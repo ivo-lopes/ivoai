@@ -235,36 +235,6 @@ func serviceUserIdentity() (string, error) {
 	return account.Uid + ":" + account.Gid, nil
 }
 
-func ensureDocker(ctx context.Context, out, errOut io.Writer) error {
-	if _, err := exec.LookPath("docker"); err == nil {
-		if exec.CommandContext(ctx, "docker", "compose", "version").Run() == nil {
-			return nil
-		}
-	}
-	apt, err := exec.LookPath("apt-get")
-	if err != nil {
-		return errors.New("Docker with Compose v2 is required and automatic installation supports apt-based systems")
-	}
-	install := func(args ...string) error {
-		cmd := exec.CommandContext(ctx, apt, args...)
-		cmd.Stdout, cmd.Stderr = out, errOut
-		cmd.Env = append(os.Environ(), "DEBIAN_FRONTEND=noninteractive")
-		return cmd.Run()
-	}
-	if err := install("update"); err != nil {
-		return fmt.Errorf("update apt package metadata: %w", err)
-	}
-	if err := install("install", "-y", "ca-certificates", "docker.io", "docker-compose-v2"); err != nil {
-		if fallbackErr := install("install", "-y", "ca-certificates", "docker.io", "docker-compose-plugin"); fallbackErr != nil {
-			return fmt.Errorf("install Docker Compose v2: %w", fallbackErr)
-		}
-	}
-	if exec.CommandContext(ctx, "docker", "compose", "version").Run() != nil {
-		return errors.New("Docker installed without Compose v2; install the docker-compose-v2 plugin and rerun setup")
-	}
-	return nil
-}
-
 func ensureServiceOwnership(layout server.Layout) error {
 	if os.Geteuid() != 0 {
 		return nil

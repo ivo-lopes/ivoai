@@ -13,6 +13,7 @@ ivoai's own code is MIT-licensed. It installs or runs the following separately d
 | Node.js | 22.18.0 | MIT | Isolated runtime for the managed Ruflo installation | <https://nodejs.org/> |
 | uv | 0.12.5 | Apache-2.0 OR MIT | Isolated Python/tool runtime used to install Headroom | <https://github.com/astral-sh/uv> |
 | CPython | 3.13.15 | Python Software Foundation License 2.0 | Managed interpreter for Headroom | <https://www.python.org/downloads/release/python-31315/> |
+| Docker Compose | 5.5.0 | Apache-2.0 | Container dependency orchestration for the server | <https://github.com/docker/compose> |
 | Qdrant | 1.19.0 | Apache-2.0 | Internal server vector database | <https://github.com/qdrant/qdrant> |
 | Hugging Face Text Embeddings Inference | 1.9.3 | Apache-2.0 | Local CPU embedding HTTP runtime | <https://github.com/huggingface/text-embeddings-inference> |
 | intfloat multilingual-e5-small | revision `614241f622f53c4eeff9890bdc4f31cfecc418b3` | MIT | Local multilingual embedding model | <https://huggingface.co/intfloat/multilingual-e5-small> |

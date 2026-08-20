@@ -40,3 +40,10 @@ replace pre-existing tools.
 Run `ivoai server doctor`, then `ivoai server logs`. Verify Docker and Compose for
 dependencies and use `systemctl status ivoai-gateway ivoai-context`. Diagnostics
 redact authentication material, but review output before sharing it externally.
+
+On Debian 12, `docker-compose-v2` and `docker-compose-plugin` may be absent from
+the configured repositories; this is supported. Re-run `ivoai setup --mode server`:
+ivoai installs the pinned, checksum-verified official Compose CLI plugin. If setup
+reports a pre-existing incompatible plugin at
+`/usr/local/lib/docker/cli-plugins/docker-compose`, ivoai preserves it instead
+of overwriting third-party software; move that file aside deliberately, then retry.

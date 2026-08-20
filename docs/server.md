@@ -7,6 +7,12 @@ amd64 and arm64. Both architectures use their reviewed, immutable embedding-runt
 OCI digest. Run
 `ivoai setup --mode server` as root. The operation is idempotent.
 
+Setup installs `docker.io` from the operating-system repository when Docker is
+absent. When that repository does not provide Compose v2, including Debian 12,
+ivoai installs the architecture-specific official Docker Compose plugin at
+`/usr/local/lib/docker/cli-plugins/docker-compose` after verifying its pinned
+SHA-256 checksum. An existing working Compose v2 installation is preserved.
+
 ## Layout
 
 | Purpose | Path |
