@@ -1,0 +1,152 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Formatting
+        run: test -z "$(gofmt -l .)"
+      - name: Unit tests
+        run: go test ./...
+      - name: Race tests
+        run: go test -race ./...
+      - name: Vet
+        run: go vet ./...
+      - name: Build
+        run: go build -trimpath ./cmd/ivoai
+      - name: ShellCheck
+        run: shellcheck install.sh scripts/*.sh
+      - name: Vulnerability scan
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@v1.7.0
+          govulncheck ./...
+
+  install-smoke:
+    name: Install smoke (${{ matrix.name }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Ubuntu 22.04
+            image: ubuntu:22.04
+          - name: Ubuntu 24.04
+            image: ubuntu:24.04
+          - name: Debian 12
+            image: debian:12-slim
+    container:
+      image: ${{ matrix.image }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - name: Install smoke dependencies
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends bash ca-certificates coreutils curl git gzip tar
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Two-command and idempotency smoke
+        env:
+          IVOAI_SMOKE_TARGET: ${{ matrix.name }}
+        run: scripts/install-smoke.sh
+
+  real-client-install:
+    name: Real client install (${{ matrix.name }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Ubuntu 22.04
+            image: ubuntu:22.04
+          - name: Ubuntu 24.04
+            image: ubuntu:24.04
+          - name: Debian 12
+            image: debian:12-slim
+    container:
+      image: ${{ matrix.image }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - name: Install platform prerequisites
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends ca-certificates coreutils curl git gzip tar xz-utils
+          useradd --create-home --shell /bin/sh ivoai-test
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Install binary from checkout
+        run: ./install.sh
+      - name: Run real two-command experience twice
+        run: |
+          su - ivoai-test -c 'ivoai setup'
+          su - ivoai-test -c 'ivoai setup'
+          su - ivoai-test -c 'ivoai status'
+          su - ivoai-test -c 'ivoai doctor'
+          su - ivoai-test -c 'ivoai doctor --json' | grep -Eq '"overall"[[:space:]]*:[[:space:]]*"READY"'
+
+  real-server-deployment:
+    name: Real Ubuntu 24.04 server deployment
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    needs: quality
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Install server binary
+        run: sudo env "PATH=$PATH" ./install.sh
+      - name: Deploy and verify idempotent server
+        run: |
+          sudo ivoai setup --mode server
+          sudo ivoai setup --mode server
+          sudo ivoai server doctor
+          sudo ivoai server enrollment create --ttl 5m | grep -q 'shown once'
+          sudo ivoai server backup --output /var/lib/ivoai/backups/ci-backup.tar.gz
+          sudo ivoai server restore --input /var/lib/ivoai/backups/ci-backup.tar.gz
+          sudo ivoai server doctor
+
+  cross-build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        goos: [linux]
+        goarch: [amd64, arm64]
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Build ${{ matrix.goos }}/${{ matrix.goarch }}
+        env:
+          CGO_ENABLED: "0"
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+        run: go build -trimpath -o "ivoai_${GOOS}_${GOARCH}" ./cmd/ivoai

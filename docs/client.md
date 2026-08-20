@@ -1,0 +1,58 @@
+# Client
+
+## Files and ownership
+
+ivoai follows the XDG Base Directory Specification:
+
+| Purpose | Default |
+| --- | --- |
+| Configuration | `$XDG_CONFIG_HOME/ivoai` or `~/.config/ivoai` |
+| Data and managed assets | `$XDG_DATA_HOME/ivoai` or `~/.local/share/ivoai` |
+| State and ownership manifest | `$XDG_STATE_HOME/ivoai` or `~/.local/state/ivoai` |
+| Cache | `$XDG_CACHE_HOME/ivoai` or `~/.cache/ivoai` |
+
+Directories containing private state use mode `0700`; secret files use `0600`.
+The main TOML file contains status and preferences, not bearer tokens.
+
+`ivoai setup` is idempotent. It records whether each executable was already present
+or installed by ivoai. `ivoai uninstall` removes only managed files and binaries; it
+does not remove third-party logins or pre-existing tools.
+
+## Components
+
+Versions and installation sources are centralized in `manifest/components.yaml`.
+Setup checks the platform, downloads pinned artifacts, verifies the reviewed integrity
+data, installs managed wrappers, and reports independent failures. Headroom uses
+architecture-specific hash-locked constraints; Ruflo uses its complete npm lockfile.
+Updates are explicit through `ivoai update`. A successful update retains the previous
+binary; `ivoai update --rollback` restores it atomically and runs Doctor again.
+
+The healthy disconnected state is:
+
+```text
+ivoai          ready
+Codex          installed / not connected
+Claude Code    installed / not connected
+Headroom       ready
+ai-memory      installed / not connected
+Ruflo          ready / provider execution disabled
+Server         not-connected
+
+Overall: READY — external connections pending
+```
+
+## Agent launch
+
+`ivoai codex` and `ivoai claude` preserve the terminal, working directory, signals,
+and agent exit code. When enabled and healthy, Headroom's supported wrapper is used.
+If Headroom is unavailable, unhealthy, or incompatible during preflight, ivoai
+starts the official agent directly. Once a selected wrapper process starts, its exit
+status is propagated instead of being hidden. Memory and context hooks are best
+effort and cannot block launch.
+
+## Project identity
+
+ivoai is host-first. Outside a project, memory uses a stable normalized host identity
+instead of deriving a project from every working directory. `ivoai project init`
+creates an explicit local marker inside a Git repository and overrides the host
+identity for that tree.
