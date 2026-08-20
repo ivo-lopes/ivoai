@@ -117,7 +117,7 @@ func TestServerEnrollmentAndOneTimeCode(t *testing.T) {
 			json.NewDecoder(r.Body).Decode(&request)
 			mu.Lock()
 			defer mu.Unlock()
-			if request.Code != code || used {
+			if request.Code != "" || r.Header.Get("Authorization") != "Ivoai-Enrollment "+code || used {
 				http.Error(w, "refused", http.StatusUnauthorized)
 				return
 			}
@@ -199,6 +199,10 @@ func TestEnrollmentCredentialSurvivesDegradedMCPProbe(t *testing.T) {
 		case "/ready":
 			json.NewEncoder(w).Encode(map[string]string{"status": "ready"})
 		case "/enroll":
+			if r.Header.Get("Authorization") != "Ivoai-Enrollment one-time" {
+				http.Error(w, "missing enrollment authorization", http.StatusBadRequest)
+				return
+			}
 			if used {
 				http.Error(w, "already used", http.StatusUnauthorized)
 				return

@@ -32,7 +32,7 @@ type Discovery struct {
 	Features            map[string]bool `json:"features"`
 }
 type enrollmentRequest struct {
-	Code            string   `json:"code"`
+	Code            string   `json:"code,omitempty"`
 	ClientName      string   `json:"client_name"`
 	RequestedScopes []string `json:"requested_scopes"`
 }
@@ -246,13 +246,17 @@ func (s ServerConnector) health(ctx context.Context, base *url.URL, endpoint str
 	return nil
 }
 func (s ServerConnector) enroll(ctx context.Context, base *url.URL, endpoint, code, clientName string) (enrollmentResponse, error) {
-	payload, _ := json.Marshal(enrollmentRequest{Code: code, ClientName: clientName, RequestedScopes: []string{"context:read", "memory:read", "memory:write", "status:read", "doctor:read", "connector:read"}})
+	// Keep the one-time credential out of proxy-parsed JSON. Authorization is
+	// already the required transport for issued client credentials and is less
+	// likely to be rewritten by reverse-proxy request-body protections.
+	payload, _ := json.Marshal(enrollmentRequest{ClientName: clientName, RequestedScopes: []string{"context:read", "memory:read", "memory:write", "status:read", "doctor:read", "connector:read"}})
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, resolveEndpoint(base, endpoint), bytes.NewReader(payload))
 	if err != nil {
 		return enrollmentResponse{}, err
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Authorization", "Ivoai-Enrollment "+code)
 	resp, err := s.Client.Do(req)
 	if err != nil {
 		return enrollmentResponse{}, fmt.Errorf("enrollment request: %w", err)

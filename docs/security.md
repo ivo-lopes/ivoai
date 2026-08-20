@@ -22,6 +22,10 @@ Enrollment through `--code-stdin` or the no-echo prompt is preferred; the suppor
 `--enrollment-code` automation flag may be visible in process listings or shell
 history.
 
+During enrollment the one-time code uses a dedicated `Authorization` scheme rather
+than a proxy-parsed JSON field. Gateway audit never records that header. Legacy body
+transport remains accepted only for rolling compatibility.
+
 ## Network controls
 
 Clients use standard TLS validation and bounded HTTP timeouts. Cleartext HTTP is

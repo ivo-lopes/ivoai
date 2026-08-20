@@ -45,6 +45,11 @@ The client:
 6. configures ai-memory hooks best-effort, reporting a degraded integration without
    discarding the valid server connection.
 
+Current clients carry the one-time code in the `Authorization` header using the
+ivoai enrollment scheme; the JSON body contains only client identity and requested
+scopes. The gateway accepts the legacy JSON field for rolling upgrades, but rejects
+requests that ambiguously provide both transports.
+
 HTTP is rejected for non-loopback servers. Disconnect deletes only ivoai's scoped
 credential and managed registry entries.
 

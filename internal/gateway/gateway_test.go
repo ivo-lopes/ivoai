@@ -216,8 +216,9 @@ func TestEnrollmentAuditExcludesSecretsAndCorrelatesRejection(t *testing.T) {
 		t.Fatal(err)
 	}
 	code := "ivoai-enroll_0123456789abcdef_secret-fixture"
-	body, _ := json.Marshal(map[string]any{"code": code, "client_name": "test", "requested_scopes": []string{"context:read"}})
+	body, _ := json.Marshal(map[string]any{"client_name": "test", "requested_scopes": []string{"context:read"}})
 	request := httptest.NewRequest(http.MethodPost, "/v1/enroll", bytes.NewReader(body))
+	request.Header.Set("Authorization", "Ivoai-Enrollment "+code)
 	request.RemoteAddr = "192.0.2.20:43123"
 	response := httptest.NewRecorder()
 	g.Handler().ServeHTTP(response, request)

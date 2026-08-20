@@ -163,8 +163,23 @@ func (g *Gateway) enroll(w http.ResponseWriter, r *http.Request) {
 	r.Body = http.MaxBytesReader(w, r.Body, 64<<10)
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
-	if err := decoder.Decode(&request); err != nil || request.Code == "" || request.ClientName == "" {
+	if err := decoder.Decode(&request); err != nil || request.ClientName == "" {
 		g.auditEnrollment(request.Code, r.RemoteAddr, false, "invalid_request")
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "valid enrollment code and client name are required"})
+		return
+	}
+	const enrollmentScheme = "Ivoai-Enrollment "
+	header := r.Header.Get("Authorization")
+	if header != "" {
+		if request.Code != "" || !strings.HasPrefix(header, enrollmentScheme) || strings.ContainsAny(header, "\r\n") {
+			g.auditEnrollment(request.Code, r.RemoteAddr, false, "ambiguous_or_invalid_transport")
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "valid enrollment code and client name are required"})
+			return
+		}
+		request.Code = strings.TrimPrefix(header, enrollmentScheme)
+	}
+	if request.Code == "" {
+		g.auditEnrollment(request.Code, r.RemoteAddr, false, "missing_code")
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "valid enrollment code and client name are required"})
 		return
 	}
