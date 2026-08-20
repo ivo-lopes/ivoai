@@ -128,6 +128,14 @@ func serveGateway(ctx context.Context, layout server.Layout, version string, err
 			}
 			return nil
 		},
+		EnrollmentAudit: func(event gateway.EnrollmentAudit) {
+			peer := event.Peer
+			if host, _, splitErr := net.SplitHostPort(event.Peer); splitErr == nil {
+				peer = host
+			}
+			fmt.Fprintf(errOut, "ivoai gateway: enrollment audit id=%s length=%d format_valid=%t accepted=%t reason=%s peer=%s\n",
+				event.ID, event.CodeLength, event.FormatValid, event.Accepted, event.Reason, peer)
+		},
 	})
 	if err != nil {
 		return err

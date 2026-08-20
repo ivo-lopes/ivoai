@@ -200,3 +200,35 @@ func decode(t *testing.T, response *http.Response, output any) {
 		t.Fatal(err)
 	}
 }
+
+func TestEnrollmentAuditExcludesSecretsAndCorrelatesRejection(t *testing.T) {
+	contextService, err := contextsvc.NewService(contextsvc.DeterministicEmbedder{DimensionsN: 8}, contextsvc.NewMemoryStore(), contextsvc.NewMemoryCatalog())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := contextService.Initialize(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	store := enrollment.NewStore(filepath.Join(t.TempDir(), "state.json"))
+	var audit EnrollmentAudit
+	g, err := New(Config{ServerVersion: "test", Context: contextService, Enrollments: store, EnrollmentAudit: func(event EnrollmentAudit) { audit = event }})
+	if err != nil {
+		t.Fatal(err)
+	}
+	code := "ivoai-enroll_0123456789abcdef_secret-fixture"
+	body, _ := json.Marshal(map[string]any{"code": code, "client_name": "test", "requested_scopes": []string{"context:read"}})
+	request := httptest.NewRequest(http.MethodPost, "/v1/enroll", bytes.NewReader(body))
+	request.RemoteAddr = "192.0.2.20:43123"
+	response := httptest.NewRecorder()
+	g.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusUnauthorized {
+		t.Fatalf("status = %d", response.Code)
+	}
+	if audit.ID != "0123456789abcdef" || audit.CodeLength != len(code) || !audit.FormatValid || audit.Accepted || audit.Reason != "invalid_or_expired" || audit.Peer != request.RemoteAddr {
+		t.Fatalf("unexpected safe audit metadata: %#v", audit)
+	}
+	encoded, _ := json.Marshal(audit)
+	if bytes.Contains(encoded, []byte("secret-fixture")) {
+		t.Fatal("audit event exposed enrollment secret")
+	}
+}

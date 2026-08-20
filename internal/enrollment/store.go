@@ -304,6 +304,11 @@ func codeID(code string) (string, bool) {
 	return id, true
 }
 
+// CodeID returns only the non-secret public identifier embedded in a
+// syntactically valid enrollment code. It never exposes or verifies the secret
+// portion and is intended for safe operational audit correlation.
+func CodeID(code string) (string, bool) { return codeID(code) }
+
 func (s *Store) Consume(code, clientName string) (ClientCredential, error) {
 	return s.ConsumeScoped(code, clientName, nil)
 }

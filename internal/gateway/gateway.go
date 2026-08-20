@@ -16,13 +16,25 @@ import (
 const ProtocolVersion = 1
 
 type Config struct {
-	ServerVersion string
-	PublicBaseURL string
-	Context       *contextsvc.Service
-	Enrollments   *enrollment.Store
-	Memory        http.Handler
-	MemoryHealth  func(context.Context) error
-	Now           func() time.Time
+	ServerVersion   string
+	PublicBaseURL   string
+	Context         *contextsvc.Service
+	Enrollments     *enrollment.Store
+	Memory          http.Handler
+	MemoryHealth    func(context.Context) error
+	Now             func() time.Time
+	EnrollmentAudit func(EnrollmentAudit)
+}
+
+// EnrollmentAudit contains only non-secret request metadata. Code contents,
+// hashes, issued credentials, and client names are deliberately excluded.
+type EnrollmentAudit struct {
+	ID          string
+	CodeLength  int
+	FormatValid bool
+	Peer        string
+	Accepted    bool
+	Reason      string
 }
 
 type Gateway struct {
@@ -152,6 +164,7 @@ func (g *Gateway) enroll(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	decoder.DisallowUnknownFields()
 	if err := decoder.Decode(&request); err != nil || request.Code == "" || request.ClientName == "" {
+		g.auditEnrollment(request.Code, r.RemoteAddr, false, "invalid_request")
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "valid enrollment code and client name are required"})
 		return
 	}
@@ -164,11 +177,27 @@ func (g *Gateway) enroll(w http.ResponseWriter, r *http.Request) {
 	}
 	credential, err := g.config.Enrollments.ConsumeScoped(request.Code, request.ClientName, requested)
 	if err != nil {
+		reason := "invalid_or_expired"
+		if strings.Contains(err.Error(), "scope") {
+			reason = "scope_not_allowed"
+		} else if strings.Contains(err.Error(), "client name") {
+			reason = "invalid_client_name"
+		}
+		g.auditEnrollment(request.Code, r.RemoteAddr, false, reason)
 		// A deliberately uniform response avoids exposing code state.
 		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "invalid or expired enrollment code"})
 		return
 	}
+	g.auditEnrollment(request.Code, r.RemoteAddr, true, "accepted")
 	writeJSON(w, http.StatusCreated, credential)
+}
+
+func (g *Gateway) auditEnrollment(code, peer string, accepted bool, reason string) {
+	if g.config.EnrollmentAudit == nil {
+		return
+	}
+	id, valid := enrollment.CodeID(code)
+	g.config.EnrollmentAudit(EnrollmentAudit{ID: id, CodeLength: len(code), FormatValid: valid, Peer: peer, Accepted: accepted, Reason: reason})
 }
 
 type principalKey struct{}

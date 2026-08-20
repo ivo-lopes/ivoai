@@ -71,3 +71,10 @@ An HTTP 502 from a reverse proxy means the gateway is not reachable from that pr
 First make `ivoai server doctor` pass. For a proxy on another host, configure the
 gateway with its private listen address and the proxy's narrow source CIDR using
 `--trusted-proxy`; loopback is reachable only from the ivoai server itself.
+
+Enrollment rejection responses remain deliberately uniform. The gateway journal
+records only safe correlation metadata: enrollment ID, input length, format validity,
+proxy peer, result, and broad rejection reason. It never records the enrollment code,
+its verifier, a client token, or the client name. Use
+`ivoai server logs ivoai-gateway.service` to distinguish a malformed/mismatched code,
+an unauthorized scope, or a request routed to another gateway instance.
