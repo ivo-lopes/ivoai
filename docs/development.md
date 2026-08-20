@@ -2,7 +2,8 @@
 
 ## Requirements
 
-- Go version declared in `go.mod`
+- Go version declared in `go.mod` for direct development commands. `./install.sh`
+  bootstraps the exact reviewed toolchain temporarily when Go is absent or too old.
 - Git
 - Bash and ShellCheck
 - Docker only for server dependency integration tests

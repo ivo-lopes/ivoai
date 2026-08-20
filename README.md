@@ -28,7 +28,9 @@ ivoai setup
 ```
 
 For a private repository, clone with authenticated GitHub access and run
-`./install.sh`, then `ivoai setup`.
+`./install.sh`, then `ivoai setup`. A compatible system Go is used when available;
+otherwise the installer downloads a pinned, checksum-verified Go toolchain only for
+the source build and removes it afterward.
 
 Connect accounts later through official login flows managed by their own clients:
 

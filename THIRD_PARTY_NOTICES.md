@@ -4,6 +4,7 @@ ivoai's own code is MIT-licensed. It installs or runs the following separately d
 
 | Project | Version | License / terms | Role | Upstream |
 |---|---:|---|---|---|
+| Go toolchain | 1.27.0 | BSD-3-Clause | Ephemeral, checksum-pinned compiler for source-checkout installation when compatible Go is unavailable | <https://go.dev/dl/> |
 | OpenAI Codex CLI | 0.148.0 | Apache-2.0 | Official ChatGPT/Codex terminal client | <https://github.com/openai/codex> |
 | Anthropic Claude Code | 2.1.228 stable | Proprietary; Anthropic Consumer or Commercial Terms, depending on account | Official Claude terminal client | <https://github.com/anthropics/claude-code> |
 | Headroom | 0.36.0 | Apache-2.0 | Optional local context-optimization proxy/wrapper | <https://github.com/headroomlabs-ai/headroom> |

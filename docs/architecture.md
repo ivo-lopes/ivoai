@@ -46,6 +46,14 @@ socket. The server does not expose a shell or an arbitrary-command endpoint.
 
 ## Client architecture
 
+The public installer downloads a release archive and verifies its published checksum.
+When invoked from an authenticated source checkout, it first uses a compatible system
+Go toolchain. If Go is absent or older than the `go.mod` directive, it downloads the
+reviewed linux/amd64 or linux/arm64 Go archive, verifies the pinned official SHA-256,
+and builds with temporary module and build caches. The toolchain and caches are removed
+when installation finishes; no global Go installation or package-manager mutation is
+required.
+
 ### Files and ownership
 
 The client follows the XDG Base Directory Specification:

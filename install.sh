@@ -11,8 +11,13 @@ fail() {
   exit 1
 }
 
-command -v curl >/dev/null 2>&1 || fail "curl is required"
-command -v sha256sum >/dev/null 2>&1 || fail "sha256sum is required"
+info() {
+  printf 'ivoai installer: %s\n' "$*"
+}
+
+for prerequisite in awk chmod curl dirname find grep id install mkdir mktemp readlink sha256sum stat tar uname; do
+  command -v "$prerequisite" >/dev/null 2>&1 || fail "$prerequisite is required"
+done
 
 case "$(uname -s)" in
   Linux) os="linux" ;;
@@ -57,6 +62,57 @@ owned_install() {
   ' "$ownership"
 }
 
+version_at_least() {
+  current_version=$1
+  required_version=$2
+  awk -v current="$current_version" -v required="$required_version" 'BEGIN {
+    split(current, c, "."); split(required, r, ".")
+    for (i = 1; i <= 3; i++) {
+      c[i] += 0; r[i] += 0
+      if (c[i] > r[i]) exit 0
+      if (c[i] < r[i]) exit 1
+    }
+    exit 0
+  }'
+}
+
+select_go_toolchain() {
+  required_go=$1
+  go_command=""
+  if command -v go >/dev/null 2>&1; then
+    candidate_go="$(command -v go)"
+    candidate_version="$(GOTOOLCHAIN=local "$candidate_go" env GOVERSION 2>/dev/null || true)"
+    candidate_version=${candidate_version#go}
+    if printf '%s\n' "$candidate_version" | grep -Eq '^[0-9]+\.[0-9]+(\.[0-9]+)?$' &&
+       version_at_least "$candidate_version" "$required_go"; then
+      go_command=$candidate_go
+      info "using system Go $candidate_version"
+      return
+    fi
+    info "system Go ${candidate_version:-unknown} is older than required Go $required_go"
+  else
+    info "Go was not found; bootstrapping Go $required_go for this source build"
+  fi
+
+  case "$required_go/$arch" in
+    1.27.0/amd64) go_checksum="675c26c449cbb18fc24b74650de1eabbae6e16f64326fd85a283fb3b58280685" ;;
+    1.27.0/arm64) go_checksum="51798d2c42d0e1c6ed7fd9f48728b4193abac9e8aad6dbac2fe96a81f5909bda" ;;
+    *) fail "no reviewed Go toolchain is pinned for Go $required_go on linux/$arch" ;;
+  esac
+  go_asset="go${required_go}.linux-${arch}.tar.gz"
+  curl -fsSL --retry 3 --connect-timeout 10 "https://go.dev/dl/$go_asset" -o "$tmp_dir/$go_asset" ||
+    fail "Go $required_go toolchain download failed"
+  printf '%s  %s\n' "$go_checksum" "$tmp_dir/$go_asset" | sha256sum -c - >/dev/null ||
+    fail "Go $required_go toolchain checksum mismatch"
+  tar -xzf "$tmp_dir/$go_asset" -C "$tmp_dir"
+  go_command="$tmp_dir/go/bin/go"
+  if ! { [ -f "$go_command" ] && [ -x "$go_command" ] && [ ! -L "$go_command" ]; }; then
+    fail "downloaded Go toolchain is incomplete"
+  fi
+  bootstrapped_version="$(GOTOOLCHAIN=local "$go_command" env GOVERSION 2>/dev/null || true)"
+  [ "$bootstrapped_version" = "go$required_go" ] || fail "downloaded Go toolchain version is invalid"
+}
+
 if [ -z "$install_dir" ]; then
   if [ "$(id -u)" -eq 0 ]; then
     install_dir="/usr/local/bin"
@@ -77,7 +133,10 @@ case "$install_dir" in
 esac
 
 tmp_dir="$(mktemp -d "${TMPDIR:-/tmp}/ivoai-install.XXXXXXXX")"
-cleanup() { find "$tmp_dir" -depth -delete 2>/dev/null || true; }
+cleanup() {
+  chmod -R u+w "$tmp_dir" 2>/dev/null || true
+  find "$tmp_dir" -depth -delete 2>/dev/null || true
+}
 trap cleanup EXIT HUP INT TERM
 
 # An authenticated clone can install itself before a public release exists. Do not
@@ -92,8 +151,13 @@ case "$0" in
 esac
 if [ "$source_checkout" -eq 1 ] && [ -f "$script_dir/go.mod" ] && [ -d "$script_dir/cmd/ivoai" ] &&
    grep -Eq '^module[[:space:]]+github\.com/ivo-lopes/ivoai$' "$script_dir/go.mod"; then
-  command -v go >/dev/null 2>&1 || fail "Go is required for installation from a source checkout"
-  (cd "$script_dir" && go build -trimpath -o "$tmp_dir/ivoai" ./cmd/ivoai)
+  required_go="$(awk '$1 == "go" && NF == 2 { print $2; exit }' "$script_dir/go.mod")"
+  printf '%s\n' "$required_go" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$' ||
+    fail "go.mod does not declare a supported stable Go version"
+  select_go_toolchain "$required_go"
+  (cd "$script_dir" && GOTOOLCHAIN=local CGO_ENABLED=0 \
+    GOCACHE="$tmp_dir/go-build-cache" GOMODCACHE="$tmp_dir/go-module-cache" \
+    "$go_command" build -buildvcs=false -trimpath -o "$tmp_dir/ivoai" ./cmd/ivoai)
 else
   asset="ivoai_${os}_${arch}.tar.gz"
   if [ "$version" = "latest" ]; then

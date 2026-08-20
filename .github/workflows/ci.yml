@@ -59,6 +59,16 @@ jobs:
         run: |
           apt-get update
           apt-get install -y --no-install-recommends bash ca-certificates coreutils curl git gzip tar
+      - name: Source installer bootstraps missing Go
+        if: matrix.name == 'Ubuntu 24.04'
+        run: |
+          mkdir -p /tmp/ivoai-bootstrap-home /tmp/ivoai-bootstrap-bin
+          env HOME=/tmp/ivoai-bootstrap-home \
+            XDG_STATE_HOME=/tmp/ivoai-bootstrap-home/state \
+            IVOAI_INSTALL_DIR=/tmp/ivoai-bootstrap-bin \
+            PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
+            ./install.sh
+          /tmp/ivoai-bootstrap-bin/ivoai version
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
         with:
           go-version-file: go.mod

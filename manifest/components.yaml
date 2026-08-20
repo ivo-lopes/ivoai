@@ -22,6 +22,25 @@ components:
     install_strategy: github_release_asset
     checksum_strategy: release_sha256sums
 
+  - name: go-toolchain
+    role: [development-bootstrap]
+    validated_version: "1.27.0"
+    minimum_version: "1.27.0"
+    license: BSD-3-Clause
+    source: "https://go.dev/dl/"
+    architectures: [linux/amd64, linux/arm64]
+    install_strategy: ephemeral_source_build_toolchain
+    checksum_strategy: official_archive_sha256
+    assets:
+      linux/amd64:
+        url: "https://go.dev/dl/go1.27.0.linux-amd64.tar.gz"
+        sha256: "675c26c449cbb18fc24b74650de1eabbae6e16f64326fd85a283fb3b58280685"
+      linux/arm64:
+        url: "https://go.dev/dl/go1.27.0.linux-arm64.tar.gz"
+        sha256: "51798d2c42d0e1c6ed7fd9f48728b4193abac9e8aad6dbac2fe96a81f5909bda"
+    notes:
+      - "Used only when installing from a source checkout without a compatible system Go; extracted under the installer temporary directory and removed after the build."
+
   - name: codex
     role: [client]
     package: "@openai/codex"
