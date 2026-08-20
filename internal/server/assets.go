@@ -20,7 +20,7 @@ const ComposeYAML = `services:
       timeout: 3s
       retries: 12
     security_opt: ["no-new-privileges:true"]
-    networks: [ivoai-internal]
+    networks: [ivoai-internal, host-publish]
 
   embeddings:
     container_name: ivoai-embeddings
@@ -39,7 +39,7 @@ const ComposeYAML = `services:
       timeout: 3s
       retries: 30
     security_opt: ["no-new-privileges:true"]
-    networks: [ivoai-internal, model-download]
+    networks: [ivoai-internal, host-publish, model-download]
 
   ai-memory:
     image: akitaonrails/ai-memory@sha256:1d8a2ca7d7bc2349ba964d2d97dafb683632676460c1e373083f919a18c60d37
@@ -59,11 +59,18 @@ const ComposeYAML = `services:
       start_period: 5s
     cap_drop: ["ALL"]
     security_opt: ["no-new-privileges:true"]
-    networks: [ivoai-internal]
+    networks: [ivoai-internal, host-publish]
 
 networks:
   ivoai-internal:
     internal: true
+  # Docker silently omits published ports for containers attached only to an
+  # internal network. This transient network creates the loopback bindings;
+  # systemd disconnects it after startup so backends have no runtime egress.
+  host-publish:
+    name: ivoai-host-publish
+    driver_opts:
+      com.docker.network.bridge.enable_ip_masquerade: "false"
   model-download:
     name: ivoai-model-download
 `
@@ -160,8 +167,11 @@ Requires=docker.service
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/usr/bin/docker compose -f /etc/ivoai/compose.yaml up -d --wait --wait-timeout 840
+ExecStart=/usr/bin/docker compose -f /etc/ivoai/compose.yaml up -d --force-recreate --wait --wait-timeout 840
 ExecStartPost=/usr/bin/docker network disconnect ivoai-model-download ivoai-embeddings
+ExecStartPost=-/usr/bin/docker network disconnect -f ivoai-host-publish ivoai-qdrant-1
+ExecStartPost=-/usr/bin/docker network disconnect -f ivoai-host-publish ivoai-embeddings
+ExecStartPost=-/usr/bin/docker network disconnect -f ivoai-host-publish ivoai-ai-memory-1
 ExecStop=/usr/bin/docker compose -f /etc/ivoai/compose.yaml down
 NoNewPrivileges=yes
 TimeoutStartSec=15min

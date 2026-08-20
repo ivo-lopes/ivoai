@@ -76,6 +76,20 @@ public origin without editing a file:
 sudo ivoai server gateway configure --public-url https://ai.example.com
 ```
 
+If the HTTPS reverse proxy runs on another host or container, explicitly bind the
+gateway to the server's private address and allow only the proxy's source address:
+
+```sh
+sudo ivoai server gateway configure \
+  --public-url https://ai.example.com \
+  --listen 192.0.2.10:7744 \
+  --trusted-proxy 192.0.2.20/32
+```
+
+Use the real private address of the ivoai server and the real source IP/CIDR of the
+proxy. Requests from other peers, and proxy requests without
+`X-Forwarded-Proto: https`, are rejected. Do not use `0.0.0.0/0`.
+
 Alternatively, let ivoai serve TLS directly. The certificate and key are copied into
 `/etc/ivoai/secrets/tls` as service-owned `0600` files, and a non-loopback listener
 is accepted only when both are supplied:
@@ -91,6 +105,8 @@ sudo ivoai server gateway configure \
 Certificate issuance and renewal remain operator responsibilities. Re-run the
 configure command to refresh managed certificate copies. Qdrant, embeddings, and
 ai-memory stay on loopback mappings; only the gateway or reverse proxy is public.
+The dependency containers join a non-internal network only while Docker establishes
+the loopback bindings; systemd disconnects that transient network after startup.
 After systemd loads the backend environment files, the context service cannot access
 the managed secrets tree.
 

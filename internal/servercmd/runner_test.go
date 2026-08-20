@@ -9,6 +9,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/ivo-lopes/ivoai/internal/server"
 )
 
 func TestServerSetupEnrollmentAndConnectorsAreIdempotent(t *testing.T) {
@@ -162,6 +164,27 @@ func TestWaitForServerStartReportsProgress(t *testing.T) {
 	}
 }
 
+func TestWaitForServicesStableRejectsTransientAndInactiveServices(t *testing.T) {
+	active := []server.ServiceState{
+		{Name: "ivoai-dependencies.service", Active: true, Detail: "active"},
+		{Name: "ivoai-context.service", Active: true, Detail: "active"},
+		{Name: "ivoai-gateway.service", Active: true, Detail: "active"},
+	}
+	if err := waitForServicesStable(context.Background(), 50*time.Millisecond, time.Millisecond, 3*time.Millisecond, func(context.Context) ([]server.ServiceState, error) {
+		return active, nil
+	}); err != nil {
+		t.Fatalf("stable services rejected: %v", err)
+	}
+
+	inactive := append([]server.ServiceState(nil), active...)
+	inactive[2] = server.ServiceState{Name: "ivoai-gateway.service", Detail: "activating"}
+	if err := waitForServicesStable(context.Background(), 8*time.Millisecond, time.Millisecond, 3*time.Millisecond, func(context.Context) ([]server.ServiceState, error) {
+		return inactive, nil
+	}); err == nil || !strings.Contains(err.Error(), "ivoai-gateway.service=activating") {
+		t.Fatalf("inactive service did not fail with a diagnostic: %v", err)
+	}
+}
+
 func TestSecureRegularOwnershipUsesNoFollowDescriptor(t *testing.T) {
 	dir := t.TempDir()
 	regular := filepath.Join(dir, "managed.env")
@@ -214,6 +237,14 @@ func TestGatewayConfigurePersistsHTTPSWithoutManualEditing(t *testing.T) {
 	}
 	if err := run(context.Background(), []string{"gateway", "configure", "--public-url", "https://ai.example.com", "--listen", "0.0.0.0:7744"}, strings.NewReader(""), &bytes.Buffer{}, &bytes.Buffer{}); err == nil {
 		t.Fatal("public plaintext gateway configuration accepted")
+	}
+	var proxyOut bytes.Buffer
+	if err := run(context.Background(), []string{"gateway", "configure", "--public-url", "https://ai.example.com", "--listen", "192.0.2.10:7744", "--trusted-proxy", "192.0.2.20/32"}, strings.NewReader(""), &proxyOut, &proxyOut); err != nil {
+		t.Fatalf("trusted reverse-proxy configuration rejected: %v (%s)", err, proxyOut.String())
+	}
+	configuration, err = os.ReadFile(filepath.Join(root, "etc/ivoai/gateway.json"))
+	if err != nil || !bytes.Contains(configuration, []byte(`"trusted_proxy_cidrs"`)) || !strings.Contains(proxyOut.String(), "trusted HTTPS reverse proxy") {
+		t.Fatalf("trusted reverse-proxy configuration was not persisted: %s / %v / %s", configuration, err, proxyOut.String())
 	}
 	certificate := filepath.Join(t.TempDir(), "fullchain.pem")
 	key := filepath.Join(t.TempDir(), "private-key.pem")

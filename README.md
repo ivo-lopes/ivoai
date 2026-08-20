@@ -66,9 +66,9 @@ sudo ivoai server doctor
 sudo ivoai server enrollment create
 ```
 
-The gateway remains on loopback by default, ready for an administrator-managed HTTPS
-reverse proxy. Direct TLS can instead be configured through the same command with
-`--listen`, `--tls-cert`, and `--tls-key`; see the server guide. Clients need only the
+The gateway remains on loopback by default, ready for a reverse proxy on the same
+host. A proxy on another private host can be authorized with `--listen` and a narrow
+`--trusted-proxy` CIDR. Direct TLS is also supported; see the server guide. Clients need only the
 HTTPS base URL and a short-lived, one-time enrollment code. Dependency ports bind to
 loopback and are not publicly exposed.
 

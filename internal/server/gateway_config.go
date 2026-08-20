@@ -18,13 +18,14 @@ const gatewayConfigFile = "gateway.json"
 
 // GatewayConfig controls the public gateway without requiring users to edit
 // systemd units or configuration files. A loopback listener without TLS is
-// suitable for a TLS-terminating reverse proxy; a non-loopback listener must
-// have a certificate and key configured.
+// suitable for a local TLS-terminating reverse proxy. A non-loopback listener
+// must use direct TLS or restrict plaintext traffic to explicit proxy CIDRs.
 type GatewayConfig struct {
-	ListenAddress string `json:"listen_address"`
-	PublicURL     string `json:"public_url,omitempty"`
-	TLSCertFile   string `json:"tls_cert_file,omitempty"`
-	TLSKeyFile    string `json:"tls_key_file,omitempty"`
+	ListenAddress     string   `json:"listen_address"`
+	PublicURL         string   `json:"public_url,omitempty"`
+	TLSCertFile       string   `json:"tls_cert_file,omitempty"`
+	TLSKeyFile        string   `json:"tls_key_file,omitempty"`
+	TrustedProxyCIDRs []string `json:"trusted_proxy_cidrs,omitempty"`
 }
 
 func DefaultGatewayConfig() GatewayConfig {
@@ -160,6 +161,9 @@ func (c GatewayConfig) Validate(checkTLSFiles bool) error {
 	if (c.TLSCertFile == "") != (c.TLSKeyFile == "") {
 		return errors.New("TLS certificate and key must be configured together")
 	}
+	if c.TLSCertFile != "" && len(c.TrustedProxyCIDRs) > 0 {
+		return errors.New("direct TLS and trusted reverse-proxy modes are mutually exclusive")
+	}
 	loopback := strings.EqualFold(host, "localhost")
 	if ip := net.ParseIP(host); ip != nil {
 		loopback = ip.IsLoopback()
@@ -167,8 +171,16 @@ func (c GatewayConfig) Validate(checkTLSFiles bool) error {
 	if host == "" {
 		loopback = false
 	}
-	if !loopback && c.TLSCertFile == "" {
-		return errors.New("a non-loopback gateway listener requires direct TLS; use loopback behind an HTTPS reverse proxy otherwise")
+	if !loopback && c.TLSCertFile == "" && len(c.TrustedProxyCIDRs) == 0 {
+		return errors.New("a non-loopback gateway listener requires direct TLS or at least one explicitly trusted HTTPS reverse-proxy CIDR")
+	}
+	if len(c.TrustedProxyCIDRs) > 0 {
+		if c.PublicURL == "" {
+			return errors.New("trusted reverse-proxy mode requires a public HTTPS URL")
+		}
+		if _, err := ParseTrustedProxyCIDRs(c.TrustedProxyCIDRs); err != nil {
+			return err
+		}
 	}
 	if !checkTLSFiles || c.TLSCertFile == "" {
 		return nil
@@ -193,4 +205,24 @@ func (c GatewayConfig) Validate(checkTLSFiles bool) error {
 		}
 	}
 	return nil
+}
+
+// ParseTrustedProxyCIDRs validates source networks used by the plaintext
+// reverse-proxy listener. A wildcard network would turn this mode into a
+// public HTTP endpoint and is therefore rejected.
+func ParseTrustedProxyCIDRs(values []string) ([]*net.IPNet, error) {
+	networks := make([]*net.IPNet, 0, len(values))
+	for _, value := range values {
+		value = strings.TrimSpace(value)
+		ip, network, err := net.ParseCIDR(value)
+		if err != nil || ip == nil || network == nil {
+			return nil, fmt.Errorf("trusted proxy must be an IP CIDR: %q", value)
+		}
+		ones, bits := network.Mask.Size()
+		if ones <= 0 || bits <= 0 {
+			return nil, errors.New("trusted proxy CIDR must not match every address")
+		}
+		networks = append(networks, network)
+	}
+	return networks, nil
 }

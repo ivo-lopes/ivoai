@@ -60,3 +60,14 @@ If Qdrant reports permission errors for `/qdrant/.qdrant-initialized` or
 `/qdrant/snapshots/tmp`, update and reinstall ivoai. Current setup mounts separate
 service-owned init and snapshot paths while keeping the image root filesystem
 non-writable and the Qdrant process non-root.
+
+If containers are healthy but Context reports `127.0.0.1:6333: connection refused`,
+update and reinstall ivoai. Some Docker versions silently omit published ports for a
+container attached only to an internal network. Current setup establishes all three
+loopback bindings through a transient network, verifies service stability, and then
+removes dependency egress.
+
+An HTTP 502 from a reverse proxy means the gateway is not reachable from that proxy.
+First make `ivoai server doctor` pass. For a proxy on another host, configure the
+gateway with its private listen address and the proxy's narrow source CIDR using
+`--trusted-proxy`; loopback is reachable only from the ivoai server itself.

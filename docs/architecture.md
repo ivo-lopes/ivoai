@@ -243,8 +243,9 @@ one-time credential and MCP registry are persisted before context and memory pro
 Probe failures become explicit degradation warnings, so a consumed code never
 strands the issued credential. Redirects to another origin are rejected during
 discovery and enrollment. Plaintext is accepted only on loopback for development or
-behind a TLS-terminating reverse proxy; a non-loopback gateway listener requires
-direct TLS configuration.
+behind a same-host TLS-terminating reverse proxy. A remote reverse proxy requires an
+explicit source CIDR and forwarded HTTPS enforcement; other non-loopback listeners
+require direct TLS configuration.
 
 Endpoints use bounded JSON bodies and server-level request, read, write, and idle
 timeouts. MCP endpoints accept JSON-RPC over HTTP and require bearer authentication.
@@ -320,7 +321,9 @@ upload therefore requires another ingestion run.
 The Qdrant collection is `ivoai-context-v1-d384`; Qdrant 1.19.0 uses the pinned
 upstream unprivileged multi-architecture image digest. Its host mapping is
 loopback-only (`127.0.0.1:6333`) and requires a generated API key. Embeddings and
-ai-memory use separate generated credentials. The index is a cache; source documents,
+ai-memory use separate generated credentials. Docker uses a transient non-internal
+network to establish these loopback bindings, then systemd disconnects it to remove
+backend egress. The index is a cache; source documents,
 normalized metadata, and connector definitions are authoritative. A collection can
 be deleted and rebuilt deterministically.
 

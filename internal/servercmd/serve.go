@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -131,9 +132,17 @@ func serveGateway(ctx context.Context, layout server.Layout, version string, err
 	if err != nil {
 		return err
 	}
+	handler := g.Handler()
+	if len(gatewayConfig.TrustedProxyCIDRs) > 0 {
+		networks, err := server.ParseTrustedProxyCIDRs(gatewayConfig.TrustedProxyCIDRs)
+		if err != nil {
+			return err
+		}
+		handler = trustedHTTPSProxyOnly(handler, networks)
+	}
 	httpServer := &http.Server{
 		Addr:              gatewayConfig.ListenAddress,
-		Handler:           g.Handler(),
+		Handler:           handler,
 		ReadHeaderTimeout: 5 * time.Second,
 		ReadTimeout:       30 * time.Second,
 		WriteTimeout:      30 * time.Second,
@@ -164,6 +173,29 @@ func serveGateway(ctx context.Context, layout server.Layout, version string, err
 		}
 		return nil
 	}
+}
+
+func trustedHTTPSProxyOnly(next http.Handler, networks []*net.IPNet) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		host, _, err := net.SplitHostPort(r.RemoteAddr)
+		peer := net.ParseIP(host)
+		trusted := err == nil && peer != nil
+		if trusted {
+			trusted = false
+			for _, network := range networks {
+				if network.Contains(peer) {
+					trusted = true
+					break
+				}
+			}
+		}
+		if !trusted || !strings.EqualFold(strings.TrimSpace(r.Header.Get("X-Forwarded-Proto")), "https") {
+			w.Header().Set("Cache-Control", "no-store")
+			http.Error(w, "HTTPS reverse proxy required", http.StatusForbidden)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
 }
 
 func memoryProxy(targetURLs ...string) (http.Handler, error) {

@@ -148,7 +148,9 @@ func (r *runner) setup(ctx context.Context, layout server.Layout, manager server
 	if err := ensureServiceOwnership(layout); err != nil {
 		return err
 	}
-	if err := waitForServerStart(ctx, r.out, 15*time.Second, manager.Start); err != nil {
+	// Restart also reconciles updated Compose assets on an idempotent rerun;
+	// systemctl start would leave an already-active oneshot dependency unit stale.
+	if err := waitForServerStart(ctx, r.out, 15*time.Second, manager.Restart); err != nil {
 		diagnosticCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 		logs, logErr := manager.Logs(diagnosticCtx, "ivoai-dependencies.service", 80)
@@ -157,8 +159,73 @@ func (r *runner) setup(ctx context.Context, layout server.Layout, manager server
 		}
 		return fmt.Errorf("server files installed but services did not start: %w", err)
 	}
+	if err := waitForServicesStable(ctx, 20*time.Second, 500*time.Millisecond, 2*time.Second, manager.Status); err != nil {
+		diagnosticCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		var journals []string
+		for _, service := range []string{"ivoai-context.service", "ivoai-gateway.service"} {
+			logs, logErr := manager.Logs(diagnosticCtx, service, 40)
+			if logErr == nil && strings.TrimSpace(logs) != "" {
+				journals = append(journals, service+":\n"+platform.Redact(logs))
+			}
+		}
+		if len(journals) > 0 {
+			return fmt.Errorf("server dependencies started but application services are not stable: %w\nRecent service journals:\n%s", err, strings.Join(journals, "\n"))
+		}
+		return fmt.Errorf("server dependencies started but application services are not stable: %w", err)
+	}
 	fmt.Fprintf(r.out, "ivoai server %s setup complete\n", r.version)
 	return nil
+}
+
+func waitForServicesStable(ctx context.Context, timeout, interval, stableFor time.Duration, status func(context.Context) ([]server.ServiceState, error)) error {
+	if timeout <= 0 {
+		timeout = 20 * time.Second
+	}
+	if interval <= 0 {
+		interval = 500 * time.Millisecond
+	}
+	if stableFor <= 0 {
+		stableFor = 2 * time.Second
+	}
+	waitCtx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+	var stableSince time.Time
+	var last []server.ServiceState
+	for {
+		states, err := status(waitCtx)
+		if err != nil {
+			return err
+		}
+		last = states
+		allActive := len(states) == len(server.ManagedServices)
+		for _, state := range states {
+			allActive = allActive && state.Active
+		}
+		if allActive {
+			if stableSince.IsZero() {
+				stableSince = time.Now()
+			}
+			if time.Since(stableSince) >= stableFor {
+				return nil
+			}
+		} else {
+			stableSince = time.Time{}
+		}
+		select {
+		case <-waitCtx.Done():
+			inactive := make([]string, 0, len(last))
+			for _, state := range last {
+				if !state.Active {
+					inactive = append(inactive, state.Name+"="+state.Detail)
+				}
+			}
+			return fmt.Errorf("timed out waiting for stable services (%s)", strings.Join(inactive, ", "))
+		case <-ticker.C:
+		}
+	}
 }
 
 func waitForServerStart(ctx context.Context, out io.Writer, interval time.Duration, start func(context.Context) error) error {
@@ -862,6 +929,8 @@ func (r *runner) gateway(ctx context.Context, layout server.Layout, args []strin
 		listen := fs.String("listen", "127.0.0.1:7744", "gateway listen address")
 		cert := fs.String("tls-cert", "", "absolute TLS certificate path")
 		key := fs.String("tls-key", "", "absolute owner-only TLS private key path")
+		var trustedProxies stringListFlag
+		fs.Var(&trustedProxies, "trusted-proxy", "trusted reverse-proxy source CIDR (repeatable)")
 		if err := fs.Parse(args[1:]); err != nil {
 			return err
 		}
@@ -876,11 +945,8 @@ func (r *runner) gateway(ctx context.Context, layout server.Layout, args []strin
 				return err
 			}
 		}
-		config := server.GatewayConfig{ListenAddress: *listen, PublicURL: *publicURL, TLSCertFile: managedCert, TLSKeyFile: managedKey}
+		config := server.GatewayConfig{ListenAddress: *listen, PublicURL: *publicURL, TLSCertFile: managedCert, TLSKeyFile: managedKey, TrustedProxyCIDRs: trustedProxies}
 		if err := server.SaveGatewayConfig(layout, config); err != nil {
-			return err
-		}
-		if err := ensureServiceOwnership(layout); err != nil {
 			return err
 		}
 		if err := ensureServiceOwnership(layout); err != nil {
@@ -894,11 +960,25 @@ func (r *runner) gateway(ctx context.Context, layout server.Layout, args []strin
 		mode := "TLS reverse proxy on loopback"
 		if *cert != "" {
 			mode = "direct TLS"
+		} else if len(trustedProxies) > 0 {
+			mode = "trusted HTTPS reverse proxy"
 		}
 		fmt.Fprintf(r.out, "Gateway configured: %s (%s)\n", *publicURL, mode)
 		return nil
 	}
-	return errors.New("usage: ivoai server gateway <serve|configure --public-url HTTPS_ORIGIN [--listen HOST:PORT] [--tls-cert PATH --tls-key PATH]>")
+	return errors.New("usage: ivoai server gateway <serve|configure --public-url HTTPS_ORIGIN [--listen HOST:PORT] [--trusted-proxy CIDR] [--tls-cert PATH --tls-key PATH]>")
+}
+
+type stringListFlag []string
+
+func (f *stringListFlag) String() string { return strings.Join(*f, ",") }
+func (f *stringListFlag) Set(value string) error {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return errors.New("value must not be empty")
+	}
+	*f = append(*f, value)
+	return nil
 }
 
 func (r *runner) usage() {
@@ -907,7 +987,7 @@ func (r *runner) usage() {
   enrollment create [--ttl 10m] | list | revoke <id>
   connector list | add --name NAME --type filesystem|git --path PATH | remove NAME
   context status | memory status
-  gateway configure --public-url HTTPS_ORIGIN [--listen HOST:PORT] [--tls-cert PATH --tls-key PATH]
+  gateway configure --public-url HTTPS_ORIGIN [--listen HOST:PORT] [--trusted-proxy CIDR] [--tls-cert PATH --tls-key PATH]
   backup [--output PATH] | restore --input PATH
   remote status | doctor | connector list`)
 }

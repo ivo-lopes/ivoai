@@ -7,6 +7,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -78,6 +79,20 @@ func TestSetupIsIdempotentAndLifecycleUsesManagedServices(t *testing.T) {
 			t.Errorf("Qdrant writable runtime mount missing %q: %s", expected, first)
 		}
 	}
+	for _, networks := range []string{
+		"networks: [ivoai-internal, host-publish]",
+		"networks: [ivoai-internal, host-publish, model-download]",
+	} {
+		if !bytes.Contains(first, []byte(networks)) {
+			t.Fatalf("dependency container is missing the transient network %q: %s", networks, first)
+		}
+	}
+	if !bytes.Contains(first, []byte("name: ivoai-host-publish")) {
+		t.Fatalf("dependency containers must use the transient host-publish network: %s", first)
+	}
+	if !bytes.Contains(first, []byte(`com.docker.network.bridge.enable_ip_masquerade: "false"`)) {
+		t.Fatal("transient host-publish network unexpectedly permits masqueraded egress")
+	}
 	if err := manager.Setup(context.Background()); err != nil {
 		t.Fatal(err)
 	}
@@ -107,6 +122,15 @@ func TestSetupIsIdempotentAndLifecycleUsesManagedServices(t *testing.T) {
 	for _, hardening := range []string{"User=ivoai-context", "Group=ivoai", "ProtectProc=invisible", "ProcSubset=pid", "InaccessiblePaths=/etc/ivoai/secrets"} {
 		if !bytes.Contains(contextUnit, []byte(hardening)) {
 			t.Fatalf("context unit missing %s", hardening)
+		}
+	}
+	dependenciesUnit, _ := os.ReadFile(filepath.Join(layout.SystemdDir, "ivoai-dependencies.service"))
+	if !bytes.Contains(dependenciesUnit, []byte("up -d --force-recreate --wait")) {
+		t.Fatal("dependency unit does not recreate disconnected transient networks on boot")
+	}
+	for _, container := range []string{"ivoai-qdrant-1", "ivoai-embeddings", "ivoai-ai-memory-1"} {
+		if !bytes.Contains(dependenciesUnit, []byte("network disconnect -f ivoai-host-publish "+container)) {
+			t.Fatalf("dependency unit does not remove transient network from %s", container)
 		}
 	}
 }
@@ -234,7 +258,7 @@ func TestGatewayConfigurationSupportsReverseProxyAndDirectTLS(t *testing.T) {
 		t.Fatal(err)
 	}
 	loaded, err := LoadGatewayConfig(layout)
-	if err != nil || loaded != reverseProxy {
+	if err != nil || !reflect.DeepEqual(loaded, reverseProxy) {
 		t.Fatalf("load gateway config = %#v, %v", loaded, err)
 	}
 	if err := os.Chmod(GatewayConfigPath(layout), 0o640); err != nil {
@@ -245,6 +269,14 @@ func TestGatewayConfigurationSupportsReverseProxyAndDirectTLS(t *testing.T) {
 	}
 	if err := (GatewayConfig{ListenAddress: "0.0.0.0:7744", PublicURL: "https://ai.example.com"}).Validate(false); err == nil {
 		t.Fatal("public plaintext listener accepted")
+	}
+	trustedProxy := GatewayConfig{ListenAddress: "192.0.2.10:7744", PublicURL: "https://ai.example.com", TrustedProxyCIDRs: []string{"192.0.2.20/32"}}
+	if err := trustedProxy.Validate(false); err != nil {
+		t.Fatalf("explicit trusted proxy rejected: %v", err)
+	}
+	trustedProxy.TrustedProxyCIDRs = []string{"0.0.0.0/0"}
+	if err := trustedProxy.Validate(false); err == nil {
+		t.Fatal("wildcard trusted proxy accepted")
 	}
 	cert := filepath.Join(t.TempDir(), "gateway.crt")
 	key := filepath.Join(t.TempDir(), "gateway.key")

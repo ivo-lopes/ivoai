@@ -25,12 +25,15 @@ history.
 ## Network controls
 
 Clients use standard TLS validation and bounded HTTP timeouts. Cleartext HTTP is
-accepted only on loopback for development or for a TLS-terminating reverse proxy;
-a non-loopback gateway listener requires direct TLS. Discovery is non-sensitive.
+accepted only on loopback for development or a same-host TLS reverse proxy. A
+non-loopback plaintext listener requires an HTTPS public origin and explicit trusted
+proxy CIDRs; the gateway validates the socket peer and forwarded HTTPS scheme. Direct
+TLS remains available for non-loopback listeners. Discovery is non-sensitive.
 The gateway is the only intended public endpoint. Qdrant, embeddings, and ai-memory
 use independent generated bearer credentials even on loopback-only host mappings;
 client credentials are never forwarded to them. After the pinned model is healthy,
-systemd disconnects the embedding container from its egress network.
+systemd disconnects the embedding container from its download network and all
+dependency containers from the transient network used to establish host bindings.
 
 For direct TLS, ivoai copies the selected certificate and key into the gateway-owned
 `/etc/ivoai/secrets/tls` directory as `0600` files. The gateway and context services

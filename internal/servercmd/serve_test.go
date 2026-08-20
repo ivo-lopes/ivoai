@@ -2,10 +2,45 @@ package servercmd
 
 import (
 	"io"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 )
+
+func TestTrustedHTTPSProxyOnlyValidatesPeerAndScheme(t *testing.T) {
+	_, network, err := net.ParseCIDR("192.0.2.10/32")
+	if err != nil {
+		t.Fatal(err)
+	}
+	handler := trustedHTTPSProxyOnly(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+	}), []*net.IPNet{network})
+
+	for _, test := range []struct {
+		name       string
+		remoteAddr string
+		proto      string
+		want       int
+	}{
+		{"trusted HTTPS proxy", "192.0.2.10:43123", "https", http.StatusNoContent},
+		{"untrusted peer", "192.0.2.11:43123", "https", http.StatusForbidden},
+		{"plaintext forwarding", "192.0.2.10:43123", "http", http.StatusForbidden},
+		{"spoofed forwarded address", "192.0.2.11:43123", "https", http.StatusForbidden},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			request := httptest.NewRequest(http.MethodGet, "http://gateway/health", nil)
+			request.RemoteAddr = test.remoteAddr
+			request.Header.Set("X-Forwarded-Proto", test.proto)
+			request.Header.Set("X-Forwarded-For", "192.0.2.10")
+			response := httptest.NewRecorder()
+			handler.ServeHTTP(response, request)
+			if response.Code != test.want {
+				t.Fatalf("status = %d, want %d", response.Code, test.want)
+			}
+		})
+	}
+}
 
 func TestMemoryProxyAllowsOnlyStableOperationalRoutesAndStripsCredentials(t *testing.T) {
 	t.Setenv("AI_MEMORY_AUTH_TOKEN", "internal-memory-token")
