@@ -1,9 +1,11 @@
 package servercmd
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -57,8 +59,14 @@ func TestInstallVerifiedComposePlugin(t *testing.T) {
 		t.Fatal(err)
 	}
 	asset := composeAsset{URL: server.URL, SHA256: hex.EncodeToString(digest[:])}
-	if err := installVerifiedComposePlugin(context.Background(), server.Client(), asset, destination); err != nil {
+	var progress bytes.Buffer
+	if err := installVerifiedComposePlugin(context.Background(), server.Client(), asset, destination, &progress); err != nil {
 		t.Fatal(err)
+	}
+	for _, expected := range []string{"Downloading Docker Compose", "download complete"} {
+		if !strings.Contains(progress.String(), expected) {
+			t.Errorf("download progress omitted %q: %s", expected, progress.String())
+		}
 	}
 	installed, err := os.ReadFile(destination)
 	if err != nil || string(installed) != string(payload) {
@@ -68,7 +76,7 @@ func TestInstallVerifiedComposePlugin(t *testing.T) {
 	if err != nil || info.Mode().Perm() != 0o755 {
 		t.Fatalf("installed plugin mode: %v / %v", info, err)
 	}
-	if err := installVerifiedComposePlugin(context.Background(), server.Client(), asset, destination); err != nil {
+	if err := installVerifiedComposePlugin(context.Background(), server.Client(), asset, destination, io.Discard); err != nil {
 		t.Fatalf("exact pinned plugin was not idempotent: %v", err)
 	}
 }
@@ -87,7 +95,7 @@ func TestInstallVerifiedComposePluginPreservesPreExistingPaths(t *testing.T) {
 	if err := os.WriteFile(destination, []byte("user-owned plugin\n"), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if err := installVerifiedComposePlugin(context.Background(), server.Client(), asset, destination); err == nil {
+	if err := installVerifiedComposePlugin(context.Background(), server.Client(), asset, destination, io.Discard); err == nil {
 		t.Fatal("pre-existing plugin was replaced")
 	}
 	content, _ := os.ReadFile(destination)
@@ -103,7 +111,7 @@ func TestInstallVerifiedComposePluginPreservesPreExistingPaths(t *testing.T) {
 	if err := os.Symlink(target, link); err != nil {
 		t.Fatal(err)
 	}
-	if err := installVerifiedComposePlugin(context.Background(), server.Client(), asset, link); err == nil {
+	if err := installVerifiedComposePlugin(context.Background(), server.Client(), asset, link, io.Discard); err == nil {
 		t.Fatal("symlink plugin path was accepted")
 	}
 	content, _ = os.ReadFile(target)
@@ -123,7 +131,7 @@ func TestInstallVerifiedComposePluginRejectsCorruptDownload(t *testing.T) {
 		URL:    server.URL,
 		SHA256: strings.Repeat("0", sha256.Size*2),
 	}
-	if err := installVerifiedComposePlugin(context.Background(), server.Client(), asset, destination); err == nil || !strings.Contains(err.Error(), "checksum mismatch") {
+	if err := installVerifiedComposePlugin(context.Background(), server.Client(), asset, destination, io.Discard); err == nil || !strings.Contains(err.Error(), "checksum mismatch") {
 		t.Fatalf("corrupt download was not rejected safely: %v", err)
 	}
 	if _, err := os.Lstat(destination); !os.IsNotExist(err) {

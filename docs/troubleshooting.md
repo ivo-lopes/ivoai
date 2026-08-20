@@ -47,3 +47,11 @@ ivoai installs the pinned, checksum-verified official Compose CLI plugin. If set
 reports a pre-existing incompatible plugin at
 `/usr/local/lib/docker/cli-plugins/docker-compose`, ivoai preserves it instead
 of overwriting third-party software; move that file aside deliberately, then retry.
+During this approximately 49 MB download, setup reports received bytes every 10
+seconds. Interrupting the process is safe: the incomplete temporary file is removed,
+and the idempotent setup can be run again.
+
+If an older setup reports `open service-owned entry config.json: too many levels of
+symbolic links`, update and reinstall ivoai before rerunning setup. Hugging Face model
+caches intentionally use symlinks; current ivoai preserves them and does not recursively
+change ownership inside container-managed data.

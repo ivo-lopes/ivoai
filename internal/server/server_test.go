@@ -64,6 +64,9 @@ func TestSetupIsIdempotentAndLifecycleUsesManagedServices(t *testing.T) {
 	if bytes.Count(first, []byte(`user: "4242:4242"`)) != 3 {
 		t.Fatalf("every dependency container must use the service identity: %s", first)
 	}
+	if !bytes.Contains(first, []byte("/readyz")) || bytes.Contains(first, []byte(`"</dev/tcp/127.0.0.1/6333"`)) {
+		t.Fatalf("Qdrant must use its HTTP readiness endpoint: %s", first)
+	}
 	if err := manager.Setup(context.Background()); err != nil {
 		t.Fatal(err)
 	}

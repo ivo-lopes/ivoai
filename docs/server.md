@@ -11,7 +11,9 @@ Setup installs `docker.io` from the operating-system repository when Docker is
 absent. When that repository does not provide Compose v2, including Debian 12,
 ivoai installs the architecture-specific official Docker Compose plugin at
 `/usr/local/lib/docker/cli-plugins/docker-compose` after verifying its pinned
-SHA-256 checksum. An existing working Compose v2 installation is preserved.
+SHA-256 checksum. Progress is printed every 10 seconds and the bounded download
+window is 30 minutes for slow links. An existing working Compose v2 installation
+is preserved.
 
 ## Layout
 
@@ -32,6 +34,11 @@ unprivileged image, the embedding runtime, and ai-memory use the non-login `ivoa
 container identity. Dependency ports bind only to loopback, require separate generated
 internal credentials, and are not public. After TEI downloads the pinned model and
 passes health checks, its download network is disconnected.
+
+Rerunning setup changes ownership only on managed mount roots; it does not traverse
+application-created content. This preserves legitimate Hugging Face cache symlinks.
+Qdrant readiness uses its unauthenticated `/readyz` endpoint, while its data API
+continues to require the generated internal credential.
 
 ## Operations
 

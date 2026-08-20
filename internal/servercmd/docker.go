@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -24,6 +25,8 @@ const (
 	dockerComposeVersion     = "5.5.0"
 	dockerComposeInstallPath = "/usr/local/lib/docker/cli-plugins/docker-compose"
 	maxComposeBinarySize     = 96 << 20
+	composeDownloadTimeout   = 30 * time.Minute
+	composeProgressInterval  = 10 * time.Second
 )
 
 var dockerAPTInstallArgs = []string{"install", "-y", "ca-certificates", "docker.io"}
@@ -82,7 +85,7 @@ func ensureDocker(ctx context.Context, out, errOut io.Writer) error {
 		return err
 	}
 	client := &http.Client{
-		Timeout: 10 * time.Minute,
+		Timeout: composeDownloadTimeout,
 		CheckRedirect: func(request *http.Request, via []*http.Request) error {
 			if len(via) >= 5 {
 				return errors.New("too many Docker Compose download redirects")
@@ -94,7 +97,7 @@ func ensureDocker(ctx context.Context, out, errOut io.Writer) error {
 		},
 	}
 	fmt.Fprintf(out, "Docker Compose plugin %s is absent; installing the verified official plugin for linux/%s\n", dockerComposeVersion, runtime.GOARCH)
-	if err := installVerifiedComposePlugin(ctx, client, asset, dockerComposeInstallPath); err != nil {
+	if err := installVerifiedComposePlugin(ctx, client, asset, dockerComposeInstallPath, out); err != nil {
 		return fmt.Errorf("install Docker Compose plugin %s: %w", dockerComposeVersion, err)
 	}
 	if !dockerComposeAvailable(ctx) {
@@ -152,7 +155,7 @@ func ensureRootPluginDirectory() error {
 	return nil
 }
 
-func installVerifiedComposePlugin(ctx context.Context, client *http.Client, asset composeAsset, destination string) error {
+func installVerifiedComposePlugin(ctx context.Context, client *http.Client, asset composeAsset, destination string, progress io.Writer) error {
 	parsed, err := url.Parse(asset.URL)
 	if err != nil || parsed.Scheme != "https" || parsed.Host == "" || parsed.User != nil {
 		return errors.New("invalid Docker Compose asset URL")
@@ -192,6 +195,9 @@ func installVerifiedComposePlugin(ctx context.Context, client *http.Client, asse
 	if response.ContentLength > maxComposeBinarySize {
 		return errors.New("Docker Compose asset exceeds the size limit")
 	}
+	if progress == nil {
+		progress = io.Discard
+	}
 
 	directory := filepath.Dir(destination)
 	temporary, err := os.CreateTemp(directory, ".ivoai-docker-compose-*")
@@ -205,7 +211,10 @@ func installVerifiedComposePlugin(ctx context.Context, client *http.Client, asse
 		return err
 	}
 	hasher := sha256.New()
-	written, copyErr := io.Copy(io.MultiWriter(temporary, hasher), io.LimitReader(response.Body, maxComposeBinarySize+1))
+	counter := &atomicByteCounter{}
+	stopProgress := startComposeDownloadProgress(progress, counter, response.ContentLength)
+	written, copyErr := io.Copy(io.MultiWriter(temporary, hasher, counter), io.LimitReader(response.Body, maxComposeBinarySize+1))
+	stopProgress()
 	if copyErr != nil {
 		temporary.Close()
 		return copyErr
@@ -218,6 +227,7 @@ func installVerifiedComposePlugin(ctx context.Context, client *http.Client, asse
 		temporary.Close()
 		return errors.New("Docker Compose asset checksum mismatch")
 	}
+	fmt.Fprintf(progress, "Docker Compose download complete: %s\n", formatByteCount(written))
 	if err := temporary.Sync(); err != nil {
 		temporary.Close()
 		return err
@@ -229,6 +239,56 @@ func installVerifiedComposePlugin(ctx context.Context, client *http.Client, asse
 		return err
 	}
 	return os.Chmod(destination, 0o755)
+}
+
+type atomicByteCounter struct {
+	written atomic.Int64
+}
+
+func (counter *atomicByteCounter) Write(data []byte) (int, error) {
+	counter.written.Add(int64(len(data)))
+	return len(data), nil
+}
+
+func startComposeDownloadProgress(out io.Writer, counter *atomicByteCounter, total int64) func() {
+	done := make(chan struct{})
+	stopped := make(chan struct{})
+	fmt.Fprintf(out, "Downloading Docker Compose %s (%s); progress updates every %s\n", dockerComposeVersion, formatDownloadTotal(total), composeProgressInterval)
+	ticker := time.NewTicker(composeProgressInterval)
+	go func() {
+		defer close(stopped)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ticker.C:
+				written := counter.written.Load()
+				if total > 0 {
+					percent := float64(written) * 100 / float64(total)
+					fmt.Fprintf(out, "Docker Compose download: %s of %s (%.0f%%)\n", formatByteCount(written), formatByteCount(total), percent)
+				} else {
+					fmt.Fprintf(out, "Docker Compose download: %s received\n", formatByteCount(written))
+				}
+			case <-done:
+				return
+			}
+		}
+	}()
+	return func() {
+		close(done)
+		<-stopped
+	}
+}
+
+func formatDownloadTotal(total int64) string {
+	if total <= 0 {
+		return "size not reported by server"
+	}
+	return formatByteCount(total)
+}
+
+func formatByteCount(bytes int64) string {
+	const mebibyte = 1024 * 1024
+	return fmt.Sprintf("%.1f MiB", float64(bytes)/mebibyte)
 }
 
 func regularFileMatchesSHA256(path, expected string) (bool, error) {

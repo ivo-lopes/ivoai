@@ -119,6 +119,27 @@ func TestSecureChownTreeRefusesSymlinkEntries(t *testing.T) {
 	}
 }
 
+func TestManagedDataRootOwnershipPreservesApplicationSymlinks(t *testing.T) {
+	root := t.TempDir()
+	blobs := filepath.Join(root, "blobs")
+	if err := os.Mkdir(blobs, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(blobs, "model-config"), []byte("safe"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink("blobs/model-config", filepath.Join(root, "config.json")); err != nil {
+		t.Fatal(err)
+	}
+	if err := chownMode(root, os.Getuid(), os.Getgid(), 0o700); err != nil {
+		t.Fatalf("managed data root rejected an application cache symlink: %v", err)
+	}
+	info, err := os.Lstat(filepath.Join(root, "config.json"))
+	if err != nil || info.Mode()&os.ModeSymlink == 0 {
+		t.Fatalf("application cache symlink was not preserved: info=%v err=%v", info, err)
+	}
+}
+
 func TestSecureRegularOwnershipUsesNoFollowDescriptor(t *testing.T) {
 	dir := t.TempDir()
 	regular := filepath.Join(dir, "managed.env")

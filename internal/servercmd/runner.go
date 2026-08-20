@@ -267,10 +267,11 @@ func ensureServiceOwnership(layout server.Layout) error {
 		{layout.QdrantDir, containerUID, 0o700},
 		{layout.ModelsDir, containerUID, 0o700},
 	} {
-		if err := secureChownTree(owned.path, owned.uid, sharedGID); err != nil {
-			return err
-		}
-		if err := os.Chmod(owned.path, owned.mode); err != nil {
+		// Container and model caches legitimately contain application-managed
+		// symlinks (for example Hugging Face snapshot links). Ownership is set on
+		// the managed mount root before first start; recursively traversing data
+		// created by an unprivileged service is unnecessary and breaks reruns.
+		if err := chownMode(owned.path, owned.uid, sharedGID, owned.mode); err != nil {
 			return err
 		}
 	}
