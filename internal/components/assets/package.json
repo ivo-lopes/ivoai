@@ -1,0 +1,8 @@
+{
+  "name": "ivoai-ruflo-runtime",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "ruflo": "3.38.12"
+  }
+}
