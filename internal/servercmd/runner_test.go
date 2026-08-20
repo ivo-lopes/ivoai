@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestServerSetupEnrollmentAndConnectorsAreIdempotent(t *testing.T) {
@@ -137,6 +138,27 @@ func TestManagedDataRootOwnershipPreservesApplicationSymlinks(t *testing.T) {
 	info, err := os.Lstat(filepath.Join(root, "config.json"))
 	if err != nil || info.Mode()&os.ModeSymlink == 0 {
 		t.Fatalf("application cache symlink was not preserved: info=%v err=%v", info, err)
+	}
+}
+
+func TestWaitForServerStartReportsProgress(t *testing.T) {
+	var output bytes.Buffer
+	release := make(chan struct{})
+	start := func(context.Context) error {
+		<-release
+		return nil
+	}
+	go func() {
+		time.Sleep(5 * time.Millisecond)
+		close(release)
+	}()
+	if err := waitForServerStart(context.Background(), &output, time.Millisecond, start); err != nil {
+		t.Fatal(err)
+	}
+	for _, expected := range []string{"waiting for container health checks", "still initializing", "docker compose"} {
+		if !strings.Contains(output.String(), expected) {
+			t.Errorf("server start output omitted %q: %s", expected, output.String())
+		}
 	}
 }
 

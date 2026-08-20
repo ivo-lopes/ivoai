@@ -39,6 +39,10 @@ Rerunning setup changes ownership only on managed mount roots; it does not trave
 application-created content. This preserves legitimate Hugging Face cache symlinks.
 Qdrant readiness uses its unauthenticated `/readyz` endpoint, while its data API
 continues to require the generated internal credential.
+Qdrant storage remains at `/var/lib/ivoai/qdrant`; its writable snapshot workspace
+and initialization marker live at `/var/lib/ivoai/qdrant-snapshots` and
+`/var/lib/ivoai/qdrant-init`. These separate mounts allow the pinned image to run as
+the ivoai non-root container identity without making `/qdrant` writable.
 
 ## Operations
 

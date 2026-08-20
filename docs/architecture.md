@@ -184,6 +184,8 @@ Layout:
 /var/lib/ivoai/context/     metadata, normalized corpus and ingestion state
 /var/lib/ivoai/memory/      ai-memory authoritative data
 /var/lib/ivoai/qdrant/      rebuildable vector index
+/var/lib/ivoai/qdrant-snapshots/ Qdrant snapshot workspace
+/var/lib/ivoai/qdrant-init/ Qdrant non-secret initialization marker
 /var/lib/ivoai/models/      pinned embedding model snapshot
 /var/lib/ivoai/enrollment/  hashed enrollment/client credential records
 /var/lib/ivoai/backups/     versioned backup archives

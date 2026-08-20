@@ -55,3 +55,8 @@ If an older setup reports `open service-owned entry config.json: too many levels
 symbolic links`, update and reinstall ivoai before rerunning setup. Hugging Face model
 caches intentionally use symlinks; current ivoai preserves them and does not recursively
 change ownership inside container-managed data.
+
+If Qdrant reports permission errors for `/qdrant/.qdrant-initialized` or
+`/qdrant/snapshots/tmp`, update and reinstall ivoai. Current setup mounts separate
+service-owned init and snapshot paths while keeping the image root filesystem
+non-writable and the Qdrant process non-root.

@@ -54,6 +54,12 @@ func TestSetupIsIdempotentAndLifecycleUsesManagedServices(t *testing.T) {
 	if err := manager.Setup(context.Background()); err != nil {
 		t.Fatal(err)
 	}
+	for _, directory := range []string{layout.QdrantSnapshotsDir, layout.QdrantInitDir} {
+		info, err := os.Stat(directory)
+		if err != nil || !info.IsDir() || info.Mode().Perm() != 0o700 {
+			t.Fatalf("Qdrant writable directory is not private: %s info=%v err=%v", directory, info, err)
+		}
+	}
 	first, err := os.ReadFile(filepath.Join(layout.ConfigDir, "compose.yaml"))
 	if err != nil {
 		t.Fatal(err)
@@ -66,6 +72,11 @@ func TestSetupIsIdempotentAndLifecycleUsesManagedServices(t *testing.T) {
 	}
 	if !bytes.Contains(first, []byte("/readyz")) || bytes.Contains(first, []byte(`"</dev/tcp/127.0.0.1/6333"`)) {
 		t.Fatalf("Qdrant must use its HTTP readiness endpoint: %s", first)
+	}
+	for _, expected := range []string{"QDRANT_INIT_FILE_PATH: /qdrant/init/.qdrant-initialized", "/var/lib/ivoai/qdrant-snapshots:/qdrant/snapshots", "/var/lib/ivoai/qdrant-init:/qdrant/init"} {
+		if !bytes.Contains(first, []byte(expected)) {
+			t.Errorf("Qdrant writable runtime mount missing %q: %s", expected, first)
+		}
 	}
 	if err := manager.Setup(context.Background()); err != nil {
 		t.Fatal(err)

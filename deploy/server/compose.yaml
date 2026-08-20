@@ -4,10 +4,14 @@ services:
     restart: unless-stopped
     user: "1000:1000"
     env_file: [/etc/ivoai/secrets/qdrant.env]
+    environment:
+      QDRANT_INIT_FILE_PATH: /qdrant/init/.qdrant-initialized
     ports:
       - "127.0.0.1:6333:6333"
     volumes:
       - /var/lib/ivoai/qdrant:/qdrant/storage
+      - /var/lib/ivoai/qdrant-snapshots:/qdrant/snapshots
+      - /var/lib/ivoai/qdrant-init:/qdrant/init
     healthcheck:
       test: ["CMD", "bash", "-ec", "exec 3<>/dev/tcp/127.0.0.1/6333; printf 'GET /readyz HTTP/1.0\\r\\nHost: localhost\\r\\n\\r\\n' >&3; IFS= read -r status <&3; [[ $$status == *' 200 '* ]]"]
       interval: 10s

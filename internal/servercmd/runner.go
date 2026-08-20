@@ -148,11 +148,41 @@ func (r *runner) setup(ctx context.Context, layout server.Layout, manager server
 	if err := ensureServiceOwnership(layout); err != nil {
 		return err
 	}
-	if err := manager.Start(ctx); err != nil {
+	if err := waitForServerStart(ctx, r.out, 15*time.Second, manager.Start); err != nil {
+		diagnosticCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		logs, logErr := manager.Logs(diagnosticCtx, "ivoai-dependencies.service", 80)
+		if logErr == nil && strings.TrimSpace(logs) != "" {
+			return fmt.Errorf("server files installed but services did not start: %w\nRecent dependency journal:\n%s", err, platform.Redact(logs))
+		}
 		return fmt.Errorf("server files installed but services did not start: %w", err)
 	}
 	fmt.Fprintf(r.out, "ivoai server %s setup complete\n", r.version)
 	return nil
+}
+
+func waitForServerStart(ctx context.Context, out io.Writer, interval time.Duration, start func(context.Context) error) error {
+	if interval <= 0 {
+		interval = 15 * time.Second
+	}
+	fmt.Fprintln(out, "Starting server dependencies; waiting for container health checks...")
+	startedAt := time.Now()
+	result := make(chan error, 1)
+	go func() {
+		result <- start(ctx)
+	}()
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+	for {
+		select {
+		case err := <-result:
+			return err
+		case <-ticker.C:
+			fmt.Fprintf(out, "Server dependencies are still initializing (elapsed %s). Inspect live state with: docker compose -f /etc/ivoai/compose.yaml ps\n", time.Since(startedAt).Round(time.Second))
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+	}
 }
 
 func validateServerOS() error {
@@ -265,6 +295,8 @@ func ensureServiceOwnership(layout server.Layout) error {
 		{filepath.Join(layout.DataDir, "enrollment"), gatewayUID, 0o700},
 		{layout.MemoryDir, containerUID, 0o700},
 		{layout.QdrantDir, containerUID, 0o700},
+		{layout.QdrantSnapshotsDir, containerUID, 0o700},
+		{layout.QdrantInitDir, containerUID, 0o700},
 		{layout.ModelsDir, containerUID, 0o700},
 	} {
 		// Container and model caches legitimately contain application-managed
