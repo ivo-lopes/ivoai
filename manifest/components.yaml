@@ -1,0 +1,257 @@
+schema_version: 1
+validated_at: "2026-08-20"
+transitive_dependency_cutoff: "2026-08-20T00:00:00Z"
+policy:
+  allow_latest_tags: false
+  update_command: "ivoai update"
+  supported_client_platforms:
+    - linux/amd64
+    - linux/arm64
+  supported_server_platforms:
+    - linux/amd64
+    - linux/arm64
+
+components:
+  - name: ivoai
+    role: [client, server]
+    validated_version: "0.1.0"
+    minimum_version: "0.1.0"
+    license: MIT
+    source: "https://github.com/ivo-lopes/ivoai"
+    architectures: [linux/amd64, linux/arm64]
+    install_strategy: github_release_asset
+    checksum_strategy: release_sha256sums
+
+  - name: codex
+    role: [client]
+    package: "@openai/codex"
+    validated_version: "0.148.0"
+    minimum_version: "0.148.0"
+    license: Apache-2.0
+    source: "https://github.com/openai/codex/releases/tag/rust-v0.148.0"
+    documentation: "https://learn.chatgpt.com/docs/codex/cli"
+    architectures: [linux/amd64, linux/arm64]
+    install_strategy: github_release_asset
+    checksum_strategy: reviewed_release_asset_sha256
+    assets:
+      linux/amd64:
+        url: "https://github.com/openai/codex/releases/download/rust-v0.148.0/codex-x86_64-unknown-linux-musl.tar.gz"
+        sha256: "1a36f762f6b3bef533bb86345ad9517661c2d84d53996a250cf2ca89d2cfee5a"
+      linux/arm64:
+        url: "https://github.com/openai/codex/releases/download/rust-v0.148.0/codex-aarch64-unknown-linux-musl.tar.gz"
+        sha256: "410c6ae0c763eb39c6da17665e63f9aa4a98e6ee663d81f8e8b779c97cb175ac"
+    auth:
+      default: "codex login"
+      status: "codex login status"
+      subscription_supported: true
+      payg_key_required: false
+
+  - name: claude-code
+    role: [client]
+    package: "@anthropic-ai/claude-code"
+    validated_version: "2.1.228"
+    observed_latest_version: "2.1.237"
+    minimum_version: "2.1.228"
+    license: Proprietary-Anthropic-Terms
+    source: "https://github.com/anthropics/claude-code/releases/tag/v2.1.228"
+    documentation: "https://code.claude.com/docs/en/getting-started"
+    architectures: [linux/amd64, linux/arm64]
+    install_strategy: github_release_asset
+    checksum_strategy: reviewed_release_asset_sha256
+    signing_key_fingerprint: "31DD DE24 DDFA B679 F42D 7BD2 BAA9 29FF 1A7E CACE"
+    assets:
+      linux/amd64:
+        url: "https://github.com/anthropics/claude-code/releases/download/v2.1.228/claude-linux-x64.tar.gz"
+        sha256: "9050d667bcc3940b7ceee65e3e5c4439d2b7161a71d940fdf60192302243f960"
+      linux/arm64:
+        url: "https://github.com/anthropics/claude-code/releases/download/v2.1.228/claude-linux-arm64.tar.gz"
+        sha256: "877d423c35e6d059752f86399352837df5bf1af2a9dbcda5753d898629a439f4"
+    auth:
+      default: "claude auth login"
+      subscription_supported: true
+      payg_key_required: false
+    notes:
+      - "Pinned to Anthropic's stable channel; 2.1.237 was the latest channel on the validation date."
+      - "ivoai must disable Claude's silent auto-update for a managed install and update only through ivoai update."
+
+  - name: headroom
+    role: [client]
+    package: "headroom-ai[proxy]"
+    validated_version: "0.36.0"
+    minimum_version: "0.36.0"
+    license: Apache-2.0
+    source: "https://github.com/headroomlabs-ai/headroom/releases/tag/v0.36.0"
+    documentation: "https://headroomlabs-ai.github.io/headroom/cli/"
+    architectures: [linux/amd64, linux/arm64]
+    install_strategy: isolated_python_tool
+    runtime_requirement: "Python >=3.10"
+    checksum_strategy: pypi_sha256
+    assets:
+      linux/amd64:
+        filename: "headroom_ai-0.36.0-cp310-abi3-manylinux_2_28_x86_64.whl"
+        url: "https://github.com/headroomlabs-ai/headroom/releases/download/v0.36.0/headroom_ai-0.36.0-cp310-abi3-manylinux_2_28_x86_64.whl"
+        sha256: "fab6af014363c5a9a6bb41913a84df6f1daaecb56edf005925940e4501937f42"
+      linux/arm64:
+        filename: "headroom_ai-0.36.0-cp310-abi3-manylinux_2_28_aarch64.whl"
+        url: "https://github.com/headroomlabs-ai/headroom/releases/download/v0.36.0/headroom_ai-0.36.0-cp310-abi3-manylinux_2_28_aarch64.whl"
+        sha256: "a00f3d7a705e15bc52a529c1476a775badb8d0e2e3fb72ec96f952814121697c"
+    notes:
+      - "Use headroom wrap codex/claude only after a local compatibility probe; direct-agent fallback is mandatory."
+      - "Architecture-specific transitive constraints and hashes are embedded; uv installs wheels against exact CPython 3.13.15."
+
+  - name: ai-memory
+    role: [client, server]
+    validated_version: "1.29.0"
+    minimum_version: "1.29.0"
+    license: MIT
+    source: "https://github.com/akitaonrails/ai-memory/releases/tag/v1.29.0"
+    changelog: "https://github.com/akitaonrails/ai-memory/blob/v1.29.0/CHANGELOG.md"
+    architectures: [linux/amd64, linux/arm64]
+    install_strategy: github_release_asset
+    checksum_strategy: adjacent_upstream_sha256
+    assets:
+      linux/amd64:
+        url: "https://github.com/akitaonrails/ai-memory/releases/download/v1.29.0/ai-memory-linux-x86_64.tar.gz"
+        sha256: "c666fa4ec778673ae995cd8aa4489b6184c7a3dc220a2c4e1c18792eda1321f1"
+      linux/arm64:
+        url: "https://github.com/akitaonrails/ai-memory/releases/download/v1.29.0/ai-memory-linux-aarch64.tar.gz"
+        sha256: "828cb63f697f8b773d4e6c41c38d0d850310afed04f37479bb48e3a11969d689"
+    server_image:
+      reference: "akitaonrails/ai-memory@sha256:1d8a2ca7d7bc2349ba964d2d97dafb683632676460c1e373083f919a18c60d37"
+      tag_for_humans: "1.29.0"
+    notes:
+      - "1.29.0 supersedes the prompt's 1.28.1 floor and publishes per-architecture checksums."
+      - "Hooks must spool/best-effort and always allow the primary agent to continue when the server is offline."
+
+  - name: ruflo
+    role: [client]
+    package: ruflo
+    validated_version: "3.38.12"
+    minimum_version: "3.38.12"
+    license: MIT
+    source: "https://www.npmjs.com/package/ruflo/v/3.38.12"
+    upstream_repository: "https://github.com/ruvnet/ruflo"
+    architectures: [linux/amd64, linux/arm64]
+    install_strategy: isolated_npm_prefix
+    runtime_requirement: "Node.js >=20"
+    checksum_strategy: npm_registry_integrity
+    integrity: "sha512-NOQnhI/fKok9aM0c+NR/6r6K81LJIO9ZwX7UZUJqIZFU/jg8edMX2qvQVaJfh+wdGCWP7oCdZyxjnNn/5MVr0Q=="
+    package_url: "https://registry.npmjs.org/ruflo/-/ruflo-3.38.12.tgz"
+    safe_default_features:
+      - coordination
+      - workflows_without_direct_provider_calls
+      - hooks
+      - ephemeral_operational_state
+    disabled_default_features:
+      - agent_execute
+      - direct_provider_inference
+      - durable_memory
+    notes:
+      - "A reviewed npm v3 lock pins Ruflo and every transitive version, URL and integrity value."
+      - "Production uses npm ci with lifecycle scripts disabled and a minimal credential-free environment."
+      - "Open upstream issues #2356 and #2962 show agent_execute still requires a separately configured provider."
+      - "No OPENAI_API_KEY or ANTHROPIC_API_KEY is requested by ivoai's default Ruflo profile."
+
+  - name: nodejs
+    role: [client-runtime]
+    validated_version: "22.18.0"
+    minimum_version: "22.18.0"
+    license: MIT
+    source: "https://nodejs.org/download/release/v22.18.0/"
+    architectures: [linux/amd64, linux/arm64]
+    install_strategy: verified_isolated_archive
+    checksum_strategy: upstream_sha256
+    assets:
+      linux/amd64:
+        url: "https://nodejs.org/dist/v22.18.0/node-v22.18.0-linux-x64.tar.gz"
+        sha256: "a2e703725d8683be86bb5da967bf8272f4518bdaf10f21389e2b2c9eaeae8c8a"
+      linux/arm64:
+        url: "https://nodejs.org/dist/v22.18.0/node-v22.18.0-linux-arm64.tar.gz"
+        sha256: "d415eeea90a2fdb60c66dd386b258acbfc4d1fa4720a8df5dea7369fbdbcddee"
+    notes:
+      - "Private runtime for the pinned Ruflo installation; it does not modify the user's global Node.js setup."
+
+  - name: uv
+    role: [client-runtime]
+    validated_version: "0.12.5"
+    minimum_version: "0.12.5"
+    license: Apache-2.0-or-MIT
+    source: "https://github.com/astral-sh/uv/releases/tag/0.12.5"
+    architectures: [linux/amd64, linux/arm64]
+    install_strategy: verified_isolated_archive
+    checksum_strategy: upstream_sha256
+    assets:
+      linux/amd64:
+        url: "https://github.com/astral-sh/uv/releases/download/0.12.5/uv-x86_64-unknown-linux-gnu.tar.gz"
+        sha256: "68a509da24b06b4223a1c0175fb5eb5bc79342b76cbeff0cfe51ac3f5b17b6b2"
+      linux/arm64:
+        url: "https://github.com/astral-sh/uv/releases/download/0.12.5/uv-aarch64-unknown-linux-gnu.tar.gz"
+        sha256: "9bf43b4d1a07665bf64d4c4e710930b382321a785e0eb10aac07f46471f86a31"
+    notes:
+      - "Private runtime for Headroom; it does not modify the user's global Python tooling."
+      - "Headroom's architecture-specific hashed constraints are generated with this pinned uv and the manifest cutoff."
+
+  - name: python-runtime
+    role: [client-runtime]
+    project: CPython
+    validated_version: "3.13.15"
+    minimum_version: "3.13.15"
+    license: PSF-2.0
+    source: "https://www.python.org/downloads/release/python-31315/"
+    architectures: [linux/amd64, linux/arm64]
+    install_strategy: uv_managed_python
+    checksum_strategy: uv_managed_runtime_metadata
+    notes:
+      - "ivoai requests exactly 3.13.15 through the pinned uv runtime and keeps it below the ivoai data root."
+      - "The platform-specific managed Python artifact is selected and verified by pinned uv and is not bundled in ivoai release archives."
+
+  - name: qdrant
+    role: [server]
+    validated_version: "1.19.0"
+    minimum_version: "1.19.0"
+    license: Apache-2.0
+    source: "https://github.com/qdrant/qdrant/releases/tag/v1.19.0"
+    architectures: [linux/amd64, linux/arm64]
+    install_strategy: docker_compose_internal_network
+    checksum_strategy: oci_digest
+    image:
+      reference: "qdrant/qdrant@sha256:a0e04fe623cb064502cd869cefc1dc7ce359d8edd481063b5bd351c0a0a2c91e"
+      tag_for_humans: "v1.19.0"
+    exposure: internal_only
+
+  - name: embedding-runtime
+    role: [server]
+    project: text-embeddings-inference
+    validated_version: "1.9.3"
+    minimum_version: "1.9.3"
+    license: Apache-2.0
+    source: "https://github.com/huggingface/text-embeddings-inference/releases/tag/v1.9.3"
+    architectures: [linux/amd64, linux/arm64]
+    install_strategy: docker_compose_internal_network
+    checksum_strategy: per_architecture_oci_digest
+    images:
+      linux/amd64:
+        reference: "ghcr.io/huggingface/text-embeddings-inference@sha256:ad950d30878eceb72aaf32024d26fa2b1d04a75304fa0b4776b49aa1941fea07"
+        source_revision: "06670157fb6c1523482219bdb2d1660277d38088"
+      linux/arm64:
+        reference: "ghcr.io/huggingface/text-embeddings-inference@sha256:2873ddd3029bf6eed09c0befe737d88123107a0b89274b1552d68d1e3bb2a047"
+        upstream_tag: "cpu-arm64-sha-30507cb"
+        platform_manifest_digest: "sha256:bf03cea"
+    exposure: internal_only
+    notes:
+      - "The arm64 OCI index digest was reviewed from upstream tag cpu-arm64-sha-30507cb; the shortened platform manifest digest is informational and the full index digest is the install pin."
+
+  - name: embedding-model
+    role: [server]
+    project: intfloat/multilingual-e5-small
+    validated_version: "614241f622f53c4eeff9890bdc4f31cfecc418b3"
+    minimum_version: "614241f622f53c4eeff9890bdc4f31cfecc418b3"
+    license: MIT
+    source: "https://huggingface.co/intfloat/multilingual-e5-small/tree/614241f622f53c4eeff9890bdc4f31cfecc418b3"
+    architectures: [linux/amd64, linux/arm64]
+    install_strategy: huggingface_snapshot
+    checksum_strategy: pinned_git_revision_and_safetensors_sha256
+    model_safetensors_sha256: "1a55775f53449dac10a2bcbc312469fac40b96d53198c407081a831f81c98477"
+    dimensions: 384
+    max_tokens: 512
+    languages: 94

@@ -1,0 +1,9 @@
+.serena/
+/bin/
+/dist/
+/coverage.out
+*.test
+*.prof
+.env
+*.secret
+*.token
