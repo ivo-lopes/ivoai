@@ -1,0 +1,239 @@
+package servercmd
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"io"
+	"net/http"
+	"net/http/httputil"
+	"net/url"
+	"os"
+	"os/signal"
+	"path/filepath"
+	"strings"
+	"syscall"
+	"time"
+
+	contextsvc "github.com/ivo-lopes/ivoai/internal/context"
+	"github.com/ivo-lopes/ivoai/internal/gateway"
+	"github.com/ivo-lopes/ivoai/internal/server"
+)
+
+const (
+	qdrantURL    = "http://127.0.0.1:6333"
+	embeddingURL = "http://127.0.0.1:8080"
+	memoryURL    = "http://127.0.0.1:49374"
+)
+
+func contextService(layout server.Layout) (*contextsvc.Service, error) {
+	qdrantKey := strings.TrimSpace(os.Getenv("QDRANT__SERVICE__API_KEY"))
+	embeddingKey := strings.TrimSpace(os.Getenv("API_KEY"))
+	var err error
+	if qdrantKey == "" {
+		qdrantKey, err = server.LoadBackendSecret(layout, "qdrant.env", "QDRANT__SERVICE__API_KEY")
+		if err != nil {
+			return nil, err
+		}
+	}
+	if embeddingKey == "" {
+		embeddingKey, err = server.LoadBackendSecret(layout, "embeddings.env", "API_KEY")
+		if err != nil {
+			return nil, err
+		}
+	}
+	if qdrantKey == "" || embeddingKey == "" {
+		return nil, errors.New("private backend credentials are not loaded")
+	}
+	service, err := contextsvc.NewService(
+		contextsvc.HTTPEmbedder{BaseURL: embeddingURL, DimensionsN: 384, APIKey: embeddingKey},
+		contextsvc.QdrantStore{BaseURL: qdrantURL, Collection: "ivoai-context-v1-d384", APIKey: qdrantKey},
+		&contextsvc.FileCatalog{Path: filepath.Join(layout.ContextDir, "catalog.json")},
+	)
+	if err != nil {
+		return nil, err
+	}
+	return service, nil
+}
+
+func serveContext(ctx context.Context, layout server.Layout, errOut io.Writer) error {
+	service, err := contextService(layout)
+	if err != nil {
+		return err
+	}
+	if err := service.Initialize(ctx); err != nil {
+		return fmt.Errorf("initialize context dependencies: %w", err)
+	}
+	if err := addConfiguredConnectors(service, layout); err != nil {
+		return err
+	}
+	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	ingest := func() {
+		for _, name := range service.ConnectorNames() {
+			if _, err := service.Ingest(ctx, name); err != nil {
+				fmt.Fprintf(errOut, "context connector %s: %v\n", name, err)
+			}
+		}
+	}
+	ingest()
+	ticker := time.NewTicker(5 * time.Minute)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		case <-ticker.C:
+			ingest()
+		}
+	}
+}
+
+func serveGateway(ctx context.Context, layout server.Layout, version string, errOut io.Writer) error {
+	gatewayConfig, err := server.LoadGatewayConfig(layout)
+	if err != nil {
+		return err
+	}
+	service, err := contextService(layout)
+	if err != nil {
+		return err
+	}
+	if err := service.Initialize(ctx); err != nil {
+		return fmt.Errorf("initialize gateway context: %w", err)
+	}
+	if err := addConfiguredConnectors(service, layout); err != nil {
+		return err
+	}
+	memoryToken := strings.TrimSpace(os.Getenv("AI_MEMORY_AUTH_TOKEN"))
+	if memoryToken == "" {
+		memoryToken, err = server.LoadBackendSecret(layout, "memory.env", "AI_MEMORY_AUTH_TOKEN")
+		if err != nil {
+			return err
+		}
+	}
+	memoryHandler, err := memoryProxyWithToken(memoryToken, memoryURL)
+	if err != nil {
+		return err
+	}
+	g, err := gateway.New(gateway.Config{
+		ServerVersion: version,
+		PublicBaseURL: gatewayConfig.PublicURL,
+		Context:       service,
+		Enrollments:   enrollmentStore(layout),
+		Memory:        memoryHandler,
+		MemoryHealth: func(checkCtx context.Context) error {
+			if probeURL(checkCtx, memoryURL+"/health") != "healthy" {
+				return errors.New("ai-memory unavailable")
+			}
+			return nil
+		},
+	})
+	if err != nil {
+		return err
+	}
+	httpServer := &http.Server{
+		Addr:              gatewayConfig.ListenAddress,
+		Handler:           g.Handler(),
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       30 * time.Second,
+		WriteTimeout:      30 * time.Second,
+		IdleTimeout:       60 * time.Second,
+		MaxHeaderBytes:    32 << 10,
+	}
+	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	done := make(chan error, 1)
+	go func() {
+		if gatewayConfig.TLSCertFile != "" {
+			done <- httpServer.ListenAndServeTLS(gatewayConfig.TLSCertFile, gatewayConfig.TLSKeyFile)
+			return
+		}
+		done <- httpServer.ListenAndServe()
+	}()
+	select {
+	case err := <-done:
+		if errors.Is(err, http.ErrServerClosed) {
+			return nil
+		}
+		return err
+	case <-ctx.Done():
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		if err := httpServer.Shutdown(shutdownCtx); err != nil {
+			fmt.Fprintf(errOut, "gateway shutdown: %v\n", err)
+		}
+		return nil
+	}
+}
+
+func memoryProxy(targetURLs ...string) (http.Handler, error) {
+	if len(targetURLs) > 1 {
+		return nil, errors.New("memory proxy accepts at most one target")
+	}
+	targetURL := memoryURL
+	if len(targetURLs) == 1 {
+		targetURL = targetURLs[0]
+	}
+	upstreamToken := strings.TrimSpace(os.Getenv("AI_MEMORY_AUTH_TOKEN"))
+	return memoryProxyWithToken(upstreamToken, targetURL)
+}
+
+func memoryProxyWithToken(upstreamToken, targetURL string) (http.Handler, error) {
+	if upstreamToken == "" {
+		return nil, errors.New("private ai-memory credential is not loaded")
+	}
+	target, err := url.Parse(targetURL)
+	if err != nil {
+		return nil, err
+	}
+	proxy := httputil.NewSingleHostReverseProxy(target)
+	original := proxy.Director
+	proxy.Director = func(request *http.Request) {
+		original(request)
+		switch request.URL.Path {
+		case "/v1/memory/mcp":
+			request.URL.Path = "/mcp"
+		case "/v1/memory/hook":
+			request.URL.Path = "/hook"
+		case "/v1/memory/hook/batch":
+			request.URL.Path = "/hook/batch"
+		case "/v1/memory/handoff":
+			request.URL.Path = "/handoff"
+			// Native ai-memory lifecycle hooks append these stable paths to the
+			// configured gateway origin. Only this explicit allowlist is proxied.
+		default:
+			request.URL.Path = "/invalid-ivoai-memory-route"
+		}
+		request.URL.RawPath = ""
+		request.Header.Del("Authorization")
+		request.Header.Del("Cookie")
+		if upstreamToken != "" {
+			request.Header.Set("Authorization", "Bearer "+upstreamToken)
+		}
+	}
+	proxy.ErrorHandler = func(w http.ResponseWriter, _ *http.Request, _ error) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusServiceUnavailable)
+		_, _ = io.WriteString(w, `{"error":"ai-memory is temporarily unavailable"}`+"\n")
+	}
+	return proxy, nil
+}
+
+func probeURL(ctx context.Context, endpoint string) string {
+	probeCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
+	defer cancel()
+	req, err := http.NewRequestWithContext(probeCtx, http.MethodGet, endpoint, nil)
+	if err != nil {
+		return "unhealthy"
+	}
+	client := &http.Client{Timeout: 3 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "unhealthy"
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
+		return "healthy"
+	}
+	return "unhealthy"
+}

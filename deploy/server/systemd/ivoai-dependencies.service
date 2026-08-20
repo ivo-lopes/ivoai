@@ -1,0 +1,17 @@
+[Unit]
+Description=ivoai container dependencies
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/docker compose -f /etc/ivoai/compose.yaml up -d --wait --wait-timeout 840
+ExecStartPost=/usr/bin/docker network disconnect ivoai-model-download ivoai-embeddings
+ExecStop=/usr/bin/docker compose -f /etc/ivoai/compose.yaml down
+NoNewPrivileges=yes
+TimeoutStartSec=15min
+TimeoutStopSec=2min
+
+[Install]
+WantedBy=multi-user.target

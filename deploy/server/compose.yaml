@@ -1,0 +1,62 @@
+services:
+  qdrant:
+    image: qdrant/qdrant@sha256:a0e04fe623cb064502cd869cefc1dc7ce359d8edd481063b5bd351c0a0a2c91e
+    restart: unless-stopped
+    user: "1000:1000"
+    env_file: [/etc/ivoai/secrets/qdrant.env]
+    ports:
+      - "127.0.0.1:6333:6333"
+    volumes:
+      - /var/lib/ivoai/qdrant:/qdrant/storage
+    healthcheck:
+      test: ["CMD", "bash", "-c", "</dev/tcp/127.0.0.1/6333"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+    security_opt: ["no-new-privileges:true"]
+    networks: [ivoai-internal]
+
+  embeddings:
+    container_name: ivoai-embeddings
+    image: ghcr.io/huggingface/text-embeddings-inference@sha256:ad950d30878eceb72aaf32024d26fa2b1d04a75304fa0b4776b49aa1941fea07
+    restart: unless-stopped
+    user: "1000:1000"
+    env_file: [/etc/ivoai/secrets/embeddings.env]
+    command: ["--model-id", "intfloat/multilingual-e5-small", "--revision", "614241f622f53c4eeff9890bdc4f31cfecc418b3", "--port", "80"]
+    ports:
+      - "127.0.0.1:8080:80"
+    volumes:
+      - /var/lib/ivoai/models:/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS -H 'Authorization: Bearer '$$API_KEY http://127.0.0.1:80/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 30
+    security_opt: ["no-new-privileges:true"]
+    networks: [ivoai-internal, model-download]
+
+  ai-memory:
+    image: akitaonrails/ai-memory@sha256:1d8a2ca7d7bc2349ba964d2d97dafb683632676460c1e373083f919a18c60d37
+    restart: unless-stopped
+    command: ["serve", "--transport", "http", "--bind", "0.0.0.0:49374"]
+    user: "1000:1000"
+    env_file: [/etc/ivoai/secrets/memory.env]
+    ports:
+      - "127.0.0.1:49374:49374"
+    volumes:
+      - /var/lib/ivoai/memory:/data
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/ai-memory", "status"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    cap_drop: ["ALL"]
+    security_opt: ["no-new-privileges:true"]
+    networks: [ivoai-internal]
+
+networks:
+  ivoai-internal:
+    internal: true
+  model-download:
+    name: ivoai-model-download

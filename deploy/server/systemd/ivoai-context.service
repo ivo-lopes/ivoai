@@ -1,0 +1,35 @@
+[Unit]
+Description=ivoai context ingestion service
+After=network-online.target ivoai-dependencies.service
+Requires=ivoai-dependencies.service
+
+[Service]
+Type=simple
+User=ivoai-context
+Group=ivoai
+ExecStart=/usr/local/bin/ivoai server context serve
+Restart=on-failure
+RestartSec=5s
+NoNewPrivileges=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectProc=invisible
+ProcSubset=pid
+ProtectSystem=strict
+ProtectHome=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+ReadWritePaths=/var/lib/ivoai/context /run/ivoai
+ReadOnlyPaths=/etc/ivoai
+InaccessiblePaths=/etc/ivoai/secrets /var/lib/ivoai/enrollment /var/lib/ivoai/memory
+EnvironmentFile=/etc/ivoai/secrets/qdrant.env
+EnvironmentFile=/etc/ivoai/secrets/embeddings.env
+UMask=0077
+
+[Install]
+WantedBy=multi-user.target
