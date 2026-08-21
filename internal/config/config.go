@@ -26,6 +26,7 @@ type Paths struct {
 	Ownership   string
 	HooksDir    string
 	SessionsDir string
+	QuotaDir    string
 }
 
 func ResolvePaths() (Paths, error) {
@@ -45,7 +46,7 @@ func ResolvePaths() (Paths, error) {
 		CacheDir: filepath.Join(cacheHome, "ivoai"), BinDir: filepath.Join(dataDir, "bin"),
 		Config: filepath.Join(configDir, "config.toml"), State: filepath.Join(stateDir, "state.toml"),
 		Secrets: filepath.Join(configDir, "secrets.json"), Ownership: filepath.Join(stateDir, "ownership.toml"),
-		HooksDir: filepath.Join(dataDir, "hooks"), SessionsDir: filepath.Join(stateDir, "sessions"),
+		HooksDir: filepath.Join(dataDir, "hooks"), SessionsDir: filepath.Join(stateDir, "sessions"), QuotaDir: filepath.Join(stateDir, "quota"),
 	}, nil
 }
 
@@ -79,12 +80,30 @@ type MemoryConfig struct {
 	Enabled bool `toml:"enabled"`
 }
 type OrchestrationConfig struct {
-	Enabled           bool   `toml:"enabled"`
-	ProviderExecution bool   `toml:"provider_execution"`
-	DefaultMode       string `toml:"default_mode"`
-	PrimaryExecutor   string `toml:"primary_executor"`
-	ReviewExecutor    string `toml:"review_executor"`
-	MaxWorkers        int    `toml:"max_workers"`
+	Enabled           bool       `toml:"enabled"`
+	ProviderExecution bool       `toml:"provider_execution"`
+	DefaultMode       string     `toml:"default_mode"`
+	PrimaryExecutor   string     `toml:"primary_executor"`
+	ReviewExecutor    string     `toml:"review_executor"`
+	MaxWorkers        int        `toml:"max_workers"`
+	Auto              AutoConfig `toml:"auto"`
+}
+type AutoConfig struct {
+	Enabled             bool            `toml:"enabled"`
+	DefaultPlanner      string          `toml:"default_planner"`
+	AutomaticFailover   bool            `toml:"automatic_failover"`
+	CheckpointEnabled   bool            `toml:"checkpoint_enabled"`
+	QuotaRefreshSeconds int             `toml:"quota_refresh_seconds"`
+	MaxWorkers          int             `toml:"max_workers"`
+	Quota               AutoQuotaConfig `toml:"quota"`
+}
+type AutoQuotaConfig struct {
+	Enabled         bool `toml:"enabled"`
+	ShowWeekly      bool `toml:"show_weekly"`
+	ShowMonthly     bool `toml:"show_monthly"`
+	ShowSession     bool `toml:"show_session"`
+	ShowContext     bool `toml:"show_context"`
+	ShowModelScoped bool `toml:"show_model_scoped"`
 }
 type Connection struct {
 	Status   string `toml:"status"`
@@ -110,7 +129,7 @@ func Default() Config {
 	return Config{
 		IVOAI: IVOAIConfig{Version: SchemaVersion}, Client: ClientConfig{Profile: "default"},
 		Headroom: HeadroomConfig{Enabled: true}, Memory: MemoryConfig{Enabled: true},
-		Orchestration: OrchestrationConfig{Enabled: true, ProviderExecution: false, DefaultMode: "direct", PrimaryExecutor: "codex", ReviewExecutor: "claude", MaxWorkers: 2},
+		Orchestration: OrchestrationConfig{Enabled: true, ProviderExecution: false, DefaultMode: "direct", PrimaryExecutor: "codex", ReviewExecutor: "claude", MaxWorkers: 2, Auto: defaultAutoConfig()},
 		Connections: ConnectionsConfig{
 			ChatGPT: Connection{Status: "not-connected"}, Claude: Connection{Status: "not-connected"}, Server: Connection{Status: "not-connected"},
 		}, MCP: MCPConfig{Servers: map[string]MCPServer{}},
@@ -145,7 +164,7 @@ type Store struct{ Paths Paths }
 func NewStore(paths Paths) *Store { return &Store{Paths: paths} }
 
 func (s *Store) Ensure() error {
-	for _, dir := range []string{s.Paths.ConfigDir, s.Paths.DataDir, s.Paths.StateDir, s.Paths.CacheDir, s.Paths.HooksDir, s.Paths.SessionsDir} {
+	for _, dir := range []string{s.Paths.ConfigDir, s.Paths.DataDir, s.Paths.StateDir, s.Paths.CacheDir, s.Paths.HooksDir, s.Paths.SessionsDir, s.Paths.QuotaDir} {
 		if dir == "" {
 			continue
 		}
@@ -188,6 +207,9 @@ func (s *Store) Load() (Config, error) {
 	if c.Orchestration.MaxWorkers == 0 {
 		c.Orchestration.MaxWorkers = 2
 	}
+	if c.Orchestration.Auto.DefaultPlanner == "" {
+		c.Orchestration.Auto = defaultAutoConfig()
+	}
 	if err := ValidateOrchestration(c.Orchestration); err != nil {
 		return Config{}, err
 	}
@@ -210,7 +232,24 @@ func ValidateOrchestration(value OrchestrationConfig) error {
 	if value.MaxWorkers < 1 || value.MaxWorkers > 3 {
 		return errors.New("orchestration max_workers must be between 1 and 3")
 	}
+	if value.Auto.DefaultPlanner != "codex" && value.Auto.DefaultPlanner != "claude" {
+		return errors.New("orchestration auto default_planner must be codex or claude")
+	}
+	if value.Auto.QuotaRefreshSeconds < 30 || value.Auto.QuotaRefreshSeconds > 300 {
+		return errors.New("orchestration auto quota_refresh_seconds must be between 30 and 300")
+	}
+	if value.Auto.MaxWorkers < 1 || value.Auto.MaxWorkers > 3 {
+		return errors.New("orchestration auto max_workers must be between 1 and 3")
+	}
 	return nil
+}
+
+func defaultAutoConfig() AutoConfig {
+	return AutoConfig{
+		Enabled: true, DefaultPlanner: "codex", AutomaticFailover: true, CheckpointEnabled: true,
+		QuotaRefreshSeconds: 45, MaxWorkers: 2,
+		Quota: AutoQuotaConfig{Enabled: true, ShowWeekly: true, ShowMonthly: true, ShowSession: true, ShowContext: true, ShowModelScoped: true},
+	}
 }
 
 func (s *Store) Save(c Config) error {

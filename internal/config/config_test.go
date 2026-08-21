@@ -62,7 +62,7 @@ func TestOrchestrationConfigurationMigratesAndRejectsUnsafeValues(t *testing.T) 
 	if err != nil {
 		t.Fatal(err)
 	}
-	if value.Orchestration.DefaultMode != "direct" || value.Orchestration.PrimaryExecutor != "codex" || value.Orchestration.ReviewExecutor != "claude" || value.Orchestration.MaxWorkers != 2 {
+	if value.Orchestration.DefaultMode != "direct" || value.Orchestration.PrimaryExecutor != "codex" || value.Orchestration.ReviewExecutor != "claude" || value.Orchestration.MaxWorkers != 2 || !value.Orchestration.Auto.Enabled || value.Orchestration.Auto.DefaultPlanner != "codex" || !value.Orchestration.Auto.Quota.Enabled || value.Orchestration.Auto.QuotaRefreshSeconds != 45 {
 		t.Fatalf("legacy migration=%+v", value.Orchestration)
 	}
 	value.Orchestration.ProviderExecution = true

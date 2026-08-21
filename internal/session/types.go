@@ -1,13 +1,18 @@
 // Package session owns non-sensitive operational metadata for ivoai sessions.
 package session
 
-import "time"
+import (
+	"time"
+
+	"github.com/ivo-lopes/ivoai/internal/quota"
+)
 
 type Mode string
 
 const (
 	ModeDirect       Mode = "direct"
 	ModeOrchestrated Mode = "orchestrated"
+	ModeAuto         Mode = "auto"
 )
 
 type State string
@@ -19,6 +24,8 @@ const (
 	StateStopping  State = "stopping"
 	StateCompleted State = "completed"
 	StateFailed    State = "failed"
+	StateBlocked   State = "blocked"
+	StateWaiting   State = "waiting_for_quota"
 )
 
 type ModelSource string
@@ -36,51 +43,64 @@ type ModelInfo struct {
 }
 
 type Worker struct {
-	ID           string     `json:"id"`
-	Role         string     `json:"role"`
-	Executor     string     `json:"executor"`
-	Model        ModelInfo  `json:"model"`
-	PID          int        `json:"pid,omitempty"`
-	ProcessStart string     `json:"process_start,omitempty"`
-	State        State      `json:"state"`
-	StartedAt    time.Time  `json:"started_at"`
-	EndedAt      *time.Time `json:"ended_at,omitempty"`
-	ExitCode     *int       `json:"exit_code,omitempty"`
-	RufloTaskID  string     `json:"ruflo_task_id,omitempty"`
-	HeadroomUsed bool       `json:"headroom_used"`
+	ID                string     `json:"id"`
+	Role              string     `json:"role"`
+	Executor          string     `json:"executor"`
+	Model             ModelInfo  `json:"model"`
+	PID               int        `json:"pid,omitempty"`
+	ProcessStart      string     `json:"process_start,omitempty"`
+	State             State      `json:"state"`
+	StartedAt         time.Time  `json:"started_at"`
+	EndedAt           *time.Time `json:"ended_at,omitempty"`
+	ExitCode          *int       `json:"exit_code,omitempty"`
+	RufloTaskID       string     `json:"ruflo_task_id,omitempty"`
+	HeadroomUsed      bool       `json:"headroom_used"`
+	RequestedExecutor string     `json:"requested_executor,omitempty"`
+	FallbackReason    string     `json:"fallback_reason,omitempty"`
 }
 
 type Session struct {
-	SessionID           string     `json:"session_id"`
-	StartedAt           time.Time  `json:"started_at"`
-	UpdatedAt           time.Time  `json:"updated_at"`
-	EndedAt             *time.Time `json:"ended_at,omitempty"`
-	Mode                Mode       `json:"mode"`
-	PrimaryExecutor     string     `json:"primary_executor"`
-	WorkingDirectory    string     `json:"working_directory"`
-	PrimaryPID          int        `json:"primary_pid,omitempty"`
-	PrimaryProcessStart string     `json:"primary_process_start,omitempty"`
-	PrimaryModel        ModelInfo  `json:"primary_model"`
-	HeadroomRequested   bool       `json:"headroom_requested"`
-	HeadroomUsed        bool       `json:"headroom_used"`
-	RufloEnabled        bool       `json:"ruflo_enabled"`
-	RufloHealthy        bool       `json:"ruflo_healthy"`
-	RufloSafeMode       bool       `json:"ruflo_safe_mode"`
-	ProviderExecution   bool       `json:"provider_execution"`
-	SwarmID             string     `json:"swarm_id,omitempty"`
-	SwarmState          string     `json:"swarm_state,omitempty"`
-	PrimaryRufloTaskID  string     `json:"primary_ruflo_task_id,omitempty"`
-	Workers             []Worker   `json:"workers"`
-	MaxWorkers          int        `json:"max_workers"`
-	ContextStatus       string     `json:"context_status"`
-	MemoryStatus        string     `json:"memory_status"`
-	ServerStatus        string     `json:"server_status"`
-	ExitCode            *int       `json:"exit_code,omitempty"`
-	State               State      `json:"state"`
+	SessionID            string                                 `json:"session_id"`
+	StartedAt            time.Time                              `json:"started_at"`
+	UpdatedAt            time.Time                              `json:"updated_at"`
+	EndedAt              *time.Time                             `json:"ended_at,omitempty"`
+	Mode                 Mode                                   `json:"mode"`
+	PrimaryExecutor      string                                 `json:"primary_executor"`
+	WorkingDirectory     string                                 `json:"working_directory"`
+	PrimaryPID           int                                    `json:"primary_pid,omitempty"`
+	PrimaryProcessStart  string                                 `json:"primary_process_start,omitempty"`
+	PrimaryModel         ModelInfo                              `json:"primary_model"`
+	HeadroomRequested    bool                                   `json:"headroom_requested"`
+	HeadroomUsed         bool                                   `json:"headroom_used"`
+	RufloEnabled         bool                                   `json:"ruflo_enabled"`
+	RufloHealthy         bool                                   `json:"ruflo_healthy"`
+	RufloSafeMode        bool                                   `json:"ruflo_safe_mode"`
+	ProviderExecution    bool                                   `json:"provider_execution"`
+	SwarmID              string                                 `json:"swarm_id,omitempty"`
+	SwarmState           string                                 `json:"swarm_state,omitempty"`
+	PrimaryRufloTaskID   string                                 `json:"primary_ruflo_task_id,omitempty"`
+	Workers              []Worker                               `json:"workers"`
+	MaxWorkers           int                                    `json:"max_workers"`
+	ContextStatus        string                                 `json:"context_status"`
+	MemoryStatus         string                                 `json:"memory_status"`
+	ServerStatus         string                                 `json:"server_status"`
+	ExitCode             *int                                   `json:"exit_code,omitempty"`
+	State                State                                  `json:"state"`
+	Auto                 bool                                   `json:"auto"`
+	InitialPlanner       string                                 `json:"initial_planner,omitempty"`
+	CurrentPrimary       string                                 `json:"current_primary,omitempty"`
+	FailoverCount        int                                    `json:"failover_count,omitempty"`
+	ConsecutiveFailovers int                                    `json:"consecutive_failovers,omitempty"`
+	LastFailoverAt       *time.Time                             `json:"last_failover_at,omitempty"`
+	LastFailoverReason   string                                 `json:"last_failover_reason,omitempty"`
+	CurrentPhase         string                                 `json:"current_phase,omitempty"`
+	CheckpointAvailable  bool                                   `json:"checkpoint_available"`
+	CheckpointUpdatedAt  *time.Time                             `json:"checkpoint_updated_at,omitempty"`
+	Quota                map[quota.Provider]quota.ProviderQuota `json:"quota,omitempty"`
 }
 
 func UnknownModel() ModelInfo { return ModelInfo{Name: "unknown", Source: ModelUnknown} }
 
 func (s Session) Active() bool {
-	return s.State == StateStarting || s.State == StateRunning || s.State == StateDegraded || s.State == StateStopping
+	return s.State == StateStarting || s.State == StateRunning || s.State == StateDegraded || s.State == StateStopping || s.State == StateWaiting
 }

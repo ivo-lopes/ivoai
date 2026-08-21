@@ -6,6 +6,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/ivo-lopes/ivoai/internal/quota"
 )
 
 func fixtureSession(t *testing.T, root string) (Store, Session) {
@@ -87,5 +89,31 @@ func TestModelPrecedenceAndUnknown(t *testing.T) {
 	}
 	if got := ResolveModel("", "", "codex", filepath.Join(root, "missing")); got != UnknownModel() {
 		t.Fatalf("unknown model: %#v", got)
+	}
+}
+
+func TestCheckpointRejectsSecretsAndTerminalControl(t *testing.T) {
+	store, value := fixtureSession(t, filepath.Join(t.TempDir(), "sessions"))
+	value.Mode, value.Auto = ModeAuto, true
+	value.InitialPlanner, value.CurrentPrimary = "codex", "codex"
+	value.Quota = map[quota.Provider]quota.ProviderQuota{}
+	if err := store.Create(value); err != nil {
+		t.Fatal(err)
+	}
+	for _, checkpoint := range []Checkpoint{
+		{Objective: "Authorization: Bearer super-secret-token"},
+		{NextStep: "render\x1b[2Jbad"},
+	} {
+		if err := store.SaveCheckpoint(value.SessionID, checkpoint); err == nil {
+			t.Fatalf("unsafe checkpoint accepted: %+v", checkpoint)
+		}
+	}
+	valid := Checkpoint{Objective: "Finish quota routing", Completed: []string{"Unit tests passed"}, NextStep: "Run race tests"}
+	if err := store.SaveCheckpoint(value.SessionID, valid); err != nil {
+		t.Fatal(err)
+	}
+	loaded, err := store.LoadCheckpoint(value.SessionID)
+	if err != nil || loaded.Objective != valid.Objective {
+		t.Fatalf("loaded=%+v err=%v", loaded, err)
 	}
 }

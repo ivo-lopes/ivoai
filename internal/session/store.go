@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/ivo-lopes/ivoai/internal/platform"
+	"github.com/ivo-lopes/ivoai/internal/quota"
 	"golang.org/x/sys/unix"
 )
 
@@ -259,7 +260,7 @@ func validate(value Session) error {
 	if err := ValidateID(value.SessionID); err != nil {
 		return err
 	}
-	if value.Mode != ModeDirect && value.Mode != ModeOrchestrated {
+	if value.Mode != ModeDirect && value.Mode != ModeOrchestrated && value.Mode != ModeAuto {
 		return errors.New("invalid session mode")
 	}
 	if value.PrimaryExecutor != "codex" && value.PrimaryExecutor != "claude" {
@@ -280,14 +281,33 @@ func validate(value Session) error {
 	if (value.SwarmID != "" && !safeText(value.SwarmID, 128)) || (value.PrimaryRufloTaskID != "" && !safeText(value.PrimaryRufloTaskID, 128)) {
 		return errors.New("invalid Ruflo lifecycle metadata")
 	}
-	if value.Mode == ModeOrchestrated && value.State != StateStarting && value.SwarmID == "" {
+	if (value.Mode == ModeOrchestrated || value.Mode == ModeAuto) && value.State != StateStarting && value.State != StateBlocked && value.SwarmID == "" {
 		return errors.New("orchestrated session requires a swarm ID")
+	}
+	if value.Mode == ModeAuto {
+		if !value.Auto || !oneOf(value.InitialPlanner, "codex", "claude") || !oneOf(value.CurrentPrimary, "codex", "claude") || value.FailoverCount < 0 || value.ConsecutiveFailovers < 0 || value.FailoverCount > 100 || value.ConsecutiveFailovers > 2 {
+			return errors.New("invalid automatic session metadata")
+		}
+		if value.LastFailoverReason != "" && !safeText(value.LastFailoverReason, 256) {
+			return errors.New("invalid failover metadata")
+		}
+		if value.CurrentPhase != "" && !safeText(value.CurrentPhase, 64) {
+			return errors.New("invalid automatic session phase")
+		}
+		for provider, snapshot := range value.Quota {
+			if provider != quota.ProviderCodex && provider != quota.ProviderClaude || snapshot.Provider != provider || len(snapshot.Windows) > 32 {
+				return errors.New("invalid quota snapshot metadata")
+			}
+		}
 	}
 	activeWorkers := 0
 	workerIDs := make(map[string]struct{}, len(value.Workers))
 	for _, worker := range value.Workers {
 		if worker.Executor != "codex" && worker.Executor != "claude" {
 			return fmt.Errorf("invalid worker executor %q", worker.Executor)
+		}
+		if worker.RequestedExecutor != "" && worker.RequestedExecutor != "codex" && worker.RequestedExecutor != "claude" || worker.FallbackReason != "" && !safeText(worker.FallbackReason, 256) {
+			return errors.New("invalid worker routing metadata")
 		}
 		if len(worker.ID) != 39 || !strings.HasPrefix(worker.ID, "worker_") || !safeText(worker.Role, 64) || !validState(worker.State) || !validModel(worker.Model) {
 			return errors.New("invalid worker metadata")
@@ -311,7 +331,7 @@ func validate(value Session) error {
 
 func validState(value State) bool {
 	switch value {
-	case StateStarting, StateRunning, StateDegraded, StateStopping, StateCompleted, StateFailed:
+	case StateStarting, StateRunning, StateDegraded, StateStopping, StateCompleted, StateFailed, StateBlocked, StateWaiting:
 		return true
 	}
 	return false
