@@ -22,6 +22,7 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/platform"
 	"github.com/ivo-lopes/ivoai/internal/project"
 	"github.com/ivo-lopes/ivoai/internal/secrets"
+	"github.com/ivo-lopes/ivoai/internal/terminalui"
 	"github.com/ivo-lopes/ivoai/internal/update"
 	"golang.org/x/term"
 )
@@ -122,7 +123,7 @@ func (a *App) Setup(ctx context.Context) error {
 	if err := a.Store.SaveState(state); err != nil {
 		return err
 	}
-	fmt.Fprintln(a.Out, "ivoai client setup complete")
+	a.success("ivoai client setup complete")
 	return nil
 }
 
@@ -145,16 +146,16 @@ func (a *App) Status(ctx context.Context) error {
 		{"Server", cfg.Connections.Server.Status},
 	}
 	for _, row := range rows {
-		fmt.Fprintf(a.Out, "%-14s %s\n", row.name, row.status)
+		fmt.Fprintf(a.Out, "%-14s %s\n", row.name, semanticStatus(row.status, terminalui.ColorEnabled(a.Out)))
 	}
 	if state.SetupCompletedAt.IsZero() {
-		fmt.Fprintln(a.Out, "\nOverall: SETUP REQUIRED")
+		fmt.Fprintf(a.Out, "\nOverall: %s\n", terminalui.Warning("SETUP REQUIRED", terminalui.ColorEnabled(a.Out)))
 	} else if !requiredComponentsReady(state) {
-		fmt.Fprintln(a.Out, "\nOverall: DEGRADED — run ivoai setup to repair components")
+		fmt.Fprintf(a.Out, "\nOverall: %s\n", terminalui.Warning("DEGRADED — run ivoai setup to repair components", terminalui.ColorEnabled(a.Out)))
 	} else if cfg.Connections.ChatGPT.Status != "connected" || cfg.Connections.Claude.Status != "connected" || cfg.Connections.Server.Status != "connected" {
-		fmt.Fprintln(a.Out, "\nOverall: READY — external connections pending")
+		fmt.Fprintf(a.Out, "\nOverall: %s\n", terminalui.Success("READY", terminalui.ColorEnabled(a.Out))+" — external connections pending")
 	} else {
-		fmt.Fprintln(a.Out, "\nOverall: READY — all connections active")
+		fmt.Fprintf(a.Out, "\nOverall: %s\n", terminalui.Success("READY — all connections active", terminalui.ColorEnabled(a.Out)))
 	}
 	return nil
 }
@@ -267,7 +268,7 @@ func (a *App) ConnectServer(ctx context.Context, serverURL, code string) error {
 			a.warn("ai-memory is disabled but its previous integration could not be removed", err)
 		}
 	}
-	fmt.Fprintln(a.Out, "ivoai server connected")
+	a.success("ivoai server connected")
 	return nil
 }
 func (a *App) DisconnectServer(ctx context.Context) error {
@@ -316,7 +317,7 @@ func (a *App) MemoryStatus(ctx context.Context) error {
 	state, _ := a.Store.LoadState()
 	status, err := (memory.Manager{Runner: a.Runner, Binary: state.Components["ai-memory"].Path}).Status(ctx)
 	if err == nil {
-		fmt.Fprintln(a.Out, status)
+		fmt.Fprintln(a.Out, semanticStatus(status, terminalui.ColorEnabled(a.Out)))
 	}
 	return err
 }
@@ -416,11 +417,31 @@ func (a *App) exposeServerCredential() (func(), error) {
 }
 
 func (a *App) warn(message string, err error) {
+	label := terminalui.Warning("warning:", terminalui.ColorEnabled(a.Err))
 	if err == nil {
-		fmt.Fprintf(a.Err, "warning: %s\n", message)
+		fmt.Fprintf(a.Err, "%s %s\n", label, message)
 		return
 	}
-	fmt.Fprintf(a.Err, "warning: %s: %v\n", message, err)
+	fmt.Fprintf(a.Err, "%s %s: %v\n", label, message, err)
+}
+
+func (a *App) success(message string) {
+	color := terminalui.ColorEnabled(a.Out)
+	fmt.Fprintf(a.Out, "%s %s\n", terminalui.Success("OK", color), terminalui.Success(message, color))
+}
+
+func semanticStatus(value string, color bool) string {
+	lower := strings.ToLower(value)
+	switch {
+	case strings.Contains(lower, "not installed"), strings.Contains(lower, "unhealthy"), strings.Contains(lower, "failed"):
+		return terminalui.Failure(value, color)
+	case strings.Contains(lower, "not connected"), strings.Contains(lower, "disabled"), strings.Contains(lower, "setup required"), strings.Contains(lower, "degraded"):
+		return terminalui.Warning(value, color)
+	case strings.Contains(lower, "ready"), strings.Contains(lower, "connected"), strings.Contains(lower, "installed"):
+		return terminalui.Success(value, color)
+	default:
+		return value
+	}
 }
 
 func (a *App) MCPList() error {
@@ -434,7 +455,11 @@ func (a *App) MCPList() error {
 	}
 	sort.Strings(names)
 	for _, n := range names {
-		fmt.Fprintf(a.Out, "%s\t%s\t%t\n", n, entries[n].URL, entries[n].Enabled)
+		enabled := terminalui.Warning("false", terminalui.ColorEnabled(a.Out))
+		if entries[n].Enabled {
+			enabled = terminalui.Success("true", terminalui.ColorEnabled(a.Out))
+		}
+		fmt.Fprintf(a.Out, "%s\t%s\t%s\n", n, entries[n].URL, enabled)
 	}
 	return nil
 }
@@ -487,7 +512,7 @@ func parseBool(s string) (bool, error) {
 func (a *App) ProjectInit() error {
 	marker, err := project.Init(currentDir())
 	if err == nil {
-		fmt.Fprintf(a.Out, "initialized %s\n", marker.ID)
+		a.success("project initialized " + marker.ID)
 	}
 	return err
 }

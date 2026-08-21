@@ -5,17 +5,136 @@ repo="ivo-lopes/ivoai"
 version="${IVOAI_VERSION:-latest}"
 install_dir="${IVOAI_INSTALL_DIR:-}"
 create_system_link=0
+interactive=0
+use_color=0
+use_unicode=0
+active_step_pid=""
+
+if [ -t 1 ] && [ "${TERM:-dumb}" != "dumb" ] && [ -z "${CI:-}" ] && [ "${IVOAI_NO_ANIMATION:-0}" != "1" ]; then
+  interactive=1
+  [ -z "${NO_COLOR:-}" ] && use_color=1
+fi
+case "${LC_ALL:-}${LC_CTYPE:-}${LANG:-}" in
+  *UTF-8*|*utf-8*|*UTF8*|*utf8*) [ "${IVOAI_ASCII:-0}" != "1" ] && use_unicode=1 ;;
+esac
+
+if [ "$use_color" -eq 1 ]; then
+  c_reset='\033[0m'
+  c_cyan='\033[38;5;81m'
+  c_violet='\033[38;5;141m'
+  c_green='\033[38;5;77m'
+  c_yellow='\033[38;5;220m'
+  c_red='\033[38;5;203m'
+  c_dim='\033[38;5;245m'
+else
+  c_reset='' c_cyan='' c_violet='' c_green='' c_yellow='' c_red='' c_dim=''
+fi
+
+banner() {
+  [ "$interactive" -eq 1 ] || return 0
+  columns=80
+  if command -v tput >/dev/null 2>&1; then
+    detected_columns="$(tput cols 2>/dev/null || true)"
+    case "$detected_columns" in *[!0-9]*|'') ;; *) columns=$detected_columns ;; esac
+  fi
+  if [ "$columns" -lt 46 ]; then
+    printf '%bivoai%b\n\n' "$c_cyan" "$c_reset"
+  elif [ "$columns" -lt 90 ]; then
+    printf '%b%s%b\n\n' "$c_cyan" ' ___ _   _  ___   _  ___
+|_ _| | | |/ _ \ / \|_ _|
+ | || |_| | (_) / _ \| |
+|___|\___/ \___/_/ \_\___|' "$c_reset"
+  else
+    printf '%b%s\n%b%s%b\n\n' "$c_cyan" '██╗██╗   ██╗ ██████╗  █████╗ ██╗
+██║██║   ██║██╔═══██╗██╔══██╗██║
+██║██║   ██║██║   ██║███████║██║
+██║╚██╗ ██╔╝██║   ██║██╔══██║██║
+██║ ╚████╔╝ ╚██████╔╝██║  ██║██║' "$c_violet" '╚═╝  ╚═══╝   ╚═════╝ ╚═╝  ╚═╝╚═╝' "$c_reset"
+  fi
+}
 
 fail() {
-  printf 'ivoai installer: %s\n' "$*" >&2
+  printf '%b%s%b %s\n' "$c_red" "$(status_icon failure)" "$c_reset" "$*" >&2
   exit 1
 }
 
 info() {
-  printf 'ivoai installer: %s\n' "$*"
+  printf '%b%s%b %s\n' "$c_cyan" "$(status_icon info)" "$c_reset" "$*"
 }
 
-for prerequisite in awk chmod curl dirname find grep id install mkdir mktemp readlink sha256sum stat tar uname; do
+success() {
+  printf '%b%s%b %s\n' "$c_green" "$(status_icon success)" "$c_reset" "$*"
+}
+
+step() {
+  printf '%b%s%b %s\n' "$c_violet" "$(status_icon step)" "$c_reset" "$*"
+}
+
+status_icon() {
+  if [ "$interactive" -eq 0 ] || [ "$use_unicode" -ne 1 ]; then
+    case "$1" in success) printf '[OK]' ;; failure) printf '[ERROR]' ;; info) printf '[INFO]' ;; *) printf '[..]' ;; esac
+  else
+    case "$1" in success) printf '✓' ;; failure) printf '✗' ;; info) printf '•' ;; *) printf '→' ;; esac
+  fi
+}
+
+run_step() {
+  step_label=$1
+  shift
+  if [ "$interactive" -eq 0 ]; then
+    step "$step_label"
+    set +e
+    "$@"
+    step_status=$?
+    set -e
+    if [ "$step_status" -ne 0 ]; then
+      fail "$step_label failed"
+    fi
+    success "$step_label"
+    return
+  fi
+  step_log="$tmp_dir/step.log"
+  : >"$step_log"
+  "$@" >"$step_log" 2>&1 &
+  step_pid=$!
+  active_step_pid=$step_pid
+  step_index=0
+  while kill -0 "$step_pid" 2>/dev/null; do
+    case $((step_index % 4)) in 0) frame='|' ;; 1) frame='/' ;; 2) frame='-' ;; *) frame="\\" ;; esac
+    printf '\r\033[2K%b%s%b %s' "$c_cyan" "$frame" "$c_reset" "$step_label"
+    step_index=$((step_index + 1))
+    sleep 0.1
+  done
+  set +e
+  wait "$step_pid"
+  step_status=$?
+  set -e
+  active_step_pid=""
+  printf '\r\033[2K'
+  if [ "$step_status" -ne 0 ]; then
+    cat "$step_log" >&2
+    fail "$step_label failed"
+  fi
+  success "$step_label"
+}
+
+download() {
+  download_url=$1
+  download_target=$2
+  download_label=$3
+  step "$download_label"
+  if [ "$interactive" -eq 1 ]; then
+    curl -fL --progress-bar --retry 3 --connect-timeout 10 "$download_url" -o "$download_target" || fail "$download_label failed"
+  else
+    curl -fsSL --retry 3 --connect-timeout 10 "$download_url" -o "$download_target" || fail "$download_label failed"
+  fi
+  success "$download_label"
+}
+
+banner
+printf '%bSecure client and server installer%b\n\n' "$c_dim" "$c_reset"
+
+for prerequisite in awk cat chmod curl dirname find grep id install kill mkdir mktemp readlink sha256sum sleep stat tar uname; do
   command -v "$prerequisite" >/dev/null 2>&1 || fail "$prerequisite is required"
 done
 
@@ -86,12 +205,12 @@ select_go_toolchain() {
     if printf '%s\n' "$candidate_version" | grep -Eq '^[0-9]+\.[0-9]+(\.[0-9]+)?$' &&
        version_at_least "$candidate_version" "$required_go"; then
       go_command=$candidate_go
-      info "using system Go $candidate_version"
+      info "Using system Go $candidate_version"
       return
     fi
-    info "system Go ${candidate_version:-unknown} is older than required Go $required_go"
+    info "System Go ${candidate_version:-unknown} is older than required Go $required_go"
   else
-    info "Go was not found; bootstrapping Go $required_go for this source build"
+    info "Go was not found; bootstrapping verified Go $required_go"
   fi
 
   case "$required_go/$arch" in
@@ -100,8 +219,7 @@ select_go_toolchain() {
     *) fail "no reviewed Go toolchain is pinned for Go $required_go on linux/$arch" ;;
   esac
   go_asset="go${required_go}.linux-${arch}.tar.gz"
-  curl -fsSL --retry 3 --connect-timeout 10 "https://go.dev/dl/$go_asset" -o "$tmp_dir/$go_asset" ||
-    fail "Go $required_go toolchain download failed"
+  download "https://go.dev/dl/$go_asset" "$tmp_dir/$go_asset" "Download Go $required_go toolchain"
   printf '%s  %s\n' "$go_checksum" "$tmp_dir/$go_asset" | sha256sum -c - >/dev/null ||
     fail "Go $required_go toolchain checksum mismatch"
   tar -xzf "$tmp_dir/$go_asset" -C "$tmp_dir"
@@ -137,7 +255,24 @@ cleanup() {
   chmod -R u+w "$tmp_dir" 2>/dev/null || true
   find "$tmp_dir" -depth -delete 2>/dev/null || true
 }
-trap cleanup EXIT HUP INT TERM
+handle_signal() {
+  signal_status=$1
+  trap - HUP INT TERM
+  if [ -n "$active_step_pid" ]; then
+    kill -TERM "$active_step_pid" 2>/dev/null || true
+    wait "$active_step_pid" 2>/dev/null || true
+    active_step_pid=""
+  fi
+  printf '\n%b%s%b Installation cancelled.\n' "$c_yellow" "$(status_icon failure)" "$c_reset" >&2
+  exit "$signal_status"
+}
+trap cleanup EXIT
+trap 'handle_signal 129' HUP
+trap 'handle_signal 130' INT
+trap 'handle_signal 143' TERM
+
+info "Platform: $os/$arch"
+info "Install directory: $install_dir"
 
 # An authenticated clone can install itself before a public release exists. Do not
 # mistake the caller's current directory for the script directory in `curl | sh`.
@@ -155,9 +290,12 @@ if [ "$source_checkout" -eq 1 ] && [ -f "$script_dir/go.mod" ] && [ -d "$script_
   printf '%s\n' "$required_go" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$' ||
     fail "go.mod does not declare a supported stable Go version"
   select_go_toolchain "$required_go"
-  (cd "$script_dir" && GOTOOLCHAIN=local CGO_ENABLED=0 \
+  build_source() {
+    (cd "$script_dir" && GOTOOLCHAIN=local CGO_ENABLED=0 \
     GOCACHE="$tmp_dir/go-build-cache" GOMODCACHE="$tmp_dir/go-module-cache" \
     "$go_command" build -buildvcs=false -trimpath -o "$tmp_dir/ivoai" ./cmd/ivoai)
+  }
+  run_step "Build ivoai from the source checkout" build_source
 else
   asset="ivoai_${os}_${arch}.tar.gz"
   if [ "$version" = "latest" ]; then
@@ -168,17 +306,17 @@ else
     base="https://github.com/${repo}/releases/download/${version}"
   fi
 
-  curl -fsSL --retry 3 --connect-timeout 10 "$base/$asset" -o "$tmp_dir/$asset" || \
-    fail "release download failed (for a private repository, install from an authenticated clone)"
-  curl -fsSL --retry 3 --connect-timeout 10 "$base/checksums.txt" -o "$tmp_dir/checksums.txt" || \
-    fail "checksum download failed"
+  download "$base/$asset" "$tmp_dir/$asset" "Download ivoai release"
+  download "$base/checksums.txt" "$tmp_dir/checksums.txt" "Download release checksums"
   expected="$(awk -v name="$asset" '$2 == name || $2 == "*" name {print $1; exit}' "$tmp_dir/checksums.txt")"
   case "$expected" in
     *[!0-9a-fA-F]*|'') fail "release checksum is missing or invalid" ;;
   esac
   [ "${#expected}" -eq 64 ] || fail "release checksum is missing or invalid"
-  printf '%s  %s\n' "$expected" "$tmp_dir/$asset" | sha256sum -c - >/dev/null || fail "release checksum mismatch"
-  tar -xzf "$tmp_dir/$asset" -C "$tmp_dir" ivoai
+  verify_release() { printf '%s  %s\n' "$expected" "$tmp_dir/$asset" | sha256sum -c - >/dev/null; }
+  extract_release() { tar -xzf "$tmp_dir/$asset" -C "$tmp_dir" ivoai; }
+  run_step "Verify release checksum" verify_release
+  run_step "Extract ivoai binary" extract_release
 fi
 
 if ! { [ -f "$tmp_dir/ivoai" ] && [ ! -L "$tmp_dir/ivoai" ]; }; then
@@ -197,7 +335,8 @@ fi
 if [ -e "$install_target" ] && ! owned_install "$install_target"; then
   fail "$install_target already exists but is not recorded as ivoai-managed; refusing to replace it"
 fi
-install -m 0755 "$tmp_dir/ivoai" "$install_dir/ivoai"
+install_binary() { install -m 0755 "$tmp_dir/ivoai" "$install_dir/ivoai"; }
+run_step "Install ivoai binary" install_binary
 
 managed_launcher=""
 if [ "$create_system_link" -eq 1 ]; then
@@ -214,12 +353,18 @@ if [ "$create_system_link" -eq 1 ]; then
   managed_launcher="$system_link"
 fi
 
-IVOAI_MANAGED_LAUNCHER="$managed_launcher" "$install_dir/ivoai" _register-install
+register_install() { IVOAI_MANAGED_LAUNCHER="$managed_launcher" "$install_dir/ivoai" _register-install; }
+run_step "Register managed installation" register_install
 
-printf 'ivoai installed at %s/ivoai\n' "$install_dir"
+printf '\n%bInstallation complete%b\n' "$c_green" "$c_reset"
+printf '  Binary: %s/ivoai\n\n' "$install_dir"
 if path_contains "$install_dir" || [ "$create_system_link" -eq 1 ]; then
-  printf 'Next: ivoai setup\n'
+  if [ "$(id -u)" -eq 0 ]; then
+    printf '%bNext commands%b\n  ivoai setup --mode server\n  ivoai server doctor\n' "$c_violet" "$c_reset"
+  else
+    printf '%bNext commands%b\n  ivoai setup\n  ivoai doctor\n' "$c_violet" "$c_reset"
+  fi
 else
-  printf 'Run: %s/ivoai setup\n' "$install_dir"
-  printf 'Add %s to PATH to use the ivoai command directly.\n' "$install_dir"
+  printf '%bNext commands%b\n  %s/ivoai setup\n  %s/ivoai doctor\n' "$c_violet" "$c_reset" "$install_dir" "$install_dir"
+  printf '%bTip:%b add %s to PATH to use ivoai directly.\n' "$c_yellow" "$c_reset" "$install_dir"
 fi

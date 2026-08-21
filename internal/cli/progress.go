@@ -8,7 +8,7 @@ import (
 )
 
 func runProgress(ctx context.Context, a *app.App, label string, operation func() error) error {
-	progress := &terminalui.Progress{Out: a.Err}
+	progress := &terminalui.Progress{Out: a.Err, ShowHeader: true}
 	if progress.Animated() {
 		originalOut, originalErr := a.Out, a.Err
 		a.Out, a.Err = progress.Writer(originalOut), progress.Writer(originalErr)
@@ -63,6 +63,14 @@ func commandProgress(args []string) (string, bool) {
 					return "Adding server connector", true
 				}
 				return "Removing server connector", true
+			}
+		case "enrollment":
+			if len(args) > 2 && (args[2] == "create" || args[2] == "revoke") {
+				return "Updating server enrollment", true
+			}
+		case "web-access":
+			if len(args) > 2 && (args[2] == "create" || args[2] == "revoke") {
+				return "Updating Web MCP access", true
 			}
 		case "gateway":
 			if len(args) > 2 && args[2] == "configure" {

@@ -11,6 +11,7 @@ import (
 
 	"github.com/ivo-lopes/ivoai/internal/app"
 	"github.com/ivo-lopes/ivoai/internal/platform"
+	"github.com/ivo-lopes/ivoai/internal/terminalui"
 )
 
 type ServerRunner func(context.Context, []string, io.Reader, io.Writer, io.Writer) error
@@ -31,7 +32,23 @@ func Run(ctx context.Context, a *app.App, args []string) error {
 	if label, enabled := commandProgress(args); enabled {
 		return runProgress(ctx, a, label, func() error { return runCommand(ctx, a, args) })
 	}
+	if commandHeaderEnabled(args) && terminalui.HumanOutput(a.Out) {
+		fmt.Fprintf(a.Out, "%s\n\n", terminalui.Wordmark(terminalui.ColorEnabled(a.Out)))
+	}
 	return runCommand(ctx, a, args)
+}
+
+func commandHeaderEnabled(args []string) bool {
+	if len(args) == 0 || args[0] == "_register-install" || args[0] == "codex" || args[0] == "claude" {
+		return false
+	}
+	if args[0] == "doctor" && contains(args, "--json") {
+		return false
+	}
+	if len(args) >= 3 && args[0] == "server" && (args[1] == "gateway" || args[1] == "context") && args[2] == "serve" {
+		return false
+	}
+	return true
 }
 
 func runCommand(ctx context.Context, a *app.App, args []string) error {
@@ -114,17 +131,46 @@ func runDoctor(ctx context.Context, a *app.App, args []string) error {
 		fmt.Fprintln(a.Out, string(b))
 		return nil
 	}
+	color := terminalui.ColorEnabled(a.Out)
 	fmt.Fprintf(a.Out, "ivoai doctor\nOS: %s\nArchitecture: %s\nivoai: %s\nConfig: %s\nState: %s\nSecret permissions: %s\n", report.OS, report.Architecture, report.Version, report.ConfigPath, report.StatePath, report.SecretPermissions)
-	fmt.Fprintf(a.Out, "\nCodex: installed=%t version=%s authenticated=%t\n", report.Codex.Installed, report.Codex.Version, report.Codex.Authenticated)
-	fmt.Fprintf(a.Out, "Claude: installed=%t version=%s authenticated=%t\n", report.Claude.Installed, report.Claude.Version, report.Claude.Authenticated)
-	fmt.Fprintf(a.Out, "Headroom: installed=%t enabled=%t healthy=%t version=%s\nCodex via Headroom: %s\nClaude via Headroom: %s\n", report.Headroom.Installed, report.Headroom.Enabled, report.Headroom.Healthy, report.Headroom.Version, okFail(report.Headroom.CodexCompatible), okFail(report.Headroom.ClaudeCompatible))
-	fmt.Fprintf(a.Out, "ai-memory: installed=%t version=%s hooks=%t server=%s\n", report.Memory.Installed, report.Memory.Version, report.Memory.Hooks, configured(report.Server.Configured))
-	fmt.Fprintf(a.Out, "Ruflo: installed=%t version=%s safe-mode=%t provider-execution=%t\n", report.Ruflo.Installed, report.Ruflo.Version, report.Ruflo.SafeMode, report.Ruflo.ProviderExecution)
-	fmt.Fprintf(a.Out, "Server: configured=%t reachable=%t TLS=%t protocol-compatible=%t\nOverall: %s\n", report.Server.Configured, report.Server.Reachable, report.Server.TLS, report.Server.ProtocolCompatible, report.Overall)
+	fmt.Fprintf(a.Out, "\nCodex: installed=%s version=%s authenticated=%s\n", semanticBool(report.Codex.Installed, color), report.Codex.Version, semanticOptionalBool(report.Codex.Authenticated, color))
+	fmt.Fprintf(a.Out, "Claude: installed=%s version=%s authenticated=%s\n", semanticBool(report.Claude.Installed, color), report.Claude.Version, semanticOptionalBool(report.Claude.Authenticated, color))
+	fmt.Fprintf(a.Out, "Headroom: installed=%s enabled=%s healthy=%s version=%s\nCodex via Headroom: %s\nClaude via Headroom: %s\n", semanticBool(report.Headroom.Installed, color), semanticOptionalBool(report.Headroom.Enabled, color), semanticBool(report.Headroom.Healthy, color), report.Headroom.Version, semanticOK(report.Headroom.CodexCompatible, color), semanticOK(report.Headroom.ClaudeCompatible, color))
+	fmt.Fprintf(a.Out, "ai-memory: installed=%s version=%s hooks=%s server=%s\n", semanticBool(report.Memory.Installed, color), report.Memory.Version, semanticBool(report.Memory.Hooks, color), configured(report.Server.Configured))
+	fmt.Fprintf(a.Out, "Ruflo: installed=%s version=%s safe-mode=%s provider-execution=%s\n", semanticBool(report.Ruflo.Installed, color), report.Ruflo.Version, semanticBool(report.Ruflo.SafeMode, color), semanticDisabledIsSafe(report.Ruflo.ProviderExecution, color))
+	overall := terminalui.Success(report.Overall, color)
+	if report.Overall != "READY" {
+		overall = terminalui.Warning(report.Overall, color)
+	}
+	fmt.Fprintf(a.Out, "Server: configured=%s reachable=%s TLS=%s protocol-compatible=%s\nOverall: %s\n", semanticOptionalBool(report.Server.Configured, color), semanticOptionalBool(report.Server.Reachable, color), semanticOptionalBool(report.Server.TLS, color), semanticOptionalBool(report.Server.ProtocolCompatible, color), overall)
 	for _, issue := range report.Issues {
-		fmt.Fprintf(a.Out, "- %s\n", issue)
+		fmt.Fprintf(a.Out, "%s %s\n", terminalui.Warning("-", color), issue)
 	}
 	return nil
+}
+func semanticBool(value, color bool) string {
+	if value {
+		return terminalui.Success("true", color)
+	}
+	return terminalui.Failure("false", color)
+}
+func semanticOptionalBool(value, color bool) string {
+	if value {
+		return terminalui.Success("true", color)
+	}
+	return terminalui.Warning("false", color)
+}
+func semanticDisabledIsSafe(value, color bool) string {
+	if value {
+		return terminalui.Warning("true", color)
+	}
+	return terminalui.Success("false", color)
+}
+func semanticOK(value, color bool) string {
+	if value {
+		return terminalui.Success("OK", color)
+	}
+	return terminalui.Failure("FAIL", color)
 }
 func okFail(v bool) string {
 	if v {

@@ -20,6 +20,7 @@ type Progress struct {
 	PulseInterval time.Duration
 	Now           func() time.Time
 	Animate       *bool
+	ShowHeader    bool
 	mu            sync.Mutex
 }
 
@@ -41,6 +42,10 @@ func (p *Progress) Run(ctx context.Context, label string, operation func(context
 		start = p.Now()
 	}
 	animated := p.animated()
+	color := colorEnabled(p.Out)
+	if animated && p.ShowHeader {
+		p.write("%s\n\n", Wordmark(color))
+	}
 	interval := p.Interval
 	if interval <= 0 {
 		interval = 100 * time.Millisecond
@@ -75,13 +80,13 @@ func (p *Progress) Run(ctx context.Context, label string, operation func(context
 	}
 	if err != nil {
 		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
-			p.write("! %s cancelled (%s)\n", label, elapsed)
+			p.write("%s %s cancelled (%s)\n", Warning("!", color), label, elapsed)
 			return err
 		}
-		p.write("x %s failed (%s)\n", label, elapsed)
+		p.write("%s %s failed (%s)\n", Failure("x", color), label, elapsed)
 		return err
 	}
-	p.write("✓ %s (%s)\n", label, elapsed)
+	p.write("%s %s (%s)\n", Success(successGlyph(), color), label, elapsed)
 	return nil
 }
 
@@ -111,10 +116,17 @@ func (p *Progress) animate(done <-chan struct{}, label string, started time.Time
 		case <-done:
 			return
 		case now := <-ticker.C:
-			p.write("\r\x1b[2K%s %s  %s", frames[index%len(frames)], label, now.Sub(started).Round(time.Second))
+			p.write("\r\x1b[2K%s %s  %s", Info(frames[index%len(frames)], colorEnabled(p.Out)), label, now.Sub(started).Round(time.Second))
 			index++
 		}
 	}
+}
+
+func successGlyph() string {
+	if unicodeEnabled() {
+		return "✓"
+	}
+	return "OK"
 }
 
 func (p *Progress) Bar(label string, current, total int64, width int) string {
@@ -158,6 +170,9 @@ func (p *Progress) Animated() bool { return p != nil && p.animated() }
 func (p *Progress) animated() bool {
 	if p.Animate != nil {
 		return *p.Animate
+	}
+	if os.Getenv("CI") != "" || os.Getenv("IVOAI_NO_ANIMATION") == "1" {
+		return false
 	}
 	file, ok := p.Out.(*os.File)
 	return ok && term.IsTerminal(int(file.Fd())) && os.Getenv("TERM") != "dumb"

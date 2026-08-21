@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"strings"
 	"testing"
@@ -49,6 +50,84 @@ func TestRenderSupportsColorAndNoColor(t *testing.T) {
 	}
 	if !strings.Contains(colored, "\x1b[") {
 		t.Fatal("colored render omitted ANSI styling")
+	}
+}
+
+func TestHumanOutputRejectsNonTerminalAndCI(t *testing.T) {
+	var output bytes.Buffer
+	if HumanOutput(&output) {
+		t.Fatal("buffer was treated as an interactive terminal")
+	}
+	t.Setenv("CI", "1")
+	if HumanOutput(os.Stdout) {
+		t.Fatal("CI output was treated as an interactive screen")
+	}
+}
+
+func TestRenderSizedNeverExceedsTerminalDimensions(t *testing.T) {
+	items := make([]Item, 0, 20)
+	for index := 0; index < 20; index++ {
+		items = append(items, Item{
+			ID:          fmt.Sprintf("item-%d", index),
+			Label:       fmt.Sprintf("A deliberately long menu item number %d that must be truncated", index),
+			Description: "A description which must not cause the menu to overflow a narrow terminal",
+		})
+	}
+	badges := []Badge{{Label: "Overall", Value: "READY", Kind: "success"}, {Label: "Server", Value: "connected", Kind: "success"}}
+	for _, dimensions := range [][2]int{{20, 8}, {35, 10}, {59, 17}, {65, 18}, {100, 24}} {
+		width, height := dimensions[0], dimensions[1]
+		rendered := RenderSized("Responsive menu", items, badges, 10, width, height, false, true)
+		lines := strings.Split(strings.TrimSuffix(rendered, "\n"), "\n")
+		if len(lines) > height {
+			t.Fatalf("%dx%d render uses %d lines:\n%s", width, height, len(lines), rendered)
+		}
+		for _, line := range lines {
+			if displayWidth(line) > width {
+				t.Fatalf("%dx%d line width=%d: %q", width, height, displayWidth(line), line)
+			}
+		}
+		if !strings.Contains(rendered, "of 20") {
+			t.Fatalf("%dx%d paginated render lacks position: %q", width, height, rendered)
+		}
+	}
+}
+
+func TestCompactAndPlainHeadersDoNotRepeatLargeBanner(t *testing.T) {
+	compact := renderSized("Dashboard", []Item{{ID: "status", Label: "Status"}}, nil, 0, 100, 24, false, true, Wordmark(false)+"\n\n")
+	if strings.Contains(compact, "██") || !strings.HasPrefix(compact, "ivoai\n") {
+		t.Fatalf("compact screen header: %q", compact)
+	}
+	var output bytes.Buffer
+	_, err := (Selector{In: strings.NewReader("0\n"), Out: &output, ForcePlain: true}).Choose("Dashboard", []Item{{ID: "status", Label: "Status"}}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(output.String(), "██") || strings.HasPrefix(output.String(), "ivoai\n") {
+		t.Fatalf("plain fallback unexpectedly contains lettering: %q", output.String())
+	}
+}
+
+func TestViewportKeepsSelectionVisible(t *testing.T) {
+	for _, selected := range []int{0, 5, 19} {
+		start, end := viewport(20, selected, 5)
+		if selected < start || selected >= end || end-start != 5 {
+			t.Fatalf("selection=%d viewport=%d:%d", selected, start, end)
+		}
+	}
+}
+
+func TestReadKeyEventReportsResize(t *testing.T) {
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer reader.Close()
+	defer writer.Close()
+	resize := make(chan os.Signal, 1)
+	resize <- os.Interrupt
+	key, err := readKeyEvent(context.Background(), bufio.NewReader(reader), int(reader.Fd()), resize)
+	if err != nil || key != KeyResize {
+		t.Fatalf("key=%v err=%v", key, err)
 	}
 }
 

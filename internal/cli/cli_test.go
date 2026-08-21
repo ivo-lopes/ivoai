@@ -204,6 +204,25 @@ func TestCommandProgressClassification(t *testing.T) {
 	}
 }
 
+func TestCommandHeaderExcludesMachineAndProcessEntrypoints(t *testing.T) {
+	for _, test := range []struct {
+		args []string
+		want bool
+	}{
+		{[]string{"status"}, true},
+		{[]string{"doctor", "--json"}, false},
+		{[]string{"codex"}, false},
+		{[]string{"claude"}, false},
+		{[]string{"_register-install"}, false},
+		{[]string{"server", "gateway", "serve"}, false},
+		{[]string{"server", "context", "serve"}, false},
+	} {
+		if got := commandHeaderEnabled(test.args); got != test.want {
+			t.Fatalf("commandHeaderEnabled(%v)=%t want %t", test.args, got, test.want)
+		}
+	}
+}
+
 type assertError string
 
 func (e assertError) Error() string { return string(e) }
