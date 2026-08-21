@@ -377,7 +377,9 @@ loopback-only (`127.0.0.1:6333`) and requires a generated API key. Embeddings an
 ai-memory use separate generated credentials. Docker uses a transient publication
 network to establish the loopback bindings and a separate model-download network with
 explicit highest gateway priority. After the embedding model is healthy, systemd
-disconnects both transient routes to remove backend egress. The index is a cache; source documents,
+disconnects the download route. The loopback-publication network remains attached so
+the host mappings stay valid, but disables IP masquerading and therefore provides no
+backend egress. The index is a cache; source documents,
 normalized metadata, and connector definitions are authoritative. A collection can
 be deleted and rebuilt deterministically.
 

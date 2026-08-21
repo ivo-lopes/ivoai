@@ -128,12 +128,13 @@ func TestSetupIsIdempotentAndLifecycleUsesManagedServices(t *testing.T) {
 	}
 	dependenciesUnit, _ := os.ReadFile(filepath.Join(layout.SystemdDir, "ivoai-dependencies.service"))
 	if !bytes.Contains(dependenciesUnit, []byte("up -d --force-recreate --wait")) {
-		t.Fatal("dependency unit does not recreate disconnected transient networks on boot")
+		t.Fatal("dependency unit does not recreate managed networks on boot")
 	}
-	for _, container := range []string{"ivoai-qdrant-1", "ivoai-embeddings", "ivoai-ai-memory-1"} {
-		if !bytes.Contains(dependenciesUnit, []byte("network disconnect -f ivoai-host-publish "+container)) {
-			t.Fatalf("dependency unit does not remove transient network from %s", container)
-		}
+	if !bytes.Contains(dependenciesUnit, []byte("network disconnect ivoai-model-download ivoai-embeddings")) {
+		t.Fatal("dependency unit does not remove the model download route")
+	}
+	if bytes.Contains(dependenciesUnit, []byte("network disconnect -f ivoai-host-publish")) {
+		t.Fatal("dependency unit removes the network required for loopback port mappings")
 	}
 }
 
