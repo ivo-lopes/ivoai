@@ -15,7 +15,15 @@ func fixtureSession(t *testing.T, root string) (Store, Session) {
 		t.Fatal(err)
 	}
 	now := time.Now().UTC()
-	return Store{Root: root}, Session{SessionID: id, StartedAt: now, UpdatedAt: now, Mode: ModeDirect, PrimaryExecutor: "codex", WorkingDirectory: t.TempDir(), PrimaryModel: UnknownModel(), Workers: []Worker{}, MaxWorkers: 2, State: StateStarting}
+	return Store{Root: root}, Session{SessionID: id, StartedAt: now, UpdatedAt: now, Mode: ModeDirect, PrimaryExecutor: "codex", WorkingDirectory: t.TempDir(), PrimaryModel: UnknownModel(), Workers: []Worker{}, MaxWorkers: 2, ContextStatus: "disabled", MemoryStatus: "disabled", ServerStatus: "not-connected", State: StateStarting}
+}
+
+func TestStoreRejectsTerminalEscapeAndSecretShapedStatusTampering(t *testing.T) {
+	store, value := fixtureSession(t, t.TempDir()+"/sessions")
+	value.ContextStatus = "ready\x1b[2J Authorization: Bearer secret"
+	if err := store.Create(value); err == nil {
+		t.Fatal("untrusted status metadata accepted")
+	}
 }
 
 func TestStorePersistsOnlyPrivateAtomicMetadata(t *testing.T) {

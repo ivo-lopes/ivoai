@@ -41,7 +41,7 @@ func TestSafeProfileFiltersProvidersExecutionAndDurableMemory(t *testing.T) {
 		t.Fatal(err)
 	}
 	text := string(wrapper)
-	for _, required := range []string{"unset ANTHROPIC_API_KEY OPENAI_API_KEY", "RUFLO_PROVIDER=ivoai-disabled", "CLAUDE_FLOW_MEMORY_BACKEND=memory", "CLAUDE_FLOW_MCP_TOOLS="} {
+	for _, required := range []string{"unset ANTHROPIC_API_KEY", "OPENAI_API_KEY", "AWS_ACCESS_KEY_ID", "CLAUDE_CODE_USE_BEDROCK", "RUFLO_PROVIDER=ivoai-disabled", "CLAUDE_FLOW_MEMORY_BACKEND=memory", "CLAUDE_FLOW_MCP_TOOLS="} {
 		if !strings.Contains(text, required) {
 			t.Fatalf("wrapper missing %q:\n%s", required, text)
 		}

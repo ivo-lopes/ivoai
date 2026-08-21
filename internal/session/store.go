@@ -268,15 +268,23 @@ func validate(value Session) error {
 	if value.WorkingDirectory == "" || !filepath.IsAbs(value.WorkingDirectory) || strings.ContainsAny(value.WorkingDirectory, "\x00\x1b\r\n") {
 		return errors.New("invalid session working directory")
 	}
-	if value.MaxWorkers < 1 || value.MaxWorkers > 3 || len(value.Workers) > 3 {
+	if value.MaxWorkers < 1 || value.MaxWorkers > 3 || len(value.Workers) > 256 {
 		return errors.New("invalid worker limit")
 	}
 	if !validState(value.State) || !validModel(value.PrimaryModel) {
 		return errors.New("invalid session state or model metadata")
 	}
+	if !oneOf(value.ContextStatus, "ready", "degraded", "disabled") || !oneOf(value.MemoryStatus, "ready", "degraded", "disabled") || !oneOf(value.ServerStatus, "connected", "not-connected", "degraded") {
+		return errors.New("invalid service status metadata")
+	}
+	if (value.SwarmID != "" && !safeText(value.SwarmID, 128)) || (value.PrimaryRufloTaskID != "" && !safeText(value.PrimaryRufloTaskID, 128)) {
+		return errors.New("invalid Ruflo lifecycle metadata")
+	}
 	if value.Mode == ModeOrchestrated && value.State != StateStarting && value.SwarmID == "" {
 		return errors.New("orchestrated session requires a swarm ID")
 	}
+	activeWorkers := 0
+	workerIDs := make(map[string]struct{}, len(value.Workers))
 	for _, worker := range value.Workers {
 		if worker.Executor != "codex" && worker.Executor != "claude" {
 			return fmt.Errorf("invalid worker executor %q", worker.Executor)
@@ -284,6 +292,19 @@ func validate(value Session) error {
 		if len(worker.ID) != 39 || !strings.HasPrefix(worker.ID, "worker_") || !safeText(worker.Role, 64) || !validState(worker.State) || !validModel(worker.Model) {
 			return errors.New("invalid worker metadata")
 		}
+		if worker.RufloTaskID != "" && !safeText(worker.RufloTaskID, 128) {
+			return errors.New("invalid worker Ruflo lifecycle metadata")
+		}
+		if _, duplicate := workerIDs[worker.ID]; duplicate {
+			return errors.New("duplicate worker ID")
+		}
+		workerIDs[worker.ID] = struct{}{}
+		if worker.State == StateStarting || worker.State == StateRunning || worker.State == StateStopping {
+			activeWorkers++
+		}
+	}
+	if activeWorkers > value.MaxWorkers || activeWorkers > 3 {
+		return errors.New("active worker limit exceeded")
 	}
 	return nil
 }
@@ -308,4 +329,13 @@ func validModel(value ModelInfo) bool {
 
 func safeText(value string, limit int) bool {
 	return value != "" && len(value) <= limit && !strings.ContainsAny(value, "\x00\x1b\r\n")
+}
+
+func oneOf(value string, allowed ...string) bool {
+	for _, candidate := range allowed {
+		if value == candidate {
+			return true
+		}
+	}
+	return false
 }

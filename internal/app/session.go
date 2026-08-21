@@ -124,7 +124,10 @@ func (a *App) SessionStart(ctx context.Context, executor string, mode session.Mo
 			exitCode = exitErr.Code
 		}
 	}
-	a.cleanupSession(store, id, control)
+	cleanupErr := a.cleanupSession(store, id, control)
+	if cleanupErr != nil && launchErr == nil {
+		launchErr, finalState, exitCode = fmt.Errorf("session cleanup failed: %w", cleanupErr), session.StateFailed, 1
+	}
 	a.finishSession(store, id, finalState, exitCode)
 	return launchErr
 }
@@ -226,7 +229,8 @@ func (a *App) orchestratedAgentArgs(executor string, existing []string, id, runt
 	return append([]string{"--mcp-config", configPath}, existing...), nil
 }
 
-func (a *App) cleanupSession(store session.Store, id string, control orchestration.ControlPlane) {
+func (a *App) cleanupSession(store session.Store, id string, control orchestration.ControlPlane) error {
+	var cleanupErr error
 	value, err := store.Get(id)
 	if err == nil {
 		for _, worker := range value.Workers {
@@ -241,10 +245,13 @@ func (a *App) cleanupSession(store session.Store, id string, control orchestrati
 			_ = control.CancelLifecycle(context.Background(), value.PrimaryRufloTaskID)
 		}
 		if value.Mode == session.ModeOrchestrated {
-			_ = control.Stop(context.Background())
+			cleanupErr = control.Stop(context.Background())
 		}
 	}
-	_ = store.CleanupRuntime(id)
+	if err := store.CleanupRuntime(id); err != nil {
+		cleanupErr = errors.Join(cleanupErr, err)
+	}
+	return cleanupErr
 }
 
 func (a *App) finishSession(store session.Store, id string, final session.State, exitCode int) {

@@ -28,8 +28,12 @@ const (
 
 var providerEnvironment = map[string]struct{}{
 	"ANTHROPIC_API_KEY": {}, "OPENAI_API_KEY": {}, "OPENROUTER_API_KEY": {},
+	"ANTHROPIC_BASE_URL": {}, "OPENAI_BASE_URL": {},
 	"GOOGLE_API_KEY": {}, "GOOGLE_GEMINI_API_KEY": {}, "GEMINI_API_KEY": {},
 	"AZURE_OPENAI_API_KEY": {}, "GROQ_API_KEY": {}, "OLLAMA_API_KEY": {},
+	"AWS_ACCESS_KEY_ID": {}, "AWS_SECRET_ACCESS_KEY": {}, "AWS_SESSION_TOKEN": {},
+	"GOOGLE_APPLICATION_CREDENTIALS": {}, "CLAUDE_CODE_USE_BEDROCK": {},
+	"CLAUDE_CODE_USE_VERTEX": {}, "CLAUDE_CODE_USE_FOUNDRY": {},
 }
 
 type Request struct {

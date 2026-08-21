@@ -31,7 +31,7 @@ func TestLocalBridgeDelegatesToOfficialWorkerAndPersistsMetadataOnly(t *testing.
 	store := session.Store{Root: filepath.Join(root, "sessions")}
 	id, _ := session.NewID()
 	now := time.Now().UTC()
-	value := session.Session{SessionID: id, StartedAt: now, UpdatedAt: now, Mode: session.ModeOrchestrated, PrimaryExecutor: "codex", WorkingDirectory: root, PrimaryModel: session.UnknownModel(), RufloEnabled: true, RufloHealthy: true, RufloSafeMode: true, SwarmID: "swarm-fixture", SwarmState: "active", Workers: []session.Worker{}, MaxWorkers: 2, State: session.StateRunning}
+	value := session.Session{SessionID: id, StartedAt: now, UpdatedAt: now, Mode: session.ModeOrchestrated, PrimaryExecutor: "codex", WorkingDirectory: root, PrimaryModel: session.UnknownModel(), RufloEnabled: true, RufloHealthy: true, RufloSafeMode: true, SwarmID: "swarm-fixture", SwarmState: "active", Workers: []session.Worker{}, MaxWorkers: 2, ContextStatus: "disabled", MemoryStatus: "disabled", ServerStatus: "not-connected", State: session.StateRunning}
 	if err := store.Create(value); err != nil {
 		t.Fatal(err)
 	}
@@ -87,7 +87,7 @@ func TestBridgeEnforcesWorkerLimitBeforeExecution(t *testing.T) {
 	store := session.Store{Root: filepath.Join(root, "sessions")}
 	id, _ := session.NewID()
 	now := time.Now().UTC()
-	value := session.Session{SessionID: id, StartedAt: now, UpdatedAt: now, Mode: session.ModeOrchestrated, PrimaryExecutor: "codex", WorkingDirectory: root, PrimaryModel: session.UnknownModel(), RufloEnabled: true, RufloHealthy: true, RufloSafeMode: true, SwarmID: "swarm-fixture", Workers: []session.Worker{{ID: "worker_0123456789abcdef0123456789abcdef", Role: "busy", Executor: "codex", Model: session.UnknownModel(), State: session.StateRunning, StartedAt: now}}, MaxWorkers: 1, State: session.StateRunning}
+	value := session.Session{SessionID: id, StartedAt: now, UpdatedAt: now, Mode: session.ModeOrchestrated, PrimaryExecutor: "codex", WorkingDirectory: root, PrimaryModel: session.UnknownModel(), RufloEnabled: true, RufloHealthy: true, RufloSafeMode: true, SwarmID: "swarm-fixture", Workers: []session.Worker{{ID: "worker_0123456789abcdef0123456789abcdef", Role: "busy", Executor: "codex", Model: session.UnknownModel(), State: session.StateRunning, StartedAt: now}}, MaxWorkers: 1, ContextStatus: "disabled", MemoryStatus: "disabled", ServerStatus: "not-connected", State: session.StateRunning}
 	if err := store.Create(value); err != nil {
 		t.Fatal(err)
 	}

@@ -32,7 +32,9 @@ var safeTools = []string{
 
 var providerVariables = []string{
 	"ANTHROPIC_API_KEY",
+	"ANTHROPIC_BASE_URL",
 	"OPENAI_API_KEY",
+	"OPENAI_BASE_URL",
 	"OPENROUTER_API_KEY",
 	"OLLAMA_API_KEY",
 	"GOOGLE_API_KEY",
@@ -44,6 +46,9 @@ var providerVariables = []string{
 	"AWS_SECRET_ACCESS_KEY",
 	"AWS_SESSION_TOKEN",
 	"GOOGLE_APPLICATION_CREDENTIALS",
+	"CLAUDE_CODE_USE_BEDROCK",
+	"CLAUDE_CODE_USE_VERTEX",
+	"CLAUDE_CODE_USE_FOUNDRY",
 }
 
 type Status struct {

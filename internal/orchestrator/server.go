@@ -31,6 +31,7 @@ type Server struct {
 
 	mu      sync.Mutex
 	results map[string]workerResult
+	order   []string
 	cancels map[string]context.CancelFunc
 }
 
@@ -224,7 +225,12 @@ func (s *Server) finish(id string, state session.State, exitCode int, text strin
 		return nil
 	})
 	s.mu.Lock()
+	if len(s.results) >= 8 && len(s.order) > 0 {
+		delete(s.results, s.order[0])
+		s.order = s.order[1:]
+	}
 	s.results[id] = workerResult{Text: text, State: string(state), ExitCode: exitCode}
+	s.order = append(s.order, id)
 	s.mu.Unlock()
 }
 

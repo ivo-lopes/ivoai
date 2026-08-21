@@ -46,3 +46,32 @@ func TestResolvePathsHonorsAbsoluteXDGOnly(t *testing.T) {
 		t.Fatalf("data %s", p.DataDir)
 	}
 }
+
+func TestOrchestrationConfigurationMigratesAndRejectsUnsafeValues(t *testing.T) {
+	root := t.TempDir()
+	paths := testPaths(root)
+	store := NewStore(paths)
+	if err := os.MkdirAll(paths.ConfigDir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	legacy := []byte("[ivoai]\nversion=1\n[orchestration]\nenabled=true\nprovider_execution=false\n")
+	if err := os.WriteFile(paths.Config, legacy, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	value, err := store.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if value.Orchestration.DefaultMode != "direct" || value.Orchestration.PrimaryExecutor != "codex" || value.Orchestration.ReviewExecutor != "claude" || value.Orchestration.MaxWorkers != 2 {
+		t.Fatalf("legacy migration=%+v", value.Orchestration)
+	}
+	value.Orchestration.ProviderExecution = true
+	if err := store.Save(value); err == nil {
+		t.Fatal("provider execution was persisted")
+	}
+	value.Orchestration.ProviderExecution = false
+	value.Orchestration.MaxWorkers = 4
+	if err := store.Save(value); err == nil {
+		t.Fatal("worker limit above hard bound was persisted")
+	}
+}
