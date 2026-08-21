@@ -5,7 +5,7 @@ go 1.27.0
 require (
 	github.com/modelcontextprotocol/go-sdk v1.7.0
 	github.com/pelletier/go-toml/v2 v2.2.4
-	golang.org/x/sys v0.41.0
+	golang.org/x/sys v0.47.0
 	golang.org/x/term v0.34.0
 )
 
