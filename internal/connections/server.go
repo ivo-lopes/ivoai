@@ -20,6 +20,12 @@ import (
 const ProtocolVersion = 1
 const maxResponse = 1 << 20
 
+const (
+	enrollmentAuthorizationScheme = "Ivoai-Enrollment "
+	enrollmentClientNameHeader    = "X-Ivoai-Client-Name"
+	enrollmentScopesHeader        = "X-Ivoai-Requested-Scopes"
+)
+
 type Discovery struct {
 	ProtocolVersion     int             `json:"protocol_version"`
 	ServerVersion       string          `json:"server_version"`
@@ -256,7 +262,13 @@ func (s ServerConnector) enroll(ctx context.Context, base *url.URL, endpoint, co
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
-	req.Header.Set("Authorization", "Ivoai-Enrollment "+code)
+	req.Header.Set("Authorization", enrollmentAuthorizationScheme+code)
+	// Repeat non-secret enrollment metadata in headers. Some reverse proxies
+	// apply request-body inspection rules that can discard a small JSON body;
+	// the gateway treats these explicit headers as the authoritative transport
+	// while retaining the JSON body for compatibility with older servers.
+	req.Header.Set(enrollmentClientNameHeader, clientName)
+	req.Header.Set(enrollmentScopesHeader, strings.Join([]string{"context:read", "memory:read", "memory:write", "status:read", "doctor:read", "connector:read"}, ","))
 	resp, err := s.Client.Do(req)
 	if err != nil {
 		return enrollmentResponse{}, fmt.Errorf("enrollment request: %w", err)

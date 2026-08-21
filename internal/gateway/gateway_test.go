@@ -233,3 +233,38 @@ func TestEnrollmentAuditExcludesSecretsAndCorrelatesRejection(t *testing.T) {
 		t.Fatal("audit event exposed enrollment secret")
 	}
 }
+
+func TestEnrollmentAcceptsProxyResilientHeadersWithoutBody(t *testing.T) {
+	contextService, err := contextsvc.NewService(contextsvc.DeterministicEmbedder{DimensionsN: 8}, contextsvc.NewMemoryStore(), contextsvc.NewMemoryCatalog())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := contextService.Initialize(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	store := enrollment.NewStore(filepath.Join(t.TempDir(), "state.json"))
+	created, err := store.Create(time.Minute, []enrollment.Scope{enrollment.ScopeContextRead, enrollment.ScopeDoctorRead})
+	if err != nil {
+		t.Fatal(err)
+	}
+	g, err := New(Config{ServerVersion: "test", Context: contextService, Enrollments: store})
+	if err != nil {
+		t.Fatal(err)
+	}
+	request := httptest.NewRequest(http.MethodPost, "/v1/enroll", nil)
+	request.Header.Set("Authorization", enrollmentAuthorizationScheme+created.Code)
+	request.Header.Set(enrollmentClientNameHeader, "host:proxy-test")
+	request.Header.Set(enrollmentScopesHeader, "context:read, doctor:read")
+	response := httptest.NewRecorder()
+	g.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusCreated {
+		t.Fatalf("status = %d body = %s", response.Code, response.Body.String())
+	}
+	var credential enrollment.ClientCredential
+	if err := json.NewDecoder(response.Body).Decode(&credential); err != nil {
+		t.Fatal(err)
+	}
+	if credential.ClientID == "" || len(credential.Scopes) != 2 {
+		t.Fatalf("unexpected credential: %#v", credential)
+	}
+}

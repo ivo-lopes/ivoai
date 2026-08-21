@@ -15,6 +15,12 @@ import (
 
 const ProtocolVersion = 1
 
+const (
+	enrollmentAuthorizationScheme = "Ivoai-Enrollment "
+	enrollmentClientNameHeader    = "X-Ivoai-Client-Name"
+	enrollmentScopesHeader        = "X-Ivoai-Requested-Scopes"
+)
+
 type Config struct {
 	ServerVersion   string
 	PublicBaseURL   string
@@ -160,23 +166,42 @@ func (g *Gateway) enroll(w http.ResponseWriter, r *http.Request) {
 		ClientName      string   `json:"client_name"`
 		RequestedScopes []string `json:"requested_scopes,omitempty"`
 	}
-	r.Body = http.MaxBytesReader(w, r.Body, 64<<10)
-	decoder := json.NewDecoder(r.Body)
-	decoder.DisallowUnknownFields()
-	if err := decoder.Decode(&request); err != nil || request.ClientName == "" {
-		g.auditEnrollment(request.Code, r.RemoteAddr, false, "invalid_request")
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "valid enrollment code and client name are required"})
-		return
-	}
-	const enrollmentScheme = "Ivoai-Enrollment "
 	header := r.Header.Get("Authorization")
+	headerClientName := strings.TrimSpace(r.Header.Get(enrollmentClientNameHeader))
+	if headerClientName != "" {
+		// Header metadata is authoritative for the proxy-resilient transport.
+		// The JSON body remains present only so newer clients can enroll against
+		// older gateways. Neither metadata header carries a secret.
+		request.ClientName = headerClientName
+		scopes := strings.TrimSpace(r.Header.Get(enrollmentScopesHeader))
+		if scopes != "" {
+			for _, scope := range strings.Split(scopes, ",") {
+				scope = strings.TrimSpace(scope)
+				if scope == "" {
+					g.auditEnrollment("", r.RemoteAddr, false, "invalid_request")
+					writeJSON(w, http.StatusBadRequest, map[string]string{"error": "valid enrollment code and client name are required"})
+					return
+				}
+				request.RequestedScopes = append(request.RequestedScopes, scope)
+			}
+		}
+	} else {
+		r.Body = http.MaxBytesReader(w, r.Body, 64<<10)
+		decoder := json.NewDecoder(r.Body)
+		decoder.DisallowUnknownFields()
+		if err := decoder.Decode(&request); err != nil || request.ClientName == "" {
+			g.auditEnrollment(request.Code, r.RemoteAddr, false, "invalid_request")
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "valid enrollment code and client name are required"})
+			return
+		}
+	}
 	if header != "" {
-		if request.Code != "" || !strings.HasPrefix(header, enrollmentScheme) || strings.ContainsAny(header, "\r\n") {
+		if request.Code != "" || !strings.HasPrefix(header, enrollmentAuthorizationScheme) || strings.ContainsAny(header, "\r\n") {
 			g.auditEnrollment(request.Code, r.RemoteAddr, false, "ambiguous_or_invalid_transport")
 			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "valid enrollment code and client name are required"})
 			return
 		}
-		request.Code = strings.TrimPrefix(header, enrollmentScheme)
+		request.Code = strings.TrimPrefix(header, enrollmentAuthorizationScheme)
 	}
 	if request.Code == "" {
 		g.auditEnrollment(request.Code, r.RemoteAddr, false, "missing_code")

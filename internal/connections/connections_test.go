@@ -117,7 +117,7 @@ func TestServerEnrollmentAndOneTimeCode(t *testing.T) {
 			json.NewDecoder(r.Body).Decode(&request)
 			mu.Lock()
 			defer mu.Unlock()
-			if request.Code != "" || r.Header.Get("Authorization") != "Ivoai-Enrollment "+code || used {
+			if request.Code != "" || r.Header.Get("Authorization") != "Ivoai-Enrollment "+code || r.Header.Get(enrollmentClientNameHeader) != "host:test" || !strings.Contains(r.Header.Get(enrollmentScopesHeader), "context:read") || used {
 				http.Error(w, "refused", http.StatusUnauthorized)
 				return
 			}
