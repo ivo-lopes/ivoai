@@ -1,6 +1,6 @@
 # ivoai architecture
 
-Status: implementation baseline for v0.1.0. Decisions and upstream data were
+Status: implementation baseline for v0.4.0. Decisions and upstream data were
 validated on 2026-08-20. Exact pins live in `manifest/components.yaml`; this
 document explains why they exist and how the pieces fit together.
 
@@ -42,6 +42,24 @@ ivoai CLI/wizard                       one public HTTPS origin
                                          |     `-- Qdrant (internal)
                                          `-- ai-memory (internal)
 ```
+
+## Automatic quota-aware control plane
+
+`ivoai auto` adds a supervisor above the existing session control plane. The selected
+official Codex or Claude TUI remains planner, primary, conversation owner, and result
+consolidator. A standalone quota manager gates the initial primary and every worker;
+Ruflo remains a provider-free ephemeral lifecycle coordinator. Codex quota comes
+from the official app-server JSON-RPC method, while Claude quota comes from a
+session-local structured statusline payload. Context-window pressure is modeled
+separately from subscription quota.
+
+The supervisor owns process identity and bounded failover. It persists only session
+metadata, normalized quota snapshots, and secret-free checkpoints. On a confirmed
+hard limit it reaps the primary process group, re-probes the alternate, reads a
+bounded worktree summary without changing files, and opens the alternate official
+TUI with the handoff. A two-failover ceiling prevents ping-pong loops. See
+[Automatic orchestration](auto-orchestration.md) and
+[Subscription quota routing](quota-routing.md).
 
 Only the gateway is externally reachable. Qdrant, the embedding runtime, ai-memory
 administration, and service management stay on a private Compose network or loopback

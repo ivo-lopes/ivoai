@@ -23,9 +23,11 @@ ChatGPT Web, and Claude Web.
 ```text
 Desktop / notebook                         Private Linux server
 
-ivoai menu ── Session Control ── Codex/Claude   HTTPS gateway
-    │          ├── Headroom / direct fallback    ├── OAuth + Web MCP
-    │          └── safe Ruflo swarm (optional)   │
+ivoai auto ── quota/capability gate ── Codex/Claude TUI
+    │          ├── Headroom / direct fallback    │
+    │          └── safe Ruflo swarm + workers    │
+ivoai menu ── Session Control                   HTTPS gateway
+    │                                            ├── OAuth + Web MCP
     │ HTTPS + scoped credential                 ├── context/RAG ── Qdrant
     └───────────────────────────────────────────└── ai-memory
 ```
@@ -59,6 +61,21 @@ ivoai session start --executor codex --mode direct
 ivoai session start --executor codex --mode orchestrated
 ivoai monitor --watch
 ```
+
+For the quota-aware conversational mode, run:
+
+```sh
+ivoai auto                         # choose the primary; Codex is the default
+ivoai auto --planner codex         # official Codex TUI
+ivoai auto --planner claude        # official Claude Code TUI
+```
+
+The selected official client remains the conversation owner, planner, and primary.
+Before opening it, ivoai reads subscription telemetry through Codex app-server and
+Claude's session-local structured statusline, then routes around a hard exhausted
+provider. The same gate runs before every worker. During a session, a hard limit can
+trigger a bounded checkpoint/handoff to the other official TUI. Unknown telemetry
+is displayed as `N/A / not exposed`; it is never treated as zero or invented.
 
 Orchestrated mode proves a real safe Ruflo swarm before opening the official primary
 client. Ruflo records only ephemeral lifecycle metadata; official Codex/Claude
@@ -130,6 +147,7 @@ ivoai update                 # explicit, configuration-preserving update
 ivoai project init           # optional project-specific identity
 ivoai session list           # non-sensitive session metadata
 ivoai monitor --watch        # primary, swarm, workers, services
+ivoai auto --planner codex   # automatic quota-aware conversation
 ivoai server status          # local server services
 ivoai server backup          # authoritative data backup
 ```
@@ -147,6 +165,8 @@ execution.
 - [Architecture](docs/architecture.md)
 - [Client guide](docs/client.md)
 - [Direct and orchestrated sessions](docs/orchestration.md)
+- [Automatic orchestration](docs/auto-orchestration.md)
+- [Quota routing](docs/quota-routing.md)
 - [Server and reverse proxy](docs/server.md)
 - [Connections and Web MCP](docs/connections.md)
 - [Security model](docs/security.md)

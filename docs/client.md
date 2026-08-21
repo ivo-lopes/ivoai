@@ -116,6 +116,25 @@ Model output is labelled `runtime_verified`, `argument`, `configured`, or `unkno
 the last value is intentionally used rather than guessing. See
 [Session control and orchestration](orchestration.md).
 
+## Automatic conversation mode
+
+`ivoai auto` shows cached weekly/monthly availability, asks which official client
+will own the conversation, and defaults to Codex. `--planner codex` and
+`--planner claude` make this selection non-interactive. The selected client opens in
+its normal official TUI; ivoai does not emulate a chat UI and does not capture its
+transcript.
+
+Automatic mode starts the same provider-free Ruflo control plane used by explicit
+orchestrated sessions, injects the session-local orchestration MCP, and adds
+quota-aware worker routing and bounded continuity checkpoints. Run
+`ivoai monitor --watch` in a second terminal to see the current primary, model
+provenance, failover count, worker state, quota source/freshness/reset, and service
+health. Weekly and monthly rows are always present; unsupported values remain
+`N/A / not exposed`.
+
+See [Automatic orchestration](auto-orchestration.md) and
+[Quota routing](quota-routing.md).
+
 ## Project identity
 
 ivoai is host-first. Outside a project, memory uses a stable normalized host identity

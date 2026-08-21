@@ -86,3 +86,24 @@ client certificate validation. Ruflo direct provider execution is intentionally
 disabled in the default profile until it works without separate PAYG credentials.
 
 The design and operational controls are detailed in [docs/security.md](docs/security.md).
+
+## Automatic orchestration and quota telemetry
+
+Automatic routing uses only official subscription clients. Codex telemetry is read
+through its documented app-server protocol; Claude telemetry is received through a
+private session-local structured statusline. ivoai never extracts provider OAuth
+credentials, reuses internal tokens, scrapes authenticated Web UI, or enables a PAYG
+fallback. Known provider-key and base-URL environment variables are stripped from
+quota probes and workers. Ruflo provider execution remains disabled.
+
+Quota inputs are untrusted. Payloads, lines, stderr, metadata, and caches are bounded;
+terminal control characters, secret-shaped fields, symlinks, invalid percentages,
+and unknown providers are rejected or redacted. Concurrent cache writes are locked.
+Unknown telemetry is not interpreted as exhausted. Network errors do not cause
+automatic quota failover.
+
+Automatic checkpoints reject credentials and complete prompts/responses. Failover
+handoffs include only this bounded checkpoint and bounded Git status/diff statistics;
+they never run destructive Git cleanup. PID plus Linux process-start identity guards
+signal delivery, cancelled primary processes are reaped, and a two-failover ceiling
+prevents Codex/Claude ping-pong.

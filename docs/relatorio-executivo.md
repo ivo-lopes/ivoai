@@ -1,5 +1,19 @@
 # Relatório executivo do ivoai
 
+## Orquestração automática
+
+O comando `ivoai auto` permite escolher Codex ou Claude Code para conduzir a
+conversa na interface oficial já conhecida. Codex é o padrão. O ivoai acompanha os
+limites expostos pelas assinaturas, evita encaminhar trabalho para um provedor com
+limite confirmado e pode transferir a continuidade para o outro cliente. A troca
+preserva os arquivos em andamento e usa um resumo seguro do último ponto confirmado;
+nenhuma chave de API paga é solicitada ou ativada como alternativa.
+
+Uma segunda janela com `ivoai monitor --watch` mostra quem está conduzindo a
+conversa, workers, saúde dos serviços, limites semanal/mensal, origem e atualização
+dos dados. Quando uma plataforma não fornece determinada métrica, o produto informa
+`N/A / not exposed` em vez de inventar um percentual.
+
 ## Visão geral
 
 ivoai é uma plataforma pessoal para instalar, conectar e operar ferramentas de

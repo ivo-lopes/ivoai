@@ -1,5 +1,24 @@
 # Relatório técnico do ivoai
 
+## Orquestração automática quota-aware (v0.4.0)
+
+`ivoai auto` adiciona um supervisor ao Session Control Plane. O primary selecionado
+continua sendo a TUI oficial do Codex ou Claude Code, simultaneamente planner,
+conversation owner e consolidador. O Quota Manager usa
+`account/rateLimits/read` no Codex app-server e o payload estruturado de `statusLine`
+do Claude, normaliza context/session/weekly/monthly/model-scoped sem confundi-los e
+persiste somente telemetria não sensível em cache privado, atômico e bloqueado por
+arquivo.
+
+O gate é aplicado no startup, periodicamente no primary, antes e depois de cada
+worker e antes de failover. Ruflo mantém `provider_execution=false` e registra apenas
+IDs opacos. Checkpoints locais limitados e livres de segredos dão a fronteira
+imediata do handoff; hooks do ai-memory mantêm continuidade operacional durável. O
+supervisor preserva o worktree, sinaliza e aguarda o grupo de processo correto e
+limita a dois failovers consecutivos. Métricas ausentes continuam desconhecidas e
+erros de rede não são promovidos a exaustão. Detalhes e contratos estão em
+`docs/auto-orchestration.md` e `docs/quota-routing.md`.
+
 ## 1. Objetivo e princípios
 
 ivoai é um único binário Go com modos client e server. O cliente é host-first: Git e

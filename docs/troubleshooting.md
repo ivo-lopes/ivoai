@@ -1,5 +1,39 @@
 # Troubleshooting
 
+## Automatic mode does not start the selected client
+
+Run `ivoai doctor` and inspect the **Automatic Orchestration** section. A provider
+must use first-party subscription authentication; PAYG API-key sessions are not an
+automatic-routing fallback. `ivoai status` intentionally reads cached quota only,
+while Doctor performs the active probes.
+
+If Codex shows a probe error, confirm that the managed client supports
+`codex app-server --stdio` and that `codex login status` succeeds. If Claude is
+authenticated but weekly/monthly are `N/A`, start one automatic Claude conversation
+and complete a turn so its official statusline can publish telemetry. Monthly may
+remain `N/A / not exposed` because the supported Claude client does not promise that
+field.
+
+## Automatic session switched providers
+
+Use `ivoai monitor --watch` or `ivoai session show --json <session-id>`. A recorded
+failover includes current primary, time, and a non-secret reason. Hard quota triggers
+fallback; a network error does not. The alternate receives the last confirmed
+checkpoint and bounded Git status/diff-stat, but ivoai never resets, checks out, or
+cleans the working tree.
+
+If both providers are exhausted, the session stops in `BLOCKED` or
+`WAITING_FOR_QUOTA`; no worker and no PAYG provider is started. Wait for the displayed
+reset, authenticate an eligible subscription client, then start a new automatic
+session. The supervisor refuses more than two consecutive automatic failovers.
+
+## Claude statusline customization
+
+Automatic mode passes a private `--settings` file only to the launched Claude
+process. It does not edit the user's persistent statusline. The automatic statusline
+is needed for structured model/context/rate-limit capture. Outside that process the
+user's normal Claude settings remain unchanged.
+
 Start with:
 
 ```sh

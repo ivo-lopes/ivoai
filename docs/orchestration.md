@@ -1,6 +1,6 @@
 # Session control and orchestration
 
-ivoai has two explicit session modes. Neither mode adds a pay-as-you-go provider
+ivoai has direct, explicit orchestrated, and automatic session modes. None adds a pay-as-you-go provider
 credential, and neither replaces the official Codex or Claude Code interface.
 
 ## Direct mode
@@ -57,6 +57,33 @@ The bridge offers:
   worker;
 - `orchestration_result` — an in-memory bounded result;
 - `orchestration_cancel` — cancellation of a worker owned by the session.
+
+In automatic sessions it additionally offers read-only `orchestration_quota` and,
+when enabled, `orchestration_checkpoint`. The quota manager, not the model, has the
+final authority over the provider used for each worker.
+
+## Automatic mode
+
+```sh
+ivoai auto
+ivoai auto --planner codex
+ivoai auto --planner claude
+```
+
+Automatic mode keeps the chosen official Codex or Claude Code TUI as planner,
+primary, user interface, and result consolidator. It verifies both subscription
+clients before starting Ruflo, automatically uses the alternate when the requested
+provider has a confirmed hard limit, refreshes quota before and after worker work,
+and monitors the active primary. A hard mid-session limit stops only the matching
+process group, preserves the worktree, and starts the alternate with a bounded
+checkpoint plus Git status/diff-stat summary. At most two consecutive automatic
+failovers are accepted; a successful checkpoint resets that counter.
+
+Codex receives session instructions through an official process-scoped config
+override. Claude receives them through `--append-system-prompt-file` and a private
+session-only `--settings` file that captures structured statusline telemetry. No
+permanent third-party configuration is overwritten. Details are in
+[auto-orchestration.md](auto-orchestration.md).
 
 Delegation tasks and results never enter Ruflo or the session JSON. Ruflo receives
 only opaque session/worker IDs through provider-free task lifecycle commands. The
@@ -126,6 +153,22 @@ default_mode = "direct"
 primary_executor = "codex"
 review_executor = "claude"
 max_workers = 2
+
+[orchestration.auto]
+enabled = true
+default_planner = "codex"
+automatic_failover = true
+checkpoint_enabled = true
+quota_refresh_seconds = 45
+max_workers = 2
+
+[orchestration.auto.quota]
+enabled = true
+show_weekly = true
+show_monthly = true
+show_session = true
+show_context = true
+show_model_scoped = true
 ```
 
 `provider_execution=true`, unknown executors, unknown modes and worker limits outside
