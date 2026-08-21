@@ -1,5 +1,262 @@
 # Troubleshooting
 
+Start with:
+
+```sh
+ivoai status
+ivoai doctor
+```
+
+On a server, use:
+
+```sh
+sudo ivoai server doctor
+sudo ivoai server status
+```
+
+`ivoai doctor --json` is suitable for automation and never includes secret values.
+Do not bypass checksum, TLS, ownership, symlink, or credential checks to make an
+installation continue. If a host was installed before one of the fixes below, update
+to a release that contains the fix or reinstall from an authenticated source checkout,
+then rerun the idempotent setup.
+
+## Installation and first server setup
+
+This section records failure modes observed while bringing clean and previously
+configured Linux hosts through the real ivoai installation flow. Prefer these checks
+before manually editing generated Compose or systemd files.
+
+### Public installer cannot download or verify ivoai
+
+The public installer downloads a release archive plus `checksums.txt` and refuses to
+install an asset whose checksum does not match. If `Download ivoai release` returns a
+404, verify that a GitHub Release exists for the requested version and contains both
+the platform archive and checksum file. Do not disable verification or substitute an
+unreviewed binary.
+
+For an authenticated source checkout, run:
+
+```sh
+./install.sh
+```
+
+The source installer uses a compatible system Go when available. If Go is absent or
+older than the version declared in `go.mod`, ivoai downloads the pinned official Go
+toolchain for the current architecture, verifies its SHA-256, uses temporary build and
+module caches, and removes the toolchain afterward. A checksum mismatch, unsupported
+architecture, or `no reviewed Go toolchain is pinned` error should be treated as a
+hard stop rather than worked around.
+
+If the destination already contains an unrelated `ivoai` executable or symlink, the
+installer intentionally refuses to replace it. Move or remove that path only after
+confirming it is not a third-party or separately managed installation.
+
+### Debian 12 has Docker but no `docker compose`
+
+Debian 12 repositories may provide `docker.io` without Compose v2. This is supported.
+Rerun:
+
+```sh
+sudo ivoai setup --mode server
+```
+
+ivoai installs the pinned, checksum-verified official Docker Compose CLI plugin at
+`/usr/local/lib/docker/cli-plugins/docker-compose` when no working Compose v2 is
+available. The download is roughly 49 MiB, has a bounded 30-minute window, and reports
+received bytes every 10 seconds.
+
+If setup reports a pre-existing incompatible plugin at that path, ivoai preserves it
+instead of overwriting third-party software. Inspect the file, move it aside only if
+you intentionally want ivoai to manage that location, then rerun setup. Interrupting
+the managed download is safe; the incomplete temporary file is removed.
+
+### Server setup appears to hang while dependencies initialize
+
+A first clean server setup may spend several minutes inside:
+
+```text
+Starting server dependencies; waiting for container health checks...
+```
+
+This is not necessarily a hang. Setup periodically prints elapsed time and the safe
+inspection command:
+
+```sh
+sudo docker compose -f /etc/ivoai/compose.yaml ps
+```
+
+For additional diagnostics:
+
+```sh
+sudo ivoai server logs ivoai-dependencies.service
+sudo docker compose -f /etc/ivoai/compose.yaml logs --tail=100 qdrant embeddings ai-memory
+```
+
+Do not repeatedly restart the stack while the first embedding model is still being
+downloaded; doing so restarts the health window and can make a slow bootstrap look
+like a persistent failure.
+
+### First embedding initialization takes more than five minutes
+
+The pinned local embedding model is downloaded on the first clean setup. CPU-only
+hosts and slow Internet links can exceed five minutes before Text Embeddings Inference
+becomes healthy. Current releases give that container a ten-minute startup grace
+period; successful health probes end the grace period immediately. Later starts reuse
+the persistent model cache.
+
+If the container is still unhealthy after the grace period, inspect:
+
+```sh
+sudo docker compose -f /etc/ivoai/compose.yaml ps embeddings
+sudo docker compose -f /etc/ivoai/compose.yaml logs --tail=150 embeddings
+```
+
+A download or DNS/connectivity error is different from slow initialization and should
+be diagnosed as a network problem rather than by increasing health timeouts again.
+
+### Embeddings cannot download the model on a clean host
+
+The embeddings container intentionally has a temporary egress network only for model
+bootstrap. It is attached to the internal network, the loopback-publication network,
+and `ivoai-model-download`; the model-download network is given the preferred gateway
+while the model is being fetched. Once embeddings are healthy, systemd disconnects
+that download route.
+
+If logs show that the model registry is unreachable during first bootstrap, inspect
+the container networks before changing firewall policy:
+
+```sh
+sudo docker inspect ivoai-embeddings --format '{{json .NetworkSettings.Networks}}'
+sudo docker network inspect ivoai-model-download
+```
+
+On an up-to-date installation the download network must be attached during bootstrap.
+Do not permanently add broad Internet egress to `ivoai-internal` as a workaround.
+
+### Rerunning setup fails with `too many levels of symbolic links`
+
+Older setup logic recursively changed ownership inside application-created model
+caches. Hugging Face caches legitimately use symlinks, which could produce errors such
+as:
+
+```text
+open service-owned entry config.json: too many levels of symbolic links
+```
+
+Current setup changes ownership only on managed mount roots and does not recursively
+walk normal application caches. Update/reinstall ivoai and rerun the idempotent setup.
+Do not replace cache symlinks with regular files or use a blanket recursive `chown` as
+a workaround.
+
+### Qdrant fails with permission errors under `/qdrant`
+
+Older layouts could leave the non-root Qdrant process unable to create its
+initialization marker or temporary snapshot data. Typical paths include:
+
+```text
+/qdrant/.qdrant-initialized
+/qdrant/snapshots/tmp
+```
+
+Current setup uses separate service-owned host mounts for storage, snapshot workspace,
+and initialization state while keeping the container non-root. Update/reinstall ivoai
+and rerun server setup rather than making the whole container filesystem writable.
+
+### Containers are healthy but Context reports `127.0.0.1:6333: connection refused`
+
+Docker can omit or invalidate host port publication when containers are attached only
+to an internal network, and disconnecting the network used for publication can remove
+the effective loopback binding. Current releases keep `ivoai-host-publish` attached
+with IP masquerading disabled; only the temporary model-download route is disconnected
+after embeddings become healthy.
+
+Check the local bindings:
+
+```sh
+sudo ss -ltnp | grep -E ':(6333|8080|49374|7744)\b'
+sudo docker network inspect ivoai-host-publish
+sudo docker compose -f /etc/ivoai/compose.yaml ps
+```
+
+Do not manually disconnect `ivoai-host-publish`; it is required for the host-side
+loopback mappings while still providing no backend masqueraded egress.
+
+### ai-memory is reported unhealthy although its container is running
+
+ai-memory does not expose the generic `/health` endpoint that older diagnostics
+expected. Current ivoai health checks authenticate to the ai-memory MCP endpoint and
+perform a bounded `tools/list` request. The gateway also rewrites the upstream Host
+header and replaces the client credential with the private backend credential before
+proxying allowed memory routes.
+
+Use:
+
+```sh
+sudo ivoai server memory status
+sudo ivoai server doctor
+sudo docker compose -f /etc/ivoai/compose.yaml ps ai-memory
+sudo ivoai server logs ivoai-gateway.service
+```
+
+If an older installation reports ai-memory unavailable while the container is healthy,
+update/reinstall before changing ai-memory authentication or Host allowlists manually.
+Context and the basic agents remain independently usable while memory is degraded.
+
+### Reverse proxy returns HTTP 502 after server setup
+
+A `502` means the reverse proxy cannot reach the ivoai gateway. First make local
+health pass:
+
+```sh
+sudo ivoai server doctor
+```
+
+The gateway listens on loopback by default, which is correct only for a reverse proxy
+running on the same host. For a proxy on another host or container, explicitly bind
+the gateway to the server's private address and trust only the proxy's source CIDR:
+
+```sh
+sudo ivoai server gateway configure \
+  --public-url https://ai.example.com \
+  --listen 192.0.2.10:7744 \
+  --trusted-proxy 192.0.2.20/32
+```
+
+Use the real private addresses. Do not use `0.0.0.0/0` as a trusted proxy range.
+Requests in trusted-proxy mode must also carry `X-Forwarded-Proto: https`.
+
+### Enrollment works locally but is rejected through a proxy
+
+Enrollment rejection responses are deliberately uniform. Current clients transport
+the one-time code in a dedicated Authorization scheme and carry non-secret client
+metadata separately, making enrollment resilient to proxies that rewrite request
+bodies. The gateway accepts the legacy body form only for rolling compatibility and
+rejects ambiguous requests that provide both transports.
+
+Inspect only the safe gateway audit metadata:
+
+```sh
+sudo ivoai server logs ivoai-gateway.service
+```
+
+The audit can distinguish malformed or mismatched enrollment input, unauthorized
+scopes, state availability problems, or a request routed to a different gateway
+instance without logging the code, verifier, issued client token, or client name. If
+the one-time code was consumed or expired, create a new one rather than attempting to
+recover or reuse it.
+
+### Restore finishes but services restart with permission errors
+
+A validated backup is restored as root-owned regular files. Current releases reapply
+the dedicated service ownership to the restored context, corpus, and memory trees
+before restarting the stack, while normal setup still avoids recursively traversing
+application caches.
+
+If a host restored with an older build starts failing on read/write permissions,
+upgrade before repeating the restore. Do not use `chown -R /var/lib/ivoai`: model and
+application caches can contain legitimate symlinks, and broad ownership changes weaken
+the separation between gateway, context, and dependency services.
+
 ## Interactive menu rendering
 
 - Use `NO_COLOR=1 ivoai` when ANSI colors are not supported.
@@ -13,15 +270,6 @@
   `LINES` values.
 - Very short terminals intentionally hide descriptions and use a scrolling viewport;
   the position indicator shows undisplayed items.
-
-Start with:
-
-```sh
-ivoai status
-ivoai doctor
-```
-
-`ivoai doctor --json` is suitable for automation and never includes secret values.
 
 ## Agent is installed but not connected
 
@@ -47,56 +295,14 @@ updating either side; ivoai will not persist a partially compatible connection.
 The error identifies the component and leaves other components intact. Confirm the
 OS/architecture is listed in the manifest, that HTTPS access to the upstream release
 host is available, and rerun `ivoai setup`. Repeated setup does not duplicate hooks or
-replace pre-existing tools.
+replace pre-existing tools. For installer, Docker, Qdrant, embeddings, and first-server
+failures, use the installation checklist above before making manual changes.
 
 ## Server services do not start
 
 Run `ivoai server doctor`, then `ivoai server logs`. Verify Docker and Compose for
 dependencies and use `systemctl status ivoai-gateway ivoai-context`. Diagnostics
 redact authentication material, but review output before sharing it externally.
-
-On Debian 12, `docker-compose-v2` and `docker-compose-plugin` may be absent from
-the configured repositories; this is supported. Re-run `ivoai setup --mode server`:
-ivoai installs the pinned, checksum-verified official Compose CLI plugin. If setup
-reports a pre-existing incompatible plugin at
-`/usr/local/lib/docker/cli-plugins/docker-compose`, ivoai preserves it instead
-of overwriting third-party software; move that file aside deliberately, then retry.
-During this approximately 49 MB download, setup reports received bytes every 10
-seconds. Interrupting the process is safe: the incomplete temporary file is removed,
-and the idempotent setup can be run again.
-
-If an older setup reports `open service-owned entry config.json: too many levels of
-symbolic links`, update and reinstall ivoai before rerunning setup. Hugging Face model
-caches intentionally use symlinks; current ivoai preserves them and does not recursively
-change ownership inside container-managed data.
-
-If Qdrant reports permission errors for `/qdrant/.qdrant-initialized` or
-`/qdrant/snapshots/tmp`, update and reinstall ivoai. Current setup mounts separate
-service-owned init and snapshot paths while keeping the image root filesystem
-non-writable and the Qdrant process non-root.
-
-If containers are healthy but Context reports `127.0.0.1:6333: connection refused`,
-update and reinstall ivoai. Some Docker versions silently omit published ports for a
-container attached only to an internal network. Current setup establishes all three
-loopback bindings through a transient network, verifies service stability, and then
-removes dependency egress.
-
-An HTTP 502 from a reverse proxy means the gateway is not reachable from that proxy.
-First make `ivoai server doctor` pass. For a proxy on another host, configure the
-gateway with its private listen address and the proxy's narrow source CIDR using
-`--trusted-proxy`; loopback is reachable only from the ivoai server itself.
-
-Enrollment rejection responses remain deliberately uniform. The gateway journal
-records only safe correlation metadata: enrollment ID, input length, format validity,
-proxy peer, result, and broad rejection reason. It never records the enrollment code,
-its verifier, a client token, or the client name. Use
-`ivoai server logs ivoai-gateway.service` to distinguish a malformed/mismatched code,
-an unauthorized scope, or a request routed to another gateway instance.
-
-The pinned local embedding model is downloaded during the first clean setup. On a
-CPU-only host or slower connection this can take more than five minutes. Its health
-check has a ten-minute startup grace period, while setup continues to print elapsed
-progress. Later starts reuse the persistent model cache.
 
 ## ChatGPT or Claude Web cannot connect to `/mcp`
 
