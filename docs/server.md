@@ -204,4 +204,6 @@ rebuildable. Restore validates bounded entries, rejects links and traversal, exc
 secrets, and writes regular files atomically. The CLI automatically stops the managed
 gateway, context, and dependency services around each backup/restore operation and
 starts them again afterward. Restore merges validated files into the managed roots
-and does not delete stale files that are absent from the archive.
+and does not delete stale files that are absent from the archive. Before restart it
+reapplies dedicated service ownership only to the validated restored trees, without
+traversing normal application caches.

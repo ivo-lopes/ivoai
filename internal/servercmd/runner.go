@@ -996,8 +996,43 @@ func (r *runner) restore(ctx context.Context, layout server.Layout, manager serv
 		if err := server.Restore(layout, *input); err != nil {
 			return err
 		}
+		if err := ensureRestoredServiceOwnership(layout); err != nil {
+			return err
+		}
 		return ensureServiceOwnership(layout)
 	})
+}
+
+// ensureRestoredServiceOwnership is intentionally separate from idempotent setup.
+// A validated backup contains only directories and regular files, all freshly
+// written as root. Those restored trees can therefore be traversed safely, while
+// normal setup continues to avoid walking application-managed caches and symlinks.
+func ensureRestoredServiceOwnership(layout server.Layout) error {
+	containerUID, sharedGID, err := serviceAccountIDs("ivoai")
+	if err != nil {
+		return err
+	}
+	contextUID, _, err := serviceAccountIDs("ivoai-context")
+	if err != nil {
+		return err
+	}
+	return applyRestoredServiceOwnership(layout, containerUID, sharedGID, contextUID)
+}
+
+func applyRestoredServiceOwnership(layout server.Layout, containerUID, sharedGID, contextUID int) error {
+	for _, owned := range []struct {
+		path string
+		uid  int
+	}{
+		{layout.ContextDir, contextUID},
+		{layout.CorpusDir, contextUID},
+		{layout.MemoryDir, containerUID},
+	} {
+		if err := secureChownTree(owned.path, owned.uid, sharedGID); err != nil {
+			return fmt.Errorf("restore service ownership for %s: %w", owned.path, err)
+		}
+	}
+	return nil
 }
 
 func (r *runner) withQuiescedServices(ctx context.Context, manager server.Manager, operation func() error) error {

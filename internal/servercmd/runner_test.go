@@ -150,6 +150,25 @@ func TestSecureChownTreeRefusesSymlinkEntries(t *testing.T) {
 	}
 }
 
+func TestApplyRestoredServiceOwnershipRejectsLinks(t *testing.T) {
+	layout := server.DefaultLayout(t.TempDir())
+	if err := layout.Ensure(); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(layout.MemoryDir, "page.json"), []byte("{}"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := applyRestoredServiceOwnership(layout, os.Getuid(), os.Getgid(), os.Getuid()); err != nil {
+		t.Fatalf("validated restored files were rejected: %v", err)
+	}
+	if err := os.Symlink("page.json", filepath.Join(layout.MemoryDir, "unsafe")); err != nil {
+		t.Fatal(err)
+	}
+	if err := applyRestoredServiceOwnership(layout, os.Getuid(), os.Getgid(), os.Getuid()); err == nil {
+		t.Fatal("restored ownership traversal accepted a symlink")
+	}
+}
+
 func TestManagedDataRootOwnershipPreservesApplicationSymlinks(t *testing.T) {
 	root := t.TempDir()
 	blobs := filepath.Join(root, "blobs")
