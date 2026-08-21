@@ -24,7 +24,16 @@ type Runtime struct {
 	HeadroomPath string
 }
 
+type Observation struct {
+	PID          int
+	HeadroomUsed bool
+}
+
 func (r Runtime) Launch(ctx context.Context, agent string, args []string, headroomEnabled bool) error {
+	return r.LaunchObserved(ctx, agent, args, headroomEnabled, nil)
+}
+
+func (r Runtime) LaunchObserved(ctx context.Context, agent string, args []string, headroomEnabled bool, observe func(Observation)) error {
 	if agent != "codex" && agent != "claude" {
 		return fmt.Errorf("unsupported agent %q", agent)
 	}
@@ -65,7 +74,11 @@ func (r Runtime) Launch(ctx context.Context, agent string, args []string, headro
 			}
 		}
 	}
-	err = runInteractive(ctx, command, commandArgs, environment, r.In, r.Out, r.Err)
+	err = runInteractive(ctx, command, commandArgs, environment, r.In, r.Out, r.Err, func(pid int) {
+		if observe != nil {
+			observe(Observation{PID: pid, HeadroomUsed: wrappedUsed})
+		}
+	})
 	var startErr *StartError
 	if wrappedUsed && errors.As(err, &startErr) {
 		if r.Err != nil {
@@ -74,12 +87,16 @@ func (r Runtime) Launch(ctx context.Context, agent string, args []string, headro
 		// Preserve agent-specific protections (notably Claude's managed-update
 		// guard) when the selected Headroom executable disappears between the
 		// successful preflight and process start.
-		return runInteractive(ctx, direct, args, environment, r.In, r.Out, r.Err)
+		return runInteractive(ctx, direct, args, environment, r.In, r.Out, r.Err, func(pid int) {
+			if observe != nil {
+				observe(Observation{PID: pid, HeadroomUsed: false})
+			}
+		})
 	}
 	return err
 }
 
-func runInteractive(ctx context.Context, command string, args, environment []string, in io.Reader, out, errOut io.Writer) error {
+func runInteractive(ctx context.Context, command string, args, environment []string, in io.Reader, out, errOut io.Writer, observe func(int)) error {
 	cmd := exec.CommandContext(ctx, command, args...)
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = in, out, errOut
 	if environment != nil {
@@ -88,6 +105,9 @@ func runInteractive(ctx context.Context, command string, args, environment []str
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 	if err := cmd.Start(); err != nil {
 		return &StartError{Err: err}
+	}
+	if observe != nil {
+		observe(cmd.Process.Pid)
 	}
 	signals := make(chan os.Signal, 4)
 	signal.Notify(signals, os.Interrupt, syscall.SIGTERM, syscall.SIGHUP)

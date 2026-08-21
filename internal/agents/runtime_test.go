@@ -5,6 +5,8 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/ivo-lopes/ivoai/internal/platform"
@@ -20,6 +22,35 @@ func TestLaunchFallsBackDirectWhenHeadroomUnavailable(t *testing.T) {
 	}
 	if _, err := os.Stat(marker); err != nil {
 		t.Fatal("direct agent did not run after Headroom preflight failure")
+	}
+}
+
+func TestDirectLaunchPreservesCWDArgumentsAndObservesPID(t *testing.T) {
+	root := t.TempDir()
+	marker := filepath.Join(root, "observation")
+	agent := writeExecutable(t, root, "codex", "#!/bin/sh\nprintf '%s\\n%s\\n' \"$PWD\" \"$*\" > \"$1\"\n")
+	previous, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.Chdir(previous) })
+	if err := os.Chdir(root); err != nil {
+		t.Fatal(err)
+	}
+	var observed Observation
+	runtime := Runtime{Runner: platform.ExecRunner{}, AgentPath: agent}
+	if err := runtime.LaunchObserved(context.Background(), "codex", []string{marker, "--model", "fixture-model"}, false, func(value Observation) { observed = value }); err != nil {
+		t.Fatal(err)
+	}
+	body, err := os.ReadFile(marker)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(body), root+"\n"+marker+" --model fixture-model") {
+		t.Fatalf("cwd/arguments not preserved: %q", body)
+	}
+	if observed.PID <= 0 || observed.HeadroomUsed {
+		t.Fatalf("observation = %+v (pid %s)", observed, strconv.Itoa(observed.PID))
 	}
 }
 
