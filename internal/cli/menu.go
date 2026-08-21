@@ -43,7 +43,8 @@ func PublicMenuActionIDs() []string {
 		"status", "doctor", "version", "setup", "update", "rollback", "uninstall",
 		"connect.list", "connect.chatgpt", "disconnect.chatgpt", "connect.claude", "disconnect.claude", "connect.server", "disconnect.server",
 		"mcp.list", "mcp.add", "mcp.remove", "launch.codex", "launch.claude", "memory.status", "memory.configure",
-		"project.status", "project.init", "config.show", "config.headroom", "config.memory", "config.ruflo",
+		"session.direct.codex", "session.direct.claude", "session.orchestrated.codex", "session.orchestrated.claude", "session.list", "session.monitor", "session.stop",
+		"project.status", "project.init", "config.show", "config.headroom", "config.memory", "config.ruflo", "config.session-mode", "config.primary", "config.reviewer", "config.workers",
 		"server.setup", "server.status", "server.doctor", "server.start", "server.stop", "server.restart", "server.logs",
 		"server.enrollment.create", "server.enrollment.list", "server.enrollment.revoke",
 		"server.web-access.create", "server.web-access.list", "server.web-access.revoke",
@@ -65,6 +66,7 @@ func menu(ctx context.Context, a *app.App) error {
 			{id: "maintenance", label: "Setup & Maintenance", description: "Install, repair, update, rollback, or uninstall", run: session.maintenance},
 			{id: "connections", label: "Connections", description: "ChatGPT, Claude, ivoai server, and external MCPs", run: session.connections},
 			{id: "agents", label: "Agents", description: "Launch Codex or Claude through the ivoai runtime", run: session.agents},
+			{id: "sessions", label: "Session Control", description: "Start observable direct or Ruflo-orchestrated sessions", run: session.sessions},
 			{id: "memory", label: "Memory", description: "Inspect or reconfigure persistent operational memory", run: session.memory},
 			{id: "project", label: "Project", description: "Host identity and optional project override", run: session.project},
 			{id: "configuration", label: "Configuration", description: "Headroom, ai-memory, and Ruflo safe settings", run: session.configuration},
@@ -132,6 +134,34 @@ func (s *menuSession) agents() (bool, error) {
 	})
 }
 
+func (s *menuSession) sessions() (bool, error) {
+	return s.loop("Session Control", []menuAction{
+		{id: "session.direct.codex", label: "Direct Session — Codex", description: "Official Codex runtime with session observability; Ruflo is not started", run: func() (bool, error) { return true, s.app.SessionStart(s.ctx, "codex", "direct", nil) }},
+		{id: "session.direct.claude", label: "Direct Session — Claude", description: "Official Claude runtime with session observability; Ruflo is not started", run: func() (bool, error) { return true, s.app.SessionStart(s.ctx, "claude", "direct", nil) }},
+		{id: "session.orchestrated.codex", label: "Orchestrated Session — Codex", description: "Safe Ruflo swarm with official Codex primary and bounded workers", run: func() (bool, error) { return true, s.app.SessionStart(s.ctx, "codex", "orchestrated", nil) }},
+		{id: "session.orchestrated.claude", label: "Orchestrated Session — Claude", description: "Safe Ruflo swarm with official Claude primary and bounded workers", run: func() (bool, error) { return true, s.app.SessionStart(s.ctx, "claude", "orchestrated", nil) }},
+		{id: "session.list", label: "List Sessions", description: "Show non-sensitive lifecycle metadata", run: s.simple(func() error { return runSession(s.ctx, s.app, []string{"list"}) })},
+		{id: "session.monitor", label: "Monitor Latest Session", description: "Show primary, swarm, workers, and service health", run: s.simple(func() error { return runMonitor(s.ctx, s.app, nil) })},
+		{id: "session.stop", label: "Stop Session", description: "Stop only processes whose PID identity matches the session", run: s.sessionStop},
+	})
+}
+
+func (s *menuSession) sessionStop() (bool, error) {
+	id, err := s.promptValidated("Session ID", false, "", func(value string) error {
+		if !strings.HasPrefix(value, "sess_") || len(value) != 37 {
+			return errors.New("invalid session ID")
+		}
+		return nil
+	})
+	if err != nil {
+		return false, err
+	}
+	if !s.confirm("STOP") {
+		return false, nil
+	}
+	return false, s.app.SessionStop(id)
+}
+
 func (s *menuSession) memory() (bool, error) {
 	return s.loop("Memory", []menuAction{
 		{id: "memory.status", label: "Memory Status", run: s.simple(func() error { return s.app.MemoryStatus(s.ctx) })},
@@ -153,7 +183,28 @@ func (s *menuSession) configuration() (bool, error) {
 		{id: "config.headroom", label: toggleLabel("Headroom", snapshot.HeadroomEnabled), run: s.simple(func() error { return s.app.ConfigSet("headroom.enabled", opposite(snapshot.HeadroomEnabled)) })},
 		{id: "config.memory", label: toggleLabel("ai-memory", snapshot.MemoryEnabled), run: s.simple(func() error { return s.app.ConfigSet("memory.enabled", opposite(snapshot.MemoryEnabled)) })},
 		{id: "config.ruflo", label: toggleLabel("Ruflo", snapshot.RufloEnabled), run: s.simple(func() error { return s.app.ConfigSet("orchestration.enabled", opposite(snapshot.RufloEnabled)) })},
+		{id: "config.session-mode", label: "Default Session Mode: " + strings.ToUpper(snapshot.DefaultMode), run: s.simple(func() error { return s.app.ConfigSet("orchestration.default_mode", otherMode(snapshot.DefaultMode)) })},
+		{id: "config.primary", label: "Primary Executor: " + strings.ToUpper(snapshot.PrimaryExecutor), run: s.simple(func() error {
+			return s.app.ConfigSet("orchestration.primary_executor", otherExecutor(snapshot.PrimaryExecutor))
+		})},
+		{id: "config.reviewer", label: "Review Executor: " + strings.ToUpper(snapshot.ReviewExecutor), run: s.simple(func() error {
+			return s.app.ConfigSet("orchestration.review_executor", otherExecutor(snapshot.ReviewExecutor))
+		})},
+		{id: "config.workers", label: fmt.Sprintf("Maximum Workers: %d", snapshot.MaxWorkers), run: s.maxWorkers},
 	})
+}
+
+func (s *menuSession) maxWorkers() (bool, error) {
+	value, err := s.promptValidated("Maximum workers (1-3)", false, "2", func(value string) error {
+		if value != "1" && value != "2" && value != "3" {
+			return errors.New("maximum workers must be 1, 2, or 3")
+		}
+		return nil
+	})
+	if err != nil {
+		return false, err
+	}
+	return false, s.app.ConfigSet("orchestration.max_workers", value)
 }
 
 func (s *menuSession) mcp() (bool, error) {
@@ -704,6 +755,20 @@ func opposite(value bool) string {
 		return "false"
 	}
 	return "true"
+}
+
+func otherMode(value string) string {
+	if value == "orchestrated" {
+		return "direct"
+	}
+	return "orchestrated"
+}
+
+func otherExecutor(value string) string {
+	if value == "claude" {
+		return "codex"
+	}
+	return "claude"
 }
 
 func defaultSuffix(value string) string {

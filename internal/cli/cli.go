@@ -11,6 +11,7 @@ import (
 
 	"github.com/ivo-lopes/ivoai/internal/app"
 	"github.com/ivo-lopes/ivoai/internal/platform"
+	"github.com/ivo-lopes/ivoai/internal/session"
 	"github.com/ivo-lopes/ivoai/internal/terminalui"
 )
 
@@ -39,10 +40,13 @@ func Run(ctx context.Context, a *app.App, args []string) error {
 }
 
 func commandHeaderEnabled(args []string) bool {
-	if len(args) == 0 || args[0] == "_register-install" || args[0] == "codex" || args[0] == "claude" {
+	if len(args) == 0 || args[0] == "_register-install" || args[0] == "_orchestrator-serve" || args[0] == "codex" || args[0] == "claude" {
 		return false
 	}
 	if args[0] == "doctor" && contains(args, "--json") {
+		return false
+	}
+	if (args[0] == "monitor" || args[0] == "session") && contains(args, "--json") {
 		return false
 	}
 	if len(args) >= 3 && args[0] == "server" && (args[1] == "gateway" || args[1] == "context") && args[2] == "serve" {
@@ -102,6 +106,18 @@ func runCommand(ctx context.Context, a *app.App, args []string) error {
 		return runDisconnect(ctx, a, args[1:])
 	case "codex", "claude":
 		return a.Launch(ctx, args[0], trimDoubleDash(args[1:]))
+	case "session":
+		return runSession(ctx, a, args[1:])
+	case "monitor":
+		return runMonitor(ctx, a, args[1:])
+	case "_orchestrator-serve":
+		fs := flag.NewFlagSet("_orchestrator-serve", flag.ContinueOnError)
+		fs.SetOutput(io.Discard)
+		id := fs.String("session", "", "session ID")
+		if err := fs.Parse(args[1:]); err != nil || *id == "" || fs.NArg() != 0 {
+			return errors.New("invalid local orchestrator invocation")
+		}
+		return a.OrchestratorServe(ctx, *id)
 	case "memory":
 		return runMemory(ctx, a, args[1:])
 	case "config":
@@ -112,6 +128,54 @@ func runCommand(ctx context.Context, a *app.App, args []string) error {
 		return runServer(ctx, args[1:], a)
 	default:
 		return fmt.Errorf("unknown command %q; run ivoai help", args[0])
+	}
+}
+
+func runSession(ctx context.Context, a *app.App, args []string) error {
+	if len(args) == 0 {
+		return errors.New("usage: ivoai session <start|list|show|stop>")
+	}
+	switch args[0] {
+	case "start":
+		fs := flag.NewFlagSet("session start", flag.ContinueOnError)
+		fs.SetOutput(a.Err)
+		executor := fs.String("executor", "codex", "codex or claude")
+		mode := fs.String("mode", "direct", "direct or orchestrated")
+		if err := fs.Parse(args[1:]); err != nil {
+			return err
+		}
+		return a.SessionStart(ctx, *executor, session.Mode(*mode), trimDoubleDash(fs.Args()))
+	case "list":
+		fs := flag.NewFlagSet("session list", flag.ContinueOnError)
+		fs.SetOutput(a.Err)
+		jsonOutput := fs.Bool("json", false, "JSON output")
+		if err := fs.Parse(args[1:]); err != nil || fs.NArg() != 0 {
+			return errors.New("usage: ivoai session list [--json]")
+		}
+		values, err := a.SessionList()
+		if err != nil {
+			return err
+		}
+		return writeSessions(a.Out, values, *jsonOutput)
+	case "show":
+		fs := flag.NewFlagSet("session show", flag.ContinueOnError)
+		fs.SetOutput(a.Err)
+		jsonOutput := fs.Bool("json", false, "JSON output")
+		if err := fs.Parse(args[1:]); err != nil || fs.NArg() != 1 {
+			return errors.New("usage: ivoai session show [--json] <session-id>")
+		}
+		value, err := a.SessionShow(fs.Arg(0))
+		if err != nil {
+			return err
+		}
+		return writeSessions(a.Out, []session.Session{value}, *jsonOutput)
+	case "stop":
+		if len(args) != 2 {
+			return errors.New("usage: ivoai session stop <session-id>")
+		}
+		return a.SessionStop(args[1])
+	default:
+		return fmt.Errorf("unknown session action %q", args[0])
 	}
 }
 
@@ -138,6 +202,7 @@ func runDoctor(ctx context.Context, a *app.App, args []string) error {
 	fmt.Fprintf(a.Out, "Headroom: installed=%s enabled=%s healthy=%s version=%s\nCodex via Headroom: %s\nClaude via Headroom: %s\n", semanticBool(report.Headroom.Installed, color), semanticOptionalBool(report.Headroom.Enabled, color), semanticBool(report.Headroom.Healthy, color), report.Headroom.Version, semanticOK(report.Headroom.CodexCompatible, color), semanticOK(report.Headroom.ClaudeCompatible, color))
 	fmt.Fprintf(a.Out, "ai-memory: installed=%s version=%s hooks=%s server=%s\n", semanticBool(report.Memory.Installed, color), report.Memory.Version, semanticBool(report.Memory.Hooks, color), configured(report.Server.Configured))
 	fmt.Fprintf(a.Out, "Ruflo: installed=%s version=%s safe-mode=%s provider-execution=%s\n", semanticBool(report.Ruflo.Installed, color), report.Ruflo.Version, semanticBool(report.Ruflo.SafeMode, color), semanticDisabledIsSafe(report.Ruflo.ProviderExecution, color))
+	fmt.Fprintf(a.Out, "Orchestration: enabled=%s bridge=%s session-permissions=%s max-workers=%d codex-worker=%s claude-worker=%s\n", semanticOptionalBool(report.Orchestration.Enabled, color), semanticBool(report.Orchestration.BridgeAvailable, color), report.Orchestration.SessionPerms, report.Orchestration.MaxWorkers, semanticBool(report.Orchestration.CodexWorker, color), semanticBool(report.Orchestration.ClaudeWorker, color))
 	overall := terminalui.Success(report.Overall, color)
 	if report.Overall != "READY" {
 		overall = terminalui.Warning(report.Overall, color)
@@ -281,7 +346,7 @@ func runConfig(a *app.App, args []string) error {
 	if args[0] == "set" && len(args) == 3 {
 		return a.ConfigSet(args[1], args[2])
 	}
-	return errors.New("usage: ivoai config [show|set <key> <true|false>]")
+	return errors.New("usage: ivoai config [show|set <key> <value>]")
 }
 func runProject(a *app.App, args []string) error {
 	if len(args) == 0 || args[0] == "status" {
@@ -317,8 +382,11 @@ Usage:
   ivoai disconnect <chatgpt|claude|server>
   ivoai codex [-- agent arguments...]
   ivoai claude [-- agent arguments...]
+  ivoai session start --executor <codex|claude> --mode <direct|orchestrated> [-- agent arguments...]
+  ivoai session list [--json] | show [--json] <id> | stop <id>
+  ivoai monitor [--watch] [--session <id>] [--json]
   ivoai memory [status|configure]
-  ivoai config [show|set <key> <true|false>]
+  ivoai config [show|set <key> <value>]
   ivoai project [init|status]
   ivoai server ...`)
 }

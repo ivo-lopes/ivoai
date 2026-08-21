@@ -431,6 +431,12 @@ func truncate(value string, width int) string {
 	return output.String()
 }
 
+// Fit exposes the terminal cell-aware truncation used by non-menu views.
+func Fit(value string, width int) string { return truncate(value, width) }
+
+// CellWidth returns the visual width after removing ANSI styling.
+func CellWidth(value string) int { return displayWidth(value) }
+
 func DecodeKey(sequence []byte) Key {
 	if len(sequence) == 0 {
 		return KeyUnknown

@@ -7,8 +7,11 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/ivo-lopes/ivoai/internal/app"
+	"github.com/ivo-lopes/ivoai/internal/session"
+	"github.com/ivo-lopes/ivoai/internal/terminalui"
 )
 
 func TestMenuCanExitAndDoctorJSON(t *testing.T) {
@@ -87,7 +90,7 @@ func TestPublicMenuActionCoverageIsUnique(t *testing.T) {
 		}
 		seen[id] = true
 	}
-	for _, required := range []string{"setup", "connect.chatgpt", "connect.claude", "connect.server", "launch.codex", "launch.claude", "server.restore", "remote.doctor", "uninstall"} {
+	for _, required := range []string{"setup", "connect.chatgpt", "connect.claude", "connect.server", "launch.codex", "launch.claude", "session.direct.codex", "session.orchestrated.claude", "session.monitor", "session.stop", "server.restore", "remote.doctor", "uninstall"} {
 		if !seen[required] {
 			t.Fatalf("public command missing from menu: %s", required)
 		}
@@ -214,12 +217,33 @@ func TestCommandHeaderExcludesMachineAndProcessEntrypoints(t *testing.T) {
 		{[]string{"codex"}, false},
 		{[]string{"claude"}, false},
 		{[]string{"_register-install"}, false},
+		{[]string{"_orchestrator-serve", "--session", "x"}, false},
+		{[]string{"monitor", "--json"}, false},
 		{[]string{"server", "gateway", "serve"}, false},
 		{[]string{"server", "context", "serve"}, false},
 	} {
 		if got := commandHeaderEnabled(test.args); got != test.want {
 			t.Fatalf("commandHeaderEnabled(%v)=%t want %t", test.args, got, test.want)
 		}
+	}
+}
+
+func TestMonitorRenderingFitsNarrowTerminalAndJSONHasNoANSI(t *testing.T) {
+	now := time.Now().UTC()
+	value := session.Session{SessionID: "sess_0123456789abcdef0123456789abcdef", StartedAt: now, UpdatedAt: now, Mode: session.ModeOrchestrated, PrimaryExecutor: "codex", WorkingDirectory: "/tmp/project", PrimaryModel: session.ModelInfo{Name: strings.Repeat("model", 20), Source: session.ModelConfigured}, RufloEnabled: true, RufloHealthy: true, RufloSafeMode: true, SwarmID: "swarm-fixture-with-a-long-identifier", Workers: []session.Worker{}, MaxWorkers: 2, State: session.StateRunning}
+	var human bytes.Buffer
+	renderMonitorSized(&human, value, 40)
+	for _, line := range strings.Split(human.String(), "\n") {
+		if terminalui.CellWidth(line) > 40 {
+			t.Fatalf("monitor overflow (%d cells): %q", terminalui.CellWidth(line), line)
+		}
+	}
+	var machine bytes.Buffer
+	if err := writeSessions(&machine, []session.Session{value}, true); err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(machine.String(), "\x1b[") || !strings.Contains(machine.String(), `"session_id"`) {
+		t.Fatalf("invalid machine output: %q", machine.String())
 	}
 }
 

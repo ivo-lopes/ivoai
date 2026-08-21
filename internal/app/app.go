@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -46,6 +47,10 @@ type MenuSnapshot struct {
 	MemoryEnabled    bool
 	HeadroomEnabled  bool
 	RufloEnabled     bool
+	DefaultMode      string
+	PrimaryExecutor  string
+	ReviewExecutor   string
+	MaxWorkers       int
 }
 
 func New(version string, in io.Reader, out, errOut io.Writer) (*App, error) {
@@ -74,6 +79,10 @@ func (a *App) MenuSnapshot() (MenuSnapshot, error) {
 		MemoryEnabled:    cfg.Memory.Enabled,
 		HeadroomEnabled:  cfg.Headroom.Enabled,
 		RufloEnabled:     cfg.Orchestration.Enabled,
+		DefaultMode:      cfg.Orchestration.DefaultMode,
+		PrimaryExecutor:  cfg.Orchestration.PrimaryExecutor,
+		ReviewExecutor:   cfg.Orchestration.ReviewExecutor,
+		MaxWorkers:       cfg.Orchestration.MaxWorkers,
 	}, nil
 }
 
@@ -144,6 +153,20 @@ func (a *App) Status(ctx context.Context) error {
 		{"ai-memory", componentStatus(state.Components["ai-memory"], cfg.Connections.Server.Status)},
 		{"Ruflo", safeStatus(state.Components["ruflo"])},
 		{"Server", cfg.Connections.Server.Status},
+	}
+	if sessions, sessionErr := a.SessionList(); sessionErr == nil {
+		active, orchestrated := 0, 0
+		for _, value := range sessions {
+			if value.Active() {
+				active++
+				if value.Mode == "orchestrated" {
+					orchestrated++
+				}
+			}
+		}
+		if active > 0 {
+			rows = append(rows, struct{ name, status string }{"Sessions", fmt.Sprintf("%d active / %d orchestrated", active, orchestrated)})
+		}
 	}
 	for _, row := range rows {
 		fmt.Fprintf(a.Out, "%-14s %s\n", row.name, semanticStatus(row.status, terminalui.ColorEnabled(a.Out)))
@@ -483,17 +506,37 @@ func (a *App) ConfigSet(key, value string) error {
 	if err != nil {
 		return err
 	}
-	b, err := parseBool(value)
-	if err != nil {
-		return err
-	}
 	switch key {
 	case "headroom.enabled":
+		b, err := parseBool(value)
+		if err != nil {
+			return err
+		}
 		c.Headroom.Enabled = b
 	case "memory.enabled":
+		b, err := parseBool(value)
+		if err != nil {
+			return err
+		}
 		c.Memory.Enabled = b
 	case "orchestration.enabled":
+		b, err := parseBool(value)
+		if err != nil {
+			return err
+		}
 		c.Orchestration.Enabled = b
+	case "orchestration.default_mode":
+		c.Orchestration.DefaultMode = strings.ToLower(value)
+	case "orchestration.primary_executor":
+		c.Orchestration.PrimaryExecutor = strings.ToLower(value)
+	case "orchestration.review_executor":
+		c.Orchestration.ReviewExecutor = strings.ToLower(value)
+	case "orchestration.max_workers":
+		parsed, parseErr := strconv.Atoi(value)
+		if parseErr != nil {
+			return errors.New("max_workers must be an integer between 1 and 3")
+		}
+		c.Orchestration.MaxWorkers = parsed
 	default:
 		return fmt.Errorf("unsupported config key %q", key)
 	}

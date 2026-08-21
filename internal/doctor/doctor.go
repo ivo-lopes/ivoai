@@ -39,6 +39,15 @@ type Server struct {
 	ProtocolCompatible bool   `json:"protocol_compatible"`
 	URL                string `json:"url,omitempty"`
 }
+type Orchestration struct {
+	Enabled          bool   `json:"enabled"`
+	BridgeAvailable  bool   `json:"bridge_available"`
+	SessionDirectory string `json:"session_directory"`
+	SessionPerms     string `json:"session_permissions"`
+	MaxWorkers       int    `json:"max_workers"`
+	CodexWorker      bool   `json:"codex_worker_capable"`
+	ClaudeWorker     bool   `json:"claude_worker_capable"`
+}
 type Report struct {
 	Overall           string               `json:"overall"`
 	OS                string               `json:"os"`
@@ -55,6 +64,7 @@ type Report struct {
 	Memory            Component            `json:"ai_memory"`
 	Ruflo             orchestration.Status `json:"ruflo"`
 	Server            Server               `json:"server"`
+	Orchestration     Orchestration        `json:"orchestration"`
 	Issues            []string             `json:"issues"`
 }
 type Doctor struct {
@@ -91,6 +101,7 @@ func (d Doctor) Run(ctx context.Context) Report {
 		r.Ruflo.Installed, r.Ruflo.Version = true, fixture.Version
 	}
 	r.Server = d.server(ctx, cfg.Connections.Server)
+	r.Orchestration = d.orchestration(ctx, cfg, state)
 	for name, component := range map[string]Component{"Codex": componentFromAuth(r.Codex), "Claude Code": componentFromAuth(r.Claude), "Headroom": {Installed: r.Headroom.Installed}, "ai-memory": r.Memory, "Ruflo": {Installed: r.Ruflo.Installed}} {
 		if !component.Installed {
 			r.Issues = append(r.Issues, name+" is not installed")
@@ -99,8 +110,24 @@ func (d Doctor) Run(ctx context.Context) Report {
 	if cfg.Memory.Enabled && r.Memory.Installed && !r.Memory.Hooks {
 		r.Issues = append(r.Issues, "ai-memory hooks are not installed")
 	}
-	if cfg.Orchestration.Enabled && r.Ruflo.Installed && !r.Ruflo.SafeMode {
-		r.Issues = append(r.Issues, "Ruflo safe profile is not active")
+	if cfg.Orchestration.Enabled {
+		if !r.Ruflo.Installed {
+			r.Issues = append(r.Issues, "Ruflo orchestration is enabled but Ruflo is not installed")
+		} else if !r.Ruflo.SafeMode || r.Ruflo.ProviderExecution || r.Ruflo.DurableMemory {
+			r.Issues = append(r.Issues, "Ruflo safe profile is not active or provider execution is enabled")
+		}
+		if !r.Orchestration.BridgeAvailable {
+			r.Issues = append(r.Issues, "local orchestrator bridge is unavailable")
+		}
+		if r.Orchestration.SessionPerms != "0700" {
+			r.Issues = append(r.Issues, "session state directory must be 0700")
+		}
+		if !r.Orchestration.CodexWorker {
+			r.Issues = append(r.Issues, "Codex official non-interactive worker capability is unavailable")
+		}
+		if !r.Orchestration.ClaudeWorker {
+			r.Issues = append(r.Issues, "Claude official non-interactive worker capability is unavailable")
+		}
 	}
 	if r.SecretPermissions != "not-created" && r.SecretPermissions != "0600" {
 		r.Issues = append(r.Issues, "secret file permissions must be 0600")
@@ -123,6 +150,33 @@ func (d Doctor) Run(ctx context.Context) Report {
 		r.Overall = "DEGRADED"
 	}
 	return r
+}
+
+func (d Doctor) orchestration(ctx context.Context, cfg config.Config, state config.State) Orchestration {
+	result := Orchestration{Enabled: cfg.Orchestration.Enabled, SessionDirectory: d.Store.Paths.SessionsDir, SessionPerms: permissions(d.Store.Paths.SessionsDir), MaxWorkers: cfg.Orchestration.MaxWorkers}
+	if executable, err := os.Executable(); err == nil {
+		if info, statErr := os.Stat(executable); statErr == nil && info.Mode().IsRegular() && info.Mode()&0o111 != 0 {
+			result.BridgeAvailable = true
+		}
+	}
+	result.CodexWorker = d.workerCapability(ctx, state.Components["codex"], []string{"exec", "--help"})
+	result.ClaudeWorker = d.workerCapability(ctx, state.Components["claude-code"], []string{"--help"})
+	return result
+}
+
+func (d Doctor) workerCapability(ctx context.Context, component config.ComponentState, args []string) bool {
+	if strings.HasSuffix(component.Version, "-fixture") {
+		return component.Installed
+	}
+	if component.Path == "" || !component.Installed {
+		return false
+	}
+	info, err := os.Stat(component.Path)
+	if err != nil || !info.Mode().IsRegular() || info.Mode()&0o111 == 0 {
+		return false
+	}
+	_, err = d.Runner.Run(ctx, component.Path, args, platform.RunOptions{Timeout: 15 * time.Second})
+	return err == nil
 }
 
 func loopbackServer(raw string) bool {
