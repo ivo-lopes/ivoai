@@ -54,6 +54,11 @@ ivoai codex
 ivoai claude
 ```
 
+The interactive menu uses arrow keys and Enter, shows a live readiness summary, and
+provides every public client/server operation through nested screens. Use Esc to go
+back and `q` to exit. Non-interactive terminals automatically receive a numbered
+fallback; `NO_COLOR=1` disables styling.
+
 ## Server
 
 On Ubuntu 22.04+, Ubuntu 24.04+, or Debian 12+:
@@ -88,5 +93,7 @@ as untrusted data and context MCP tools are read-only.
 - [Security](docs/security.md)
 - [Development](docs/development.md)
 - [Troubleshooting](docs/troubleshooting.md)
+- [Executive report (PT-BR)](docs/relatorio-executivo.md)
+- [Technical report (PT-BR)](docs/relatorio-tecnico.md)
 
 Licensed under the [MIT License](LICENSE).

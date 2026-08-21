@@ -1,5 +1,17 @@
 # Client
 
+## Interactive menu
+
+Run `ivoai` without arguments for the full menu. In a TTY use Up/Down (or `j`/`k`),
+Enter, Esc, and `q`. The menu restores cooked terminal mode before prompts and before
+launching Codex or Claude. Destructive operations require an exact confirmation
+phrase.
+
+When stdin/stdout are not terminals, ivoai prints a numbered fallback. Set
+`NO_COLOR=1` to disable ANSI color or `IVOAI_ASCII=1` to avoid Unicode lettering.
+Subcommands remain the stable interface for automation. Progress is written to
+stderr so stdout and `doctor --json` stay machine-readable.
+
 ## Files and ownership
 
 ivoai follows the XDG Base Directory Specification:

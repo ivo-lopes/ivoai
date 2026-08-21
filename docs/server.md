@@ -1,5 +1,11 @@
 # Server
 
+Server administration is available both through `ivoai server ...` subcommands and
+the **Server Administration** section of the interactive menu. Mutating local server
+actions are shown as unavailable unless ivoai is running on a supported Linux host
+with root privileges. Restore, stop, enrollment revocation, and connector removal
+require explicit confirmation in the menu.
+
 ## Supported systems
 
 Initial server support targets Ubuntu 22.04, Ubuntu 24.04, and Debian 12 on Linux

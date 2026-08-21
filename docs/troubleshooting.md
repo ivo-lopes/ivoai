@@ -1,5 +1,14 @@
 # Troubleshooting
 
+## Interactive menu rendering
+
+- Use `NO_COLOR=1 ivoai` when ANSI colors are not supported.
+- Use `IVOAI_ASCII=1 ivoai` when the terminal font cannot render block characters.
+- Piped input and `TERM=dumb` intentionally select the numbered fallback.
+- Raw terminal state is restored on normal errors, EOF, Esc, `q`, and cancellation.
+- Animated progress goes to stderr. Redirect stdout independently when consuming
+  command or JSON output.
+
 Start with:
 
 ```sh
