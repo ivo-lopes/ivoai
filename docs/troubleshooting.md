@@ -93,6 +93,11 @@ its verifier, a client token, or the client name. Use
 `ivoai server logs ivoai-gateway.service` to distinguish a malformed/mismatched code,
 an unauthorized scope, or a request routed to another gateway instance.
 
+The pinned local embedding model is downloaded during the first clean setup. On a
+CPU-only host or slower connection this can take more than five minutes. Its health
+check has a ten-minute startup grace period, while setup continues to print elapsed
+progress. Later starts reuse the persistent model cache.
+
 ## ChatGPT or Claude Web cannot connect to `/mcp`
 
 Verify the public paths without supplying a secret:

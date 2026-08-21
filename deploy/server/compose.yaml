@@ -36,6 +36,9 @@ services:
       interval: 10s
       timeout: 3s
       retries: 30
+      # The first CPU-only model download can exceed five minutes on a clean
+      # host. Successful probes still end this grace period immediately.
+      start_period: 10m
     security_opt: ["no-new-privileges:true"]
     networks: [ivoai-internal, host-publish, model-download]
 
