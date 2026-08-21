@@ -11,6 +11,7 @@ import (
 
 	"github.com/ivo-lopes/ivoai/internal/config"
 	"github.com/ivo-lopes/ivoai/internal/platform"
+	"github.com/ivo-lopes/ivoai/internal/terminalui"
 )
 
 type AgentAuth struct {
@@ -33,7 +34,10 @@ func (a AgentAuth) Connect(ctx context.Context, target string) error {
 	if err != nil || path == "" {
 		return fmt.Errorf("%s is not installed; run ivoai setup first", command)
 	}
+	a.message("Checking the official %s authentication state...", agentDisplayName(target))
 	if !a.authenticated(ctx, path, statusArgs) {
+		a.message("No active session was found. Starting the official %s subscription login.", agentDisplayName(target))
+		a.message("Complete authentication in your browser; if it does not open, follow the URL printed below.")
 		options := platform.RunOptions{Stdin: a.In, Stdout: a.Out, Stderr: a.Err, TTY: true}
 		if target == "claude" {
 			options.Env = []string{"DISABLE_AUTOUPDATER=1"}
@@ -42,11 +46,15 @@ func (a AgentAuth) Connect(ctx context.Context, target string) error {
 		if err != nil && target == "claude" {
 			// Older stable Claude builds expose subscription login only inside
 			// the official interactive client (/login), not `auth login`.
+			a.message("The direct login command is unavailable; opening Claude Code's interactive login instead.")
 			_, err = a.Runner.Run(ctx, path, nil, options)
 		}
 		if err != nil {
 			return fmt.Errorf("official %s login failed: %w", target, err)
 		}
+		a.message("Validating the authenticated session...")
+	} else {
+		a.message("%s is already authenticated.", agentDisplayName(target))
 	}
 	if !a.authenticated(ctx, path, statusArgs) {
 		return fmt.Errorf("%s did not report an authenticated session after login", command)
@@ -60,7 +68,34 @@ func (a AgentAuth) Connect(ctx context.Context, target string) error {
 	} else {
 		c.Connections.Claude.Status = "connected"
 	}
-	return a.Store.Save(c)
+	if err := a.Store.Save(c); err != nil {
+		return err
+	}
+	a.success("%s connection is ready.", agentDisplayName(target))
+	return nil
+}
+
+func (a AgentAuth) message(format string, values ...any) {
+	if a.Err == nil {
+		return
+	}
+	color := terminalui.ColorEnabled(a.Err)
+	fmt.Fprintln(a.Err, terminalui.Info("i", color), fmt.Sprintf(format, values...))
+}
+
+func (a AgentAuth) success(format string, values ...any) {
+	if a.Err == nil {
+		return
+	}
+	color := terminalui.ColorEnabled(a.Err)
+	fmt.Fprintln(a.Err, terminalui.Success("✓", color), fmt.Sprintf(format, values...))
+}
+
+func agentDisplayName(target string) string {
+	if target == "claude" {
+		return "Claude Code"
+	}
+	return "Codex"
 }
 
 func (a AgentAuth) Disconnect(ctx context.Context, target string) error {
@@ -198,7 +233,7 @@ func authCommands(target string) (string, []string, []string, error) {
 	case "chatgpt":
 		return "codex", []string{"login", "status"}, []string{"login"}, nil
 	case "claude":
-		return "claude", []string{"auth", "status"}, []string{"auth", "login"}, nil
+		return "claude", []string{"auth", "status"}, []string{"auth", "login", "--claudeai"}, nil
 	default:
 		return "", nil, nil, fmt.Errorf("unsupported connection %q", target)
 	}

@@ -329,3 +329,28 @@ Use `ivoai server web-access list` to confirm the grant is active and scoped. Re
 the entry and reconnect if refresh-token rotation was interrupted. Memory-tool
 failures do not imply that context is unavailable; check `ivoai server memory status`
 and `ivoai server context status` separately.
+
+## Interactive menu is diagonal or does not fit the terminal
+
+Update and reinstall ivoai if menu rows appear as a staircase, start farther to the
+right on every line, or leave large blank regions. Older builds wrote bare newlines
+after enabling raw terminal mode. Current builds emit the required carriage returns,
+re-read width and height after resize, paginate vertically, and never render beyond
+the detected column count. `TERM=dumb` remains available as a numbered fallback.
+
+## `ivoai connect claude` appears to do nothing
+
+Update and reinstall ivoai before retrying. Older builds moved the official Claude
+login into a background process group, which allowed the operating system to suspend
+it when it read from the terminal. Current builds keep Claude Code in the foreground,
+show the authentication preflight, and explicitly request the official Claude
+subscription flow:
+
+```sh
+ivoai connect claude
+```
+
+Complete the browser flow or open the URL printed by Claude Code. Verify the result
+with `ivoai doctor`. ivoai does not read or store Claude credentials. If login still
+fails, run `claude auth status` to check the official client independently and make
+sure the terminal permits interactive input.

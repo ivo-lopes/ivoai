@@ -88,6 +88,31 @@ func TestAgentAuthUsesOfficialCommands(t *testing.T) {
 	}
 }
 
+func TestClaudeAuthUsesSubscriptionLoginAndReportsProgress(t *testing.T) {
+	store := connStore(t.TempDir())
+	if err := store.Save(config.Default()); err != nil {
+		t.Fatal(err)
+	}
+	runner := &authRunner{}
+	var output strings.Builder
+	a := AgentAuth{Runner: runner, Store: store, In: strings.NewReader(""), Out: io.Discard, Err: &output}
+	if err := a.Connect(context.Background(), "claude"); err != nil {
+		t.Fatal(err)
+	}
+	joined := ""
+	for _, call := range runner.calls {
+		joined += strings.Join(call, " ") + "\n"
+	}
+	if !strings.Contains(joined, "/fake/claude auth login --claudeai") {
+		t.Fatalf("official subscription login was not used:\n%s", joined)
+	}
+	for _, message := range []string{"Checking", "Starting", "Validating", "connection is ready"} {
+		if !strings.Contains(output.String(), message) {
+			t.Fatalf("missing %q in progress output: %q", message, output.String())
+		}
+	}
+}
+
 func TestServerEnrollmentAndOneTimeCode(t *testing.T) {
 	var mu sync.Mutex
 	used := false

@@ -8,7 +8,6 @@ import (
 	"os"
 	"os/exec"
 	"strings"
-	"syscall"
 	"time"
 )
 
@@ -67,9 +66,10 @@ func (ExecRunner) Run(ctx context.Context, command string, args []string, o RunO
 	} else {
 		cmd.Stderr = &stderr
 	}
-	if o.TTY {
-		cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
-	}
+	// Interactive children must remain in ivoai's foreground process group.
+	// Moving them to a new group without also transferring terminal ownership
+	// causes reads from stdin to be suspended by SIGTTIN. CommandContext still
+	// terminates the direct child when the caller cancels the operation.
 	err := cmd.Run()
 	r := Result{Stdout: stdout.String(), Stderr: stderr.String(), ExitCode: 0}
 	if err == nil {
