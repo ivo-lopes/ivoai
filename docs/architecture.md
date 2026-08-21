@@ -374,9 +374,10 @@ upload therefore requires another ingestion run.
 The Qdrant collection is `ivoai-context-v1-d384`; Qdrant 1.19.0 uses the pinned
 upstream unprivileged multi-architecture image digest. Its host mapping is
 loopback-only (`127.0.0.1:6333`) and requires a generated API key. Embeddings and
-ai-memory use separate generated credentials. Docker uses a transient non-internal
-network to establish these loopback bindings, then systemd disconnects it to remove
-backend egress. The index is a cache; source documents,
+ai-memory use separate generated credentials. Docker uses a transient publication
+network to establish the loopback bindings and a separate model-download network with
+explicit highest gateway priority. After the embedding model is healthy, systemd
+disconnects both transient routes to remove backend egress. The index is a cache; source documents,
 normalized metadata, and connector definitions are authoritative. A collection can
 be deleted and rebuilt deterministically.
 

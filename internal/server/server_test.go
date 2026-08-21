@@ -79,12 +79,14 @@ func TestSetupIsIdempotentAndLifecycleUsesManagedServices(t *testing.T) {
 			t.Errorf("Qdrant writable runtime mount missing %q: %s", expected, first)
 		}
 	}
-	for _, networks := range []string{
-		"networks: [ivoai-internal, host-publish]",
-		"networks: [ivoai-internal, host-publish, model-download]",
-	} {
+	for _, networks := range []string{"networks: [ivoai-internal, host-publish]"} {
 		if !bytes.Contains(first, []byte(networks)) {
 			t.Fatalf("dependency container is missing the transient network %q: %s", networks, first)
+		}
+	}
+	for _, expected := range []string{"model-download:", "gw_priority: 1"} {
+		if !bytes.Contains(first, []byte(expected)) {
+			t.Fatalf("embedding download network lacks deterministic gateway setting %q: %s", expected, first)
 		}
 	}
 	if !bytes.Contains(first, []byte("name: ivoai-host-publish")) {

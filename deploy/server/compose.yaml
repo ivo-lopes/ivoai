@@ -40,7 +40,13 @@ services:
       # host. Successful probes still end this grace period immediately.
       start_period: 10m
     security_opt: ["no-new-privileges:true"]
-    networks: [ivoai-internal, host-publish, model-download]
+    networks:
+      ivoai-internal: {}
+      host-publish: {}
+      # Force the only masqueraded network to be the startup default route.
+      # systemd disconnects it immediately after the model is healthy.
+      model-download:
+        gw_priority: 1
 
   ai-memory:
     image: akitaonrails/ai-memory@sha256:1d8a2ca7d7bc2349ba964d2d97dafb683632676460c1e373083f919a18c60d37
