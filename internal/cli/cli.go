@@ -40,7 +40,7 @@ func Run(ctx context.Context, a *app.App, args []string) error {
 }
 
 func commandHeaderEnabled(args []string) bool {
-	if len(args) == 0 || args[0] == "_register-install" || args[0] == "_orchestrator-serve" || args[0] == "codex" || args[0] == "claude" {
+	if len(args) == 0 || args[0] == "_register-install" || args[0] == "_orchestrator-serve" || args[0] == "_quota-statusline" || args[0] == "codex" || args[0] == "claude" || args[0] == "auto" {
 		return false
 	}
 	if args[0] == "doctor" && contains(args, "--json") {
@@ -106,6 +106,14 @@ func runCommand(ctx context.Context, a *app.App, args []string) error {
 		return runDisconnect(ctx, a, args[1:])
 	case "codex", "claude":
 		return a.Launch(ctx, args[0], trimDoubleDash(args[1:]))
+	case "auto":
+		fs := flag.NewFlagSet("auto", flag.ContinueOnError)
+		fs.SetOutput(a.Err)
+		planner := fs.String("planner", "", "codex or claude")
+		if err := fs.Parse(args[1:]); err != nil {
+			return err
+		}
+		return a.Auto(ctx, *planner, trimDoubleDash(fs.Args()))
 	case "session":
 		return runSession(ctx, a, args[1:])
 	case "monitor":
@@ -118,6 +126,23 @@ func runCommand(ctx context.Context, a *app.App, args []string) error {
 			return errors.New("invalid local orchestrator invocation")
 		}
 		return a.OrchestratorServe(ctx, *id)
+	case "_quota-statusline":
+		fs := flag.NewFlagSet("_quota-statusline", flag.ContinueOnError)
+		fs.SetOutput(io.Discard)
+		id := fs.String("session", "", "session ID")
+		if err := fs.Parse(args[1:]); err != nil || *id == "" || fs.NArg() != 0 {
+			return errors.New("invalid quota statusline invocation")
+		}
+		body, err := io.ReadAll(io.LimitReader(a.In, (64<<10)+1))
+		if err != nil || len(body) > 64<<10 {
+			return errors.New("invalid quota statusline payload")
+		}
+		line, err := a.QuotaStatusline(*id, body)
+		if err != nil {
+			return err
+		}
+		fmt.Fprintln(a.Out, line)
+		return nil
 	case "memory":
 		return runMemory(ctx, a, args[1:])
 	case "config":
@@ -203,6 +228,12 @@ func runDoctor(ctx context.Context, a *app.App, args []string) error {
 	fmt.Fprintf(a.Out, "ai-memory: installed=%s version=%s hooks=%s server=%s\n", semanticBool(report.Memory.Installed, color), report.Memory.Version, semanticBool(report.Memory.Hooks, color), configured(report.Server.Configured))
 	fmt.Fprintf(a.Out, "Ruflo: installed=%s version=%s safe-mode=%s provider-execution=%s\n", semanticBool(report.Ruflo.Installed, color), report.Ruflo.Version, semanticBool(report.Ruflo.SafeMode, color), semanticDisabledIsSafe(report.Ruflo.ProviderExecution, color))
 	fmt.Fprintf(a.Out, "Orchestration: enabled=%s bridge=%s session-permissions=%s max-workers=%d codex-worker=%s claude-worker=%s\n", semanticOptionalBool(report.Orchestration.Enabled, color), semanticBool(report.Orchestration.BridgeAvailable, color), report.Orchestration.SessionPerms, report.Orchestration.MaxWorkers, semanticBool(report.Orchestration.CodexWorker, color), semanticBool(report.Orchestration.ClaudeWorker, color))
+	fmt.Fprintf(a.Out, "\nAutomatic Orchestration\n  enabled=%s default=%s failover=%s checkpoint=%s\n", semanticOptionalBool(report.Automatic.Enabled, color), report.Automatic.DefaultPlanner, semanticOptionalBool(report.Automatic.AutomaticFailover, color), semanticBool(report.Automatic.CheckpointReady, color))
+	for _, provider := range []string{"codex", "claude"} {
+		probe := report.Automatic.Quota[provider]
+		fmt.Fprintf(a.Out, "  %-6s probe=%s auth=%s eligible=%s weekly-source=%s monthly-source=%s\n", provider, semanticBool(probe.Ready, color), semanticOptionalBool(probe.Authenticated, color), semanticOptionalBool(probe.Eligible, color), probe.WeeklySource, probe.MonthlySource)
+	}
+	fmt.Fprintf(a.Out, "  failover Codex->Claude=%s Claude->Codex=%s\n", semanticOptionalBool(report.Automatic.CodexToClaude, color), semanticOptionalBool(report.Automatic.ClaudeToCodex, color))
 	overall := terminalui.Success(report.Overall, color)
 	if report.Overall != "READY" {
 		overall = terminalui.Warning(report.Overall, color)
@@ -382,6 +413,7 @@ Usage:
   ivoai disconnect <chatgpt|claude|server>
   ivoai codex [-- agent arguments...]
   ivoai claude [-- agent arguments...]
+  ivoai auto [--planner codex|claude] [-- agent arguments...]
   ivoai session start --executor <codex|claude> --mode <direct|orchestrated> [-- agent arguments...]
   ivoai session list [--json] | show [--json] <id> | stop <id>
   ivoai monitor [--watch] [--session <id>] [--json]

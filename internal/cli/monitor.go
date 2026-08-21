@@ -13,6 +13,7 @@ import (
 
 	"github.com/ivo-lopes/ivoai/internal/app"
 	"github.com/ivo-lopes/ivoai/internal/platform"
+	"github.com/ivo-lopes/ivoai/internal/quota"
 	"github.com/ivo-lopes/ivoai/internal/session"
 	"github.com/ivo-lopes/ivoai/internal/terminalui"
 	"golang.org/x/term"
@@ -123,6 +124,15 @@ func renderMonitorSized(out io.Writer, value session.Session, width int) {
 	}
 	monitorRow(out, "Session", clean(value.SessionID), width)
 	fmt.Fprintf(out, "%-15s%s\n%-15s%s\n\n", "Mode", mode, "State", state)
+	if value.Mode == session.ModeAuto {
+		fmt.Fprintln(out, "Automatic Session")
+		monitorRow(out, "  Conversation", providerDisplay(value.CurrentPrimary), width)
+		monitorRow(out, "  Initial", providerDisplay(value.InitialPlanner), width)
+		monitorRow(out, "  Failovers", fmt.Sprint(value.FailoverCount), width)
+		monitorRow(out, "  Phase", clean(value.CurrentPhase), width)
+		monitorRow(out, "  Checkpoint", checkpointMonitor(value), width)
+		fmt.Fprintln(out)
+	}
 	fmt.Fprintln(out, "Primary")
 	monitorRow(out, "  Executor", clean(value.PrimaryExecutor), width)
 	monitorRow(out, "  Model", clean(value.PrimaryModel.Name)+" ("+strings.ReplaceAll(string(value.PrimaryModel.Source), "_", " ")+")", width)
@@ -134,6 +144,17 @@ func renderMonitorSized(out io.Writer, value session.Session, width int) {
 	monitorRow(out, "  Provider", disabledLabel(value.ProviderExecution), width)
 	monitorRow(out, "  Swarm", clean(value.SwarmID), width)
 	monitorRow(out, "  Workers", fmt.Sprintf("%d/%d", activeWorkers(value.Workers), value.MaxWorkers), width)
+	if value.Mode == session.ModeAuto {
+		fmt.Fprintln(out, "\nQuota")
+		for _, provider := range []quota.Provider{quota.ProviderCodex, quota.ProviderClaude} {
+			current := value.Quota[provider]
+			fmt.Fprintln(out, "  "+providerDisplay(string(provider)))
+			quotaMonitorRow(out, "    Session", current, quota.KindSession, width)
+			quotaMonitorRow(out, "    Weekly", current, quota.KindWeekly, width)
+			quotaMonitorRow(out, "    Monthly", current, quota.KindMonthly, width)
+			monitorRow(out, "    Eligible", yesNo(current.Eligible), width)
+		}
+	}
 	if len(value.Workers) > 0 {
 		fmt.Fprintln(out, "\nWorkers")
 		for _, worker := range value.Workers {
@@ -144,6 +165,38 @@ func renderMonitorSized(out io.Writer, value session.Session, width int) {
 	monitorRow(out, "  Context", clean(value.ContextStatus), width)
 	monitorRow(out, "  ai-memory", clean(value.MemoryStatus), width)
 	monitorRow(out, "  Server", clean(value.ServerStatus), width)
+}
+
+func quotaMonitorRow(out io.Writer, label string, value quota.ProviderQuota, kind quota.Kind, width int) {
+	window, ok := value.Window(kind)
+	if !ok || !window.Available || !window.Authoritative {
+		monitorRow(out, label, "N/A / not exposed", width)
+		return
+	}
+	text := fmt.Sprintf("%.0f%% remaining", window.RemainingPercent)
+	if window.ResetsAt != nil {
+		text += " · reset " + window.ResetsAt.UTC().Format(time.RFC3339)
+	}
+	text += " · " + clean(window.Source) + " · " + window.ObservedAt.UTC().Format(time.RFC3339)
+	monitorRow(out, label, text, width)
+}
+
+func providerDisplay(value string) string {
+	switch value {
+	case "claude":
+		return "Claude Code"
+	case "codex":
+		return "Codex"
+	default:
+		return "N/A"
+	}
+}
+
+func checkpointMonitor(value session.Session) string {
+	if !value.CheckpointAvailable || value.CheckpointUpdatedAt == nil {
+		return "unavailable"
+	}
+	return "available · " + value.CheckpointUpdatedAt.UTC().Format(time.RFC3339)
 }
 
 func monitorRow(out io.Writer, label, value string, width int) {

@@ -40,6 +40,7 @@ type menuAction struct {
 // entrypoints such as gateway/context serve are intentionally excluded.
 func PublicMenuActionIDs() []string {
 	return []string{
+		"auto",
 		"status", "doctor", "version", "setup", "update", "rollback", "uninstall",
 		"connect.list", "connect.chatgpt", "disconnect.chatgpt", "connect.claude", "disconnect.claude", "connect.server", "disconnect.server",
 		"mcp.list", "mcp.add", "mcp.remove", "launch.codex", "launch.claude", "memory.status", "memory.configure",
@@ -62,6 +63,7 @@ func menu(ctx context.Context, a *app.App) error {
 		}
 		badges := snapshotBadges(snapshot)
 		actions := []menuAction{
+			{id: "auto", label: "Automatic Orchestration", description: "Plan, route, delegate, checkpoint, and fail over by subscription quota", disabled: disabledUnless(snapshot.AutoEnabled, "automatic orchestration disabled"), run: func() (bool, error) { return true, session.app.Auto(session.ctx, "", nil) }},
 			{id: "dashboard", label: "Dashboard", description: "Status, diagnostics, and version information", run: session.dashboard},
 			{id: "maintenance", label: "Setup & Maintenance", description: "Install, repair, update, rollback, or uninstall", run: session.maintenance},
 			{id: "connections", label: "Connections", description: "ChatGPT, Claude, ivoai server, and external MCPs", run: session.connections},
@@ -135,7 +137,9 @@ func (s *menuSession) agents() (bool, error) {
 }
 
 func (s *menuSession) sessions() (bool, error) {
+	snapshot, _ := s.app.MenuSnapshot()
 	return s.loop("Session Control", []menuAction{
+		{id: "auto", label: "Automatic Orchestration", description: "Quota-aware Codex/Claude primary with safe Ruflo delegation", disabled: disabledUnless(snapshot.AutoEnabled, "automatic orchestration disabled"), run: func() (bool, error) { return true, s.app.Auto(s.ctx, "", nil) }},
 		{id: "session.direct.codex", label: "Direct Session — Codex", description: "Official Codex runtime with session observability; Ruflo is not started", run: func() (bool, error) { return true, s.app.SessionStart(s.ctx, "codex", "direct", nil) }},
 		{id: "session.direct.claude", label: "Direct Session — Claude", description: "Official Claude runtime with session observability; Ruflo is not started", run: func() (bool, error) { return true, s.app.SessionStart(s.ctx, "claude", "direct", nil) }},
 		{id: "session.orchestrated.codex", label: "Orchestrated Session — Codex", description: "Safe Ruflo swarm with official Codex primary and bounded workers", run: func() (bool, error) { return true, s.app.SessionStart(s.ctx, "codex", "orchestrated", nil) }},
@@ -183,6 +187,16 @@ func (s *menuSession) configuration() (bool, error) {
 		{id: "config.headroom", label: toggleLabel("Headroom", snapshot.HeadroomEnabled), run: s.simple(func() error { return s.app.ConfigSet("headroom.enabled", opposite(snapshot.HeadroomEnabled)) })},
 		{id: "config.memory", label: toggleLabel("ai-memory", snapshot.MemoryEnabled), run: s.simple(func() error { return s.app.ConfigSet("memory.enabled", opposite(snapshot.MemoryEnabled)) })},
 		{id: "config.ruflo", label: toggleLabel("Ruflo", snapshot.RufloEnabled), run: s.simple(func() error { return s.app.ConfigSet("orchestration.enabled", opposite(snapshot.RufloEnabled)) })},
+		{id: "config.auto", label: toggleLabel("Automatic Orchestration", snapshot.AutoEnabled), run: s.simple(func() error { return s.app.ConfigSet("orchestration.auto.enabled", opposite(snapshot.AutoEnabled)) })},
+		{id: "config.auto-planner", label: "Automatic Planner: " + strings.ToUpper(snapshot.DefaultPlanner), run: s.simple(func() error {
+			return s.app.ConfigSet("orchestration.auto.default_planner", otherExecutor(snapshot.DefaultPlanner))
+		})},
+		{id: "config.auto-failover", label: toggleLabel("Automatic Failover", snapshot.AutomaticFailover), run: s.simple(func() error {
+			return s.app.ConfigSet("orchestration.auto.automatic_failover", opposite(snapshot.AutomaticFailover))
+		})},
+		{id: "config.auto-checkpoint", label: toggleLabel("Automatic Checkpoints", snapshot.CheckpointEnabled), run: s.simple(func() error {
+			return s.app.ConfigSet("orchestration.auto.checkpoint_enabled", opposite(snapshot.CheckpointEnabled))
+		})},
 		{id: "config.session-mode", label: "Default Session Mode: " + strings.ToUpper(snapshot.DefaultMode), run: s.simple(func() error { return s.app.ConfigSet("orchestration.default_mode", otherMode(snapshot.DefaultMode)) })},
 		{id: "config.primary", label: "Primary Executor: " + strings.ToUpper(snapshot.PrimaryExecutor), run: s.simple(func() error {
 			return s.app.ConfigSet("orchestration.primary_executor", otherExecutor(snapshot.PrimaryExecutor))

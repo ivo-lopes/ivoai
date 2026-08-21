@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/ivo-lopes/ivoai/internal/app"
+	"github.com/ivo-lopes/ivoai/internal/quota"
 	"github.com/ivo-lopes/ivoai/internal/session"
 	"github.com/ivo-lopes/ivoai/internal/terminalui"
 )
@@ -65,7 +66,7 @@ func TestHierarchicalPlainMenuCanRunStatusAndReturn(t *testing.T) {
 	t.Setenv("XDG_CACHE_HOME", filepath.Join(root, "cache"))
 	t.Setenv("IVOAI_TEST_MODE", "1")
 	var output bytes.Buffer
-	a, err := app.New("v0.1.0", strings.NewReader("1\n1\n0\n0\n"), &output, &output)
+	a, err := app.New("v0.1.0", strings.NewReader("2\n1\n0\n0\n"), &output, &output)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -90,7 +91,7 @@ func TestPublicMenuActionCoverageIsUnique(t *testing.T) {
 		}
 		seen[id] = true
 	}
-	for _, required := range []string{"setup", "connect.chatgpt", "connect.claude", "connect.server", "launch.codex", "launch.claude", "session.direct.codex", "session.orchestrated.claude", "session.monitor", "session.stop", "server.restore", "remote.doctor", "uninstall"} {
+	for _, required := range []string{"auto", "setup", "connect.chatgpt", "connect.claude", "connect.server", "launch.codex", "launch.claude", "session.direct.codex", "session.orchestrated.claude", "session.monitor", "session.stop", "server.restore", "remote.doctor", "uninstall"} {
 		if !seen[required] {
 			t.Fatalf("public command missing from menu: %s", required)
 		}
@@ -244,6 +245,33 @@ func TestMonitorRenderingFitsNarrowTerminalAndJSONHasNoANSI(t *testing.T) {
 	}
 	if strings.Contains(machine.String(), "\x1b[") || !strings.Contains(machine.String(), `"session_id"`) {
 		t.Fatalf("invalid machine output: %q", machine.String())
+	}
+}
+
+func TestAutomaticMonitorAlwaysShowsWeeklyAndMonthlyWithSourceAndFreshness(t *testing.T) {
+	now := time.Unix(100, 0).UTC()
+	reset := time.Unix(200, 0).UTC()
+	value := session.Session{
+		SessionID: "sess_0123456789abcdef0123456789abcdef", StartedAt: now, UpdatedAt: now,
+		Mode: session.ModeAuto, Auto: true, InitialPlanner: "codex", CurrentPrimary: "claude", PrimaryExecutor: "claude",
+		PrimaryModel: session.UnknownModel(), WorkingDirectory: "/tmp/project", Workers: []session.Worker{}, MaxWorkers: 2,
+		State: session.StateRunning, CurrentPhase: "conversation", Quota: map[quota.Provider]quota.ProviderQuota{
+			quota.ProviderCodex:  {Provider: quota.ProviderCodex, Eligible: true, Windows: []quota.Window{{Kind: quota.KindWeekly, RemainingPercent: 71, UsedPercent: 29, ResetsAt: &reset, Source: "codex app-server", ObservedAt: now, Available: true, Authoritative: true}}},
+			quota.ProviderClaude: {Provider: quota.ProviderClaude, Eligible: true},
+		},
+	}
+	var output bytes.Buffer
+	renderMonitorSized(&output, value, 120)
+	text := output.String()
+	for _, expected := range []string{"Automatic Session", "Conversation", "Claude Code", "Failovers", "Codex", "Claude Code", "Weekly", "Monthly", "71% remaining", "codex app-server", "1970-01-01T00:01:40Z", "N/A / not exposed"} {
+		if !strings.Contains(text, expected) {
+			t.Fatalf("automatic monitor missing %q:\n%s", expected, text)
+		}
+	}
+	for _, line := range strings.Split(text, "\n") {
+		if terminalui.CellWidth(line) > 120 {
+			t.Fatalf("automatic monitor overflow: %q", line)
+		}
 	}
 }
 
