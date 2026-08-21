@@ -53,7 +53,7 @@ func PublicMenuActionIDs() []string {
 }
 
 func menu(ctx context.Context, a *app.App) error {
-	session := &menuSession{ctx: ctx, app: a, reader: bufio.NewReader(a.In), progress: &terminalui.Progress{Out: a.Err, ShowHeader: true}}
+	session := &menuSession{ctx: ctx, app: a, reader: bufio.NewReader(a.In), progress: &terminalui.Progress{Out: a.Err, Version: a.Version, ShowHeader: true}}
 	for {
 		snapshot, err := a.MenuSnapshot()
 		if err != nil {
@@ -251,7 +251,7 @@ func (s *menuSession) choose(title string, actions []menuAction, badges []termin
 	if _, ok := s.app.In.(*os.File); ok {
 		input = s.app.In
 	}
-	return (terminalui.Selector{Context: s.ctx, In: input, Out: s.app.Out, Compact: title != "Personal AI runtime"}).Choose(title, items, badges)
+	return (terminalui.Selector{Context: s.ctx, In: input, Out: s.app.Out, Version: s.app.Version}).Choose(title, items, badges)
 }
 
 func (s *menuSession) execute(action menuAction) (bool, error) {
@@ -259,6 +259,9 @@ func (s *menuSession) execute(action menuAction) (bool, error) {
 		return false, nil
 	}
 	if !action.long {
+		if terminalui.HumanOutput(s.app.Out) {
+			fmt.Fprint(s.app.Out, terminalui.ScreenHeader(s.app.Out, s.app.Version))
+		}
 		return action.run()
 	}
 	originalOut, originalErr := s.app.Out, s.app.Err

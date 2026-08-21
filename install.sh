@@ -33,13 +33,16 @@ fi
 banner() {
   [ "$interactive" -eq 1 ] || return 0
   columns=80
+  rows=24
   if command -v tput >/dev/null 2>&1; then
     detected_columns="$(tput cols 2>/dev/null || true)"
     case "$detected_columns" in *[!0-9]*|'') ;; *) columns=$detected_columns ;; esac
+    detected_rows="$(tput lines 2>/dev/null || true)"
+    case "$detected_rows" in *[!0-9]*|'') ;; *) rows=$detected_rows ;; esac
   fi
-  if [ "$columns" -lt 46 ]; then
+  if [ "$columns" -lt 46 ] || [ "$rows" -lt 14 ]; then
     printf '%bivoai%b\n\n' "$c_cyan" "$c_reset"
-  elif [ "$columns" -lt 90 ]; then
+  elif [ "$columns" -lt 90 ] || [ "$rows" -lt 24 ]; then
     printf '%b%s%b\n\n' "$c_cyan" ' ___ _   _  ___   _  ___
 |_ _| | | |/ _ \ / \|_ _|
  | || |_| | (_) / _ \| |
@@ -290,10 +293,18 @@ if [ "$source_checkout" -eq 1 ] && [ -f "$script_dir/go.mod" ] && [ -d "$script_
   printf '%s\n' "$required_go" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$' ||
     fail "go.mod does not declare a supported stable Go version"
   select_go_toolchain "$required_go"
+  source_version="dev"
+  if command -v git >/dev/null 2>&1; then
+    described_version="$(git -C "$script_dir" describe --tags --always --dirty 2>/dev/null || true)"
+    case "$described_version" in
+      v*) source_version=${described_version#v} ;;
+      [0-9a-fA-F]*) source_version=$described_version ;;
+    esac
+  fi
   build_source() {
     (cd "$script_dir" && GOTOOLCHAIN=local CGO_ENABLED=0 \
     GOCACHE="$tmp_dir/go-build-cache" GOMODCACHE="$tmp_dir/go-module-cache" \
-    "$go_command" build -buildvcs=false -trimpath -o "$tmp_dir/ivoai" ./cmd/ivoai)
+    "$go_command" build -buildvcs=false -trimpath -ldflags "-X main.version=$source_version" -o "$tmp_dir/ivoai" ./cmd/ivoai)
   }
   run_step "Build ivoai from the source checkout" build_source
 else
@@ -323,6 +334,9 @@ if ! { [ -f "$tmp_dir/ivoai" ] && [ ! -L "$tmp_dir/ivoai" ]; }; then
   fail "downloaded ivoai is not a regular file"
 fi
 chmod 0755 "$tmp_dir/ivoai"
+installed_version="$("$tmp_dir/ivoai" version 2>/dev/null || true)"
+[ -n "$installed_version" ] || fail "installed ivoai binary did not report its version"
+info "Version: $installed_version"
 [ ! -L "$install_dir" ] || fail "$install_dir is a symlink; refusing installation"
 mkdir -p "$install_dir"
 if ! { [ -d "$install_dir" ] && [ ! -L "$install_dir" ]; }; then
@@ -356,7 +370,10 @@ fi
 register_install() { IVOAI_MANAGED_LAUNCHER="$managed_launcher" "$install_dir/ivoai" _register-install; }
 run_step "Register managed installation" register_install
 
-printf '\n%bInstallation complete%b\n' "$c_green" "$c_reset"
+printf '\n'
+banner
+printf '%bVersion: %s%b\n' "$c_dim" "$installed_version" "$c_reset"
+printf '%bInstallation complete%b\n' "$c_green" "$c_reset"
 printf '  Binary: %s/ivoai\n\n' "$install_dir"
 if path_contains "$install_dir" || [ "$create_system_link" -eq 1 ]; then
   if [ "$(id -u)" -eq 0 ]; then

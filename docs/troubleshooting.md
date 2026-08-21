@@ -270,6 +270,9 @@ the separation between gateway, context, and dependency services.
   `LINES` values.
 - Very short terminals intentionally hide descriptions and use a scrolling viewport;
   the position indicator shows undisplayed items.
+- If an older build exits when Up/Down is pressed, update and reinstall ivoai. Current
+  releases decode escape sequences already buffered by the terminal instead of
+  misclassifying an arrow key as a standalone Esc.
 
 ## Agent is installed but not connected
 

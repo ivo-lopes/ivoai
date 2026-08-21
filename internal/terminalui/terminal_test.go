@@ -100,11 +100,7 @@ func TestRawTerminalOutputReturnsEveryRowToColumnZero(t *testing.T) {
 	}
 }
 
-func TestCompactAndPlainHeadersDoNotRepeatLargeBanner(t *testing.T) {
-	compact := renderSized("Dashboard", []Item{{ID: "status", Label: "Status"}}, nil, 0, 100, 24, false, true, Wordmark(false)+"\n\n")
-	if strings.Contains(compact, "██") || !strings.HasPrefix(compact, "ivoai\n") {
-		t.Fatalf("compact screen header: %q", compact)
-	}
+func TestPlainFallbackDoesNotAddInteractiveHeader(t *testing.T) {
 	var output bytes.Buffer
 	_, err := (Selector{In: strings.NewReader("0\n"), Out: &output, ForcePlain: true}).Choose("Dashboard", []Item{{ID: "status", Label: "Status"}}, nil)
 	if err != nil {
@@ -136,6 +132,34 @@ func TestReadKeyEventReportsResize(t *testing.T) {
 	key, err := readKeyEvent(context.Background(), bufio.NewReader(reader), int(reader.Fd()), resize)
 	if err != nil || key != KeyResize {
 		t.Fatalf("key=%v err=%v", key, err)
+	}
+}
+
+func TestReadKeyEventConsumesBufferedArrowSequence(t *testing.T) {
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer reader.Close()
+	defer writer.Close()
+	if _, err := writer.Write([]byte("\x1b[B")); err != nil {
+		t.Fatal(err)
+	}
+	key, err := readKeyEvent(context.Background(), bufio.NewReader(reader), int(reader.Fd()), nil)
+	if err != nil || key != KeyDown {
+		t.Fatalf("buffered arrow key=%v err=%v", key, err)
+	}
+}
+
+func TestCanonicalHeaderIncludesAdaptiveLetteringAndVersion(t *testing.T) {
+	for _, dimensions := range [][2]int{{30, 10}, {60, 18}, {100, 30}} {
+		header := BannerVersionSized(dimensions[0], dimensions[1], "1.2.3", false, true)
+		if !strings.Contains(header, "ivoai") && !strings.Contains(header, "___") && !strings.Contains(header, "██") {
+			t.Fatalf("%dx%d header lacks lettering: %q", dimensions[0], dimensions[1], header)
+		}
+		if !strings.Contains(header, "Version: 1.2.3") {
+			t.Fatalf("%dx%d header lacks version: %q", dimensions[0], dimensions[1], header)
+		}
 	}
 }
 

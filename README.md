@@ -9,6 +9,8 @@
 ╚═╝  ╚═══╝   ╚═════╝ ╚═╝  ╚═╝╚═╝
 ```
 
+[![Current release](https://img.shields.io/github/v/release/ivo-lopes/ivoai?label=version&color=8b5cf6)](https://github.com/ivo-lopes/ivoai/releases/latest)
+
 **One host-first runtime for Codex, Claude, persistent AI memory, and private RAG.**
 
 ivoai installs and coordinates Codex CLI, Claude Code, Headroom, ai-memory, and

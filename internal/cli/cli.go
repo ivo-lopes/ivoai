@@ -33,7 +33,7 @@ func Run(ctx context.Context, a *app.App, args []string) error {
 		return runProgress(ctx, a, label, func() error { return runCommand(ctx, a, args) })
 	}
 	if commandHeaderEnabled(args) && terminalui.HumanOutput(a.Out) {
-		fmt.Fprintf(a.Out, "%s\n\n", terminalui.Wordmark(terminalui.ColorEnabled(a.Out)))
+		fmt.Fprint(a.Out, terminalui.ScreenHeader(a.Out, a.Version))
 	}
 	return runCommand(ctx, a, args)
 }

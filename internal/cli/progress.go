@@ -8,7 +8,7 @@ import (
 )
 
 func runProgress(ctx context.Context, a *app.App, label string, operation func() error) error {
-	progress := &terminalui.Progress{Out: a.Err, ShowHeader: true}
+	progress := &terminalui.Progress{Out: a.Err, Version: a.Version, ShowHeader: true}
 	if progress.Animated() {
 		originalOut, originalErr := a.Out, a.Err
 		a.Out, a.Err = progress.Writer(originalOut), progress.Writer(originalErr)

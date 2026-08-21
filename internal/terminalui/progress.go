@@ -16,6 +16,7 @@ import (
 
 type Progress struct {
 	Out           io.Writer
+	Version       string
 	Interval      time.Duration
 	PulseInterval time.Duration
 	Now           func() time.Time
@@ -44,7 +45,7 @@ func (p *Progress) Run(ctx context.Context, label string, operation func(context
 	animated := p.animated()
 	color := colorEnabled(p.Out)
 	if animated && p.ShowHeader {
-		p.write("%s\n\n", Wordmark(color))
+		p.write("%s", ScreenHeader(p.Out, p.Version))
 	}
 	interval := p.Interval
 	if interval <= 0 {

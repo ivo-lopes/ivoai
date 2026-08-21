@@ -47,8 +47,8 @@ type Selector struct {
 	Context    context.Context
 	In         io.Reader
 	Out        io.Writer
+	Version    string
 	ForcePlain bool
-	Compact    bool
 	Width      int
 	Height     int
 }
@@ -79,10 +79,7 @@ func (s Selector) Choose(title string, items []Item, badges []Badge) (string, er
 	defer signal.Stop(resize)
 	for {
 		width, height := s.dimensions(outFile)
-		header := BannerSized(width, height, colorEnabled(s.Out), unicodeEnabled())
-		if s.Compact {
-			header = Wordmark(colorEnabled(s.Out)) + "\n\n"
-		}
+		header := BannerVersionSized(width, height, s.Version, colorEnabled(s.Out), unicodeEnabled())
 		_, _ = fmt.Fprint(s.Out, "\x1b[2J\x1b[H", rawTerminalOutput(renderSized(title, items, badges, selected, width, height, colorEnabled(s.Out), unicodeEnabled(), header)))
 		key, err := readKeyEvent(ctx, reader, int(inFile.Fd()), resize)
 		if err != nil {
@@ -366,8 +363,27 @@ func BannerSized(width, height int, color, unicode bool) string {
 	return output.String()
 }
 
-// Wordmark is the compact header used by command-oriented screens.
-func Wordmark(color bool) string { return paint("ivoai", cyan, color) }
+// BannerVersionSized is the canonical ivoai screen header. Every human-facing
+// interactive screen uses this same adaptive lettering and version treatment.
+func BannerVersionSized(width, height int, version string, color, unicode bool) string {
+	banner := strings.TrimRight(BannerSized(width, height, color, unicode), "\n")
+	if strings.TrimSpace(version) == "" {
+		version = "dev"
+	}
+	return banner + "\n" + paint("Version: "+version, dim, color) + "\n\n"
+}
+
+// ScreenHeader resolves live terminal dimensions and renders the same header
+// used by the interactive menu.
+func ScreenHeader(out io.Writer, version string) string {
+	width, height := 80, 24
+	if file, ok := out.(*os.File); ok && term.IsTerminal(int(file.Fd())) {
+		if terminalWidth, terminalHeight, err := term.GetSize(int(file.Fd())); err == nil {
+			width, height = terminalWidth, terminalHeight
+		}
+	}
+	return BannerVersionSized(width, height, version, colorEnabled(out), unicodeEnabled())
+}
 
 func displayWidth(value string) int {
 	width := 0
@@ -473,24 +489,18 @@ func readKeyEvent(ctx context.Context, reader *bufio.Reader, fd int, resize <-ch
 	}
 	sequence := []byte{first}
 	if first == 27 {
-		poll := []unix.PollFd{{Fd: int32(fd), Events: unix.POLLIN}}
-		if ready, _ := unix.Poll(poll, int(EscapeSequenceTimeout/time.Millisecond)); ready > 0 {
-			for len(sequence) < 3 && reader.Buffered() > 0 {
-				value, readErr := reader.ReadByte()
-				if readErr != nil {
+		for len(sequence) < 3 {
+			if reader.Buffered() == 0 {
+				poll := []unix.PollFd{{Fd: int32(fd), Events: unix.POLLIN}}
+				if ready, _ := unix.Poll(poll, int(EscapeSequenceTimeout/time.Millisecond)); ready == 0 {
 					break
 				}
-				sequence = append(sequence, value)
 			}
-			if len(sequence) == 1 {
-				for len(sequence) < 3 {
-					value, readErr := reader.ReadByte()
-					if readErr != nil {
-						break
-					}
-					sequence = append(sequence, value)
-				}
+			value, readErr := reader.ReadByte()
+			if readErr != nil {
+				break
 			}
+			sequence = append(sequence, value)
 		}
 	}
 	return DecodeKey(sequence), nil

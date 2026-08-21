@@ -21,14 +21,16 @@ the interface never relies on a fixed 80-column terminal.
 
 Interactive human-facing screens use the same semantic palette: cyan for active
 work, violet for headings, green for success, yellow for degraded results, and red
-for failures. Every submenu and long-running command displays at least a compact
-ivoai wordmark. Lettering, cursor animation, and color are deliberately absent from
-machine-readable and redirected output.
+for failures. The main menu, every submenu, and every human-facing command use the
+same adaptive ivoai lettering and print the running binary version directly below
+it. Lettering, version decoration, cursor animation, and color are deliberately
+absent from machine-readable and redirected output.
 
 ## Installer presentation
 
-`install.sh` prints a responsive ivoai banner, detected platform, architecture,
-installation target, and numbered phases. Known-size transfers use a byte/percentage
+`install.sh` uses the same responsive ivoai banner as the CLI, reports the exact
+installed version, detected platform, architecture, installation target, and phases.
+Known-size transfers use a byte/percentage
 bar; checksum, extraction, source build, and registration use a spinner with elapsed
 time. If a step fails, the installer stops the animation, prints the related log in
 a readable error block, and leaves no partial temporary download.
