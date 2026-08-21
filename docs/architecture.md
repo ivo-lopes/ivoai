@@ -31,7 +31,9 @@ ivoai CLI/wizard                       one public HTTPS origin
   +-- connection registry                +-- /health and /ready
   +-- official agent authentication      +-- enrollment/control API
   +-- fail-safe memory hooks              +-- context MCP (read-only)
-  +-- Ruflo safe orchestration            +-- ai-memory MCP
+  +-- session control plane               +-- ai-memory MCP
+  |     +-- direct observability
+  |     `-- safe Ruflo swarm + local MCP
   |                                      |
   +-- Headroom -- Codex/Claude            +-- Web MCP + OAuth 2.1
         `------ direct fallback           +-- context service
@@ -130,6 +132,28 @@ Sources: <https://headroomlabs-ai.github.io/headroom/cli/>,
 <https://github.com/headroomlabs-ai/headroom/releases/tag/v0.36.0>,
 <https://github.com/astral-sh/uv/releases/tag/0.12.5>, and
 <https://www.python.org/downloads/release/python-31315/>.
+
+### Session control plane
+
+Session metadata is an explicit domain below the XDG state directory. Random IDs,
+atomic private files and Linux PID start markers support lifecycle monitoring without
+creating another conversation store. Prompts, results, tokens and raw environments
+are excluded. Direct sessions call the same interactive runtime as `ivoai codex` and
+`ivoai claude`; Ruflo is not touched.
+
+Orchestrated sessions have a strict gate: the safe profile must match its reviewed
+tool allowlist, provider execution and durable Ruflo memory must be false, Ruflo must
+pass a version/health command, a real hierarchical swarm must return a verifiable ID,
+and an opaque primary task must be registered before the official client starts.
+Ruflo gets a clean environment with `RUFLO_PROVIDER=ivoai-disabled` and
+`CLAUDE_FLOW_MEMORY_BACKEND=memory`.
+
+The local stdio `ivoai-orchestrator` MCP is injected only for the lifetime of that
+primary. It maps delegation to trusted official Codex/Claude executables and maps
+opaque lifecycle IDs to Ruflo task commands. Results are bounded to 1 MiB and kept in
+the bridge process, never in session state. Worker concurrency defaults to two and is
+hard-capped at three. The bridge is not registered in or routed by the public server
+gateway. See [orchestration.md](orchestration.md).
 
 ai-memory 1.29.0 is the durable operational memory layer. Its versioned native
 binaries and hook bundle support Codex and Claude Code and publish per-platform

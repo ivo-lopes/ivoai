@@ -90,3 +90,29 @@ journald should still be reviewed before logs are exported or shared.
 
 Report vulnerabilities privately to the repository owner. Do not include tokens,
 private documents, or production logs in reports.
+
+## Session control plane
+
+Session JSON contains only operational metadata and uses private XDG directories,
+atomic `0600` writes, no-follow reads and an advisory lock opened with
+`O_NOFOLLOW`. Random session/worker IDs, bounded metadata and validation of every
+executor/model/state field reduce tampering and terminal-escape risks. Prompts,
+answers, tokens and raw environments are never fields in this schema.
+
+`ivoai-orchestrator` is a local stdio MCP attached only through per-process official
+client configuration. Its startup requires an active session with a verified Swarm
+ID, safe Ruflo status and provider execution disabled. The remote gateway has no
+route to it. Delegation selects only trusted component-state paths whose basename is
+`codex` or `claude`; it accepts no shell, executable path or working-directory input.
+Tasks are capped at 32 KiB, results at 1 MiB, concurrent workers at the configured
+limit and three absolutely.
+
+Ruflo receives a clean environment, `RUFLO_PROVIDER=ivoai-disabled`, process-local
+memory and opaque lifecycle IDs only. PAYG provider variables, prompts and results do
+not cross that boundary. Official workers receive provider-key variables removed
+while retaining their own supported subscription authentication stores.
+
+Primary and worker process groups are signalled only when the recorded Linux kernel
+start marker still matches the PID. Shutdown cancels workers, closes lifecycle tasks
+and removes the private transient runtime. Stale sessions can be finalized without
+killing a recycled PID.

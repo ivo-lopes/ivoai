@@ -51,6 +51,15 @@ compromised host are outside ivoai's protection boundary.
 - Optional memory, context, Headroom, and Ruflo failures cannot prevent a direct
   Codex or Claude launch; authorization failures never fail open.
 - All production dependency versions and integrity strategies are pinned.
+- Session state contains operational metadata only: never prompts, worker results,
+  tokens, headers, cookies, environment dumps, or provider keys.
+- The local orchestration MCP is stdio-only, bound to one unpredictable active
+  session ID, accepts only known Codex/Claude executors, and enforces bounded input,
+  output and concurrency.
+- PID actions require the Linux process start marker to match, preventing stale PID
+  reuse from terminating an unrelated process.
+- Ruflo receives a clean provider-free environment and only opaque lifecycle IDs;
+  it never receives delegation prompts or worker responses.
 
 ## Reportable findings and severity context
 
@@ -60,6 +69,11 @@ path escape, unsafe archive extraction, cross-origin token forwarding, public da
 exposure, persistent prompt-injection-to-control flow, or supply-chain verification
 bypass. Severity depends on realistic reachability, required privileges, exposed data,
 and whether the default deployment is affected.
+
+For the session control plane, also report unsafe executable selection, symlink or
+permission bypass in session state, PID-reuse termination, provider environment
+leakage, prompt/result persistence, unbounded worker creation, orphan processes, or
+remote exposure of `ivoai-orchestrator`.
 
 ## Out of scope and known limitations
 

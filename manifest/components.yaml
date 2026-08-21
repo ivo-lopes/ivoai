@@ -170,6 +170,8 @@ components:
     package_url: "https://registry.npmjs.org/ruflo/-/ruflo-3.38.12.tgz"
     safe_default_features:
       - coordination
+      - hierarchical_swarm_lifecycle
+      - opaque_task_lifecycle
       - workflows_without_direct_provider_calls
       - hooks
       - ephemeral_operational_state
@@ -182,6 +184,7 @@ components:
       - "Production uses npm ci with lifecycle scripts disabled and a minimal credential-free environment."
       - "Open upstream issues #2356 and #2962 show agent_execute still requires a separately configured provider."
       - "No OPENAI_API_KEY or ANTHROPIC_API_KEY is requested by ivoai's default Ruflo profile."
+      - "Session workers are official Codex/Claude CLI subprocesses; Ruflo receives only opaque lifecycle IDs and never delegation prompts or results."
 
   - name: nodejs
     role: [client-runtime]

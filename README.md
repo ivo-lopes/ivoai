@@ -23,8 +23,9 @@ ChatGPT Web, and Claude Web.
 ```text
 Desktop / notebook                         Private Linux server
 
-ivoai menu ── Headroom ── Codex/Claude       HTTPS gateway
-    │             └────── direct fallback       ├── OAuth + Web MCP
+ivoai menu ── Session Control ── Codex/Claude   HTTPS gateway
+    │          ├── Headroom / direct fallback    ├── OAuth + Web MCP
+    │          └── safe Ruflo swarm (optional)   │
     │ HTTPS + scoped credential                 ├── context/RAG ── Qdrant
     └───────────────────────────────────────────└── ai-memory
 ```
@@ -49,6 +50,20 @@ ivoai connect server
 ivoai codex
 ivoai claude
 ```
+
+Direct agent commands are unchanged. For observable or delegated work, use explicit
+session modes:
+
+```sh
+ivoai session start --executor codex --mode direct
+ivoai session start --executor codex --mode orchestrated
+ivoai monitor --watch
+```
+
+Orchestrated mode proves a real safe Ruflo swarm before opening the official primary
+client. Ruflo records only ephemeral lifecycle metadata; official Codex/Claude
+clients perform inference with their existing subscription logins. No PAYG provider
+key is passed to Ruflo or required by ivoai.
 
 Logins use the official Codex and Claude flows. ivoai never asks for or stores their
 passwords, cookies, or provider OAuth tokens.
@@ -113,6 +128,8 @@ ivoai doctor                 # human-readable diagnostics
 ivoai doctor --json          # stable automation output
 ivoai update                 # explicit, configuration-preserving update
 ivoai project init           # optional project-specific identity
+ivoai session list           # non-sensitive session metadata
+ivoai monitor --watch        # primary, swarm, workers, services
 ivoai server status          # local server services
 ivoai server backup          # authoritative data backup
 ```
@@ -129,6 +146,7 @@ execution.
 
 - [Architecture](docs/architecture.md)
 - [Client guide](docs/client.md)
+- [Direct and orchestrated sessions](docs/orchestration.md)
 - [Server and reverse proxy](docs/server.md)
 - [Connections and Web MCP](docs/connections.md)
 - [Security model](docs/security.md)

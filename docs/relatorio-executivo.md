@@ -157,6 +157,20 @@ ChatGPT Web e Claude Web exigem que o gateway esteja publicado em HTTPS válido.
 disponibilidade de conectores customizados e skills também depende do plano e das
 políticas do workspace de cada provedor.
 
+## Sessões observáveis e orquestradas
+
+O usuário pode continuar abrindo Codex e Claude da forma mais simples, sem qualquer
+interferência do Ruflo. Quando precisa acompanhar uma atividade, escolhe uma sessão
+direta; quando precisa delegar revisões ou testes, escolhe explicitamente uma sessão
+orquestrada. O app confirma que a coordenação Ruflo está segura antes de abrir o
+agente e permite acompanhar executor, modelo declarado, workers e serviços por
+`ivoai monitor --watch`.
+
+Essa evolução não cria um novo chat e não exige chaves pagas. Codex e Claude oficiais
+continuam fazendo todo o trabalho inteligente com os logins do usuário. Ruflo mantém
+somente a organização temporária; ai-memory continua responsável pela memória
+durável e Context continua responsável pelo conhecimento recuperável.
+
 ## Leituras relacionadas
 
 - [Relatório técnico](relatorio-tecnico.md)

@@ -90,6 +90,32 @@ starts the official agent directly. Once a selected wrapper process starts, its 
 status is propagated instead of being hidden. Memory and context hooks are best
 effort and cannot block launch.
 
+## Session control plane
+
+The interactive menu contains **Session Control**, with direct and orchestrated
+choices for both official clients, session listing, monitoring and safe stop. The
+same operations are available to automation:
+
+```sh
+ivoai session start --executor codex --mode direct
+ivoai session start --executor claude --mode orchestrated
+ivoai session list --json
+ivoai session show --json <session-id>
+ivoai session stop <session-id>
+ivoai monitor --watch
+```
+
+Direct sessions add metadata and monitoring but do not initialize Ruflo.
+Orchestrated sessions require a verified safe Ruflo profile, initialize and verify a
+real swarm, register the primary, and inject the local `ivoai-orchestrator` MCP. The
+MCP delegates bounded tasks to official Codex/Claude non-interactive modes. The
+default is two concurrent workers and the hard maximum is three.
+
+Session JSON is private XDG state and contains no prompt, response or credential.
+Model output is labelled `runtime_verified`, `argument`, `configured`, or `unknown`;
+the last value is intentionally used rather than guessing. See
+[Session control and orchestration](orchestration.md).
+
 ## Project identity
 
 ivoai is host-first. Outside a project, memory uses a stable normalized host identity

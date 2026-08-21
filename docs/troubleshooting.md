@@ -357,3 +357,60 @@ Complete the browser flow or open the URL printed by Claude Code. Verify the res
 with `ivoai doctor`. ivoai does not read or store Claude credentials. If login still
 fails, run `claude auth status` to check the official client independently and make
 sure the terminal permits interactive input.
+
+## Ruflo is installed but an orchestrated session is refused
+
+Run `ivoai setup` and then `ivoai doctor`. Orchestrated mode requires the current
+private wrapper and exact safe-profile version, a provider-free health probe, a real
+swarm ID and successful primary lifecycle registration. A profile edited by hand,
+an older allowlist, `provider_execution=true`, durable Ruflo memory, or a failing
+`ruflo swarm init/status` causes an explicit refusal. Direct commands remain usable:
+
+```sh
+ivoai codex
+ivoai claude
+```
+
+Do not add provider keys to work around the gate. Ruflo is a coordination layer, not
+the inference provider.
+
+## Worker failed to launch
+
+Doctor checks `codex exec --help` and `claude --help` without performing inference.
+Repair components with `ivoai setup`, verify each official login separately, and
+inspect the session with `ivoai monitor --session <id>`. Only managed or discovered
+Codex/Claude component paths are accepted; an executable path cannot be supplied by
+a delegation prompt. A Headroom start failure retries the official worker directly,
+while an already-started wrapper's failure is reported normally.
+
+## Model is `unknown`
+
+This is a safe result, not a health failure. ivoai reports a model only when verified
+by runtime evidence, supplied with `--model`/`-m`, or found in a supported official
+client configuration. It never derives a model from the CLI version, account plan or
+binary name. Pass an explicit official model argument if deterministic provenance is
+needed.
+
+## Monitor shows a stale session
+
+Run `ivoai session show <id>` and then `ivoai session stop <id>`. ivoai sends a signal
+only when both PID and Linux process-start marker match. If no owned process exists,
+the stale lifecycle is finalized as failed rather than risking an unrelated recycled
+PID. Session JSON under the XDG state directory may be retained as non-sensitive
+history; do not edit it manually.
+
+## Recovering an orphan worker
+
+Normal primary shutdown cancels the bridge context, terminates owned worker process
+groups, closes Ruflo lifecycle tasks and removes the private runtime directory. If
+the host lost power or ivoai itself was killed, use `ivoai session stop <id>` after
+restart. A mismatched process marker is deliberately not killed. Check the official
+client independently only if an actual matching process remains.
+
+## ai-memory or Context is degraded during a session
+
+These services are independent of inference. The monitor reports `ready`, `degraded`
+or `disabled`, but Codex, Claude and bounded workers continue. Use `ivoai memory
+configure`, `ivoai doctor`, and the server context/memory status commands to repair
+the integration. Ruflo never receives a copy of the context corpus or becomes a
+durable memory fallback.

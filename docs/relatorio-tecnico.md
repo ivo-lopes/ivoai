@@ -282,7 +282,34 @@ autorização por tool. OAuth cobre PKCE, DCR, redirect malicioso, expiração, 
 one-time, rotação, revogação, CSRF, scopes e ausência de secrets nos logs. O release
 valida o ZIP da skill e inclui seu checksum junto aos binários.
 
-## 17. Referências internas
+## 17. Session Control Plane
+
+O domínio `internal/session` persiste metadados operacionais de forma atômica sob XDG
+state, com IDs aleatórios, locks no-follow e identidade de processo composta por PID
+e start time do kernel. Os estados são `starting`, `running`, `degraded`, `stopping`,
+`completed` e `failed`. Prompt, resultado, environment e secrets não pertencem ao
+schema.
+
+No modo direct, `internal/app` chama o mesmo `agents.Runtime` usado pelos entrypoints
+históricos, apenas observando PID e uso real de Headroom. No modo orchestrated,
+`orchestration.ControlPlane` valida o perfil seguro, executa e confirma um swarm real
+e registra o primary como task opaca antes do launch. O MCP local
+`ivoai-orchestrator` oferece status, agentes, delegate, result e cancel somente por
+stdio e somente enquanto a sessão está ativa.
+
+`internal/workers` encapsula `codex exec --json --output-last-message` e
+`claude --print --output-format json`. Executáveis vêm exclusivamente do component
+state, o ambiente exclui keys PAYG, o task é limitado a 32 KiB e o resultado a 1 MiB.
+Headroom é usado após probe e seu uso efetivo fica no worker metadata. Ruflo recebe
+apenas IDs e lifecycle; respostas ficam em memória no bridge. A concorrência padrão é
+dois e o hard limit é três.
+
+O monitor possui saída humana responsiva e JSON sem ANSI. Proveniência de modelo
+segue `runtime_verified > argument > configured > unknown`; a implementação atual
+não promove saída textual comum a runtime verified. Detalhes operacionais estão em
+[orchestration.md](orchestration.md).
+
+## 18. Referências internas
 
 - [Arquitetura](architecture.md)
 - [Cliente](client.md)
