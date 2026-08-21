@@ -33,8 +33,9 @@ ivoai CLI/wizard                       one public HTTPS origin
   +-- fail-safe memory hooks              +-- context MCP (read-only)
   +-- Ruflo safe orchestration            +-- ai-memory MCP
   |                                      |
-  +-- Headroom -- Codex/Claude            +-- context service
-        `------ direct fallback           |     +-- connectors/ingestion
+  +-- Headroom -- Codex/Claude            +-- Web MCP + OAuth 2.1
+        `------ direct fallback           +-- context service
+                                         |     +-- connectors/ingestion
                                          |     +-- local embeddings
                                          |     `-- Qdrant (internal)
                                          `-- ai-memory (internal)
@@ -228,7 +229,9 @@ The public discovery response is non-sensitive. The gateway applies
   "context_mcp_endpoint": "/v1/mcp/context",
   "memory_mcp_endpoint": "/v1/memory/mcp",
   "memory_hooks_endpoint": "/v1/memory",
-  "features": {"context": true, "memory": true, "memory_hooks": true, "remote_admin_read_only": true}
+  "web_mcp_endpoint": "/mcp",
+  "oauth_authorization_server_metadata": "/.well-known/oauth-authorization-server",
+  "features": {"context": true, "memory": true, "memory_hooks": true, "web_mcp": true, "oauth_pkce": true, "remote_admin_read_only": true}
 }
 ```
 
@@ -275,6 +278,56 @@ file. Initial scopes are `context:read`, `memory:read`, `memory:write`, `status:
 `doctor:read`, and `connector:read`. Administrative mutation is never implied by
 enrollment. Revocation is immediate. Invalid, expired, consumed, and revoked codes
 share one uniform external error, so code state is not disclosed.
+
+### Web MCP and OAuth
+
+ChatGPT Web and Claude Web use a separate public integration boundary. `/mcp` is a
+Streamable HTTP MCP endpoint built on the pinned official MCP Go SDK. It aggregates
+context and memory behind one connector URL while preserving the existing native
+client MCP routes. `initialize` advertises server instructions, tool capabilities,
+and the bounded skills extension; tools return typed `structuredContent` plus a text
+representation for compatibility.
+
+The Web tool surface is intentionally narrower than the backing services:
+
+- `context_search`, `context_get_document`, `context_recent`, and `context_health`
+  are read-only and label retrieved documents as untrusted data;
+- `memory_query`, `memory_recent`, `memory_read_page`, and `memory_status` require
+  `memory:read`;
+- `memory_write_page` and `memory_feedback` require `memory:write`;
+- `memory_delete_page` requires `memory:delete`, a normalized page path, and explicit
+  confirmation in the call.
+
+Maintenance, self-improvement, handoff orchestration, arbitrary upstream tools, and
+host commands are not published by this facade. Loss of ai-memory degrades memory
+tools without making context tools or gateway liveness unavailable.
+
+OAuth follows Authorization Code with PKCE S256. Protected-resource and authorization
+server metadata support Web connector discovery; dynamic client registration accepts
+only validated HTTPS redirect URIs (plus the explicitly supported loopback development
+case). Authorization codes live for five minutes, access tokens for one hour, and
+rotating refresh tokens for 30 days. The browser consent flow additionally requires a
+short-lived one-time activation code created by the local administrator, avoiding a
+new password database.
+
+Server-side OAuth persistence stores only hashes of activation codes, authorization
+codes, access tokens, and refresh tokens. Mutations are locked and atomic. Scopes are
+checked again at the tool boundary. Origin validation, PKCE verification, `state`
+round-tripping, exact redirect matching, token rotation, and revocation limit token
+substitution and cross-site authorization attacks.
+
+The RFC 8707 `resource` value is the canonical public `/mcp` URL. It is preserved in
+authorization codes, access tokens, rotating refresh tokens, and every authenticated
+MCP request so credentials cannot be replayed against a different audience.
+
+### MCP skill delivery
+
+The repository's `skills/ivoai-memory-context/SKILL.md` is also available through
+`skills/list`, `skills/get`, and `resources/read`. The advertised resource uses a
+`skill://` URI and digest so compatible clients can import a fixed snapshot. A release
+also publishes the same directory as `ivoai-memory-context.zip` for Claude custom
+Skill import. Importing instructions does not guarantee that a Web model will invoke
+a tool on every turn; the platform retains final tool-selection control.
 
 Remote administration is an explicit allowlist of typed operations such as status,
 doctor summary, and connector list. There is no host-command parameter,

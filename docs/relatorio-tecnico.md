@@ -32,6 +32,7 @@ CLIENTE
 SERVIDOR
   ivoai gateway
     ├── discovery, health, readiness e enrollment
+    ├── OAuth 2.1 + Web MCP unificado
     ├── context MCP ── context ── embeddings ── Qdrant
     ├── memory MCP/hook proxy ── ai-memory
     └── remote admin read-only
@@ -58,6 +59,18 @@ confirmação exata. Itens incompatíveis permanecem visíveis com a razão.
 O snapshot do menu é tipado e contém somente readiness e estados booleanos; nenhum
 token, enrollment code ou conteúdo bruto de secret chega à camada visual.
 
+O renderer não fixa as dimensões na abertura. Ele consulta largura e altura a cada
+frame e recebe `SIGWINCH`, recalculando banner, badges, descrições e viewport. O modo
+amplo é usado a partir de `90x24`, o intermediário entre `60x18` e `89x23`, e o
+compacto abaixo disso. Cálculos usam células visuais Unicode e removem ANSI antes de
+medir; badges quebram linha e listas altas são paginadas, evitando overflow.
+
+A apresentação semântica é compartilhada pelos comandos humanos: cyan/violeta para
+estrutura e progresso, verde para sucesso, amarelo para warning e vermelho para erro.
+O lettering completo aparece no instalador e na entrada principal; telas internas
+usam wordmark compacto. JSON, pipes, `NO_COLOR`, `TERM=dumb` e CI não recebem códigos
+ANSI ou animação.
+
 ## 4. Progresso e I/O
 
 O indicador central apresenta spinner e tempo decorrido em TTY, frames ASCII quando
@@ -71,6 +84,12 @@ linha animada é encerrada para entregar o terminal ao subprocesso.
 Downloads específicos, como o plugin Docker Compose, reportam bytes e percentual a
 partir de `Content-Length`. Health demorado de containers emite heartbeats com elapsed
 time e comando seguro de diagnóstico.
+
+O shell installer implementa a mesma máquina visual antes que o binário exista. Cada
+fase possui início, conclusão e erro; downloads conhecidos exibem barra, enquanto
+checksum, extração e build exibem spinner. Saída detalhada temporariamente capturada é
+reapresentada se a operação falhar. A conclusão informa caminho instalado e diferencia
+o próximo passo client (`ivoai setup`) do server (`ivoai setup --mode server`).
 
 ## 5. Configuração e persistência client-side
 
@@ -174,7 +193,60 @@ Enrollment:
 State e lock de enrollment são `0600` e pertencem ao gateway. Falhas internas de
 estado retornam indisponibilidade sem se mascararem como credencial inválida.
 
-## 12. Segurança e ameaças
+## 12. OAuth e MCP para aplicações Web
+
+O endpoint público `/mcp` usa Streamable HTTP através do SDK Go oficial do MCP,
+pinado. Ele preserva os endpoints nativos usados pelo desktop, mas oferece a ChatGPT
+Web e Claude Web um único catálogo agregado. A sessão negocia a versão do protocolo,
+publica schemas de entrada/saída, annotations de segurança e respostas em
+`structuredContent` com fallback textual.
+
+Ferramentas de contexto são read-only. A memória é separada por scopes:
+
+| Ferramentas | Scope |
+| --- | --- |
+| `context_search`, `context_get_document`, `context_recent`, `context_health` | `context:read` |
+| `memory_query`, `memory_recent`, `memory_read_page`, `memory_status` | `memory:read` |
+| `memory_write_page`, `memory_feedback` | `memory:write` |
+| `memory_delete_page` | `memory:delete` + confirmação do path normalizado |
+
+O facade não repassa ferramentas upstream desconhecidas. Self-routing, sweeps,
+auto-improvement, manutenção, provider execution e shell remoto ficam fora do
+catálogo. A indisponibilidade de ai-memory retorna erro apenas nas ferramentas de
+memória.
+
+OAuth 2.1 utiliza Authorization Code com PKCE S256, metadata de authorization server
+e protected resource, dynamic client registration, redirect exato, consentimento e
+revogação. Authorization codes duram cinco minutos, access tokens uma hora, e refresh
+tokens rotativos 30 dias. Um código de ativação one-time criado por
+`ivoai server web-access create` autoriza o navegador sem uma base de senhas.
+
+O estado OAuth é owner-only, bloqueado entre processos e escrito atomicamente.
+Códigos e tokens são armazenados apenas como hashes; o valor é entregue somente ao
+participante do fluxo. Rotação invalida o refresh anterior, e revogação encerra toda
+a família. Origin, redirect, PKCE, scopes e confirmação destrutiva são validados no
+gateway.
+
+Para proxy reverso, somente a origem HTTPS é pública. Nginx Proxy Manager preserva
+`Authorization`, `Host` e `X-Forwarded-Proto`, desabilita buffering do Streamable HTTP
+e não adiciona Basic Auth ou Access List sobre OAuth. Qdrant, TEI e ai-memory
+continuam inacessíveis externamente.
+
+## 13. Distribuição da skill
+
+`skills/ivoai-memory-context/SKILL.md` instrui o modelo a consultar memória e contexto
+quando histórico ou estado do projeto forem relevantes, distinguir resultado de
+inferência e declarar indisponibilidade. RAG e memória são tratados como dados não
+confiáveis. Escrita exige pedido explícito; delete exige uma confirmação separada que
+nomeie o path normalizado.
+
+O MCP publica uma fotografia dessa skill por `skills/list`, `skills/get` e
+`resources/read`, com URI `skill://` e digest. O workflow de release também produz
+`ivoai-memory-context.zip`, contendo a pasta da skill na raiz, para importação no
+Claude Web. A importação não garante invocação em cada turno: tool selection permanece
+uma decisão do produto Web.
+
+## 14. Segurança e ameaças
 
 - TLS Web PKI ou direto; proxy remoto exige CIDR confiável e HTTPS encaminhado.
 - Redirects cross-origin são recusados.
@@ -189,7 +261,7 @@ estado retornam indisponibilidade sem se mascararem como credencial inválida.
 Falhas de Headroom, Ruflo, memória, contexto ou server remoto degradam somente a
 função relacionada. Codex e Claude continuam disponíveis diretamente.
 
-## 13. Backup, restore e atualização
+## 15. Backup, restore e atualização
 
 Backup inclui configuração necessária, catálogo/contexto, corpus, memória e metadados
 de reconstrução. Restore valida o archive, interrompe serviços necessários e reinicia
@@ -198,14 +270,19 @@ de forma controlada; o menu exige confirmação `RESTORE`.
 Update é explícito, preserva config/secrets, executa doctor e retém o binário anterior
 para rollback quando possível.
 
-## 14. Qualidade e entrega
+## 16. Qualidade e entrega
 
 CI executa gofmt, testes, race detector, vet, builds Linux amd64/arm64, ShellCheck,
 govulncheck e smoke tests em Ubuntu 22.04, Ubuntu 24.04 e Debian 12. O menu acrescenta
 testes de largura, cor, teclas, fallback, indisponibilidade, confirmação, progresso e
 inventário de ações públicas.
 
-## 15. Referências internas
+O MCP acrescenta testes de negociação, schemas, skills, isolamento de falhas e
+autorização por tool. OAuth cobre PKCE, DCR, redirect malicioso, expiração, consumo
+one-time, rotação, revogação, CSRF, scopes e ausência de secrets nos logs. O release
+valida o ZIP da skill e inclui seu checksum junto aos binários.
+
+## 17. Referências internas
 
 - [Arquitetura](architecture.md)
 - [Cliente](client.md)
@@ -214,4 +291,3 @@ inventário de ações públicas.
 - [Segurança](security.md)
 - [Desenvolvimento](development.md)
 - [Troubleshooting](troubleshooting.md)
-

@@ -8,6 +8,11 @@
 - Raw terminal state is restored on normal errors, EOF, Esc, `q`, and cancellation.
 - Animated progress goes to stderr. Redirect stdout independently when consuming
   command or JSON output.
+- Resize is detected while the menu is open. If an intermediary SSH client does not
+  propagate `SIGWINCH`, reopen the menu after resizing or set correct `COLUMNS` and
+  `LINES` values.
+- Very short terminals intentionally hide descriptions and use a scrolling viewport;
+  the position indicator shows undisplayed items.
 
 Start with:
 
@@ -87,3 +92,29 @@ proxy peer, result, and broad rejection reason. It never records the enrollment 
 its verifier, a client token, or the client name. Use
 `ivoai server logs ivoai-gateway.service` to distinguish a malformed/mismatched code,
 an unauthorized scope, or a request routed to another gateway instance.
+
+## ChatGPT or Claude Web cannot connect to `/mcp`
+
+Verify the public paths without supplying a secret:
+
+```sh
+curl -i https://ai.example.com/.well-known/ivoai
+curl -i https://ai.example.com/.well-known/oauth-authorization-server
+curl -i https://ai.example.com/.well-known/oauth-protected-resource
+```
+
+A `502` means the proxy cannot reach port 7744. A proxy-generated `401` or `403`
+usually means an NPM Access List, Basic Auth, WAF rule, or another authentication
+layer is intercepting OAuth; remove that extra challenge from this host. Preserve the
+`Authorization` header and `X-Forwarded-Proto: https`, disable proxy buffering for
+Streamable HTTP, and allow a long read timeout.
+
+If OAuth reports an invalid redirect, remove the connector and add it again so its
+current redirect URI is dynamically registered. Never broaden redirect matching.
+If the activation code expired or was already consumed, create another with
+`ivoai server web-access create`; do not place the code in the URL or logs.
+
+Use `ivoai server web-access list` to confirm the grant is active and scoped. Revoke
+the entry and reconnect if refresh-token rotation was interrupted. Memory-tool
+failures do not imply that context is unavailable; check `ivoai server memory status`
+and `ivoai server context status` separately.

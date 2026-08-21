@@ -6,6 +6,7 @@
   bootstraps the exact reviewed toolchain temporarily when Go is absent or too old.
 - Git
 - Bash and ShellCheck
+- Python 3 for deterministic Web skill packaging
 - Docker only for server dependency integration tests
 
 For a private checkout, authenticate Git and clone by SSH:
@@ -26,6 +27,8 @@ go test -race ./...
 go vet ./...
 shellcheck install.sh scripts/*.sh
 scripts/install-smoke.sh
+scripts/package-skill.sh
+unzip -t dist/ivoai-memory-context.zip
 go build ./cmd/ivoai
 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build ./cmd/ivoai
 CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build ./cmd/ivoai
@@ -67,6 +70,8 @@ vulnerability checks in the `quality` job.
 ## Release
 
 Semantic-version tags drive the release workflow. It verifies quality gates, builds
-Linux amd64 and arm64 archives, generates `checksums.txt`, and publishes a GitHub
-release. Do not tag a commit until unit, race, vet, cross-build,
+Linux amd64 and arm64 archives, packages the `ivoai-memory-context` Web skill, verifies
+the ZIP, generates `checksums.txt` for every artifact, and publishes a GitHub release.
+The package script writes fixed ZIP metadata so identical skill input produces an
+identical archive. Do not tag a commit until unit, race, vet, cross-build,
 install-idempotency, deployment, and security checks pass.

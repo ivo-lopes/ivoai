@@ -61,6 +61,9 @@ ivoai server stop
 ivoai server restart
 ivoai server logs
 ivoai server gateway configure --public-url https://ai.example.com
+ivoai server web-access create --ttl 10m
+ivoai server web-access list
+ivoai server web-access revoke <id>
 ivoai server backup [--output <path>]
 ivoai server restore --input <backup>
 ivoai server remote status
@@ -115,6 +118,51 @@ The dependency containers join a non-internal network only while Docker establis
 the loopback bindings; systemd disconnects that transient network after startup.
 After systemd loads the backend environment files, the context service cannot access
 the managed secrets tree.
+
+### Nginx Proxy Manager
+
+Create one Proxy Host for the public hostname with scheme `http`, the ivoai server's
+private address, and port `7744`. Enable a valid certificate and Force SSL. Do not
+attach an NPM Access List, Basic Authentication, or another login challenge to the
+host: Web connectors must reach the ivoai OAuth metadata and authorization flow.
+
+When NPM runs on another host or container, configure the gateway listener and the
+narrow source CIDR as shown above. NPM must preserve `Authorization`, `Host`, and the
+original HTTPS scheme. The following Advanced configuration is suitable for the
+Streamable HTTP MCP route:
+
+```nginx
+proxy_set_header Authorization $http_authorization;
+proxy_set_header Host $host;
+proxy_set_header X-Forwarded-Proto https;
+proxy_buffering off;
+proxy_request_buffering off;
+proxy_read_timeout 3600s;
+```
+
+Do not use `0.0.0.0/0` as a trusted proxy and do not publish ports 6333, 6334, 8080,
+or 49374. Only the HTTPS proxy origin should be internet-facing.
+
+## Web MCP access
+
+The public connector URL is the configured origin plus `/mcp`, for example
+`https://ai.example.com/mcp`. Before connecting a Web client, create a one-time code:
+
+```sh
+sudo ivoai server web-access create --ttl 10m
+```
+
+The command prints the activation code once. During the connector's OAuth browser
+flow, review the requested scopes and enter that code. The default grant contains
+`context:read`, `memory:read`, `memory:write`, and `memory:delete`; select a narrower
+set when mutation is not needed. `list` displays identifiers, scopes, expiry, and
+revocation state without tokens. `revoke` invalidates the selected Web grant and its
+refresh-token family.
+
+The unified MCP exposes context search/read and bounded memory CRUD. Deleting memory
+requires the `memory:delete` scope and an explicit confirmation for the normalized
+page path. Context remains read-only. The gateway does not proxy administrative
+ai-memory tools or arbitrary MCP calls.
 
 ## Enrollment
 

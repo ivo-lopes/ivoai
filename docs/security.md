@@ -22,6 +22,23 @@ Enrollment through `--code-stdin` or the no-echo prompt is preferred; the suppor
 `--enrollment-code` automation flag may be visible in process listings or shell
 history.
 
+Web connector authorization uses OAuth 2.1 Authorization Code with PKCE S256 and
+exact redirect URI matching. The browser must also present a short-lived one-time
+activation code created locally by `ivoai server web-access create`. Activation and
+authorization codes, access tokens, and rotating refresh tokens are persisted only
+as hashes. Access-token lifetime is one hour; refresh-token lifetime is 30 days;
+revocation invalidates the associated token family.
+
+Dynamic client registration does not waive redirect validation. Consent shows the
+requested scopes, and every MCP tool checks its required scope. `memory_delete_page`
+also requires confirmation bound to the normalized target path. Web credentials are
+never interchangeable with native client enrollment credentials or backend service
+tokens.
+
+The OAuth `resource` parameter is bound to the canonical public `/mcp` URL throughout
+authorization, code exchange, refresh rotation, and bearer-token validation. A token
+issued for another audience is rejected before any MCP request is handled.
+
 During enrollment the one-time code uses a dedicated `Authorization` scheme rather
 than a proxy-parsed JSON field. Gateway audit never records that header. Legacy body
 transport remains accepted only for rolling compatibility.
@@ -56,6 +73,12 @@ quotas cap a document at 8 MiB, a connector at 10,000 documents/256 MiB, and an
 ingestion at 250,000 chunks. Retrieved text is labeled as untrusted context. Context
 MCP methods are read-only by default. Removing a connector purges its catalog and
 vector entries.
+
+The bundled skill reinforces this boundary: retrieved memory and RAG text are
+evidence, not instructions. It permits memory writes only after an explicit user
+request and deletion only after a separate path-specific confirmation. The Web MCP
+does not expose ai-memory maintenance, self-improvement, provider execution, remote
+shell, or unrestricted upstream tool forwarding.
 
 ## Supply chain and operations
 

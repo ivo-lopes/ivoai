@@ -12,6 +12,32 @@ When stdin/stdout are not terminals, ivoai prints a numbered fallback. Set
 Subcommands remain the stable interface for automation. Progress is written to
 stderr so stdout and `doctor --json` stay machine-readable.
 
+The renderer reads both width and height on every frame and reacts to `SIGWINCH`.
+Wide terminals show the complete block/shadow lettering, readiness badges, and
+descriptions. Medium terminals use a reduced banner and compact descriptions. Small
+terminals use a one-line wordmark, a height-bounded viewport, and a position
+indicator. Badges wrap and labels are truncated by displayed Unicode cell width, so
+the interface never relies on a fixed 80-column terminal.
+
+Interactive human-facing screens use the same semantic palette: cyan for active
+work, violet for headings, green for success, yellow for degraded results, and red
+for failures. Every submenu and long-running command displays at least a compact
+ivoai wordmark. Lettering, cursor animation, and color are deliberately absent from
+machine-readable and redirected output.
+
+## Installer presentation
+
+`install.sh` prints a responsive ivoai banner, detected platform, architecture,
+installation target, and numbered phases. Known-size transfers use a byte/percentage
+bar; checksum, extraction, source build, and registration use a spinner with elapsed
+time. If a step fails, the installer stops the animation, prints the related log in
+a readable error block, and leaves no partial temporary download.
+
+On success it reports the installed path and the next command. A normal user is
+directed to `ivoai setup`; a root server installation is directed to
+`ivoai setup --mode server`. Animation automatically becomes periodic plain text
+when stderr is not a compatible terminal.
+
 ## Files and ownership
 
 ivoai follows the XDG Base Directory Specification:

@@ -67,3 +67,47 @@ ivoai connect mcp remove example
 
 These commands manage ivoai's registry; agent-specific rendering remains an edge
 adapter rather than a separate source of truth.
+
+## ChatGPT Web and Claude Web
+
+Web products connect directly to the server's unified remote MCP; they do not use the
+desktop enrollment credential. Prerequisites are a publicly reachable HTTPS origin,
+a passing `ivoai server doctor`, and reverse-proxy access to the OAuth and `/mcp`
+routes.
+
+Create a short-lived browser activation code on the server:
+
+```sh
+sudo ivoai server web-access create --ttl 10m
+```
+
+In ChatGPT Web, enable developer mode for custom connectors when required by the
+workspace, add a connector, and enter `https://ai.example.com/mcp`. In Claude Web,
+add a custom connector with the same URL. Both services discover ivoai's OAuth 2.1
+metadata and open the browser authorization flow. Review the requested scopes and
+enter the activation code there; do not put it in the connector URL or a custom
+header.
+
+The connector may request these scopes:
+
+| Scope | Capability |
+| --- | --- |
+| `context:read` | Search and read untrusted indexed context |
+| `memory:read` | Query, list, and read memory pages |
+| `memory:write` | Write pages and submit memory feedback |
+| `memory:delete` | Delete a confirmed normalized page path |
+
+The default activation code permits all four scopes. Generate or approve a narrower
+grant for read-only use. Access and refresh tokens remain owned by the Web connector;
+ivoai stores only token hashes and revocation metadata.
+
+ChatGPT-compatible MCP discovery advertises the bundled
+`ivoai-memory-context` skill. For Claude Web, download
+`ivoai-memory-context.zip` from the matching ivoai release and import it as a custom
+Skill. The instructions ask the model to check ivoai before project-dependent
+answers, but no remote MCP or skill format can guarantee a tool call on every model
+turn.
+
+Provider references: [connect an MCP server to ChatGPT](https://developers.openai.com/plugins/deploy/connect-chatgpt),
+[use custom connectors in Claude](https://support.claude.com/en/articles/11176164-use-connectors-to-extend-claude-s-capabilities),
+and [Claude custom Skills](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview).
