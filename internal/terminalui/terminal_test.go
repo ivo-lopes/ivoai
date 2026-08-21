@@ -92,6 +92,14 @@ func TestRenderSizedNeverExceedsTerminalDimensions(t *testing.T) {
 	}
 }
 
+func TestRawTerminalOutputReturnsEveryRowToColumnZero(t *testing.T) {
+	got := rawTerminalOutput("first\nsecond\r\nthird\n")
+	want := "first\r\nsecond\r\nthird\r\n"
+	if got != want {
+		t.Fatalf("rawTerminalOutput() = %q, want %q", got, want)
+	}
+}
+
 func TestCompactAndPlainHeadersDoNotRepeatLargeBanner(t *testing.T) {
 	compact := renderSized("Dashboard", []Item{{ID: "status", Label: "Status"}}, nil, 0, 100, 24, false, true, Wordmark(false)+"\n\n")
 	if strings.Contains(compact, "██") || !strings.HasPrefix(compact, "ivoai\n") {

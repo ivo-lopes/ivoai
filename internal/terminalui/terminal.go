@@ -83,7 +83,7 @@ func (s Selector) Choose(title string, items []Item, badges []Badge) (string, er
 		if s.Compact {
 			header = Wordmark(colorEnabled(s.Out)) + "\n\n"
 		}
-		_, _ = fmt.Fprint(s.Out, "\x1b[2J\x1b[H", renderSized(title, items, badges, selected, width, height, colorEnabled(s.Out), unicodeEnabled(), header))
+		_, _ = fmt.Fprint(s.Out, "\x1b[2J\x1b[H", rawTerminalOutput(renderSized(title, items, badges, selected, width, height, colorEnabled(s.Out), unicodeEnabled(), header)))
 		key, err := readKeyEvent(ctx, reader, int(inFile.Fd()), resize)
 		if err != nil {
 			if errors.Is(err, io.EOF) {
@@ -108,6 +108,15 @@ func (s Selector) Choose(title string, items []Item, badges []Badge) (string, er
 			return "", nil
 		}
 	}
+}
+
+// rawTerminalOutput restores the carriage return normally supplied by the
+// terminal's ONLCR output processing. term.MakeRaw disables that processing,
+// so writing bare newlines would make every menu row start where the previous
+// row ended and produce a diagonal, apparently non-responsive screen.
+func rawTerminalOutput(value string) string {
+	value = strings.ReplaceAll(value, "\r\n", "\n")
+	return strings.ReplaceAll(value, "\n", "\r\n")
 }
 
 func (s Selector) dimensions(out *os.File) (int, int) {
