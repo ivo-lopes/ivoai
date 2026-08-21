@@ -1,6 +1,7 @@
 package servercmd
 
 import (
+	"context"
 	"io"
 	"net"
 	"net/http"
@@ -72,5 +73,22 @@ func TestMemoryProxyAllowsOnlyStableOperationalRoutesAndStripsCredentials(t *tes
 		if got.path != expected || got.authorization != "Bearer internal-memory-token" || got.cookie != "" || got.host != strings.TrimPrefix(upstream.URL, "http://") {
 			t.Fatalf("%s proxied as %#v, want path %s with only the internal credential", incoming, got, expected)
 		}
+	}
+}
+
+func TestMemoryMCPProbeUsesAuthenticatedToolsList(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost || r.URL.Path != "/mcp" || r.Header.Get("Authorization") != "Bearer internal-token" || !strings.Contains(r.Header.Get("Accept"), "application/json") {
+			http.Error(w, "invalid probe", http.StatusForbidden)
+			return
+		}
+		_, _ = io.WriteString(w, `{"jsonrpc":"2.0","id":1,"result":{"tools":[]}}`)
+	}))
+	defer server.Close()
+	if status := probeMemoryMCP(context.Background(), server.URL+"/mcp", "internal-token"); status != "healthy" {
+		t.Fatalf("probe status = %s", status)
+	}
+	if status := probeMemoryMCP(context.Background(), server.URL+"/mcp", "wrong-token"); status != "unhealthy" {
+		t.Fatalf("invalid credential probe status = %s", status)
 	}
 }

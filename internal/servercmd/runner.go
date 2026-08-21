@@ -600,7 +600,7 @@ func (r *runner) status(ctx context.Context, manager server.Manager, doctor bool
 		if gatewayConfig.TLSCertFile != "" {
 			tlsMode = "direct"
 		}
-		fmt.Fprintf(r.out, "gateway=%s context=%s memory=%s tls=%s databases-public=false arbitrary-command-api=false\n", probeURL(ctx, gatewayBase+"/health"), probeURL(ctx, gatewayBase+"/ready"), probeURLWithBearer(ctx, "http://127.0.0.1:49374/health", memoryToken), tlsMode)
+		fmt.Fprintf(r.out, "gateway=%s context=%s memory=%s tls=%s databases-public=false arbitrary-command-api=false\n", probeURL(ctx, gatewayBase+"/health"), probeURL(ctx, gatewayBase+"/ready"), probeMemoryMCP(ctx, "http://127.0.0.1:49374/mcp", memoryToken), tlsMode)
 	}
 	if !all {
 		return errors.New("one or more ivoai services are inactive")
@@ -870,7 +870,7 @@ func (r *runner) memory(ctx context.Context, layout server.Layout, args []string
 	if err != nil {
 		return fmt.Errorf("private backend credential memory.env: %w", err)
 	}
-	status := probeURLWithBearer(ctx, "http://127.0.0.1:49374/health", token)
+	status := probeMemoryMCP(ctx, "http://127.0.0.1:49374/mcp", token)
 	fmt.Fprintf(r.out, "ai-memory: %s\n", status)
 	if status != "healthy" {
 		return errors.New("ai-memory is unavailable; context and agent clients remain usable")

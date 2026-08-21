@@ -297,8 +297,11 @@ func (a *App) ReconfigureMemory(ctx context.Context) error {
 	}
 	state, _ := a.Store.LoadState()
 	mem := a.memoryManager(state)
+	quietMem := mem
+	quietMem.Out = nil
+	quietMem.Err = nil
 	if !cfg.Memory.Enabled {
-		if err := mem.Disable(ctx); err != nil {
+		if err := quietMem.Disable(ctx); err != nil {
 			return err
 		}
 		if cfg.Connections.Server.Status == "connected" {
@@ -309,7 +312,7 @@ func (a *App) ReconfigureMemory(ctx context.Context) error {
 	if cfg.Connections.Server.Status != "connected" || data.Server == nil {
 		return mem.Configure(ctx, "", "")
 	}
-	if err := mem.Disable(ctx); err != nil {
+	if err := quietMem.Disable(ctx); err != nil {
 		return err
 	}
 	a.reconcileAgentMCP(ctx, state, cfg)

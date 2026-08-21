@@ -123,7 +123,7 @@ func serveGateway(ctx context.Context, layout server.Layout, version string, err
 		Enrollments:   enrollmentStore(layout),
 		Memory:        memoryHandler,
 		MemoryHealth: func(checkCtx context.Context) error {
-			if probeURLWithBearer(checkCtx, memoryURL+"/health", memoryToken) != "healthy" {
+			if probeMemoryMCP(checkCtx, memoryURL+"/mcp", memoryToken) != "healthy" {
 				return errors.New("ai-memory unavailable")
 			}
 			return nil
@@ -282,6 +282,32 @@ func probeURLWithBearer(ctx context.Context, endpoint, token string) string {
 		return "unhealthy"
 	}
 	defer resp.Body.Close()
+	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
+		return "healthy"
+	}
+	return "unhealthy"
+}
+
+func probeMemoryMCP(ctx context.Context, endpoint, token string) string {
+	if strings.TrimSpace(token) == "" {
+		return "unhealthy"
+	}
+	probeCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+	payload := strings.NewReader(`{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}`)
+	req, err := http.NewRequestWithContext(probeCtx, http.MethodPost, endpoint, payload)
+	if err != nil {
+		return "unhealthy"
+	}
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Accept", "application/json, text/event-stream")
+	resp, err := (&http.Client{Timeout: 5 * time.Second}).Do(req)
+	if err != nil {
+		return "unhealthy"
+	}
+	defer resp.Body.Close()
+	_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, 1<<20))
 	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
 		return "healthy"
 	}
