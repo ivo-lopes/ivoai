@@ -14,16 +14,18 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/platform"
 )
 
-const profileVersion = 1
+const profileVersion = 2
 const serverName = "ivoai-ruflo"
 
 var safeTools = []string{
 	"agent_list",
-	"agent_spawn",
 	"agent_status",
-	"agent_terminate",
 	"swarm_init",
 	"swarm_status",
+	"task_create",
+	"task_list",
+	"task_status",
+	"task_cancel",
 	"system_health",
 	"system_info",
 }
@@ -148,6 +150,10 @@ func (m Manager) Inspect(ctx context.Context) Status {
 		status.Version = strings.TrimSpace(result.Stdout)
 	}
 	profile, err := m.loadProfile()
+	if err == nil {
+		status.ProviderExecution = profile.ProviderExecution
+		status.DurableMemory = profile.DurableMemory
+	}
 	if err == nil && profile.Version == profileVersion && !profile.ProviderExecution && !profile.DurableMemory && slices.Equal(profile.Tools, safeTools) {
 		if info, statErr := os.Stat(m.wrapperPath()); statErr == nil && info.Mode().IsRegular() && info.Mode().Perm()&0o077 == 0 && info.Mode().Perm()&0o100 != 0 {
 			status.SafeMode = true

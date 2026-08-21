@@ -49,6 +49,9 @@ func TestSafeProfileFiltersProvidersExecutionAndDurableMemory(t *testing.T) {
 	if strings.Contains(strings.Join(safeTools, ","), "memory") || strings.Contains(strings.Join(safeTools, ","), "execute") || strings.Contains(strings.Join(safeTools, ","), "workflow") {
 		t.Fatalf("unsafe tool allowlist %#v", safeTools)
 	}
+	if strings.Contains(strings.Join(safeTools, ","), "agent_spawn") || strings.Contains(strings.Join(safeTools, ","), "agent_terminate") {
+		t.Fatalf("provider-capable agent lifecycle leaked into safe tools: %#v", safeTools)
+	}
 	joined := make([]string, 0, len(runner.calls))
 	for _, call := range runner.calls {
 		joined = append(joined, strings.Join(call, " "))
