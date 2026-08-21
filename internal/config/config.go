@@ -15,16 +15,17 @@ import (
 const SchemaVersion = 1
 
 type Paths struct {
-	ConfigDir string
-	DataDir   string
-	StateDir  string
-	CacheDir  string
-	BinDir    string
-	Config    string
-	State     string
-	Secrets   string
-	Ownership string
-	HooksDir  string
+	ConfigDir   string
+	DataDir     string
+	StateDir    string
+	CacheDir    string
+	BinDir      string
+	Config      string
+	State       string
+	Secrets     string
+	Ownership   string
+	HooksDir    string
+	SessionsDir string
 }
 
 func ResolvePaths() (Paths, error) {
@@ -44,7 +45,7 @@ func ResolvePaths() (Paths, error) {
 		CacheDir: filepath.Join(cacheHome, "ivoai"), BinDir: filepath.Join(dataDir, "bin"),
 		Config: filepath.Join(configDir, "config.toml"), State: filepath.Join(stateDir, "state.toml"),
 		Secrets: filepath.Join(configDir, "secrets.json"), Ownership: filepath.Join(stateDir, "ownership.toml"),
-		HooksDir: filepath.Join(dataDir, "hooks"),
+		HooksDir: filepath.Join(dataDir, "hooks"), SessionsDir: filepath.Join(stateDir, "sessions"),
 	}, nil
 }
 
@@ -78,8 +79,12 @@ type MemoryConfig struct {
 	Enabled bool `toml:"enabled"`
 }
 type OrchestrationConfig struct {
-	Enabled           bool `toml:"enabled"`
-	ProviderExecution bool `toml:"provider_execution"`
+	Enabled           bool   `toml:"enabled"`
+	ProviderExecution bool   `toml:"provider_execution"`
+	DefaultMode       string `toml:"default_mode"`
+	PrimaryExecutor   string `toml:"primary_executor"`
+	ReviewExecutor    string `toml:"review_executor"`
+	MaxWorkers        int    `toml:"max_workers"`
 }
 type Connection struct {
 	Status   string `toml:"status"`
@@ -105,7 +110,7 @@ func Default() Config {
 	return Config{
 		IVOAI: IVOAIConfig{Version: SchemaVersion}, Client: ClientConfig{Profile: "default"},
 		Headroom: HeadroomConfig{Enabled: true}, Memory: MemoryConfig{Enabled: true},
-		Orchestration: OrchestrationConfig{Enabled: true, ProviderExecution: false},
+		Orchestration: OrchestrationConfig{Enabled: true, ProviderExecution: false, DefaultMode: "direct", PrimaryExecutor: "codex", ReviewExecutor: "claude", MaxWorkers: 2},
 		Connections: ConnectionsConfig{
 			ChatGPT: Connection{Status: "not-connected"}, Claude: Connection{Status: "not-connected"}, Server: Connection{Status: "not-connected"},
 		}, MCP: MCPConfig{Servers: map[string]MCPServer{}},
@@ -140,7 +145,10 @@ type Store struct{ Paths Paths }
 func NewStore(paths Paths) *Store { return &Store{Paths: paths} }
 
 func (s *Store) Ensure() error {
-	for _, dir := range []string{s.Paths.ConfigDir, s.Paths.DataDir, s.Paths.StateDir, s.Paths.CacheDir, s.Paths.HooksDir} {
+	for _, dir := range []string{s.Paths.ConfigDir, s.Paths.DataDir, s.Paths.StateDir, s.Paths.CacheDir, s.Paths.HooksDir, s.Paths.SessionsDir} {
+		if dir == "" {
+			continue
+		}
 		if err := platform.EnsurePrivateDir(dir); err != nil {
 			return err
 		}
@@ -166,10 +174,49 @@ func (s *Store) Load() (Config, error) {
 	if c.MCP.Servers == nil {
 		c.MCP.Servers = map[string]MCPServer{}
 	}
+	// Zero values come from pre-session-control-plane configurations. Migrate
+	// them in memory and persist on the next normal setup/config write.
+	if c.Orchestration.DefaultMode == "" {
+		c.Orchestration.DefaultMode = "direct"
+	}
+	if c.Orchestration.PrimaryExecutor == "" {
+		c.Orchestration.PrimaryExecutor = "codex"
+	}
+	if c.Orchestration.ReviewExecutor == "" {
+		c.Orchestration.ReviewExecutor = "claude"
+	}
+	if c.Orchestration.MaxWorkers == 0 {
+		c.Orchestration.MaxWorkers = 2
+	}
+	if err := ValidateOrchestration(c.Orchestration); err != nil {
+		return Config{}, err
+	}
 	return c, nil
 }
 
+func ValidateOrchestration(value OrchestrationConfig) error {
+	if value.ProviderExecution {
+		return errors.New("orchestration provider execution must remain disabled")
+	}
+	if value.DefaultMode != "direct" && value.DefaultMode != "orchestrated" {
+		return errors.New("orchestration default_mode must be direct or orchestrated")
+	}
+	if value.PrimaryExecutor != "codex" && value.PrimaryExecutor != "claude" {
+		return errors.New("orchestration primary_executor must be codex or claude")
+	}
+	if value.ReviewExecutor != "codex" && value.ReviewExecutor != "claude" {
+		return errors.New("orchestration review_executor must be codex or claude")
+	}
+	if value.MaxWorkers < 1 || value.MaxWorkers > 3 {
+		return errors.New("orchestration max_workers must be between 1 and 3")
+	}
+	return nil
+}
+
 func (s *Store) Save(c Config) error {
+	if err := ValidateOrchestration(c.Orchestration); err != nil {
+		return err
+	}
 	if err := s.Ensure(); err != nil {
 		return err
 	}
