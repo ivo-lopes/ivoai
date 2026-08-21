@@ -4,6 +4,7 @@ ivoai's own code is MIT-licensed. It installs or runs the following separately d
 
 | Project | Version | License / terms | Role | Upstream |
 |---|---:|---|---|---|
+| Model Context Protocol Go SDK | 1.7.0 | Apache-2.0 / MIT (file-specific; see upstream LICENSE) | Official Streamable HTTP and MCP protocol implementation linked into the ivoai Web MCP gateway | <https://github.com/modelcontextprotocol/go-sdk> |
 | Go toolchain | 1.27.0 | BSD-3-Clause | Ephemeral, checksum-pinned compiler for source-checkout installation when compatible Go is unavailable | <https://go.dev/dl/> |
 | OpenAI Codex CLI | 0.148.0 | Apache-2.0 | Official ChatGPT/Codex terminal client | <https://github.com/openai/codex> |
 | Anthropic Claude Code | 2.1.228 stable | Proprietary; Anthropic Consumer or Commercial Terms, depending on account | Official Claude terminal client | <https://github.com/anthropics/claude-code> |
@@ -19,7 +20,7 @@ ivoai's own code is MIT-licensed. It installs or runs the following separately d
 | intfloat multilingual-e5-small | revision `614241f622f53c4eeff9890bdc4f31cfecc418b3` | MIT | Local multilingual embedding model | <https://huggingface.co/intfloat/multilingual-e5-small> |
 | pelletier/go-toml v2 | 2.2.4 | MIT | TOML configuration parser/encoder linked into ivoai | <https://github.com/pelletier/go-toml> |
 | golang.org/x/term | 0.34.0 | BSD-3-Clause | Secure terminal input support linked into ivoai | <https://pkg.go.dev/golang.org/x/term> |
-| golang.org/x/sys | 0.35.0 | BSD-3-Clause | Indirect operating-system support linked into ivoai | <https://pkg.go.dev/golang.org/x/sys> |
+| golang.org/x/sys | 0.41.0 | BSD-3-Clause | Indirect operating-system support linked into ivoai | <https://pkg.go.dev/golang.org/x/sys> |
 
 Claude Code is not represented as open-source software. ivoai downloads the official external binary and does not redistribute or modify its credential material. Use is governed by [Anthropic's legal and compliance guidance](https://code.claude.com/docs/en/legal-and-compliance), including Consumer Terms for Free/Pro/Max users and Commercial Terms for Team/Enterprise/API users.
 

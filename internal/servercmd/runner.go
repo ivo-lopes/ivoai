@@ -21,6 +21,8 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/enrollment"
 	"github.com/ivo-lopes/ivoai/internal/platform"
 	"github.com/ivo-lopes/ivoai/internal/server"
+	"github.com/ivo-lopes/ivoai/internal/terminalui"
+	"github.com/ivo-lopes/ivoai/internal/webauth"
 	"golang.org/x/sys/unix"
 )
 
@@ -36,6 +38,28 @@ type runner struct {
 	in      io.Reader
 	out     io.Writer
 	errOut  io.Writer
+}
+
+func semanticHealth(value string, color bool) string {
+	switch strings.ToLower(strings.TrimSpace(value)) {
+	case "healthy", "ready", "active":
+		return terminalui.Success(value, color)
+	case "degraded", "starting", "disabled":
+		return terminalui.Warning(value, color)
+	default:
+		return terminalui.Failure(value, color)
+	}
+}
+
+func semanticRecordStatus(value string, color bool) string {
+	switch strings.ToLower(strings.TrimSpace(value)) {
+	case "active", "authorized":
+		return terminalui.Success(value, color)
+	case "pending", "consumed", "expired":
+		return terminalui.Warning(value, color)
+	default:
+		return terminalui.Failure(value, color)
+	}
 }
 
 func (r *runner) run(ctx context.Context, args []string) error {
@@ -65,6 +89,8 @@ func (r *runner) run(ctx context.Context, args []string) error {
 		return r.logs(ctx, manager, args[1:])
 	case "enrollment":
 		return r.enrollment(layout, args[1:])
+	case "web-access":
+		return r.webAccess(layout, args[1:])
 	case "connector":
 		return r.connector(ctx, layout, manager, args[1:])
 	case "context":
@@ -572,8 +598,13 @@ func (r *runner) status(ctx context.Context, manager server.Manager, doctor bool
 		return err
 	}
 	all := true
+	color := terminalui.ColorEnabled(r.out)
 	for _, state := range states {
-		fmt.Fprintf(r.out, "%s\t%t\t%s\n", state.Name, state.Active, platform.Redact(state.Detail))
+		active := terminalui.Failure("false", color)
+		if state.Active {
+			active = terminalui.Success("true", color)
+		}
+		fmt.Fprintf(r.out, "%s\t%s\t%s\n", state.Name, active, platform.Redact(state.Detail))
 		all = all && state.Active
 	}
 	if doctor {
@@ -600,7 +631,10 @@ func (r *runner) status(ctx context.Context, manager server.Manager, doctor bool
 		if gatewayConfig.TLSCertFile != "" {
 			tlsMode = "direct"
 		}
-		fmt.Fprintf(r.out, "gateway=%s context=%s memory=%s tls=%s databases-public=false arbitrary-command-api=false\n", probeURL(ctx, gatewayBase+"/health"), probeURL(ctx, gatewayBase+"/ready"), probeMemoryMCP(ctx, "http://127.0.0.1:49374/mcp", memoryToken), tlsMode)
+		gatewayHealth := probeURL(ctx, gatewayBase+"/health")
+		contextHealth := probeURL(ctx, gatewayBase+"/ready")
+		memoryHealth := probeMemoryMCP(ctx, "http://127.0.0.1:49374/mcp", memoryToken)
+		fmt.Fprintf(r.out, "gateway=%s context=%s memory=%s tls=%s databases-public=%s arbitrary-command-api=%s\n", semanticHealth(gatewayHealth, color), semanticHealth(contextHealth, color), semanticHealth(memoryHealth, color), tlsMode, terminalui.Success("false", color), terminalui.Success("false", color))
 	}
 	if !all {
 		return errors.New("one or more ivoai services are inactive")
@@ -623,6 +657,56 @@ func (r *runner) logs(ctx context.Context, manager server.Manager, args []string
 
 func enrollmentStore(layout server.Layout) *enrollment.Store {
 	return enrollment.NewStore(filepath.Join(layout.DataDir, "enrollment", "state.json"))
+}
+
+func webAccessStore(layout server.Layout) *webauth.Store {
+	return webauth.NewStore(filepath.Join(layout.DataDir, "web-oauth", "state.json"))
+}
+
+func (r *runner) webAccess(layout server.Layout, args []string) error {
+	if len(args) == 0 {
+		return errors.New("usage: ivoai server web-access <create|list|revoke>")
+	}
+	store := webAccessStore(layout)
+	switch args[0] {
+	case "create":
+		fs := flag.NewFlagSet("server web-access create", flag.ContinueOnError)
+		fs.SetOutput(r.errOut)
+		ttl := fs.Duration("ttl", 10*time.Minute, "activation lifetime")
+		scopeText := fs.String("scopes", strings.Join(webauth.DefaultScopes, ","), "comma-separated OAuth scopes")
+		if err := fs.Parse(args[1:]); err != nil {
+			return err
+		}
+		scopes := strings.Split(*scopeText, ",")
+		created, err := store.CreateActivation(*ttl, scopes)
+		if err != nil {
+			return err
+		}
+		if err := ensureServiceOwnership(layout); err != nil {
+			return err
+		}
+		fmt.Fprintf(r.out, "Web access ID: %s\nExpires: %s\nActivation code (shown once): %s\n", created.ID, created.ExpiresAt.Format(time.RFC3339), created.Code)
+		return nil
+	case "list":
+		items, err := store.ListGrants()
+		if err != nil {
+			return err
+		}
+		for _, item := range items {
+			fmt.Fprintf(r.out, "%s\t%s\t%s\t%s\n", item.ID, semanticRecordStatus(item.Status, terminalui.ColorEnabled(r.out)), item.ExpiresAt.Format(time.RFC3339), strings.Join(item.Scopes, ","))
+		}
+		return nil
+	case "revoke":
+		if len(args) != 2 {
+			return errors.New("usage: ivoai server web-access revoke <id>")
+		}
+		if err := store.RevokeActivation(args[1]); err != nil {
+			return err
+		}
+		return ensureServiceOwnership(layout)
+	default:
+		return fmt.Errorf("unknown web-access action %q", args[0])
+	}
 }
 
 func (r *runner) enrollment(layout server.Layout, args []string) error {
@@ -661,7 +745,7 @@ func (r *runner) enrollment(layout server.Layout, args []string) error {
 			} else if time.Now().After(item.ExpiresAt) {
 				status = "expired"
 			}
-			fmt.Fprintf(r.out, "%s\t%s\t%s\n", item.ID, status, item.ExpiresAt.Format(time.RFC3339))
+			fmt.Fprintf(r.out, "%s\t%s\t%s\n", item.ID, semanticRecordStatus(status, terminalui.ColorEnabled(r.out)), item.ExpiresAt.Format(time.RFC3339))
 		}
 		return nil
 	case "revoke":
@@ -856,7 +940,7 @@ func (r *runner) context(ctx context.Context, layout server.Layout, args []strin
 			return err
 		}
 		status := service.Status(ctx)
-		fmt.Fprintf(r.out, "Context service: %s\nDocuments: %d\nChunks: %d\nConnectors: %d\n", map[bool]string{true: "healthy", false: "unhealthy"}[status.Healthy], status.Documents, status.Chunks, status.Connectors)
+		fmt.Fprintf(r.out, "Context service: %s\nDocuments: %d\nChunks: %d\nConnectors: %d\n", semanticHealth(map[bool]string{true: "healthy", false: "unhealthy"}[status.Healthy], terminalui.ColorEnabled(r.out)), status.Documents, status.Chunks, status.Connectors)
 		return nil
 	}
 	return errors.New("usage: ivoai server context [status|serve]")
@@ -871,7 +955,7 @@ func (r *runner) memory(ctx context.Context, layout server.Layout, args []string
 		return fmt.Errorf("private backend credential memory.env: %w", err)
 	}
 	status := probeMemoryMCP(ctx, "http://127.0.0.1:49374/mcp", token)
-	fmt.Fprintf(r.out, "ai-memory: %s\n", status)
+	fmt.Fprintf(r.out, "ai-memory: %s\n", semanticHealth(status, terminalui.ColorEnabled(r.out)))
 	if status != "healthy" {
 		return errors.New("ai-memory is unavailable; context and agent clients remain usable")
 	}
@@ -1004,6 +1088,7 @@ func (r *runner) usage() {
 	fmt.Fprintln(r.out, `ivoai server commands:
   setup | status | doctor | start | stop | restart | logs [service]
   enrollment create [--ttl 10m] | list | revoke <id>
+  web-access create [--ttl 10m] [--scopes SCOPE,...] | list | revoke <id>
   connector list | add --name NAME --type filesystem|git --path PATH | remove NAME
   context status | memory status
   gateway configure --public-url HTTPS_ORIGIN [--listen HOST:PORT] [--trusted-proxy CIDR] [--tls-cert PATH --tls-key PATH]

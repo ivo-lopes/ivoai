@@ -46,13 +46,14 @@ func PublicMenuActionIDs() []string {
 		"project.status", "project.init", "config.show", "config.headroom", "config.memory", "config.ruflo",
 		"server.setup", "server.status", "server.doctor", "server.start", "server.stop", "server.restart", "server.logs",
 		"server.enrollment.create", "server.enrollment.list", "server.enrollment.revoke",
+		"server.web-access.create", "server.web-access.list", "server.web-access.revoke",
 		"server.connector.list", "server.connector.add", "server.connector.remove", "server.context.status", "server.memory.status",
 		"server.gateway.configure", "server.backup", "server.restore", "remote.status", "remote.doctor", "remote.connector.list",
 	}
 }
 
 func menu(ctx context.Context, a *app.App) error {
-	session := &menuSession{ctx: ctx, app: a, reader: bufio.NewReader(a.In), progress: &terminalui.Progress{Out: a.Err}}
+	session := &menuSession{ctx: ctx, app: a, reader: bufio.NewReader(a.In), progress: &terminalui.Progress{Out: a.Err, ShowHeader: true}}
 	for {
 		snapshot, err := a.MenuSnapshot()
 		if err != nil {
@@ -76,7 +77,7 @@ func menu(ctx context.Context, a *app.App) error {
 			if errors.Is(err, io.EOF) {
 				return nil
 			}
-			fmt.Fprintf(a.Err, "Error: %s\n", UserError(err))
+			fmt.Fprintf(a.Err, "%s %s\n", terminalui.Failure("Error:", terminalui.ColorEnabled(a.Err)), UserError(err))
 			continue
 		}
 		if id == "" {
@@ -85,7 +86,7 @@ func menu(ctx context.Context, a *app.App) error {
 		action := findAction(actions, id)
 		exit, actionErr := session.execute(action)
 		if actionErr != nil {
-			fmt.Fprintf(a.Err, "Error: %s\n", UserError(actionErr))
+			fmt.Fprintf(a.Err, "%s %s\n", terminalui.Failure("Error:", terminalui.ColorEnabled(a.Err)), UserError(actionErr))
 		}
 		if exit {
 			return actionErr
@@ -176,6 +177,7 @@ func (s *menuSession) server() (bool, error) {
 		{id: "server.restart", label: "Restart Services", disabled: mutationRestriction, long: true, run: s.serverArgs("restart")},
 		{id: "server.logs", label: "Service Logs", disabled: readRestriction, run: s.serverLogs},
 		{id: "enrollment", label: "Enrollment", disabled: readRestriction, run: s.enrollment},
+		{id: "web-access", label: "Web MCP Access", disabled: readRestriction, run: s.webAccess},
 		{id: "connectors", label: "Connectors", disabled: readRestriction, run: s.connectors},
 		{id: "server.context.status", label: "Context Status", disabled: readRestriction, run: s.serverArgs("context", "status")},
 		{id: "server.memory.status", label: "Memory Status", disabled: readRestriction, run: s.serverArgs("memory", "status")},
@@ -191,6 +193,15 @@ func (s *menuSession) enrollment() (bool, error) {
 		{id: "server.enrollment.create", label: "Create One-Time Code", disabled: requiresRoot, run: s.enrollmentCreate},
 		{id: "server.enrollment.list", label: "List Codes", disabled: readRestriction, run: s.serverArgs("enrollment", "list")},
 		{id: "server.enrollment.revoke", label: "Revoke Code", disabled: requiresRoot, run: s.enrollmentRevoke},
+	})
+}
+
+func (s *menuSession) webAccess() (bool, error) {
+	readRestriction, requiresRoot := serverRestrictions(runtime.GOOS, os.Geteuid(), localServerInstalled())
+	return s.loop("Web MCP Access", []menuAction{
+		{id: "server.web-access.create", label: "Create Activation Code", disabled: requiresRoot, run: s.webAccessCreate},
+		{id: "server.web-access.list", label: "List Activation Codes", disabled: readRestriction, run: s.serverArgs("web-access", "list")},
+		{id: "server.web-access.revoke", label: "Revoke Activation Code", disabled: requiresRoot, run: s.webAccessRevoke},
 	})
 }
 
@@ -222,7 +233,7 @@ func (s *menuSession) loop(title string, actions []menuAction) (bool, error) {
 		}
 		exit, runErr := s.execute(findAction(actions, id))
 		if runErr != nil {
-			fmt.Fprintf(s.app.Err, "Error: %s\n", UserError(runErr))
+			fmt.Fprintf(s.app.Err, "%s %s\n", terminalui.Failure("Error:", terminalui.ColorEnabled(s.app.Err)), UserError(runErr))
 		}
 		if exit {
 			return true, runErr
@@ -240,7 +251,7 @@ func (s *menuSession) choose(title string, actions []menuAction, badges []termin
 	if _, ok := s.app.In.(*os.File); ok {
 		input = s.app.In
 	}
-	return (terminalui.Selector{Context: s.ctx, In: input, Out: s.app.Out}).Choose(title, items, badges)
+	return (terminalui.Selector{Context: s.ctx, In: input, Out: s.app.Out, Compact: title != "Personal AI runtime"}).Choose(title, items, badges)
 }
 
 func (s *menuSession) execute(action menuAction) (bool, error) {
@@ -271,7 +282,7 @@ func (s *menuSession) simple(operation func() error) func() (bool, error) {
 func (s *menuSession) confirmed(phrase string, operation func() error) func() (bool, error) {
 	return func() (bool, error) {
 		if !s.confirm(phrase) {
-			fmt.Fprintln(s.app.Out, "Cancelled.")
+			fmt.Fprintln(s.app.Out, terminalui.Warning("Cancelled.", terminalui.ColorEnabled(s.app.Out)))
 			return false, nil
 		}
 		return false, operation()
@@ -281,7 +292,7 @@ func (s *menuSession) confirmed(phrase string, operation func() error) func() (b
 func (s *menuSession) confirmedProgress(phrase, label string, operation func() error) func() (bool, error) {
 	return func() (bool, error) {
 		if !s.confirm(phrase) {
-			fmt.Fprintln(s.app.Out, "Cancelled.")
+			fmt.Fprintln(s.app.Out, terminalui.Warning("Cancelled.", terminalui.ColorEnabled(s.app.Out)))
 			return false, nil
 		}
 		return false, runProgress(s.ctx, s.app, label, operation)
@@ -291,7 +302,7 @@ func (s *menuSession) confirmedProgress(phrase, label string, operation func() e
 func (s *menuSession) confirmedProgressExit(phrase, label string, operation func() error) func() (bool, error) {
 	return func() (bool, error) {
 		if !s.confirm(phrase) {
-			fmt.Fprintln(s.app.Out, "Cancelled.")
+			fmt.Fprintln(s.app.Out, terminalui.Warning("Cancelled.", terminalui.ColorEnabled(s.app.Out)))
 			return false, nil
 		}
 		return true, runProgress(s.ctx, s.app, label, operation)
@@ -372,6 +383,31 @@ func (s *menuSession) enrollmentRevoke() (bool, error) {
 		return false, nil
 	}
 	return false, runServer(s.ctx, []string{"enrollment", "revoke", id}, s.app)
+}
+
+func (s *menuSession) webAccessCreate() (bool, error) {
+	ttl, err := s.promptValidated("Activation TTL", false, "10m", func(value string) error {
+		duration, err := time.ParseDuration(value)
+		if err != nil || duration <= 0 || duration > 24*time.Hour {
+			return errors.New("TTL must be a duration between zero and 24h")
+		}
+		return nil
+	})
+	if err != nil {
+		return false, err
+	}
+	return false, runServer(s.ctx, []string{"web-access", "create", "--ttl", ttl}, s.app)
+}
+
+func (s *menuSession) webAccessRevoke() (bool, error) {
+	id, err := s.promptValidated("Web access ID", false, "", validateIdentifier)
+	if err != nil {
+		return false, err
+	}
+	if !s.confirm("REVOKE") {
+		return false, nil
+	}
+	return false, runServer(s.ctx, []string{"web-access", "revoke", id}, s.app)
 }
 
 func (s *menuSession) connectorAdd() (bool, error) {

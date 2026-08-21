@@ -11,6 +11,7 @@ import (
 
 	contextsvc "github.com/ivo-lopes/ivoai/internal/context"
 	"github.com/ivo-lopes/ivoai/internal/enrollment"
+	"github.com/ivo-lopes/ivoai/internal/webauth"
 )
 
 const ProtocolVersion = 1
@@ -30,6 +31,8 @@ type Config struct {
 	MemoryHealth    func(context.Context) error
 	Now             func() time.Time
 	EnrollmentAudit func(EnrollmentAudit)
+	WebOAuth        *webauth.Server
+	WebMCP          http.Handler
 }
 
 // EnrollmentAudit contains only non-secret request metadata. Code contents,
@@ -60,6 +63,8 @@ type Discovery struct {
 	MemoryMCPEndpoint   string          `json:"memory_mcp_endpoint,omitempty"`
 	MemoryHooksEndpoint string          `json:"memory_hooks_endpoint,omitempty"`
 	EnrollmentEndpoint  string          `json:"enrollment_endpoint"`
+	WebMCPEndpoint      string          `json:"web_mcp_endpoint,omitempty"`
+	OAuthMetadata       string          `json:"oauth_authorization_server_metadata,omitempty"`
 	Features            map[string]bool `json:"features"`
 }
 
@@ -82,6 +87,10 @@ func (g *Gateway) routes() {
 	g.mux.HandleFunc("GET /ready", g.ready)
 	g.mux.HandleFunc("GET /.well-known/ivoai", g.discovery)
 	g.mux.HandleFunc("POST /v1/enroll", g.enroll)
+	if g.config.WebOAuth != nil && g.config.WebMCP != nil {
+		g.config.WebOAuth.Register(g.mux)
+		g.mux.Handle("POST /mcp", g.authorizeWeb(g.config.WebMCP))
+	}
 	g.mux.Handle("POST /v1/mcp/context", g.authorize(enrollment.ScopeContextRead, contextsvc.MCPHandler{Service: g.config.Context}))
 	if g.config.Memory != nil {
 		g.mux.Handle("POST /v1/memory/mcp", g.authorizeAll([]enrollment.Scope{enrollment.ScopeMemoryRead, enrollment.ScopeMemoryWrite}, g.config.Memory))
@@ -148,6 +157,12 @@ func (g *Gateway) discovery(w http.ResponseWriter, _ *http.Request) {
 	discovery := Discovery{ProtocolVersion: ProtocolVersion, ServerVersion: g.config.ServerVersion,
 		HealthEndpoint: "/health", ReadyEndpoint: "/ready", ContextMCPEndpoint: "/v1/mcp/context",
 		EnrollmentEndpoint: "/v1/enroll", PublicBaseURL: g.config.PublicBaseURL, Features: map[string]bool{"context": true, "memory": g.config.Memory != nil, "memory_hooks": g.config.Memory != nil, "remote_admin_read_only": true}}
+	if g.config.WebOAuth != nil && g.config.WebMCP != nil {
+		discovery.WebMCPEndpoint = "/mcp"
+		discovery.OAuthMetadata = "/.well-known/oauth-authorization-server"
+		discovery.Features["web_mcp"] = true
+		discovery.Features["oauth_pkce"] = true
+	}
 	if g.config.Memory != nil {
 		discovery.MemoryMCPEndpoint = "/v1/memory/mcp"
 		discovery.MemoryHooksEndpoint = "/v1/memory"
@@ -272,6 +287,27 @@ func (g *Gateway) authorizeAll(scopes []enrollment.Scope, next http.Handler) htt
 			return
 		}
 		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), principalKey{}, principal)))
+	})
+}
+
+func (g *Gateway) authorizeWeb(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if g.config.WebOAuth == nil || g.config.WebOAuth.Store == nil {
+			writeJSON(w, http.StatusServiceUnavailable, map[string]string{"error": "web access unavailable"})
+			return
+		}
+		if !acquire(g.authSlots) {
+			writeJSON(w, http.StatusTooManyRequests, map[string]string{"error": "authentication capacity temporarily exhausted"})
+			return
+		}
+		principal, err := g.config.WebOAuth.Store.Authenticate(webauth.Bearer(r), g.config.WebOAuth.Resource())
+		release(g.authSlots)
+		if err != nil {
+			w.Header().Set("WWW-Authenticate", `Bearer resource_metadata="`+strings.TrimRight(g.config.PublicBaseURL, "/")+`/.well-known/oauth-protected-resource"`)
+			writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "invalid_token"})
+			return
+		}
+		next.ServeHTTP(w, r.WithContext(webauth.WithPrincipal(r.Context(), principal)))
 	})
 }
 

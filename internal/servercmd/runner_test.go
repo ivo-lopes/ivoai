@@ -45,6 +45,34 @@ func TestServerSetupEnrollmentAndConnectorsAreIdempotent(t *testing.T) {
 		t.Fatalf("enrollment state permissions: info=%v err=%v", info, err)
 	}
 
+	var webOut bytes.Buffer
+	if err := run(context.Background(), []string{"web-access", "create", "--ttl", "5m"}, strings.NewReader(""), &webOut, &webOut); err != nil {
+		t.Fatal(err)
+	}
+	webCode := regexp.MustCompile(`ivoai-web_[A-Za-z0-9_-]+`).FindString(webOut.String())
+	if webCode == "" {
+		t.Fatalf("web activation code missing: %s", webOut.String())
+	}
+	webStatePath := filepath.Join(root, "var/lib/ivoai/web-oauth/state.json")
+	webState, err := os.ReadFile(webStatePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if bytes.Contains(webState, []byte(webCode)) {
+		t.Fatal("web activation code persisted in plaintext")
+	}
+	var webList bytes.Buffer
+	if err := run(context.Background(), []string{"web-access", "list"}, strings.NewReader(""), &webList, &webList); err != nil {
+		t.Fatal(err)
+	}
+	webID := regexp.MustCompile(`Web access ID: ([a-f0-9]+)`).FindStringSubmatch(webOut.String())
+	if len(webID) != 2 || !strings.Contains(webList.String(), webID[1]+"\tpending") {
+		t.Fatalf("web access not listed: %s", webList.String())
+	}
+	if err := run(context.Background(), []string{"web-access", "revoke", webID[1]}, strings.NewReader(""), &bytes.Buffer{}, &bytes.Buffer{}); err != nil {
+		t.Fatal(err)
+	}
+
 	source := filepath.Join(t.TempDir(), "documents")
 	if err := os.MkdirAll(source, 0o700); err != nil {
 		t.Fatal(err)

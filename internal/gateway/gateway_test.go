@@ -14,6 +14,7 @@ import (
 
 	contextsvc "github.com/ivo-lopes/ivoai/internal/context"
 	"github.com/ivo-lopes/ivoai/internal/enrollment"
+	"github.com/ivo-lopes/ivoai/internal/webauth"
 )
 
 func TestGatewayDiscoveryEnrollmentAuthAndMCP(t *testing.T) {
@@ -119,6 +120,31 @@ func TestDiscoveryMemoryEndpointEndsInMCP(t *testing.T) {
 	}
 	if discovery.MemoryMCPEndpoint != "/v1/memory/mcp" || !strings.HasSuffix(discovery.MemoryMCPEndpoint, "/mcp") || discovery.MemoryHooksEndpoint != "/v1/memory" || discovery.PublicBaseURL != "https://ai.example.com" {
 		t.Fatalf("unexpected memory discovery: %#v", discovery)
+	}
+}
+
+func TestWebMCPDiscoveryAndBearerChallenge(t *testing.T) {
+	contextService, _ := contextsvc.NewService(contextsvc.DeterministicEmbedder{DimensionsN: 8}, contextsvc.NewMemoryStore(), contextsvc.NewMemoryCatalog())
+	_ = contextService.Initialize(context.Background())
+	oauth := &webauth.Server{Store: webauth.NewStore(filepath.Join(t.TempDir(), "oauth.json")), Issuer: "https://ai.example.com"}
+	g, err := New(Config{ServerVersion: "test", PublicBaseURL: "https://ai.example.com", Context: contextService, Enrollments: enrollment.NewStore(filepath.Join(t.TempDir(), "enrollment.json")), WebOAuth: oauth, WebMCP: http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(204) })})
+	if err != nil {
+		t.Fatal(err)
+	}
+	discoveryRecorder := httptest.NewRecorder()
+	g.Handler().ServeHTTP(discoveryRecorder, httptest.NewRequest("GET", "/.well-known/ivoai", nil))
+	var discovery Discovery
+	if err := json.Unmarshal(discoveryRecorder.Body.Bytes(), &discovery); err != nil {
+		t.Fatal(err)
+	}
+	if discovery.WebMCPEndpoint != "/mcp" || discovery.OAuthMetadata == "" || !discovery.Features["oauth_pkce"] {
+		t.Fatalf("web MCP not discovered: %#v", discovery)
+	}
+	request := httptest.NewRequest("POST", "/mcp", strings.NewReader(`{"jsonrpc":"2.0"}`))
+	recorder := httptest.NewRecorder()
+	g.Handler().ServeHTTP(recorder, request)
+	if recorder.Code != 401 || !strings.Contains(recorder.Header().Get("WWW-Authenticate"), "/.well-known/oauth-protected-resource") {
+		t.Fatalf("challenge=%d %q", recorder.Code, recorder.Header().Get("WWW-Authenticate"))
 	}
 }
 

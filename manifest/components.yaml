@@ -1,6 +1,6 @@
 schema_version: 1
-validated_at: "2026-08-20"
-transitive_dependency_cutoff: "2026-08-20T00:00:00Z"
+validated_at: "2026-08-21"
+transitive_dependency_cutoff: "2026-08-21T00:00:00Z"
 policy:
   allow_latest_tags: false
   update_command: "ivoai update"
@@ -12,6 +12,18 @@ policy:
     - linux/arm64
 
 components:
+  - name: mcp-go-sdk
+    role: [server]
+    validated_version: "1.7.0"
+    minimum_version: "1.7.0"
+    license: "Apache-2.0 / MIT (file-specific)"
+    source: "https://github.com/modelcontextprotocol/go-sdk/releases/tag/v1.7.0"
+    architectures: [linux/amd64, linux/arm64]
+    install_strategy: statically_linked_go_module
+    checksum_strategy: go_sum
+    notes:
+      - "Provides the official stateless Streamable HTTP transport and protocol implementation for the public Web MCP endpoint."
+
   - name: ivoai
     role: [client, server]
     validated_version: "0.1.0"

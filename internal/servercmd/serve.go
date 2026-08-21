@@ -19,6 +19,8 @@ import (
 	contextsvc "github.com/ivo-lopes/ivoai/internal/context"
 	"github.com/ivo-lopes/ivoai/internal/gateway"
 	"github.com/ivo-lopes/ivoai/internal/server"
+	"github.com/ivo-lopes/ivoai/internal/webauth"
+	"github.com/ivo-lopes/ivoai/internal/webmcp"
 )
 
 const (
@@ -116,12 +118,25 @@ func serveGateway(ctx context.Context, layout server.Layout, version string, err
 	if err != nil {
 		return err
 	}
+	var webOAuth *webauth.Server
+	var webMCP http.Handler
+	if gatewayConfig.PublicURL != "" {
+		issuer := strings.TrimRight(gatewayConfig.PublicURL, "/")
+		webStore := webauth.NewStore(filepath.Join(layout.DataDir, "web-oauth", "state.json"))
+		webOAuth = &webauth.Server{Store: webStore, Issuer: issuer}
+		webMCP, err = webmcp.New(webmcp.Config{Version: version, Context: service, Memory: webmcp.HTTPMemoryCaller(memoryURL+"/mcp", memoryToken)})
+		if err != nil {
+			return err
+		}
+	}
 	g, err := gateway.New(gateway.Config{
 		ServerVersion: version,
 		PublicBaseURL: gatewayConfig.PublicURL,
 		Context:       service,
 		Enrollments:   enrollmentStore(layout),
 		Memory:        memoryHandler,
+		WebOAuth:      webOAuth,
+		WebMCP:        webMCP,
 		MemoryHealth: func(checkCtx context.Context) error {
 			if probeMemoryMCP(checkCtx, memoryURL+"/mcp", memoryToken) != "healthy" {
 				return errors.New("ai-memory unavailable")
