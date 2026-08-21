@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"bufio"
 	"context"
 	"errors"
 	"flag"
@@ -29,6 +28,13 @@ func Run(ctx context.Context, a *app.App, args []string) error {
 		platform.DebugLog(a.Err, "cli.menu", nil)
 		return menu(ctx, a)
 	}
+	if label, enabled := commandProgress(args); enabled {
+		return runProgress(ctx, a, label, func() error { return runCommand(ctx, a, args) })
+	}
+	return runCommand(ctx, a, args)
+}
+
+func runCommand(ctx context.Context, a *app.App, args []string) error {
 	platform.DebugLog(a.Err, "cli.command", map[string]string{"command": args[0]})
 	switch args[0] {
 	case "help", "--help", "-h":
@@ -178,7 +184,7 @@ func connectServer(ctx context.Context, a *app.App, args []string) error {
 			return err
 		}
 	}
-	return a.ConnectServer(ctx, *serverURL, *code)
+	return runProgress(ctx, a, "Connecting ivoai server", func() error { return a.ConnectServer(ctx, *serverURL, *code) })
 }
 
 func runDisconnect(ctx context.Context, a *app.App, args []string) error {
@@ -252,55 +258,6 @@ func trimDoubleDash(args []string) []string {
 		return args[1:]
 	}
 	return args
-}
-
-func menu(ctx context.Context, a *app.App) error {
-	reader := bufio.NewReader(a.In)
-	for {
-		fmt.Fprintln(a.Out, "\nivoai\n1) Status\n2) Setup\n3) Connections\n4) ChatGPT\n5) Claude\n6) Server\n7) Doctor\n8) Update\n9) Configuration\n10) Launch Codex\n11) Launch Claude\n0) Exit")
-		fmt.Fprint(a.Out, "> ")
-		line, err := reader.ReadString('\n')
-		if err != nil && !errors.Is(err, io.EOF) {
-			return err
-		}
-		switch strings.TrimSpace(line) {
-		case "1":
-			menuResult(a, a.Status(ctx))
-		case "2":
-			menuResult(a, a.Setup(ctx))
-		case "3":
-			menuResult(a, connectionList(a))
-		case "4":
-			menuResult(a, a.ConnectAgent(ctx, "chatgpt"))
-		case "5":
-			menuResult(a, a.ConnectAgent(ctx, "claude"))
-		case "6":
-			fmt.Fprintln(a.Out, "Use: ivoai connect server")
-		case "7":
-			menuResult(a, runDoctor(ctx, a, nil))
-		case "8":
-			menuResult(a, a.Update(ctx))
-		case "9":
-			menuResult(a, a.ConfigShow())
-		case "10":
-			return a.Launch(ctx, "codex", nil)
-		case "11":
-			return a.Launch(ctx, "claude", nil)
-		case "0", "", "q", "quit", "exit":
-			return nil
-		default:
-			fmt.Fprintln(a.Err, "invalid selection")
-		}
-		if errors.Is(err, io.EOF) {
-			return nil
-		}
-	}
-}
-
-func menuResult(a *app.App, err error) {
-	if err != nil {
-		fmt.Fprintf(a.Err, "Error: %s\n", UserError(err))
-	}
 }
 
 func usage(w io.Writer) {

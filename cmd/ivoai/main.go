@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/ivo-lopes/ivoai/internal/agents"
 	"github.com/ivo-lopes/ivoai/internal/app"
@@ -15,17 +17,22 @@ import (
 var version = "dev"
 
 func main() {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
 	cli.RegisterServerRunner(servercmd.New(version))
 	a, err := app.New(version, os.Stdin, os.Stdout, os.Stderr)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "ivoai:", cli.UserError(err))
 		os.Exit(1)
 	}
-	if err := cli.Run(context.Background(), a, os.Args[1:]); err != nil {
+	if err := cli.Run(ctx, a, os.Args[1:]); err != nil {
 		fmt.Fprintln(os.Stderr, "ivoai:", cli.UserError(err))
 		var exitErr *agents.ExitError
 		if errors.As(err, &exitErr) && exitErr.Code > 0 {
 			os.Exit(exitErr.Code)
+		}
+		if errors.Is(err, context.Canceled) {
+			os.Exit(130)
 		}
 		os.Exit(1)
 	}

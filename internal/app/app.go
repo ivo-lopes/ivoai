@@ -34,12 +34,46 @@ type App struct {
 	Out, Err io.Writer
 }
 
+// MenuSnapshot is a non-secret, read-only view used by the interactive UI.
+// It deliberately contains no endpoint credentials or raw configuration.
+type MenuSnapshot struct {
+	SetupComplete    bool
+	ComponentsReady  bool
+	ChatGPTConnected bool
+	ClaudeConnected  bool
+	ServerConnected  bool
+	MemoryEnabled    bool
+	HeadroomEnabled  bool
+	RufloEnabled     bool
+}
+
 func New(version string, in io.Reader, out, errOut io.Writer) (*App, error) {
 	paths, err := config.ResolvePaths()
 	if err != nil {
 		return nil, err
 	}
 	return &App{Version: version, Store: config.NewStore(paths), Runner: platform.ExecRunner{}, In: in, Out: out, Err: errOut}, nil
+}
+
+func (a *App) MenuSnapshot() (MenuSnapshot, error) {
+	cfg, err := a.Store.Load()
+	if err != nil {
+		return MenuSnapshot{}, err
+	}
+	state, err := a.Store.LoadState()
+	if err != nil {
+		return MenuSnapshot{}, err
+	}
+	return MenuSnapshot{
+		SetupComplete:    !state.SetupCompletedAt.IsZero(),
+		ComponentsReady:  requiredComponentsReady(state),
+		ChatGPTConnected: cfg.Connections.ChatGPT.Status == "connected",
+		ClaudeConnected:  cfg.Connections.Claude.Status == "connected",
+		ServerConnected:  cfg.Connections.Server.Status == "connected",
+		MemoryEnabled:    cfg.Memory.Enabled,
+		HeadroomEnabled:  cfg.Headroom.Enabled,
+		RufloEnabled:     cfg.Orchestration.Enabled,
+	}, nil
 }
 
 func (a *App) Setup(ctx context.Context) error {
