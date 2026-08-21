@@ -192,9 +192,11 @@ func (a *App) OrchestratorServe(ctx context.Context, id string) error {
 	}
 	server := orchestrator.Server{
 		Store: store, SessionID: id, Directory: value.WorkingDirectory, RuntimeDir: runtimeDir,
-		ReviewExecutor: cfg.Orchestration.ReviewExecutor,
-		Adapter:        workers.Adapter{Runner: a.Runner, CodexPath: state.Components["codex"].Path, ClaudePath: state.Components["claude-code"].Path, HeadroomPath: state.Components["headroom"].Path, HeadroomEnabled: cfg.Headroom.Enabled},
-		Control:        orchestration.ControlPlane{Manager: a.orchestrationManager(state), RuntimeDir: runtimeDir},
+		ReviewExecutor:    cfg.Orchestration.ReviewExecutor,
+		Adapter:           workers.Adapter{Runner: a.Runner, CodexPath: state.Components["codex"].Path, ClaudePath: state.Components["claude-code"].Path, HeadroomPath: state.Components["headroom"].Path, HeadroomEnabled: cfg.Headroom.Enabled},
+		Control:           orchestration.ControlPlane{Manager: a.orchestrationManager(state), RuntimeDir: runtimeDir},
+		Quota:             a.automaticQuotaManager(cfg, state),
+		CheckpointEnabled: cfg.Orchestration.Auto.CheckpointEnabled,
 	}
 	return server.Run(ctx)
 }
@@ -244,7 +246,7 @@ func (a *App) cleanupSession(store session.Store, id string, control orchestrati
 		if value.PrimaryRufloTaskID != "" {
 			_ = control.CancelLifecycle(context.Background(), value.PrimaryRufloTaskID)
 		}
-		if value.Mode == session.ModeOrchestrated {
+		if value.Mode == session.ModeOrchestrated || value.Mode == session.ModeAuto {
 			cleanupErr = control.Stop(context.Background())
 		}
 	}
@@ -257,8 +259,13 @@ func (a *App) cleanupSession(store session.Store, id string, control orchestrati
 func (a *App) finishSession(store session.Store, id string, final session.State, exitCode int) {
 	now := time.Now().UTC()
 	_, _ = store.Update(id, func(value *session.Session) error {
-		value.State, value.EndedAt, value.ExitCode = final, &now, &exitCode
-		if value.Mode == session.ModeOrchestrated {
+		value.State, value.ExitCode = final, &exitCode
+		if final == session.StateWaiting {
+			value.EndedAt = nil
+		} else {
+			value.EndedAt = &now
+		}
+		if value.Mode == session.ModeOrchestrated || value.Mode == session.ModeAuto {
 			value.SwarmState = "stopped"
 		}
 		return nil

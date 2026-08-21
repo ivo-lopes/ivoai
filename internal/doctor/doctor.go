@@ -17,6 +17,7 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/headroom"
 	"github.com/ivo-lopes/ivoai/internal/orchestration"
 	"github.com/ivo-lopes/ivoai/internal/platform"
+	"github.com/ivo-lopes/ivoai/internal/quota"
 )
 
 type Component struct {
@@ -48,6 +49,24 @@ type Orchestration struct {
 	CodexWorker      bool   `json:"codex_worker_capable"`
 	ClaudeWorker     bool   `json:"claude_worker_capable"`
 }
+type QuotaProbe struct {
+	Ready         bool   `json:"ready"`
+	Authenticated bool   `json:"authenticated"`
+	Eligible      bool   `json:"eligible"`
+	Source        string `json:"source"`
+	WeeklySource  string `json:"weekly_source"`
+	MonthlySource string `json:"monthly_source"`
+	Reason        string `json:"reason,omitempty"`
+}
+type Automatic struct {
+	Enabled           bool                  `json:"enabled"`
+	DefaultPlanner    string                `json:"default_planner"`
+	AutomaticFailover bool                  `json:"automatic_failover"`
+	CheckpointReady   bool                  `json:"checkpoint_ready"`
+	CodexToClaude     bool                  `json:"codex_to_claude"`
+	ClaudeToCodex     bool                  `json:"claude_to_codex"`
+	Quota             map[string]QuotaProbe `json:"quota"`
+}
 type Report struct {
 	Overall           string               `json:"overall"`
 	OS                string               `json:"os"`
@@ -65,13 +84,15 @@ type Report struct {
 	Ruflo             orchestration.Status `json:"ruflo"`
 	Server            Server               `json:"server"`
 	Orchestration     Orchestration        `json:"orchestration"`
+	Automatic         Automatic            `json:"automatic_orchestration"`
 	Issues            []string             `json:"issues"`
 }
 type Doctor struct {
-	Store      *config.Store
-	Runner     platform.Runner
-	Version    string
-	HTTPClient *http.Client
+	Store        *config.Store
+	Runner       platform.Runner
+	Version      string
+	HTTPClient   *http.Client
+	QuotaManager *quota.Manager
 }
 
 func (d Doctor) Run(ctx context.Context) Report {
@@ -102,6 +123,7 @@ func (d Doctor) Run(ctx context.Context) Report {
 	}
 	r.Server = d.server(ctx, cfg.Connections.Server)
 	r.Orchestration = d.orchestration(ctx, cfg, state)
+	r.Automatic = d.automatic(ctx, cfg, state, r)
 	for name, component := range map[string]Component{"Codex": componentFromAuth(r.Codex), "Claude Code": componentFromAuth(r.Claude), "Headroom": {Installed: r.Headroom.Installed}, "ai-memory": r.Memory, "Ruflo": {Installed: r.Ruflo.Installed}} {
 		if !component.Installed {
 			r.Issues = append(r.Issues, name+" is not installed")
@@ -150,6 +172,51 @@ func (d Doctor) Run(ctx context.Context) Report {
 		r.Overall = "DEGRADED"
 	}
 	return r
+}
+
+func (d Doctor) automatic(ctx context.Context, cfg config.Config, state config.State, report Report) Automatic {
+	result := Automatic{
+		Enabled: cfg.Orchestration.Auto.Enabled, DefaultPlanner: cfg.Orchestration.Auto.DefaultPlanner,
+		AutomaticFailover: cfg.Orchestration.Auto.AutomaticFailover,
+		CheckpointReady:   cfg.Orchestration.Auto.CheckpointEnabled && report.Memory.Installed && report.Memory.Hooks,
+		Quota:             map[string]QuotaProbe{},
+	}
+	if report.TestMode {
+		for _, provider := range []quota.Provider{quota.ProviderCodex, quota.ProviderClaude} {
+			result.Quota[string(provider)] = QuotaProbe{Ready: true, Authenticated: true, Eligible: true, Source: "fixture", WeeklySource: "N/A / not exposed", MonthlySource: "N/A / not exposed"}
+		}
+	} else {
+		manager := d.QuotaManager
+		if manager == nil {
+			ttl := time.Duration(cfg.Orchestration.Auto.QuotaRefreshSeconds) * time.Second
+			manager = &quota.Manager{Store: quota.Store{Root: d.Store.Paths.QuotaDir}, TTL: ttl, Probes: map[quota.Provider]quota.Probe{
+				quota.ProviderCodex:  quota.CodexAdapter{Binary: state.Components["codex"].Path},
+				quota.ProviderClaude: quota.ClaudeAdapter{Binary: state.Components["claude-code"].Path, Runner: d.Runner, Store: quota.Store{Root: d.Store.Paths.QuotaDir}, TTL: ttl},
+			}}
+		}
+		for _, provider := range []quota.Provider{quota.ProviderCodex, quota.ProviderClaude} {
+			value, err := manager.Probe(ctx, provider, true)
+			result.Quota[string(provider)] = quotaProbeDiagnostic(value, err)
+		}
+	}
+	codex := result.Quota[string(quota.ProviderCodex)]
+	claude := result.Quota[string(quota.ProviderClaude)]
+	result.CodexToClaude = result.AutomaticFailover && claude.Authenticated
+	result.ClaudeToCodex = result.AutomaticFailover && codex.Authenticated
+	return result
+}
+
+func quotaProbeDiagnostic(value quota.ProviderQuota, probeErr error) QuotaProbe {
+	weekly, weeklyOK := value.Window(quota.KindWeekly)
+	monthly, monthlyOK := value.Window(quota.KindMonthly)
+	result := QuotaProbe{Ready: probeErr == nil && value.Authenticated, Authenticated: value.Authenticated, Eligible: value.Eligible, Source: value.Source, WeeklySource: "N/A / not exposed", MonthlySource: "N/A / not exposed", Reason: value.Reason}
+	if weeklyOK && weekly.Available && weekly.Authoritative {
+		result.WeeklySource = weekly.Source
+	}
+	if monthlyOK && monthly.Available && monthly.Authoritative {
+		result.MonthlySource = monthly.Source
+	}
+	return result
 }
 
 func (d Doctor) orchestration(ctx context.Context, cfg config.Config, state config.State) Orchestration {

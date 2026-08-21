@@ -10,12 +10,17 @@ import (
 
 	"github.com/ivo-lopes/ivoai/internal/orchestration"
 	"github.com/ivo-lopes/ivoai/internal/platform"
+	"github.com/ivo-lopes/ivoai/internal/quota"
 	"github.com/ivo-lopes/ivoai/internal/session"
 	"github.com/ivo-lopes/ivoai/internal/workers"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
 type rufloRunner struct{ calls [][]string }
+
+type bridgeProbe struct{ value quota.ProviderQuota }
+
+func (p bridgeProbe) Probe(context.Context) (quota.ProviderQuota, error) { return p.value, nil }
 
 func (r *rufloRunner) LookPath(string) (string, error) { return "/managed/ruflo", nil }
 func (r *rufloRunner) Run(_ context.Context, _ string, args []string, _ platform.RunOptions) (platform.Result, error) {
@@ -97,6 +102,96 @@ func TestBridgeEnforcesWorkerLimitBeforeExecution(t *testing.T) {
 	if _, err := server.delegate(context.Background(), request); err == nil || !strings.Contains(err.Error(), "limit") {
 		t.Fatalf("worker limit error=%v", err)
 	}
+}
+
+func TestAutomaticBridgeBlocksWorkerBeforeRufloWhenBothProvidersExhausted(t *testing.T) {
+	root := t.TempDir()
+	store, id := automaticBridgeSession(t, root)
+	now := time.Now().UTC()
+	exhausted := func(provider quota.Provider) quota.ProviderQuota {
+		return quota.ProviderQuota{Provider: provider, Authenticated: true, HardLimitReached: true, Reason: "subscription exhausted", Source: "fixture", ObservedAt: now}
+	}
+	runner := &rufloRunner{}
+	server := &Server{Store: store, SessionID: id, Directory: root, RuntimeDir: filepath.Join(root, "runtime"), ReviewExecutor: "codex", Control: orchestration.ControlPlane{Manager: orchestration.Manager{Runner: runner, Binary: "/managed/ruflo"}, RuntimeDir: filepath.Join(root, "runtime")}, Quota: &quota.Manager{Store: quota.Store{Root: filepath.Join(root, "quota")}, Probes: map[quota.Provider]quota.Probe{
+		quota.ProviderCodex: bridgeProbe{exhausted(quota.ProviderCodex)}, quota.ProviderClaude: bridgeProbe{exhausted(quota.ProviderClaude)},
+	}}}
+	request := &mcp.CallToolRequest{Params: &mcp.CallToolParamsRaw{Arguments: []byte(`{"role":"reviewer","task":"must not run","preferred_executor":"codex"}`)}}
+	if _, err := server.delegate(context.Background(), request); err == nil {
+		t.Fatal("exhausted providers accepted worker")
+	}
+	updated, _ := store.Get(id)
+	if len(updated.Workers) != 0 || len(runner.calls) != 0 {
+		t.Fatalf("work started before quota gate: workers=%+v calls=%+v", updated.Workers, runner.calls)
+	}
+}
+
+func TestAutomaticBridgeRoutesExhaustedRequestedWorkerToAlternate(t *testing.T) {
+	root := t.TempDir()
+	store, id := automaticBridgeSession(t, root)
+	now := time.Now().UTC()
+	codex := quota.ProviderQuota{Provider: quota.ProviderCodex, Authenticated: true, HardLimitReached: true, Reason: "weekly exhausted", Source: "fixture", ObservedAt: now}
+	claude := quota.ProviderQuota{Provider: quota.ProviderClaude, Authenticated: true, Eligible: true, Source: "fixture", ObservedAt: now}
+	claudeBinary := executable(t, root, "claude", "#!/bin/sh\ncat >/dev/null\nprintf '%s' '{\"type\":\"result\",\"result\":\"alternate answer\"}'\n")
+	runner := &rufloRunner{}
+	server := &Server{Store: store, SessionID: id, Directory: root, RuntimeDir: filepath.Join(root, "runtime"), ReviewExecutor: "codex", Adapter: workers.Adapter{Runner: platform.ExecRunner{}, ClaudePath: claudeBinary}, Control: orchestration.ControlPlane{Manager: orchestration.Manager{Runner: runner, Binary: "/managed/ruflo"}, RuntimeDir: filepath.Join(root, "runtime")}, Quota: &quota.Manager{Store: quota.Store{Root: filepath.Join(root, "quota")}, Probes: map[quota.Provider]quota.Probe{
+		quota.ProviderCodex: bridgeProbe{codex}, quota.ProviderClaude: bridgeProbe{claude},
+	}}}
+	server.initialize()
+	request := &mcp.CallToolRequest{Params: &mcp.CallToolParamsRaw{Arguments: []byte(`{"role":"reviewer","task":"review","preferred_executor":"codex"}`)}}
+	if _, err := server.delegate(context.Background(), request); err != nil {
+		t.Fatal(err)
+	}
+	updated, _ := store.Get(id)
+	if len(updated.Workers) != 1 || updated.Workers[0].RequestedExecutor != "codex" || updated.Workers[0].Executor != "claude" || updated.Workers[0].FallbackReason == "" {
+		t.Fatalf("worker route not recorded: %+v", updated.Workers)
+	}
+}
+
+func TestAutomaticBridgeRetriesWorkerOnAlternateOnlyForLimitSignal(t *testing.T) {
+	root := t.TempDir()
+	store, id := automaticBridgeSession(t, root)
+	now := time.Now().UTC()
+	available := func(provider quota.Provider) quota.ProviderQuota {
+		return quota.ProviderQuota{Provider: provider, Authenticated: true, Eligible: true, Source: "fixture", ObservedAt: now}
+	}
+	codexBinary := executable(t, root, "codex", `#!/bin/sh
+result=""
+previous=""
+for arg in "$@"; do
+  [ "$previous" = "--output-last-message" ] && result="$arg"
+  previous="$arg"
+done
+cat >/dev/null
+echo 'subscription rate limit reached' >&2
+exit 1
+`)
+	claudeBinary := executable(t, root, "claude", "#!/bin/sh\ncat >/dev/null\nprintf '%s' '{\"type\":\"result\",\"result\":\"recovered answer\"}'\n")
+	runner := &rufloRunner{}
+	server := &Server{Store: store, SessionID: id, Directory: root, RuntimeDir: filepath.Join(root, "runtime"), ReviewExecutor: "codex", Adapter: workers.Adapter{Runner: platform.ExecRunner{}, CodexPath: codexBinary, ClaudePath: claudeBinary}, Control: orchestration.ControlPlane{Manager: orchestration.Manager{Runner: runner, Binary: "/managed/ruflo"}, RuntimeDir: filepath.Join(root, "runtime")}, Quota: &quota.Manager{Store: quota.Store{Root: filepath.Join(root, "quota")}, Probes: map[quota.Provider]quota.Probe{
+		quota.ProviderCodex: bridgeProbe{available(quota.ProviderCodex)}, quota.ProviderClaude: bridgeProbe{available(quota.ProviderClaude)},
+	}}}
+	server.initialize()
+	request := &mcp.CallToolRequest{Params: &mcp.CallToolParamsRaw{Arguments: []byte(`{"role":"reviewer","task":"review","preferred_executor":"codex"}`)}}
+	response, err := server.delegate(context.Background(), request)
+	if err != nil || !strings.Contains(response.Content[0].(*mcp.TextContent).Text, "recovered answer") {
+		t.Fatalf("response=%+v err=%v", response, err)
+	}
+	updated, _ := store.Get(id)
+	if len(updated.Workers) != 1 || updated.Workers[0].Executor != "claude" || updated.Workers[0].State != session.StateCompleted || !strings.Contains(updated.Workers[0].FallbackReason, "limit") {
+		t.Fatalf("runtime worker fallback not recorded: %+v", updated.Workers)
+	}
+}
+
+func automaticBridgeSession(t *testing.T, root string) (session.Store, string) {
+	t.Helper()
+	store := session.Store{Root: filepath.Join(root, "sessions")}
+	id, _ := session.NewID()
+	now := time.Now().UTC()
+	value := session.Session{SessionID: id, StartedAt: now, UpdatedAt: now, Mode: session.ModeAuto, Auto: true, InitialPlanner: "codex", CurrentPrimary: "codex", PrimaryExecutor: "codex", WorkingDirectory: root, PrimaryModel: session.UnknownModel(), RufloEnabled: true, RufloHealthy: true, RufloSafeMode: true, SwarmID: "swarm-fixture", SwarmState: "active", Workers: []session.Worker{}, MaxWorkers: 2, ContextStatus: "disabled", MemoryStatus: "disabled", ServerStatus: "not-connected", State: session.StateRunning, Quota: map[quota.Provider]quota.ProviderQuota{}}
+	if err := store.Create(value); err != nil {
+		t.Fatal(err)
+	}
+	return store, id
 }
 
 func executable(t *testing.T, directory, name, body string) string {

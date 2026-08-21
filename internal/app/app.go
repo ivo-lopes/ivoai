@@ -22,6 +22,7 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/orchestration"
 	"github.com/ivo-lopes/ivoai/internal/platform"
 	"github.com/ivo-lopes/ivoai/internal/project"
+	"github.com/ivo-lopes/ivoai/internal/quota"
 	"github.com/ivo-lopes/ivoai/internal/secrets"
 	"github.com/ivo-lopes/ivoai/internal/terminalui"
 	"github.com/ivo-lopes/ivoai/internal/update"
@@ -29,28 +30,35 @@ import (
 )
 
 type App struct {
-	Version  string
-	Store    *config.Store
-	Runner   platform.Runner
-	In       io.Reader
-	Out, Err io.Writer
+	Version          string
+	Store            *config.Store
+	Runner           platform.Runner
+	In               io.Reader
+	Out, Err         io.Writer
+	QuotaManager     *quota.Manager
+	AutoPollInterval time.Duration
 }
 
 // MenuSnapshot is a non-secret, read-only view used by the interactive UI.
 // It deliberately contains no endpoint credentials or raw configuration.
 type MenuSnapshot struct {
-	SetupComplete    bool
-	ComponentsReady  bool
-	ChatGPTConnected bool
-	ClaudeConnected  bool
-	ServerConnected  bool
-	MemoryEnabled    bool
-	HeadroomEnabled  bool
-	RufloEnabled     bool
-	DefaultMode      string
-	PrimaryExecutor  string
-	ReviewExecutor   string
-	MaxWorkers       int
+	SetupComplete     bool
+	ComponentsReady   bool
+	ChatGPTConnected  bool
+	ClaudeConnected   bool
+	ServerConnected   bool
+	MemoryEnabled     bool
+	HeadroomEnabled   bool
+	RufloEnabled      bool
+	DefaultMode       string
+	PrimaryExecutor   string
+	ReviewExecutor    string
+	MaxWorkers        int
+	AutoEnabled       bool
+	DefaultPlanner    string
+	AutomaticFailover bool
+	CheckpointEnabled bool
+	AutoMaxWorkers    int
 }
 
 func New(version string, in io.Reader, out, errOut io.Writer) (*App, error) {
@@ -71,18 +79,23 @@ func (a *App) MenuSnapshot() (MenuSnapshot, error) {
 		return MenuSnapshot{}, err
 	}
 	return MenuSnapshot{
-		SetupComplete:    !state.SetupCompletedAt.IsZero(),
-		ComponentsReady:  requiredComponentsReady(state),
-		ChatGPTConnected: cfg.Connections.ChatGPT.Status == "connected",
-		ClaudeConnected:  cfg.Connections.Claude.Status == "connected",
-		ServerConnected:  cfg.Connections.Server.Status == "connected",
-		MemoryEnabled:    cfg.Memory.Enabled,
-		HeadroomEnabled:  cfg.Headroom.Enabled,
-		RufloEnabled:     cfg.Orchestration.Enabled,
-		DefaultMode:      cfg.Orchestration.DefaultMode,
-		PrimaryExecutor:  cfg.Orchestration.PrimaryExecutor,
-		ReviewExecutor:   cfg.Orchestration.ReviewExecutor,
-		MaxWorkers:       cfg.Orchestration.MaxWorkers,
+		SetupComplete:     !state.SetupCompletedAt.IsZero(),
+		ComponentsReady:   requiredComponentsReady(state),
+		ChatGPTConnected:  cfg.Connections.ChatGPT.Status == "connected",
+		ClaudeConnected:   cfg.Connections.Claude.Status == "connected",
+		ServerConnected:   cfg.Connections.Server.Status == "connected",
+		MemoryEnabled:     cfg.Memory.Enabled,
+		HeadroomEnabled:   cfg.Headroom.Enabled,
+		RufloEnabled:      cfg.Orchestration.Enabled,
+		DefaultMode:       cfg.Orchestration.DefaultMode,
+		PrimaryExecutor:   cfg.Orchestration.PrimaryExecutor,
+		ReviewExecutor:    cfg.Orchestration.ReviewExecutor,
+		MaxWorkers:        cfg.Orchestration.MaxWorkers,
+		AutoEnabled:       cfg.Orchestration.Auto.Enabled,
+		DefaultPlanner:    cfg.Orchestration.Auto.DefaultPlanner,
+		AutomaticFailover: cfg.Orchestration.Auto.AutomaticFailover,
+		CheckpointEnabled: cfg.Orchestration.Auto.CheckpointEnabled,
+		AutoMaxWorkers:    cfg.Orchestration.Auto.MaxWorkers,
 	}, nil
 }
 
@@ -154,6 +167,25 @@ func (a *App) Status(ctx context.Context) error {
 		{"Ruflo", safeStatus(state.Components["ruflo"])},
 		{"Server", cfg.Connections.Server.Status},
 	}
+	quotaSnapshot, quotaErr := (quota.Store{Root: a.Store.Paths.QuotaDir}).Load()
+	autoReady := cfg.Orchestration.Auto.Enabled && cfg.Orchestration.Auto.Quota.Enabled && componentPresent(state.Components["codex"]) && componentPresent(state.Components["claude-code"]) && componentPresent(state.Components["ruflo"])
+	autoStatus := "disabled"
+	if autoReady {
+		autoStatus = "ready / default " + displayProvider(cfg.Orchestration.Auto.DefaultPlanner)
+	} else if cfg.Orchestration.Auto.Enabled {
+		autoStatus = "degraded"
+	}
+	routingStatus := "N/A / telemetry not captured"
+	if quotaErr == nil && len(quotaSnapshot.Providers) > 0 {
+		routingStatus = "ready / cached"
+	}
+	rows = append(rows,
+		struct{ name, status string }{"Auto", autoStatus},
+		struct{ name, status string }{"Quota routing", routingStatus},
+		struct{ name, status string }{"Failover", map[bool]string{true: "ready", false: "disabled"}[cfg.Orchestration.Auto.AutomaticFailover]},
+		struct{ name, status string }{"Codex weekly", quotaValue(quotaSnapshot.Providers[quota.ProviderCodex], quota.KindWeekly)},
+		struct{ name, status string }{"Claude weekly", quotaValue(quotaSnapshot.Providers[quota.ProviderClaude], quota.KindWeekly)},
+	)
 	if sessions, sessionErr := a.SessionList(); sessionErr == nil {
 		active, orchestrated := 0, 0
 		for _, value := range sessions {
@@ -237,7 +269,7 @@ func safeStatus(s config.ComponentState) string {
 }
 
 func (a *App) Doctor(ctx context.Context) doctor.Report {
-	return (doctor.Doctor{Store: a.Store, Runner: a.Runner, Version: a.Version}).Run(ctx)
+	return (doctor.Doctor{Store: a.Store, Runner: a.Runner, Version: a.Version, QuotaManager: a.QuotaManager}).Run(ctx)
 }
 
 func (a *App) ConnectAgent(ctx context.Context, target string) error {
@@ -537,6 +569,74 @@ func (a *App) ConfigSet(key, value string) error {
 			return errors.New("max_workers must be an integer between 1 and 3")
 		}
 		c.Orchestration.MaxWorkers = parsed
+	case "orchestration.auto.enabled":
+		parsed, parseErr := parseBool(value)
+		if parseErr != nil {
+			return parseErr
+		}
+		c.Orchestration.Auto.Enabled = parsed
+	case "orchestration.auto.default_planner":
+		c.Orchestration.Auto.DefaultPlanner = strings.ToLower(value)
+	case "orchestration.auto.automatic_failover":
+		parsed, parseErr := parseBool(value)
+		if parseErr != nil {
+			return parseErr
+		}
+		c.Orchestration.Auto.AutomaticFailover = parsed
+	case "orchestration.auto.checkpoint_enabled":
+		parsed, parseErr := parseBool(value)
+		if parseErr != nil {
+			return parseErr
+		}
+		c.Orchestration.Auto.CheckpointEnabled = parsed
+	case "orchestration.auto.quota_refresh_seconds":
+		parsed, parseErr := strconv.Atoi(value)
+		if parseErr != nil {
+			return errors.New("quota_refresh_seconds must be an integer between 30 and 300")
+		}
+		c.Orchestration.Auto.QuotaRefreshSeconds = parsed
+	case "orchestration.auto.max_workers":
+		parsed, parseErr := strconv.Atoi(value)
+		if parseErr != nil {
+			return errors.New("auto max_workers must be an integer between 1 and 3")
+		}
+		c.Orchestration.Auto.MaxWorkers = parsed
+	case "orchestration.auto.quota.enabled":
+		parsed, parseErr := parseBool(value)
+		if parseErr != nil {
+			return parseErr
+		}
+		c.Orchestration.Auto.Quota.Enabled = parsed
+	case "orchestration.auto.quota.show_weekly":
+		parsed, parseErr := parseBool(value)
+		if parseErr != nil {
+			return parseErr
+		}
+		c.Orchestration.Auto.Quota.ShowWeekly = parsed
+	case "orchestration.auto.quota.show_monthly":
+		parsed, parseErr := parseBool(value)
+		if parseErr != nil {
+			return parseErr
+		}
+		c.Orchestration.Auto.Quota.ShowMonthly = parsed
+	case "orchestration.auto.quota.show_session":
+		parsed, parseErr := parseBool(value)
+		if parseErr != nil {
+			return parseErr
+		}
+		c.Orchestration.Auto.Quota.ShowSession = parsed
+	case "orchestration.auto.quota.show_context":
+		parsed, parseErr := parseBool(value)
+		if parseErr != nil {
+			return parseErr
+		}
+		c.Orchestration.Auto.Quota.ShowContext = parsed
+	case "orchestration.auto.quota.show_model_scoped":
+		parsed, parseErr := parseBool(value)
+		if parseErr != nil {
+			return parseErr
+		}
+		c.Orchestration.Auto.Quota.ShowModelScoped = parsed
 	default:
 		return fmt.Errorf("unsupported config key %q", key)
 	}

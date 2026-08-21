@@ -222,7 +222,12 @@ func run(ctx context.Context, command string, args []string, request Request, di
 	case err = <-done:
 	case <-ctx.Done():
 		_ = syscall.Kill(-cmd.Process.Pid, syscall.SIGTERM)
-		err = <-done
+		select {
+		case err = <-done:
+		case <-time.After(2 * time.Second):
+			_ = syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
+			err = <-done
+		}
 		if err == nil {
 			err = ctx.Err()
 		}

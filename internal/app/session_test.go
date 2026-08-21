@@ -98,7 +98,7 @@ func sessionTestApp(t *testing.T, root, codex, claude, ruflo string) *App {
 	t.Helper()
 	paths := config.Paths{
 		ConfigDir: filepath.Join(root, "config"), DataDir: filepath.Join(root, "data"), StateDir: filepath.Join(root, "state"), CacheDir: filepath.Join(root, "cache"), BinDir: filepath.Join(root, "data", "bin"),
-		Config: filepath.Join(root, "config", "config.toml"), State: filepath.Join(root, "state", "state.toml"), Secrets: filepath.Join(root, "config", "secrets.json"), Ownership: filepath.Join(root, "state", "ownership.toml"), HooksDir: filepath.Join(root, "data", "hooks"), SessionsDir: filepath.Join(root, "state", "sessions"),
+		Config: filepath.Join(root, "config", "config.toml"), State: filepath.Join(root, "state", "state.toml"), Secrets: filepath.Join(root, "config", "secrets.json"), Ownership: filepath.Join(root, "state", "ownership.toml"), HooksDir: filepath.Join(root, "data", "hooks"), SessionsDir: filepath.Join(root, "state", "sessions"), QuotaDir: filepath.Join(root, "state", "quota"),
 	}
 	store := config.NewStore(paths)
 	cfg := config.Default()

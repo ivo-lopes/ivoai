@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/ivo-lopes/ivoai/internal/orchestration"
+	"github.com/ivo-lopes/ivoai/internal/quota"
 	"github.com/ivo-lopes/ivoai/internal/session"
 	"github.com/ivo-lopes/ivoai/internal/workers"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -21,13 +22,15 @@ import (
 var rolePattern = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_-]{0,63}$`)
 
 type Server struct {
-	Store          session.Store
-	SessionID      string
-	Adapter        workers.Adapter
-	Control        orchestration.ControlPlane
-	Directory      string
-	RuntimeDir     string
-	ReviewExecutor string
+	Store             session.Store
+	SessionID         string
+	Adapter           workers.Adapter
+	Control           orchestration.ControlPlane
+	Directory         string
+	RuntimeDir        string
+	ReviewExecutor    string
+	Quota             *quota.Manager
+	CheckpointEnabled bool
 
 	mu      sync.Mutex
 	results map[string]workerResult
@@ -71,7 +74,7 @@ func (s *Server) authorized() error {
 	if err != nil {
 		return err
 	}
-	if !value.Active() || value.Mode != session.ModeOrchestrated || value.SwarmID == "" || !value.RufloHealthy || !value.RufloSafeMode || value.ProviderExecution {
+	if !value.Active() || (value.Mode != session.ModeOrchestrated && value.Mode != session.ModeAuto) || value.SwarmID == "" || !value.RufloHealthy || !value.RufloSafeMode || value.ProviderExecution {
 		return errors.New("orchestration bridge requires an active safe orchestrated session")
 	}
 	return nil
@@ -90,6 +93,13 @@ func (s *Server) addTools(server *mcp.Server) {
 	}, "role", "task"), Annotations: write}, s.delegate)
 	server.AddTool(&mcp.Tool{Name: "orchestration_result", Description: "Read a bounded worker result retained only in this bridge process.", InputSchema: object(map[string]any{"worker_id": map[string]any{"type": "string"}}, "worker_id"), Annotations: read}, s.result)
 	server.AddTool(&mcp.Tool{Name: "orchestration_cancel", Description: "Cancel a worker owned by this active session.", InputSchema: object(map[string]any{"worker_id": map[string]any{"type": "string"}}, "worker_id"), Annotations: write}, s.cancel)
+	value, _ := s.Store.Get(s.SessionID)
+	if value.Mode == session.ModeAuto {
+		server.AddTool(&mcp.Tool{Name: "orchestration_quota", Description: "Read authoritative or explicitly unavailable subscription quota telemetry. The model cannot change quota state.", InputSchema: object(nil), Annotations: read}, s.quotaStatus)
+		if s.CheckpointEnabled {
+			server.AddTool(&mcp.Tool{Name: "orchestration_checkpoint", Description: "Save a bounded, secret-free continuity checkpoint after a relevant completed turn. Do not include transcripts, prompts, credentials, tokens, or raw responses.", InputSchema: checkpointSchema(), Annotations: write}, s.checkpoint)
+		}
+	}
 }
 
 func (s *Server) status(_ context.Context, _ *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -124,6 +134,33 @@ func (s *Server) delegate(ctx context.Context, request *mcp.CallToolRequest) (*m
 	if args.Executor != "codex" && args.Executor != "claude" {
 		return nil, errors.New("preferred_executor must be codex or claude")
 	}
+	requestedExecutor := args.Executor
+	fallbackReason := ""
+	value, err := s.Store.Get(s.SessionID)
+	if err != nil {
+		return nil, err
+	}
+	if value.Mode == session.ModeAuto {
+		if s.Quota == nil {
+			return nil, errors.New("automatic session quota manager is unavailable")
+		}
+		decision, routeErr := s.Quota.Resolve(ctx, quota.Provider(args.Executor), args.Model, true)
+		if routeErr != nil {
+			return nil, routeErr
+		}
+		args.Executor = string(decision.Resolved)
+		fallbackReason = decision.Reason
+		if args.Executor != requestedExecutor {
+			args.Model = ""
+		}
+		_, _ = s.Store.Update(s.SessionID, func(current *session.Session) error {
+			if current.Quota == nil {
+				current.Quota = map[quota.Provider]quota.ProviderQuota{}
+			}
+			current.Quota[decision.Quota.Provider] = decision.Quota
+			return nil
+		})
+	}
 	workerID, err := newWorkerID()
 	if err != nil {
 		return nil, err
@@ -139,7 +176,7 @@ func (s *Server) delegate(ctx context.Context, request *mcp.CallToolRequest) (*m
 		if active >= value.MaxWorkers || active >= 3 {
 			return errors.New("session worker limit reached")
 		}
-		value.Workers = append(value.Workers, session.Worker{ID: workerID, Role: args.Role, Executor: args.Executor, Model: session.ResolveModel("", args.Model, args.Executor, ""), State: session.StateStarting, StartedAt: started})
+		value.Workers = append(value.Workers, session.Worker{ID: workerID, Role: args.Role, RequestedExecutor: requestedExecutor, Executor: args.Executor, FallbackReason: fallbackReason, Model: session.ResolveModel("", args.Model, args.Executor, ""), State: session.StateStarting, StartedAt: started})
 		return nil
 	})
 	if err != nil {
@@ -168,6 +205,30 @@ func (s *Server) delegate(ctx context.Context, request *mcp.CallToolRequest) (*m
 			return nil
 		})
 	})
+	if runErr != nil && value.Mode == session.ModeAuto && s.Quota != nil && quotaLimitError(args.Executor, runErr.Error()) {
+		_ = s.Quota.MarkExhausted(quota.Provider(args.Executor), "official worker reported a subscription limit")
+		decision, routeErr := s.Quota.Resolve(ctx, quota.Other(quota.Provider(args.Executor)), "", true)
+		if routeErr == nil && decision.Resolved != quota.Provider(args.Executor) {
+			previous := args.Executor
+			args.Executor, args.Model = string(decision.Resolved), ""
+			_, _ = s.Store.Update(s.SessionID, func(current *session.Session) error {
+				if worker := findWorker(current, workerID); worker != nil {
+					worker.Executor = args.Executor
+					worker.Model = session.UnknownModel()
+					worker.FallbackReason = previous + " worker reported a subscription limit"
+				}
+				return nil
+			})
+			result, runErr = s.Adapter.Run(workerCtx, workers.Request{Executor: args.Executor, Task: args.Task, Directory: s.Directory, Runtime: s.RuntimeDir}, func(observation workers.Observation) {
+				_, _ = s.Store.Update(s.SessionID, func(current *session.Session) error {
+					if worker := findWorker(current, workerID); worker != nil {
+						worker.PID, worker.ProcessStart, worker.HeadroomUsed, worker.State = observation.PID, observation.ProcessStart, observation.HeadroomUsed, session.StateRunning
+					}
+					return nil
+				})
+			})
+		}
+	}
 	cancel()
 	s.mu.Lock()
 	delete(s.cancels, workerID)
@@ -179,12 +240,73 @@ func (s *Server) delegate(ctx context.Context, request *mcp.CallToolRequest) (*m
 			exitCode = 1
 		}
 	}
+	if value.Mode == session.ModeAuto && s.Quota != nil {
+		refreshed, _ := s.Quota.Probe(context.Background(), quota.Provider(args.Executor), true)
+		_, _ = s.Store.Update(s.SessionID, func(current *session.Session) error {
+			if current.Quota == nil {
+				current.Quota = map[quota.Provider]quota.ProviderQuota{}
+			}
+			current.Quota[refreshed.Provider] = refreshed
+			return nil
+		})
+	}
 	s.finish(workerID, state, exitCode, result.Text)
 	_ = s.Control.CancelLifecycle(context.Background(), taskID)
 	if runErr != nil {
 		return nil, runErr
 	}
 	return toolResult(map[string]any{"worker_id": workerID, "executor": args.Executor, "model": result.Model, "headroom_used": result.HeadroomUsed, "result": result.Text})
+}
+
+func quotaLimitError(executor, message string) bool {
+	if executor == "claude" {
+		return quota.IsClaudeLimitError(message)
+	}
+	return quota.IsCodexLimitError(message)
+}
+
+func (s *Server) quotaStatus(ctx context.Context, _ *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	value, err := s.Store.Get(s.SessionID)
+	if err != nil {
+		return nil, err
+	}
+	if value.Mode != session.ModeAuto || s.Quota == nil {
+		return nil, errors.New("quota routing is available only in automatic sessions")
+	}
+	result := map[string]quota.ProviderQuota{}
+	for _, provider := range []quota.Provider{quota.ProviderCodex, quota.ProviderClaude} {
+		current, _ := s.Quota.Probe(ctx, provider, false)
+		result[string(provider)] = current
+	}
+	return toolResult(map[string]any{"providers": result, "policy": "quota manager has authority over provider selection"})
+}
+
+func (s *Server) checkpoint(_ context.Context, request *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	value, err := s.Store.Get(s.SessionID)
+	if err != nil {
+		return nil, err
+	}
+	if value.Mode != session.ModeAuto {
+		return nil, errors.New("checkpoints are available only in automatic sessions")
+	}
+	var checkpoint session.Checkpoint
+	if err := json.Unmarshal(request.Params.Arguments, &checkpoint); err != nil {
+		return nil, errors.New("invalid checkpoint")
+	}
+	if err := s.Store.SaveCheckpoint(s.SessionID, checkpoint); err != nil {
+		return nil, err
+	}
+	saved, err := s.Store.LoadCheckpoint(s.SessionID)
+	if err != nil {
+		return nil, err
+	}
+	_, _ = s.Store.Update(s.SessionID, func(current *session.Session) error {
+		current.CheckpointAvailable = true
+		current.CheckpointUpdatedAt = &saved.UpdatedAt
+		current.ConsecutiveFailovers = 0
+		return nil
+	})
+	return toolResult(map[string]any{"saved": true, "updated_at": saved.UpdatedAt, "ai_memory": value.MemoryStatus})
 }
 
 func (s *Server) result(_ context.Context, request *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -270,6 +392,17 @@ func object(properties map[string]any, required ...string) map[string]any {
 		value["required"] = required
 	}
 	return value
+}
+
+func checkpointSchema() map[string]any {
+	properties := map[string]any{}
+	for _, name := range []string{"objective", "next_step"} {
+		properties[name] = map[string]any{"type": "string", "maxLength": 4096}
+	}
+	for _, name := range []string{"decisions", "completed", "files_changed", "important_checks", "outstanding", "blockers"} {
+		properties[name] = map[string]any{"type": "array", "maxItems": 64, "items": map[string]any{"type": "string", "maxLength": 1024}}
+	}
+	return object(properties)
 }
 
 func toolResult(value any) (*mcp.CallToolResult, error) {

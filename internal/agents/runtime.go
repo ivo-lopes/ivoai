@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/ivo-lopes/ivoai/internal/headroom"
 	"github.com/ivo-lopes/ivoai/internal/platform"
@@ -131,7 +132,14 @@ func runInteractive(ctx context.Context, command string, args, environment []str
 			return waitErr
 		case <-ctx.Done():
 			_ = syscall.Kill(-cmd.Process.Pid, syscall.SIGTERM)
-			return ctx.Err()
+			select {
+			case <-done:
+				return ctx.Err()
+			case <-time.After(2 * time.Second):
+				_ = syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
+				<-done
+				return ctx.Err()
+			}
 		}
 	}
 }
