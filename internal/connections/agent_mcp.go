@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/ivo-lopes/ivoai/internal/config"
@@ -92,7 +93,14 @@ func (m AgentMCP) remove(ctx context.Context, executable, configuredPath, name s
 	if executable == "claude" {
 		args = []string{"mcp", "remove", "--scope", "user", name}
 	}
-	if _, err := m.Runner.Run(ctx, path, args, platform.RunOptions{Timeout: 30 * time.Second}); err != nil {
+	result, err := m.Runner.Run(ctx, path, args, platform.RunOptions{Timeout: 30 * time.Second})
+	if err != nil {
+		output := strings.ToLower(result.Stdout + "\n" + result.Stderr)
+		// Official CLIs return a non-zero exit code when an idempotent removal
+		// targets an entry that does not exist.
+		if strings.Contains(output, "no mcp server named") || strings.Contains(output, "not found") || strings.Contains(output, "does not exist") {
+			return nil
+		}
 		return fmt.Errorf("remove %s from %s: %w", name, executable, err)
 	}
 	return nil

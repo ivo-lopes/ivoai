@@ -123,7 +123,7 @@ func serveGateway(ctx context.Context, layout server.Layout, version string, err
 		Enrollments:   enrollmentStore(layout),
 		Memory:        memoryHandler,
 		MemoryHealth: func(checkCtx context.Context) error {
-			if probeURL(checkCtx, memoryURL+"/health") != "healthy" {
+			if probeURLWithBearer(checkCtx, memoryURL+"/health", memoryToken) != "healthy" {
 				return errors.New("ai-memory unavailable")
 			}
 			return nil
@@ -230,6 +230,9 @@ func memoryProxyWithToken(upstreamToken, targetURL string) (http.Handler, error)
 	original := proxy.Director
 	proxy.Director = func(request *http.Request) {
 		original(request)
+		// The private backend enforces a local Host allowlist. Never forward the
+		// public gateway Host into the loopback-only ai-memory service.
+		request.Host = target.Host
 		switch request.URL.Path {
 		case "/v1/memory/mcp":
 			request.URL.Path = "/mcp"
@@ -260,11 +263,18 @@ func memoryProxyWithToken(upstreamToken, targetURL string) (http.Handler, error)
 }
 
 func probeURL(ctx context.Context, endpoint string) string {
+	return probeURLWithBearer(ctx, endpoint, "")
+}
+
+func probeURLWithBearer(ctx context.Context, endpoint, token string) string {
 	probeCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 	req, err := http.NewRequestWithContext(probeCtx, http.MethodGet, endpoint, nil)
 	if err != nil {
 		return "unhealthy"
+	}
+	if token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
 	}
 	client := &http.Client{Timeout: 3 * time.Second}
 	resp, err := client.Do(req)

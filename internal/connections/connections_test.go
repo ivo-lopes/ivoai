@@ -3,6 +3,7 @@ package connections
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -238,12 +239,16 @@ func TestEnrollmentCredentialSurvivesDegradedMCPProbe(t *testing.T) {
 }
 
 type mcpRunner struct {
-	calls [][]string
+	calls              [][]string
+	missingRemoveEntry bool
 }
 
 func (r *mcpRunner) LookPath(name string) (string, error) { return "/managed/" + name, nil }
 func (r *mcpRunner) Run(_ context.Context, command string, args []string, _ platform.RunOptions) (platform.Result, error) {
 	r.calls = append(r.calls, append([]string{command}, args...))
+	if r.missingRemoveEntry && strings.Contains(strings.Join(args, " "), "mcp remove") {
+		return platform.Result{Stderr: "No MCP server named fixture in user scope", ExitCode: 1}, errors.New("fixture exit 1")
+	}
 	return platform.Result{}, nil
 }
 
@@ -281,5 +286,13 @@ func TestAgentMCPUsesDiscoveryURLsAndTokenEnvironmentReference(t *testing.T) {
 	}
 	if len(runner.calls) != 4 {
 		t.Fatalf("expected four remove calls, got %d", len(runner.calls))
+	}
+}
+
+func TestAgentMCPRemovalIgnoresAlreadyAbsentEntries(t *testing.T) {
+	runner := &mcpRunner{missingRemoveEntry: true}
+	manager := AgentMCP{Runner: runner, CodexBinary: "/managed/codex", ClaudeBinary: "/managed/claude"}
+	if err := manager.RemoveRemote(context.Background()); err != nil {
+		t.Fatalf("idempotent removal failed: %v", err)
 	}
 }

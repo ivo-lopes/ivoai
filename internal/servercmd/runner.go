@@ -70,7 +70,7 @@ func (r *runner) run(ctx context.Context, args []string) error {
 	case "context":
 		return r.context(ctx, layout, args[1:])
 	case "memory":
-		return r.memory(ctx, args[1:])
+		return r.memory(ctx, layout, args[1:])
 	case "backup":
 		return r.backup(ctx, layout, manager, args[1:])
 	case "restore":
@@ -577,9 +577,14 @@ func (r *runner) status(ctx context.Context, manager server.Manager, doctor bool
 		all = all && state.Active
 	}
 	if doctor {
+		memoryToken := ""
 		for _, secret := range []struct{ file, variable string }{{"qdrant.env", "QDRANT__SERVICE__API_KEY"}, {"embeddings.env", "API_KEY"}, {"memory.env", "AI_MEMORY_AUTH_TOKEN"}} {
-			if _, err := server.LoadBackendSecret(manager.Layout, secret.file, secret.variable); err != nil {
+			value, err := server.LoadBackendSecret(manager.Layout, secret.file, secret.variable)
+			if err != nil {
 				return fmt.Errorf("private backend credential %s: %w", secret.file, err)
+			}
+			if secret.variable == "AI_MEMORY_AUTH_TOKEN" {
+				memoryToken = value
 			}
 		}
 		gatewayConfig, configErr := server.LoadGatewayConfig(manager.Layout)
@@ -595,7 +600,7 @@ func (r *runner) status(ctx context.Context, manager server.Manager, doctor bool
 		if gatewayConfig.TLSCertFile != "" {
 			tlsMode = "direct"
 		}
-		fmt.Fprintf(r.out, "gateway=%s context=%s memory=%s tls=%s databases-public=false arbitrary-command-api=false\n", probeURL(ctx, gatewayBase+"/health"), probeURL(ctx, gatewayBase+"/ready"), probeURL(ctx, "http://127.0.0.1:49374/health"), tlsMode)
+		fmt.Fprintf(r.out, "gateway=%s context=%s memory=%s tls=%s databases-public=false arbitrary-command-api=false\n", probeURL(ctx, gatewayBase+"/health"), probeURL(ctx, gatewayBase+"/ready"), probeURLWithBearer(ctx, "http://127.0.0.1:49374/health", memoryToken), tlsMode)
 	}
 	if !all {
 		return errors.New("one or more ivoai services are inactive")
@@ -857,11 +862,15 @@ func (r *runner) context(ctx context.Context, layout server.Layout, args []strin
 	return errors.New("usage: ivoai server context [status|serve]")
 }
 
-func (r *runner) memory(ctx context.Context, args []string) error {
+func (r *runner) memory(ctx context.Context, layout server.Layout, args []string) error {
 	if len(args) > 1 || (len(args) == 1 && args[0] != "status") {
 		return errors.New("usage: ivoai server memory status")
 	}
-	status := probeURL(ctx, "http://127.0.0.1:49374/health")
+	token, err := server.LoadBackendSecret(layout, "memory.env", "AI_MEMORY_AUTH_TOKEN")
+	if err != nil {
+		return fmt.Errorf("private backend credential memory.env: %w", err)
+	}
+	status := probeURLWithBearer(ctx, "http://127.0.0.1:49374/health", token)
 	fmt.Fprintf(r.out, "ai-memory: %s\n", status)
 	if status != "healthy" {
 		return errors.New("ai-memory is unavailable; context and agent clients remain usable")

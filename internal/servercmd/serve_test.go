@@ -5,6 +5,7 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -45,11 +46,11 @@ func TestTrustedHTTPSProxyOnlyValidatesPeerAndScheme(t *testing.T) {
 func TestMemoryProxyAllowsOnlyStableOperationalRoutesAndStripsCredentials(t *testing.T) {
 	t.Setenv("AI_MEMORY_AUTH_TOKEN", "internal-memory-token")
 	type observed struct {
-		path, authorization, cookie string
+		path, authorization, cookie, host string
 	}
 	requests := make(chan observed, 4)
 	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		requests <- observed{r.URL.Path, r.Header.Get("Authorization"), r.Header.Get("Cookie")}
+		requests <- observed{r.URL.Path, r.Header.Get("Authorization"), r.Header.Get("Cookie"), r.Host}
 		_, _ = io.WriteString(w, `{}`)
 	}))
 	defer upstream.Close()
@@ -68,7 +69,7 @@ func TestMemoryProxyAllowsOnlyStableOperationalRoutesAndStripsCredentials(t *tes
 		request.Header.Set("Cookie", "private=cookie")
 		proxy.ServeHTTP(httptest.NewRecorder(), request)
 		got := <-requests
-		if got.path != expected || got.authorization != "Bearer internal-memory-token" || got.cookie != "" {
+		if got.path != expected || got.authorization != "Bearer internal-memory-token" || got.cookie != "" || got.host != strings.TrimPrefix(upstream.URL, "http://") {
 			t.Fatalf("%s proxied as %#v, want path %s with only the internal credential", incoming, got, expected)
 		}
 	}

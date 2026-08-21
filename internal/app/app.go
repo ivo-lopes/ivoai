@@ -216,17 +216,20 @@ func (a *App) ConnectServer(ctx context.Context, serverURL, code string) error {
 	}
 	state, _ := a.Store.LoadState()
 	mem := a.memoryManager(state)
+	quietMem := mem
+	quietMem.Out = nil
+	quietMem.Err = nil
 	a.reconcileAgentMCP(ctx, state, cfg)
 	_, memoryAvailable := cfg.MCP.Servers["ivoai-memory"]
 	if cfg.Memory.Enabled && memoryAvailable {
-		if err := mem.Disable(ctx); err != nil {
+		if err := quietMem.Disable(ctx); err != nil {
 			a.warn("previous ai-memory integration could not be fully removed", err)
 		}
 		if err := mem.ConfigureHooks(ctx, result.MemoryHooksURL, data.Server.Token); err != nil {
 			a.warn("server connected, but ai-memory hooks are degraded", err)
 		}
 	} else if !cfg.Memory.Enabled {
-		if err := mem.Disable(ctx); err != nil {
+		if err := quietMem.Disable(ctx); err != nil {
 			a.warn("ai-memory is disabled but its previous integration could not be removed", err)
 		}
 	}
