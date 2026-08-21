@@ -218,14 +218,22 @@ func (g *Gateway) enroll(w http.ResponseWriter, r *http.Request) {
 	credential, err := g.config.Enrollments.ConsumeScoped(request.Code, request.ClientName, requested)
 	if err != nil {
 		reason := "invalid_or_expired"
-		if strings.Contains(err.Error(), "scope") {
+		status := http.StatusUnauthorized
+		message := "invalid or expired enrollment code"
+		if !errors.Is(err, enrollment.ErrInvalidEnrollmentCode) && !strings.Contains(err.Error(), "scope") && !strings.Contains(err.Error(), "client name") {
+			reason = "state_unavailable"
+			status = http.StatusServiceUnavailable
+			message = "enrollment service temporarily unavailable"
+		} else if strings.Contains(err.Error(), "scope") {
 			reason = "scope_not_allowed"
 		} else if strings.Contains(err.Error(), "client name") {
 			reason = "invalid_client_name"
 		}
 		g.auditEnrollment(request.Code, r.RemoteAddr, false, reason)
-		// A deliberately uniform response avoids exposing code state.
-		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "invalid or expired enrollment code"})
+		// Invalid credentials receive a deliberately uniform response. Internal
+		// storage failures are availability errors and must never masquerade as
+		// an invalid user-supplied code.
+		writeJSON(w, status, map[string]string{"error": message})
 		return
 	}
 	g.auditEnrollment(request.Code, r.RemoteAddr, true, "accepted")

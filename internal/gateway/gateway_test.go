@@ -268,3 +268,30 @@ func TestEnrollmentAcceptsProxyResilientHeadersWithoutBody(t *testing.T) {
 		t.Fatalf("unexpected credential: %#v", credential)
 	}
 }
+
+func TestEnrollmentReportsStateAvailabilityFailure(t *testing.T) {
+	contextService, err := contextsvc.NewService(contextsvc.DeterministicEmbedder{DimensionsN: 8}, contextsvc.NewMemoryStore(), contextsvc.NewMemoryCatalog())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := contextService.Initialize(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	var audit EnrollmentAudit
+	// A directory is intentionally not a valid state file, simulating an
+	// unreadable or incorrectly-owned deployment without involving a secret.
+	store := enrollment.NewStore(t.TempDir())
+	g, err := New(Config{ServerVersion: "test", Context: contextService, Enrollments: store, EnrollmentAudit: func(event EnrollmentAudit) { audit = event }})
+	if err != nil {
+		t.Fatal(err)
+	}
+	request := httptest.NewRequest(http.MethodPost, "/v1/enroll", nil)
+	request.Header.Set("Authorization", enrollmentAuthorizationScheme+"ivoai-enroll_0123456789abcdef_secret-fixture")
+	request.Header.Set(enrollmentClientNameHeader, "host:state-test")
+	request.Header.Set(enrollmentScopesHeader, "context:read")
+	response := httptest.NewRecorder()
+	g.Handler().ServeHTTP(response, request)
+	if response.Code != http.StatusServiceUnavailable || audit.Reason != "state_unavailable" {
+		t.Fatalf("status=%d audit=%#v body=%s", response.Code, audit, response.Body.String())
+	}
+}

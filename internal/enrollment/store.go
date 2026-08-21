@@ -35,6 +35,10 @@ const (
 
 var DefaultClientScopes = []Scope{ScopeContextRead, ScopeMemoryRead, ScopeMemoryWrite, ScopeStatusRead, ScopeDoctorRead, ScopeConnectorRead}
 
+// ErrInvalidEnrollmentCode deliberately covers missing, altered, consumed,
+// revoked, and expired codes so callers cannot disclose credential state.
+var ErrInvalidEnrollmentCode = errors.New("invalid or expired enrollment code")
+
 type Enrollment struct {
 	ID         string    `json:"id"`
 	ExpiresAt  time.Time `json:"expires_at"`
@@ -321,7 +325,7 @@ func (s *Store) ConsumeScoped(code, clientName string, requested []Scope) (Clien
 	}
 	id, valid := codeID(code)
 	if !valid {
-		return ClientCredential{}, errors.New("invalid or expired enrollment code")
+		return ClientCredential{}, ErrInvalidEnrollmentCode
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -337,7 +341,7 @@ func (s *Store) ConsumeScoped(code, clientName string, requested []Scope) (Clien
 	record, found := current.Enrollments[id]
 	providedHash := hash(code)
 	if !found || subtle.ConstantTimeCompare([]byte(record.CodeHash), []byte(providedHash)) != 1 || !record.ConsumedAt.IsZero() || !record.RevokedAt.IsZero() || !s.now().Before(record.ExpiresAt) {
-		return ClientCredential{}, errors.New("invalid or expired enrollment code")
+		return ClientCredential{}, ErrInvalidEnrollmentCode
 	}
 	granted := append([]Scope(nil), record.Scopes...)
 	if requested != nil {

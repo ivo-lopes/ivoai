@@ -374,6 +374,16 @@ func ensureServiceOwnership(layout server.Layout) error {
 			return err
 		}
 	}
+	// Enrollment administration runs as root while the gateway runs as its
+	// dedicated account. Atomic root writes replace both files with root-owned
+	// inodes, so restore their service ownership after every admin operation and
+	// idempotent setup. Without this, valid newly-created codes appear invalid.
+	enrollmentDir := filepath.Join(layout.DataDir, "enrollment")
+	for _, name := range []string{"state.json", "state.json.lock"} {
+		if err := secureRegularOwnership(filepath.Join(enrollmentDir, name), gatewayUID, sharedGID, 0o600); err != nil && !errors.Is(err, os.ErrNotExist) {
+			return err
+		}
+	}
 	if err := chownMode(layout.BackupDir, 0, 0, 0o700); err != nil {
 		return err
 	}
