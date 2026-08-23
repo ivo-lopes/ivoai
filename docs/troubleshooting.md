@@ -479,6 +479,14 @@ repository as their project scope, so the same checkout reached through `/home/.
 Context cannot accept conversational writes; it contains only documents ingested
 through configured connectors.
 
+If the memory tool visibly finds the correct page but its body ends before the
+answer, inspect whether an older IvoAI launch used Headroom. Headroom 0.36.0 can
+compress Codex Code Mode `custom_tool_call_output` frames and omit exact trailing
+text. Current IvoAI launches bypass Headroom whenever `ivoai-memory` or
+`ivoai-context` is active and print the reason; start a new `ivoai codex`,
+`ivoai claude`, session, or automatic run after updating. Existing processes keep
+the launch policy they started with and are not killed or rewritten during update.
+
 For registered remote IvoAI services, memory and Context reads receive narrowly
 scoped, process-local Codex approval overrides. If `memory_query` still says that an
 approval is required, confirm the launch went through the current `ivoai codex`,

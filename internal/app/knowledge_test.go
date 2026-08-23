@@ -66,6 +66,29 @@ func TestCodexKnowledgeArgsDoNotCreateUnregisteredMCPServers(t *testing.T) {
 	}
 }
 
+func TestHeadroomIsBypassedOnlyForActiveSharedKnowledge(t *testing.T) {
+	cfg := config.Default()
+	if !primaryHeadroomEnabled(cfg) || headroomBypassedForSharedKnowledge(cfg) {
+		t.Fatal("Headroom was bypassed without an active shared-knowledge MCP")
+	}
+	cfg.MCP.Servers["ivoai-memory"] = config.MCPServer{Enabled: true, Kind: "memory"}
+	if primaryHeadroomEnabled(cfg) || !headroomBypassedForSharedKnowledge(cfg) {
+		t.Fatal("active memory MCP did not bypass lossy Headroom compression")
+	}
+	cfg.Memory.Enabled = false
+	if !primaryHeadroomEnabled(cfg) {
+		t.Fatal("disabled memory integration still bypassed Headroom")
+	}
+	cfg.MCP.Servers["ivoai-context"] = config.MCPServer{Enabled: true, Kind: "context"}
+	if primaryHeadroomEnabled(cfg) {
+		t.Fatal("active Context MCP did not bypass lossy Headroom compression")
+	}
+	cfg.Headroom.Enabled = false
+	if primaryHeadroomEnabled(cfg) || headroomBypassedForSharedKnowledge(cfg) {
+		t.Fatal("disabled Headroom was reported as a shared-knowledge bypass")
+	}
+}
+
 func TestManagedCodexAcceptsExactVerifiedCompanion(t *testing.T) {
 	root := t.TempDir()
 	codex := filepath.Join(root, "codex")

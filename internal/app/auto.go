@@ -278,7 +278,7 @@ func (a *App) launchAutomaticPrimary(ctx context.Context, store session.Store, i
 		component = "claude-code"
 	}
 	runtime := agents.Runtime{Runner: a.Runner, In: a.In, Out: a.Out, Err: a.Err, AgentPath: state.Components[component].Path, HeadroomPath: state.Components["headroom"].Path, Environment: environment}
-	return runtime.LaunchObserved(ctx, executor, args, cfg.Headroom.Enabled, func(observation agents.Observation) {
+	return runtime.LaunchObserved(ctx, executor, args, primaryHeadroomEnabled(cfg), func(observation agents.Observation) {
 		_, _ = store.Update(id, func(current *session.Session) error {
 			current.PrimaryPID = observation.PID
 			current.PrimaryProcessStart = session.ProcessStart(observation.PID)
@@ -507,6 +507,9 @@ func (a *App) printAutoPreflight(values map[quota.Provider]quota.ProviderQuota, 
 	headroomState := "DISABLED"
 	if cfg.Headroom.Enabled {
 		headroomState = "ENABLED / INTERACTIVE PREFLIGHT PENDING"
+	}
+	if headroomBypassedForSharedKnowledge(cfg) {
+		headroomState = "BYPASSED / PRESERVING EXACT SHARED KNOWLEDGE"
 	}
 	fmt.Fprintf(a.Out, "\nSelected        %s\nRuflo           CONFIGURED / VALIDATING SAFE MODE\nai-memory       %s\nContext         %s\nServer          %s\nHeadroom        %s\n\n", displayProvider(selected), strings.ToUpper(current.MemoryStatus), strings.ToUpper(current.ContextStatus), strings.ToUpper(current.ServerStatus), headroomState)
 }

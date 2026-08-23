@@ -1,6 +1,6 @@
 # ivoai architecture
 
-Status: implementation baseline for v0.4.3. Decisions and upstream data were
+Status: implementation baseline for v0.4.4. Decisions and upstream data were
 validated on 2026-08-23. Exact pins live in `manifest/components.yaml`; this
 document explains why they exist and how the pieces fit together.
 
@@ -144,9 +144,11 @@ context cancellation uses a bounded TERM-to-KILL sequence. The normal decision t
 
 ```text
 requested agent
-  -> Headroom enabled, healthy and compatibility probe passed?
-       yes -> headroom wrap <agent> [argv...]
-       no  -> official agent [argv...]
+  -> ivoai-memory or ivoai-context MCP active?
+       yes -> official agent [argv...]
+       no  -> Headroom enabled, healthy and compatibility probe passed?
+                yes -> headroom wrap <agent> [argv...]
+                no  -> official agent [argv...]
 ```
 
 Headroom 0.36.0 officially supplies `wrap codex` and `wrap claude`. It is installed
@@ -155,8 +157,14 @@ into an isolated tool environment using uv 0.12.5 and the exact managed CPython
 preflight selects the direct agent. After a compatible wrapper process has started,
 ivoai propagates its exit status; it does not silently retry a failed interactive
 session. ivoai does not rewrite the user's aliases or replace third-party launchers.
+Headroom 0.36.0 can apply lossy compression to Codex Code Mode
+`custom_tool_call_output` items without reliably associating them with the originating
+MCP tool name. IvoAI therefore bypasses Headroom for primaries and workers whenever
+either shared-knowledge MCP is active. This preserves exact memory and Context
+results; session telemetry still records that Headroom was requested but not used.
 Sources: <https://headroomlabs-ai.github.io/headroom/cli/>,
 <https://github.com/headroomlabs-ai/headroom/releases/tag/v0.36.0>,
+<https://github.com/headroomlabs-ai/headroom/issues/940>,
 <https://github.com/astral-sh/uv/releases/tag/0.12.5>, and
 <https://www.python.org/downloads/release/python-31315/>.
 

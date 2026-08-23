@@ -220,6 +220,45 @@ esac
 	}
 }
 
+func TestObservedSessionBypassesHeadroomForExactSharedKnowledge(t *testing.T) {
+	root := t.TempDir()
+	agentMarker := filepath.Join(root, "codex-ran")
+	headroomMarker := filepath.Join(root, "headroom-ran")
+	codex := appExecutable(t, root, "codex", "#!/bin/sh\nprintf direct > '"+agentMarker+"'\n")
+	ruflo := appExecutable(t, root, "ruflo", "#!/bin/sh\nexit 0\n")
+	a := sessionTestApp(t, root, codex, appExecutable(t, root, "claude", "#!/bin/sh\nexit 0\n"), ruflo)
+	headroom := appExecutable(t, root, "headroom", "#!/bin/sh\nprintf wrapped > '"+headroomMarker+"'\nexit 2\n")
+	cfg, _ := a.Store.Load()
+	cfg.Headroom.Enabled = true
+	cfg.MCP.Servers["ivoai-context"] = config.MCPServer{Enabled: true, Kind: "context"}
+	if err := a.Store.Save(cfg); err != nil {
+		t.Fatal(err)
+	}
+	state, _ := a.Store.LoadState()
+	state.Components["headroom"] = config.ComponentState{Installed: true, Path: headroom, Version: "fixture"}
+	if err := a.Store.SaveState(state); err != nil {
+		t.Fatal(err)
+	}
+	previous, _ := os.Getwd()
+	t.Cleanup(func() { _ = os.Chdir(previous) })
+	if err := os.Chdir(root); err != nil {
+		t.Fatal(err)
+	}
+	if err := a.SessionStart(context.Background(), "codex", session.ModeDirect, nil); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(agentMarker); err != nil {
+		t.Fatalf("official Codex did not run: %v", err)
+	}
+	if _, err := os.Stat(headroomMarker); !os.IsNotExist(err) {
+		t.Fatalf("Headroom was invoked despite shared knowledge: %v", err)
+	}
+	values, err := a.SessionList()
+	if err != nil || len(values) != 1 || !values[0].HeadroomRequested || values[0].HeadroomUsed {
+		t.Fatalf("unexpected Headroom telemetry: sessions=%+v err=%v", values, err)
+	}
+}
+
 func sessionTestApp(t *testing.T, root, codex, claude, ruflo string) *App {
 	t.Helper()
 	paths := config.Paths{

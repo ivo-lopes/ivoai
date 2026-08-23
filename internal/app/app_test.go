@@ -500,6 +500,47 @@ func TestLaunchInjectsServerTokenOnlyIntoChildEnvironment(t *testing.T) {
 	}
 }
 
+func TestLaunchBypassesHeadroomForExactSharedKnowledge(t *testing.T) {
+	root := t.TempDir()
+	t.Setenv("HOME", root)
+	t.Setenv("XDG_CONFIG_HOME", filepath.Join(root, "config"))
+	t.Setenv("XDG_DATA_HOME", filepath.Join(root, "data"))
+	t.Setenv("XDG_STATE_HOME", filepath.Join(root, "state"))
+	t.Setenv("XDG_CACHE_HOME", filepath.Join(root, "cache"))
+	var output bytes.Buffer
+	a, err := New("test", strings.NewReader(""), &output, &output)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg := config.Default()
+	cfg.MCP.Servers["ivoai-memory"] = config.MCPServer{Enabled: true, Kind: "memory"}
+	if err := a.Store.Save(cfg); err != nil {
+		t.Fatal(err)
+	}
+	agentMarker := filepath.Join(root, "agent-launched")
+	headroomMarker := filepath.Join(root, "headroom-launched")
+	agent := appExecutable(t, root, "codex", "#!/bin/sh\nprintf direct > '"+agentMarker+"'\n")
+	headroom := appExecutable(t, root, "headroom", "#!/bin/sh\nprintf wrapped > '"+headroomMarker+"'\nexit 2\n")
+	state, _ := a.Store.LoadState()
+	state.Components["codex"] = config.ComponentState{Installed: true, Path: agent}
+	state.Components["headroom"] = config.ComponentState{Installed: true, Path: headroom}
+	if err := a.Store.SaveState(state); err != nil {
+		t.Fatal(err)
+	}
+	if err := a.Launch(context.Background(), "codex", nil); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(agentMarker); err != nil {
+		t.Fatalf("official client was not launched directly: %v", err)
+	}
+	if _, err := os.Stat(headroomMarker); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("Headroom was invoked despite exact shared knowledge: %v", err)
+	}
+	if !strings.Contains(output.String(), "Headroom bypassed") {
+		t.Fatalf("bypass was not reported: %q", output.String())
+	}
+}
+
 func TestManagedCodexWithoutCodeModeHostRefusesToollessLaunch(t *testing.T) {
 	root := t.TempDir()
 	t.Setenv("HOME", root)

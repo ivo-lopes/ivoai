@@ -110,7 +110,11 @@ func (a *App) SessionStart(ctx context.Context, executor string, mode session.Mo
 		component = "claude-code"
 	}
 	runtime := agents.Runtime{Runner: a.Runner, In: a.In, Out: a.Out, Err: a.Err, AgentPath: state.Components[component].Path, HeadroomPath: state.Components["headroom"].Path, Environment: environment}
-	launchErr := runtime.LaunchObserved(ctx, executor, args, cfg.Headroom.Enabled, func(observation agents.Observation) {
+	useHeadroom := primaryHeadroomEnabled(cfg)
+	if headroomBypassedForSharedKnowledge(cfg) {
+		a.warn(sharedKnowledgeHeadroomBypass, nil)
+	}
+	launchErr := runtime.LaunchObserved(ctx, executor, args, useHeadroom, func(observation agents.Observation) {
 		_, _ = store.Update(id, func(current *session.Session) error {
 			current.PrimaryPID = observation.PID
 			current.PrimaryProcessStart = session.ProcessStart(observation.PID)
@@ -199,7 +203,7 @@ func (a *App) OrchestratorServe(ctx context.Context, id string) error {
 	server := orchestrator.Server{
 		Store: store, SessionID: id, Directory: value.WorkingDirectory, RuntimeDir: runtimeDir,
 		ReviewExecutor:    cfg.Orchestration.ReviewExecutor,
-		Adapter:           workers.Adapter{Runner: a.Runner, CodexPath: state.Components["codex"].Path, ClaudePath: state.Components["claude-code"].Path, HeadroomPath: state.Components["headroom"].Path, HeadroomEnabled: cfg.Headroom.Enabled},
+		Adapter:           workers.Adapter{Runner: a.Runner, CodexPath: state.Components["codex"].Path, ClaudePath: state.Components["claude-code"].Path, HeadroomPath: state.Components["headroom"].Path, HeadroomEnabled: primaryHeadroomEnabled(cfg)},
 		Control:           orchestration.ControlPlane{Manager: a.orchestrationManager(state), RuntimeDir: runtimeDir},
 		Quota:             a.automaticQuotaManager(cfg, state),
 		CheckpointEnabled: cfg.Orchestration.Auto.CheckpointEnabled,

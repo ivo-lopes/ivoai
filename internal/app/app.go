@@ -525,7 +525,11 @@ func (a *App) Launch(ctx context.Context, target string, args []string) error {
 	if err != nil {
 		return err
 	}
-	return (agents.Runtime{Runner: a.Runner, In: a.In, Out: a.Out, Err: a.Err, AgentPath: state.Components[key].Path, HeadroomPath: state.Components["headroom"].Path, Environment: environment}).Launch(ctx, target, args, cfg.Headroom.Enabled)
+	useHeadroom := primaryHeadroomEnabled(cfg)
+	if headroomBypassedForSharedKnowledge(cfg) {
+		a.warn(sharedKnowledgeHeadroomBypass, nil)
+	}
+	return (agents.Runtime{Runner: a.Runner, In: a.In, Out: a.Out, Err: a.Err, AgentPath: state.Components[key].Path, HeadroomPath: state.Components["headroom"].Path, Environment: environment}).Launch(ctx, target, args, useHeadroom)
 }
 
 func (a *App) MemoryStatus(ctx context.Context) error {

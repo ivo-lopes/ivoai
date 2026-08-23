@@ -187,6 +187,46 @@ exit 2
 	}
 }
 
+func TestAutoBypassesHeadroomForExactSharedKnowledge(t *testing.T) {
+	root := t.TempDir()
+	agentMarker := filepath.Join(root, "codex-launched")
+	headroomMarker := filepath.Join(root, "headroom-launched")
+	a := autoTestApp(t, root, "#!/bin/sh\nprintf direct > '"+agentMarker+"'\n", "#!/bin/sh\nexit 0\n")
+	headroom := appExecutable(t, root, "headroom", "#!/bin/sh\nprintf wrapped > '"+headroomMarker+"'\nexit 2\n")
+	cfg, _ := a.Store.Load()
+	cfg.Headroom.Enabled = true
+	cfg.MCP.Servers["ivoai-memory"] = config.MCPServer{Enabled: true, Kind: "memory"}
+	if err := a.Store.Save(cfg); err != nil {
+		t.Fatal(err)
+	}
+	state, _ := a.Store.LoadState()
+	state.Components["headroom"] = config.ComponentState{Installed: true, Path: headroom, Version: "fixture"}
+	if err := a.Store.SaveState(state); err != nil {
+		t.Fatal(err)
+	}
+	a.QuotaManager = &quota.Manager{Store: quota.Store{Root: a.Store.Paths.QuotaDir}, Probes: map[quota.Provider]quota.Probe{
+		quota.ProviderCodex:  probeFunc(func(context.Context) (quota.ProviderQuota, error) { return available(quota.ProviderCodex), nil }),
+		quota.ProviderClaude: probeFunc(func(context.Context) (quota.ProviderQuota, error) { return available(quota.ProviderClaude), nil }),
+	}}
+	if err := a.Auto(context.Background(), "codex", nil); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(agentMarker); err != nil {
+		t.Fatalf("official Codex did not run: %v", err)
+	}
+	if _, err := os.Stat(headroomMarker); !os.IsNotExist(err) {
+		t.Fatalf("Headroom was invoked despite shared knowledge: %v", err)
+	}
+	values, err := a.SessionList()
+	if err != nil || len(values) != 1 || values[0].HeadroomUsed {
+		t.Fatalf("unexpected automatic Headroom telemetry: sessions=%+v err=%v", values, err)
+	}
+	output := a.Out.(*bytes.Buffer).String()
+	if !strings.Contains(output, "BYPASSED / PRESERVING EXACT SHARED KNOWLEDGE") {
+		t.Fatalf("automatic preflight omitted the bypass: %q", output)
+	}
+}
+
 func TestQuotaStatuslineRejectsUnauthorizedSessionBeforeCacheWrite(t *testing.T) {
 	root := t.TempDir()
 	a := autoTestApp(t, root, "#!/bin/sh\nexit 0\n", "#!/bin/sh\nexit 0\n")

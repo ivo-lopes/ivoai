@@ -100,7 +100,8 @@ inside each official client.
 - **Codex / Claude Code:** all inference, reasoning, tools and user interaction.
 - **Ruflo:** ephemeral swarm topology and opaque lifecycle coordination only.
 - **Headroom:** optional wrapper for primary and worker processes; telemetry records
-  whether it was actually used.
+  whether it was actually used. It is bypassed while either shared-knowledge MCP is
+  active so exact memory and Context tool results cannot be lossily shortened.
 - **ai-memory:** durable operational memory and cross-session continuity. Ruflo uses
   `CLAUDE_FLOW_MEMORY_BACKEND=memory`, never a competing durable store.
 - **IvoAI Context:** independent RAG/context service. The session control plane only

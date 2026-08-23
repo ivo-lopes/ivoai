@@ -90,6 +90,13 @@ starts the official agent directly. Once a selected wrapper process starts, its 
 status is propagated instead of being hidden. Memory and context hooks are best
 effort and cannot block launch.
 
+When `ivoai-memory` or `ivoai-context` is active, the launcher deliberately starts
+the official client directly even if Headroom is enabled. Headroom 0.36.0 may
+lossily shorten Codex Code Mode custom-tool results before the model sees them,
+including the end of an exact memory page. The launch prints this bypass and observed
+session metadata reports `headroom_used=false`; Headroom remains available for
+launches without active shared-knowledge MCPs.
+
 Every ivoai-managed primary receives the same shared-knowledge contract. Questions
 that can depend on another session, prior decisions, or project history are retrieved
 from `ivoai-memory` before answering; indexed repository/connector documents are
