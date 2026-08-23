@@ -120,15 +120,18 @@ func runInteractive(ctx context.Context, command string, args, environment []str
 	if environment != nil {
 		cmd.Env = environment
 	}
+	// Subscribe before starting the child so there is no window where an
+	// interactive agent is already running but a supervisor-directed TERM or
+	// HUP still has its default effect on ivoai instead of being forwarded.
+	signals := make(chan os.Signal, 4)
+	signal.Notify(signals, os.Interrupt, syscall.SIGTERM, syscall.SIGHUP)
+	defer signal.Stop(signals)
 	if err := cmd.Start(); err != nil {
 		return &StartError{Err: err}
 	}
 	if observe != nil {
 		observe(cmd.Process.Pid)
 	}
-	signals := make(chan os.Signal, 4)
-	signal.Notify(signals, os.Interrupt, syscall.SIGTERM, syscall.SIGHUP)
-	defer signal.Stop(signals)
 	done := make(chan error, 1)
 	go func() { done <- cmd.Wait() }()
 	for {
