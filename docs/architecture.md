@@ -1,6 +1,6 @@
 # ivoai architecture
 
-Status: implementation baseline for v0.4.0. Decisions and upstream data were
+Status: implementation baseline for v0.4.1. Decisions and upstream data were
 validated on 2026-08-20. Exact pins live in `manifest/components.yaml`; this
 document explains why they exist and how the pieces fit together.
 
@@ -130,8 +130,11 @@ login remain owned by the user.
 
 ### Agent launch and failure isolation
 
-The launcher uses structured argv and signal forwarding; it never constructs `sh -c`
-from user input. The normal decision tree is:
+The launcher uses structured argv and signal forwarding. Interactive clients inherit
+ivoai's foreground process group; creating a new group without `tcsetpgrp` would
+suspend terminal reads with `SIGTTIN`. Terminal and shell job-control interrupt,
+suspend, continue, and resize signals therefore reach the complete interactive stack, while
+context cancellation uses a bounded TERM-to-KILL sequence. The normal decision tree is:
 
 ```text
 requested agent

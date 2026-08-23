@@ -9,10 +9,27 @@ while Doctor performs the active probes.
 
 If Codex shows a probe error, confirm that the managed client supports
 `codex app-server --stdio` and that `codex login status` succeeds. If Claude is
-authenticated but weekly/monthly are `N/A`, start one automatic Claude conversation
-and complete a turn so its official statusline can publish telemetry. Monthly may
-remain `N/A / not exposed` because the supported Claude client does not promise that
-field.
+authenticated but 5-hour/weekly quota says `awaiting first response`, start one
+automatic Claude conversation and complete a turn so its official statusline can
+publish telemetry. `N/A / not exposed` means a structured response was observed but
+omitted that field; `stale` means the displayed percentage is an older observation.
+Claude monthly is not assumed.
+
+## Headroom proxy appears but the Codex/Claude Code TUI does not open
+
+IvoAI 0.4.0 could place `headroom wrap` in a new process group while leaving the
+terminal foreground group assigned to IvoAI. When Headroom or the official client
+read stdin, the kernel suspended that background group with `SIGTTIN`.
+
+Inspect the live process tree with `ps -o pid,ppid,pgid,tpgid,stat,args`. Affected
+children have `PGID != TPGID` and `STAT` containing `T`. Update to the fixed patch
+release. Fixed versions keep the interactive stack in the existing foreground group,
+restore terminal modes on exit, and preserve the official client's exit code.
+
+Headroom starts its proxy in a detached session and may reuse a healthy proxy on port
+8787. Do not use `pkill headroom`: a proxy can be shared or pre-existing. Headroom's
+own wrapper tracks clients with PID/start-identity markers and cleans up a proxy it
+created after the last wrapper exits normally.
 
 ## Automatic session switched providers
 

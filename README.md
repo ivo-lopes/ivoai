@@ -74,8 +74,10 @@ The selected official client remains the conversation owner, planner, and primar
 Before opening it, ivoai reads subscription telemetry through Codex app-server and
 Claude's session-local structured statusline, then routes around a hard exhausted
 provider. The same gate runs before every worker. During a session, a hard limit can
-trigger a bounded checkpoint/handoff to the other official TUI. Unknown telemetry
-is displayed as `N/A / not exposed`; it is never treated as zero or invented.
+trigger a bounded checkpoint/handoff to the other official TUI. Before Claude's
+first response, missing rate-limit telemetry is `awaiting first response`; a field
+observed missing later is `N/A / not exposed`, and an old value is labelled `stale`.
+None of these states is treated as zero or invented.
 
 Orchestrated mode proves a real safe Ruflo swarm before opening the official primary
 client. Ruflo records only ephemeral lifecycle metadata; official Codex/Claude

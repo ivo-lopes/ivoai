@@ -39,6 +39,8 @@ compromised host are outside ivoai's protection boundary.
 ## Security invariants
 
 - Vendor authentication stays in the official Codex and Claude clients.
+- Server credentials used by ai-memory hooks are supplied only in the launched
+  agent's process environment; they are never baked into persistent hook argv.
 - Secrets never enter main configuration, argv, URLs, diagnostics, or logs.
 - Enrollment codes are high-entropy, short-lived, digest-only, transactional, and
   single-use; issued client credentials are scoped, hashed server-side, and revocable.
@@ -101,6 +103,11 @@ terminal control characters, secret-shaped fields, symlinks, invalid percentages
 and unknown providers are rejected or redacted. Concurrent cache writes are locked.
 Unknown telemetry is not interpreted as exhausted. Network errors do not cause
 automatic quota failover.
+
+Interactive official clients remain in ivoai's foreground terminal process group.
+This prevents background reads and `SIGTTIN` suspension while preserving terminal
+delivery of interrupt, suspend, continue and resize signals. IvoAI snapshots and
+restores terminal modes and reaps the direct wrapper process on cancellation.
 
 Automatic checkpoints reject credentials and complete prompts/responses. Failover
 handoffs include only this bounded checkpoint and bounded Git status/diff statistics;

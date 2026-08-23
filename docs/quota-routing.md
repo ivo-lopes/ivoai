@@ -36,8 +36,12 @@ payload and extracts:
 - seven-day/weekly quota;
 - monthly quota only if a future/current supported client explicitly supplies it.
 
-The current supported Claude payload may not expose monthly quota. In that case the
-monitor deliberately shows `Claude Monthly  N/A / not exposed`. ivoai does not
+The session-local statusline wrapper composes an existing user/project command when
+it can be read safely, so quota capture does not silently remove the user's normal
+statusline. Persistent Claude settings are never rewritten.
+
+The current supported Claude payload does not require a monthly subscription window.
+The primary monitor therefore does not render a Claude monthly row. ivoai does not
 scrape claude.ai, browser sessions, ANSI UI output, Cloudflare, or internal tokens.
 
 ## Normalization
@@ -49,9 +53,12 @@ remaining = clamp(100 - used)
 ```
 
 Every window records kind, optional model, used/remaining, optional reset time,
-source, observation time, authority, and availability. Context, session, weekly,
-monthly, model-specific, and credit windows are distinct. Unknown means unavailable,
-not exhausted.
+source, observation time, authority, availability, and telemetry state. Context,
+session, weekly, monthly, model-specific, and credit windows are distinct. `pending`
+means Claude has not yet returned rate limits, `not_exposed` means a subsequent
+structured payload omitted that field, `stale` preserves an old value with an
+explicit warning, and `exhausted` is an authoritative zero. Only the last state
+blocks routing.
 
 ## Eligibility and routing
 

@@ -118,8 +118,8 @@ the last value is intentionally used rather than guessing. See
 
 ## Automatic conversation mode
 
-`ivoai auto` shows cached weekly/monthly availability, asks which official client
-will own the conversation, and defaults to Codex. `--planner codex` and
+`ivoai auto` shows cached Codex weekly and Claude Code 5-hour/weekly availability,
+asks which official client will own the conversation, and defaults to Codex. `--planner codex` and
 `--planner claude` make this selection non-interactive. The selected client opens in
 its normal official TUI; ivoai does not emulate a chat UI and does not capture its
 transcript.
@@ -129,11 +129,18 @@ orchestrated sessions, injects the session-local orchestration MCP, and adds
 quota-aware worker routing and bounded continuity checkpoints. Run
 `ivoai monitor --watch` in a second terminal to see the current primary, model
 provenance, failover count, worker state, quota source/freshness/reset, and service
-health. Weekly and monthly rows are always present; unsupported values remain
-`N/A / not exposed`.
+health. Before Claude's first response its quota rows say `awaiting first response`;
+unsupported fields say `N/A / not exposed`, and old observations are marked
+`stale`. Claude monthly is not fabricated.
 
 See [Automatic orchestration](auto-orchestration.md) and
 [Quota routing](quota-routing.md).
+
+`ivoai status` uses bounded live checks for Server and the Ruflo safe profile.
+Stored Server configuration is never labelled connected by itself. When Server is
+unreachable, Context and remote ai-memory are degraded while local Codex and Claude
+Code remain available. Headroom installation/compatibility is reported separately
+from an interactive launch validation.
 
 ## Project identity
 

@@ -89,12 +89,15 @@ ivoai monitor --watch
 ivoai monitor --session <session-id> --json
 ```
 
-The monitor always renders Codex/Claude weekly and monthly rows. It adds session,
-context, model-specific buckets and reset times only when authoritative data exists.
+The monitor renders Codex session/weekly/monthly only when those official buckets
+apply, and renders Claude Code 5-hour and weekly rows. It adds context and
+model-specific buckets and reset times only when authoritative data exists.
 It reports source and observation time, current/initial primary, failovers,
 checkpoint availability, Headroom use, workers, Ruflo, context, ai-memory, and server
-state. `status` reads the bounded cache and does not perform a heavy provider probe;
-`doctor` performs active capability checks.
+state. `status` reads the bounded quota cache while running short, parallel Server
+and Ruflo health checks; it does not perform a heavy provider quota probe. `doctor`
+performs deeper active capability checks. Headroom version/help probes establish
+installation and compatibility only, not an interactive launch validation.
 
 Session JSON lives below `$XDG_STATE_HOME/ivoai/sessions`; quota cache lives below
 `$XDG_STATE_HOME/ivoai/quota`. Directories are `0700`, files are `0600`, writes are
@@ -106,6 +109,6 @@ atomic, and concurrent quota writers use an advisory file lock.
 - Headroom failure uses the existing direct-client fallback.
 - Ruflo failure stops automatic orchestration but does not affect `ivoai codex` or
   `ivoai claude`.
-- Unknown or stale quota is never converted to `0%`.
+- Pending, not-exposed, and stale quota are distinct and never converted to `0%`.
 - Both confirmed exhausted providers produce a bounded waiting/blocked state; ivoai
   does not retry forever or activate PAYG inference.

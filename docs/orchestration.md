@@ -12,8 +12,9 @@ ivoai codex
 ivoai claude
 ```
 
-They transfer the current directory, stdin, stdout, stderr, terminal and signals to
-the selected official client. Ruflo is not initialized. Headroom is used only after
+They transfer the current directory, stdin, stdout, stderr, foreground terminal
+process group and signals to the selected official client. The runtime snapshots and
+restores terminal modes on return. Ruflo is not initialized. Headroom is used only after
 its compatibility probe succeeds, with the existing safe direct-start fallback.
 
 For the same runtime with lifecycle observability, start a direct session:
@@ -179,6 +180,8 @@ automation can use `ivoai config set orchestration.<field> <value>`.
 
 Context, ai-memory and the remote server may be degraded without preventing the
 primary client or workers from starting. A Headroom preflight/start failure uses the
-documented direct-agent fallback. In contrast, Ruflo health, profile, swarm or
+documented direct-agent fallback. Once a wrapper process has started, ivoai does not
+retry automatically because it cannot prove that the agent has not received the
+task. In contrast, Ruflo health, profile, swarm or
 primary-registration failure is fatal only to an explicitly orchestrated session.
 The original `ivoai codex` and `ivoai claude` commands remain independent of Ruflo.
