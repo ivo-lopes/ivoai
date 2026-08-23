@@ -108,6 +108,21 @@ func TestConcurrentActivationConsumptionIsOneTime(t *testing.T) {
 	}
 }
 
+func TestAuthorizationRejectsRequestsWithNoApprovedScope(t *testing.T) {
+	const resource = "https://ivoai.example/mcp"
+	store := NewStore(filepath.Join(t.TempDir(), "state.json"))
+	activation, _ := store.CreateActivation(time.Minute, []string{ScopeContextRead})
+	client, _ := store.RegisterClient("ChatGPT", []string{"https://example.test/callback"})
+	verifier := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~"
+	nonce, err := store.BeginAuthorization(client.ID, client.RedirectURIs[0], PKCEChallenge(verifier), "state", resource, []string{ScopeMemoryDelete})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, _, _, _, err := store.AuthorizeRequestWithScopes(activation.Code, nonce); err == nil {
+		t.Fatal("authorization with no approved requested scope succeeded")
+	}
+}
+
 func TestStateAndLockSymlinksRejected(t *testing.T) {
 	dir := t.TempDir()
 	target := filepath.Join(dir, "target")

@@ -525,7 +525,17 @@ func (s *Store) BeginAuthorization(clientID, redirect, challenge, oauthState, re
 }
 
 func (s *Store) AuthorizeRequest(activation, nonce string) (string, string, string, error) {
+	code, redirect, oauthState, _, err := s.AuthorizeRequestWithScopes(activation, nonce)
+	return code, redirect, oauthState, err
+}
+
+// AuthorizeRequestWithScopes consumes an activation and returns the scopes it
+// actually grants. OAuth clients may request every scope advertised by the
+// server, while an administrator deliberately approves a smaller subset in the
+// one-time activation code.
+func (s *Store) AuthorizeRequestWithScopes(activation, nonce string) (string, string, string, []string, error) {
 	var code, redirect, oauthState string
+	var grantedScopes []string
 	err := s.with(true, func(current *state) error {
 		key := digest(nonce)
 		request, ok := current.Requests[key]
@@ -542,9 +552,12 @@ func (s *Store) AuthorizeRequest(activation, nonce string) (string, string, stri
 			return errors.New("invalid or expired activation code")
 		}
 		for _, requestedScope := range request.Scopes {
-			if !contains(activationRecord.Scopes, requestedScope) {
-				return errors.New("requested scope is not approved")
+			if contains(activationRecord.Scopes, requestedScope) {
+				grantedScopes = append(grantedScopes, requestedScope)
 			}
+		}
+		if len(grantedScopes) == 0 {
+			return errors.New("activation approves none of the requested scopes")
 		}
 		secret, err := s.random(32)
 		if err != nil {
@@ -556,10 +569,10 @@ func (s *Store) AuthorizeRequest(activation, nonce string) (string, string, stri
 		activationRecord.ConsumedAt = s.now()
 		activationRecord.CodeHash = ""
 		current.Activations[grantID] = activationRecord
-		current.Codes[digest(code)] = authCode{Hash: digest(code), ClientID: request.ClientID, RedirectURI: request.RedirectURI, Challenge: request.Challenge, GrantID: grantID, Resource: request.Resource, Scopes: request.Scopes, ExpiresAt: s.now().Add(5 * time.Minute)}
+		current.Codes[digest(code)] = authCode{Hash: digest(code), ClientID: request.ClientID, RedirectURI: request.RedirectURI, Challenge: request.Challenge, GrantID: grantID, Resource: request.Resource, Scopes: grantedScopes, ExpiresAt: s.now().Add(5 * time.Minute)}
 		return nil
 	})
-	return code, redirect, oauthState, err
+	return code, redirect, oauthState, grantedScopes, err
 }
 
 type Tokens struct {

@@ -159,7 +159,7 @@ func supportedValues(values []string, allowed ...string) bool {
 	return true
 }
 
-var authorizePage = template.Must(template.New("authorize").Parse(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Authorize ivoai</title><style>body{font:16px system-ui;background:#111827;color:#e5e7eb;max-width:42rem;margin:3rem auto;padding:1rem}main{border:1px solid #374151;border-radius:12px;padding:2rem}input{box-sizing:border-box;width:100%;padding:.8rem;margin:.5rem 0 1rem;background:#0b1220;color:white;border:1px solid #4b5563;border-radius:7px}button{padding:.8rem 1.2rem;background:#06b6d4;color:#082f49;border:0;border-radius:7px;font-weight:bold}.scopes{color:#a78bfa}</style></head><body><main><h1>ivoai web access</h1><p>Authorize <strong>{{.Client}}</strong> to access:</p><p class="scopes">{{.Scopes}}</p><form method="post"><input type="hidden" name="csrf" value="{{.CSRF}}"><input type="hidden" name="state" value="{{.State}}"><label>One-time activation code</label><input type="password" name="activation_code" autocomplete="one-time-code" required><button type="submit">Authorize</button></form></main></body></html>`))
+var authorizePage = template.Must(template.New("authorize").Parse(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Authorize ivoai</title><style>body{font:16px system-ui;background:#111827;color:#e5e7eb;max-width:42rem;margin:3rem auto;padding:1rem}main{border:1px solid #374151;border-radius:12px;padding:2rem}input{box-sizing:border-box;width:100%;padding:.8rem;margin:.5rem 0 1rem;background:#0b1220;color:white;border:1px solid #4b5563;border-radius:7px}button{padding:.8rem 1.2rem;background:#06b6d4;color:#082f49;border:0;border-radius:7px;font-weight:bold}.scopes{color:#a78bfa}.note{color:#9ca3af}</style></head><body><main><h1>ivoai web access</h1><p><strong>{{.Client}}</strong> requested:</p><p class="scopes">{{.Scopes}}</p><p class="note">Your activation code determines which of these permissions are granted.</p><form method="post"><input type="hidden" name="csrf" value="{{.CSRF}}"><input type="hidden" name="state" value="{{.State}}"><label>One-time activation code</label><input type="password" name="activation_code" autocomplete="one-time-code" required><button type="submit">Authorize</button></form></main></body></html>`))
 
 func (s *Server) parseAuthorize(r *http.Request) (Client, string, string, string, []string, error) {
 	q := r.URL.Query()
@@ -216,7 +216,7 @@ func (s *Server) authorize(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid authorization request", 400)
 		return
 	}
-	code, redirect, oauthState, err := s.Store.AuthorizeRequest(r.FormValue("activation_code"), cookie.Value)
+	code, redirect, oauthState, grantedScopes, err := s.Store.AuthorizeRequestWithScopes(r.FormValue("activation_code"), cookie.Value)
 	if err != nil {
 		http.Error(w, "Invalid or expired activation code", 401)
 		return
@@ -225,6 +225,7 @@ func (s *Server) authorize(w http.ResponseWriter, r *http.Request) {
 	q := u.Query()
 	q.Set("code", code)
 	q.Set("state", oauthState)
+	q.Set("scope", strings.Join(grantedScopes, " "))
 	u.RawQuery = q.Encode()
 	http.Redirect(w, r, u.String(), http.StatusFound)
 }

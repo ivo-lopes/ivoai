@@ -16,7 +16,8 @@ import (
 
 func TestOAuthHTTPFlowAndMetadata(t *testing.T) {
 	store := NewStore(filepath.Join(t.TempDir(), "state.json"))
-	activation, _ := store.CreateActivation(time.Minute, nil)
+	approvedScopes := []string{ScopeContextRead, ScopeMemoryRead, ScopeMemoryWrite}
+	activation, _ := store.CreateActivation(time.Minute, approvedScopes)
 	server := &Server{Store: store, Issuer: "https://ivoai.example"}
 	mux := http.NewServeMux()
 	server.Register(mux)
@@ -67,8 +68,8 @@ func TestOAuthHTTPFlowAndMetadata(t *testing.T) {
 	}
 	location, _ := url.Parse(rec.Header().Get("Location"))
 	code := location.Query().Get("code")
-	if location.Query().Get("state") != "s1" || code == "" {
-		t.Fatal("redirect state/code missing")
+	if location.Query().Get("state") != "s1" || code == "" || location.Query().Get("scope") != strings.Join(approvedScopes, " ") {
+		t.Fatalf("redirect state/code/granted scope missing: %s", location.String())
 	}
 	tokenForm := url.Values{"grant_type": {"authorization_code"}, "code": {code}, "client_id": {client.ID}, "redirect_uri": {"https://chat.example/cb"}, "code_verifier": {verifier}, "resource": {server.Resource()}}
 	missingTokenResource := url.Values{"grant_type": {"authorization_code"}, "code": {code}, "client_id": {client.ID}, "redirect_uri": {"https://chat.example/cb"}, "code_verifier": {verifier}}
@@ -87,6 +88,10 @@ func TestOAuthHTTPFlowAndMetadata(t *testing.T) {
 	mux.ServeHTTP(rec, tokenReq)
 	if rec.Code != 200 {
 		t.Fatalf("token=%d %s", rec.Code, rec.Body.String())
+	}
+	var tokens Tokens
+	if err := json.Unmarshal(rec.Body.Bytes(), &tokens); err != nil || tokens.Scope != strings.Join(approvedScopes, " ") {
+		t.Fatalf("token response over-granted scopes: %#v err=%v", tokens, err)
 	}
 	if strings.Contains(rec.Body.String(), activation.Code) {
 		t.Fatal("activation leaked")
