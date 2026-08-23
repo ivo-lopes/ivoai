@@ -9,12 +9,13 @@ import (
 )
 
 type Status struct {
-	Installed        bool   `json:"installed"`
-	Enabled          bool   `json:"enabled"`
-	Version          string `json:"version"`
-	Healthy          bool   `json:"healthy"`
-	CodexCompatible  bool   `json:"codex_compatible"`
-	ClaudeCompatible bool   `json:"claude_compatible"`
+	Installed         bool   `json:"installed"`
+	Enabled           bool   `json:"enabled"`
+	Version           string `json:"version"`
+	Healthy           bool   `json:"healthy"`
+	CodexCompatible   bool   `json:"codex_compatible"`
+	ClaudeCompatible  bool   `json:"claude_compatible"`
+	InteractiveLaunch string `json:"interactive_launch"`
 }
 type Manager struct {
 	Runner platform.Runner
@@ -22,7 +23,7 @@ type Manager struct {
 }
 
 func (m Manager) Inspect(ctx context.Context, enabled bool) Status {
-	status := Status{Enabled: enabled}
+	status := Status{Enabled: enabled, InteractiveLaunch: "not_run"}
 	path := m.Binary
 	var err error
 	if path == "" {

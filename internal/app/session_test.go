@@ -94,6 +94,48 @@ esac
 	}
 }
 
+func TestClaudeCodeDirectAndOrchestratedSessions(t *testing.T) {
+	for _, mode := range []session.Mode{session.ModeDirect, session.ModeOrchestrated} {
+		mode := mode
+		t.Run(string(mode), func(t *testing.T) {
+			root := t.TempDir()
+			marker := filepath.Join(root, "claude-ran")
+			claude := appExecutable(t, root, "claude", "#!/bin/sh\nprintf launched > '"+marker+"'\n")
+			ruflo := appExecutable(t, root, "ruflo", `#!/bin/sh
+case "$*" in
+  "--version") echo 'ruflo v3.38.12' ;;
+  "swarm init"*) echo 'Swarm ID: swarm-claude-123' ;;
+  "swarm status") echo 'swarm-claude-123 active' ;;
+  "task create"*) echo 'task-claude-123' ;;
+esac
+`)
+			a := sessionTestApp(t, root, appExecutable(t, root, "codex", "#!/bin/sh\nexit 0\n"), claude, ruflo)
+			t.Setenv("IVOAI_TEST_MODE", "1")
+			if mode == session.ModeOrchestrated {
+				state, _ := a.Store.LoadState()
+				if err := a.orchestrationManager(state).Configure(context.Background(), true); err != nil {
+					t.Fatal(err)
+				}
+			}
+			previous, _ := os.Getwd()
+			t.Cleanup(func() { _ = os.Chdir(previous) })
+			if err := os.Chdir(root); err != nil {
+				t.Fatal(err)
+			}
+			if err := a.SessionStart(context.Background(), "claude", mode, nil); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := os.Stat(marker); err != nil {
+				t.Fatalf("Claude Code did not launch: %v", err)
+			}
+			values, err := a.SessionList()
+			if err != nil || len(values) != 1 || values[0].Mode != mode || values[0].State != session.StateCompleted {
+				t.Fatalf("sessions=%+v err=%v", values, err)
+			}
+		})
+	}
+}
+
 func sessionTestApp(t *testing.T, root, codex, claude, ruflo string) *App {
 	t.Helper()
 	paths := config.Paths{

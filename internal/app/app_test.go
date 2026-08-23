@@ -16,8 +16,10 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/components"
 	"github.com/ivo-lopes/ivoai/internal/config"
 	"github.com/ivo-lopes/ivoai/internal/connections"
+	"github.com/ivo-lopes/ivoai/internal/orchestration"
 	"github.com/ivo-lopes/ivoai/internal/platform"
 	"github.com/ivo-lopes/ivoai/internal/secrets"
+	"github.com/ivo-lopes/ivoai/internal/terminalui"
 )
 
 type missingRunner struct{}
@@ -121,6 +123,83 @@ func TestStatusReportsDegradedWhenRequiredComponentIsMissing(t *testing.T) {
 	}
 	if !strings.Contains(output.String(), "Overall: DEGRADED") {
 		t.Fatalf("missing component was reported ready:\n%s", output.String())
+	}
+}
+
+func TestStatusAndDoctorAgreeWhenConfiguredServerIsUnreachable(t *testing.T) {
+	runner := &setupRunner{}
+	a, output := managedSetupApp(t, true, runner)
+	if err := a.Setup(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/.well-known/ivoai":
+			_ = json.NewEncoder(w).Encode(connections.Discovery{ProtocolVersion: connections.ProtocolVersion, HealthEndpoint: "/health", ReadyEndpoint: "/ready"})
+		case "/health":
+			w.WriteHeader(http.StatusNoContent)
+		case "/ready":
+			http.Error(w, "not ready", http.StatusServiceUnavailable)
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer server.Close()
+	cfg, err := a.Store.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg.Connections.ChatGPT.Status = "connected"
+	cfg.Connections.Claude.Status = "connected"
+	cfg.Connections.Server = config.Connection{Status: "connected", URL: server.URL, Protocol: connections.ProtocolVersion}
+	if err := a.Store.Save(cfg); err != nil {
+		t.Fatal(err)
+	}
+	a.HTTPClient = server.Client()
+	output.Reset()
+	if err := a.Status(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(output.String(), "Server") || !strings.Contains(output.String(), "unreachable") || !strings.Contains(output.String(), "Overall: DEGRADED") || strings.Contains(output.String(), "all connections active") {
+		t.Fatalf("untruthful status:\n%s", output.String())
+	}
+	report := a.Doctor(context.Background())
+	if report.Overall != "DEGRADED" || !report.Server.Configured || report.Server.Reachable {
+		t.Fatalf("status/doctor disagreement: %+v", report.Server)
+	}
+}
+
+func TestSemanticStatusKindsDoNotInferMeaningFromDisabled(t *testing.T) {
+	ruflo := terminalui.Semantic("ready / provider execution disabled", terminalui.StatusSuccess, true)
+	headroom := terminalui.Semantic("installed / disabled", terminalui.StatusNeutral, true)
+	missing := terminalui.Semantic("not installed", terminalui.StatusFailure, true)
+	if !strings.Contains(ruflo, "\x1b[38;5;77m") {
+		t.Fatalf("safe Ruflo state is not green: %q", ruflo)
+	}
+	if strings.Contains(headroom, "\x1b[38;5;77m") || !strings.Contains(headroom, "\x1b[38;5;245m") {
+		t.Fatalf("disabled Headroom inherited success semantics: %q", headroom)
+	}
+	if !strings.Contains(missing, "\x1b[38;5;203m") {
+		t.Fatalf("missing component is not red: %q", missing)
+	}
+	t.Setenv("NO_COLOR", "1")
+	if plain := terminalui.Semantic("ready", terminalui.StatusSuccess, false); strings.Contains(plain, "\x1b[") {
+		t.Fatalf("NO_COLOR output contains ANSI: %q", plain)
+	}
+}
+
+func TestRufloStatusRequiresVerifiedSafeProfile(t *testing.T) {
+	safe := safeStatus(orchestration.Status{Installed: true, SafeMode: true})
+	unsafe := safeStatus(orchestration.Status{Installed: true, ProviderExecution: true})
+	unverified := safeStatus(orchestration.Status{Installed: true})
+	if safe.Kind != terminalui.StatusSuccess || safe.Text != "ready / provider execution disabled" {
+		t.Fatalf("safe Ruflo status=%+v", safe)
+	}
+	if unsafe.Kind != terminalui.StatusFailure || !strings.Contains(unsafe.Text, "unsafe") {
+		t.Fatalf("unsafe Ruflo status=%+v", unsafe)
+	}
+	if unverified.Kind != terminalui.StatusWarning || !strings.Contains(unverified.Text, "not verified") {
+		t.Fatalf("unverified Ruflo status=%+v", unverified)
 	}
 }
 
@@ -337,7 +416,7 @@ func TestDisabledMemoryIsExcludedFromAgentMCPRegistration(t *testing.T) {
 	}
 }
 
-func TestLaunchInjectsScopedServerTokenAndRestoresEnvironment(t *testing.T) {
+func TestLaunchInjectsServerTokenOnlyIntoChildEnvironment(t *testing.T) {
 	root := t.TempDir()
 	t.Setenv("HOME", root)
 	t.Setenv("XDG_CONFIG_HOME", filepath.Join(root, "config"))
@@ -357,7 +436,7 @@ func TestLaunchInjectsScopedServerTokenAndRestoresEnvironment(t *testing.T) {
 		t.Fatal(err)
 	}
 	agent := filepath.Join(root, "codex-fixture")
-	if err := os.WriteFile(agent, []byte("#!/bin/sh\nprintf '%s' \"$"+connections.ServerTokenEnvironment+"\"\n"), 0o700); err != nil {
+	if err := os.WriteFile(agent, []byte("#!/bin/sh\nprintf '%s/%s' \"$"+connections.ServerTokenEnvironment+"\" \"$AI_MEMORY_AUTH_TOKEN\"\n"), 0o700); err != nil {
 		t.Fatal(err)
 	}
 	state, _ := a.Store.LoadState()
@@ -372,11 +451,14 @@ func TestLaunchInjectsScopedServerTokenAndRestoresEnvironment(t *testing.T) {
 	if err := a.Launch(context.Background(), "codex", nil); err != nil {
 		t.Fatal(err)
 	}
-	if output.String() != "scoped-secret" {
+	if output.String() != "scoped-secret/scoped-secret" {
 		t.Fatalf("agent did not receive scoped credential: %q", output.String())
 	}
 	if got := os.Getenv(connections.ServerTokenEnvironment); got != "pre-existing" {
-		t.Fatalf("parent environment was not restored: %q", got)
+		t.Fatalf("parent environment was modified: %q", got)
+	}
+	if got := os.Getenv("AI_MEMORY_AUTH_TOKEN"); got != "" {
+		t.Fatalf("ai-memory token environment was not restored: %q", got)
 	}
 }
 

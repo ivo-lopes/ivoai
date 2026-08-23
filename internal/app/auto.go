@@ -14,6 +14,7 @@ import (
 
 	"github.com/ivo-lopes/ivoai/internal/agents"
 	"github.com/ivo-lopes/ivoai/internal/config"
+	"github.com/ivo-lopes/ivoai/internal/doctor"
 	"github.com/ivo-lopes/ivoai/internal/orchestration"
 	"github.com/ivo-lopes/ivoai/internal/platform"
 	"github.com/ivo-lopes/ivoai/internal/quota"
@@ -56,13 +57,14 @@ func (a *App) Auto(ctx context.Context, planner string, agentArgs []string) erro
 		return err
 	}
 	now := time.Now().UTC()
+	contextState, memoryState, serverState := a.autoServiceStatuses(ctx, cfg, state)
 	value := session.Session{
 		SessionID: id, StartedAt: now, UpdatedAt: now, Mode: session.ModeAuto, Auto: true,
 		InitialPlanner: planner, CurrentPrimary: planner, PrimaryExecutor: planner,
 		WorkingDirectory: cwd, PrimaryModel: session.ResolveModel("", session.ParseModelArgument(agentArgs), planner, agentModelConfig(planner)),
 		HeadroomRequested: cfg.Headroom.Enabled, RufloEnabled: true, ProviderExecution: false,
 		Workers: []session.Worker{}, MaxWorkers: cfg.Orchestration.Auto.MaxWorkers,
-		ContextStatus: contextStatus(cfg), MemoryStatus: memoryStatus(cfg, state), ServerStatus: serverStatus(cfg),
+		ContextStatus: contextState, MemoryStatus: memoryState, ServerStatus: serverState,
 		State: session.StateStarting, CurrentPhase: "quota_preflight", Quota: map[quota.Provider]quota.ProviderQuota{},
 	}
 	store := session.Store{Root: a.Store.Paths.SessionsDir}
@@ -102,7 +104,7 @@ func (a *App) Auto(ctx context.Context, planner string, agentArgs []string) erro
 	if err != nil {
 		return err
 	}
-	a.printAutoPreflight(value.Quota, current, state, cfg)
+	a.printAutoPreflight(value.Quota, current, value, cfg)
 	runtimeDir, err := store.RuntimeDir(id)
 	if err != nil {
 		return err
@@ -141,11 +143,10 @@ func (a *App) Auto(ctx context.Context, planner string, agentArgs []string) erro
 	if err := platform.AtomicWritePrivate([]byte(automaticInstructions(cfg.Orchestration.Auto.CheckpointEnabled)), instructionsPath); err != nil {
 		return err
 	}
-	restoreEnvironment, err := a.exposeServerCredential()
+	environment, err := a.serverCredentialEnvironment()
 	if err != nil {
 		return err
 	}
-	defer restoreEnvironment()
 
 	var handoff string
 	for {
@@ -159,7 +160,7 @@ func (a *App) Auto(ctx context.Context, planner string, agentArgs []string) erro
 		limitReason := make(chan string, 1)
 		monitorDone := make(chan struct{})
 		go a.monitorPrimaryQuota(launchCtx, manager, quota.Provider(current), limitReason, cancelLaunch, cfg.Orchestration.Auto.QuotaRefreshSeconds, monitorDone)
-		launchErr := a.launchAutomaticPrimary(launchCtx, store, id, current, launchArgs, state, cfg)
+		launchErr := a.launchAutomaticPrimary(launchCtx, store, id, current, launchArgs, state, cfg, environment)
 		cancelLaunch()
 		<-monitorDone
 		reason := ""
@@ -215,7 +216,7 @@ func (a *App) Auto(ctx context.Context, planner string, agentArgs []string) erro
 		if err != nil {
 			return err
 		}
-		fmt.Fprintf(a.Out, "\nIvoAI Automatic Failover\nFrom       %s\nTo         %s\nReason     %s\nCheckpoint %s\nWorking tree preserved\n\n", displayProvider(previous), displayProvider(current), reason, checkpointLabel(store, id))
+		fmt.Fprintf(a.Out, "\nAutomatic Failover\nFrom       %s\nTo         %s\nReason     %s\nCheckpoint %s\nWorking tree preserved\n\n", displayProvider(previous), displayProvider(current), reason, checkpointLabel(store, id))
 		agentArgs = nil
 	}
 }
@@ -236,14 +237,12 @@ func (a *App) selectPlanner(defaultPlanner string) (string, error) {
 	if defaultPlanner == "" {
 		defaultPlanner = "codex"
 	}
-	fmt.Fprintln(a.Out, "IvoAI Automatic Orchestration\n\nSubscription quota (cached)")
+	fmt.Fprintln(a.Out, "Automatic Orchestration\n\nSubscription quota (cached)")
 	snapshot := quota.Snapshot{Providers: map[quota.Provider]quota.ProviderQuota{}}
 	if a.Store != nil {
 		snapshot, _ = (quota.Store{Root: a.Store.Paths.QuotaDir}).Load()
 	}
-	for _, provider := range []quota.Provider{quota.ProviderCodex, quota.ProviderClaude} {
-		fmt.Fprintf(a.Out, "  %-11s Weekly %-20s Monthly %s\n", displayProvider(string(provider)), quotaValue(snapshot.Providers[provider], quota.KindWeekly), quotaValue(snapshot.Providers[provider], quota.KindMonthly))
-	}
+	printQuotaSummary(a.Out, snapshot.Providers)
 	codexDefault, claudeDefault := "", ""
 	if defaultPlanner == "claude" {
 		claudeDefault = " [default]"
@@ -270,12 +269,12 @@ func (a *App) selectPlanner(defaultPlanner string) (string, error) {
 	}
 }
 
-func (a *App) launchAutomaticPrimary(ctx context.Context, store session.Store, id, executor string, args []string, state config.State, cfg config.Config) error {
+func (a *App) launchAutomaticPrimary(ctx context.Context, store session.Store, id, executor string, args []string, state config.State, cfg config.Config, environment []string) error {
 	component := executor
 	if executor == "claude" {
 		component = "claude-code"
 	}
-	runtime := agents.Runtime{Runner: a.Runner, In: a.In, Out: a.Out, Err: a.Err, AgentPath: state.Components[component].Path, HeadroomPath: state.Components["headroom"].Path}
+	runtime := agents.Runtime{Runner: a.Runner, In: a.In, Out: a.Out, Err: a.Err, AgentPath: state.Components[component].Path, HeadroomPath: state.Components["headroom"].Path, Environment: environment}
 	return runtime.LaunchObserved(ctx, executor, args, cfg.Headroom.Enabled, func(observation agents.Observation) {
 		_, _ = store.Update(id, func(current *session.Session) error {
 			current.PrimaryPID = observation.PID
@@ -308,7 +307,11 @@ func (a *App) autoAgentArgs(executor string, existing []string, id, runtimeDir, 
 		if err != nil {
 			return nil, err
 		}
-		settings := map[string]any{"statusLine": map[string]any{"type": "command", "command": shellArgument(executable) + " _quota-statusline --session " + shellArgument(id), "refreshInterval": 5}}
+		statuslineCommand, err := a.claudeStatuslineCommand(id, runtimeDir, executable)
+		if err != nil {
+			return nil, err
+		}
+		settings := map[string]any{"statusLine": map[string]any{"type": "command", "command": statuslineCommand, "refreshInterval": 5}}
 		body, err := json.Marshal(settings)
 		if err != nil {
 			return nil, err
@@ -322,6 +325,69 @@ func (a *App) autoAgentArgs(executor string, existing []string, id, runtimeDir, 
 		args = append(args, handoff)
 	}
 	return args, nil
+}
+
+func (a *App) claudeStatuslineCommand(id, runtimeDir, executable string) (string, error) {
+	capture := shellArgument(executable) + " _quota-statusline --session " + shellArgument(id)
+	original := existingClaudeStatusline()
+	if original == "" {
+		return capture, nil
+	}
+	commandPath := filepath.Join(runtimeDir, "claude-original-statusline")
+	if err := platform.AtomicWritePrivate([]byte(original), commandPath); err != nil {
+		return "", err
+	}
+	wrapperPath := filepath.Join(runtimeDir, "claude-statusline-wrapper.sh")
+	wrapper := `#!/bin/sh
+set -u
+umask 077
+payload=$(mktemp ` + shellArgument(filepath.Join(runtimeDir, "statusline-payload.XXXXXX")) + `) || exit 1
+trap 'rm -f -- "$payload"' EXIT HUP INT TERM
+cat > "$payload" || exit 1
+` + capture + ` < "$payload" || true
+/bin/sh -c "$(cat ` + shellArgument(commandPath) + `)" < "$payload"
+`
+	if err := platform.AtomicWritePrivate([]byte(wrapper), wrapperPath); err != nil {
+		return "", err
+	}
+	return "/bin/sh " + shellArgument(wrapperPath), nil
+}
+
+func existingClaudeStatusline() string {
+	paths := []string{}
+	if configDir := strings.TrimSpace(os.Getenv("CLAUDE_CONFIG_DIR")); filepath.IsAbs(configDir) {
+		paths = append(paths, filepath.Join(configDir, "settings.json"))
+	} else if home, err := os.UserHomeDir(); err == nil {
+		paths = append(paths, filepath.Join(home, ".claude", "settings.json"))
+	}
+	if cwd, err := os.Getwd(); err == nil {
+		paths = append(paths, filepath.Join(cwd, ".claude", "settings.json"), filepath.Join(cwd, ".claude", "settings.local.json"))
+	}
+	command := ""
+	for _, path := range paths {
+		info, err := os.Stat(path)
+		if err != nil || !info.Mode().IsRegular() || info.Size() > 1<<20 {
+			continue
+		}
+		body, err := os.ReadFile(path)
+		if err != nil {
+			continue
+		}
+		var settings struct {
+			StatusLine struct {
+				Type    string `json:"type"`
+				Command string `json:"command"`
+			} `json:"statusLine"`
+		}
+		if json.Unmarshal(body, &settings) != nil || settings.StatusLine.Type != "command" {
+			continue
+		}
+		candidate := strings.TrimSpace(settings.StatusLine.Command)
+		if candidate != "" && len(candidate) <= 16<<10 && !strings.ContainsAny(candidate, "\x00\r\n") {
+			command = candidate
+		}
+	}
+	return command
 }
 
 func (a *App) monitorPrimaryQuota(ctx context.Context, manager *quota.Manager, provider quota.Provider, reason chan<- string, cancel context.CancelFunc, refreshSeconds int, done chan<- struct{}) {
@@ -410,11 +476,9 @@ func (a *App) QuotaStatusline(id string, body []byte) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	weekly, ok := value.Window(quota.KindWeekly)
-	if !ok {
-		return "ivoai auto · Claude weekly N/A", nil
-	}
-	return fmt.Sprintf("ivoai auto · Claude weekly %.0f%% remaining", weekly.RemainingPercent), nil
+	fiveHour := quotaValueFor(quota.ProviderClaude, value, quota.KindSession)
+	weekly := quotaValueFor(quota.ProviderClaude, value, quota.KindWeekly)
+	return fmt.Sprintf("ivoai auto · Claude 5h %s · weekly %s", fiveHour, weekly), nil
 }
 
 func automaticInstructions(checkpointEnabled bool) string {
@@ -432,12 +496,38 @@ Workers are advisory/read-only by default. You remain the only writer and conver
 `
 }
 
-func (a *App) printAutoPreflight(values map[quota.Provider]quota.ProviderQuota, selected string, state config.State, cfg config.Config) {
+func (a *App) printAutoPreflight(values map[quota.Provider]quota.ProviderQuota, selected string, current session.Session, cfg config.Config) {
 	fmt.Fprintln(a.Out, "\nQuota")
-	for _, provider := range []quota.Provider{quota.ProviderCodex, quota.ProviderClaude} {
-		fmt.Fprintf(a.Out, "  %-8s Weekly %-20s Monthly %s\n", displayProvider(string(provider)), quotaValue(values[provider], quota.KindWeekly), quotaValue(values[provider], quota.KindMonthly))
+	printQuotaSummary(a.Out, values)
+	headroomState := "DISABLED"
+	if cfg.Headroom.Enabled {
+		headroomState = "ENABLED / INTERACTIVE PREFLIGHT PENDING"
 	}
-	fmt.Fprintf(a.Out, "\nSelected        %s\nRuflo           READY / provider disabled\nai-memory       %s\nContext         %s\nHeadroom        %s\n\n", displayProvider(selected), strings.ToUpper(memoryStatus(cfg, state)), strings.ToUpper(contextStatus(cfg)), map[bool]string{true: "READY", false: "DISABLED"}[cfg.Headroom.Enabled])
+	fmt.Fprintf(a.Out, "\nSelected        %s\nRuflo           CONFIGURED / VALIDATING SAFE MODE\nai-memory       %s\nContext         %s\nServer          %s\nHeadroom        %s\n\n", displayProvider(selected), strings.ToUpper(current.MemoryStatus), strings.ToUpper(current.ContextStatus), strings.ToUpper(current.ServerStatus), headroomState)
+}
+
+func (a *App) autoServiceStatuses(ctx context.Context, cfg config.Config, state config.State) (string, string, string) {
+	contextState, memoryState, serverState := contextStatus(cfg), memoryStatus(cfg, state), serverStatus(cfg)
+	health := doctor.ProbeServer(ctx, cfg.Connections.Server, a.statusHTTPClient())
+	if !health.Configured {
+		return contextState, memoryState, serverState
+	}
+	if !health.Reachable || !health.ProtocolCompatible || (!health.TLS && !loopbackURL(health.URL)) {
+		if contextState != "disabled" {
+			contextState = "degraded"
+		}
+		if memoryState != "disabled" {
+			memoryState = "degraded"
+		}
+		return contextState, memoryState, "unreachable"
+	}
+	if contextState != "disabled" {
+		contextState = "ready"
+	}
+	if memoryState != "disabled" {
+		memoryState = "ready"
+	}
+	return contextState, memoryState, "reachable"
 }
 
 func (a *App) printStartupFallback(from, to, reason string) {
@@ -446,17 +536,48 @@ func (a *App) printStartupFallback(from, to, reason string) {
 
 func (a *App) printNoProvider(values map[quota.Provider]quota.ProviderQuota) {
 	fmt.Fprintln(a.Out, "No subscription-backed LLM is currently available.")
-	for _, provider := range []quota.Provider{quota.ProviderCodex, quota.ProviderClaude} {
-		fmt.Fprintf(a.Out, "%s  Weekly %s  Monthly %s\n", displayProvider(string(provider)), quotaValue(values[provider], quota.KindWeekly), quotaValue(values[provider], quota.KindMonthly))
+	printQuotaSummary(a.Out, values)
+}
+
+func printQuotaSummary(out io.Writer, values map[quota.Provider]quota.ProviderQuota) {
+	codex := values[quota.ProviderCodex]
+	claude := values[quota.ProviderClaude]
+	fmt.Fprintf(out, "  Codex       weekly  %s\n", quotaValueFor(quota.ProviderCodex, codex, quota.KindWeekly))
+	fmt.Fprintf(out, "  Claude Code 5h      %s\n", quotaValueFor(quota.ProviderClaude, claude, quota.KindSession))
+	fmt.Fprintf(out, "              weekly  %s\n", quotaValueFor(quota.ProviderClaude, claude, quota.KindWeekly))
+}
+
+func quotaValueFor(provider quota.Provider, value quota.ProviderQuota, kind quota.Kind) string {
+	window, ok := value.Window(kind)
+	if !ok {
+		if provider == quota.ProviderClaude && (kind == quota.KindSession || kind == quota.KindWeekly) {
+			return "awaiting first response"
+		}
+		return "N/A / not exposed"
+	}
+	switch window.TelemetryState() {
+	case quota.TelemetryPending:
+		return "awaiting first response"
+	case quota.TelemetryNotExposed:
+		return "N/A / not exposed"
+	case quota.TelemetryStale:
+		if window.Available {
+			return formatPercent(window.RemainingPercent) + "% remaining / stale"
+		}
+		return "stale telemetry"
+	default:
+		if !window.Available || !window.Authoritative {
+			return "N/A / not exposed"
+		}
+		return formatPercent(window.RemainingPercent) + "% remaining"
 	}
 }
 
-func quotaValue(value quota.ProviderQuota, kind quota.Kind) string {
-	window, ok := value.Window(kind)
-	if !ok || !window.Available || !window.Authoritative {
-		return "N/A / not exposed"
+func formatPercent(value float64) string {
+	if value == float64(int64(value)) {
+		return fmt.Sprintf("%.0f", value)
 	}
-	return fmt.Sprintf("%.0f%% remaining", window.RemainingPercent)
+	return fmt.Sprintf("%.1f", value)
 }
 
 func displayProvider(value string) string {

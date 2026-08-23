@@ -45,6 +45,11 @@ func (m Manager) Probe(ctx context.Context, provider Provider, force bool) (Prov
 			if previous, ok := cached.Providers[provider]; ok {
 				previous.Eligible = previous.Authenticated && !previous.HardLimitReached
 				previous.Reason = "stale quota telemetry: " + platform.Redact(err.Error())
+				for index := range previous.Windows {
+					if previous.Windows[index].Available {
+						previous.Windows[index].State = TelemetryStale
+					}
+				}
 				return previous, err
 			}
 		}

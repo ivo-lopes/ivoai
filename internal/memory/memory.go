@@ -68,7 +68,10 @@ func (m Manager) ConfigureWith(ctx context.Context, configuration Configuration)
 			if m.HooksDir != "" {
 				hookArgs = append(hookArgs, "--hooks-dir", m.HooksDir)
 			}
-			env := memoryEnv(configuration.HooksBaseURL, configuration.Token)
+			// Hook configuration is persistent. Never let the installer bake a
+			// bearer into an agent settings command; ivoai supplies the token only
+			// in the launched agent's process environment.
+			env := memoryEnv(configuration.HooksBaseURL, "")
 			if _, err := m.Runner.Run(ctx, path, hookArgs, platform.RunOptions{Env: env, Stdout: m.Out, Stderr: m.Err, Timeout: 2 * time.Minute}); err != nil {
 				return fmt.Errorf("configure ai-memory hooks for %s: %w", agent, err)
 			}

@@ -50,13 +50,14 @@ type Orchestration struct {
 	ClaudeWorker     bool   `json:"claude_worker_capable"`
 }
 type QuotaProbe struct {
-	Ready         bool   `json:"ready"`
-	Authenticated bool   `json:"authenticated"`
-	Eligible      bool   `json:"eligible"`
-	Source        string `json:"source"`
-	WeeklySource  string `json:"weekly_source"`
-	MonthlySource string `json:"monthly_source"`
-	Reason        string `json:"reason,omitempty"`
+	Ready          bool   `json:"ready"`
+	Authenticated  bool   `json:"authenticated"`
+	Eligible       bool   `json:"eligible"`
+	Source         string `json:"source"`
+	FiveHourSource string `json:"five_hour_source,omitempty"`
+	WeeklySource   string `json:"weekly_source"`
+	MonthlySource  string `json:"monthly_source"`
+	Reason         string `json:"reason,omitempty"`
 }
 type Automatic struct {
 	Enabled           bool                  `json:"enabled"`
@@ -110,7 +111,7 @@ func (d Doctor) Run(ctx context.Context) Report {
 	r.Claude = d.agent(ctx, "claude", []string{"auth", "status"}, state.Components["claude-code"])
 	r.Headroom = (headroom.Manager{Runner: d.Runner, Binary: state.Components["headroom"].Path}).Inspect(ctx, cfg.Headroom.Enabled)
 	if fixture := state.Components["headroom"]; !r.Headroom.Installed && strings.HasSuffix(fixture.Version, "-fixture") {
-		r.Headroom.Installed, r.Headroom.Healthy, r.Headroom.CodexCompatible, r.Headroom.ClaudeCompatible, r.Headroom.Version = true, true, true, true, fixture.Version
+		r.Headroom.Installed, r.Headroom.Healthy, r.Headroom.CodexCompatible, r.Headroom.ClaudeCompatible, r.Headroom.Version, r.Headroom.InteractiveLaunch = true, true, true, true, fixture.Version, "fixture"
 	}
 	r.Memory = componentFromState(state.Components["ai-memory"])
 	r.Memory.Hooks = hooksInstalled(d.Store.Paths.HooksDir)
@@ -183,7 +184,11 @@ func (d Doctor) automatic(ctx context.Context, cfg config.Config, state config.S
 	}
 	if report.TestMode {
 		for _, provider := range []quota.Provider{quota.ProviderCodex, quota.ProviderClaude} {
-			result.Quota[string(provider)] = QuotaProbe{Ready: true, Authenticated: true, Eligible: true, Source: "fixture", WeeklySource: "N/A / not exposed", MonthlySource: "N/A / not exposed"}
+			probe := QuotaProbe{Ready: true, Authenticated: true, Eligible: true, Source: "fixture", WeeklySource: "N/A / not exposed", MonthlySource: "N/A / not exposed"}
+			if provider == quota.ProviderClaude {
+				probe.FiveHourSource, probe.WeeklySource = "awaiting first response", "awaiting first response"
+			}
+			result.Quota[string(provider)] = probe
 		}
 	} else {
 		manager := d.QuotaManager
@@ -208,15 +213,37 @@ func (d Doctor) automatic(ctx context.Context, cfg config.Config, state config.S
 
 func quotaProbeDiagnostic(value quota.ProviderQuota, probeErr error) QuotaProbe {
 	weekly, weeklyOK := value.Window(quota.KindWeekly)
+	fiveHour, fiveHourOK := value.Window(quota.KindSession)
 	monthly, monthlyOK := value.Window(quota.KindMonthly)
-	result := QuotaProbe{Ready: probeErr == nil && value.Authenticated, Authenticated: value.Authenticated, Eligible: value.Eligible, Source: value.Source, WeeklySource: "N/A / not exposed", MonthlySource: "N/A / not exposed", Reason: value.Reason}
+	result := QuotaProbe{Ready: probeErr == nil && value.Authenticated, Authenticated: value.Authenticated, Eligible: value.Eligible, Source: value.Source, FiveHourSource: "N/A / not exposed", WeeklySource: "N/A / not exposed", MonthlySource: "N/A / not exposed", Reason: value.Reason}
+	if value.Provider == quota.ProviderClaude && !fiveHourOK {
+		result.FiveHourSource = "awaiting first response"
+	}
+	if fiveHourOK {
+		result.FiveHourSource = quotaDiagnosticSource(fiveHour)
+	}
 	if weeklyOK && weekly.Available && weekly.Authoritative {
 		result.WeeklySource = weekly.Source
+	} else if weeklyOK {
+		result.WeeklySource = quotaDiagnosticSource(weekly)
+	} else if value.Provider == quota.ProviderClaude {
+		result.WeeklySource = "awaiting first response"
 	}
 	if monthlyOK && monthly.Available && monthly.Authoritative {
 		result.MonthlySource = monthly.Source
 	}
 	return result
+}
+
+func quotaDiagnosticSource(window quota.Window) string {
+	switch window.TelemetryState() {
+	case quota.TelemetryPending:
+		return "awaiting first response"
+	case quota.TelemetryStale:
+		return window.Source + " / stale"
+	default:
+		return "N/A / not exposed"
+	}
 }
 
 func (d Doctor) orchestration(ctx context.Context, cfg config.Config, state config.State) Orchestration {
@@ -321,6 +348,13 @@ func (d Doctor) server(ctx context.Context, connection config.Connection) Server
 		s.Reachable = false
 	}
 	return s
+}
+
+// ProbeServer is the bounded live-health contract shared by status, automatic
+// preflight and Doctor. Callers may choose a shorter HTTP client timeout, but
+// they cannot reinterpret stored configuration as a live connection.
+func ProbeServer(ctx context.Context, connection config.Connection, client *http.Client) Server {
+	return (Doctor{HTTPClient: client}).server(ctx, connection)
 }
 
 func doctorProbe(ctx context.Context, client *http.Client, base, endpoint string) bool {

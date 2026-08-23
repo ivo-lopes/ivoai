@@ -22,16 +22,27 @@ const (
 	KindCredits     Kind = "credits"
 )
 
+type TelemetryState string
+
+const (
+	TelemetryPending    TelemetryState = "pending"
+	TelemetryAvailable  TelemetryState = "available"
+	TelemetryNotExposed TelemetryState = "not_exposed"
+	TelemetryStale      TelemetryState = "stale"
+	TelemetryExhausted  TelemetryState = "exhausted"
+)
+
 type Window struct {
-	Kind             Kind       `json:"kind"`
-	Model            string     `json:"model,omitempty"`
-	UsedPercent      float64    `json:"used_percent,omitempty"`
-	RemainingPercent float64    `json:"remaining_percent,omitempty"`
-	ResetsAt         *time.Time `json:"resets_at,omitempty"`
-	Source           string     `json:"source"`
-	ObservedAt       time.Time  `json:"observed_at"`
-	Authoritative    bool       `json:"authoritative"`
-	Available        bool       `json:"available"`
+	Kind             Kind           `json:"kind"`
+	Model            string         `json:"model,omitempty"`
+	UsedPercent      float64        `json:"used_percent,omitempty"`
+	RemainingPercent float64        `json:"remaining_percent,omitempty"`
+	ResetsAt         *time.Time     `json:"resets_at,omitempty"`
+	Source           string         `json:"source"`
+	ObservedAt       time.Time      `json:"observed_at"`
+	Authoritative    bool           `json:"authoritative"`
+	Available        bool           `json:"available"`
+	State            TelemetryState `json:"state,omitempty"`
 }
 
 type ProviderQuota struct {
@@ -71,7 +82,28 @@ func Clamp(value float64) float64 {
 
 func FromUsed(kind Kind, used float64, reset *time.Time, source string, observed time.Time) Window {
 	used = Clamp(used)
-	return Window{Kind: kind, UsedPercent: used, RemainingPercent: Clamp(100 - used), ResetsAt: reset, Source: source, ObservedAt: observed, Authoritative: true, Available: true}
+	state := TelemetryAvailable
+	if used >= 100 {
+		state = TelemetryExhausted
+	}
+	return Window{Kind: kind, UsedPercent: used, RemainingPercent: Clamp(100 - used), ResetsAt: reset, Source: source, ObservedAt: observed, Authoritative: true, Available: true, State: state}
+}
+
+func Unavailable(kind Kind, state TelemetryState, source string, observed time.Time) Window {
+	return Window{Kind: kind, State: state, Source: source, ObservedAt: observed.UTC()}
+}
+
+func (w Window) TelemetryState() TelemetryState {
+	if w.State != "" {
+		return w.State
+	}
+	if w.Available && w.RemainingPercent <= 0 {
+		return TelemetryExhausted
+	}
+	if w.Available {
+		return TelemetryAvailable
+	}
+	return TelemetryNotExposed
 }
 
 func (q ProviderQuota) Window(kind Kind) (Window, bool) {

@@ -25,7 +25,8 @@ func (a ClaudeAdapter) Probe(ctx context.Context) (ProviderQuota, error) {
 	if a.Now != nil {
 		now = a.Now().UTC()
 	}
-	result := ProviderQuota{Provider: ProviderClaude, Eligible: true, Authenticated: true, Source: "claude statusline", ObservedAt: now}
+	result := ProviderQuota{Provider: ProviderClaude, Eligible: true, Authenticated: true, Source: "claude statusline", ObservedAt: now, Reason: "awaiting first response"}
+	result.Windows = []Window{Unavailable(KindSession, TelemetryPending, result.Source, now), Unavailable(KindWeekly, TelemetryPending, result.Source, now)}
 	if a.Binary == "" || !filepath.IsAbs(a.Binary) || filepath.Base(a.Binary) != "claude" {
 		result.Authenticated, result.Eligible, result.Reason = false, false, "Claude executable unavailable"
 		return result, errors.New(result.Reason)
@@ -44,7 +45,12 @@ func (a ClaudeAdapter) Probe(ctx context.Context) (ProviderQuota, error) {
 		result.Authenticated = true
 		result.Eligible = !result.HardLimitReached
 		if now.Sub(result.ObservedAt) > a.ttl() {
-			result.Reason = "quota telemetry unknown until Claude completes a turn"
+			result.Reason = "stale quota telemetry; awaiting a current Claude response"
+			for index := range result.Windows {
+				if result.Windows[index].Available {
+					result.Windows[index].State = TelemetryStale
+				}
+			}
 		}
 	}
 	return result, nil
@@ -67,7 +73,7 @@ type ClaudeStatusline struct {
 		Used      *float64 `json:"used_percentage"`
 		Remaining *float64 `json:"remaining_percentage"`
 	} `json:"context_window"`
-	RateLimits struct {
+	RateLimits *struct {
 		FiveHour *claudeLimit `json:"five_hour"`
 		SevenDay *claudeLimit `json:"seven_day"`
 		Monthly  *claudeLimit `json:"monthly"`
@@ -83,8 +89,11 @@ func ParseClaudeStatusline(body []byte, observed time.Time) (ProviderQuota, erro
 	if len(body) == 0 || len(body) > 64<<10 {
 		return ProviderQuota{}, errors.New("invalid Claude statusline payload size")
 	}
-	var input ClaudeStatusline
+	var input *ClaudeStatusline
 	if err := json.Unmarshal(body, &input); err != nil {
+		return ProviderQuota{}, errors.New("invalid Claude statusline payload")
+	}
+	if input == nil {
 		return ProviderQuota{}, errors.New("invalid Claude statusline payload")
 	}
 	value := ProviderQuota{Provider: ProviderClaude, Model: safeModel(input.Model.ID), Authenticated: true, Eligible: true, Source: "claude statusline", ObservedAt: observed.UTC()}
@@ -94,8 +103,23 @@ func ParseClaudeStatusline(body []byte, observed time.Time) (ProviderQuota, erro
 		remaining := Clamp(*input.Context.Remaining)
 		value.Windows = append(value.Windows, Window{Kind: KindContext, UsedPercent: Clamp(100 - remaining), RemainingPercent: remaining, Source: "claude statusline", ObservedAt: observed.UTC(), Authoritative: true, Available: true})
 	}
-	for kind, limit := range map[Kind]*claudeLimit{KindSession: input.RateLimits.FiveHour, KindWeekly: input.RateLimits.SevenDay, KindMonthly: input.RateLimits.Monthly} {
+	if input.RateLimits == nil {
+		value.Reason = "awaiting first response"
+		value.Windows = append(value.Windows,
+			Unavailable(KindSession, TelemetryPending, value.Source, observed),
+			Unavailable(KindWeekly, TelemetryPending, value.Source, observed),
+		)
+		return value, nil
+	}
+	for _, item := range []struct {
+		kind  Kind
+		limit *claudeLimit
+	}{{KindSession, input.RateLimits.FiveHour}, {KindWeekly, input.RateLimits.SevenDay}, {KindMonthly, input.RateLimits.Monthly}} {
+		kind, limit := item.kind, item.limit
 		if limit == nil {
+			if kind != KindMonthly {
+				value.Windows = append(value.Windows, Unavailable(kind, TelemetryNotExposed, value.Source, observed))
+			}
 			continue
 		}
 		var reset *time.Time
@@ -134,7 +158,12 @@ func (a ClaudeAdapter) ttl() time.Duration {
 
 func IsClaudeLimitError(value string) bool {
 	lower := strings.ToLower(value)
-	for _, marker := range []string{"rate limit", "usage limit", "limit reached", "quota exhausted", "spend control"} {
+	for _, contradiction := range []string{"authentication", "unauthorized", "network error", "connection refused", "connection reset", "mcp server", "mcp failure"} {
+		if strings.Contains(lower, contradiction) {
+			return false
+		}
+	}
+	for _, marker := range []string{"rate limit reached", "usage limit reached", "subscription limit", "quota exhausted", "spend control reached"} {
 		if strings.Contains(lower, marker) {
 			return true
 		}

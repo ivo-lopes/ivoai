@@ -44,7 +44,7 @@ func TestConfigureHooksUsesHookBaseWithoutInstallingMCP(t *testing.T) {
 			t.Fatalf("unexpected hook-only command %q", joined)
 		}
 		environment := strings.Join(call.env, " ")
-		if !strings.Contains(environment, "AI_MEMORY_SERVER_URL=https://ai.example.com") || !strings.Contains(environment, "AI_MEMORY_AUTH_TOKEN=secret-token") {
+		if !strings.Contains(environment, "AI_MEMORY_SERVER_URL=https://ai.example.com") || strings.Contains(environment, "AI_MEMORY_AUTH_TOKEN") || strings.Contains(environment, "secret-token") {
 			t.Fatalf("wrong environment %q", environment)
 		}
 	}
@@ -85,8 +85,12 @@ func TestConfigureUsesIdempotentUpstreamCommandsAndSecretEnvironment(t *testing.
 		if !strings.Contains(joined, "--apply") {
 			t.Fatalf("not applying: %s", joined)
 		}
-		if !strings.Contains(strings.Join(call.env, " "), "AI_MEMORY_AUTH_TOKEN=secret-token") {
-			t.Fatal("token missing from child environment")
+		environment := strings.Join(call.env, " ")
+		if strings.Contains(joined, "install-mcp") && !strings.Contains(environment, "AI_MEMORY_AUTH_TOKEN=secret-token") {
+			t.Fatal("token missing from transient MCP installer environment")
+		}
+		if strings.Contains(joined, "install-hooks") && strings.Contains(environment, "secret-token") {
+			t.Fatal("token supplied to persistent hook installer")
 		}
 	}
 }

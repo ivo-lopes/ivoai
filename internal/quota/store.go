@@ -114,6 +114,11 @@ func validateSnapshot(value Snapshot) error {
 			return errors.New("unsafe quota metadata")
 		}
 		for _, window := range current.Windows {
+			switch window.TelemetryState() {
+			case TelemetryPending, TelemetryAvailable, TelemetryNotExposed, TelemetryStale, TelemetryExhausted:
+			default:
+				return errors.New("invalid quota telemetry state")
+			}
 			if window.Available && (window.RemainingPercent < 0 || window.RemainingPercent > 100 || window.UsedPercent < 0 || window.UsedPercent > 100) {
 				return errors.New("invalid quota percentage")
 			}

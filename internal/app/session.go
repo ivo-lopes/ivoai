@@ -97,16 +97,15 @@ func (a *App) SessionStart(ctx context.Context, executor string, mode session.Mo
 		}
 	}
 	a.printSessionSummary(value, mode == session.ModeOrchestrated)
-	restoreEnvironment, err := a.exposeServerCredential()
+	environment, err := a.serverCredentialEnvironment()
 	if err != nil {
 		return err
 	}
-	defer restoreEnvironment()
 	component := executor
 	if executor == "claude" {
 		component = "claude-code"
 	}
-	runtime := agents.Runtime{Runner: a.Runner, In: a.In, Out: a.Out, Err: a.Err, AgentPath: state.Components[component].Path, HeadroomPath: state.Components["headroom"].Path}
+	runtime := agents.Runtime{Runner: a.Runner, In: a.In, Out: a.Out, Err: a.Err, AgentPath: state.Components[component].Path, HeadroomPath: state.Components["headroom"].Path, Environment: environment}
 	launchErr := runtime.LaunchObserved(ctx, executor, args, cfg.Headroom.Enabled, func(observation agents.Observation) {
 		_, _ = store.Update(id, func(current *session.Session) error {
 			current.PrimaryPID = observation.PID
@@ -162,7 +161,10 @@ func (a *App) SessionStop(id string) error {
 	}
 	if session.ProcessMatches(value.PrimaryPID, value.PrimaryProcessStart) {
 		signalled = true
-		if err := syscall.Kill(-value.PrimaryPID, syscall.SIGTERM); err != nil && !errors.Is(err, syscall.ESRCH) {
+		// Interactive primaries share ivoai's foreground process group so the
+		// terminal can deliver job-control signals correctly. Signal the recorded
+		// process itself; workers retain dedicated process groups.
+		if err := syscall.Kill(value.PrimaryPID, syscall.SIGTERM); err != nil && !errors.Is(err, syscall.ESRCH) {
 			failures = append(failures, err)
 		}
 	}
@@ -300,7 +302,7 @@ func agentModelConfig(executor string) string {
 
 func contextStatus(cfg config.Config) string {
 	if server, ok := cfg.MCP.Servers["ivoai-context"]; ok && server.Enabled {
-		return "ready"
+		return "configured"
 	}
 	if cfg.Connections.Server.Status == "connected" {
 		return "degraded"
@@ -313,14 +315,14 @@ func memoryStatus(cfg config.Config, state config.State) string {
 		return "disabled"
 	}
 	if componentPresent(state.Components["ai-memory"]) {
-		return "ready"
+		return "configured"
 	}
 	return "degraded"
 }
 
 func serverStatus(cfg config.Config) string {
 	if cfg.Connections.Server.Status == "connected" {
-		return "connected"
+		return "configured"
 	}
 	return "not-connected"
 }

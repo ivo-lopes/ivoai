@@ -275,7 +275,7 @@ func validate(value Session) error {
 	if !validState(value.State) || !validModel(value.PrimaryModel) {
 		return errors.New("invalid session state or model metadata")
 	}
-	if !oneOf(value.ContextStatus, "ready", "degraded", "disabled") || !oneOf(value.MemoryStatus, "ready", "degraded", "disabled") || !oneOf(value.ServerStatus, "connected", "not-connected", "degraded") {
+	if !oneOf(value.ContextStatus, "ready", "configured", "degraded", "disabled") || !oneOf(value.MemoryStatus, "ready", "configured", "degraded", "disabled") || !oneOf(value.ServerStatus, "reachable", "configured", "unreachable", "connected", "not-connected", "degraded") {
 		return errors.New("invalid service status metadata")
 	}
 	if (value.SwarmID != "" && !safeText(value.SwarmID, 128)) || (value.PrimaryRufloTaskID != "" && !safeText(value.PrimaryRufloTaskID, 128)) {

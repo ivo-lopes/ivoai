@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
+	"net/http"
 	"os"
 	"path/filepath"
 	"sort"
@@ -37,6 +39,7 @@ type App struct {
 	Out, Err         io.Writer
 	QuotaManager     *quota.Manager
 	AutoPollInterval time.Duration
+	HTTPClient       *http.Client
 }
 
 // MenuSnapshot is a non-secret, read-only view used by the interactive UI.
@@ -130,11 +133,11 @@ func (a *App) Setup(ctx context.Context) error {
 	mem := a.memoryManager(state)
 	if cfg.Memory.Enabled && cfg.Connections.Server.Status == "connected" {
 		if err := a.ReconfigureMemory(ctx); err != nil {
-			a.warn("remote ai-memory integration is degraded; Codex and Claude remain usable", err)
+			a.warn("remote ai-memory integration is degraded; Codex and Claude Code remain usable", err)
 		}
 	} else if cfg.Memory.Enabled {
 		if err := mem.Configure(ctx, "", ""); err != nil {
-			a.warn("ai-memory hooks are degraded; Codex and Claude remain usable", err)
+			a.warn("ai-memory hooks are degraded; Codex and Claude Code remain usable", err)
 		}
 	} else if err := mem.Disable(ctx); err != nil {
 		a.warn("ai-memory is disabled but its previous integration could not be removed", err)
@@ -158,33 +161,66 @@ func (a *App) Status(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	rows := []struct{ name, status string }{
-		{"ivoai", ready(state.SetupCompletedAt.IsZero())},
+	probeContext, cancelProbes := context.WithTimeout(ctx, 2*time.Second)
+	defer cancelProbes()
+	serverResult := make(chan doctor.Server, 1)
+	rufloResult := make(chan orchestration.Status, 1)
+	go func() { serverResult <- doctor.ProbeServer(probeContext, cfg.Connections.Server, a.statusHTTPClient()) }()
+	go func() { rufloResult <- a.orchestrationManager(state).Inspect(probeContext) }()
+	serverHealth, rufloHealth := <-serverResult, <-rufloResult
+	rows := []struct {
+		name   string
+		status statusValue
+	}{
+		{"ivoai", readyStatus(state.SetupCompletedAt.IsZero())},
 		{"Codex", componentStatus(state.Components["codex"], cfg.Connections.ChatGPT.Status)},
 		{"Claude Code", componentStatus(state.Components["claude-code"], cfg.Connections.Claude.Status)},
-		{"Headroom", enabledStatus(state.Components["headroom"], cfg.Headroom.Enabled)},
-		{"ai-memory", componentStatus(state.Components["ai-memory"], cfg.Connections.Server.Status)},
-		{"Ruflo", safeStatus(state.Components["ruflo"])},
-		{"Server", cfg.Connections.Server.Status},
+		{"Headroom", headroomStatus(state.Components["headroom"], cfg.Headroom.Enabled)},
+		{"Context", contextHealthStatus(cfg, serverHealth)},
+		{"ai-memory", memoryHealthStatus(cfg, state.Components["ai-memory"], serverHealth)},
+		{"Ruflo", safeStatus(rufloHealth)},
+		{"Server", liveServerStatus(serverHealth)},
 	}
 	quotaSnapshot, quotaErr := (quota.Store{Root: a.Store.Paths.QuotaDir}).Load()
-	autoReady := cfg.Orchestration.Auto.Enabled && cfg.Orchestration.Auto.Quota.Enabled && componentPresent(state.Components["codex"]) && componentPresent(state.Components["claude-code"]) && componentPresent(state.Components["ruflo"])
+	autoReady := cfg.Orchestration.Auto.Enabled && cfg.Orchestration.Auto.Quota.Enabled && componentPresent(state.Components["codex"]) && componentPresent(state.Components["claude-code"]) && rufloHealth.SafeMode && !rufloHealth.ProviderExecution && !rufloHealth.DurableMemory
 	autoStatus := "disabled"
+	autoKind := terminalui.StatusNeutral
 	if autoReady {
 		autoStatus = "ready / default " + displayProvider(cfg.Orchestration.Auto.DefaultPlanner)
+		autoKind = terminalui.StatusSuccess
 	} else if cfg.Orchestration.Auto.Enabled {
 		autoStatus = "degraded"
+		autoKind = terminalui.StatusWarning
 	}
 	routingStatus := "N/A / telemetry not captured"
 	if quotaErr == nil && len(quotaSnapshot.Providers) > 0 {
 		routingStatus = "ready / cached"
 	}
 	rows = append(rows,
-		struct{ name, status string }{"Auto", autoStatus},
-		struct{ name, status string }{"Quota routing", routingStatus},
-		struct{ name, status string }{"Failover", map[bool]string{true: "ready", false: "disabled"}[cfg.Orchestration.Auto.AutomaticFailover]},
-		struct{ name, status string }{"Codex weekly", quotaValue(quotaSnapshot.Providers[quota.ProviderCodex], quota.KindWeekly)},
-		struct{ name, status string }{"Claude weekly", quotaValue(quotaSnapshot.Providers[quota.ProviderClaude], quota.KindWeekly)},
+		struct {
+			name   string
+			status statusValue
+		}{"Auto", statusValue{autoStatus, autoKind}},
+		struct {
+			name   string
+			status statusValue
+		}{"Quota routing", statusValue{routingStatus, map[bool]terminalui.StatusKind{true: terminalui.StatusSuccess, false: terminalui.StatusNeutral}[quotaErr == nil && len(quotaSnapshot.Providers) > 0]}},
+		struct {
+			name   string
+			status statusValue
+		}{"Failover", optionalStatus(cfg.Orchestration.Auto.AutomaticFailover)},
+		struct {
+			name   string
+			status statusValue
+		}{"Codex weekly", quotaStatus(quota.ProviderCodex, quotaSnapshot.Providers[quota.ProviderCodex], quota.KindWeekly)},
+		struct {
+			name   string
+			status statusValue
+		}{"Claude 5h", quotaStatus(quota.ProviderClaude, quotaSnapshot.Providers[quota.ProviderClaude], quota.KindSession)},
+		struct {
+			name   string
+			status statusValue
+		}{"Claude weekly", quotaStatus(quota.ProviderClaude, quotaSnapshot.Providers[quota.ProviderClaude], quota.KindWeekly)},
 	)
 	if sessions, sessionErr := a.SessionList(); sessionErr == nil {
 		active, orchestrated := 0, 0
@@ -197,17 +233,24 @@ func (a *App) Status(ctx context.Context) error {
 			}
 		}
 		if active > 0 {
-			rows = append(rows, struct{ name, status string }{"Sessions", fmt.Sprintf("%d active / %d orchestrated", active, orchestrated)})
+			rows = append(rows, struct {
+				name   string
+				status statusValue
+			}{"Sessions", statusValue{fmt.Sprintf("%d active / %d orchestrated", active, orchestrated), terminalui.StatusSuccess}})
 		}
 	}
 	for _, row := range rows {
-		fmt.Fprintf(a.Out, "%-14s %s\n", row.name, semanticStatus(row.status, terminalui.ColorEnabled(a.Out)))
+		fmt.Fprintf(a.Out, "%-14s %s\n", row.name, terminalui.Semantic(row.status.Text, row.status.Kind, terminalui.ColorEnabled(a.Out)))
 	}
 	if state.SetupCompletedAt.IsZero() {
 		fmt.Fprintf(a.Out, "\nOverall: %s\n", terminalui.Warning("SETUP REQUIRED", terminalui.ColorEnabled(a.Out)))
 	} else if !requiredComponentsReady(state) {
 		fmt.Fprintf(a.Out, "\nOverall: %s\n", terminalui.Warning("DEGRADED — run ivoai setup to repair components", terminalui.ColorEnabled(a.Out)))
-	} else if cfg.Connections.ChatGPT.Status != "connected" || cfg.Connections.Claude.Status != "connected" || cfg.Connections.Server.Status != "connected" {
+	} else if !rufloHealth.SafeMode || rufloHealth.ProviderExecution || rufloHealth.DurableMemory {
+		fmt.Fprintf(a.Out, "\nOverall: %s\n", terminalui.Warning("DEGRADED — run ivoai setup to repair the Ruflo safe profile", terminalui.ColorEnabled(a.Out)))
+	} else if serverHealth.Configured && (!serverHealth.Reachable || !serverHealth.ProtocolCompatible || (!serverHealth.TLS && !loopbackURL(serverHealth.URL))) {
+		fmt.Fprintf(a.Out, "\nOverall: %s\n", terminalui.Warning("DEGRADED", terminalui.ColorEnabled(a.Out))+" — local agents available; run ivoai doctor")
+	} else if cfg.Connections.ChatGPT.Status != "connected" || cfg.Connections.Claude.Status != "connected" || !serverHealth.Configured {
 		fmt.Fprintf(a.Out, "\nOverall: %s\n", terminalui.Success("READY", terminalui.ColorEnabled(a.Out))+" — external connections pending")
 	} else {
 		fmt.Fprintf(a.Out, "\nOverall: %s\n", terminalui.Success("READY — all connections active", terminalui.ColorEnabled(a.Out)))
@@ -237,39 +280,138 @@ func componentPresent(component config.ComponentState) bool {
 	info, err := os.Stat(component.Path)
 	return err == nil && info.Mode().IsRegular() && info.Mode()&0o111 != 0
 }
-func ready(notSetup bool) string {
-	if notSetup {
-		return "setup required"
-	}
-	return "ready"
+
+type statusValue struct {
+	Text string
+	Kind terminalui.StatusKind
 }
-func componentStatus(s config.ComponentState, connection string) string {
+
+func readyStatus(notSetup bool) statusValue {
+	if notSetup {
+		return statusValue{"setup required", terminalui.StatusWarning}
+	}
+	return statusValue{"ready", terminalui.StatusSuccess}
+}
+func componentStatus(s config.ComponentState, connection string) statusValue {
 	if !componentPresent(s) {
-		return "not installed"
+		return statusValue{"not installed", terminalui.StatusFailure}
 	}
 	if connection != "connected" {
-		return "installed / not connected"
+		return statusValue{"installed / not connected", terminalui.StatusNeutral}
 	}
-	return "ready"
+	return statusValue{"ready", terminalui.StatusSuccess}
 }
-func enabledStatus(s config.ComponentState, enabled bool) string {
-	if !s.Installed {
-		return "not installed"
+func headroomStatus(s config.ComponentState, enabled bool) statusValue {
+	if !componentPresent(s) {
+		return statusValue{"not installed", terminalui.StatusFailure}
 	}
 	if !enabled {
-		return "installed / disabled"
+		return statusValue{"installed / disabled", terminalui.StatusNeutral}
 	}
-	return "ready"
+	return statusValue{"installed / enabled / interactive not validated", terminalui.StatusWarning}
 }
-func safeStatus(s config.ComponentState) string {
+func safeStatus(s orchestration.Status) statusValue {
 	if !s.Installed {
-		return "not installed"
+		return statusValue{"not installed", terminalui.StatusFailure}
 	}
-	return "ready / provider execution disabled"
+	if s.ProviderExecution || s.DurableMemory {
+		return statusValue{"unsafe profile — run ivoai setup", terminalui.StatusFailure}
+	}
+	if !s.SafeMode {
+		return statusValue{"safe profile not verified — run ivoai setup", terminalui.StatusWarning}
+	}
+	return statusValue{"ready / provider execution disabled", terminalui.StatusSuccess}
+}
+
+func liveServerStatus(health doctor.Server) statusValue {
+	if !health.Configured {
+		return statusValue{"not configured", terminalui.StatusNeutral}
+	}
+	if !health.TLS && !loopbackURL(health.URL) {
+		return statusValue{"TLS invalid — run ivoai doctor", terminalui.StatusFailure}
+	}
+	if !health.Reachable {
+		return statusValue{"unreachable — run ivoai doctor", terminalui.StatusWarning}
+	}
+	if !health.ProtocolCompatible {
+		return statusValue{"protocol incompatible — run ivoai doctor", terminalui.StatusFailure}
+	}
+	return statusValue{"reachable / compatible", terminalui.StatusSuccess}
+}
+
+func contextHealthStatus(cfg config.Config, health doctor.Server) statusValue {
+	contextConfigured := false
+	if server, ok := cfg.MCP.Servers["ivoai-context"]; ok && server.Enabled {
+		contextConfigured = true
+	}
+	if !contextConfigured && cfg.Connections.Server.Status != "connected" {
+		return statusValue{"not configured", terminalui.StatusNeutral}
+	}
+	if !serverUsable(health) {
+		return statusValue{"degraded / Server unreachable", terminalui.StatusWarning}
+	}
+	return statusValue{"ready", terminalui.StatusSuccess}
+}
+
+func memoryHealthStatus(cfg config.Config, component config.ComponentState, health doctor.Server) statusValue {
+	if !componentPresent(component) {
+		return statusValue{"not installed", terminalui.StatusFailure}
+	}
+	if !cfg.Memory.Enabled {
+		return statusValue{"installed / disabled", terminalui.StatusNeutral}
+	}
+	if cfg.Connections.Server.Status != "connected" {
+		return statusValue{"installed / offline hooks", terminalui.StatusNeutral}
+	}
+	if !serverUsable(health) {
+		return statusValue{"degraded / Server unreachable", terminalui.StatusWarning}
+	}
+	return statusValue{"ready", terminalui.StatusSuccess}
+}
+
+func serverUsable(health doctor.Server) bool {
+	return health.Configured && health.Reachable && health.ProtocolCompatible && (health.TLS || loopbackURL(health.URL))
+}
+
+func (a *App) statusHTTPClient() *http.Client {
+	if a.HTTPClient != nil {
+		return a.HTTPClient
+	}
+	client := connections.SecureHTTPClient()
+	client.Timeout = 2 * time.Second
+	return client
+}
+
+func loopbackURL(raw string) bool {
+	base, err := connections.ValidateBaseURL(raw)
+	if err != nil {
+		return false
+	}
+	host := base.Hostname()
+	return strings.EqualFold(host, "localhost") || net.ParseIP(host) != nil && net.ParseIP(host).IsLoopback()
+}
+
+func optionalStatus(enabled bool) statusValue {
+	if enabled {
+		return statusValue{"ready", terminalui.StatusSuccess}
+	}
+	return statusValue{"disabled", terminalui.StatusNeutral}
+}
+
+func quotaStatus(provider quota.Provider, value quota.ProviderQuota, kind quota.Kind) statusValue {
+	text := quotaValueFor(provider, value, kind)
+	window, ok := value.Window(kind)
+	if !ok || window.TelemetryState() == quota.TelemetryPending || window.TelemetryState() == quota.TelemetryNotExposed {
+		return statusValue{text, terminalui.StatusNeutral}
+	}
+	if window.TelemetryState() == quota.TelemetryStale || window.TelemetryState() == quota.TelemetryExhausted {
+		return statusValue{text, terminalui.StatusWarning}
+	}
+	return statusValue{text, terminalui.StatusSuccess}
 }
 
 func (a *App) Doctor(ctx context.Context) doctor.Report {
-	return (doctor.Doctor{Store: a.Store, Runner: a.Runner, Version: a.Version, QuotaManager: a.QuotaManager}).Run(ctx)
+	return (doctor.Doctor{Store: a.Store, Runner: a.Runner, Version: a.Version, QuotaManager: a.QuotaManager, HTTPClient: a.HTTPClient}).Run(ctx)
 }
 
 func (a *App) ConnectAgent(ctx context.Context, target string) error {
@@ -360,12 +502,11 @@ func (a *App) Launch(ctx context.Context, target string, args []string) error {
 	if target == "claude" {
 		key = "claude-code"
 	}
-	restoreEnvironment, err := a.exposeServerCredential()
+	environment, err := a.serverCredentialEnvironment()
 	if err != nil {
 		return err
 	}
-	defer restoreEnvironment()
-	return (agents.Runtime{Runner: a.Runner, In: a.In, Out: a.Out, Err: a.Err, AgentPath: state.Components[key].Path, HeadroomPath: state.Components["headroom"].Path}).Launch(ctx, target, args, cfg.Headroom.Enabled)
+	return (agents.Runtime{Runner: a.Runner, In: a.In, Out: a.Out, Err: a.Err, AgentPath: state.Components[key].Path, HeadroomPath: state.Components["headroom"].Path, Environment: environment}).Launch(ctx, target, args, cfg.Headroom.Enabled)
 }
 
 func (a *App) MemoryStatus(ctx context.Context) error {
@@ -450,25 +591,29 @@ func (a *App) orchestrationManager(state config.State) orchestration.Manager {
 	return orchestration.Manager{Runner: a.Runner, Binary: state.Components["ruflo"].Path, CodexBinary: state.Components["codex"].Path, ClaudeBinary: state.Components["claude-code"].Path, ProfileDir: a.Store.Paths.DataDir}
 }
 
-func (a *App) exposeServerCredential() (func(), error) {
+func (a *App) serverCredentialEnvironment() ([]string, error) {
 	data, err := (secrets.Store{Path: a.Store.Paths.Secrets}).Load()
 	if err != nil {
-		return func() {}, err
+		return nil, err
 	}
+	environment := os.Environ()
 	if data.Server == nil || data.Server.Token == "" {
-		return func() {}, nil
+		return environment, nil
 	}
-	previous, existed := os.LookupEnv(connections.ServerTokenEnvironment)
-	if err := os.Setenv(connections.ServerTokenEnvironment, data.Server.Token); err != nil {
-		return func() {}, err
-	}
-	return func() {
-		if existed {
-			_ = os.Setenv(connections.ServerTokenEnvironment, previous)
-		} else {
-			_ = os.Unsetenv(connections.ServerTokenEnvironment)
+	environment = setProcessEnvironment(environment, connections.ServerTokenEnvironment, data.Server.Token)
+	environment = setProcessEnvironment(environment, "AI_MEMORY_AUTH_TOKEN", data.Server.Token)
+	return environment, nil
+}
+
+func setProcessEnvironment(environment []string, key, value string) []string {
+	prefix := key + "="
+	result := make([]string, 0, len(environment)+1)
+	for _, entry := range environment {
+		if !strings.HasPrefix(entry, prefix) {
+			result = append(result, entry)
 		}
-	}, nil
+	}
+	return append(result, prefix+value)
 }
 
 func (a *App) warn(message string, err error) {

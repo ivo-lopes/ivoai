@@ -117,6 +117,87 @@ func TestClaudeStatuslineSeparatesContextSessionWeeklyAndMonthly(t *testing.T) {
 	}
 }
 
+func TestClaudeOfficialRateLimitFixturePreservesResetsAndDecimals(t *testing.T) {
+	observed := time.Unix(1738000000, 0).UTC()
+	value, err := ParseClaudeStatusline([]byte(`{
+  "rate_limits": {
+    "five_hour": {"used_percentage": 23.5, "resets_at": 1738425600},
+    "seven_day": {"used_percentage": 41.2, "resets_at": 1738857600}
+  }
+}`), observed)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fiveHour, ok := value.Window(KindSession)
+	if !ok || math.Abs(fiveHour.RemainingPercent-76.5) > 0.001 || fiveHour.ResetsAt == nil || fiveHour.ResetsAt.Unix() != 1738425600 {
+		t.Fatalf("five-hour window=%+v", fiveHour)
+	}
+	weekly, ok := value.Window(KindWeekly)
+	if !ok || math.Abs(weekly.RemainingPercent-58.8) > 0.001 || weekly.ResetsAt == nil || weekly.ResetsAt.Unix() != 1738857600 {
+		t.Fatalf("weekly window=%+v", weekly)
+	}
+	if fiveHour.TelemetryState() != TelemetryAvailable || weekly.TelemetryState() != TelemetryAvailable {
+		t.Fatalf("telemetry states=%s/%s", fiveHour.TelemetryState(), weekly.TelemetryState())
+	}
+}
+
+func TestClaudeMissingRateLimitsProgressesFromPendingToNotExposed(t *testing.T) {
+	observed := time.Now().UTC()
+	pending, err := ParseClaudeStatusline([]byte(`{"model":{"id":"claude-test"}}`), observed)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, kind := range []Kind{KindSession, KindWeekly} {
+		window, ok := pending.Window(kind)
+		if !ok || window.TelemetryState() != TelemetryPending || window.Available {
+			t.Fatalf("pending %s=%+v", kind, window)
+		}
+	}
+	notExposed, err := ParseClaudeStatusline([]byte(`{"rate_limits":{}}`), observed)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, kind := range []Kind{KindSession, KindWeekly} {
+		window, ok := notExposed.Window(kind)
+		if !ok || window.TelemetryState() != TelemetryNotExposed || window.Available {
+			t.Fatalf("not-exposed %s=%+v", kind, window)
+		}
+	}
+}
+
+func TestClaudeStatuslineBoundsAndInvalidPayloads(t *testing.T) {
+	value, err := ParseClaudeStatusline([]byte(`{"rate_limits":{"five_hour":{"used_percentage":-1},"seven_day":{"used_percentage":101}}}`), time.Now())
+	if err != nil {
+		t.Fatal(err)
+	}
+	fiveHour, _ := value.Window(KindSession)
+	weekly, _ := value.Window(KindWeekly)
+	if fiveHour.RemainingPercent != 100 || weekly.RemainingPercent != 0 || !value.HardLimitReached || value.Eligible {
+		t.Fatalf("clamped value=%+v", value)
+	}
+	for name, body := range map[string][]byte{
+		"empty": {}, "malformed": []byte(`{"rate_limits":`), "null": []byte(`null`),
+		"oversize": make([]byte, (64<<10)+1), "nan": []byte(`{"rate_limits":{"five_hour":{"used_percentage":NaN}}}`),
+	} {
+		if _, err := ParseClaudeStatusline(body, time.Now()); err == nil {
+			t.Fatalf("%s payload accepted", name)
+		}
+	}
+}
+
+func TestLimitClassificationRequiresProviderQuotaEvidence(t *testing.T) {
+	for _, message := range []string{"usage limit reached", "subscription limit reached", "rate limit reached", "quota exhausted", "spend control reached"} {
+		if !IsClaudeLimitError(message) {
+			t.Fatalf("quota signal not classified: %q", message)
+		}
+	}
+	for _, message := range []string{"network error while checking rate limit", "authentication failed: usage limit unknown", "MCP server failure: limit reached", "connection refused"} {
+		if IsClaudeLimitError(message) {
+			t.Fatalf("non-quota error misclassified: %q", message)
+		}
+	}
+}
+
 func TestClaudeMonthlyUnavailableIsNotFabricated(t *testing.T) {
 	value, err := ParseClaudeStatusline([]byte(`{"rate_limits":{"seven_day":{"used_percentage":50,"resets_at":300}}}`), time.Now())
 	if err != nil {
