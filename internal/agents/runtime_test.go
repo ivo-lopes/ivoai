@@ -201,6 +201,14 @@ func waitPTYLine(t *testing.T, lines <-chan string, readErr <-chan error, timeou
 	case line := <-lines:
 		return line
 	case err := <-readErr:
+		// A PTY master reports EIO when the last slave closes. The scanner can
+		// therefore enqueue the child's final line and the closing error before
+		// this select runs; always prefer that already-observed output.
+		select {
+		case line := <-lines:
+			return line
+		default:
+		}
 		t.Fatalf("PTY closed before expected output: %v", err)
 	case <-time.After(timeout):
 		t.Fatal("timed out waiting for PTY output; child may be suspended by job control")
