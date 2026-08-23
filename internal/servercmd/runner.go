@@ -359,6 +359,12 @@ func serviceUserIdentity() (string, error) {
 }
 
 func ensureServiceOwnership(layout server.Layout) error {
+	// Test-mode layouts are deliberately isolated from host service accounts.
+	// This also keeps the server command tests hermetic when they run as root in
+	// a minimal container that does not have the ivoai users provisioned.
+	if os.Getenv("IVOAI_TEST_MODE") == "1" {
+		return nil
+	}
 	if os.Geteuid() != 0 {
 		return nil
 	}
