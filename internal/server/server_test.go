@@ -55,7 +55,7 @@ func TestSetupIsIdempotentAndLifecycleUsesManagedServices(t *testing.T) {
 	if err := manager.Setup(context.Background()); err != nil {
 		t.Fatal(err)
 	}
-	for _, directory := range []string{layout.QdrantSnapshotsDir, layout.QdrantInitDir} {
+	for _, directory := range []string{layout.QdrantSnapshotsDir, layout.QdrantInitDir, filepath.Join(layout.DataDir, "enrollment"), filepath.Join(layout.DataDir, "web-oauth")} {
 		info, err := os.Stat(directory)
 		if err != nil || !info.IsDir() || info.Mode().Perm() != 0o700 {
 			t.Fatalf("Qdrant writable directory is not private: %s info=%v err=%v", directory, info, err)
@@ -115,13 +115,13 @@ func TestSetupIsIdempotentAndLifecycleUsesManagedServices(t *testing.T) {
 		t.Fatalf("unexpected controller calls: %#v", controller.calls)
 	}
 	unit, _ := os.ReadFile(filepath.Join(layout.SystemdDir, "ivoai-gateway.service"))
-	for _, hardening := range []string{"NoNewPrivileges=yes", "ProtectSystem=strict", "User=ivoai-gateway", "Group=ivoai", "ProtectProc=invisible", "ProcSubset=pid", "Restart=on-failure"} {
+	for _, hardening := range []string{"NoNewPrivileges=yes", "ProtectSystem=strict", "User=ivoai-gateway", "Group=ivoai", "ProtectProc=invisible", "ProcSubset=pid", "Restart=on-failure", "ReadWritePaths=/var/lib/ivoai/enrollment /var/lib/ivoai/web-oauth /run/ivoai"} {
 		if !bytes.Contains(unit, []byte(hardening)) {
 			t.Fatalf("unit missing %s", hardening)
 		}
 	}
 	contextUnit, _ := os.ReadFile(filepath.Join(layout.SystemdDir, "ivoai-context.service"))
-	for _, hardening := range []string{"User=ivoai-context", "Group=ivoai", "ProtectProc=invisible", "ProcSubset=pid", "InaccessiblePaths=/etc/ivoai/secrets"} {
+	for _, hardening := range []string{"User=ivoai-context", "Group=ivoai", "ProtectProc=invisible", "ProcSubset=pid", "InaccessiblePaths=/etc/ivoai/secrets /var/lib/ivoai/enrollment /var/lib/ivoai/web-oauth"} {
 		if !bytes.Contains(contextUnit, []byte(hardening)) {
 			t.Fatalf("context unit missing %s", hardening)
 		}

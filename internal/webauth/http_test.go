@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -97,6 +98,46 @@ func TestRedirectValidation(t *testing.T) {
 		if ValidateRedirectURI(raw) == nil {
 			t.Fatalf("accepted %q", raw)
 		}
+	}
+}
+
+func TestRegistrationDistinguishesClientErrorsFromStoreFailures(t *testing.T) {
+	statePath := filepath.Join(t.TempDir(), "state.json")
+	if err := os.Mkdir(statePath, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	server := &Server{Store: NewStore(statePath), Issuer: "https://ivoai.example"}
+	mux := http.NewServeMux()
+	server.Register(mux)
+
+	for _, test := range []struct {
+		name       string
+		body       string
+		wantStatus int
+		wantError  string
+	}{
+		{
+			name:       "invalid redirect",
+			body:       `{"client_name":"ChatGPT","redirect_uris":["http://example.com/callback"]}`,
+			wantStatus: http.StatusBadRequest,
+			wantError:  "invalid_redirect_uri",
+		},
+		{
+			name:       "persistent store failure",
+			body:       `{"client_name":"ChatGPT","redirect_uris":["https://example.com/callback"]}`,
+			wantStatus: http.StatusInternalServerError,
+			wantError:  "server_error",
+		},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			request := httptest.NewRequest(http.MethodPost, "/oauth/register", strings.NewReader(test.body))
+			request.RemoteAddr = "192.0.2.50:1234"
+			response := httptest.NewRecorder()
+			mux.ServeHTTP(response, request)
+			if response.Code != test.wantStatus || !strings.Contains(response.Body.String(), `"error":"`+test.wantError+`"`) {
+				t.Fatalf("registration response=%d %s", response.Code, response.Body.String())
+			}
+		})
 	}
 }
 

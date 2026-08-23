@@ -58,7 +58,7 @@ func (l Layout) Ensure() error {
 	if err := l.Validate(); err != nil {
 		return err
 	}
-	private := []string{l.ConfigDir, l.SecretsDir, filepath.Join(l.SecretsDir, "tls"), l.DataDir, l.ContextDir, l.CorpusDir, l.MemoryDir, l.QdrantDir, l.QdrantSnapshotsDir, l.QdrantInitDir, l.ModelsDir, l.BackupDir, l.RuntimeDir, l.InstallDir}
+	private := []string{l.ConfigDir, l.SecretsDir, filepath.Join(l.SecretsDir, "tls"), l.DataDir, filepath.Join(l.DataDir, "enrollment"), filepath.Join(l.DataDir, "web-oauth"), l.ContextDir, l.CorpusDir, l.MemoryDir, l.QdrantDir, l.QdrantSnapshotsDir, l.QdrantInitDir, l.ModelsDir, l.BackupDir, l.RuntimeDir, l.InstallDir}
 	for _, dir := range private {
 		if info, err := os.Lstat(dir); err == nil && info.Mode()&os.ModeSymlink != 0 {
 			return fmt.Errorf("refusing symlink server directory %s", dir)

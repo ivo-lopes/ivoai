@@ -263,6 +263,43 @@ func TestSecureRegularOwnershipUsesNoFollowDescriptor(t *testing.T) {
 	}
 }
 
+func TestGatewayStateOwnershipCoversEnrollmentAndWebOAuth(t *testing.T) {
+	layout := server.DefaultLayout(t.TempDir())
+	if err := layout.Ensure(); err != nil {
+		t.Fatal(err)
+	}
+	for _, dir := range []string{
+		filepath.Join(layout.DataDir, "enrollment"),
+		filepath.Join(layout.DataDir, "web-oauth"),
+	} {
+		if err := os.Chmod(dir, 0o777); err != nil {
+			t.Fatal(err)
+		}
+		for _, name := range []string{"state.json", "state.json.lock"} {
+			if err := os.WriteFile(filepath.Join(dir, name), []byte("{}"), 0o666); err != nil {
+				t.Fatal(err)
+			}
+		}
+	}
+	if err := ensureGatewayStateOwnership(layout, os.Getuid(), os.Getgid()); err != nil {
+		t.Fatal(err)
+	}
+	for _, dir := range []string{
+		filepath.Join(layout.DataDir, "enrollment"),
+		filepath.Join(layout.DataDir, "web-oauth"),
+	} {
+		if info, err := os.Stat(dir); err != nil || info.Mode().Perm() != 0o700 {
+			t.Fatalf("gateway state directory permissions: %s info=%v err=%v", dir, info, err)
+		}
+		for _, name := range []string{"state.json", "state.json.lock"} {
+			path := filepath.Join(dir, name)
+			if info, err := os.Stat(path); err != nil || info.Mode().Perm() != 0o600 {
+				t.Fatalf("gateway state file permissions: %s info=%v err=%v", path, info, err)
+			}
+		}
+	}
+}
+
 func TestGatewayConfigurePersistsHTTPSWithoutManualEditing(t *testing.T) {
 	root := filepath.Join(t.TempDir(), "root")
 	t.Setenv("IVOAI_TEST_MODE", "1")

@@ -391,7 +391,6 @@ func ensureServiceOwnership(layout server.Layout) error {
 	}{
 		{layout.ContextDir, contextUID, 0o2750},
 		{layout.CorpusDir, contextUID, 0o2750},
-		{filepath.Join(layout.DataDir, "enrollment"), gatewayUID, 0o700},
 		{layout.MemoryDir, containerUID, 0o700},
 		{layout.QdrantDir, containerUID, 0o700},
 		{layout.QdrantSnapshotsDir, containerUID, 0o700},
@@ -406,15 +405,8 @@ func ensureServiceOwnership(layout server.Layout) error {
 			return err
 		}
 	}
-	// Enrollment administration runs as root while the gateway runs as its
-	// dedicated account. Atomic root writes replace both files with root-owned
-	// inodes, so restore their service ownership after every admin operation and
-	// idempotent setup. Without this, valid newly-created codes appear invalid.
-	enrollmentDir := filepath.Join(layout.DataDir, "enrollment")
-	for _, name := range []string{"state.json", "state.json.lock"} {
-		if err := secureRegularOwnership(filepath.Join(enrollmentDir, name), gatewayUID, sharedGID, 0o600); err != nil && !errors.Is(err, os.ErrNotExist) {
-			return err
-		}
+	if err := ensureGatewayStateOwnership(layout, gatewayUID, sharedGID); err != nil {
+		return err
 	}
 	if err := chownMode(layout.BackupDir, 0, 0, 0o700); err != nil {
 		return err
@@ -472,6 +464,27 @@ func ensureServiceOwnership(layout server.Layout) error {
 		return err
 	}
 	return os.Chmod(layout.InstallDir, 0o755)
+}
+
+// Gateway state administration runs as root while the gateway runs as its
+// dedicated account. Atomic root writes replace state and lock files with
+// root-owned inodes, so restore service ownership after every admin operation
+// and idempotent setup.
+func ensureGatewayStateOwnership(layout server.Layout, gatewayUID, sharedGID int) error {
+	for _, dir := range []string{
+		filepath.Join(layout.DataDir, "enrollment"),
+		filepath.Join(layout.DataDir, "web-oauth"),
+	} {
+		if err := chownMode(dir, gatewayUID, sharedGID, 0o700); err != nil {
+			return err
+		}
+		for _, name := range []string{"state.json", "state.json.lock"} {
+			if err := secureRegularOwnership(filepath.Join(dir, name), gatewayUID, sharedGID, 0o600); err != nil && !errors.Is(err, os.ErrNotExist) {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func serviceAccountIDs(name string) (int, int, error) {

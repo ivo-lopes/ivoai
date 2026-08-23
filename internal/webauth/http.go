@@ -121,9 +121,23 @@ func (s *Server) register(w http.ResponseWriter, r *http.Request) {
 	if strings.TrimSpace(in.ClientName) == "" {
 		in.ClientName = "Web MCP client"
 	}
+	if len(in.RedirectURIs) == 0 || len(in.RedirectURIs) > 8 {
+		jsonResponse(w, http.StatusBadRequest, map[string]string{"error": "invalid_redirect_uri"})
+		return
+	}
+	for _, redirectURI := range in.RedirectURIs {
+		if ValidateRedirectURI(redirectURI) != nil {
+			jsonResponse(w, http.StatusBadRequest, map[string]string{"error": "invalid_redirect_uri"})
+			return
+		}
+	}
+	if len(in.ClientName) > 128 {
+		jsonResponse(w, http.StatusBadRequest, map[string]string{"error": "invalid_client_metadata"})
+		return
+	}
 	c, err := s.Store.RegisterClient(in.ClientName, in.RedirectURIs)
 	if err != nil {
-		jsonResponse(w, 400, map[string]string{"error": "invalid_redirect_uri"})
+		jsonResponse(w, http.StatusInternalServerError, map[string]string{"error": "server_error"})
 		return
 	}
 	jsonResponse(w, 201, map[string]any{"client_id": c.ID, "client_name": c.Name, "redirect_uris": c.RedirectURIs, "token_endpoint_auth_method": "none", "grant_types": []string{"authorization_code", "refresh_token"}, "response_types": []string{"code"}})
