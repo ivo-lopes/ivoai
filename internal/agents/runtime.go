@@ -15,6 +15,7 @@ import (
 
 	"github.com/ivo-lopes/ivoai/internal/headroom"
 	"github.com/ivo-lopes/ivoai/internal/platform"
+	"golang.org/x/term"
 )
 
 type Runtime struct {
@@ -23,6 +24,7 @@ type Runtime struct {
 	Out, Err     io.Writer
 	AgentPath    string
 	HeadroomPath string
+	Environment  []string
 }
 
 type Observation struct {
@@ -47,9 +49,12 @@ func (r Runtime) LaunchObserved(ctx context.Context, agent string, args []string
 		return fmt.Errorf("%s is not installed; run ivoai setup", agent)
 	}
 	command, commandArgs := direct, args
-	var environment []string
+	environment := r.Environment
+	if environment == nil {
+		environment = os.Environ()
+	}
 	if agent == "claude" {
-		environment = setEnvironment(os.Environ(), "DISABLE_AUTOUPDATER", "1")
+		environment = setEnvironment(environment, "DISABLE_AUTOUPDATER", "1")
 	}
 	wrappedUsed := false
 	if headroomEnabled {
@@ -98,12 +103,23 @@ func (r Runtime) LaunchObserved(ctx context.Context, agent string, args []string
 }
 
 func runInteractive(ctx context.Context, command string, args, environment []string, in io.Reader, out, errOut io.Writer, observe func(int)) error {
-	cmd := exec.CommandContext(ctx, command, args...)
+	if terminal, ok := in.(*os.File); ok && term.IsTerminal(int(terminal.Fd())) {
+		if state, stateErr := term.GetState(int(terminal.Fd())); stateErr == nil {
+			defer func() { _ = term.Restore(int(terminal.Fd()), state) }()
+		}
+	}
+	// Interactive clients inherit ivoai's foreground process group. A child in
+	// a separate group cannot read the controlling terminal until terminal
+	// ownership is explicitly transferred, and is suspended with SIGTTIN. The
+	// shared foreground group also lets terminal and shell job-control signals
+	// such as SIGINT, SIGTSTP, SIGCONT and SIGWINCH reach the complete stack.
+	// We intentionally use exec.Command instead of CommandContext so cancellation
+	// gets a bounded SIGTERM grace period before SIGKILL.
+	cmd := exec.Command(command, args...)
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = in, out, errOut
 	if environment != nil {
 		cmd.Env = environment
 	}
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 	if err := cmd.Start(); err != nil {
 		return &StartError{Err: err}
 	}
@@ -119,7 +135,13 @@ func runInteractive(ctx context.Context, command string, args, environment []str
 		select {
 		case sig := <-signals:
 			if s, ok := sig.(syscall.Signal); ok {
-				_ = syscall.Kill(-cmd.Process.Pid, s)
+				// Ctrl+C has already reached the child through the foreground group;
+				// do not turn one keypress into two interrupts. TERM and HUP may be
+				// addressed only to the supervisor, so forward those explicitly.
+				if s == syscall.SIGINT {
+					continue
+				}
+				_ = cmd.Process.Signal(s)
 			}
 		case waitErr := <-done:
 			if waitErr == nil {
@@ -131,12 +153,12 @@ func runInteractive(ctx context.Context, command string, args, environment []str
 			}
 			return waitErr
 		case <-ctx.Done():
-			_ = syscall.Kill(-cmd.Process.Pid, syscall.SIGTERM)
+			_ = cmd.Process.Signal(syscall.SIGTERM)
 			select {
 			case <-done:
 				return ctx.Err()
 			case <-time.After(2 * time.Second):
-				_ = syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
+				_ = cmd.Process.Kill()
 				<-done
 				return ctx.Err()
 			}
