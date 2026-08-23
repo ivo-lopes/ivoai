@@ -149,9 +149,15 @@ func renderMonitorSized(out io.Writer, value session.Session, width int) {
 		for _, provider := range []quota.Provider{quota.ProviderCodex, quota.ProviderClaude} {
 			current := value.Quota[provider]
 			fmt.Fprintln(out, "  "+providerDisplay(string(provider)))
-			quotaMonitorRow(out, "    Session", current, quota.KindSession, width)
-			quotaMonitorRow(out, "    Weekly", current, quota.KindWeekly, width)
-			quotaMonitorRow(out, "    Monthly", current, quota.KindMonthly, width)
+			sessionLabel := "    Session"
+			if provider == quota.ProviderClaude {
+				sessionLabel = "    5h"
+			}
+			quotaMonitorRow(out, sessionLabel, provider, current, quota.KindSession, width)
+			quotaMonitorRow(out, "    Weekly", provider, current, quota.KindWeekly, width)
+			if provider == quota.ProviderCodex {
+				quotaMonitorRow(out, "    Monthly", provider, current, quota.KindMonthly, width)
+			}
 			monitorRow(out, "    Eligible", yesNo(current.Eligible), width)
 		}
 	}
@@ -167,18 +173,47 @@ func renderMonitorSized(out io.Writer, value session.Session, width int) {
 	monitorRow(out, "  Server", clean(value.ServerStatus), width)
 }
 
-func quotaMonitorRow(out io.Writer, label string, value quota.ProviderQuota, kind quota.Kind, width int) {
+func quotaMonitorRow(out io.Writer, label string, provider quota.Provider, value quota.ProviderQuota, kind quota.Kind, width int) {
 	window, ok := value.Window(kind)
-	if !ok || !window.Available || !window.Authoritative {
+	if !ok {
+		if provider == quota.ProviderClaude && (kind == quota.KindSession || kind == quota.KindWeekly) {
+			monitorRow(out, label, "awaiting first response", width)
+			return
+		}
 		monitorRow(out, label, "N/A / not exposed", width)
 		return
 	}
-	text := fmt.Sprintf("%.0f%% remaining", window.RemainingPercent)
-	if window.ResetsAt != nil {
-		text += " · reset " + window.ResetsAt.UTC().Format(time.RFC3339)
+	state := window.TelemetryState()
+	if state == quota.TelemetryPending {
+		monitorRow(out, label, "awaiting first response", width)
+		return
 	}
-	text += " · " + clean(window.Source) + " · " + window.ObservedAt.UTC().Format(time.RFC3339)
-	monitorRow(out, label, text, width)
+	if state == quota.TelemetryNotExposed || !window.Available || !window.Authoritative {
+		monitorRow(out, label, "N/A / not exposed", width)
+		return
+	}
+	monitorRow(out, label, formatQuotaPercent(window.RemainingPercent)+"% remaining", width)
+	reset := "N/A / not exposed"
+	if window.ResetsAt != nil {
+		reset = window.ResetsAt.UTC().Format(time.RFC3339)
+	}
+	monitorRow(out, "      Reset", reset, width)
+	monitorRow(out, "      Source", clean(window.Source), width)
+	freshness := "fresh"
+	if state == quota.TelemetryStale {
+		freshness = "stale"
+	}
+	if !window.ObservedAt.IsZero() {
+		freshness += " · observed " + window.ObservedAt.UTC().Format(time.RFC3339)
+	}
+	monitorRow(out, "      Freshness", freshness, width)
+}
+
+func formatQuotaPercent(value float64) string {
+	if value == float64(int64(value)) {
+		return fmt.Sprintf("%.0f", value)
+	}
+	return fmt.Sprintf("%.1f", value)
 }
 
 func providerDisplay(value string) string {

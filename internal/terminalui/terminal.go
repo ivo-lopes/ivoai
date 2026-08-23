@@ -31,6 +31,16 @@ type Badge struct {
 	Kind  string
 }
 
+type StatusKind string
+
+const (
+	StatusSuccess StatusKind = "success"
+	StatusWarning StatusKind = "warning"
+	StatusFailure StatusKind = "failure"
+	StatusNeutral StatusKind = "neutral"
+	StatusUnknown StatusKind = "unknown"
+)
+
 type Key int
 
 const (
@@ -558,6 +568,21 @@ func Success(value string, enabled bool) string { return paint(value, green, ena
 func Failure(value string, enabled bool) string { return paint(value, red, enabled) }
 func Warning(value string, enabled bool) string { return paint(value, yellow, enabled) }
 func Info(value string, enabled bool) string    { return paint(value, cyan, enabled) }
+
+func Semantic(value string, kind StatusKind, enabled bool) string {
+	switch kind {
+	case StatusSuccess:
+		return Success(value, enabled)
+	case StatusWarning:
+		return Warning(value, enabled)
+	case StatusFailure:
+		return Failure(value, enabled)
+	case StatusNeutral:
+		return paint(value, dim, enabled)
+	default:
+		return value
+	}
+}
 
 func ColorEnabled(out io.Writer) bool { return colorEnabled(out) }
 

@@ -32,28 +32,9 @@ fi
 
 banner() {
   [ "$interactive" -eq 1 ] || return 0
-  columns=80
-  rows=24
-  if command -v tput >/dev/null 2>&1; then
-    detected_columns="$(tput cols 2>/dev/null || true)"
-    case "$detected_columns" in *[!0-9]*|'') ;; *) columns=$detected_columns ;; esac
-    detected_rows="$(tput lines 2>/dev/null || true)"
-    case "$detected_rows" in *[!0-9]*|'') ;; *) rows=$detected_rows ;; esac
-  fi
-  if [ "$columns" -lt 46 ] || [ "$rows" -lt 14 ]; then
-    printf '%bivoai%b\n\n' "$c_cyan" "$c_reset"
-  elif [ "$columns" -lt 90 ] || [ "$rows" -lt 24 ]; then
-    printf '%b%s%b\n\n' "$c_cyan" ' ___ _   _  ___   _  ___
-|_ _| | | |/ _ \ / \|_ _|
- | || |_| | (_) / _ \| |
-|___|\___/ \___/_/ \_\___|' "$c_reset"
-  else
-    printf '%b%s\n%b%s%b\n\n' "$c_cyan" '██╗██╗   ██╗ ██████╗  █████╗ ██╗
-██║██║   ██║██╔═══██╗██╔══██╗██║
-██║██║   ██║██║   ██║███████║██║
-██║╚██╗ ██╔╝██║   ██║██╔══██║██║
-██║ ╚████╔╝ ╚██████╔╝██║  ██║██║' "$c_violet" '╚═╝  ╚═══╝   ╚═════╝ ╚═╝  ╚═╝╚═╝' "$c_reset"
-  fi
+  # The compiled client owns the canonical responsive lettering. The bootstrap
+  # installer deliberately uses a plain label so branding is not duplicated.
+  printf '%bIvoAI Installer%b\n\n' "$c_cyan" "$c_reset"
 }
 
 fail() {

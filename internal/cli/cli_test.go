@@ -215,8 +215,9 @@ func TestCommandHeaderExcludesMachineAndProcessEntrypoints(t *testing.T) {
 	}{
 		{[]string{"status"}, true},
 		{[]string{"doctor", "--json"}, false},
-		{[]string{"codex"}, false},
-		{[]string{"claude"}, false},
+		{[]string{"codex"}, true},
+		{[]string{"claude"}, true},
+		{[]string{"auto", "--planner", "claude"}, true},
 		{[]string{"_register-install"}, false},
 		{[]string{"_orchestrator-serve", "--session", "x"}, false},
 		{[]string{"monitor", "--json"}, false},
@@ -248,7 +249,7 @@ func TestMonitorRenderingFitsNarrowTerminalAndJSONHasNoANSI(t *testing.T) {
 	}
 }
 
-func TestAutomaticMonitorAlwaysShowsWeeklyAndMonthlyWithSourceAndFreshness(t *testing.T) {
+func TestAutomaticMonitorShowsProviderWindowsWithSourceAndFreshness(t *testing.T) {
 	now := time.Unix(100, 0).UTC()
 	reset := time.Unix(200, 0).UTC()
 	value := session.Session{
@@ -263,7 +264,7 @@ func TestAutomaticMonitorAlwaysShowsWeeklyAndMonthlyWithSourceAndFreshness(t *te
 	var output bytes.Buffer
 	renderMonitorSized(&output, value, 120)
 	text := output.String()
-	for _, expected := range []string{"Automatic Session", "Conversation", "Claude Code", "Failovers", "Codex", "Claude Code", "Weekly", "Monthly", "71% remaining", "codex app-server", "1970-01-01T00:01:40Z", "N/A / not exposed"} {
+	for _, expected := range []string{"Automatic Session", "Conversation", "Claude Code", "Failovers", "Codex", "Claude Code", "5h", "Weekly", "Monthly", "71% remaining", "codex app-server", "1970-01-01T00:01:40Z", "fresh", "awaiting first response"} {
 		if !strings.Contains(text, expected) {
 			t.Fatalf("automatic monitor missing %q:\n%s", expected, text)
 		}

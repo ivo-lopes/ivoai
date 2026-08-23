@@ -66,8 +66,8 @@ func menu(ctx context.Context, a *app.App) error {
 			{id: "auto", label: "Automatic Orchestration", description: "Plan, route, delegate, checkpoint, and fail over by subscription quota", disabled: disabledUnless(snapshot.AutoEnabled, "automatic orchestration disabled"), run: func() (bool, error) { return true, session.app.Auto(session.ctx, "", nil) }},
 			{id: "dashboard", label: "Dashboard", description: "Status, diagnostics, and version information", run: session.dashboard},
 			{id: "maintenance", label: "Setup & Maintenance", description: "Install, repair, update, rollback, or uninstall", run: session.maintenance},
-			{id: "connections", label: "Connections", description: "ChatGPT, Claude, ivoai server, and external MCPs", run: session.connections},
-			{id: "agents", label: "Agents", description: "Launch Codex or Claude through the ivoai runtime", run: session.agents},
+			{id: "connections", label: "Connections", description: "ChatGPT, Claude Code, ivoai server, and external MCPs", run: session.connections},
+			{id: "agents", label: "Agents", description: "Launch Codex or Claude Code through the ivoai runtime", run: session.agents},
 			{id: "sessions", label: "Session Control", description: "Start observable direct or Ruflo-orchestrated sessions", run: session.sessions},
 			{id: "memory", label: "Memory", description: "Inspect or reconfigure persistent operational memory", run: session.memory},
 			{id: "project", label: "Project", description: "Host identity and optional project override", run: session.project},
@@ -121,8 +121,8 @@ func (s *menuSession) connections() (bool, error) {
 		{id: "connect.list", label: "Connection Status", run: s.simple(func() error { return s.app.Status(s.ctx) })},
 		{id: "connect.chatgpt", label: "Connect ChatGPT / Codex", description: "Use the official Codex login flow", run: s.simple(func() error { return s.app.ConnectAgent(s.ctx, "chatgpt") })},
 		{id: "disconnect.chatgpt", label: "Disconnect ChatGPT state", disabled: disabledUnless(snapshot.ChatGPTConnected, "not connected"), run: s.simple(func() error { return s.app.DisconnectAgent(s.ctx, "chatgpt") })},
-		{id: "connect.claude", label: "Connect Claude", description: "Use the official Claude Code login flow", run: s.simple(func() error { return s.app.ConnectAgent(s.ctx, "claude") })},
-		{id: "disconnect.claude", label: "Disconnect Claude state", disabled: disabledUnless(snapshot.ClaudeConnected, "not connected"), run: s.simple(func() error { return s.app.DisconnectAgent(s.ctx, "claude") })},
+		{id: "connect.claude", label: "Connect Claude Code", description: "Use the official Claude Code login flow", run: s.simple(func() error { return s.app.ConnectAgent(s.ctx, "claude") })},
+		{id: "disconnect.claude", label: "Disconnect Claude Code state", disabled: disabledUnless(snapshot.ClaudeConnected, "not connected"), run: s.simple(func() error { return s.app.DisconnectAgent(s.ctx, "claude") })},
 		{id: "connect.server", label: "Connect ivoai Server", description: "Discover and enroll with a one-time code", run: s.connectServer},
 		{id: "disconnect.server", label: "Disconnect ivoai Server", disabled: disabledUnless(snapshot.ServerConnected, "not connected"), run: s.confirmed("DISCONNECT", func() error { return s.app.DisconnectServer(s.ctx) })},
 		{id: "mcp", label: "External MCP Registry", run: s.mcp},
@@ -132,18 +132,18 @@ func (s *menuSession) connections() (bool, error) {
 func (s *menuSession) agents() (bool, error) {
 	return s.loop("Agents", []menuAction{
 		{id: "launch.codex", label: "Launch Codex", description: "Use Headroom when healthy, with direct fallback", run: func() (bool, error) { return true, s.app.Launch(s.ctx, "codex", nil) }},
-		{id: "launch.claude", label: "Launch Claude", description: "Use Headroom when healthy, with direct fallback", run: func() (bool, error) { return true, s.app.Launch(s.ctx, "claude", nil) }},
+		{id: "launch.claude", label: "Launch Claude Code", description: "Use Headroom when healthy, with direct fallback", run: func() (bool, error) { return true, s.app.Launch(s.ctx, "claude", nil) }},
 	})
 }
 
 func (s *menuSession) sessions() (bool, error) {
 	snapshot, _ := s.app.MenuSnapshot()
 	return s.loop("Session Control", []menuAction{
-		{id: "auto", label: "Automatic Orchestration", description: "Quota-aware Codex/Claude primary with safe Ruflo delegation", disabled: disabledUnless(snapshot.AutoEnabled, "automatic orchestration disabled"), run: func() (bool, error) { return true, s.app.Auto(s.ctx, "", nil) }},
+		{id: "auto", label: "Automatic Orchestration", description: "Quota-aware Codex/Claude Code primary with safe Ruflo delegation", disabled: disabledUnless(snapshot.AutoEnabled, "automatic orchestration disabled"), run: func() (bool, error) { return true, s.app.Auto(s.ctx, "", nil) }},
 		{id: "session.direct.codex", label: "Direct Session — Codex", description: "Official Codex runtime with session observability; Ruflo is not started", run: func() (bool, error) { return true, s.app.SessionStart(s.ctx, "codex", "direct", nil) }},
-		{id: "session.direct.claude", label: "Direct Session — Claude", description: "Official Claude runtime with session observability; Ruflo is not started", run: func() (bool, error) { return true, s.app.SessionStart(s.ctx, "claude", "direct", nil) }},
+		{id: "session.direct.claude", label: "Direct Session — Claude Code", description: "Official Claude Code runtime with session observability; Ruflo is not started", run: func() (bool, error) { return true, s.app.SessionStart(s.ctx, "claude", "direct", nil) }},
 		{id: "session.orchestrated.codex", label: "Orchestrated Session — Codex", description: "Safe Ruflo swarm with official Codex primary and bounded workers", run: func() (bool, error) { return true, s.app.SessionStart(s.ctx, "codex", "orchestrated", nil) }},
-		{id: "session.orchestrated.claude", label: "Orchestrated Session — Claude", description: "Safe Ruflo swarm with official Claude primary and bounded workers", run: func() (bool, error) { return true, s.app.SessionStart(s.ctx, "claude", "orchestrated", nil) }},
+		{id: "session.orchestrated.claude", label: "Orchestrated Session — Claude Code", description: "Safe Ruflo swarm with official Claude Code primary and bounded workers", run: func() (bool, error) { return true, s.app.SessionStart(s.ctx, "claude", "orchestrated", nil) }},
 		{id: "session.list", label: "List Sessions", description: "Show non-sensitive lifecycle metadata", run: s.simple(func() error { return runSession(s.ctx, s.app, []string{"list"}) })},
 		{id: "session.monitor", label: "Monitor Latest Session", description: "Show primary, swarm, workers, and service health", run: s.simple(func() error { return runMonitor(s.ctx, s.app, nil) })},
 		{id: "session.stop", label: "Stop Session", description: "Stop only processes whose PID identity matches the session", run: s.sessionStop},
@@ -691,7 +691,7 @@ func snapshotBadges(snapshot app.MenuSnapshot) []terminalui.Badge {
 	return []terminalui.Badge{
 		{Label: "Overall", Value: overall, Kind: kind},
 		{Label: "ChatGPT", Value: connectedLabel(snapshot.ChatGPTConnected), Kind: connectionKind(snapshot.ChatGPTConnected)},
-		{Label: "Claude", Value: connectedLabel(snapshot.ClaudeConnected), Kind: connectionKind(snapshot.ClaudeConnected)},
+		{Label: "Claude Code", Value: connectedLabel(snapshot.ClaudeConnected), Kind: connectionKind(snapshot.ClaudeConnected)},
 		{Label: "Server", Value: connectedLabel(snapshot.ServerConnected), Kind: connectionKind(snapshot.ServerConnected)},
 	}
 }

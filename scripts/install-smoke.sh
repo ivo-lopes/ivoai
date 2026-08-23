@@ -86,10 +86,11 @@ for expected in \
   "ivoai          ready" \
   "Codex          installed / not connected" \
   "Claude Code    installed / not connected" \
-  "Headroom       ready" \
-  "ai-memory      installed / not connected" \
+  "Headroom       installed / enabled / interactive not validated" \
+  "Context        not configured" \
+  "ai-memory      installed / offline hooks" \
   "Ruflo          ready / provider execution disabled" \
-  "Server         not-connected" \
+  "Server         not configured" \
   "Overall: READY"; do
   grep -Fq "$expected" <<<"$status_output" || fail "status is missing: $expected"
 done

@@ -152,7 +152,7 @@ func TestReadKeyEventConsumesBufferedArrowSequence(t *testing.T) {
 }
 
 func TestCanonicalHeaderIncludesAdaptiveLetteringAndVersion(t *testing.T) {
-	for _, dimensions := range [][2]int{{30, 10}, {60, 18}, {100, 30}} {
+	for _, dimensions := range [][2]int{{40, 12}, {80, 24}, {120, 40}} {
 		header := BannerVersionSized(dimensions[0], dimensions[1], "1.2.3", false, true)
 		if !strings.Contains(header, "ivoai") && !strings.Contains(header, "___") && !strings.Contains(header, "██") {
 			t.Fatalf("%dx%d header lacks lettering: %q", dimensions[0], dimensions[1], header)
@@ -160,6 +160,11 @@ func TestCanonicalHeaderIncludesAdaptiveLetteringAndVersion(t *testing.T) {
 		if !strings.Contains(header, "Version: 1.2.3") {
 			t.Fatalf("%dx%d header lacks version: %q", dimensions[0], dimensions[1], header)
 		}
+	}
+	t.Setenv("TERM", "dumb")
+	t.Setenv("NO_COLOR", "1")
+	if header := BannerVersionSized(80, 24, "1.2.3", false, true); strings.Contains(header, "\x1b[") {
+		t.Fatalf("dumb/NO_COLOR header contains ANSI: %q", header)
 	}
 }
 

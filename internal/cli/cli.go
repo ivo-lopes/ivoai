@@ -35,12 +35,15 @@ func Run(ctx context.Context, a *app.App, args []string) error {
 	}
 	if commandHeaderEnabled(args) && terminalui.HumanOutput(a.Out) {
 		fmt.Fprint(a.Out, terminalui.ScreenHeader(a.Out, a.Version))
+		if args[0] == "version" {
+			return nil
+		}
 	}
 	return runCommand(ctx, a, args)
 }
 
 func commandHeaderEnabled(args []string) bool {
-	if len(args) == 0 || args[0] == "_register-install" || args[0] == "_orchestrator-serve" || args[0] == "_quota-statusline" || args[0] == "codex" || args[0] == "claude" || args[0] == "auto" {
+	if len(args) == 0 || args[0] == "_register-install" || args[0] == "_orchestrator-serve" || args[0] == "_quota-statusline" {
 		return false
 	}
 	if args[0] == "doctor" && contains(args, "--json") {
@@ -223,17 +226,21 @@ func runDoctor(ctx context.Context, a *app.App, args []string) error {
 	color := terminalui.ColorEnabled(a.Out)
 	fmt.Fprintf(a.Out, "ivoai doctor\nOS: %s\nArchitecture: %s\nivoai: %s\nConfig: %s\nState: %s\nSecret permissions: %s\n", report.OS, report.Architecture, report.Version, report.ConfigPath, report.StatePath, report.SecretPermissions)
 	fmt.Fprintf(a.Out, "\nCodex: installed=%s version=%s authenticated=%s\n", semanticBool(report.Codex.Installed, color), report.Codex.Version, semanticOptionalBool(report.Codex.Authenticated, color))
-	fmt.Fprintf(a.Out, "Claude: installed=%s version=%s authenticated=%s\n", semanticBool(report.Claude.Installed, color), report.Claude.Version, semanticOptionalBool(report.Claude.Authenticated, color))
-	fmt.Fprintf(a.Out, "Headroom: installed=%s enabled=%s healthy=%s version=%s\nCodex via Headroom: %s\nClaude via Headroom: %s\n", semanticBool(report.Headroom.Installed, color), semanticOptionalBool(report.Headroom.Enabled, color), semanticBool(report.Headroom.Healthy, color), report.Headroom.Version, semanticOK(report.Headroom.CodexCompatible, color), semanticOK(report.Headroom.ClaudeCompatible, color))
+	fmt.Fprintf(a.Out, "Claude Code: installed=%s version=%s authenticated=%s\n", semanticBool(report.Claude.Installed, color), report.Claude.Version, semanticOptionalBool(report.Claude.Authenticated, color))
+	fmt.Fprintf(a.Out, "Headroom: installed=%s enabled=%s healthy=%s version=%s interactive-launch=%s\nCodex via Headroom: %s\nClaude Code via Headroom: %s\n", semanticBool(report.Headroom.Installed, color), semanticOptionalBool(report.Headroom.Enabled, color), semanticBool(report.Headroom.Healthy, color), report.Headroom.Version, report.Headroom.InteractiveLaunch, semanticOK(report.Headroom.CodexCompatible, color), semanticOK(report.Headroom.ClaudeCompatible, color))
 	fmt.Fprintf(a.Out, "ai-memory: installed=%s version=%s hooks=%s server=%s\n", semanticBool(report.Memory.Installed, color), report.Memory.Version, semanticBool(report.Memory.Hooks, color), configured(report.Server.Configured))
 	fmt.Fprintf(a.Out, "Ruflo: installed=%s version=%s safe-mode=%s provider-execution=%s\n", semanticBool(report.Ruflo.Installed, color), report.Ruflo.Version, semanticBool(report.Ruflo.SafeMode, color), semanticDisabledIsSafe(report.Ruflo.ProviderExecution, color))
 	fmt.Fprintf(a.Out, "Orchestration: enabled=%s bridge=%s session-permissions=%s max-workers=%d codex-worker=%s claude-worker=%s\n", semanticOptionalBool(report.Orchestration.Enabled, color), semanticBool(report.Orchestration.BridgeAvailable, color), report.Orchestration.SessionPerms, report.Orchestration.MaxWorkers, semanticBool(report.Orchestration.CodexWorker, color), semanticBool(report.Orchestration.ClaudeWorker, color))
 	fmt.Fprintf(a.Out, "\nAutomatic Orchestration\n  enabled=%s default=%s failover=%s checkpoint=%s\n", semanticOptionalBool(report.Automatic.Enabled, color), report.Automatic.DefaultPlanner, semanticOptionalBool(report.Automatic.AutomaticFailover, color), semanticBool(report.Automatic.CheckpointReady, color))
 	for _, provider := range []string{"codex", "claude"} {
 		probe := report.Automatic.Quota[provider]
-		fmt.Fprintf(a.Out, "  %-6s probe=%s auth=%s eligible=%s weekly-source=%s monthly-source=%s\n", provider, semanticBool(probe.Ready, color), semanticOptionalBool(probe.Authenticated, color), semanticOptionalBool(probe.Eligible, color), probe.WeeklySource, probe.MonthlySource)
+		if provider == "claude" {
+			fmt.Fprintf(a.Out, "  Claude Code probe=%s auth=%s eligible=%s 5h-source=%s weekly-source=%s\n", semanticBool(probe.Ready, color), semanticOptionalBool(probe.Authenticated, color), semanticOptionalBool(probe.Eligible, color), probe.FiveHourSource, probe.WeeklySource)
+			continue
+		}
+		fmt.Fprintf(a.Out, "  Codex probe=%s auth=%s eligible=%s weekly-source=%s monthly-source=%s\n", semanticBool(probe.Ready, color), semanticOptionalBool(probe.Authenticated, color), semanticOptionalBool(probe.Eligible, color), probe.WeeklySource, probe.MonthlySource)
 	}
-	fmt.Fprintf(a.Out, "  failover Codex->Claude=%s Claude->Codex=%s\n", semanticOptionalBool(report.Automatic.CodexToClaude, color), semanticOptionalBool(report.Automatic.ClaudeToCodex, color))
+	fmt.Fprintf(a.Out, "  failover Codex->Claude Code=%s Claude Code->Codex=%s\n", semanticOptionalBool(report.Automatic.CodexToClaude, color), semanticOptionalBool(report.Automatic.ClaudeToCodex, color))
 	overall := terminalui.Success(report.Overall, color)
 	if report.Overall != "READY" {
 		overall = terminalui.Warning(report.Overall, color)
