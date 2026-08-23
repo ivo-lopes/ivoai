@@ -95,7 +95,8 @@ show a spinner, elapsed time, or a download bar; success, warnings, and failures
 consistent semantic colors.
 
 Non-interactive terminals receive a numbered fallback. `NO_COLOR=1` disables ANSI,
-and `IVOAI_ASCII=1` selects ASCII-safe rendering. Progress goes to stderr, so stdout
+and `IVOAI_ASCII=1` selects the plain-text `ivoai` fallback instead of alternate
+lettering. Progress goes to stderr, so stdout
 and `ivoai doctor --json` remain suitable for automation.
 
 ## Server quick start

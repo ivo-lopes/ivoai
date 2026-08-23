@@ -41,6 +41,24 @@ func TestSharedKnowledgeContractUsesOfficialClientInstructionChannels(t *testing
 	}
 }
 
+func TestSharedKnowledgeContractDefinesBoundedOneCallRecall(t *testing.T) {
+	for _, expected := range []string{
+		"one-call fast path",
+		`memory_read_page once with only {"query":"essential terms"}`,
+		"answer immediately and stop",
+		"call memory_query once",
+		"do not make further memory calls for a simple recall",
+		"never pass id, page_id, scope",
+		"write exactly one canonical page",
+		"Never duplicate the same fact across scopes",
+		"Context/RAG is read-only",
+	} {
+		if !strings.Contains(sharedKnowledgeInstructions, expected) {
+			t.Fatalf("shared-knowledge fast-path contract missing %q", expected)
+		}
+	}
+}
+
 func TestCodexKnowledgeArgsDoNotCreateUnregisteredMCPServers(t *testing.T) {
 	joined := strings.Join(sharedKnowledgeAgentArgs("codex", nil, config.Default()), "\n")
 	if strings.Contains(joined, "approval_mode") {

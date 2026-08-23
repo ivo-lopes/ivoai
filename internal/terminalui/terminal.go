@@ -342,24 +342,20 @@ func Banner(width int, color, unicode bool) string {
 	return BannerSized(width, 24, color, unicode)
 }
 
+const blockLettering = `██╗██╗   ██╗ ██████╗  █████╗ ██╗
+██║██║   ██║██╔═══██╗██╔══██╗██║
+██║██║   ██║██║   ██║███████║██║
+██║╚██╗ ██╔╝██║   ██║██╔══██║██║
+██║ ╚████╔╝ ╚██████╔╝██║  ██║██║
+╚═╝  ╚═══╝   ╚═════╝ ╚═╝  ╚═╝╚═╝`
+
 func BannerSized(width, height int, color, unicode bool) string {
-	if width < 46 || height < 14 {
+	// Never substitute compressed or alternate lettering. If the canonical
+	// block wordmark cannot be rendered comfortably, keep only the plain name.
+	if !unicode || width < 90 || height < 24 {
 		return paint("ivoai", cyan, color) + "\n\n"
 	}
-	if !unicode || width < 90 || height < 24 {
-		return paint(` ___ _   _  ___   _  ___
-|_ _| | | |/ _ \ / \|_ _|
- | || |_| | (_) / _ \| |
-|___|\___/ \___/_/ \_\___|`, cyan, color) + "\n\n"
-	}
-	lines := []string{
-		"██╗██╗   ██╗ ██████╗  █████╗ ██╗",
-		"██║██║   ██║██╔═══██╗██╔══██╗██║",
-		"██║██║   ██║██║   ██║███████║██║",
-		"██║╚██╗ ██╔╝██║   ██║██╔══██║██║",
-		"██║ ╚████╔╝ ╚██████╔╝██║  ██║██║",
-		"╚═╝  ╚═══╝   ╚═════╝ ╚═╝  ╚═╝╚═╝",
-	}
+	lines := strings.Split(blockLettering, "\n")
 	var output strings.Builder
 	for index, line := range lines {
 		shade := cyan

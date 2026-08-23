@@ -29,14 +29,26 @@ func TestBannerAdaptsToTerminalWidthAndCharacterSet(t *testing.T) {
 	wide := Banner(100, false, true)
 	medium := Banner(60, false, false)
 	narrow := Banner(30, false, true)
-	if !strings.Contains(wide, "██") || !strings.Contains(wide, "IVO") && !strings.Contains(wide, "██╗") {
-		t.Fatalf("wide banner missing block lettering: %q", wide)
+	if strings.TrimSpace(wide) != blockLettering {
+		t.Fatalf("wide banner does not use the canonical block lettering: %q", wide)
 	}
-	if !strings.Contains(medium, "___") || strings.Contains(medium, "██") {
-		t.Fatalf("medium ASCII banner: %q", medium)
+	if strings.TrimSpace(medium) != "ivoai" {
+		t.Fatalf("non-Unicode banner = %q", medium)
 	}
 	if strings.TrimSpace(narrow) != "ivoai" {
 		t.Fatalf("narrow banner = %q", narrow)
+	}
+}
+
+func TestBannerNeverUsesAlternateOrCompressedLettering(t *testing.T) {
+	for _, dimensions := range [][2]int{{46, 14}, {60, 24}, {89, 40}, {120, 23}} {
+		got := BannerSized(dimensions[0], dimensions[1], false, true)
+		if strings.TrimSpace(got) != "ivoai" {
+			t.Fatalf("%dx%d fallback = %q", dimensions[0], dimensions[1], got)
+		}
+	}
+	if got := BannerSized(120, 40, false, false); strings.TrimSpace(got) != "ivoai" {
+		t.Fatalf("ASCII-safe fallback = %q", got)
 	}
 }
 
@@ -154,7 +166,7 @@ func TestReadKeyEventConsumesBufferedArrowSequence(t *testing.T) {
 func TestCanonicalHeaderIncludesAdaptiveLetteringAndVersion(t *testing.T) {
 	for _, dimensions := range [][2]int{{40, 12}, {80, 24}, {120, 40}} {
 		header := BannerVersionSized(dimensions[0], dimensions[1], "1.2.3", false, true)
-		if !strings.Contains(header, "ivoai") && !strings.Contains(header, "___") && !strings.Contains(header, "██") {
+		if !strings.Contains(header, "ivoai") && !strings.Contains(header, "██") {
 			t.Fatalf("%dx%d header lacks lettering: %q", dimensions[0], dimensions[1], header)
 		}
 		if !strings.Contains(header, "Version: 1.2.3") {

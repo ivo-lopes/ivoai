@@ -311,7 +311,8 @@ the separation between gateway, context, and dependency services.
 ## Interactive menu rendering
 
 - Use `NO_COLOR=1 ivoai` when ANSI colors are not supported.
-- Use `IVOAI_ASCII=1 ivoai` when the terminal font cannot render block characters.
+- Use `IVOAI_ASCII=1 ivoai` when the terminal font cannot render block characters;
+  the header falls back to the plain text `ivoai`, never alternate lettering.
 - Piped input and `TERM=dumb` intentionally select the numbered fallback.
 - Raw terminal state is restored on normal errors, EOF, Esc, `q`, and cancellation.
 - Animated progress goes to stderr. Redirect stdout independently when consuming
@@ -468,12 +469,15 @@ durable memory fallback.
 
 If a fact written by Claude is not recalled by Codex, first check chronology: the
 write must complete before the query. Then run `ivoai doctor` and confirm both
-`ivoai-memory` registrations use the same server. IvoAI-managed primaries are
-instructed to call `memory_query` for prior-session facts and to verify explicit
-writes. Lifecycle hooks use the main Git repository as their project scope, so the
-same checkout reached through `/home/...`, `/mnt/...`, a subdirectory or a linked
-worktree does not create separate hook buckets. Context cannot accept conversational
-writes; it contains only documents ingested through configured connectors.
+`ivoai-memory` registrations use the same server. IvoAI-managed primaries use
+`memory_read_page(query=...)` as the one-call fast path for simple prior-session
+facts, stop as soon as the full page answers the question, and make at most one
+`memory_query` fallback. Explicit writes use one canonical page and one verification
+instead of duplicating a fact across scopes. Lifecycle hooks use the main Git
+repository as their project scope, so the same checkout reached through `/home/...`,
+`/mnt/...`, a subdirectory or a linked worktree does not create separate hook buckets.
+Context cannot accept conversational writes; it contains only documents ingested
+through configured connectors.
 
 For registered remote IvoAI services, memory and Context reads receive narrowly
 scoped, process-local Codex approval overrides. If `memory_query` still says that an
