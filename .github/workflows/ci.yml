@@ -148,8 +148,9 @@ jobs:
           sudo ivoai setup --mode server
           sudo ivoai server doctor
           sudo ivoai server enrollment create --ttl 5m | grep -q 'shown once'
+          sudo ivoai server gateway configure --public-url https://ivoai-ci.example
           sudo ivoai server web-access create --ttl 5m | grep -q 'shown once'
-          curl -fsS -H 'Content-Type: application/json' \
+          curl --retry 10 --retry-connrefused --retry-delay 1 -fsS -H 'Content-Type: application/json' \
             --data-binary '{"client_name":"CI","redirect_uris":["https://example.test/callback"],"token_endpoint_auth_method":"none"}' \
             http://127.0.0.1:7744/oauth/register | grep -q '"client_id"'
           sudo ivoai server backup --output /var/lib/ivoai/backups/ci-backup.tar.gz
