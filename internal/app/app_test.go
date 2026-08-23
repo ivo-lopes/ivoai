@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/ivo-lopes/ivoai/internal/components"
 	"github.com/ivo-lopes/ivoai/internal/config"
@@ -166,6 +167,43 @@ func TestStatusAndDoctorAgreeWhenConfiguredServerIsUnreachable(t *testing.T) {
 	report := a.Doctor(context.Background())
 	if report.Overall != "DEGRADED" || !report.Server.Configured || report.Server.Reachable {
 		t.Fatalf("status/doctor disagreement: %+v", report.Server)
+	}
+}
+
+func TestStatusDoesNotDeclareReachableServerDownDuringSlowDNSClassLatency(t *testing.T) {
+	runner := &setupRunner{}
+	a, output := managedSetupApp(t, true, runner)
+	if err := a.Setup(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path == "/.well-known/ivoai" {
+			time.Sleep(2100 * time.Millisecond)
+			_ = json.NewEncoder(w).Encode(connections.Discovery{ProtocolVersion: connections.ProtocolVersion, HealthEndpoint: "/health", ReadyEndpoint: "/ready"})
+			return
+		}
+		if r.URL.Path == "/health" || r.URL.Path == "/ready" {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		http.NotFound(w, r)
+	}))
+	defer server.Close()
+	cfg, err := a.Store.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg.Connections.Server = config.Connection{Status: "connected", URL: server.URL, Protocol: connections.ProtocolVersion}
+	if err := a.Store.Save(cfg); err != nil {
+		t.Fatal(err)
+	}
+	a.HTTPClient = server.Client()
+	output.Reset()
+	if err := a.Status(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(output.String(), "reachable / compatible") {
+		t.Fatalf("healthy server was falsely reported unreachable:\n%s", output.String())
 	}
 }
 
@@ -459,6 +497,41 @@ func TestLaunchInjectsServerTokenOnlyIntoChildEnvironment(t *testing.T) {
 	}
 	if got := os.Getenv("AI_MEMORY_AUTH_TOKEN"); got != "" {
 		t.Fatalf("ai-memory token environment was not restored: %q", got)
+	}
+}
+
+func TestManagedCodexWithoutCodeModeHostRefusesToollessLaunch(t *testing.T) {
+	root := t.TempDir()
+	t.Setenv("HOME", root)
+	t.Setenv("XDG_CONFIG_HOME", filepath.Join(root, "config"))
+	t.Setenv("XDG_DATA_HOME", filepath.Join(root, "data"))
+	t.Setenv("XDG_STATE_HOME", filepath.Join(root, "state"))
+	t.Setenv("XDG_CACHE_HOME", filepath.Join(root, "cache"))
+	var output bytes.Buffer
+	a, err := New("test", strings.NewReader(""), &output, &output)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg := config.Default()
+	cfg.Headroom.Enabled = false
+	if err := a.Store.Save(cfg); err != nil {
+		t.Fatal(err)
+	}
+	argsFile := filepath.Join(root, "args")
+	agent := filepath.Join(root, "codex")
+	if err := os.WriteFile(agent, []byte("#!/bin/sh\nprintf '%s\\n' \"$@\" > '"+argsFile+"'\n"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	state, _ := a.Store.LoadState()
+	state.Components["codex"] = config.ComponentState{Installed: true, Managed: true, Path: agent}
+	if err := a.Store.SaveState(state); err != nil {
+		t.Fatal(err)
+	}
+	if err := a.Launch(context.Background(), "codex", []string{"original-prompt"}); err == nil || !strings.Contains(err.Error(), "run ivoai setup") {
+		t.Fatalf("toolless managed Codex launch error=%v", err)
+	}
+	if _, err := os.Stat(argsFile); !os.IsNotExist(err) {
+		t.Fatal("Codex launched without its required tool host")
 	}
 }
 

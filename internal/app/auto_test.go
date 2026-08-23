@@ -265,7 +265,11 @@ func TestClaudeAutomaticSettingsComposeExistingStatuslinePrivately(t *testing.T)
 	if err := os.WriteFile(instructions, []byte("fixture"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	args, err := a.autoAgentArgs("claude", nil, "sess_0123456789abcdef0123456789abcdef", runtimeDir, instructions, "")
+	cfg, err := a.Store.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	args, err := a.autoAgentArgs("claude", nil, "sess_0123456789abcdef0123456789abcdef", runtimeDir, instructions, "", cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -293,5 +297,41 @@ func TestClaudeAutomaticSettingsComposeExistingStatuslinePrivately(t *testing.T)
 	unchanged, _ := os.ReadFile(settingsPath)
 	if string(unchanged) != string(originalSettings) {
 		t.Fatal("persistent Claude settings were modified")
+	}
+}
+
+func TestCodexAutomaticArgsApproveOnlySharedKnowledgeReads(t *testing.T) {
+	root := t.TempDir()
+	a := autoTestApp(t, root, "#!/bin/sh\nexit 0\n", "#!/bin/sh\nexit 0\n")
+	runtimeDir := filepath.Join(root, "runtime")
+	if err := os.MkdirAll(runtimeDir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	instructions := filepath.Join(runtimeDir, "automatic-instructions.md")
+	if err := os.WriteFile(instructions, []byte("fixture"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := a.Store.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg.MCP.Servers["ivoai-memory"] = config.MCPServer{Enabled: true, Kind: "memory"}
+	cfg.MCP.Servers["ivoai-context"] = config.MCPServer{Enabled: true, Kind: "context"}
+	args, err := a.autoAgentArgs("codex", nil, "sess_0123456789abcdef0123456789abcdef", runtimeDir, instructions, "", cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	joined := strings.Join(args, "\n")
+	for _, expected := range []string{
+		`developer_instructions="fixture"`,
+		`mcp_servers.ivoai-memory.tools.memory_query.approval_mode="approve"`,
+		`mcp_servers.ivoai-context.tools.context_search.approval_mode="approve"`,
+	} {
+		if !strings.Contains(joined, expected) {
+			t.Fatalf("automatic Codex arguments missing %q: %q", expected, joined)
+		}
+	}
+	if strings.Contains(joined, "memory_write_page.approval_mode") {
+		t.Fatalf("automatic Codex arguments auto-approved a memory write: %q", joined)
 	}
 }

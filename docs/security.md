@@ -80,6 +80,12 @@ request and deletion only after a separate path-specific confirmation. The Web M
 does not expose ai-memory maintenance, self-improvement, provider execution, remote
 shell, or unrestricted upstream tool forwarding.
 
+Some upstream memory tools do not advertise MCP read-only annotations, so Codex
+would otherwise ask for approval even for a lookup. IvoAI adds process-local approval
+overrides only for the named read tools of registered `ivoai-memory` and
+`ivoai-context` servers. It does not auto-approve memory writes, deletion, connector
+administration, arbitrary MCP tools, or servers absent from the IvoAI registry.
+
 ## Supply chain and operations
 
 The installer verifies release checksums before extraction. Component versions and

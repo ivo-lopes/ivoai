@@ -52,6 +52,8 @@ type Spec struct {
 	PackageURL, Integrity              string
 	Strategy                           Strategy
 	Assets                             map[string]Asset
+	RequiresManaged                    string
+	NoVersionProbe                     bool
 }
 
 const (
@@ -68,6 +70,10 @@ func DefaultCatalog() []Spec {
 		{Name: "codex", Executable: "codex", Version: "0.148.0", Strategy: StrategyBinary, Assets: map[string]Asset{
 			"linux/amd64": {URL: "https://github.com/openai/codex/releases/download/rust-v0.148.0/codex-x86_64-unknown-linux-musl.tar.gz", SHA256: "1a36f762f6b3bef533bb86345ad9517661c2d84d53996a250cf2ca89d2cfee5a"},
 			"linux/arm64": {URL: "https://github.com/openai/codex/releases/download/rust-v0.148.0/codex-aarch64-unknown-linux-musl.tar.gz", SHA256: "410c6ae0c763eb39c6da17665e63f9aa4a98e6ee663d81f8e8b779c97cb175ac"},
+		}},
+		{Name: "codex-code-mode-host", Executable: "codex-code-mode-host", Version: "0.148.0", Strategy: StrategyBinary, RequiresManaged: "codex", NoVersionProbe: true, Assets: map[string]Asset{
+			"linux/amd64": {URL: "https://github.com/openai/codex/releases/download/rust-v0.148.0/codex-code-mode-host-x86_64-unknown-linux-musl.tar.gz", SHA256: "8e6e559b228fa61b18fb2c28c31ec02068751025bcce3f00cf63c79499d59829"},
+			"linux/arm64": {URL: "https://github.com/openai/codex/releases/download/rust-v0.148.0/codex-code-mode-host-aarch64-unknown-linux-musl.tar.gz", SHA256: "1c410fe4bb174949649efe05c150b1512fb4775d5874eb54b2edb624cf7513a4"},
 		}},
 		{Name: "claude-code", Executable: "claude", Version: "2.1.228", Strategy: StrategyBinary, Assets: map[string]Asset{
 			"linux/amd64": {URL: "https://github.com/anthropics/claude-code/releases/download/v2.1.228/claude-linux-x64.tar.gz", SHA256: "9050d667bcc3940b7ceee65e3e5c4439d2b7161a71d940fdf60192302243f960"},
@@ -113,6 +119,9 @@ func (i *Installer) Setup(ctx context.Context) error {
 	}
 	var failures []string
 	for _, spec := range i.Catalog {
+		if spec.RequiresManaged != "" && !state.Components[spec.RequiresManaged].Managed {
+			continue
+		}
 		component, installErr := i.ensure(ctx, spec, state.Components[spec.Name])
 		state.Components[spec.Name] = component
 		ownership.Components[spec.Name] = config.OwnedItem{Managed: component.Managed, Path: component.Path}
@@ -156,10 +165,12 @@ func (i *Installer) ensure(ctx context.Context, spec Spec, previous config.Compo
 	if err != nil {
 		return config.ComponentState{}, err
 	}
-	actual := detectVersion(ctx, i.Runner, path)
-	if !sameVersion(actual, spec.Version) {
-		_ = os.Remove(path)
-		return config.ComponentState{}, fmt.Errorf("installed version mismatch: expected %s, got %q", spec.Version, actual)
+	if !spec.NoVersionProbe {
+		actual := detectVersion(ctx, i.Runner, path)
+		if !sameVersion(actual, spec.Version) {
+			_ = os.Remove(path)
+			return config.ComponentState{}, fmt.Errorf("installed version mismatch: expected %s, got %q", spec.Version, actual)
+		}
 	}
 	return config.ComponentState{Installed: true, Managed: true, Version: spec.Version, Path: path}, nil
 }

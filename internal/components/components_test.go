@@ -72,6 +72,47 @@ func TestVerifiedBinaryInstallIsIdempotent(t *testing.T) {
 	}
 }
 
+func TestVersionlessManagedCompanionIsInstalledOnlyWithManagedParent(t *testing.T) {
+	archive := testArchive(t, "tool-host", []byte("#!/bin/sh\nexit 0\n"))
+	sum := sha256.Sum256(archive)
+	var requests atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		requests.Add(1)
+		_, _ = w.Write(archive)
+	}))
+	defer server.Close()
+	root := t.TempDir()
+	paths := config.Paths{ConfigDir: filepath.Join(root, "config"), DataDir: filepath.Join(root, "data"), StateDir: filepath.Join(root, "state"), CacheDir: filepath.Join(root, "cache"), BinDir: filepath.Join(root, "bin"), Config: filepath.Join(root, "config", "config.toml"), State: filepath.Join(root, "state", "state.toml"), Ownership: filepath.Join(root, "state", "ownership.toml"), HooksDir: filepath.Join(root, "data", "hooks")}
+	store := config.NewStore(paths)
+	if err := store.SaveState(config.State{Schema: config.SchemaVersion, Components: map[string]config.ComponentState{"tool": {Installed: true, Managed: false, Path: "/external/tool"}}}); err != nil {
+		t.Fatal(err)
+	}
+	companion := Spec{Name: "tool-host", Executable: "tool-host", Version: "1.0.0", Strategy: StrategyBinary, RequiresManaged: "tool", NoVersionProbe: true, Assets: map[string]Asset{runtime.GOOS + "/" + runtime.GOARCH: {URL: server.URL, SHA256: hex.EncodeToString(sum[:])}}}
+	installer := Installer{Runner: absentRunner{}, Store: store, Catalog: []Spec{companion}, Client: server.Client()}
+	if err := installer.Setup(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if requests.Load() != 0 {
+		t.Fatal("companion was installed for an externally managed parent")
+	}
+	state, _ := store.LoadState()
+	state.Components["tool"] = config.ComponentState{Installed: true, Managed: true, Path: filepath.Join(root, "bin", "tool")}
+	if err := store.SaveState(state); err != nil {
+		t.Fatal(err)
+	}
+	if err := installer.Setup(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if requests.Load() != 1 {
+		t.Fatalf("managed companion downloads=%d", requests.Load())
+	}
+	state, _ = store.LoadState()
+	installed := state.Components["tool-host"]
+	if !installed.Managed || installed.Version != "1.0.0" || filepath.Base(installed.Path) != "tool-host" {
+		t.Fatalf("companion state=%+v", installed)
+	}
+}
+
 func TestVersionCompatibility(t *testing.T) {
 	for _, test := range []struct {
 		actual, minimum string

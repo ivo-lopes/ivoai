@@ -1,5 +1,5 @@
 schema_version: 1
-validated_at: "2026-08-21"
+validated_at: "2026-08-23"
 transitive_dependency_cutoff: "2026-08-21T00:00:00Z"
 policy:
   allow_latest_tags: false
@@ -26,7 +26,7 @@ components:
 
   - name: ivoai
     role: [client, server]
-    validated_version: "0.4.1"
+    validated_version: "0.4.2"
     minimum_version: "0.1.0"
     license: MIT
     source: "https://github.com/ivo-lopes/ivoai"
@@ -104,6 +104,27 @@ components:
     notes:
       - "Pinned to Anthropic's stable channel; 2.1.237 was the latest channel on the validation date."
       - "ivoai must disable Claude's silent auto-update for a managed install and update only through ivoai update."
+
+  - name: codex-code-mode-host
+    role: [client]
+    package: "@openai/codex companion"
+    validated_version: "0.148.0"
+    minimum_version: "0.148.0"
+    license: Apache-2.0
+    source: "https://github.com/openai/codex/releases/tag/rust-v0.148.0"
+    architectures: [linux/amd64, linux/arm64]
+    install_strategy: github_release_asset_when_codex_is_managed
+    checksum_strategy: github_release_asset_digest_sha256
+    assets:
+      linux/amd64:
+        url: "https://github.com/openai/codex/releases/download/rust-v0.148.0/codex-code-mode-host-x86_64-unknown-linux-musl.tar.gz"
+        sha256: "8e6e559b228fa61b18fb2c28c31ec02068751025bcce3f00cf63c79499d59829"
+      linux/arm64:
+        url: "https://github.com/openai/codex/releases/download/rust-v0.148.0/codex-code-mode-host-aarch64-unknown-linux-musl.tar.gz"
+        sha256: "1c410fe4bb174949649efe05c150b1512fb4775d5874eb54b2edb624cf7513a4"
+    notes:
+      - "Installed beside managed Codex because the stable Code Mode tool router fails closed when the companion is absent."
+      - "The companion has no --version endpoint; compatibility is pinned to the exact Codex release and verified by the reviewed archive digest."
 
   - name: headroom
     role: [client]

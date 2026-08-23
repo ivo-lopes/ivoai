@@ -3,10 +3,13 @@ package app
 import (
 	"bytes"
 	"context"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/ivo-lopes/ivoai/internal/config"
 	"github.com/ivo-lopes/ivoai/internal/platform"
@@ -39,8 +42,89 @@ func TestDirectSessionUsesExistingRuntimeWithoutRuflo(t *testing.T) {
 		t.Fatalf("session=%+v", values[0])
 	}
 	body, _ := os.ReadFile(codexArgs)
-	if string(body) != "--model\nargument-model\nprompt\n" {
-		t.Fatalf("direct arguments changed: %q", body)
+	arguments := string(body)
+	if !strings.Contains(arguments, "developer_instructions=") || !strings.Contains(arguments, "memory_query") || !strings.HasSuffix(arguments, "--model\nargument-model\nprompt\n") {
+		t.Fatalf("direct session did not preserve arguments and attach shared-memory guidance: %q", body)
+	}
+}
+
+func TestConcurrentDirectSessionsRemainIndependent(t *testing.T) {
+	root := t.TempDir()
+	release := filepath.Join(root, "release")
+	t.Cleanup(func() { _ = os.WriteFile(release, []byte("release"), 0o600) })
+	agentBody := `#!/bin/sh
+printf '%s\n' "$$" > "` + root + `/started-$$"
+while [ ! -f "` + release + `" ]; do sleep 0.02; done
+`
+	codex := appExecutable(t, root, "codex", agentBody)
+	claude := appExecutable(t, root, "claude", agentBody)
+	a := sessionTestApp(t, root, codex, claude, appExecutable(t, root, "ruflo", "#!/bin/sh\nexit 0\n"))
+	previous, _ := os.Getwd()
+	t.Cleanup(func() { _ = os.Chdir(previous) })
+	if err := os.Chdir(root); err != nil {
+		t.Fatal(err)
+	}
+
+	executors := []string{"codex", "codex", "claude"}
+	apps := make([]*App, len(executors))
+	for index := range apps {
+		copy := *a
+		copy.In, copy.Out, copy.Err = strings.NewReader(""), io.Discard, io.Discard
+		apps[index] = &copy
+	}
+	errorsBySession := make(chan error, len(executors))
+	var started sync.WaitGroup
+	started.Add(len(executors))
+	for index, executor := range executors {
+		client := apps[index]
+		executor := executor
+		go func() {
+			started.Done()
+			errorsBySession <- client.SessionStart(context.Background(), executor, session.ModeDirect, nil)
+		}()
+	}
+	started.Wait()
+
+	deadline := time.Now().Add(3 * time.Second)
+	var active []session.Session
+	for time.Now().Before(deadline) {
+		active, _ = (session.Store{Root: a.Store.Paths.SessionsDir}).Active()
+		if len(active) == len(executors) {
+			break
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	if len(active) != len(executors) {
+		t.Fatalf("active sessions=%+v", active)
+	}
+	ids, pids := map[string]bool{}, map[int]bool{}
+	counts := map[string]int{}
+	for _, value := range active {
+		ids[value.SessionID], pids[value.PrimaryPID] = true, true
+		counts[value.PrimaryExecutor]++
+		if value.State != session.StateRunning || value.PrimaryPID <= 0 {
+			t.Fatalf("session not independently running: %+v", value)
+		}
+	}
+	if len(ids) != 3 || len(pids) != 3 || counts["codex"] != 2 || counts["claude"] != 1 {
+		t.Fatalf("sessions collided: ids=%d pids=%d executors=%v", len(ids), len(pids), counts)
+	}
+	if err := os.WriteFile(release, []byte("release"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	for range executors {
+		if err := <-errorsBySession; err != nil {
+			t.Fatal(err)
+		}
+	}
+	values, err := a.SessionList()
+	if err != nil || len(values) != 3 {
+		t.Fatalf("sessions=%+v err=%v", values, err)
+	}
+	for _, value := range values {
+		if value.State != session.StateCompleted {
+			t.Fatalf("session completion crossed streams: %+v", value)
+		}
 	}
 }
 

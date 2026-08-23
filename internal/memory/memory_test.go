@@ -43,6 +43,9 @@ func TestConfigureHooksUsesHookBaseWithoutInstallingMCP(t *testing.T) {
 		if !strings.HasPrefix(joined, "install-hooks ") || strings.Contains(joined, "install-mcp") {
 			t.Fatalf("unexpected hook-only command %q", joined)
 		}
+		if !strings.Contains(joined, "--project-strategy repo-root") {
+			t.Fatalf("hook project scope is not stable across checkout aliases: %q", joined)
+		}
 		environment := strings.Join(call.env, " ")
 		if !strings.Contains(environment, "AI_MEMORY_SERVER_URL=https://ai.example.com") || strings.Contains(environment, "AI_MEMORY_AUTH_TOKEN") || strings.Contains(environment, "secret-token") {
 			t.Fatalf("wrong environment %q", environment)
@@ -84,6 +87,9 @@ func TestConfigureUsesIdempotentUpstreamCommandsAndSecretEnvironment(t *testing.
 		}
 		if !strings.Contains(joined, "--apply") {
 			t.Fatalf("not applying: %s", joined)
+		}
+		if strings.Contains(joined, "install-hooks") && !strings.Contains(joined, "--project-strategy repo-root") {
+			t.Fatalf("hook project scope is not repository-stable: %s", joined)
 		}
 		environment := strings.Join(call.env, " ")
 		if strings.Contains(joined, "install-mcp") && !strings.Contains(environment, "AI_MEMORY_AUTH_TOKEN=secret-token") {

@@ -79,6 +79,7 @@ type Report struct {
 	SecretPath        string               `json:"secret_path"`
 	SecretPermissions string               `json:"secret_permissions"`
 	Codex             Auth                 `json:"codex"`
+	CodexCodeModeHost Component            `json:"codex_code_mode_host"`
 	Claude            Auth                 `json:"claude"`
 	Headroom          headroom.Status      `json:"headroom"`
 	Memory            Component            `json:"ai_memory"`
@@ -108,6 +109,7 @@ func (d Doctor) Run(ctx context.Context) Report {
 	}
 	r.SecretPermissions = permissions(d.Store.Paths.Secrets)
 	r.Codex = d.agent(ctx, "codex", []string{"login", "status"}, state.Components["codex"])
+	r.CodexCodeModeHost = componentFromState(state.Components["codex-code-mode-host"])
 	r.Claude = d.agent(ctx, "claude", []string{"auth", "status"}, state.Components["claude-code"])
 	r.Headroom = (headroom.Manager{Runner: d.Runner, Binary: state.Components["headroom"].Path}).Inspect(ctx, cfg.Headroom.Enabled)
 	if fixture := state.Components["headroom"]; !r.Headroom.Installed && strings.HasSuffix(fixture.Version, "-fixture") {
@@ -125,7 +127,11 @@ func (d Doctor) Run(ctx context.Context) Report {
 	r.Server = d.server(ctx, cfg.Connections.Server)
 	r.Orchestration = d.orchestration(ctx, cfg, state)
 	r.Automatic = d.automatic(ctx, cfg, state, r)
-	for name, component := range map[string]Component{"Codex": componentFromAuth(r.Codex), "Claude Code": componentFromAuth(r.Claude), "Headroom": {Installed: r.Headroom.Installed}, "ai-memory": r.Memory, "Ruflo": {Installed: r.Ruflo.Installed}} {
+	required := map[string]Component{"Codex": componentFromAuth(r.Codex), "Claude Code": componentFromAuth(r.Claude), "Headroom": {Installed: r.Headroom.Installed}, "ai-memory": r.Memory, "Ruflo": {Installed: r.Ruflo.Installed}}
+	if state.Components["codex"].Managed {
+		required["Codex code-mode host"] = r.CodexCodeModeHost
+	}
+	for name, component := range required {
 		if !component.Installed {
 			r.Issues = append(r.Issues, name+" is not installed")
 		}
@@ -323,7 +329,11 @@ func (d Doctor) server(ctx context.Context, connection config.Connection) Server
 	client := d.HTTPClient
 	if client == nil {
 		client = connections.SecureHTTPClient()
-		client.Timeout = 5 * time.Second
+		// DNS on WSL and split-horizon VPN hosts can legitimately consume the
+		// resolver's first five-second attempt. A five-second total deadline
+		// therefore reported healthy remote services as unreachable before the
+		// TCP/TLS request even began.
+		client.Timeout = 8 * time.Second
 	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, strings.TrimRight(base.String(), "/")+"/.well-known/ivoai", nil)
 	if err != nil {

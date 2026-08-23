@@ -42,6 +42,8 @@ type App struct {
 	HTTPClient       *http.Client
 }
 
+const liveServiceProbeTimeout = 8 * time.Second
+
 // MenuSnapshot is a non-secret, read-only view used by the interactive UI.
 // It deliberately contains no endpoint credentials or raw configuration.
 type MenuSnapshot struct {
@@ -161,7 +163,7 @@ func (a *App) Status(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	probeContext, cancelProbes := context.WithTimeout(ctx, 2*time.Second)
+	probeContext, cancelProbes := context.WithTimeout(ctx, liveServiceProbeTimeout)
 	defer cancelProbes()
 	serverResult := make(chan doctor.Server, 1)
 	rufloResult := make(chan orchestration.Status, 1)
@@ -174,6 +176,7 @@ func (a *App) Status(ctx context.Context) error {
 	}{
 		{"ivoai", readyStatus(state.SetupCompletedAt.IsZero())},
 		{"Codex", componentStatus(state.Components["codex"], cfg.Connections.ChatGPT.Status)},
+		{"Codex tools", codexToolHostStatus(state)},
 		{"Claude Code", componentStatus(state.Components["claude-code"], cfg.Connections.Claude.Status)},
 		{"Headroom", headroomStatus(state.Components["headroom"], cfg.Headroom.Enabled)},
 		{"Context", contextHealthStatus(cfg, serverHealth)},
@@ -264,6 +267,9 @@ func requiredComponentsReady(state config.State) bool {
 			return false
 		}
 	}
+	if state.Components["codex"].Managed && !componentPresent(state.Components["codex-code-mode-host"]) {
+		return false
+	}
 	return true
 }
 
@@ -298,6 +304,15 @@ func componentStatus(s config.ComponentState, connection string) statusValue {
 	}
 	if connection != "connected" {
 		return statusValue{"installed / not connected", terminalui.StatusNeutral}
+	}
+	return statusValue{"ready", terminalui.StatusSuccess}
+}
+func codexToolHostStatus(state config.State) statusValue {
+	if !state.Components["codex"].Managed {
+		return statusValue{"external client", terminalui.StatusNeutral}
+	}
+	if !componentPresent(state.Components["codex-code-mode-host"]) {
+		return statusValue{"missing — run ivoai setup", terminalui.StatusFailure}
 	}
 	return statusValue{"ready", terminalui.StatusSuccess}
 }
@@ -378,7 +393,7 @@ func (a *App) statusHTTPClient() *http.Client {
 		return a.HTTPClient
 	}
 	client := connections.SecureHTTPClient()
-	client.Timeout = 2 * time.Second
+	client.Timeout = liveServiceProbeTimeout
 	return client
 }
 
@@ -502,6 +517,10 @@ func (a *App) Launch(ctx context.Context, target string, args []string) error {
 	if target == "claude" {
 		key = "claude-code"
 	}
+	if err := validateManagedAgentRuntime(target, state); err != nil {
+		return err
+	}
+	args = sharedKnowledgeAgentArgs(target, args, cfg)
 	environment, err := a.serverCredentialEnvironment()
 	if err != nil {
 		return err

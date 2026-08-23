@@ -103,6 +103,13 @@ Session JSON lives below `$XDG_STATE_HOME/ivoai/sessions`; quota cache lives bel
 `$XDG_STATE_HOME/ivoai/quota`. Directories are `0700`, files are `0600`, writes are
 atomic, and concurrent quota writers use an advisory file lock.
 
+Several automatic or explicit sessions may run simultaneously. Session IDs,
+runtime directories, primary PID/start markers, local orchestrator sockets and Ruflo
+homes are independent, so cleanup and stop operations cannot select another live
+session by recency. Shared ai-memory is common by design; lifecycle observations use
+the main repository name so Codex and Claude agree even when their cwd path aliases
+differ.
+
 ## Failure isolation
 
 - Server, context, or ai-memory outage does not stop the official primary.

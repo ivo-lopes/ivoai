@@ -64,7 +64,11 @@ func (m Manager) ConfigureWith(ctx context.Context, configuration Configuration)
 			}
 		}
 		if configuration.InstallHooks {
-			hookArgs := []string{"install-hooks", "--agent", agent, "--apply"}
+			// Resolve the project from the main Git repository rather than the
+			// process cwd. The same checkout can be presented through WSL/Linux
+			// aliases, subdirectories, or linked worktrees in different clients;
+			// repo-root keeps all of those lifecycle events in one memory scope.
+			hookArgs := []string{"install-hooks", "--agent", agent, "--apply", "--project-strategy", "repo-root"}
 			if m.HooksDir != "" {
 				hookArgs = append(hookArgs, "--hooks-dir", m.HooksDir)
 			}

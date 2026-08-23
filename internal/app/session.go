@@ -37,6 +37,9 @@ func (a *App) SessionStart(ctx context.Context, executor string, mode session.Mo
 	if err != nil {
 		return err
 	}
+	if err := validateManagedAgentRuntime(executor, state); err != nil {
+		return err
+	}
 	cwd, err := os.Getwd()
 	if err != nil {
 		return err
@@ -57,6 +60,7 @@ func (a *App) SessionStart(ctx context.Context, executor string, mode session.Mo
 	if err := store.Create(value); err != nil {
 		return err
 	}
+	args = sharedKnowledgeAgentArgs(executor, args, cfg)
 	var control orchestration.ControlPlane
 	if mode == session.ModeOrchestrated {
 		if !cfg.Orchestration.Enabled {

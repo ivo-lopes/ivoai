@@ -465,3 +465,30 @@ or `disabled`, but Codex, Claude and bounded workers continue. Use `ivoai memory
 configure`, `ivoai doctor`, and the server context/memory status commands to repair
 the integration. Ruflo never receives a copy of the context corpus or becomes a
 durable memory fallback.
+
+If a fact written by Claude is not recalled by Codex, first check chronology: the
+write must complete before the query. Then run `ivoai doctor` and confirm both
+`ivoai-memory` registrations use the same server. IvoAI-managed primaries are
+instructed to call `memory_query` for prior-session facts and to verify explicit
+writes. Lifecycle hooks use the main Git repository as their project scope, so the
+same checkout reached through `/home/...`, `/mnt/...`, a subdirectory or a linked
+worktree does not create separate hook buckets. Context cannot accept conversational
+writes; it contains only documents ingested through configured connectors.
+
+For registered remote IvoAI services, memory and Context reads receive narrowly
+scoped, process-local Codex approval overrides. If `memory_query` still says that an
+approval is required, confirm the launch went through the current `ivoai codex`,
+session, or automatic command rather than invoking an older Codex binary directly.
+Memory writes are intentionally not auto-approved.
+
+If Codex reports that `codex-code-mode-host` is missing, update ivoai. Current
+setup installs the separate, version-matched official companion release asset beside
+managed Codex and verifies its reviewed SHA-256. A launch is refused if that managed
+companion is absent or mismatched, because disabling it also makes this Codex version
+fail closed for MCP tools. Do not copy an unverified executable from another install
+into the managed bin directory.
+
+On WSL, VPN and split-horizon DNS setups, the first resolver attempt can take about
+five seconds. Current status and Doctor probes allow that resolver window before
+declaring the server unreachable. A real failure remains bounded and does not block
+the official clients.

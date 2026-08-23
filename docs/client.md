@@ -90,6 +90,28 @@ starts the official agent directly. Once a selected wrapper process starts, its 
 status is propagated instead of being hidden. Memory and context hooks are best
 effort and cannot block launch.
 
+Every ivoai-managed primary receives the same shared-knowledge contract. Questions
+that can depend on another session, prior decisions, or project history are retrieved
+from `ivoai-memory` before answering; indexed repository/connector documents are
+retrieved from the read-only `ivoai-context` service when relevant. An explicit
+request to remember information is written through `memory_write_page` and verified
+with `memory_query`. Context is a connector-fed RAG index, not a conversational write
+store, so an agent must not claim it wrote a chat fact to Context.
+
+Codex treats MCP tools without read-only annotations conservatively. For remote
+IvoAI servers that are actually registered and enabled, the launcher adds
+process-local `approve` overrides only for `memory_query`, `memory_read_page`, and
+the four read-only Context tools. This keeps headless reads functional while memory
+writes, deletion and unrelated MCP tools continue to follow the user's normal
+approval policy. No absent MCP server is synthesized by these overrides.
+
+OpenAI publishes `codex-code-mode-host` as a separate, versioned release asset.
+IvoAI installs its reviewed archive beside managed Codex and verifies its SHA-256.
+Codex's stable tool router fails closed when the companion is missing, including for
+MCP calls, so ivoai refuses a toolless managed launch and directs the user to
+`ivoai setup`. Externally managed Codex installations remain responsible for their
+own version-matched companion.
+
 ## Session control plane
 
 The interactive menu contains **Session Control**, with direct and orchestrated
@@ -115,6 +137,13 @@ Session JSON is private XDG state and contains no prompt, response or credential
 Model output is labelled `runtime_verified`, `argument`, `configured`, or `unknown`;
 the last value is intentionally used rather than guessing. See
 [Session control and orchestration](orchestration.md).
+
+Multiple primaries may run at once, including two Codex sessions plus one Claude
+session. Each has an independent random session ID, PID/start marker and private
+runtime directory. Session metadata and quota updates are file-locked and atomic;
+stopping or cleaning one session targets only its recorded processes and runtime.
+The shared memory service is intentionally common, while transient Ruflo state and
+the session-local orchestrator bridge remain isolated per session.
 
 ## Automatic conversation mode
 

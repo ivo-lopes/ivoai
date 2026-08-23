@@ -1,7 +1,7 @@
 # ivoai architecture
 
-Status: implementation baseline for v0.4.1. Decisions and upstream data were
-validated on 2026-08-20. Exact pins live in `manifest/components.yaml`; this
+Status: implementation baseline for v0.4.2. Decisions and upstream data were
+validated on 2026-08-23. Exact pins live in `manifest/components.yaml`; this
 document explains why they exist and how the pieces fit together.
 
 ## Goals and boundaries
@@ -106,6 +106,12 @@ Managed launchers use atomic replacement. Downloads have size limits and timeout
 `ivoai update`, preserve configuration and secrets, retain the previous managed
 binary for `ivoai update --rollback`, and then run doctor.
 
+Managed Codex includes the same-version `codex-code-mode-host` published as a
+separate official release asset. Both architecture-specific archives are independently
+checksum pinned. The host has no version command, so its compatibility identity is
+the reviewed release version recorded in managed state; a missing or mismatched
+companion fails setup/launch instead of silently removing the entire tool surface.
+
 ### Connections and official credentials
 
 `ivoai connect chatgpt` delegates authentication to `codex login`;
@@ -162,6 +168,13 @@ creating another conversation store. Prompts, results, tokens and raw environmen
 are excluded. Direct sessions call the same interactive runtime as `ivoai codex` and
 `ivoai claude`; Ruflo is not touched.
 
+Concurrent primaries do not share lifecycle state: each session has its own record,
+process identity and runtime subtree, and every Ruflo command runs with that subtree
+as both working directory and isolated `HOME`. Session and quota stores serialize
+cross-process mutations with advisory locks and publish complete files by atomic
+replacement. Shared `ai-memory` pages are the deliberate exception: they form the
+common durable knowledge plane used by all official clients.
+
 Orchestrated sessions have a strict gate: the safe profile must match its reviewed
 tool allowlist, provider execution and durable Ruflo memory must be false, Ruflo must
 pass a version/health command, a real hierarchical swarm must return a verifiable ID,
@@ -184,6 +197,11 @@ appropriate to the host. Connecting a server rewrites only ivoai-owned memory
 endpoint metadata. The authoritative upstream release is
 <https://github.com/akitaonrails/ai-memory/releases/tag/v1.29.0>; its changelog was
 reviewed because this is newer than the 1.28.1 floor in the product requirements.
+IvoAI installs lifecycle hooks with ai-memory's `repo-root` project strategy. Project
+resolution therefore uses the main Git repository name across Linux/WSL path aliases,
+subdirectories and linked worktrees instead of splitting observations by the client
+process's spelling of the current directory. Explicit MCP queries still include the
+global scope according to ai-memory's normal query semantics.
 
 Ruflo 3.38.12 is installed for workflows, coordination, and skills. ivoai registers a
 least-privilege MCP profile containing only coordination tools, process-local
@@ -203,12 +221,13 @@ URL/argv, scopes, ownership, and enabled status. Context and memory use the same
 registry as user-added MCPs; agent-specific renderers are edge adapters, not separate
 sources of truth.
 
-The default memory identity outside an explicitly initialized project is
+The default ivoai client identity outside an explicitly initialized project is
 `host:<normalized-hostname>`. It is independent of the current directory, so `/etc`,
 `/opt`, and `/var/lib` do not become accidental projects. `ivoai project init`
 creates a deterministic ID from the absolute Git root and a local `.ivoai.toml`
 marker that overrides host identity. Merely entering a Git repository does not
-silently change identity.
+silently change ivoai identity. ai-memory lifecycle scoping is a separate concern and
+uses the stable main-repository strategy described above.
 
 ## Server architecture
 
@@ -503,9 +522,9 @@ API.
 
 ## Upstream decisions and known uncertainty
 
-| Component | Pin | Decision and uncertainty on 2026-08-20 |
+| Component | Pin | Decision and uncertainty on 2026-08-23 |
 |---|---:|---|
-| Codex CLI | 0.148.0 | Current stable npm/GitHub release; official `codex login` supports ChatGPT subscriptions. |
+| Codex CLI + code-mode host | 0.148.0 | Official same-release assets; `codex login` supports ChatGPT subscriptions and the separately checksummed host preserves the managed tool/MCP surface. |
 | Claude Code | 2.1.228 | Official stable channel; latest was 2.1.237. Proprietary external binary subject to Anthropic terms. |
 | Headroom | 0.36.0 | Current PyPI/GitHub release with amd64/arm64 wheels; fast-moving integration requires a setup smoke probe and direct fallback. |
 | uv / CPython | 0.12.5 / 3.13.15 | Exact private installer/runtime pair for Headroom with embedded architecture-specific hashed constraints. |
