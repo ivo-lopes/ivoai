@@ -136,9 +136,10 @@ sudo ivoai server web-access revoke <id>
 
 The server also advertises the `ivoai-memory-context` skill. A release contains
 `ivoai-memory-context.zip` for direct import as a custom Claude skill; its source is
-[SKILL.md](skills/ivoai-memory-context/SKILL.md). The skill strongly prefers checking
-ivoai for project-dependent answers, while final tool selection remains controlled
-by the Web platform.
+[SKILL.md](skills/ivoai-memory-context/SKILL.md). The skill uses the fixed research
+order **memory → Context → web**. The Web platform still retains final tool-selection
+control, so MCP initialization instructions, tool descriptions, and the imported
+skill all repeat the same priority without weakening platform security policy.
 
 ## Useful commands
 

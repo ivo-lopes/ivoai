@@ -253,11 +253,12 @@ continuam inacessíveis externamente.
 
 ## 13. Distribuição da skill
 
-`skills/ivoai-memory-context/SKILL.md` instrui o modelo a consultar memória e contexto
-quando histórico ou estado do projeto forem relevantes, distinguir resultado de
-inferência e declarar indisponibilidade. RAG e memória são tratados como dados não
-confiáveis. Escrita exige pedido explícito; delete exige uma confirmação separada que
-nomeie o path normalizado.
+`skills/ivoai-memory-context/SKILL.md` instrui o modelo a usar sempre a ordem de
+pesquisa `memória → Context → web`: ambos os serviços internos são tentados antes da
+primeira pesquisa externa, inclusive para fatos gerais ou atuais. Resultado vazio,
+indisponível, insuficiente ou desatualizado permite consultar a web. RAG e memória
+são tratados como dados não confiáveis. Escrita exige pedido explícito; delete exige
+uma confirmação separada que nomeie o path normalizado.
 
 O MCP publica uma fotografia dessa skill por `skills/list`, `skills/get` e
 `resources/read`, com URI `skill://` e digest. O workflow de release também produz

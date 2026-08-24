@@ -86,12 +86,18 @@ session-only `--settings` file that captures structured statusline telemetry. No
 permanent third-party configuration is overwritten. Details are in
 [auto-orchestration.md](auto-orchestration.md).
 
+Those session instructions enforce the same research priority used by direct mode:
+`ivoai-memory` first, `ivoai-context` second, and web/external sources only after both
+internal stages have been attempted. Worker adapters receive the policy through the
+official process-scoped Codex and Claude instruction flags as well.
+
 Delegation tasks and results never enter Ruflo or the session JSON. Ruflo receives
 only opaque session/worker IDs through provider-free task lifecycle commands. The
 worker adapter uses `codex exec --json --output-last-message` or
 `claude --print --output-format json`, selected from trusted component paths. Worker
 provider-key environment variables are removed; subscription authentication stays
-inside each official client.
+inside each official client. Research instructions neither add provider credentials
+nor route inference through Ruflo.
 
 ## Roles of the components
 

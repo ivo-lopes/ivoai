@@ -84,10 +84,12 @@ ou excluir páginas de memória. Contexto institucional continua somente leitura
 Exclusões exigem permissão específica e confirmação do item. O acesso pode ser
 listado e revogado pelo administrador a qualquer momento.
 
-A skill distribuída com cada release orienta ChatGPT e Claude a consultar o ivoai
-antes de responder sobre decisões, histórico ou estado do projeto. Essa orientação
-é preferencial: a plataforma Web continua responsável pela decisão final de usar uma
-ferramenta em cada interação.
+A skill distribuída com cada release orienta ChatGPT e Claude a pesquisar sempre na
+ordem memória → Context → web. Portanto, antes de buscar uma fonte externa, o modelo
+tenta primeiro o histórico operacional e depois os documentos privados indexados.
+Se essas fontes estiverem vazias, indisponíveis, insuficientes ou desatualizadas, a
+pesquisa externa pode complementar a resposta. A plataforma Web continua responsável
+pela decisão final de usar uma ferramenta em cada interação.
 
 ## Componentes principais
 

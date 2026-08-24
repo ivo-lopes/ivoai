@@ -28,6 +28,13 @@ override. Claude is given the same policy using its official
 command only for that process. The user's persistent Codex and Claude configuration
 is not rewritten.
 
+The same session-local instructions define a strict research-source gate. For any
+research or external verification, the primary attempts `ivoai-memory` first and
+`ivoai-context` second before using web search, a browser, or another external
+connector. Empty, unavailable, insufficient, or stale results allow the web step;
+self-contained work does not trigger artificial lookups. The worker adapters receive
+the same policy through the official process-scoped instruction mechanisms.
+
 ## Startup sequence
 
 1. Create a private metadata-only session record.

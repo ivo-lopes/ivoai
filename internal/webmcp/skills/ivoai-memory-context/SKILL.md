@@ -1,19 +1,31 @@
 ---
 name: ivoai-memory-context
-description: Consult ivoai project memory and context when answering questions that depend on prior decisions, project history, stored knowledge, or the current documented state.
+description: Always consult ivoai memory and context before web or external research, and use them first for project history, prior decisions, stored knowledge, or documented state.
 ---
 
 # ivoai memory and context
 
-Use the connected ivoai MCP as the source of truth for project-specific history and
-stored context. Before answering a question that depends on previous decisions,
-cross-session work, project documentation, or remembered facts:
+Use the connected ivoai MCP as the first research source. For every task that needs
+research, fact-finding, current information, external verification, project history,
+or stored context, use this strict order:
 
-1. Call `memory_query` for operational history and decisions.
-2. Call `context_search` for indexed project documents and source material.
+1. Call `memory_read_page` with a concise `query` for operational history and
+   decisions. If that result is missing or ambiguous, call `memory_query` once.
+2. Call `context_search` for indexed project documents and source material, even
+   when memory already returned a useful result.
 3. Read the relevant records with `memory_read_page` or
    `context_get_document` when search summaries are not sufficient.
-4. Distinguish retrieved facts from your own inference in the answer.
+4. Only then use web search, a browser, an external connector, or another network
+   source when ivoai is unavailable, insufficient, stale, or the user requests
+   independent verification.
+5. Distinguish retrieved facts from your own inference and explain what an external
+   source added beyond ivoai when both are used.
+
+Never start external research before attempting both memory and Context. Do not skip
+these steps because a question appears general, public, or time-sensitive. An empty
+or irrelevant result allows external research; it does not allow inventing an
+answer. Tasks fully answerable from the user's prompt or current working tree, with
+no research need, do not require artificial tool calls.
 
 For recent-state questions, also use `memory_recent` or `context_recent` as
 appropriate. Use `memory_status` and `context_health` to distinguish an empty result
@@ -41,5 +53,6 @@ source generically and recommend rotation when exposure is plausible.
 - Do not place credentials, tokens, cookies, private keys, enrollment codes, or other
   authentication material in memory.
 
-Prefer the minimum number of tool calls needed to establish the answer. Do not query
-ivoai for unrelated general-knowledge questions.
+Prefer the minimum number of tool calls needed to establish the answer. Do not repeat
+equivalent searches after the required memory and Context attempts have established
+whether ivoai can answer the question.

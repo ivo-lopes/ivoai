@@ -184,6 +184,16 @@ func TestServicePipelineAndReadOnlyMCP(t *testing.T) {
 	}
 }
 
+func TestContextSearchAdvertisesPositionBeforeExternalWeb(t *testing.T) {
+	encoded, err := json.Marshal(toolDefinitions())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(encoded), "second research source after ivoai-memory and before external web") {
+		t.Fatalf("context_search description does not preserve research order: %s", encoded)
+	}
+}
+
 func TestIngestReconcilesDeletedDocumentsAndPurgeRemovesSource(t *testing.T) {
 	store := NewMemoryStore()
 	catalog := &FileCatalog{Path: filepath.Join(t.TempDir(), "catalog.json")}

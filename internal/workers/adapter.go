@@ -12,11 +12,13 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
 
 	"github.com/ivo-lopes/ivoai/internal/headroom"
+	"github.com/ivo-lopes/ivoai/internal/knowledgepolicy"
 	"github.com/ivo-lopes/ivoai/internal/platform"
 	"github.com/ivo-lopes/ivoai/internal/session"
 )
@@ -148,14 +150,14 @@ func (a Adapter) Run(ctx context.Context, request Request, observe func(Observat
 func workerArgs(request Request) ([]string, string, error) {
 	if request.Executor == "codex" {
 		file := filepath.Join(request.Runtime, "codex-result-"+requestID()+".txt")
-		args := []string{"exec", "--json", "--output-last-message", file}
+		args := []string{"-c", "developer_instructions=" + strconv.Quote(knowledgepolicy.ResearchFirstInstructions), "exec", "--json", "--output-last-message", file}
 		if request.Model != "" {
 			args = append(args, "--model", request.Model)
 		}
 		return append(args, "-"), file, nil
 	}
 	if request.Executor == "claude" {
-		args := []string{"--print", "--output-format", "json"}
+		args := []string{"--append-system-prompt", knowledgepolicy.ResearchFirstInstructions, "--print", "--output-format", "json"}
 		if request.Model != "" {
 			args = append(args, "--model", request.Model)
 		}

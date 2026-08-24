@@ -135,7 +135,7 @@ func (h MCPHandler) dispatch(r *http.Request, request rpcRequest) (any, error) {
 
 func toolDefinitions() []map[string]any {
 	return []map[string]any{
-		{"name": "context_search", "description": "Search untrusted context documents", "inputSchema": map[string]any{"type": "object", "required": []string{"query"}, "properties": map[string]any{"query": map[string]string{"type": "string"}, "limit": map[string]any{"type": "integer", "minimum": 1, "maximum": 100}}}},
+		{"name": "context_search", "description": "Search untrusted context documents as the second research source after ivoai-memory and before external web", "inputSchema": map[string]any{"type": "object", "required": []string{"query"}, "properties": map[string]any{"query": map[string]string{"type": "string"}, "limit": map[string]any{"type": "integer", "minimum": 1, "maximum": 100}}}},
 		{"name": "context_get_document", "description": "Read one untrusted context document", "inputSchema": map[string]any{"type": "object", "required": []string{"id"}, "properties": map[string]any{"id": map[string]string{"type": "string"}}}},
 		{"name": "context_recent", "description": "List recently ingested context documents", "inputSchema": map[string]any{"type": "object", "properties": map[string]any{"limit": map[string]any{"type": "integer", "minimum": 1, "maximum": 100}}}},
 		{"name": "context_health", "description": "Read context service health", "inputSchema": map[string]string{"type": "object"}},

@@ -106,8 +106,10 @@ ChatGPT-compatible MCP discovery advertises the bundled
 `ivoai-memory-context` skill. For Claude Web, download
 `ivoai-memory-context.zip` from the matching ivoai release and import it as a custom
 Skill. The instructions ask the model to check ivoai before project-dependent
-answers, but no remote MCP or skill format can guarantee a tool call on every model
-turn.
+answers and before every web/external research operation, in the order memory →
+Context → web. MCP initialization and tool descriptions advertise the same order.
+No remote MCP or skill format can guarantee a tool call on every model turn because
+the Web product retains final tool-selection control.
 
 Provider references: [connect an MCP server to ChatGPT](https://developers.openai.com/plugins/deploy/connect-chatgpt),
 [use custom connectors in Claude](https://support.claude.com/en/articles/11176164-use-connectors-to-extend-claude-s-capabilities),

@@ -38,9 +38,10 @@ printf 'worker result' > "$result"
 		t.Fatalf("result=%+v observation=%+v", result, observation)
 	}
 	args, _ := os.ReadFile(argsFile)
-	if !strings.Contains(string(args), "exec\n--json\n--output-last-message\n") || !strings.Contains(string(args), "--model\nfixture-model\n-\n") {
+	if !strings.HasPrefix(string(args), "-c\ndeveloper_instructions=") || !strings.Contains(string(args), "exec\n--json\n--output-last-message\n") || !strings.Contains(string(args), "--model\nfixture-model\n-\n") {
 		t.Fatalf("unexpected Codex argv: %q", args)
 	}
+	assertResearchPriority(t, string(args))
 	environment, _ := os.ReadFile(envFile)
 	if strings.Contains(string(environment), "OPENAI_API_KEY") {
 		t.Fatal("provider credential reached worker")
@@ -50,8 +51,10 @@ printf 'worker result' > "$result"
 func TestClaudeAdapterParsesStructuredResultAndSetsUpdateGuard(t *testing.T) {
 	root := t.TempDir()
 	envFile := filepath.Join(root, "env")
+	argsFile := filepath.Join(root, "args")
 	claude := executable(t, root, "claude", `#!/bin/sh
 env > "`+envFile+`"
+printf '%s\n' "$@" > "`+argsFile+`"
 cat >/dev/null
 printf '%s' '{"type":"result","result":"review complete"}'
 `)
@@ -63,9 +66,24 @@ printf '%s' '{"type":"result","result":"review complete"}'
 	if result.Text != "review complete" || result.Model.Source != session.ModelUnknown {
 		t.Fatalf("result=%+v", result)
 	}
+	args, _ := os.ReadFile(argsFile)
+	if !strings.HasPrefix(string(args), "--append-system-prompt\n") || !strings.Contains(string(args), "--print\n--output-format\njson\n") {
+		t.Fatalf("unexpected Claude argv: %q", args)
+	}
+	assertResearchPriority(t, string(args))
 	environment, _ := os.ReadFile(envFile)
 	if !strings.Contains(string(environment), "DISABLE_AUTOUPDATER=1") {
 		t.Fatal("Claude worker did not receive update guard")
+	}
+}
+
+func assertResearchPriority(t *testing.T, value string) {
+	t.Helper()
+	memory := strings.Index(value, "(1) ivoai-memory")
+	context := strings.Index(value, "(2) ivoai-context")
+	web := strings.Index(value, "(3) web")
+	if memory < 0 || context <= memory || web <= context {
+		t.Fatalf("worker research order is not memory -> context -> web: %q", value)
 	}
 }
 

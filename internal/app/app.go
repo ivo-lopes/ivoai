@@ -181,6 +181,7 @@ func (a *App) Status(ctx context.Context) error {
 		{"Headroom", headroomStatus(state.Components["headroom"], cfg.Headroom.Enabled)},
 		{"Context", contextHealthStatus(cfg, serverHealth)},
 		{"ai-memory", memoryHealthStatus(cfg, state.Components["ai-memory"], serverHealth)},
+		{"Research", researchPriorityStatus(cfg)},
 		{"Ruflo", safeStatus(rufloHealth)},
 		{"Server", liveServerStatus(serverHealth)},
 	}
@@ -386,6 +387,20 @@ func memoryHealthStatus(cfg config.Config, component config.ComponentState, heal
 
 func serverUsable(health doctor.Server) bool {
 	return health.Configured && health.Reachable && health.ProtocolCompatible && (health.TLS || loopbackURL(health.URL))
+}
+
+func researchPriorityStatus(cfg config.Config) statusValue {
+	memoryServer, memoryRegistered := cfg.MCP.Servers["ivoai-memory"]
+	contextServer, contextRegistered := cfg.MCP.Servers["ivoai-context"]
+	memoryReady := cfg.Memory.Enabled && memoryRegistered && memoryServer.Enabled
+	contextReady := contextRegistered && contextServer.Enabled
+	if memoryReady && contextReady {
+		return statusValue{"memory -> context -> web", terminalui.StatusSuccess}
+	}
+	if memoryReady || contextReady {
+		return statusValue{"degraded / internal source missing", terminalui.StatusWarning}
+	}
+	return statusValue{"unavailable / connect server", terminalui.StatusNeutral}
 }
 
 func (a *App) statusHTTPClient() *http.Client {

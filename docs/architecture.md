@@ -136,6 +136,14 @@ login remain owned by the user.
 
 ### Agent launch and failure isolation
 
+Research-source selection is centralized in `internal/knowledgepolicy`. Interactive
+primaries, automatic sessions, and background workers receive the same process-local
+contract: memory first, Context second, and external web sources only afterward when
+internal knowledge is unavailable, insufficient, stale, or independent verification
+is requested. Local working-tree inspection and tasks completely specified by the
+user do not create artificial research calls. This is an instruction-layer invariant;
+the official clients continue to own their tools and authentication.
+
 The launcher uses structured argv and signal forwarding. Interactive clients inherit
 ivoai's foreground process group; creating a new group without `tcsetpgrp` would
 suspend terminal reads with `SIGTTIN`. Terminal and shell job-control interrupt,
@@ -398,8 +406,10 @@ The repository's `skills/ivoai-memory-context/SKILL.md` is also available throug
 `skills/list`, `skills/get`, and `resources/read`. The advertised resource uses a
 `skill://` URI and digest so compatible clients can import a fixed snapshot. A release
 also publishes the same directory as `ivoai-memory-context.zip` for Claude custom
-Skill import. Importing instructions does not guarantee that a Web model will invoke
-a tool on every turn; the platform retains final tool-selection control.
+Skill import. MCP initialization instructions, read-tool descriptions, and the skill
+all declare the same `memory → Context → web` order. Importing instructions cannot
+technically guarantee that a Web model invokes a tool on every turn; the platform
+retains final tool-selection control.
 
 Remote administration is an explicit allowlist of typed operations such as status,
 doctor summary, and connector list. There is no host-command parameter,

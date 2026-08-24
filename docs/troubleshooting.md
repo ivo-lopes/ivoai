@@ -470,10 +470,11 @@ durable memory fallback.
 If a fact written by Claude is not recalled by Codex, first check chronology: the
 write must complete before the query. Then run `ivoai doctor` and confirm both
 `ivoai-memory` registrations use the same server. IvoAI-managed primaries use
-`memory_read_page(query=...)` as the one-call fast path for simple prior-session
-facts, stop as soon as the full page answers the question, and make at most one
-`memory_query` fallback. Explicit writes use one canonical page and one verification
-instead of duplicating a fact across scopes. Lifecycle hooks use the main Git
+`memory_read_page(query=...)` as the first bounded memory lookup and make at most one
+`memory_query` fallback. For research tasks they then attempt `context_search` before
+any external web source, even when memory was useful. Explicit writes use one
+canonical page and one verification instead of duplicating a fact across scopes.
+Lifecycle hooks use the main Git
 repository as their project scope, so the same checkout reached through `/home/...`,
 `/mnt/...`, a subdirectory or a linked worktree does not create separate hook buckets.
 Context cannot accept conversational writes; it contains only documents ingested

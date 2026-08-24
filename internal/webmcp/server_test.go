@@ -59,13 +59,18 @@ func TestOfficialSDKListsAllowlistAndDeleteConfirmation(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer session.Close()
+	if initialized := session.InitializeResult(); initialized == nil || initialized.Instructions == "" || !bytes.Contains([]byte(initialized.Instructions), []byte("ivoai-memory first and ivoai-context second")) {
+		t.Fatalf("MCP initialization omitted research priority: %#v", initialized)
+	}
 	tools, err := session.ListTools(context.Background(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	names := map[string]bool{}
+	descriptions := map[string]string{}
 	for _, tool := range tools.Tools {
 		names[tool.Name] = true
+		descriptions[tool.Name] = tool.Description
 		encoded, err := json.Marshal(tool.OutputSchema)
 		if err != nil {
 			t.Fatal(err)
@@ -81,6 +86,9 @@ func TestOfficialSDKListsAllowlistAndDeleteConfirmation(t *testing.T) {
 	}
 	if names["memory_handoff_accept"] || names["memory_sweep"] {
 		t.Fatal("unsafe maintenance tool exposed")
+	}
+	if !bytes.Contains([]byte(descriptions["memory_query"]), []byte("First mandatory research source")) || !bytes.Contains([]byte(descriptions["context_search"]), []byte("Second mandatory research source")) {
+		t.Fatalf("tool descriptions do not advertise memory -> context priority: %#v", descriptions)
 	}
 	if _, err := session.CallTool(context.Background(), &mcp.CallToolParams{Name: "memory_delete_page", Arguments: map[string]any{"path": "notes/a.md", "confirm_path": "notes/b.md"}}); err == nil {
 		t.Fatal("mismatched confirmation accepted")
@@ -127,6 +135,11 @@ func TestEmbeddedSkillMatchesCanonicalAndIsServed(t *testing.T) {
 	}
 	if !bytes.Equal(canonical, embedded) {
 		t.Fatal("embedded skill differs from canonical SKILL.md")
+	}
+	for _, expected := range [][]byte{[]byte("Never start external research before attempting both memory and Context"), []byte("Only then use web search")} {
+		if !bytes.Contains(canonical, expected) {
+			t.Fatalf("skill lacks research-first rule %q", expected)
+		}
 	}
 	handler, _ := New(Config{Version: "test", Context: testService(t), Memory: func(context.Context, string, json.RawMessage) (any, error) { return map[string]any{}, nil }})
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

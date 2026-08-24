@@ -97,13 +97,20 @@ including the end of an exact memory page. The launch prints this bypass and obs
 session metadata reports `headroom_used=false`; Headroom remains available for
 launches without active shared-knowledge MCPs.
 
-Every ivoai-managed primary receives the same shared-knowledge contract. Questions
-that can depend on another session, prior decisions, or project history are retrieved
-from `ivoai-memory` before answering; indexed repository/connector documents are
-retrieved from the read-only `ivoai-context` service when relevant. An explicit
-request to remember information is written through `memory_write_page` and verified
-with `memory_query`. Context is a connector-fed RAG index, not a conversational write
-store, so an agent must not claim it wrote a chat fact to Context.
+Every ivoai-managed primary receives the same shared-knowledge contract. Any task
+that requires research, fact-finding, current information, or external verification
+uses the fixed source order `ivoai-memory` → read-only `ivoai-context` → web/external
+sources. Both ivoai stages are attempted before the first external lookup, including
+for apparently general or time-sensitive questions. Empty, unavailable, insufficient,
+or stale internal results permit web research; self-contained tasks do not trigger
+artificial lookups. An explicit request to remember information is written through
+`memory_write_page` and verified with `memory_read_page`. Context is a connector-fed
+RAG index, not a conversational write store, so an agent must not claim it wrote a
+chat fact to Context.
+
+The same process-scoped policy is injected into Codex and Claude workers. It does not
+modify user-owned agent configuration, and it never treats retrieved text as
+instructions.
 
 Codex treats MCP tools without read-only annotations conservatively. For remote
 IvoAI servers that are actually registered and enabled, the launcher adds

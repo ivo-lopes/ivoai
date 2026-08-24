@@ -41,13 +41,15 @@ func TestSharedKnowledgeContractUsesOfficialClientInstructionChannels(t *testing
 	}
 }
 
-func TestSharedKnowledgeContractDefinesBoundedOneCallRecall(t *testing.T) {
+func TestSharedKnowledgeContractRequiresMemoryAndContextBeforeWeb(t *testing.T) {
 	for _, expected := range []string{
-		"one-call fast path",
+		"mandatory source order",
+		"(1) ivoai-memory, (2) ivoai-context, (3) web",
+		"Before the first web search",
 		`memory_read_page once with only {"query":"essential terms"}`,
-		"answer immediately and stop",
-		"call memory_query once",
-		"do not make further memory calls for a simple recall",
+		"call context_search once",
+		"Do not skip them because a question appears general",
+		"only then continue to external research",
 		"never pass id, page_id, scope",
 		"write exactly one canonical page",
 		"Never duplicate the same fact across scopes",
@@ -57,12 +59,33 @@ func TestSharedKnowledgeContractDefinesBoundedOneCallRecall(t *testing.T) {
 			t.Fatalf("shared-knowledge fast-path contract missing %q", expected)
 		}
 	}
+	memory := strings.Index(sharedKnowledgeInstructions, "(1) ivoai-memory")
+	context := strings.Index(sharedKnowledgeInstructions, "(2) ivoai-context")
+	web := strings.Index(sharedKnowledgeInstructions, "(3) web")
+	if memory < 0 || context <= memory || web <= context {
+		t.Fatalf("research source order is not memory -> context -> web: %q", sharedKnowledgeInstructions)
+	}
 }
 
 func TestCodexKnowledgeArgsDoNotCreateUnregisteredMCPServers(t *testing.T) {
 	joined := strings.Join(sharedKnowledgeAgentArgs("codex", nil, config.Default()), "\n")
 	if strings.Contains(joined, "approval_mode") {
 		t.Fatalf("unregistered optional MCP server received an override: %q", joined)
+	}
+}
+
+func TestResearchPriorityStatusRequiresBothInternalSources(t *testing.T) {
+	cfg := config.Default()
+	if got := researchPriorityStatus(cfg); got.Text != "unavailable / connect server" {
+		t.Fatalf("unconfigured research status=%+v", got)
+	}
+	cfg.MCP.Servers["ivoai-memory"] = config.MCPServer{Enabled: true, Kind: "memory"}
+	if got := researchPriorityStatus(cfg); got.Text != "degraded / internal source missing" {
+		t.Fatalf("single-source research status=%+v", got)
+	}
+	cfg.MCP.Servers["ivoai-context"] = config.MCPServer{Enabled: true, Kind: "context"}
+	if got := researchPriorityStatus(cfg); got.Text != "memory -> context -> web" {
+		t.Fatalf("ready research status=%+v", got)
 	}
 }
 
