@@ -490,6 +490,7 @@ func TestHeadroomCancellationLeavesNoOwnedFakeProcesses(t *testing.T) {
 	root := t.TempDir()
 	proxyPIDPath := filepath.Join(root, "proxy.pid")
 	agentPIDPath := filepath.Join(root, "agent.pid")
+	ready := filepath.Join(root, "ready")
 	cleaned := filepath.Join(root, "cleaned")
 	agent := writeExecutable(t, root, "claude", `#!/bin/sh
 printf '%s' "$$" > "$IVOAI_FAKE_AGENT_PID"
@@ -513,6 +514,7 @@ cleanup() {
   exit 0
 }
 trap cleanup TERM HUP INT
+printf ready > "$IVOAI_FAKE_READY"
 wait "$child"
 cleanup
 `)
@@ -521,10 +523,12 @@ cleanup
 	runtime := Runtime{Runner: platform.ExecRunner{}, AgentPath: agent, HeadroomPath: headroom}
 	t.Setenv("IVOAI_FAKE_PROXY_PID", proxyPIDPath)
 	t.Setenv("IVOAI_FAKE_AGENT_PID", agentPIDPath)
+	t.Setenv("IVOAI_FAKE_READY", ready)
 	t.Setenv("IVOAI_FAKE_CLEANED", cleaned)
 	go func() { done <- runtime.Launch(ctx, "claude", nil, true) }()
 	waitForFile(t, proxyPIDPath, time.Second)
 	waitForFile(t, agentPIDPath, time.Second)
+	waitForFile(t, ready, time.Second)
 	proxyPID := readPID(t, proxyPIDPath)
 	agentPID := readPID(t, agentPIDPath)
 	cancel()

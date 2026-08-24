@@ -89,7 +89,14 @@ while [ ! -f "` + release + `" ]; do sleep 0.02; done
 	var active []session.Session
 	for time.Now().Before(deadline) {
 		active, _ = (session.Store{Root: a.Store.Paths.SessionsDir}).Active()
-		if len(active) == len(executors) {
+		allRunning := len(active) == len(executors)
+		for _, value := range active {
+			if value.State != session.StateRunning || value.PrimaryPID <= 0 {
+				allRunning = false
+				break
+			}
+		}
+		if allRunning {
 			break
 		}
 		time.Sleep(20 * time.Millisecond)
