@@ -216,7 +216,7 @@ func (s *Server) authorize(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid authorization request", 400)
 		return
 	}
-	code, redirect, oauthState, grantedScopes, err := s.Store.AuthorizeRequestWithScopes(r.FormValue("activation_code"), cookie.Value)
+	code, redirect, oauthState, grantedScopes, scopesChanged, err := s.Store.AuthorizeRequestWithScopes(r.FormValue("activation_code"), cookie.Value)
 	if err != nil {
 		http.Error(w, "Invalid or expired activation code", 401)
 		return
@@ -225,7 +225,9 @@ func (s *Server) authorize(w http.ResponseWriter, r *http.Request) {
 	q := u.Query()
 	q.Set("code", code)
 	q.Set("state", oauthState)
-	q.Set("scope", strings.Join(grantedScopes, " "))
+	if scopesChanged {
+		q.Set("scope", strings.Join(grantedScopes, " "))
+	}
 	u.RawQuery = q.Encode()
 	http.Redirect(w, r, u.String(), http.StatusFound)
 }

@@ -530,7 +530,7 @@ func (s *Store) BeginAuthorization(clientID, redirect, challenge, oauthState, re
 }
 
 func (s *Store) AuthorizeRequest(activation, nonce string) (string, string, string, error) {
-	code, redirect, oauthState, _, err := s.AuthorizeRequestWithScopes(activation, nonce)
+	code, redirect, oauthState, _, _, err := s.AuthorizeRequestWithScopes(activation, nonce)
 	return code, redirect, oauthState, err
 }
 
@@ -538,9 +538,10 @@ func (s *Store) AuthorizeRequest(activation, nonce string) (string, string, stri
 // actually grants. OAuth clients may request every scope advertised by the
 // server, while an administrator deliberately approves a smaller subset in the
 // one-time activation code.
-func (s *Store) AuthorizeRequestWithScopes(activation, nonce string) (string, string, string, []string, error) {
+func (s *Store) AuthorizeRequestWithScopes(activation, nonce string) (string, string, string, []string, bool, error) {
 	var code, redirect, oauthState string
 	var grantedScopes []string
+	var scopesChanged bool
 	err := s.with(true, func(current *state) error {
 		key := digest(nonce)
 		request, ok := current.Requests[key]
@@ -564,6 +565,7 @@ func (s *Store) AuthorizeRequestWithScopes(activation, nonce string) (string, st
 		if len(grantedScopes) == 0 {
 			return errors.New("activation approves none of the requested scopes")
 		}
+		scopesChanged = len(grantedScopes) != len(request.Scopes)
 		secret, err := s.random(32)
 		if err != nil {
 			return err
@@ -577,7 +579,7 @@ func (s *Store) AuthorizeRequestWithScopes(activation, nonce string) (string, st
 		current.Codes[digest(code)] = authCode{Hash: digest(code), ClientID: request.ClientID, RedirectURI: request.RedirectURI, Challenge: request.Challenge, GrantID: grantID, Resource: request.Resource, Scopes: grantedScopes, ExpiresAt: s.now().Add(5 * time.Minute)}
 		return nil
 	})
-	return code, redirect, oauthState, grantedScopes, err
+	return code, redirect, oauthState, grantedScopes, scopesChanged, err
 }
 
 type Tokens struct {

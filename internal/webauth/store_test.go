@@ -118,7 +118,7 @@ func TestAuthorizationRejectsRequestsWithNoApprovedScope(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, _, _, _, err := store.AuthorizeRequestWithScopes(activation.Code, nonce); err == nil {
+	if _, _, _, _, _, err := store.AuthorizeRequestWithScopes(activation.Code, nonce); err == nil {
 		t.Fatal("authorization with no approved requested scope succeeded")
 	}
 }

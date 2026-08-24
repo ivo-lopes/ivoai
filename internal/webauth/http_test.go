@@ -80,8 +80,8 @@ func TestOAuthHTTPFlowAndMetadata(t *testing.T) {
 	}
 	location, _ := url.Parse(rec.Header().Get("Location"))
 	code := location.Query().Get("code")
-	if location.Query().Get("state") != "s1" || code == "" || location.Query().Get("scope") != strings.Join(approvedScopes, " ") {
-		t.Fatalf("redirect state/code/granted scope missing: %s", location.String())
+	if location.Query().Get("state") != "s1" || code == "" || location.Query().Has("scope") {
+		t.Fatalf("redirect state/code invalid or redundant scope returned: %s", location.String())
 	}
 	tokenForm := url.Values{"grant_type": {"authorization_code"}, "code": {code}, "client_id": {client.ID}, "redirect_uri": {"https://chat.example/cb"}, "code_verifier": {verifier}, "resource": {server.Resource()}}
 	missingTokenResource := url.Values{"grant_type": {"authorization_code"}, "code": {code}, "client_id": {client.ID}, "redirect_uri": {"https://chat.example/cb"}, "code_verifier": {verifier}}

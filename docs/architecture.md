@@ -1,6 +1,6 @@
 # ivoai architecture
 
-Status: implementation baseline for v0.4.7. Decisions and upstream data were
+Status: implementation baseline for v0.4.8-rc1. Decisions and upstream data were
 validated on 2026-08-23. Exact pins live in `manifest/components.yaml`; this
 document explains why they exist and how the pieces fit together.
 
