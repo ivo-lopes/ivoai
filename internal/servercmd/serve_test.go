@@ -20,7 +20,7 @@ func TestOAuthAuditLogsNoSecrets(t *testing.T) {
 	response := httptest.NewRecorder()
 	handler.ServeHTTP(response, request)
 	got := output.String()
-	if got != "ivoai gateway: oauth audit method=POST path=/oauth/token status=400\n" {
+	if got != "ivoai gateway: oauth audit method=POST path=/oauth/token status=400 location_host=none referer_host=none fetch_site=other fetch_mode=other fetch_dest=other ua=other\n" {
 		t.Fatalf("unexpected audit log: %q", got)
 	}
 	for _, secret := range []string{"query-secret", "body-secret", "contains-secret"} {

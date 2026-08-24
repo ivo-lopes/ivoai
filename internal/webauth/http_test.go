@@ -60,6 +60,10 @@ func TestOAuthHTTPFlowAndMetadata(t *testing.T) {
 	if rec.Code != 200 || len(rec.Result().Cookies()) != 1 {
 		t.Fatalf("authorize form=%d", rec.Code)
 	}
+	csp := rec.Header().Get("Content-Security-Policy")
+	if !strings.Contains(csp, "form-action 'self' https://chat.example;") || strings.Contains(csp, "/cb") {
+		t.Fatalf("callback origin missing or overbroad CSP value: %q", csp)
+	}
 	cookie := rec.Result().Cookies()[0]
 	body := rec.Body.String()
 	start := strings.Index(body, `name="csrf" value="`)
@@ -75,13 +79,33 @@ func TestOAuthHTTPFlowAndMetadata(t *testing.T) {
 	post.RemoteAddr = "192.0.2.1:125"
 	rec = httptest.NewRecorder()
 	mux.ServeHTTP(rec, post)
-	if rec.Code != 302 {
+	if rec.Code != http.StatusSeeOther {
 		t.Fatalf("authorize=%d %s", rec.Code, rec.Body.String())
 	}
 	location, _ := url.Parse(rec.Header().Get("Location"))
+	originalLocation := rec.Header().Get("Location")
 	code := location.Query().Get("code")
 	if location.Query().Get("state") != "s1" || code == "" || location.Query().Has("scope") {
 		t.Fatalf("redirect state/code invalid or redundant scope returned: %s", location.String())
+	}
+	wrongForm := url.Values{"csrf": {csrf}, "activation_code": {"ivoai-web_0000000000000000_wrong"}}
+	wrongDuplicate := httptest.NewRequest("POST", "/oauth/authorize", strings.NewReader(wrongForm.Encode()))
+	wrongDuplicate.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	wrongDuplicate.AddCookie(cookie)
+	wrongDuplicate.RemoteAddr = "192.0.2.1:129"
+	rec = httptest.NewRecorder()
+	mux.ServeHTTP(rec, wrongDuplicate)
+	if rec.Code != http.StatusUnauthorized {
+		t.Fatalf("wrong duplicate activation status=%d", rec.Code)
+	}
+	duplicate := httptest.NewRequest("POST", "/oauth/authorize", strings.NewReader(form.Encode()))
+	duplicate.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	duplicate.AddCookie(cookie)
+	duplicate.RemoteAddr = "192.0.2.1:128"
+	rec = httptest.NewRecorder()
+	mux.ServeHTTP(rec, duplicate)
+	if rec.Code != http.StatusSeeOther || rec.Header().Get("Location") != originalLocation {
+		t.Fatalf("duplicate authorization was not idempotent: %d %s", rec.Code, rec.Header().Get("Location"))
 	}
 	tokenForm := url.Values{"grant_type": {"authorization_code"}, "code": {code}, "client_id": {client.ID}, "redirect_uri": {"https://chat.example/cb"}, "code_verifier": {verifier}, "resource": {server.Resource()}}
 	missingTokenResource := url.Values{"grant_type": {"authorization_code"}, "code": {code}, "client_id": {client.ID}, "redirect_uri": {"https://chat.example/cb"}, "code_verifier": {verifier}}
@@ -123,6 +147,15 @@ func TestRedirectValidation(t *testing.T) {
 		if ValidateRedirectURI(raw) == nil {
 			t.Fatalf("accepted %q", raw)
 		}
+	}
+}
+
+func TestCSPCallbackOriginRejectsDirectiveCharacters(t *testing.T) {
+	if _, err := cspCallbackOrigin("https://example.com;script-src.example/callback"); err == nil {
+		t.Fatal("CSP directive character accepted in callback host")
+	}
+	if origin, err := cspCallbackOrigin("https://[2001:db8::1]:8443/callback"); err != nil || origin != "https://[2001:db8::1]:8443" {
+		t.Fatalf("IPv6 callback origin=%q err=%v", origin, err)
 	}
 }
 

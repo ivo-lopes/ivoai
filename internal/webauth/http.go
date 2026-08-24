@@ -15,14 +15,22 @@ import (
 )
 
 type Server struct {
-	Store  *Store
-	Issuer string
-	mu     sync.Mutex
-	peers  map[string]rateWindow
+	Store           *Store
+	Issuer          string
+	mu              sync.Mutex
+	peers           map[string]rateWindow
+	authorizationMu sync.Mutex
+	completed       map[string]completedAuthorization
 }
 type rateWindow struct {
 	Start time.Time
 	Count int
+}
+
+type completedAuthorization struct {
+	ActivationHash string
+	Location       string
+	ExpiresAt      time.Time
 }
 
 func (s *Server) Resource() string { return strings.TrimRight(s.Issuer, "/") + "/mcp" }
@@ -191,6 +199,11 @@ func (s *Server) authorizeForm(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid authorization request", 400)
 		return
 	}
+	callbackOrigin, err := cspCallbackOrigin(redirect)
+	if err != nil {
+		http.Error(w, "Invalid authorization request", 400)
+		return
+	}
 	csrf, err := s.Store.BeginAuthorization(c.ID, redirect, challenge, state, s.Resource(), scopes)
 	if err != nil {
 		http.Error(w, "Invalid authorization request", 400)
@@ -198,9 +211,27 @@ func (s *Server) authorizeForm(w http.ResponseWriter, r *http.Request) {
 	}
 	http.SetCookie(w, &http.Cookie{Name: "ivoai_oauth_csrf", Value: csrf, Path: "/oauth/authorize", HttpOnly: true, Secure: strings.HasPrefix(s.Issuer, "https://"), SameSite: http.SameSiteLaxMode, MaxAge: 600})
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.Header().Set("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'")
+	w.Header().Set("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; form-action 'self' "+callbackOrigin+"; frame-ancestors 'none'")
 	_ = authorizePage.Execute(w, map[string]any{"Client": c.Name, "State": state, "CSRF": csrf, "Scopes": strings.Join(scopes, " ")})
 }
+
+func cspCallbackOrigin(redirect string) (string, error) {
+	if err := ValidateRedirectURI(redirect); err != nil {
+		return "", err
+	}
+	parsed, err := url.Parse(redirect)
+	if err != nil || parsed.Host == "" {
+		return "", errors.New("invalid callback origin")
+	}
+	for _, char := range parsed.Host {
+		if (char >= 'a' && char <= 'z') || (char >= 'A' && char <= 'Z') || (char >= '0' && char <= '9') || strings.ContainsRune(".-:[]", char) {
+			continue
+		}
+		return "", errors.New("callback origin is not safe for CSP")
+	}
+	return parsed.Scheme + "://" + parsed.Host, nil
+}
+
 func (s *Server) authorize(w http.ResponseWriter, r *http.Request) {
 	if !s.allowed(r) {
 		http.Error(w, "Too many requests", http.StatusTooManyRequests)
@@ -216,7 +247,14 @@ func (s *Server) authorize(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid authorization request", 400)
 		return
 	}
-	code, redirect, oauthState, grantedScopes, scopesChanged, err := s.Store.AuthorizeRequestWithScopes(r.FormValue("activation_code"), cookie.Value)
+	activationCode := r.FormValue("activation_code")
+	s.authorizationMu.Lock()
+	defer s.authorizationMu.Unlock()
+	if location, ok := s.completedAuthorization(activationCode, cookie.Value); ok {
+		http.Redirect(w, r, location, http.StatusSeeOther)
+		return
+	}
+	code, redirect, oauthState, grantedScopes, scopesChanged, err := s.Store.AuthorizeRequestWithScopes(activationCode, cookie.Value)
 	if err != nil {
 		http.Error(w, "Invalid or expired activation code", 401)
 		return
@@ -229,7 +267,48 @@ func (s *Server) authorize(w http.ResponseWriter, r *http.Request) {
 		q.Set("scope", strings.Join(grantedScopes, " "))
 	}
 	u.RawQuery = q.Encode()
-	http.Redirect(w, r, u.String(), http.StatusFound)
+	s.rememberAuthorization(activationCode, cookie.Value, u.String())
+	// This endpoint processes a browser form POST. See Other makes the OAuth
+	// callback an unambiguous GET and prevents clients from replaying the
+	// one-time activation form across the cross-origin redirect.
+	http.Redirect(w, r, u.String(), http.StatusSeeOther)
+}
+
+func (s *Server) completedAuthorization(activationCode, nonce string) (string, bool) {
+	if s.completed == nil {
+		return "", false
+	}
+	key := digest(nonce)
+	completed, ok := s.completed[key]
+	if !ok {
+		return "", false
+	}
+	if time.Now().After(completed.ExpiresAt) {
+		delete(s.completed, key)
+		return "", false
+	}
+	if subtle.ConstantTimeCompare([]byte(completed.ActivationHash), []byte(digest(activationCode))) != 1 {
+		return "", false
+	}
+	return completed.Location, true
+}
+
+func (s *Server) rememberAuthorization(activationCode, nonce, location string) {
+	if s.completed == nil {
+		s.completed = map[string]completedAuthorization{}
+	}
+	now := time.Now()
+	if len(s.completed) >= 1024 {
+		for key, completed := range s.completed {
+			if now.After(completed.ExpiresAt) {
+				delete(s.completed, key)
+			}
+		}
+	}
+	if len(s.completed) >= 1024 {
+		return
+	}
+	s.completed[digest(nonce)] = completedAuthorization{ActivationHash: digest(activationCode), Location: location, ExpiresAt: now.Add(time.Minute)}
 }
 func (s *Server) token(w http.ResponseWriter, r *http.Request) {
 	if !s.allowed(r) {

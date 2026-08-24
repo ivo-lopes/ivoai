@@ -233,8 +233,46 @@ func oauthAudit(next http.Handler, out io.Writer) http.Handler {
 		if status == 0 {
 			status = http.StatusOK
 		}
-		fmt.Fprintf(out, "ivoai gateway: oauth audit method=%s path=%s status=%d\n", r.Method, r.URL.Path, status)
+		fmt.Fprintf(out, "ivoai gateway: oauth audit method=%s path=%s status=%d location_host=%s referer_host=%s fetch_site=%s fetch_mode=%s fetch_dest=%s ua=%s\n",
+			r.Method, r.URL.Path, status, oauthHeaderHost(recorder.Header().Get("Location")), oauthHeaderHost(r.Referer()),
+			oauthFetchValue(r.Header.Get("Sec-Fetch-Site")), oauthFetchValue(r.Header.Get("Sec-Fetch-Mode")),
+			oauthFetchValue(r.Header.Get("Sec-Fetch-Dest")), oauthUserAgent(r.UserAgent()))
 	})
+}
+
+func oauthHeaderHost(raw string) string {
+	parsed, err := url.Parse(raw)
+	if err != nil || parsed.Hostname() == "" {
+		return "none"
+	}
+	return strings.ToLower(parsed.Hostname())
+}
+
+func oauthFetchValue(value string) string {
+	switch strings.ToLower(strings.TrimSpace(value)) {
+	case "same-origin", "same-site", "cross-site", "none", "navigate", "cors", "no-cors", "document", "empty":
+		return strings.ToLower(strings.TrimSpace(value))
+	default:
+		return "other"
+	}
+}
+
+func oauthUserAgent(value string) string {
+	value = strings.ToLower(value)
+	switch {
+	case strings.Contains(value, "edg/"):
+		return "edge"
+	case strings.Contains(value, "chrome/") || strings.Contains(value, "chromium/"):
+		return "chromium"
+	case strings.Contains(value, "firefox/"):
+		return "firefox"
+	case strings.Contains(value, "safari/"):
+		return "safari"
+	case strings.Contains(value, "curl/"):
+		return "curl"
+	default:
+		return "other"
+	}
 }
 
 func trustedHTTPSProxyOnly(next http.Handler, networks []*net.IPNet) http.Handler {
