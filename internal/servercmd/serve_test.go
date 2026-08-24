@@ -1,6 +1,7 @@
 package servercmd
 
 import (
+	"bytes"
 	"context"
 	"io"
 	"net"
@@ -9,6 +10,25 @@ import (
 	"strings"
 	"testing"
 )
+
+func TestOAuthAuditLogsNoSecrets(t *testing.T) {
+	var output bytes.Buffer
+	handler := oauthAudit(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		http.Error(w, "contains-secret", http.StatusBadRequest)
+	}), &output)
+	request := httptest.NewRequest(http.MethodPost, "https://gateway/oauth/token?code=query-secret", strings.NewReader("code=body-secret"))
+	response := httptest.NewRecorder()
+	handler.ServeHTTP(response, request)
+	got := output.String()
+	if got != "ivoai gateway: oauth audit method=POST path=/oauth/token status=400\n" {
+		t.Fatalf("unexpected audit log: %q", got)
+	}
+	for _, secret := range []string{"query-secret", "body-secret", "contains-secret"} {
+		if strings.Contains(got, secret) {
+			t.Fatalf("audit leaked %q: %s", secret, got)
+		}
+	}
+}
 
 func TestTrustedHTTPSProxyOnlyValidatesPeerAndScheme(t *testing.T) {
 	_, network, err := net.ParseCIDR("192.0.2.10/32")

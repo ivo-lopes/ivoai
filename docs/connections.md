@@ -97,7 +97,8 @@ The connector may request these scopes:
 | `memory:write` | Write pages and submit memory feedback |
 | `memory:delete` | Delete a confirmed normalized page path |
 
-The default activation code permits all four scopes. Generate or approve a narrower
+The default activation code permits the three non-destructive scopes. Request
+`memory:delete` explicitly only when deletion is needed, or generate a narrower
 grant for read-only use. Access and refresh tokens remain owned by the Web connector;
 ivoai stores only token hashes and revocation metadata.
 

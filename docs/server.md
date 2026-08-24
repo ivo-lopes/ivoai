@@ -154,10 +154,11 @@ sudo ivoai server web-access create --ttl 10m
 
 The command prints the activation code once. During the connector's OAuth browser
 flow, review the requested scopes and enter that code. The default grant contains
-`context:read`, `memory:read`, `memory:write`, and `memory:delete`; select a narrower
-set when mutation is not needed. `list` displays identifiers, scopes, expiry, and
-revocation state without tokens. `revoke` invalidates the selected Web grant and its
-refresh-token family.
+`context:read`, `memory:read`, and `memory:write`. The destructive
+`memory:delete` scope remains available only when it is selected explicitly. Select
+a narrower set when mutation is not needed. `list` displays identifiers, scopes,
+expiry, and revocation state without tokens. `revoke` invalidates the selected Web
+grant and its refresh-token family.
 
 The unified MCP exposes context search/read and bounded memory CRUD. Deleting memory
 requires the `memory:delete` scope and an explicit confirmation for the normalized

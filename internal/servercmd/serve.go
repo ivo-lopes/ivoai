@@ -156,6 +156,7 @@ func serveGateway(ctx context.Context, layout server.Layout, version string, err
 		return err
 	}
 	handler := g.Handler()
+	handler = oauthAudit(handler, errOut)
 	if len(gatewayConfig.TrustedProxyCIDRs) > 0 {
 		networks, err := server.ParseTrustedProxyCIDRs(gatewayConfig.TrustedProxyCIDRs)
 		if err != nil {
@@ -196,6 +197,44 @@ func serveGateway(ctx context.Context, layout server.Layout, version string, err
 		}
 		return nil
 	}
+}
+
+type oauthStatusWriter struct {
+	http.ResponseWriter
+	status int
+}
+
+func (w *oauthStatusWriter) WriteHeader(status int) {
+	if w.status != 0 {
+		return
+	}
+	w.status = status
+	w.ResponseWriter.WriteHeader(status)
+}
+
+func (w *oauthStatusWriter) Write(body []byte) (int, error) {
+	if w.status == 0 {
+		w.status = http.StatusOK
+	}
+	return w.ResponseWriter.Write(body)
+}
+
+// oauthAudit records only the method, fixed endpoint path and status. Query
+// parameters, request bodies, authorization codes and tokens are never logged.
+func oauthAudit(next http.Handler, out io.Writer) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !strings.HasPrefix(r.URL.Path, "/oauth/") {
+			next.ServeHTTP(w, r)
+			return
+		}
+		recorder := &oauthStatusWriter{ResponseWriter: w}
+		next.ServeHTTP(recorder, r)
+		status := recorder.status
+		if status == 0 {
+			status = http.StatusOK
+		}
+		fmt.Fprintf(out, "ivoai gateway: oauth audit method=%s path=%s status=%d\n", r.Method, r.URL.Path, status)
+	})
 }
 
 func trustedHTTPSProxyOnly(next http.Handler, networks []*net.IPNet) http.Handler {

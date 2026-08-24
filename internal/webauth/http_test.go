@@ -21,6 +21,14 @@ func TestOAuthHTTPFlowAndMetadata(t *testing.T) {
 	server := &Server{Store: store, Issuer: "https://ivoai.example"}
 	mux := http.NewServeMux()
 	server.Register(mux)
+	for _, endpoint := range []string{"/.well-known/oauth-authorization-server", "/.well-known/oauth-protected-resource"} {
+		metadataRequest := httptest.NewRequest(http.MethodGet, endpoint, nil)
+		metadataResponse := httptest.NewRecorder()
+		mux.ServeHTTP(metadataResponse, metadataRequest)
+		if metadataResponse.Code != http.StatusOK || strings.Contains(metadataResponse.Body.String(), ScopeMemoryDelete) {
+			t.Fatalf("destructive scope advertised by %s: %d %s", endpoint, metadataResponse.Code, metadataResponse.Body.String())
+		}
+	}
 	reg := httptest.NewRequest("POST", "/oauth/register", strings.NewReader(`{"client_name":"ChatGPT","redirect_uris":["https://chat.example/cb"],"token_endpoint_auth_method":"none","grant_types":["authorization_code","refresh_token"],"response_types":["code"],"client_uri":"https://chat.example"}`))
 	reg.RemoteAddr = "192.0.2.1:123"
 	rec := httptest.NewRecorder()
@@ -29,9 +37,13 @@ func TestOAuthHTTPFlowAndMetadata(t *testing.T) {
 		t.Fatalf("register=%d %s", rec.Code, rec.Body.String())
 	}
 	var client struct {
-		ID string `json:"client_id"`
+		ID    string `json:"client_id"`
+		Scope string `json:"scope"`
 	}
 	json.Unmarshal(rec.Body.Bytes(), &client)
+	if client.Scope != strings.Join(DefaultScopes, " ") || strings.Contains(client.Scope, ScopeMemoryDelete) {
+		t.Fatalf("unsafe registration defaults: %#v", client)
+	}
 	verifier := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~"
 	missingResource := httptest.NewRequest("GET", "/oauth/authorize?response_type=code&client_id="+client.ID+"&redirect_uri="+url.QueryEscape("https://chat.example/cb")+"&scope=context%3Aread&state=s&code_challenge_method=S256&code_challenge="+PKCEChallenge(verifier), nil)
 	missingResource.RemoteAddr = "192.0.2.1:122"
@@ -95,6 +107,14 @@ func TestOAuthHTTPFlowAndMetadata(t *testing.T) {
 	}
 	if strings.Contains(rec.Body.String(), activation.Code) {
 		t.Fatal("activation leaked")
+	}
+}
+
+func TestDestructiveScopeRemainsExplicitlyAvailable(t *testing.T) {
+	store := NewStore(filepath.Join(t.TempDir(), "state.json"))
+	activation, err := store.CreateActivation(time.Minute, []string{ScopeMemoryDelete})
+	if err != nil || !contains(activation.Scopes, ScopeMemoryDelete) {
+		t.Fatalf("explicit destructive activation unavailable: %#v err=%v", activation, err)
 	}
 }
 

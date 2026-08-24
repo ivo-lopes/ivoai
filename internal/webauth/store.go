@@ -30,7 +30,12 @@ const (
 	ScopeMemoryDelete = "memory:delete"
 )
 
-var DefaultScopes = []string{ScopeContextRead, ScopeMemoryRead, ScopeMemoryWrite, ScopeMemoryDelete}
+// DefaultScopes are the non-destructive permissions advertised to generic web
+// clients. Destructive memory access remains supported, but must be requested
+// explicitly by the client and authorized by an administrator activation.
+var DefaultScopes = []string{ScopeContextRead, ScopeMemoryRead, ScopeMemoryWrite}
+
+var SupportedScopes = []string{ScopeContextRead, ScopeMemoryRead, ScopeMemoryWrite, ScopeMemoryDelete}
 
 type Activation struct {
 	ID         string    `json:"id"`
@@ -142,7 +147,7 @@ func contains(ss []string, s string) bool {
 	}
 	return false
 }
-func validScope(s string) bool { return contains(DefaultScopes, s) }
+func validScope(s string) bool { return contains(SupportedScopes, s) }
 func normalizeScopes(scopes []string) ([]string, error) {
 	if len(scopes) == 0 {
 		scopes = DefaultScopes

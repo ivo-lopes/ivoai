@@ -140,7 +140,7 @@ func (s *Server) register(w http.ResponseWriter, r *http.Request) {
 		jsonResponse(w, http.StatusInternalServerError, map[string]string{"error": "server_error"})
 		return
 	}
-	jsonResponse(w, 201, map[string]any{"client_id": c.ID, "client_name": c.Name, "redirect_uris": c.RedirectURIs, "token_endpoint_auth_method": "none", "grant_types": []string{"authorization_code", "refresh_token"}, "response_types": []string{"code"}})
+	jsonResponse(w, 201, map[string]any{"client_id": c.ID, "client_name": c.Name, "redirect_uris": c.RedirectURIs, "token_endpoint_auth_method": "none", "grant_types": []string{"authorization_code", "refresh_token"}, "response_types": []string{"code"}, "scope": strings.Join(DefaultScopes, " ")})
 }
 
 func supportedValues(values []string, allowed ...string) bool {

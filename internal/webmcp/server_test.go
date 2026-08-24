@@ -48,7 +48,7 @@ func TestOfficialSDKListsAllowlistAndDeleteConfirmation(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	principal := webauth.Principal{ClientID: "test", Scopes: append([]string(nil), webauth.DefaultScopes...)}
+	principal := webauth.Principal{ClientID: "test", Scopes: append([]string(nil), webauth.SupportedScopes...)}
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		handler.ServeHTTP(w, r.WithContext(webauth.WithPrincipal(r.Context(), principal)))
 	}))
