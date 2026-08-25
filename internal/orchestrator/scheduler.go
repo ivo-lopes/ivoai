@@ -28,6 +28,7 @@ type runtimeTask struct {
 	WorkerID  string
 	Result    workerResult
 	Queued    bool
+	Settled   bool
 	StartedAt time.Time
 }
 
@@ -431,6 +432,14 @@ func (s *Server) completeTask(planID, taskID, workerID string, state session.Sta
 	s.mu.Unlock()
 	s.persistRuntimePlan(planID)
 	s.scheduleReady(planID)
+	s.mu.Lock()
+	if plan := s.plans[planID]; plan != nil {
+		if task := plan.Tasks[taskID]; task != nil && task.WorkerID == workerID {
+			task.Settled = true
+		}
+	}
+	s.signalLocked()
+	s.mu.Unlock()
 }
 
 func boundedDiagnostic(value string) string {
@@ -516,7 +525,7 @@ func (s *Server) escalate(ctx context.Context, request *mcp.CallToolRequest) (*m
 	}
 	s.mu.Lock()
 	task.Task.Tier, task.Task.Profile, task.Task.State, task.Task.EscalationCount, task.Task.EscalationReason = next, profile, "planned", task.Task.EscalationCount+1, args.Reason
-	task.WorkerID, task.Result = "", workerResult{}
+	task.WorkerID, task.Result, task.Settled = "", workerResult{}, false
 	s.signalLocked()
 	s.mu.Unlock()
 	_, _ = s.Store.Update(s.SessionID, func(value *session.Session) error { value.EscalationCount++; return nil })
@@ -681,7 +690,7 @@ func (s *Server) waitReadyLocked(planID string, ids []string, mode string) (bool
 		if task == nil {
 			return false, fmt.Errorf("unknown task %q", id)
 		}
-		if task.Task.State == string(session.StateCompleted) || task.Task.State == string(session.StateFailed) || task.Task.State == "primary" {
+		if (task.Task.State == string(session.StateCompleted) || task.Task.State == string(session.StateFailed)) && (task.Task.ExecutionMode == "primary" || task.Settled) {
 			complete++
 		}
 	}

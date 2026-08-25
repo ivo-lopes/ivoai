@@ -159,6 +159,37 @@ func TestPlanKeepsTrivialDelegationInPrimary(t *testing.T) {
 	}
 }
 
+func TestWaitRequiresExplicitPrimaryCompletion(t *testing.T) {
+	root := t.TempDir()
+	store, id := automaticBridgeSession(t, root)
+	server := &Server{Store: store, SessionID: id, RuntimeDir: filepath.Join(root, "runtime"), Weights: routing.DefaultWeights(), Parallelism: true}
+	server.initialize()
+	task := map[string]any{
+		"id": "primary", "role": "writer", "task": "Apply the authoritative change", "delegate": false,
+		"scores": map[string]any{"complexity": 50, "risk": 40, "reasoning_depth": 40, "context_breadth": 30, "verification_need": 50, "parallel_value": 10, "latency_sensitivity": 50},
+	}
+	result, err := server.plan(context.Background(), toolRequest(map[string]any{"tasks": []map[string]any{task}}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	planID := result.StructuredContent.(map[string]any)["plan_id"].(string)
+	server.mu.Lock()
+	ready, err := server.waitReadyLocked(planID, []string{"primary"}, "all")
+	server.mu.Unlock()
+	if err != nil || ready {
+		t.Fatalf("pending primary task reported complete: ready=%v err=%v", ready, err)
+	}
+	if _, err := server.primaryComplete(context.Background(), toolRequest(map[string]any{"plan_id": planID, "task_id": "primary"})); err != nil {
+		t.Fatal(err)
+	}
+	server.mu.Lock()
+	ready, err = server.waitReadyLocked(planID, []string{"primary"}, "all")
+	server.mu.Unlock()
+	if err != nil || !ready {
+		t.Fatalf("completed primary task did not unblock wait: ready=%v err=%v", ready, err)
+	}
+}
+
 func TestStrictArgumentsRejectsTrailingJSON(t *testing.T) {
 	request := &mcp.CallToolRequest{Params: &mcp.CallToolParamsRaw{Arguments: []byte(`{"plan_id":"plan_a"}{"extra":true}`)}}
 	var value struct {
