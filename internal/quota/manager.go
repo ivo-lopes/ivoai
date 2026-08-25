@@ -20,6 +20,14 @@ type Manager struct {
 	Now    func() time.Time
 }
 
+// CanDispatch is the authoritative per-provider/model gate. Unknown telemetry
+// is not treated as zero; only authentication, hard limits, or an exact
+// authoritative model window can block dispatch.
+func (m Manager) CanDispatch(ctx context.Context, provider Provider, model string, force bool) (ProviderQuota, bool, error) {
+	value, err := m.Probe(ctx, provider, force)
+	return value, eligibleForModel(value, model), err
+}
+
 func (m Manager) Probe(ctx context.Context, provider Provider, force bool) (ProviderQuota, error) {
 	now := m.now()
 	if !force {
@@ -72,13 +80,13 @@ func (m Manager) Resolve(ctx context.Context, requested Provider, model string, 
 	if requested != ProviderCodex && requested != ProviderClaude {
 		return Decision{}, errors.New("planner must be codex or claude")
 	}
-	first, firstErr := m.Probe(ctx, requested, force)
-	if eligibleForModel(first, model) {
+	first, firstEligible, firstErr := m.CanDispatch(ctx, requested, model, force)
+	if firstEligible {
 		return Decision{Requested: requested, Resolved: requested, Quota: first}, nil
 	}
 	alternate := Other(requested)
-	second, secondErr := m.Probe(ctx, alternate, force)
-	if eligibleForModel(second, model) {
+	second, secondEligible, secondErr := m.CanDispatch(ctx, alternate, model, force)
+	if secondEligible {
 		reason := first.Reason
 		if reason == "" {
 			reason = "requested provider is unavailable"

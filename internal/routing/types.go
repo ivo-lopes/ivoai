@@ -81,6 +81,10 @@ type Task struct {
 	EscalationReason     string           `json:"escalation_reason,omitempty"`
 	DurationMilliseconds int64            `json:"duration_ms,omitempty"`
 	HeadroomUsed         bool             `json:"headroom_used"`
+	ExecutionMode        string           `json:"execution_mode"`
+	DelegationBenefit    int              `json:"delegation_benefit"`
+	DelegationOverhead   int              `json:"delegation_overhead"`
+	DelegationReason     string           `json:"delegation_reason"`
 }
 
 type Plan struct {

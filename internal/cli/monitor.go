@@ -188,9 +188,16 @@ func renderMonitorSized(out io.Writer, value session.Session, width int) {
 			} else {
 				profile += " effort=default"
 			}
-			monitorRow(out, "  "+clean(task.ID), fmt.Sprintf("%s score=%d %s %s", task.State, task.CapabilityScore, task.Tier, profile), width)
+			mode := task.ExecutionMode
+			if mode == "" {
+				mode = "legacy"
+			}
+			monitorRow(out, "  "+clean(task.ID), fmt.Sprintf("%s score=%d %s %s mode=%s", task.State, task.CapabilityScore, task.Tier, profile, clean(mode)), width)
 			if len(task.Dependencies) > 0 {
 				monitorRow(out, "    depends", strings.Join(task.Dependencies, ","), width)
+			}
+			if task.DelegationReason != "" {
+				monitorRow(out, "    routing", fmt.Sprintf("benefit=%d overhead=%d %s", task.DelegationBenefit, task.DelegationOverhead, clean(task.DelegationReason)), width)
 			}
 		}
 		fmt.Fprintln(out, "\nRouting")

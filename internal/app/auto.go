@@ -496,7 +496,7 @@ func automaticInstructions(checkpointEnabled bool) string {
 For the first substantive user request, do not immediately begin large work. Follow this enforced protocol:
 1. perform exactly one bounded relevant lookup in ivoai-memory, then exactly one bounded relevant lookup in ivoai-context; do not search the Web before these attempts;
 2. call orchestration_bootstrap with a concise SharedContextBrief containing only relevant facts, decisions, references, constraints, known state, and gaps; report either source as degraded when unavailable;
-3. inspect orchestration_quota and capability state;
+3. inspect orchestration_quota and orchestration_capabilities;
 4. decompose the request into the smallest useful non-overlapping tasks, their dependencies and parallel groups;
 5. score every task from 0..100 for complexity, risk, reasoning_depth, context_breadth, verification_need, parallel_value, and latency_sensitivity;
 6. call orchestration_plan. IvoAI calculates the capability score and has final authority over provider, model, effort, and quota;

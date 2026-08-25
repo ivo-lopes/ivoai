@@ -136,6 +136,59 @@ func TestFirstTurnPlanRequiresBoundedSharedKnowledgeBootstrap(t *testing.T) {
 	}
 }
 
+func TestPlanKeepsTrivialDelegationInPrimary(t *testing.T) {
+	root := t.TempDir()
+	store, id := automaticBridgeSession(t, root)
+	server := &Server{Store: store, SessionID: id, RuntimeDir: filepath.Join(root, "runtime"), Weights: routing.DefaultWeights(), Parallelism: true}
+	server.initialize()
+	task := map[string]any{
+		"id": "typo", "role": "editor", "task": "Correct one word", "delegate": true,
+		"scores": map[string]any{"complexity": 5, "risk": 5, "reasoning_depth": 5, "context_breadth": 5, "verification_need": 5, "parallel_value": 5, "latency_sensitivity": 50},
+	}
+	result, err := server.plan(context.Background(), toolRequest(map[string]any{"tasks": []map[string]any{task}}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	metadata := result.StructuredContent.(map[string]any)
+	tasks := metadata["tasks"].([]map[string]any)
+	if got := tasks[0]["execution_mode"]; got != "primary" {
+		t.Fatalf("trivial task execution_mode=%v metadata=%+v", got, tasks[0])
+	}
+	if tasks[0]["delegation_benefit"].(int) >= tasks[0]["delegation_overhead"].(int) {
+		t.Fatalf("economic decision is inconsistent: %+v", tasks[0])
+	}
+}
+
+func TestStrictArgumentsRejectsTrailingJSON(t *testing.T) {
+	request := &mcp.CallToolRequest{Params: &mcp.CallToolParamsRaw{Arguments: []byte(`{"plan_id":"plan_a"}{"extra":true}`)}}
+	var value struct {
+		PlanID string `json:"plan_id"`
+	}
+	if err := strictArguments(request, &value); err == nil {
+		t.Fatal("trailing JSON was accepted")
+	}
+}
+
+func TestRelatedTurnUsesDeltaPlanWithoutRepeatingBootstrap(t *testing.T) {
+	root := t.TempDir()
+	store, id := automaticBridgeSession(t, root)
+	server := &Server{Store: store, SessionID: id, RuntimeDir: filepath.Join(root, "runtime"), BootstrapRequired: true, Weights: routing.DefaultWeights(), Parallelism: true}
+	server.initialize()
+	brief := map[string]any{"objective": "inspect project", "references": []string{"memory:1", "context:2"}, "memory_status": "ready", "context_status": "ready", "memory_lookup_performed": true, "context_lookup_performed": true}
+	if _, err := server.bootstrap(context.Background(), toolRequest(brief)); err != nil {
+		t.Fatal(err)
+	}
+	before, _ := store.Get(id)
+	trivial := map[string]any{"id": "delta", "role": "primary", "task": "Answer related follow-up", "delegate": false, "scores": map[string]any{"complexity": 10, "risk": 5, "reasoning_depth": 10, "context_breadth": 10, "verification_need": 10, "parallel_value": 0, "latency_sensitivity": 80}}
+	if _, err := server.plan(context.Background(), toolRequest(map[string]any{"tasks": []map[string]any{trivial}})); err != nil {
+		t.Fatal(err)
+	}
+	after, _ := store.Get(id)
+	if !after.KnowledgeBootstrap.Performed || after.KnowledgeBootstrap.BriefHash != before.KnowledgeBootstrap.BriefHash || !after.KnowledgeBootstrap.UpdatedAt.Equal(*before.KnowledgeBootstrap.UpdatedAt) {
+		t.Fatalf("related delta plan unexpectedly refreshed bootstrap: before=%+v after=%+v", before.KnowledgeBootstrap, after.KnowledgeBootstrap)
+	}
+}
+
 func taskFixture(id string, dependencies []string) map[string]any {
 	return map[string]any{"id": id, "role": "analyst", "task": stringsUpper(id), "dependencies": dependencies, "parallel_group": "g", "scores": map[string]any{"complexity": 20, "risk": 10, "reasoning_depth": 20, "context_breadth": 10, "verification_need": 20, "parallel_value": 90, "latency_sensitivity": 80}, "preferred_executor": "codex", "delegate": true}
 }

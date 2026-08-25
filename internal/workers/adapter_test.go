@@ -38,7 +38,7 @@ printf 'worker result' > "$result"
 		t.Fatalf("result=%+v observation=%+v", result, observation)
 	}
 	args, _ := os.ReadFile(argsFile)
-	if !strings.HasPrefix(string(args), "-c\ndeveloper_instructions=") || !strings.Contains(string(args), "exec\n--json\n--output-last-message\n") || !strings.Contains(string(args), "--model\nfixture-model\n-\n") {
+	if !strings.HasPrefix(string(args), "-c\ndeveloper_instructions=") || !strings.Contains(string(args), "exec\n--sandbox\nread-only\n--json\n--output-last-message\n") || !strings.Contains(string(args), "--model\nfixture-model\n-\n") {
 		t.Fatalf("unexpected Codex argv: %q", args)
 	}
 	assertResearchPriority(t, string(args))
@@ -67,7 +67,7 @@ printf '%s' '{"type":"result","result":"review complete"}'
 		t.Fatalf("result=%+v", result)
 	}
 	args, _ := os.ReadFile(argsFile)
-	if !strings.HasPrefix(string(args), "--append-system-prompt\n") || !strings.Contains(string(args), "--print\n--output-format\njson\n") {
+	if !strings.HasPrefix(string(args), "--append-system-prompt\n") || !strings.Contains(string(args), "--disallowedTools\nBash,Edit,Write,NotebookEdit\n--permission-mode\nplan\n") || !strings.Contains(string(args), "--print\n--output-format\njson\n") {
 		t.Fatalf("unexpected Claude argv: %q", args)
 	}
 	assertResearchPriority(t, string(args))
@@ -84,6 +84,24 @@ func assertResearchPriority(t *testing.T, value string) {
 	web := strings.Index(value, "(3) web")
 	if memory < 0 || context <= memory || web <= context {
 		t.Fatalf("worker research order is not memory -> context -> web: %q", value)
+	}
+}
+
+func TestWorkerArgumentsApplyOnlyExplicitVerifiedEffortAndSharedBrief(t *testing.T) {
+	codex, _, err := workerArgs(Request{Executor: "codex", Effort: "low", SharedContextBrief: `{"facts":["one"]}`, Runtime: t.TempDir()})
+	if err != nil {
+		t.Fatal(err)
+	}
+	joined := strings.Join(codex, "\n")
+	if !strings.Contains(joined, `model_reasoning_effort="low"`) || !strings.Contains(joined, "SharedContextBrief") {
+		t.Fatalf("Codex args missing effort or brief: %q", joined)
+	}
+	claude, _, err := workerArgs(Request{Executor: "claude", Effort: "high", Runtime: t.TempDir()})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(strings.Join(claude, "\n"), "--effort\nhigh") {
+		t.Fatalf("Claude args missing effort: %#v", claude)
 	}
 }
 

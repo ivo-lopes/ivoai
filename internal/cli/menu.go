@@ -45,7 +45,7 @@ func PublicMenuActionIDs() []string {
 		"connect.list", "connect.chatgpt", "disconnect.chatgpt", "connect.claude", "disconnect.claude", "connect.server", "disconnect.server",
 		"mcp.list", "mcp.add", "mcp.remove", "launch.codex", "launch.claude", "memory.status", "memory.configure",
 		"session.direct.codex", "session.direct.claude", "session.orchestrated.codex", "session.orchestrated.claude", "session.list", "session.monitor", "session.stop",
-		"project.status", "project.init", "config.show", "config.headroom", "config.memory", "config.ruflo", "config.session-mode", "config.primary", "config.reviewer", "config.workers",
+		"project.status", "project.init", "config.show", "config.headroom", "config.memory", "config.ruflo", "config.auto", "config.auto-planner", "config.auto-failover", "config.auto-checkpoint", "config.auto-strategy", "config.auto-parallel", "config.auto-bootstrap", "config.auto-escalation", "config.session-mode", "config.primary", "config.reviewer", "config.workers",
 		"server.setup", "server.status", "server.doctor", "server.start", "server.stop", "server.restart", "server.logs",
 		"server.enrollment.create", "server.enrollment.list", "server.enrollment.revoke",
 		"server.web-access.create", "server.web-access.list", "server.web-access.revoke",

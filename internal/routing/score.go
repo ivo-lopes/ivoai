@@ -38,6 +38,15 @@ func TierForScore(score int) Tier {
 	}
 }
 
+// DelegationDecision compares bounded quality/parallel gains with official
+// worker startup and context-transfer overhead. It is deterministic so planner
+// preference cannot force wasteful fan-out.
+func DelegationDecision(value Scores) (bool, int, int) {
+	benefit := (value.ParallelValue*45 + value.VerificationNeed*20 + value.Risk*20 + value.ContextBreadth*15 + 50) / 100
+	overhead := 25 + (100-value.Complexity)*20/100 + value.LatencySensitivity*5/100
+	return benefit > overhead, benefit, overhead
+}
+
 func ResolvePlan(id string, inputs []TaskInput, weights Weights, resolve func(TaskInput, Tier) (ExecutionProfile, error)) (Plan, error) {
 	if len(inputs) == 0 || len(inputs) > MaxTasks {
 		return Plan{}, fmt.Errorf("plan must contain between 1 and %d tasks", MaxTasks)

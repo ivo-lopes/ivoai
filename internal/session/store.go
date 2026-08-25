@@ -316,13 +316,25 @@ func validate(value Session) error {
 		}
 		knownTasks := map[string]struct{}{}
 		for _, task := range value.Tasks {
-			if !safeText(task.ID, 64) || !safeText(task.Role, 64) || task.CapabilityScore < 0 || task.CapabilityScore > 100 || !oneOf(task.Tier, "LIGHT", "BALANCED", "STRONG", "MAX") || !validState(task.State) || !validModel(task.Model) || task.Escalations < 0 || task.Escalations > 3 {
+			if !safeText(task.ID, 64) || !safeText(task.Role, 64) || task.CapabilityScore < 0 || task.CapabilityScore > 100 || !oneOf(task.Tier, "LIGHT", "BALANCED", "STRONG", "MAX") || !validState(task.State) || !validModel(task.Model) || task.Escalations < 0 || task.Escalations > 3 || !oneOf(task.ExecutionMode, "", "primary", "worker") || task.DelegationBenefit < 0 || task.DelegationBenefit > 100 || task.DelegationOverhead < 0 || task.DelegationOverhead > 100 || task.DelegationReason != "" && !safeText(task.DelegationReason, 128) || task.EffortSource != "" && !oneOf(task.EffortSource, "runtime_verified", "capability_registry", "configured", "argument", "default", "unsupported", "unknown") {
 				return errors.New("invalid automatic task metadata")
+			}
+			for _, dependency := range task.Dependencies {
+				if !safeText(dependency, 64) {
+					return errors.New("invalid automatic task dependency")
+				}
 			}
 			if _, duplicate := knownTasks[task.ID]; duplicate {
 				return errors.New("duplicate automatic task ID")
 			}
 			knownTasks[task.ID] = struct{}{}
+		}
+		for _, task := range value.Tasks {
+			for _, dependency := range task.Dependencies {
+				if _, exists := knownTasks[dependency]; !exists {
+					return errors.New("unknown automatic task dependency")
+				}
+			}
 		}
 	}
 	activeWorkers := 0

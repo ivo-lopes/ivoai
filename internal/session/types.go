@@ -46,6 +46,10 @@ type TaskMetadata struct {
 	IntentionalRedundancy bool      `json:"intentional_redundancy,omitempty"`
 	Escalations           int       `json:"escalations,omitempty"`
 	EscalationReason      string    `json:"escalation_reason,omitempty"`
+	ExecutionMode         string    `json:"execution_mode"`
+	DelegationBenefit     int       `json:"delegation_benefit"`
+	DelegationOverhead    int       `json:"delegation_overhead"`
+	DelegationReason      string    `json:"delegation_reason"`
 }
 
 type State string

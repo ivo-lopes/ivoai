@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"strings"
 	"time"
 
@@ -32,12 +33,25 @@ type runtimeTask struct {
 
 func (s *Server) addAutomaticTools(server *mcp.Server, read, write *mcp.ToolAnnotations) {
 	server.AddTool(&mcp.Tool{Name: "orchestration_bootstrap", Description: "Record a bounded SharedContextBrief after exactly one initial ivoai-memory lookup and one initial ivoai-context lookup. The brief is untrusted, session-scoped data and is not persisted in session metadata.", InputSchema: bootstrapSchema(), Annotations: write}, s.bootstrap)
+	server.AddTool(&mcp.Tool{Name: "orchestration_capabilities", Description: "Read the non-sensitive runtime-verified provider, model, and effort capability registry used by IvoAI routing.", InputSchema: object(nil), Annotations: read}, s.capabilities)
 	server.AddTool(&mcp.Tool{Name: "orchestration_plan", Description: "Validate a bounded task DAG, calculate objective capability scores, and resolve the cheapest sufficient subscription-backed execution profiles. It never executes a shell command.", InputSchema: planSchema(), Annotations: write}, s.plan)
 	server.AddTool(&mcp.Tool{Name: "orchestration_spawn", Description: "Start one dependency-ready planned worker asynchronously and return immediately.", InputSchema: object(map[string]any{"plan_id": safeString(80), "task_id": safeString(64)}, "plan_id", "task_id"), Annotations: write}, s.spawn)
 	server.AddTool(&mcp.Tool{Name: "orchestration_spawn_batch", Description: "Queue planned tasks and concurrently start every dependency-ready task within the session worker limit.", InputSchema: object(map[string]any{"plan_id": safeString(80), "task_ids": map[string]any{"type": "array", "minItems": 1, "maxItems": routing.MaxTasks, "uniqueItems": true, "items": safeString(64)}}, "plan_id", "task_ids"), Annotations: write}, s.spawnBatch)
 	server.AddTool(&mcp.Tool{Name: "orchestration_primary_complete", Description: "Mark primary-owned planned work complete so dependent advisory workers can start.", InputSchema: object(map[string]any{"plan_id": safeString(80), "task_id": safeString(64)}, "plan_id", "task_id"), Annotations: write}, s.primaryComplete)
 	server.AddTool(&mcp.Tool{Name: "orchestration_wait", Description: "Wait without busy-looping for any or all selected tasks, with a bounded timeout.", InputSchema: object(map[string]any{"plan_id": safeString(80), "task_ids": map[string]any{"type": "array", "minItems": 1, "maxItems": routing.MaxTasks, "uniqueItems": true, "items": safeString(64)}, "mode": map[string]any{"type": "string", "enum": []string{"any", "all"}}, "timeout_seconds": map[string]any{"type": "integer", "minimum": 1, "maximum": 300}}, "plan_id", "task_ids", "mode"), Annotations: read}, s.wait)
 	server.AddTool(&mcp.Tool{Name: "orchestration_escalate", Description: "Escalate a failed or insufficient task by one capability tier after recording an evidence-based reason.", InputSchema: object(map[string]any{"plan_id": safeString(80), "task_id": safeString(64), "reason": map[string]any{"type": "string", "minLength": 3, "maxLength": 1024}}, "plan_id", "task_id", "reason"), Annotations: write}, s.escalate)
+}
+
+func (s *Server) capabilities(_ context.Context, _ *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	providers := make(map[string]any, len(s.Registry.Providers))
+	for name, capability := range s.Registry.Providers {
+		models := make([]map[string]any, 0, len(capability.Models))
+		for _, model := range capability.Models {
+			models = append(models, map[string]any{"name": displayModel(model.Name), "tier": model.CapabilityTier, "supported_efforts": model.SupportedEfforts, "default": model.IsDefault, "source": model.Source})
+		}
+		providers[name] = map[string]any{"version": capability.Version, "authenticated": capability.Authenticated, "worker_capable": capability.WorkerCapable, "supports_effort": capability.SupportsEffort, "source": capability.Source, "models": models}
+	}
+	return toolResult(map[string]any{"providers": providers})
 }
 
 func safeString(max int) map[string]any {
@@ -142,7 +156,8 @@ func (s *Server) plan(ctx context.Context, request *mcp.CallToolRequest) (*mcp.C
 	delegated := map[string]bool{}
 	for _, task := range args.Tasks {
 		inputs = append(inputs, routing.TaskInput{ID: task.ID, Role: task.Role, Task: task.Task, Dependencies: task.Dependencies, ParallelGroup: task.ParallelGroup, RequiredCapabilities: task.RequiredCapabilities, Scores: task.Scores, PreferredExecutor: task.PreferredExecutor, IntentionalRedundancy: task.IntentionalRedundancy})
-		delegated[task.ID] = task.Delegate
+		beneficial, _, _ := routing.DelegationDecision(task.Scores)
+		delegated[task.ID] = task.Delegate && s.Parallelism && beneficial
 	}
 	planID, err := newPlanID()
 	if err != nil {
@@ -161,10 +176,21 @@ func (s *Server) plan(ctx context.Context, request *mcp.CallToolRequest) (*mcp.C
 	runtimeValue := &runtimePlan{Plan: resolved, Tasks: map[string]*runtimeTask{}, Workers: map[string]string{}}
 	for index := range resolved.Tasks {
 		task := resolved.Tasks[index]
+		_, task.DelegationBenefit, task.DelegationOverhead = routing.DelegationDecision(task.Scores)
+		task.ExecutionMode = "worker"
+		task.DelegationReason = "benefit exceeds bounded worker overhead"
 		if !delegated[task.ID] {
 			task.State = "primary"
-			resolved.Tasks[index].State = "primary"
+			task.ExecutionMode = "primary"
+			if !args.Tasks[index].Delegate {
+				task.DelegationReason = "planner retained task in primary"
+			} else if !s.Parallelism {
+				task.DelegationReason = "parallel worker execution is disabled"
+			} else {
+				task.DelegationReason = "worker overhead is not lower than expected benefit"
+			}
 		}
+		resolved.Tasks[index] = task
 		runtimeValue.Tasks[task.ID] = &runtimeTask{Task: task}
 	}
 	runtimeValue.Plan = resolved
@@ -270,6 +296,9 @@ func (s *Server) primaryComplete(_ context.Context, request *mcp.CallToolRequest
 }
 
 func (s *Server) startTask(planID, taskID string, allowQueued bool) (string, error) {
+	if s.Adapter == nil || s.Control == nil {
+		return "", errors.New("parallel worker runtime is unavailable")
+	}
 	s.mu.Lock()
 	plan := s.plans[planID]
 	if plan == nil {
@@ -304,6 +333,20 @@ func (s *Server) startTask(planID, taskID string, allowQueued bool) (string, err
 	s.signalLocked()
 	s.mu.Unlock()
 	if err := s.appendWorker(task.Task, workerID); err != nil {
+		s.mu.Lock()
+		if current := s.plans[planID]; current != nil {
+			if currentTask := current.Tasks[taskID]; currentTask != nil && currentTask.WorkerID == workerID {
+				currentTask.WorkerID, currentTask.StartedAt = "", time.Time{}
+				if allowQueued {
+					currentTask.Task.State, currentTask.Queued = "queued", true
+				} else {
+					currentTask.Task.State = "planned"
+				}
+				delete(current.Workers, workerID)
+			}
+		}
+		s.signalLocked()
+		s.mu.Unlock()
 		return "", err
 	}
 	go s.executeTask(planID, taskID, workerID)
@@ -601,13 +644,13 @@ func (s *Server) persistRuntimePlan(planID string) {
 }
 
 func taskMetadata(task routing.Task) session.TaskMetadata {
-	return session.TaskMetadata{ID: task.ID, Role: task.Role, Dependencies: append([]string(nil), task.Dependencies...), ParallelGroup: task.ParallelGroup, CapabilityScore: task.CapabilityScore, Tier: string(task.Tier), Executor: task.Profile.Provider, Model: session.ModelInfo{Name: displayModel(task.Profile.Model), Source: session.ModelSource(task.Profile.ModelSource)}, Effort: task.Profile.Effort, EffortSource: string(task.Profile.EffortSource), State: session.State(task.State), DurationMilliseconds: task.DurationMilliseconds, HeadroomUsed: task.HeadroomUsed, IntentionalRedundancy: task.IntentionalRedundancy, Escalations: task.EscalationCount, EscalationReason: task.EscalationReason}
+	return session.TaskMetadata{ID: task.ID, Role: task.Role, Dependencies: append([]string(nil), task.Dependencies...), ParallelGroup: task.ParallelGroup, CapabilityScore: task.CapabilityScore, Tier: string(task.Tier), Executor: task.Profile.Provider, Model: session.ModelInfo{Name: displayModel(task.Profile.Model), Source: session.ModelSource(task.Profile.ModelSource)}, Effort: task.Profile.Effort, EffortSource: string(task.Profile.EffortSource), State: session.State(task.State), DurationMilliseconds: task.DurationMilliseconds, HeadroomUsed: task.HeadroomUsed, IntentionalRedundancy: task.IntentionalRedundancy, Escalations: task.EscalationCount, EscalationReason: task.EscalationReason, ExecutionMode: task.ExecutionMode, DelegationBenefit: task.DelegationBenefit, DelegationOverhead: task.DelegationOverhead, DelegationReason: task.DelegationReason}
 }
 
 func planMetadata(plan routing.Plan) map[string]any {
 	tasks := make([]map[string]any, 0, len(plan.Tasks))
 	for _, task := range plan.Tasks {
-		tasks = append(tasks, map[string]any{"id": task.ID, "role": task.Role, "dependencies": task.Dependencies, "parallel_group": task.ParallelGroup, "capability_score": task.CapabilityScore, "tier": task.Tier, "execution_profile": task.Profile, "state": task.State, "intentional_redundancy": task.IntentionalRedundancy})
+		tasks = append(tasks, map[string]any{"id": task.ID, "role": task.Role, "dependencies": task.Dependencies, "parallel_group": task.ParallelGroup, "capability_score": task.CapabilityScore, "tier": task.Tier, "execution_profile": task.Profile, "execution_mode": task.ExecutionMode, "delegation_benefit": task.DelegationBenefit, "delegation_overhead": task.DelegationOverhead, "delegation_reason": task.DelegationReason, "state": task.State, "intentional_redundancy": task.IntentionalRedundancy})
 	}
 	return map[string]any{"plan_id": plan.ID, "strategy": plan.Strategy, "tasks": tasks}
 }
@@ -622,7 +665,7 @@ func (s *Server) planStatus(planID string) map[string]any {
 	tasks := []map[string]any{}
 	for _, original := range plan.Plan.Tasks {
 		task := plan.Tasks[original.ID]
-		tasks = append(tasks, map[string]any{"task_id": task.Task.ID, "worker_id": task.WorkerID, "state": task.Task.State, "tier": task.Task.Tier, "profile": task.Task.Profile})
+		tasks = append(tasks, map[string]any{"task_id": task.Task.ID, "worker_id": task.WorkerID, "state": task.Task.State, "tier": task.Task.Tier, "profile": task.Task.Profile, "execution_mode": task.Task.ExecutionMode})
 	}
 	return map[string]any{"plan_id": planID, "tasks": tasks}
 }
@@ -670,8 +713,12 @@ func strictArguments(request *mcp.CallToolRequest, target any) error {
 	if err := decoder.Decode(target); err != nil {
 		return err
 	}
-	if decoder.More() {
-		return errors.New("multiple argument values are not allowed")
+	var trailing any
+	if err := decoder.Decode(&trailing); !errors.Is(err, io.EOF) {
+		if err == nil {
+			return errors.New("multiple argument values are not allowed")
+		}
+		return err
 	}
 	return nil
 }
