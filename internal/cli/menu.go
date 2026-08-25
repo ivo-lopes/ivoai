@@ -197,6 +197,16 @@ func (s *menuSession) configuration() (bool, error) {
 		{id: "config.auto-checkpoint", label: toggleLabel("Automatic Checkpoints", snapshot.CheckpointEnabled), run: s.simple(func() error {
 			return s.app.ConfigSet("orchestration.auto.checkpoint_enabled", opposite(snapshot.CheckpointEnabled))
 		})},
+		{id: "config.auto-strategy", label: "Automatic Optimization: " + strings.ToUpper(snapshot.AutoStrategy), disabled: "efficient is the safe default"},
+		{id: "config.auto-parallel", label: toggleLabel("Useful Parallelism", snapshot.AutoParallelism), run: s.simple(func() error {
+			return s.app.ConfigSet("orchestration.auto.optimization.parallelism", opposite(snapshot.AutoParallelism))
+		})},
+		{id: "config.auto-bootstrap", label: toggleLabel("Shared Knowledge Bootstrap", snapshot.SharedBootstrap), run: s.simple(func() error {
+			return s.app.ConfigSet("orchestration.auto.optimization.shared_context_bootstrap", opposite(snapshot.SharedBootstrap))
+		})},
+		{id: "config.auto-escalation", label: toggleLabel("Progressive Escalation", snapshot.ProgressiveEscalation), run: s.simple(func() error {
+			return s.app.ConfigSet("orchestration.auto.optimization.progressive_escalation", opposite(snapshot.ProgressiveEscalation))
+		})},
 		{id: "config.session-mode", label: "Default Session Mode: " + strings.ToUpper(snapshot.DefaultMode), run: s.simple(func() error { return s.app.ConfigSet("orchestration.default_mode", otherMode(snapshot.DefaultMode)) })},
 		{id: "config.primary", label: "Primary Executor: " + strings.ToUpper(snapshot.PrimaryExecutor), run: s.simple(func() error {
 			return s.app.ConfigSet("orchestration.primary_executor", otherExecutor(snapshot.PrimaryExecutor))

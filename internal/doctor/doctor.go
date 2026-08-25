@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
@@ -18,6 +19,7 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/orchestration"
 	"github.com/ivo-lopes/ivoai/internal/platform"
 	"github.com/ivo-lopes/ivoai/internal/quota"
+	"github.com/ivo-lopes/ivoai/internal/routing"
 )
 
 type Component struct {
@@ -60,13 +62,20 @@ type QuotaProbe struct {
 	Reason         string `json:"reason,omitempty"`
 }
 type Automatic struct {
-	Enabled           bool                  `json:"enabled"`
-	DefaultPlanner    string                `json:"default_planner"`
-	AutomaticFailover bool                  `json:"automatic_failover"`
-	CheckpointReady   bool                  `json:"checkpoint_ready"`
-	CodexToClaude     bool                  `json:"codex_to_claude"`
-	ClaudeToCodex     bool                  `json:"claude_to_codex"`
-	Quota             map[string]QuotaProbe `json:"quota"`
+	Enabled                  bool                  `json:"enabled"`
+	DefaultPlanner           string                `json:"default_planner"`
+	AutomaticFailover        bool                  `json:"automatic_failover"`
+	CheckpointReady          bool                  `json:"checkpoint_ready"`
+	CodexToClaude            bool                  `json:"codex_to_claude"`
+	ClaudeToCodex            bool                  `json:"claude_to_codex"`
+	Quota                    map[string]QuotaProbe `json:"quota"`
+	SchedulerReady           bool                  `json:"scheduler_ready"`
+	ParallelRuntime          bool                  `json:"parallel_worker_runtime"`
+	CodexModelRouting        string                `json:"codex_model_routing"`
+	ClaudeModelRouting       string                `json:"claude_model_routing"`
+	CodexEffortControl       string                `json:"codex_effort_control"`
+	ClaudeEffortControl      string                `json:"claude_effort_control"`
+	SharedKnowledgeBootstrap bool                  `json:"shared_knowledge_bootstrap"`
 }
 type Report struct {
 	Overall           string               `json:"overall"`
@@ -184,11 +193,17 @@ func (d Doctor) Run(ctx context.Context) Report {
 func (d Doctor) automatic(ctx context.Context, cfg config.Config, state config.State, report Report) Automatic {
 	result := Automatic{
 		Enabled: cfg.Orchestration.Auto.Enabled, DefaultPlanner: cfg.Orchestration.Auto.DefaultPlanner,
-		AutomaticFailover: cfg.Orchestration.Auto.AutomaticFailover,
-		CheckpointReady:   cfg.Orchestration.Auto.CheckpointEnabled && report.Memory.Installed && report.Memory.Hooks,
-		Quota:             map[string]QuotaProbe{},
+		AutomaticFailover:        cfg.Orchestration.Auto.AutomaticFailover,
+		CheckpointReady:          cfg.Orchestration.Auto.CheckpointEnabled && report.Memory.Installed && report.Memory.Hooks,
+		Quota:                    map[string]QuotaProbe{},
+		SchedulerReady:           cfg.Orchestration.Auto.Enabled && cfg.Orchestration.Auto.Optimization.Strategy == "efficient",
+		ParallelRuntime:          cfg.Orchestration.Auto.Optimization.Parallelism && cfg.Orchestration.Auto.MaxWorkers > 1,
+		SharedKnowledgeBootstrap: cfg.Orchestration.Auto.Optimization.SharedContextBootstrap,
+		CodexModelRouting:        "degraded", ClaudeModelRouting: "degraded", CodexEffortControl: "unsupported", ClaudeEffortControl: "unsupported",
 	}
 	if report.TestMode {
+		result.CodexModelRouting, result.ClaudeModelRouting = "ready", "ready"
+		result.CodexEffortControl, result.ClaudeEffortControl = "supported", "supported"
 		for _, provider := range []quota.Provider{quota.ProviderCodex, quota.ProviderClaude} {
 			probe := QuotaProbe{Ready: true, Authenticated: true, Eligible: true, Source: "fixture", WeeklySource: "N/A / not exposed", MonthlySource: "N/A / not exposed"}
 			if provider == quota.ProviderClaude {
@@ -197,6 +212,22 @@ func (d Doctor) automatic(ctx context.Context, cfg config.Config, state config.S
 			result.Quota[string(provider)] = probe
 		}
 	} else {
+		registry := (routing.Discoverer{CodexPath: state.Components["codex"].Path, ClaudePath: state.Components["claude-code"].Path, CachePath: filepath.Join(d.Store.Paths.CacheDir, "capabilities.json")}).Discover(ctx)
+		for provider, capability := range registry.Providers {
+			routingState, effortState := "degraded", "unsupported"
+			if capability.WorkerCapable && len(capability.Models) > 0 {
+				routingState = "ready"
+			}
+			if capability.SupportsEffort {
+				effortState = "supported"
+			}
+			if provider == "codex" {
+				result.CodexModelRouting, result.CodexEffortControl = routingState, effortState
+			}
+			if provider == "claude" {
+				result.ClaudeModelRouting, result.ClaudeEffortControl = routingState, effortState
+			}
+		}
 		manager := d.QuotaManager
 		if manager == nil {
 			ttl := time.Duration(cfg.Orchestration.Auto.QuotaRefreshSeconds) * time.Second

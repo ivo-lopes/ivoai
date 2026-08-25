@@ -89,13 +89,43 @@ type OrchestrationConfig struct {
 	Auto              AutoConfig `toml:"auto"`
 }
 type AutoConfig struct {
-	Enabled             bool            `toml:"enabled"`
-	DefaultPlanner      string          `toml:"default_planner"`
-	AutomaticFailover   bool            `toml:"automatic_failover"`
-	CheckpointEnabled   bool            `toml:"checkpoint_enabled"`
-	QuotaRefreshSeconds int             `toml:"quota_refresh_seconds"`
-	MaxWorkers          int             `toml:"max_workers"`
-	Quota               AutoQuotaConfig `toml:"quota"`
+	Enabled             bool                   `toml:"enabled"`
+	DefaultPlanner      string                 `toml:"default_planner"`
+	AutomaticFailover   bool                   `toml:"automatic_failover"`
+	CheckpointEnabled   bool                   `toml:"checkpoint_enabled"`
+	QuotaRefreshSeconds int                    `toml:"quota_refresh_seconds"`
+	MaxWorkers          int                    `toml:"max_workers"`
+	Quota               AutoQuotaConfig        `toml:"quota"`
+	Optimization        AutoOptimizationConfig `toml:"optimization"`
+	Profiles            AutoProfilesConfig     `toml:"profiles"`
+}
+type AutoOptimizationConfig struct {
+	Strategy               string            `toml:"strategy"`
+	Parallelism            bool              `toml:"parallelism"`
+	SharedContextBootstrap bool              `toml:"shared_context_bootstrap"`
+	ProgressiveEscalation  bool              `toml:"progressive_escalation"`
+	Weights                AutoWeightsConfig `toml:"weights"`
+}
+type AutoWeightsConfig struct {
+	Complexity       int `toml:"complexity"`
+	Risk             int `toml:"risk"`
+	ReasoningDepth   int `toml:"reasoning_depth"`
+	VerificationNeed int `toml:"verification_need"`
+	ContextBreadth   int `toml:"context_breadth"`
+}
+type AutoProfileConfig struct {
+	Model  string `toml:"model"`
+	Effort string `toml:"effort"`
+}
+type AutoTierProfiles struct {
+	Light    AutoProfileConfig `toml:"light"`
+	Balanced AutoProfileConfig `toml:"balanced"`
+	Strong   AutoProfileConfig `toml:"strong"`
+	Max      AutoProfileConfig `toml:"max"`
+}
+type AutoProfilesConfig struct {
+	Codex  AutoTierProfiles `toml:"codex"`
+	Claude AutoTierProfiles `toml:"claude"`
 }
 type AutoQuotaConfig struct {
 	Enabled         bool `toml:"enabled"`
@@ -210,6 +240,11 @@ func (s *Store) Load() (Config, error) {
 	if c.Orchestration.Auto.DefaultPlanner == "" {
 		c.Orchestration.Auto = defaultAutoConfig()
 	}
+	if c.Orchestration.Auto.Optimization.Strategy == "" {
+		defaults := defaultAutoConfig()
+		c.Orchestration.Auto.Optimization = defaults.Optimization
+		c.Orchestration.Auto.Profiles = defaults.Profiles
+	}
 	if err := ValidateOrchestration(c.Orchestration); err != nil {
 		return Config{}, err
 	}
@@ -241,6 +276,20 @@ func ValidateOrchestration(value OrchestrationConfig) error {
 	if value.Auto.MaxWorkers < 1 || value.Auto.MaxWorkers > 3 {
 		return errors.New("orchestration auto max_workers must be between 1 and 3")
 	}
+	if value.Auto.Optimization.Strategy != "efficient" {
+		return errors.New("orchestration auto optimization strategy must be efficient")
+	}
+	weights := value.Auto.Optimization.Weights
+	if weights.Complexity < 0 || weights.Risk < 0 || weights.ReasoningDepth < 0 || weights.VerificationNeed < 0 || weights.ContextBreadth < 0 || weights.Complexity+weights.Risk+weights.ReasoningDepth+weights.VerificationNeed+weights.ContextBreadth <= 0 {
+		return errors.New("orchestration auto optimization weights must be non-negative with a positive sum")
+	}
+	for _, profiles := range []AutoTierProfiles{value.Auto.Profiles.Codex, value.Auto.Profiles.Claude} {
+		for _, profile := range []AutoProfileConfig{profiles.Light, profiles.Balanced, profiles.Strong, profiles.Max} {
+			if len(profile.Model) > 128 || len(profile.Effort) > 32 {
+				return errors.New("automatic execution profile override is too long")
+			}
+		}
+	}
 	return nil
 }
 
@@ -248,7 +297,8 @@ func defaultAutoConfig() AutoConfig {
 	return AutoConfig{
 		Enabled: true, DefaultPlanner: "codex", AutomaticFailover: true, CheckpointEnabled: true,
 		QuotaRefreshSeconds: 45, MaxWorkers: 2,
-		Quota: AutoQuotaConfig{Enabled: true, ShowWeekly: true, ShowMonthly: true, ShowSession: true, ShowContext: true, ShowModelScoped: true},
+		Quota:        AutoQuotaConfig{Enabled: true, ShowWeekly: true, ShowMonthly: true, ShowSession: true, ShowContext: true, ShowModelScoped: true},
+		Optimization: AutoOptimizationConfig{Strategy: "efficient", Parallelism: true, SharedContextBootstrap: true, ProgressiveEscalation: true, Weights: AutoWeightsConfig{Complexity: 30, Risk: 25, ReasoningDepth: 20, VerificationNeed: 15, ContextBreadth: 10}},
 	}
 }
 

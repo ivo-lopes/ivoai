@@ -47,23 +47,27 @@ const liveServiceProbeTimeout = 8 * time.Second
 // MenuSnapshot is a non-secret, read-only view used by the interactive UI.
 // It deliberately contains no endpoint credentials or raw configuration.
 type MenuSnapshot struct {
-	SetupComplete     bool
-	ComponentsReady   bool
-	ChatGPTConnected  bool
-	ClaudeConnected   bool
-	ServerConnected   bool
-	MemoryEnabled     bool
-	HeadroomEnabled   bool
-	RufloEnabled      bool
-	DefaultMode       string
-	PrimaryExecutor   string
-	ReviewExecutor    string
-	MaxWorkers        int
-	AutoEnabled       bool
-	DefaultPlanner    string
-	AutomaticFailover bool
-	CheckpointEnabled bool
-	AutoMaxWorkers    int
+	SetupComplete         bool
+	ComponentsReady       bool
+	ChatGPTConnected      bool
+	ClaudeConnected       bool
+	ServerConnected       bool
+	MemoryEnabled         bool
+	HeadroomEnabled       bool
+	RufloEnabled          bool
+	DefaultMode           string
+	PrimaryExecutor       string
+	ReviewExecutor        string
+	MaxWorkers            int
+	AutoEnabled           bool
+	DefaultPlanner        string
+	AutomaticFailover     bool
+	CheckpointEnabled     bool
+	AutoMaxWorkers        int
+	AutoStrategy          string
+	AutoParallelism       bool
+	SharedBootstrap       bool
+	ProgressiveEscalation bool
 }
 
 func New(version string, in io.Reader, out, errOut io.Writer) (*App, error) {
@@ -84,23 +88,27 @@ func (a *App) MenuSnapshot() (MenuSnapshot, error) {
 		return MenuSnapshot{}, err
 	}
 	return MenuSnapshot{
-		SetupComplete:     !state.SetupCompletedAt.IsZero(),
-		ComponentsReady:   requiredComponentsReady(state),
-		ChatGPTConnected:  cfg.Connections.ChatGPT.Status == "connected",
-		ClaudeConnected:   cfg.Connections.Claude.Status == "connected",
-		ServerConnected:   cfg.Connections.Server.Status == "connected",
-		MemoryEnabled:     cfg.Memory.Enabled,
-		HeadroomEnabled:   cfg.Headroom.Enabled,
-		RufloEnabled:      cfg.Orchestration.Enabled,
-		DefaultMode:       cfg.Orchestration.DefaultMode,
-		PrimaryExecutor:   cfg.Orchestration.PrimaryExecutor,
-		ReviewExecutor:    cfg.Orchestration.ReviewExecutor,
-		MaxWorkers:        cfg.Orchestration.MaxWorkers,
-		AutoEnabled:       cfg.Orchestration.Auto.Enabled,
-		DefaultPlanner:    cfg.Orchestration.Auto.DefaultPlanner,
-		AutomaticFailover: cfg.Orchestration.Auto.AutomaticFailover,
-		CheckpointEnabled: cfg.Orchestration.Auto.CheckpointEnabled,
-		AutoMaxWorkers:    cfg.Orchestration.Auto.MaxWorkers,
+		SetupComplete:         !state.SetupCompletedAt.IsZero(),
+		ComponentsReady:       requiredComponentsReady(state),
+		ChatGPTConnected:      cfg.Connections.ChatGPT.Status == "connected",
+		ClaudeConnected:       cfg.Connections.Claude.Status == "connected",
+		ServerConnected:       cfg.Connections.Server.Status == "connected",
+		MemoryEnabled:         cfg.Memory.Enabled,
+		HeadroomEnabled:       cfg.Headroom.Enabled,
+		RufloEnabled:          cfg.Orchestration.Enabled,
+		DefaultMode:           cfg.Orchestration.DefaultMode,
+		PrimaryExecutor:       cfg.Orchestration.PrimaryExecutor,
+		ReviewExecutor:        cfg.Orchestration.ReviewExecutor,
+		MaxWorkers:            cfg.Orchestration.MaxWorkers,
+		AutoEnabled:           cfg.Orchestration.Auto.Enabled,
+		DefaultPlanner:        cfg.Orchestration.Auto.DefaultPlanner,
+		AutomaticFailover:     cfg.Orchestration.Auto.AutomaticFailover,
+		CheckpointEnabled:     cfg.Orchestration.Auto.CheckpointEnabled,
+		AutoMaxWorkers:        cfg.Orchestration.Auto.MaxWorkers,
+		AutoStrategy:          cfg.Orchestration.Auto.Optimization.Strategy,
+		AutoParallelism:       cfg.Orchestration.Auto.Optimization.Parallelism,
+		SharedBootstrap:       cfg.Orchestration.Auto.Optimization.SharedContextBootstrap,
+		ProgressiveEscalation: cfg.Orchestration.Auto.Optimization.ProgressiveEscalation,
 	}, nil
 }
 
@@ -784,6 +792,24 @@ func (a *App) ConfigSet(key, value string) error {
 			return errors.New("auto max_workers must be an integer between 1 and 3")
 		}
 		c.Orchestration.Auto.MaxWorkers = parsed
+	case "orchestration.auto.optimization.parallelism":
+		parsed, parseErr := parseBool(value)
+		if parseErr != nil {
+			return parseErr
+		}
+		c.Orchestration.Auto.Optimization.Parallelism = parsed
+	case "orchestration.auto.optimization.shared_context_bootstrap":
+		parsed, parseErr := parseBool(value)
+		if parseErr != nil {
+			return parseErr
+		}
+		c.Orchestration.Auto.Optimization.SharedContextBootstrap = parsed
+	case "orchestration.auto.optimization.progressive_escalation":
+		parsed, parseErr := parseBool(value)
+		if parseErr != nil {
+			return parseErr
+		}
+		c.Orchestration.Auto.Optimization.ProgressiveEscalation = parsed
 	case "orchestration.auto.quota.enabled":
 		parsed, parseErr := parseBool(value)
 		if parseErr != nil {

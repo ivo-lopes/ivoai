@@ -17,6 +17,7 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/orchestration"
 	"github.com/ivo-lopes/ivoai/internal/orchestrator"
 	"github.com/ivo-lopes/ivoai/internal/platform"
+	"github.com/ivo-lopes/ivoai/internal/routing"
 	"github.com/ivo-lopes/ivoai/internal/session"
 	"github.com/ivo-lopes/ivoai/internal/terminalui"
 	"github.com/ivo-lopes/ivoai/internal/workers"
@@ -202,13 +203,31 @@ func (a *App) OrchestratorServe(ctx context.Context, id string) error {
 	}
 	server := orchestrator.Server{
 		Store: store, SessionID: id, Directory: value.WorkingDirectory, RuntimeDir: runtimeDir,
-		ReviewExecutor:    cfg.Orchestration.ReviewExecutor,
-		Adapter:           workers.Adapter{Runner: a.Runner, CodexPath: state.Components["codex"].Path, ClaudePath: state.Components["claude-code"].Path, HeadroomPath: state.Components["headroom"].Path, HeadroomEnabled: primaryHeadroomEnabled(cfg)},
-		Control:           orchestration.ControlPlane{Manager: a.orchestrationManager(state), RuntimeDir: runtimeDir},
-		Quota:             a.automaticQuotaManager(cfg, state),
-		CheckpointEnabled: cfg.Orchestration.Auto.CheckpointEnabled,
+		ReviewExecutor:        cfg.Orchestration.ReviewExecutor,
+		Adapter:               workers.Adapter{Runner: a.Runner, CodexPath: state.Components["codex"].Path, ClaudePath: state.Components["claude-code"].Path, HeadroomPath: state.Components["headroom"].Path, HeadroomEnabled: primaryHeadroomEnabled(cfg)},
+		Control:               orchestration.ControlPlane{Manager: a.orchestrationManager(state), RuntimeDir: runtimeDir},
+		Quota:                 a.automaticQuotaManager(cfg, state),
+		CheckpointEnabled:     cfg.Orchestration.Auto.CheckpointEnabled,
+		BootstrapRequired:     value.Mode == session.ModeAuto && cfg.Orchestration.Auto.Optimization.SharedContextBootstrap,
+		ProgressiveEscalation: cfg.Orchestration.Auto.Optimization.ProgressiveEscalation,
+		Parallelism:           cfg.Orchestration.Auto.Optimization.Parallelism,
+		Weights:               routing.Weights{Complexity: cfg.Orchestration.Auto.Optimization.Weights.Complexity, Risk: cfg.Orchestration.Auto.Optimization.Weights.Risk, ReasoningDepth: cfg.Orchestration.Auto.Optimization.Weights.ReasoningDepth, VerificationNeed: cfg.Orchestration.Auto.Optimization.Weights.VerificationNeed, ContextBreadth: cfg.Orchestration.Auto.Optimization.Weights.ContextBreadth},
+		Registry:              routing.Discoverer{CodexPath: state.Components["codex"].Path, ClaudePath: state.Components["claude-code"].Path, CachePath: filepath.Join(a.Store.Paths.CacheDir, "capabilities.json")}.Discover(ctx),
+		Overrides:             routingOverrides(cfg.Orchestration.Auto.Profiles),
 	}
 	return server.Run(ctx)
+}
+
+func routingOverrides(value config.AutoProfilesConfig) map[string]map[routing.Tier]routing.ProfileOverride {
+	convert := func(input config.AutoTierProfiles) map[routing.Tier]routing.ProfileOverride {
+		return map[routing.Tier]routing.ProfileOverride{
+			routing.TierLight:    {Model: input.Light.Model, Effort: input.Light.Effort},
+			routing.TierBalanced: {Model: input.Balanced.Model, Effort: input.Balanced.Effort},
+			routing.TierStrong:   {Model: input.Strong.Model, Effort: input.Strong.Effort},
+			routing.TierMax:      {Model: input.Max.Model, Effort: input.Max.Effort},
+		}
+	}
+	return map[string]map[routing.Tier]routing.ProfileOverride{"codex": convert(value.Codex), "claude": convert(value.Claude)}
 }
 
 func (a *App) orchestratedAgentArgs(executor string, existing []string, id, runtimeDir string) ([]string, error) {

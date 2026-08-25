@@ -131,6 +131,7 @@ func renderMonitorSized(out io.Writer, value session.Session, width int) {
 		monitorRow(out, "  Failovers", fmt.Sprint(value.FailoverCount), width)
 		monitorRow(out, "  Phase", clean(value.CurrentPhase), width)
 		monitorRow(out, "  Checkpoint", checkpointMonitor(value), width)
+		monitorRow(out, "  Strategy", clean(value.OptimizationStrategy), width)
 		fmt.Fprintln(out)
 	}
 	fmt.Fprintln(out, "Primary")
@@ -167,10 +168,59 @@ func renderMonitorSized(out io.Writer, value session.Session, width int) {
 			monitorRow(out, "  "+clean(worker.Role), clean(worker.Executor)+" "+clean(worker.Model.Name)+" "+clean(string(worker.State)), width)
 		}
 	}
+	if value.Mode == session.ModeAuto {
+		fmt.Fprintln(out, "\nKnowledge")
+		monitorRow(out, "  Memory", clean(value.KnowledgeBootstrap.MemoryStatus), width)
+		monitorRow(out, "  Context", clean(value.KnowledgeBootstrap.ContextStatus), width)
+		bootstrap := "PENDING"
+		if value.KnowledgeBootstrap.Performed {
+			bootstrap = fmt.Sprintf("READY / %d references", value.KnowledgeBootstrap.ReferenceCount)
+		}
+		monitorRow(out, "  Bootstrap", bootstrap, width)
+		fmt.Fprintln(out, "\nPlan")
+		monitorRow(out, "  Tasks", fmt.Sprint(len(value.Tasks)), width)
+		monitorRow(out, "  Running", fmt.Sprint(activeTasks(value.Tasks)), width)
+		monitorRow(out, "  Completed", fmt.Sprint(completedTasks(value.Tasks)), width)
+		for _, task := range value.Tasks {
+			profile := clean(task.Executor) + " " + clean(task.Model.Name)
+			if task.Effort != "" {
+				profile += " effort=" + clean(task.Effort)
+			} else {
+				profile += " effort=default"
+			}
+			monitorRow(out, "  "+clean(task.ID), fmt.Sprintf("%s score=%d %s %s", task.State, task.CapabilityScore, task.Tier, profile), width)
+			if len(task.Dependencies) > 0 {
+				monitorRow(out, "    depends", strings.Join(task.Dependencies, ","), width)
+			}
+		}
+		fmt.Fprintln(out, "\nRouting")
+		monitorRow(out, "  Strategy", clean(value.OptimizationStrategy), width)
+		monitorRow(out, "  Escalations", fmt.Sprint(value.EscalationCount), width)
+	}
 	fmt.Fprintln(out, "\nServices")
 	monitorRow(out, "  Context", clean(value.ContextStatus), width)
 	monitorRow(out, "  ai-memory", clean(value.MemoryStatus), width)
 	monitorRow(out, "  Server", clean(value.ServerStatus), width)
+}
+
+func activeTasks(values []session.TaskMetadata) int {
+	count := 0
+	for _, value := range values {
+		if value.State == session.StateStarting || value.State == session.StateRunning || value.State == session.StateQueued {
+			count++
+		}
+	}
+	return count
+}
+
+func completedTasks(values []session.TaskMetadata) int {
+	count := 0
+	for _, value := range values {
+		if value.State == session.StateCompleted {
+			count++
+		}
+	}
+	return count
 }
 
 func quotaMonitorRow(out io.Writer, label string, provider quota.Provider, value quota.ProviderQuota, kind quota.Kind, width int) {

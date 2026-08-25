@@ -12,8 +12,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ivo-lopes/ivoai/internal/orchestration"
 	"github.com/ivo-lopes/ivoai/internal/quota"
+	"github.com/ivo-lopes/ivoai/internal/routing"
 	"github.com/ivo-lopes/ivoai/internal/session"
 	"github.com/ivo-lopes/ivoai/internal/workers"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -22,20 +22,38 @@ import (
 var rolePattern = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_-]{0,63}$`)
 
 type Server struct {
-	Store             session.Store
-	SessionID         string
-	Adapter           workers.Adapter
-	Control           orchestration.ControlPlane
-	Directory         string
-	RuntimeDir        string
-	ReviewExecutor    string
-	Quota             *quota.Manager
-	CheckpointEnabled bool
+	Store                 session.Store
+	SessionID             string
+	Adapter               WorkerAdapter
+	Control               LifecycleControl
+	Directory             string
+	RuntimeDir            string
+	ReviewExecutor        string
+	Quota                 *quota.Manager
+	CheckpointEnabled     bool
+	BootstrapRequired     bool
+	ProgressiveEscalation bool
+	Parallelism           bool
+	Weights               routing.Weights
+	Registry              routing.Registry
+	Overrides             map[string]map[routing.Tier]routing.ProfileOverride
 
 	mu      sync.Mutex
 	results map[string]workerResult
 	order   []string
 	cancels map[string]context.CancelFunc
+	plans   map[string]*runtimePlan
+	runCtx  context.Context
+	notify  chan struct{}
+}
+
+type WorkerAdapter interface {
+	Run(context.Context, workers.Request, func(workers.Observation)) (workers.Result, error)
+}
+
+type LifecycleControl interface {
+	RegisterLifecycle(context.Context, string, string) (string, error)
+	CancelLifecycle(context.Context, string) error
 }
 
 type workerResult struct {
@@ -48,11 +66,15 @@ func (s *Server) Run(ctx context.Context) error {
 	if err := s.authorized(); err != nil {
 		return err
 	}
-	s.initialize()
+	s.initializeContext(ctx)
 	return s.protocolServer().Run(ctx, &mcp.StdioTransport{})
 }
 
 func (s *Server) initialize() {
+	s.initializeContext(context.Background())
+}
+
+func (s *Server) initializeContext(ctx context.Context) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.results == nil {
@@ -60,6 +82,18 @@ func (s *Server) initialize() {
 	}
 	if s.cancels == nil {
 		s.cancels = map[string]context.CancelFunc{}
+	}
+	if s.plans == nil {
+		s.plans = map[string]*runtimePlan{}
+	}
+	if s.notify == nil {
+		s.notify = make(chan struct{})
+	}
+	if s.runCtx == nil {
+		s.runCtx = ctx
+	}
+	if s.Weights == (routing.Weights{}) {
+		s.Weights = routing.DefaultWeights()
 	}
 }
 
@@ -95,6 +129,7 @@ func (s *Server) addTools(server *mcp.Server) {
 	server.AddTool(&mcp.Tool{Name: "orchestration_cancel", Description: "Cancel a worker owned by this active session.", InputSchema: object(map[string]any{"worker_id": map[string]any{"type": "string"}}, "worker_id"), Annotations: write}, s.cancel)
 	value, _ := s.Store.Get(s.SessionID)
 	if value.Mode == session.ModeAuto {
+		s.addAutomaticTools(server, read, write)
 		server.AddTool(&mcp.Tool{Name: "orchestration_quota", Description: "Read authoritative or explicitly unavailable subscription quota telemetry. The model cannot change quota state.", InputSchema: object(nil), Annotations: read}, s.quotaStatus)
 		if s.CheckpointEnabled {
 			server.AddTool(&mcp.Tool{Name: "orchestration_checkpoint", Description: "Save a bounded, secret-free continuity checkpoint after a relevant completed turn. Do not include transcripts, prompts, credentials, tokens, or raw responses.", InputSchema: checkpointSchema(), Annotations: write}, s.checkpoint)

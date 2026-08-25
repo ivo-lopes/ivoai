@@ -10,10 +10,43 @@ import (
 type Mode string
 
 const (
-	ModeDirect       Mode = "direct"
-	ModeOrchestrated Mode = "orchestrated"
-	ModeAuto         Mode = "auto"
+	StatePlanned     State = "planned"
+	StatePrimary     State = "primary"
+	StateQueued      State = "queued"
+	ModeDirect       Mode  = "direct"
+	ModeOrchestrated Mode  = "orchestrated"
+	ModeAuto         Mode  = "auto"
 )
+
+type EffortSource string
+
+type BootstrapMetadata struct {
+	Performed      bool       `json:"performed"`
+	UpdatedAt      *time.Time `json:"updated_at,omitempty"`
+	MemoryStatus   string     `json:"memory_status"`
+	ContextStatus  string     `json:"context_status"`
+	ReferenceCount int        `json:"reference_count"`
+	BriefHash      string     `json:"brief_hash,omitempty"`
+}
+
+type TaskMetadata struct {
+	ID                    string    `json:"id"`
+	Role                  string    `json:"role"`
+	Dependencies          []string  `json:"dependencies,omitempty"`
+	ParallelGroup         string    `json:"parallel_group,omitempty"`
+	CapabilityScore       int       `json:"capability_score"`
+	Tier                  string    `json:"tier"`
+	Executor              string    `json:"executor,omitempty"`
+	Model                 ModelInfo `json:"model"`
+	Effort                string    `json:"effort,omitempty"`
+	EffortSource          string    `json:"effort_source"`
+	State                 State     `json:"state"`
+	DurationMilliseconds  int64     `json:"duration_ms,omitempty"`
+	HeadroomUsed          bool      `json:"headroom_used"`
+	IntentionalRedundancy bool      `json:"intentional_redundancy,omitempty"`
+	Escalations           int       `json:"escalations,omitempty"`
+	EscalationReason      string    `json:"escalation_reason,omitempty"`
+}
 
 type State string
 
@@ -31,10 +64,13 @@ const (
 type ModelSource string
 
 const (
-	ModelRuntimeVerified ModelSource = "runtime_verified"
-	ModelArgument        ModelSource = "argument"
-	ModelConfigured      ModelSource = "configured"
-	ModelUnknown         ModelSource = "unknown"
+	ModelRuntimeVerified    ModelSource = "runtime_verified"
+	ModelCapabilityRegistry ModelSource = "capability_registry"
+	ModelArgument           ModelSource = "argument"
+	ModelConfigured         ModelSource = "configured"
+	ModelDefault            ModelSource = "default"
+	ModelUnsupported        ModelSource = "unsupported"
+	ModelUnknown            ModelSource = "unknown"
 )
 
 type ModelInfo struct {
@@ -57,6 +93,11 @@ type Worker struct {
 	HeadroomUsed      bool       `json:"headroom_used"`
 	RequestedExecutor string     `json:"requested_executor,omitempty"`
 	FallbackReason    string     `json:"fallback_reason,omitempty"`
+	TaskID            string     `json:"task_id,omitempty"`
+	Tier              string     `json:"tier,omitempty"`
+	CapabilityScore   int        `json:"capability_score,omitempty"`
+	Effort            string     `json:"effort,omitempty"`
+	EffortSource      string     `json:"effort_source,omitempty"`
 }
 
 type Session struct {
@@ -97,6 +138,11 @@ type Session struct {
 	CheckpointAvailable  bool                                   `json:"checkpoint_available"`
 	CheckpointUpdatedAt  *time.Time                             `json:"checkpoint_updated_at,omitempty"`
 	Quota                map[quota.Provider]quota.ProviderQuota `json:"quota,omitempty"`
+	OptimizationStrategy string                                 `json:"optimization_strategy,omitempty"`
+	KnowledgeBootstrap   BootstrapMetadata                      `json:"knowledge_bootstrap"`
+	PlanID               string                                 `json:"plan_id,omitempty"`
+	Tasks                []TaskMetadata                         `json:"tasks,omitempty"`
+	EscalationCount      int                                    `json:"escalation_count,omitempty"`
 }
 
 func UnknownModel() ModelInfo { return ModelInfo{Name: "unknown", Source: ModelUnknown} }

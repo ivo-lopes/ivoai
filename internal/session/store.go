@@ -299,6 +299,31 @@ func validate(value Session) error {
 				return errors.New("invalid quota snapshot metadata")
 			}
 		}
+		if len(value.Tasks) > 12 || value.EscalationCount < 0 || value.EscalationCount > 100 {
+			return errors.New("invalid automatic plan metadata")
+		}
+		if value.PlanID != "" && (len(value.PlanID) != 37 || !strings.HasPrefix(value.PlanID, "plan_")) {
+			return errors.New("invalid automatic plan ID")
+		}
+		if value.OptimizationStrategy != "" && value.OptimizationStrategy != "efficient" {
+			return errors.New("invalid automatic optimization strategy")
+		}
+		if value.KnowledgeBootstrap.Performed {
+			bootstrap := value.KnowledgeBootstrap
+			if bootstrap.UpdatedAt == nil || bootstrap.ReferenceCount < 0 || bootstrap.ReferenceCount > 64 || len(bootstrap.BriefHash) != 64 || !oneOf(bootstrap.MemoryStatus, "ready", "degraded", "unavailable", "disabled") || !oneOf(bootstrap.ContextStatus, "ready", "degraded", "unavailable", "disabled") {
+				return errors.New("invalid shared knowledge bootstrap metadata")
+			}
+		}
+		knownTasks := map[string]struct{}{}
+		for _, task := range value.Tasks {
+			if !safeText(task.ID, 64) || !safeText(task.Role, 64) || task.CapabilityScore < 0 || task.CapabilityScore > 100 || !oneOf(task.Tier, "LIGHT", "BALANCED", "STRONG", "MAX") || !validState(task.State) || !validModel(task.Model) || task.Escalations < 0 || task.Escalations > 3 {
+				return errors.New("invalid automatic task metadata")
+			}
+			if _, duplicate := knownTasks[task.ID]; duplicate {
+				return errors.New("duplicate automatic task ID")
+			}
+			knownTasks[task.ID] = struct{}{}
+		}
 	}
 	activeWorkers := 0
 	workerIDs := make(map[string]struct{}, len(value.Workers))
@@ -331,7 +356,7 @@ func validate(value Session) error {
 
 func validState(value State) bool {
 	switch value {
-	case StateStarting, StateRunning, StateDegraded, StateStopping, StateCompleted, StateFailed, StateBlocked, StateWaiting:
+	case StatePlanned, StatePrimary, StateQueued, StateStarting, StateRunning, StateDegraded, StateStopping, StateCompleted, StateFailed, StateBlocked, StateWaiting:
 		return true
 	}
 	return false
@@ -339,8 +364,12 @@ func validState(value State) bool {
 
 func validModel(value ModelInfo) bool {
 	switch value.Source {
-	case ModelRuntimeVerified, ModelArgument, ModelConfigured:
+	case ModelRuntimeVerified, ModelCapabilityRegistry, ModelArgument, ModelConfigured:
 		return value.Name != "unknown" && safeText(value.Name, 128)
+	case ModelDefault:
+		return value.Name == "client-default"
+	case ModelUnsupported:
+		return value.Name == "unsupported"
 	case ModelUnknown:
 		return value.Name == "unknown"
 	}
