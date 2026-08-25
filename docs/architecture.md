@@ -1,6 +1,6 @@
 # ivoai architecture
 
-Status: implementation baseline for v0.4.8. Decisions and upstream data were
+Status: implementation baseline for v0.4.9. Decisions and upstream data were
 validated on 2026-08-23. Exact pins live in `manifest/components.yaml`; this
 document explains why they exist and how the pieces fit together.
 
@@ -282,11 +282,13 @@ Docker Compose is reserved for Qdrant, Text Embeddings Inference, and ai-memory.
 image is referenced by immutable digest, is attached to an internal network, and has
 no host port unless a loopback-only compatibility port is unavoidable. ivoai manages
 the Compose project and volumes idempotently. ivoai's own Go services remain ordinary
-systemd executables and require no private ivoai image. On supported apt-based
-hosts, Docker Engine comes from the distribution. Where Compose v2 is not packaged,
-ivoai installs the reviewed Docker Compose 5.5.0 CLI plugin for amd64 or arm64 from
-its official release, verifies the manifest SHA-256, and never selects a floating
-`latest` artifact. Direct-TLS certificate and key
+systemd executables and require no private ivoai image. Setup requires Docker Engine
+28.0.0 or newer because deterministic gateway priority is part of the backend egress
+boundary; it validates the daemon before writing server assets and does not replace
+the operator's Engine installation. Where compatible Compose is not packaged, ivoai
+installs the reviewed Docker Compose 5.5.0 CLI plugin for amd64 or arm64 from its
+official release, verifies the manifest SHA-256, and never selects a floating `latest`
+artifact. Direct-TLS certificate and key
 copies are service-owned `0600` files under `/etc/ivoai/secrets/tls`. After systemd
 loads its Qdrant and embedding environment files, the context service's sandbox makes
 the complete secrets tree, enrollment state, and memory state inaccessible. The

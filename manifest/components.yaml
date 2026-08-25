@@ -26,7 +26,7 @@ components:
 
   - name: ivoai
     role: [client, server]
-    validated_version: "0.4.8"
+    validated_version: "0.4.9"
     minimum_version: "0.1.0"
     license: MIT
     source: "https://github.com/ivo-lopes/ivoai"
@@ -274,6 +274,21 @@ components:
       tag_for_humans: "v1.19.0"
     exposure: internal_only
 
+  - name: docker-engine
+    role: [server-runtime]
+    project: Docker Engine
+    validated_version: "29.7.2"
+    minimum_version: "28.0.0"
+    license: Apache-2.0
+    source: "https://docs.docker.com/engine/release-notes/29/"
+    documentation: "https://docs.docker.com/engine/release-notes/28/"
+    architectures: [linux/amd64, linux/arm64]
+    install_strategy: operator_managed_official_repository
+    checksum_strategy: operating_system_package_manager
+    notes:
+      - "Engine 28 introduced gateway priority, which keeps model-download egress deterministic while backend publication networks remain non-masqueraded."
+      - "Setup validates the daemon version but does not replace an existing Engine installation that may own unrelated containers."
+
   - name: docker-compose
     role: [server-runtime]
     project: Docker Compose
@@ -292,7 +307,7 @@ components:
         url: "https://github.com/docker/compose/releases/download/v5.5.0/docker-compose-linux-aarch64"
         sha256: "ff42489f5a9b879d5d117c5ffea6defc27390b3286da8ad52cbc9c6ab5df590e"
     notes:
-      - "An existing working Compose v2 installation is preserved. On Debian or Ubuntu without the plugin package, setup installs this verified official binary under /usr/local/lib/docker/cli-plugins."
+      - "An existing compatible Compose installation is preserved. When Compose is absent or older than 2.33.1, setup installs this verified official binary under /usr/local/lib/docker/cli-plugins."
 
   - name: embedding-runtime
     role: [server]

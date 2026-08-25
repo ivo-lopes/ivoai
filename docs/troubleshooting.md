@@ -102,19 +102,30 @@ If the destination already contains an unrelated `ivoai` executable or symlink, 
 installer intentionally refuses to replace it. Move or remove that path only after
 confirming it is not a third-party or separately managed installation.
 
-### Debian 12 has Docker but no `docker compose`
+### Docker is missing or too old for server setup
 
-Debian 12 repositories may provide `docker.io` without Compose v2. This is supported.
-Rerun:
+The server requires Docker Engine 28.0.0 or newer and Docker Compose 2.33.1 or
+newer. Debian 12's `docker.io` 20.10 package is not sufficient: it predates the
+gateway-priority support that routes the embedding container through its temporary
+model-download network.
+
+Check both versions:
 
 ```sh
-sudo ivoai setup --mode server
+docker version --format 'Engine server: {{.Server.Version}}'
+docker compose version --short
 ```
 
-ivoai installs the pinned, checksum-verified official Docker Compose CLI plugin at
-`/usr/local/lib/docker/cli-plugins/docker-compose` when no working Compose v2 is
-available. The download is roughly 49 MiB, has a bounded 30-minute window, and reports
-received bytes every 10 seconds.
+Install or upgrade the Engine through Docker's official
+[Debian](https://docs.docker.com/engine/install/debian/) or
+[Ubuntu](https://docs.docker.com/engine/install/ubuntu/) instructions, then rerun
+`sudo ivoai setup --mode server`. ivoai deliberately does not replace an existing
+Engine because the host may run unrelated containers.
+
+When the Engine is compatible, ivoai installs the pinned, checksum-verified official
+Docker Compose CLI plugin at `/usr/local/lib/docker/cli-plugins/docker-compose` if
+Compose is absent or older than 2.33.1. The download is roughly 49 MiB, has a bounded
+30-minute window, and reports received bytes every 10 seconds.
 
 If setup reports a pre-existing incompatible plugin at that path, ivoai preserves it
 instead of overwriting third-party software. Inspect the file, move it aside only if

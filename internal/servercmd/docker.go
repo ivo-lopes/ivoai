@@ -13,6 +13,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"sync/atomic"
 	"syscall"
@@ -22,14 +23,14 @@ import (
 )
 
 const (
-	dockerComposeVersion     = "5.5.0"
-	dockerComposeInstallPath = "/usr/local/lib/docker/cli-plugins/docker-compose"
-	maxComposeBinarySize     = 96 << 20
-	composeDownloadTimeout   = 30 * time.Minute
-	composeProgressInterval  = 10 * time.Second
+	dockerEngineMinimumVersion  = "28.0.0"
+	dockerComposeMinimumVersion = "2.33.1"
+	pinnedDockerComposeVersion  = "5.5.0"
+	dockerComposeInstallPath    = "/usr/local/lib/docker/cli-plugins/docker-compose"
+	maxComposeBinarySize        = 96 << 20
+	composeDownloadTimeout      = 30 * time.Minute
+	composeProgressInterval     = 10 * time.Second
 )
-
-var dockerAPTInstallArgs = []string{"install", "-y", "ca-certificates", "docker.io"}
 
 type composeAsset struct {
 	URL    string
@@ -37,7 +38,7 @@ type composeAsset struct {
 }
 
 func dockerComposeAsset(architecture string) (composeAsset, error) {
-	base := "https://github.com/docker/compose/releases/download/v" + dockerComposeVersion + "/"
+	base := "https://github.com/docker/compose/releases/download/v" + pinnedDockerComposeVersion + "/"
 	switch architecture {
 	case "amd64":
 		return composeAsset{
@@ -54,27 +55,23 @@ func dockerComposeAsset(architecture string) (composeAsset, error) {
 	}
 }
 
-func ensureDocker(ctx context.Context, out, errOut io.Writer) error {
-	if dockerComposeAvailable(ctx) {
-		return nil
+func ensureDocker(ctx context.Context, out io.Writer) error {
+	docker, err := exec.LookPath("docker")
+	if err != nil {
+		return fmt.Errorf("Docker Engine %s or newer is required; install it from https://docs.docker.com/engine/install/ and rerun setup", dockerEngineMinimumVersion)
 	}
-	if _, err := exec.LookPath("docker"); err != nil {
-		apt, lookupErr := exec.LookPath("apt-get")
-		if lookupErr != nil {
-			return errors.New("Docker is required and automatic installation supports apt-based systems")
-		}
-		if err := runAPT(ctx, apt, out, errOut, "update"); err != nil {
-			return fmt.Errorf("update apt package metadata: %w", err)
-		}
-		if err := runAPT(ctx, apt, out, errOut, dockerAPTInstallArgs...); err != nil {
-			return fmt.Errorf("install Docker Engine from the operating-system repository: %w", err)
-		}
+	engineVersion, err := dockerEngineVersion(ctx, docker)
+	if err != nil {
+		return err
 	}
-	if _, err := exec.LookPath("docker"); err != nil {
-		return errors.New("Docker installation completed without a docker CLI")
+	if compatible, parsed := runtimeVersionAtLeast(engineVersion, dockerEngineMinimumVersion); !parsed || !compatible {
+		return validateDockerRuntimeVersions(engineVersion, dockerComposeMinimumVersion)
 	}
-	if dockerComposeAvailable(ctx) {
-		return nil
+	composeVersion, composeErr := dockerComposeVersion(ctx, docker)
+	if composeErr == nil {
+		if err := validateDockerRuntimeVersions(engineVersion, composeVersion); err == nil {
+			return nil
+		}
 	}
 
 	asset, err := dockerComposeAsset(runtime.GOARCH)
@@ -96,38 +93,101 @@ func ensureDocker(ctx context.Context, out, errOut io.Writer) error {
 			return nil
 		},
 	}
-	fmt.Fprintf(out, "Docker Compose plugin %s is absent; installing the verified official plugin for linux/%s\n", dockerComposeVersion, runtime.GOARCH)
-	if err := installVerifiedComposePlugin(ctx, client, asset, dockerComposeInstallPath, out); err != nil {
-		return fmt.Errorf("install Docker Compose plugin %s: %w", dockerComposeVersion, err)
+	if composeErr != nil {
+		fmt.Fprintf(out, "A compatible Docker Compose plugin is absent; installing the verified official plugin %s for linux/%s\n", pinnedDockerComposeVersion, runtime.GOARCH)
+	} else {
+		fmt.Fprintf(out, "Docker Compose %s is older than required %s; installing the verified official plugin %s for linux/%s\n", composeVersion, dockerComposeMinimumVersion, pinnedDockerComposeVersion, runtime.GOARCH)
 	}
-	if !dockerComposeAvailable(ctx) {
+	if err := installVerifiedComposePlugin(ctx, client, asset, dockerComposeInstallPath, out); err != nil {
+		return fmt.Errorf("install Docker Compose plugin %s: %w", pinnedDockerComposeVersion, err)
+	}
+	composeVersion, err = dockerComposeVersion(ctx, docker)
+	if err != nil {
 		return errors.New("verified Docker Compose plugin was installed, but 'docker compose version' still fails; remove any incompatible per-user Docker CLI plugin and rerun setup")
+	}
+	return validateDockerRuntimeVersions(engineVersion, composeVersion)
+}
+
+func dockerEngineVersion(ctx context.Context, docker string) (string, error) {
+	probeCtx, cancel := context.WithTimeout(ctx, 20*time.Second)
+	defer cancel()
+	cmd := exec.CommandContext(probeCtx, docker, "version", "--format", "{{.Server.Version}}")
+	cmd.Env = []string{"HOME=/root", "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"}
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return "", fmt.Errorf("query Docker Engine server version: %w: %s", err, strings.TrimSpace(string(output)))
+	}
+	return strings.TrimSpace(string(output)), nil
+}
+
+func dockerComposeVersion(ctx context.Context, docker string) (string, error) {
+	probeCtx, cancel := context.WithTimeout(ctx, 20*time.Second)
+	defer cancel()
+	cmd := exec.CommandContext(probeCtx, docker, "compose", "version", "--short")
+	cmd.Env = []string{"HOME=/root", "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"}
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return "", fmt.Errorf("query Docker Compose version: %w: %s", err, strings.TrimSpace(string(output)))
+	}
+	return strings.TrimSpace(string(output)), nil
+}
+
+func validateDockerRuntimeVersions(engineVersion, composeVersion string) error {
+	if compatible, parsed := runtimeVersionAtLeast(engineVersion, dockerEngineMinimumVersion); !parsed {
+		return fmt.Errorf("could not determine Docker Engine server version from %q", engineVersion)
+	} else if !compatible {
+		return fmt.Errorf("Docker Engine %s or newer is required for deterministic embedding download routing; found %s; install a current Engine from https://docs.docker.com/engine/install/ and rerun setup", dockerEngineMinimumVersion, engineVersion)
+	}
+	if compatible, parsed := runtimeVersionAtLeast(composeVersion, dockerComposeMinimumVersion); !parsed {
+		return fmt.Errorf("could not determine Docker Compose version from %q", composeVersion)
+	} else if !compatible {
+		return fmt.Errorf("Docker Compose %s or newer is required for gw_priority; found %s", dockerComposeMinimumVersion, composeVersion)
 	}
 	return nil
 }
 
-func runAPT(ctx context.Context, apt string, out, errOut io.Writer, args ...string) error {
-	cmd := exec.CommandContext(ctx, apt, args...)
-	cmd.Stdout, cmd.Stderr = out, errOut
-	cmd.Env = []string{
-		"DEBIAN_FRONTEND=noninteractive",
-		"HOME=/root",
-		"LANG=C.UTF-8",
-		"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+func runtimeVersionAtLeast(actual, minimum string) (bool, bool) {
+	actualParts, actualOK := runtimeVersionTriple(actual)
+	minimumParts, minimumOK := runtimeVersionTriple(minimum)
+	if !actualOK || !minimumOK {
+		return false, false
 	}
-	return cmd.Run()
+	for i := range actualParts {
+		if actualParts[i] != minimumParts[i] {
+			return actualParts[i] > minimumParts[i], true
+		}
+	}
+	return true, true
 }
 
-func dockerComposeAvailable(ctx context.Context) bool {
-	docker, err := exec.LookPath("docker")
-	if err != nil {
-		return false
+func runtimeVersionTriple(value string) ([3]int, bool) {
+	var result [3]int
+	value = strings.TrimPrefix(strings.TrimSpace(value), "v")
+	for index := range result {
+		end := 0
+		for end < len(value) && value[end] >= '0' && value[end] <= '9' {
+			end++
+		}
+		if end == 0 {
+			return result, false
+		}
+		number, err := strconv.Atoi(value[:end])
+		if err != nil {
+			return result, false
+		}
+		result[index] = number
+		value = value[end:]
+		if index < len(result)-1 {
+			if !strings.HasPrefix(value, ".") {
+				return result, false
+			}
+			value = value[1:]
+		}
 	}
-	probeCtx, cancel := context.WithTimeout(ctx, 20*time.Second)
-	defer cancel()
-	cmd := exec.CommandContext(probeCtx, docker, "compose", "version")
-	cmd.Env = []string{"HOME=/root", "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"}
-	return cmd.Run() == nil
+	if value != "" && !strings.HasPrefix(value, "+") && !strings.HasPrefix(value, "-") {
+		return result, false
+	}
+	return result, true
 }
 
 func ensureRootPluginDirectory() error {
@@ -253,7 +313,7 @@ func (counter *atomicByteCounter) Write(data []byte) (int, error) {
 func startComposeDownloadProgress(out io.Writer, counter *atomicByteCounter, total int64) func() {
 	done := make(chan struct{})
 	stopped := make(chan struct{})
-	fmt.Fprintf(out, "Downloading Docker Compose %s (%s); progress updates every %s\n", dockerComposeVersion, formatDownloadTotal(total), composeProgressInterval)
+	fmt.Fprintf(out, "Downloading Docker Compose %s (%s); progress updates every %s\n", pinnedDockerComposeVersion, formatDownloadTotal(total), composeProgressInterval)
 	ticker := time.NewTicker(composeProgressInterval)
 	go func() {
 		defer close(stopped)

@@ -13,13 +13,19 @@ amd64 and arm64. Both architectures use their reviewed, immutable embedding-runt
 OCI digest. Run
 `ivoai setup --mode server` as root. The operation is idempotent.
 
-Setup installs `docker.io` from the operating-system repository when Docker is
-absent. When that repository does not provide Compose v2, including Debian 12,
-ivoai installs the architecture-specific official Docker Compose plugin at
-`/usr/local/lib/docker/cli-plugins/docker-compose` after verifying its pinned
-SHA-256 checksum. Progress is printed every 10 seconds and the bounded download
-window is 30 minutes for slow links. An existing working Compose v2 installation
-is preserved.
+Server setup requires Docker Engine 28.0.0 or newer and Docker Compose 2.33.1 or
+newer. Engine 28 introduced the gateway-priority support used to give the embedding
+container temporary model-download egress without giving the backend networks
+permanent Internet access. Setup validates the daemon version before writing server
+assets and never replaces an existing Docker installation. Install or upgrade the
+Engine from Docker's official [Debian](https://docs.docker.com/engine/install/debian/)
+or [Ubuntu](https://docs.docker.com/engine/install/ubuntu/) repository first.
+
+When the Engine is compatible but Compose is missing or too old, ivoai installs the
+architecture-specific official Docker Compose plugin at
+`/usr/local/lib/docker/cli-plugins/docker-compose` after verifying its pinned SHA-256
+checksum. Progress is printed every 10 seconds and the bounded download window is 30
+minutes for slow links. An existing compatible Compose installation is preserved.
 
 ## Layout
 

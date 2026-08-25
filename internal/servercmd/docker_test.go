@@ -10,21 +10,58 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
-	"slices"
 	"strings"
 	"testing"
 )
 
-func TestDockerAPTInstallUsesBookwormPackagesOnly(t *testing.T) {
-	for _, unavailable := range []string{"docker-compose-v2", "docker-compose-plugin", "docker-compose"} {
-		if slices.Contains(dockerAPTInstallArgs, unavailable) {
-			t.Fatalf("Debian Bookworm-incompatible package remains in APT install: %s", unavailable)
-		}
+func TestDockerRuntimeVersionsRequireGatewayPrioritySupport(t *testing.T) {
+	tests := []struct {
+		name, engine, compose, errorContains string
+	}{
+		{name: "minimum versions", engine: "28.0.0", compose: "2.33.1"},
+		{name: "newer versions", engine: "29.7.2", compose: "5.5.0"},
+		{name: "distribution suffixes", engine: "28.0.4+dfsg1", compose: "v2.33.1-desktop.1"},
+		{name: "old engine", engine: "20.10.24+dfsg1", compose: "5.5.0", errorContains: "Docker Engine 28.0.0 or newer"},
+		{name: "old compose", engine: "28.0.0", compose: "2.32.4", errorContains: "Docker Compose 2.33.1 or newer"},
+		{name: "unparseable engine", engine: "unknown", compose: "5.5.0", errorContains: "determine Docker Engine server version"},
+		{name: "unparseable compose", engine: "28.0.0", compose: "unknown", errorContains: "determine Docker Compose version"},
 	}
-	for _, required := range []string{"ca-certificates", "docker.io"} {
-		if !slices.Contains(dockerAPTInstallArgs, required) {
-			t.Fatalf("required operating-system package missing: %s", required)
-		}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			err := validateDockerRuntimeVersions(test.engine, test.compose)
+			if test.errorContains == "" && err != nil {
+				t.Fatalf("compatible runtime rejected: %v", err)
+			}
+			if test.errorContains != "" && (err == nil || !strings.Contains(err.Error(), test.errorContains)) {
+				t.Fatalf("validateDockerRuntimeVersions(%q, %q) = %v, want error containing %q", test.engine, test.compose, err, test.errorContains)
+			}
+		})
+	}
+}
+
+func TestEnsureDockerChecksTheDaemonVersionBeforeProvisioning(t *testing.T) {
+	for _, test := range []struct {
+		name, engine, compose, errorContains string
+	}{
+		{name: "compatible", engine: "29.7.2", compose: "5.5.0"},
+		{name: "old daemon", engine: "20.10.24+dfsg1", compose: "5.5.0", errorContains: "Docker Engine 28.0.0 or newer"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			directory := t.TempDir()
+			docker := filepath.Join(directory, "docker")
+			script := "#!/bin/sh\nif [ \"$1\" = version ]; then printf '%s\\n' '" + test.engine + "'; exit 0; fi\nif [ \"$1\" = compose ]; then printf '%s\\n' '" + test.compose + "'; exit 0; fi\nexit 1\n"
+			if err := os.WriteFile(docker, []byte(script), 0o700); err != nil {
+				t.Fatal(err)
+			}
+			t.Setenv("PATH", directory)
+			err := ensureDocker(context.Background(), io.Discard)
+			if test.errorContains == "" && err != nil {
+				t.Fatalf("compatible Docker runtime rejected: %v", err)
+			}
+			if test.errorContains != "" && (err == nil || !strings.Contains(err.Error(), test.errorContains)) {
+				t.Fatalf("ensureDocker() = %v, want error containing %q", err, test.errorContains)
+			}
+		})
 	}
 }
 
@@ -33,12 +70,17 @@ func TestDockerComposePinsMatchReviewedManifest(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	for _, value := range []string{dockerEngineMinimumVersion, dockerComposeMinimumVersion} {
+		if !strings.Contains(string(manifest), value) {
+			t.Errorf("Docker runtime minimum is absent from manifest: %s", value)
+		}
+	}
 	for _, architecture := range []string{"amd64", "arm64"} {
 		asset, err := dockerComposeAsset(architecture)
 		if err != nil {
 			t.Fatal(err)
 		}
-		for _, value := range []string{dockerComposeVersion, asset.URL, asset.SHA256} {
+		for _, value := range []string{pinnedDockerComposeVersion, asset.URL, asset.SHA256} {
 			if !strings.Contains(string(manifest), value) {
 				t.Errorf("Docker Compose %s pin is absent from manifest: %s", architecture, value)
 			}

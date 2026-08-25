@@ -151,6 +151,9 @@ func (r *runner) setup(ctx context.Context, layout server.Layout, manager server
 	if !supportedServerArchitecture(runtime.GOARCH) {
 		return fmt.Errorf("unsupported server architecture %s; supported: amd64, arm64", runtime.GOARCH)
 	}
+	if err := ensureDocker(ctx, r.out); err != nil {
+		return err
+	}
 	if err := ensureServiceUser(ctx); err != nil {
 		return err
 	}
@@ -159,9 +162,6 @@ func (r *runner) setup(ctx context.Context, layout server.Layout, manager server
 		return err
 	}
 	manager.ContainerUser = containerUser
-	if err := ensureDocker(ctx, r.out, r.errOut); err != nil {
-		return err
-	}
 	if err := manager.Setup(ctx); err != nil {
 		return err
 	}
@@ -1121,6 +1121,9 @@ func (r *runner) gateway(ctx context.Context, layout server.Layout, args []strin
 			mode = "trusted HTTPS reverse proxy"
 		}
 		fmt.Fprintf(r.out, "Gateway configured: %s (%s)\n", *publicURL, mode)
+		if *cert == "" && len(trustedProxies) == 0 {
+			fmt.Fprintln(r.out, "Loopback accepts only a reverse proxy on the same host. For a proxy on another host or container, rerun with --listen PRIVATE_IP:7744 --trusted-proxy PROXY_CIDR.")
+		}
 		return nil
 	}
 	return errors.New("usage: ivoai server gateway <serve|configure --public-url HTTPS_ORIGIN [--listen HOST:PORT] [--trusted-proxy CIDR] [--tls-cert PATH --tls-key PATH]>")

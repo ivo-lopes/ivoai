@@ -103,6 +103,10 @@ and `ivoai doctor --json` remain suitable for automation.
 
 Ubuntu 22.04+, Ubuntu 24.04+, and Debian 12 are supported on amd64 and arm64:
 
+Install Docker Engine 28.0.0 or newer first from Docker's official repository.
+Server setup validates the daemon and also requires Docker Compose 2.33.1 or newer;
+it installs the project's pinned Compose plugin when needed.
+
 ```sh
 curl -fsSL https://raw.githubusercontent.com/ivo-lopes/ivoai/main/install.sh | sudo sh
 sudo ivoai setup --mode server

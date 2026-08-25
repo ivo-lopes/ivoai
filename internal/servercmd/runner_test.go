@@ -319,6 +319,11 @@ func TestGatewayConfigurePersistsHTTPSWithoutManualEditing(t *testing.T) {
 	if !bytes.Contains(configuration, []byte(`"public_url": "https://ai.example.com"`)) || !strings.Contains(out.String(), "reverse proxy") {
 		t.Fatalf("gateway configuration was not persisted: %s / %s", configuration, out.String())
 	}
+	for _, expected := range []string{"same host", "--listen", "--trusted-proxy"} {
+		if !strings.Contains(out.String(), expected) {
+			t.Errorf("loopback gateway guidance omitted %q: %s", expected, out.String())
+		}
+	}
 	if err := run(context.Background(), []string{"gateway", "configure", "--public-url", "https://ai.example.com", "--listen", "0.0.0.0:7744"}, strings.NewReader(""), &bytes.Buffer{}, &bytes.Buffer{}); err == nil {
 		t.Fatal("public plaintext gateway configuration accepted")
 	}
