@@ -41,6 +41,10 @@ func TestLocalBridgeDelegatesToOfficialWorkerAndPersistsMetadataOnly(t *testing.
 		t.Fatal(err)
 	}
 	codex := executable(t, root, "codex", `#!/bin/sh
+if [ "$1" = "mcp" ]; then
+  printf '[]'
+  exit 0
+fi
 result=""
 previous=""
 for arg in "$@"; do
@@ -155,6 +159,10 @@ func TestAutomaticBridgeRetriesWorkerOnAlternateOnlyForLimitSignal(t *testing.T)
 		return quota.ProviderQuota{Provider: provider, Authenticated: true, Eligible: true, Source: "fixture", ObservedAt: now}
 	}
 	codexBinary := executable(t, root, "codex", `#!/bin/sh
+if [ "$1" = "mcp" ]; then
+  printf '[]'
+  exit 0
+fi
 result=""
 previous=""
 for arg in "$@"; do

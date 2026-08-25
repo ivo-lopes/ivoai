@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ivo-lopes/ivoai/internal/config"
 	"github.com/ivo-lopes/ivoai/internal/platform"
 	"github.com/ivo-lopes/ivoai/internal/session"
 )
@@ -16,6 +17,10 @@ func TestCodexAdapterUsesOfficialExecAndDoesNotExposeProviderKeys(t *testing.T) 
 	argsFile := filepath.Join(root, "args")
 	envFile := filepath.Join(root, "env")
 	codex := executable(t, root, "codex", `#!/bin/sh
+if [ "$1" = "mcp" ]; then
+  printf '%s' '[{"name":"external-write"},{"name":"ivoai-memory"},{"name":"ivoai-context"}]'
+  exit 0
+fi
 printf '%s\n' "$@" > "`+argsFile+`"
 env > "`+envFile+`"
 result=""
@@ -28,7 +33,7 @@ cat >/dev/null
 printf 'worker result' > "$result"
 `)
 	t.Setenv("OPENAI_API_KEY", "must-not-leak")
-	adapter := Adapter{Runner: platform.ExecRunner{}, CodexPath: codex}
+	adapter := Adapter{Runner: platform.ExecRunner{}, CodexPath: codex, KnowledgeServers: testKnowledgeServers()}
 	var observation Observation
 	result, err := adapter.Run(context.Background(), Request{Executor: "codex", Task: "review safely", Model: "fixture-model", Directory: root, Runtime: filepath.Join(root, "runtime")}, func(value Observation) { observation = value })
 	if err != nil {
@@ -38,7 +43,7 @@ printf 'worker result' > "$result"
 		t.Fatalf("result=%+v observation=%+v", result, observation)
 	}
 	args, _ := os.ReadFile(argsFile)
-	if !strings.HasPrefix(string(args), "-c\ndeveloper_instructions=") || !strings.Contains(string(args), "exec\n--sandbox\nread-only\n--json\n--output-last-message\n") || !strings.Contains(string(args), "--model\nfixture-model\n-\n") {
+	if !strings.Contains(string(args), `mcp_servers."external-write".enabled=false`) || !strings.Contains(string(args), `mcp_servers."ivoai-memory".enabled_tools=["memory_query","memory_recent","memory_read_page","memory_status"]`) || !strings.Contains(string(args), "exec\n--sandbox\nread-only\n--json\n--output-last-message\n") || !strings.Contains(string(args), "--model\nfixture-model\n-\n") {
 		t.Fatalf("unexpected Codex argv: %q", args)
 	}
 	assertResearchPriority(t, string(args))
@@ -58,7 +63,7 @@ printf '%s\n' "$@" > "`+argsFile+`"
 cat >/dev/null
 printf '%s' '{"type":"result","result":"review complete"}'
 `)
-	adapter := Adapter{Runner: platform.ExecRunner{}, ClaudePath: claude}
+	adapter := Adapter{Runner: platform.ExecRunner{}, ClaudePath: claude, KnowledgeServers: testKnowledgeServers()}
 	result, err := adapter.Run(context.Background(), Request{Executor: "claude", Task: "review", Directory: root, Runtime: filepath.Join(root, "runtime")}, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -67,13 +72,30 @@ printf '%s' '{"type":"result","result":"review complete"}'
 		t.Fatalf("result=%+v", result)
 	}
 	args, _ := os.ReadFile(argsFile)
-	if !strings.HasPrefix(string(args), "--append-system-prompt\n") || !strings.Contains(string(args), "--disallowedTools\nBash,Edit,Write,NotebookEdit\n--permission-mode\nplan\n") || !strings.Contains(string(args), "--print\n--output-format\njson\n") {
+	if !strings.HasPrefix(string(args), "--strict-mcp-config\n--mcp-config\n") || !strings.Contains(string(args), `"ivoai-memory"`) || !strings.Contains(string(args), "mcp__ivoai-memory__memory_write_page") || !strings.Contains(string(args), "--permission-mode\nplan\n") || !strings.Contains(string(args), "--print\n--output-format\njson\n") {
 		t.Fatalf("unexpected Claude argv: %q", args)
 	}
 	assertResearchPriority(t, string(args))
 	environment, _ := os.ReadFile(envFile)
 	if !strings.Contains(string(environment), "DISABLE_AUTOUPDATER=1") {
 		t.Fatal("Claude worker did not receive update guard")
+	}
+}
+
+func testKnowledgeServers() map[string]config.MCPServer {
+	return map[string]config.MCPServer{
+		"ivoai-memory":  {URL: "https://ai.example.com/v1/memory/mcp", Enabled: true, Kind: "memory"},
+		"ivoai-context": {URL: "https://ai.example.com/v1/mcp/context", Enabled: true, Kind: "context"},
+	}
+}
+
+func TestCodexMCPIsolationFailsClosedOnUnstructuredInventory(t *testing.T) {
+	root := t.TempDir()
+	codex := executable(t, root, "codex", "#!/bin/sh\nprintf 'not-json'\n")
+	adapter := Adapter{Runner: platform.ExecRunner{}, CodexPath: codex, KnowledgeServers: testKnowledgeServers()}
+	_, err := adapter.Run(context.Background(), Request{Executor: "codex", Task: "review", Directory: root, Runtime: filepath.Join(root, "runtime")}, nil)
+	if err == nil || !strings.Contains(err.Error(), "invalid structured server inventory") {
+		t.Fatalf("unexpected isolation error: %v", err)
 	}
 }
 

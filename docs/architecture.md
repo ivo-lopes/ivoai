@@ -216,8 +216,9 @@ Automatic plans add metadata-only task IDs, dependencies, scores, tiers, profile
 sources, execution state, duration, and escalation reasons to session state. Full
 task instructions, SharedContextBrief content, worker responses, credentials, and
 environments remain in the private runtime/bridge and are never sent to Ruflo. Codex
-workers are sandboxed read-only; Claude workers use plan permission mode with write
-tools disabled. The primary alone applies changes.
+workers are sandboxed read-only and disable inherited MCPs except managed Memory/Context
+read tools. Claude workers use strict process-scoped MCP configuration and plan
+permission mode with mutation tools disabled. The primary alone applies changes.
 
 ai-memory 1.29.0 is the durable operational memory layer. Its versioned native
 binaries and hook bundle support Codex and Claude Code and publish per-platform

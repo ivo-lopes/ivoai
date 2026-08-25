@@ -204,7 +204,7 @@ func (a *App) OrchestratorServe(ctx context.Context, id string) error {
 	server := orchestrator.Server{
 		Store: store, SessionID: id, Directory: value.WorkingDirectory, RuntimeDir: runtimeDir,
 		ReviewExecutor:        cfg.Orchestration.ReviewExecutor,
-		Adapter:               workers.Adapter{Runner: a.Runner, CodexPath: state.Components["codex"].Path, ClaudePath: state.Components["claude-code"].Path, HeadroomPath: state.Components["headroom"].Path, HeadroomEnabled: primaryHeadroomEnabled(cfg)},
+		Adapter:               workers.Adapter{Runner: a.Runner, CodexPath: state.Components["codex"].Path, ClaudePath: state.Components["claude-code"].Path, HeadroomPath: state.Components["headroom"].Path, HeadroomEnabled: primaryHeadroomEnabled(cfg), KnowledgeServers: cfg.MCP.Servers},
 		Control:               orchestration.ControlPlane{Manager: a.orchestrationManager(state), RuntimeDir: runtimeDir},
 		Quota:                 a.automaticQuotaManager(cfg, state),
 		CheckpointEnabled:     cfg.Orchestration.Auto.CheckpointEnabled,

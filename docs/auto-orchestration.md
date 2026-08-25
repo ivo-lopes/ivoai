@@ -95,9 +95,10 @@ Dependency-ready workers start concurrently and return IDs immediately; dependen
 tasks remain queued until all prerequisites complete.
 
 Every worker passes through the quota and capability router. Official clients run
-inference (`codex exec` or `claude --print`); Codex workers use a read-only sandbox,
-Claude workers use plan mode with write tools disabled, and Ruflo records only opaque
-lifecycle state. Results are bounded by execution tier and retained in bridge memory.
+inference (`codex exec` or `claude --print`); Codex workers use a read-only sandbox
+plus MCP read allowlists, Claude workers use strict process-scoped MCP configuration
+and plan mode with mutation tools disabled, and Ruflo records only opaque lifecycle
+state. Results are bounded by execution tier and retained in bridge memory.
 See [Automatic scheduler and model routing](auto-scheduler.md).
 
 ## Progressive escalation

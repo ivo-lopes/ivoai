@@ -17,6 +17,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/ivo-lopes/ivoai/internal/config"
 	"github.com/ivo-lopes/ivoai/internal/headroom"
 	"github.com/ivo-lopes/ivoai/internal/knowledgepolicy"
 	"github.com/ivo-lopes/ivoai/internal/platform"
@@ -65,11 +66,12 @@ type Result struct {
 }
 
 type Adapter struct {
-	Runner          platform.Runner
-	CodexPath       string
-	ClaudePath      string
-	HeadroomPath    string
-	HeadroomEnabled bool
+	Runner           platform.Runner
+	CodexPath        string
+	ClaudePath       string
+	HeadroomPath     string
+	HeadroomEnabled  bool
+	KnowledgeServers map[string]config.MCPServer
 }
 
 func (a Adapter) Capability(ctx context.Context, executor string) error {
@@ -124,6 +126,10 @@ func (a Adapter) Run(ctx context.Context, request Request, observe func(Observat
 	if resultFile != "" {
 		defer os.Remove(resultFile)
 	}
+	args, err = a.isolateMCPs(ctx, direct, request.Executor, args)
+	if err != nil {
+		return Result{}, err
+	}
 	command, commandArgs := direct, args
 	useHeadroom := false
 	// Headroom 0.36.0 has no verified exclusion contract for authoritative
@@ -161,6 +167,109 @@ func (a Adapter) Run(ctx context.Context, request Request, observe func(Observat
 	return result, nil
 }
 
+var readOnlyKnowledgeTools = map[string][]string{
+	"ivoai-memory":  {"memory_query", "memory_recent", "memory_read_page", "memory_status"},
+	"ivoai-context": {"context_search", "context_get_document", "context_recent", "context_health"},
+}
+
+// isolateMCPs ensures an advisory worker cannot inherit a user's mutable MCP
+// tools. Codex supports per-server enablement and tool allowlists. Claude Code
+// supports a strict, process-scoped MCP configuration. Failure to establish the
+// boundary fails the worker closed; the authoritative primary remains usable.
+func (a Adapter) isolateMCPs(ctx context.Context, executable, executor string, args []string) ([]string, error) {
+	switch executor {
+	case "codex":
+		if a.Runner == nil {
+			return nil, errors.New("isolate Codex worker MCPs: runner is unavailable")
+		}
+		result, err := a.Runner.Run(ctx, executable, []string{"mcp", "list", "--json"}, platform.RunOptions{Timeout: 15 * time.Second})
+		if err != nil {
+			return nil, fmt.Errorf("isolate Codex worker MCPs: inspect configured servers: %w", err)
+		}
+		var servers []struct {
+			Name string `json:"name"`
+		}
+		if len(result.Stdout) > 256<<10 {
+			return nil, errors.New("isolate Codex worker MCPs: structured server inventory exceeds safety limit")
+		}
+		decoder := json.NewDecoder(strings.NewReader(result.Stdout))
+		if err := decoder.Decode(&servers); err != nil || len(servers) > 128 {
+			return nil, errors.New("isolate Codex worker MCPs: invalid structured server inventory")
+		}
+		var trailing any
+		if err := decoder.Decode(&trailing); !errors.Is(err, io.EOF) {
+			return nil, errors.New("isolate Codex worker MCPs: invalid trailing data")
+		}
+		restrictions := make([]string, 0, len(servers)*2+8)
+		seen := map[string]bool{}
+		for _, server := range servers {
+			if server.Name == "" || strings.ContainsAny(server.Name, "\x00\r\n") || seen[server.Name] {
+				return nil, errors.New("isolate Codex worker MCPs: unsafe server identifier")
+			}
+			seen[server.Name] = true
+			tools, managed := a.enabledKnowledgeServer(server.Name)
+			key := "mcp_servers." + strconv.Quote(server.Name)
+			if !managed {
+				restrictions = append(restrictions, "-c", key+".enabled=false")
+				continue
+			}
+			restrictions = append(restrictions, "-c", key+".enabled_tools="+tomlStringArray(tools))
+		}
+		return append(restrictions, args...), nil
+	case "claude":
+		configuration, err := a.claudeKnowledgeConfig()
+		if err != nil {
+			return nil, err
+		}
+		return append([]string{"--strict-mcp-config", "--mcp-config", configuration}, args...), nil
+	default:
+		return nil, errors.New("worker executor must be codex or claude")
+	}
+}
+
+func (a Adapter) enabledKnowledgeServer(name string) ([]string, bool) {
+	tools, known := readOnlyKnowledgeTools[name]
+	server, configured := a.KnowledgeServers[name]
+	if !known || !configured || !server.Enabled || (server.Kind != "memory" && server.Kind != "context") {
+		return nil, false
+	}
+	return tools, true
+}
+
+func (a Adapter) claudeKnowledgeConfig() (string, error) {
+	type claudeServer struct {
+		Type    string            `json:"type"`
+		URL     string            `json:"url"`
+		Headers map[string]string `json:"headers"`
+	}
+	configuration := struct {
+		Servers map[string]claudeServer `json:"mcpServers"`
+	}{Servers: map[string]claudeServer{}}
+	for _, name := range []string{"ivoai-memory", "ivoai-context"} {
+		if _, enabled := a.enabledKnowledgeServer(name); !enabled {
+			continue
+		}
+		server := a.KnowledgeServers[name]
+		if server.URL == "" || strings.ContainsAny(server.URL, "\x00\r\n") {
+			return "", errors.New("isolate Claude worker MCPs: invalid managed endpoint")
+		}
+		configuration.Servers[name] = claudeServer{Type: "http", URL: server.URL, Headers: map[string]string{"Authorization": "Bearer ${IVOAI_SERVER_TOKEN}"}}
+	}
+	encoded, err := json.Marshal(configuration)
+	if err != nil {
+		return "", fmt.Errorf("isolate Claude worker MCPs: %w", err)
+	}
+	return string(encoded), nil
+}
+
+func tomlStringArray(values []string) string {
+	encoded := make([]string, 0, len(values))
+	for _, value := range values {
+		encoded = append(encoded, strconv.Quote(value))
+	}
+	return "[" + strings.Join(encoded, ",") + "]"
+}
+
 func workerArgs(request Request) ([]string, string, error) {
 	instructions := knowledgepolicy.ResearchFirstInstructions
 	if request.SharedContextBrief != "" {
@@ -180,7 +289,7 @@ func workerArgs(request Request) ([]string, string, error) {
 		return append(args, "-"), file, nil
 	}
 	if request.Executor == "claude" {
-		args := []string{"--append-system-prompt", instructions, "--disallowedTools", "Bash,Edit,Write,NotebookEdit", "--permission-mode", "plan", "--print", "--output-format", "json"}
+		args := []string{"--append-system-prompt", instructions, "--disallowedTools", "Bash,Edit,Write,NotebookEdit,mcp__ivoai-memory__memory_write_page,mcp__ivoai-memory__memory_delete_page,mcp__ivoai-memory__memory_feedback", "--permission-mode", "plan", "--print", "--output-format", "json"}
 		if request.Effort != "" {
 			args = append(args, "--effort", request.Effort)
 		}

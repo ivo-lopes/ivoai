@@ -67,9 +67,10 @@ compromised host are outside ivoai's protection boundary.
   executables, environment, endpoints, and credentials before dispatch.
 - The SharedContextBrief is secret-checked, size-bounded, stored only in a private
   session runtime file, and represented in session JSON by metadata and a hash.
-- Automatic workers are advisory: Codex uses a read-only sandbox and Claude uses
-  plan permission mode with Bash/Edit/Write/NotebookEdit disabled. The primary is the
-  only authoritative writer.
+- Automatic workers are advisory. Codex uses a read-only sandbox, disables inherited
+  MCP servers, and allowlists only managed IvoAI Memory/Context read tools. Claude uses
+  strict process-scoped MCP configuration, plan permission mode, and explicit
+  filesystem/memory mutation denials. The primary is the only authoritative writer.
 
 ## Reportable findings and severity context
 

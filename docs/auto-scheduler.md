@@ -113,9 +113,11 @@ not session JSON or Ruflo. Worker result budgets are tier-bounded, and worker pr
 ask for conclusions, facts, evidence, issues, and recommendations instead of a long
 narrative.
 
-Codex workers run with `--sandbox read-only`. Claude workers use plan permission mode
-and disallow Bash/Edit/Write/NotebookEdit. They inherit the project directory and
-the same managed Memory/Context MCP configuration and scoped server environment.
+Codex workers run with `--sandbox read-only`, disable inherited MCP servers, and
+allowlist only managed Memory/Context read tools. Claude workers use a strict
+process-scoped MCP configuration, plan permission mode, and explicit filesystem and
+memory mutation denials. Both retain shared knowledge access through the scoped server
+environment.
 Ruflo receives only opaque lifecycle IDs.
 
 ## Escalation, observability, and limits
