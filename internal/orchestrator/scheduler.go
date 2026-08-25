@@ -416,7 +416,7 @@ func (s *Server) completeTask(planID, taskID, workerID string, state session.Sta
 	delete(s.cancels, workerID)
 	if plan := s.plans[planID]; plan != nil {
 		if task := plan.Tasks[taskID]; task != nil {
-			task.Task.State, task.Task.Profile.EffortSource = string(state), task.Task.Profile.EffortSource
+			task.Task.State = string(state)
 			task.Task.HeadroomUsed = headroom
 			if !task.StartedAt.IsZero() {
 				task.Task.DurationMilliseconds = time.Since(task.StartedAt).Milliseconds()
