@@ -60,8 +60,16 @@ The bridge offers:
 - `orchestration_cancel` — cancellation of a worker owned by the session.
 
 In automatic sessions it additionally offers read-only `orchestration_quota` and,
-when enabled, `orchestration_checkpoint`. The quota manager, not the model, has the
-final authority over the provider used for each worker.
+when enabled, `orchestration_checkpoint`, plus the validated automatic scheduler:
+
+- `orchestration_bootstrap`, `orchestration_capabilities`, and `orchestration_plan`;
+- asynchronous `orchestration_spawn` and `orchestration_spawn_batch`;
+- dependency release with `orchestration_primary_complete`;
+- bounded notification-based `orchestration_wait`;
+- one-tier-at-a-time `orchestration_escalate`.
+
+The quota manager and capability router, not the model, have final authority over
+provider, runtime-verified model, effort, and whether delegation is economical.
 
 ## Automatic mode
 
@@ -85,6 +93,14 @@ override. Claude receives them through `--append-system-prompt-file` and a priva
 session-only `--settings` file that captures structured statusline telemetry. No
 permanent third-party configuration is overwritten. Details are in
 [auto-orchestration.md](auto-orchestration.md).
+
+On the first substantive request, Memory and Context are each attempted once and a
+bounded SharedContextBrief is shared with workers. IvoAI validates the task DAG,
+calculates weighted capability tiers, keeps uneconomic work in the primary, and
+launches independent advisory workers concurrently. Workers are structurally
+read-only; the primary remains the only writer. Full task text and results never
+enter session JSON. Details of scoring and routing are in
+[auto-scheduler.md](auto-scheduler.md).
 
 Those session instructions enforce the same research priority used by direct mode:
 `ivoai-memory` first, `ivoai-context` second, and web/external sources only after both
@@ -177,7 +193,24 @@ show_monthly = true
 show_session = true
 show_context = true
 show_model_scoped = true
+
+[orchestration.auto.optimization]
+strategy = "efficient"
+parallelism = true
+shared_context_bootstrap = true
+progressive_escalation = true
+
+[orchestration.auto.optimization.weights]
+complexity = 30
+risk = 25
+reasoning_depth = 20
+verification_need = 15
+context_breadth = 10
 ```
+
+Advanced per-provider/per-tier model and effort overrides are optional. Empty values
+mean runtime auto-resolution/client default; a model override is accepted only when
+it appears in the official runtime capability catalog.
 
 `provider_execution=true`, unknown executors, unknown modes and worker limits outside
 1–3 are rejected. The interactive Configuration menu manages these preferences, or

@@ -1,7 +1,7 @@
 # ivoai architecture
 
-Status: implementation baseline for v0.4.9. Decisions and upstream data were
-validated on 2026-08-23. Exact pins live in `manifest/components.yaml`; this
+Status: implementation baseline for v0.5.0. Decisions and upstream data were
+validated through 2026-08-25. Exact pins live in `manifest/components.yaml`; this
 document explains why they exist and how the pieces fit together.
 
 ## Goals and boundaries
@@ -33,7 +33,7 @@ ivoai CLI/wizard                       one public HTTPS origin
   +-- fail-safe memory hooks              +-- context MCP (read-only)
   +-- session control plane               +-- ai-memory MCP
   |     +-- direct observability
-  |     `-- safe Ruflo swarm + local MCP
+  |     `-- AUTO bootstrap + DAG scheduler
   |                                      |
   +-- Headroom -- Codex/Claude            +-- Web MCP + OAuth 2.1
         `------ direct fallback           +-- context service
@@ -45,9 +45,15 @@ ivoai CLI/wizard                       one public HTTPS origin
 
 ## Automatic quota-aware control plane
 
-`ivoai auto` adds a supervisor above the existing session control plane. The selected
+`ivoai auto` adds a supervisor and deterministic scheduler above the existing session
+control plane. The selected
 official Codex or Claude TUI remains planner, primary, conversation owner, and result
-consolidator. A standalone quota manager gates the initial primary and every worker;
+consolidator. Its first substantive turn attempts Memory then Context exactly once,
+creates a private bounded SharedContextBrief, validates a maximum-12-task DAG, and
+submits numerical task signals to IvoAI. IvoAI—not the model—calculates capability
+scores, chooses the lowest sufficient runtime-verified model/effort profile, rejects
+uneconomic delegation, and runs dependency-ready advisory workers asynchronously.
+A standalone quota manager gates the initial primary and every worker;
 Ruflo remains a provider-free ephemeral lifecycle coordinator. Codex quota comes
 from the official app-server JSON-RPC method, while Claude quota comes from a
 session-local structured statusline payload. Context-window pressure is modeled
@@ -59,7 +65,8 @@ hard limit it reaps the primary process group, re-probes the alternate, reads a
 bounded worktree summary without changing files, and opens the alternate official
 TUI with the handoff. A two-failover ceiling prevents ping-pong loops. See
 [Automatic orchestration](auto-orchestration.md) and
-[Subscription quota routing](quota-routing.md).
+[Subscription quota routing](quota-routing.md). Scoring, capability discovery, and
+the async API are specified in [Automatic scheduler](auto-scheduler.md).
 
 Only the gateway is externally reachable. Qdrant, the embedding runtime, ai-memory
 administration, and service management stay on a private Compose network or loopback
@@ -204,6 +211,13 @@ opaque lifecycle IDs to Ruflo task commands. Results are bounded to 1 MiB and ke
 the bridge process, never in session state. Worker concurrency defaults to two and is
 hard-capped at three. The bridge is not registered in or routed by the public server
 gateway. See [orchestration.md](orchestration.md).
+
+Automatic plans add metadata-only task IDs, dependencies, scores, tiers, profile
+sources, execution state, duration, and escalation reasons to session state. Full
+task instructions, SharedContextBrief content, worker responses, credentials, and
+environments remain in the private runtime/bridge and are never sent to Ruflo. Codex
+workers are sandboxed read-only; Claude workers use plan permission mode with write
+tools disabled. The primary alone applies changes.
 
 ai-memory 1.29.0 is the durable operational memory layer. Its versioned native
 binaries and hook bundle support Codex and Claude Code and publish per-platform

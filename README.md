@@ -23,9 +23,10 @@ ChatGPT Web, and Claude Web.
 ```text
 Desktop / notebook                         Private Linux server
 
-ivoai auto ── quota/capability gate ── Codex/Claude TUI
-    │          ├── Headroom / direct fallback    │
-    │          └── safe Ruflo swarm + workers    │
+ivoai auto ── shared knowledge ── DAG scheduler ── Codex/Claude TUI
+    │          ├── quota + model/effort routing  │
+    │          ├── async read-only workers       │
+    │          └── safe Ruflo lifecycle          │
 ivoai menu ── Session Control                   HTTPS gateway
     │                                            ├── OAuth + Web MCP
     │ HTTPS + scoped credential                 ├── context/RAG ── Qdrant
@@ -70,7 +71,19 @@ ivoai auto --planner codex         # official Codex TUI
 ivoai auto --planner claude        # official Claude Code TUI
 ```
 
-The selected official client remains the conversation owner, planner, and primary.
+The selected official client remains the conversation owner, planner, primary, and
+only authoritative writer. On the first substantive request, automatic mode attempts
+one bounded Memory lookup and one Context lookup, builds a shared brief, validates a
+task DAG, calculates objective scores, and dispatches only workers whose expected
+benefit exceeds startup/context overhead. Independent tasks run concurrently; trivial
+work stays in the primary.
+
+IvoAI maps task scores to LIGHT, BALANCED, STRONG, and MAX requirements and selects
+the lowest sufficient runtime-verified model/effort profile. It never invents model
+IDs or reasoning support. Codex uses its structured app-server catalog; Claude uses
+its official client default model and only verified effort controls. Subscription
+quota and model-specific limits remain the final dispatch gate.
+
 Before opening it, ivoai reads subscription telemetry through Codex app-server and
 Claude's session-local structured statusline, then routes around a hard exhausted
 provider. The same gate runs before every worker. During a session, a hard limit can
@@ -174,6 +187,7 @@ execution.
 - [Client guide](docs/client.md)
 - [Direct and orchestrated sessions](docs/orchestration.md)
 - [Automatic orchestration](docs/auto-orchestration.md)
+- [Automatic scheduler and model routing](docs/auto-scheduler.md)
 - [Quota routing](docs/quota-routing.md)
 - [Server and reverse proxy](docs/server.md)
 - [Connections and Web MCP](docs/connections.md)

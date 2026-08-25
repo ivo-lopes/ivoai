@@ -1,5 +1,5 @@
 schema_version: 1
-validated_at: "2026-08-24"
+validated_at: "2026-08-25"
 transitive_dependency_cutoff: "2026-08-21T00:00:00Z"
 policy:
   allow_latest_tags: false
@@ -26,7 +26,7 @@ components:
 
   - name: ivoai
     role: [client, server]
-    validated_version: "0.4.9"
+    validated_version: "0.5.0"
     minimum_version: "0.1.0"
     license: MIT
     source: "https://github.com/ivo-lopes/ivoai"

@@ -39,6 +39,14 @@ executable processes, and `httptest` servers. They do not access developer Codex
 Claude credentials. Server packages remain testable without root, systemd, Docker,
 or a live Qdrant process.
 
+The automatic scheduler harness uses fake Codex/Claude adapters, fake Ruflo lifecycle
+control, and synthetic quota/capability registries. Its temporal DAG test runs two
+independent delayed workers together and verifies that dependent tasks do not start
+early. Routing tests cover the four score tiers, normalized weights, provider/model
+quota exhaustion, quota pressure, unsupported effort, unavailable capabilities,
+duplicate-work rejection, and economic primary-vs-worker selection. No normal test
+invokes a real LLM.
+
 ## Installation coverage in CI
 
 The `install-smoke` job runs in Ubuntu 22.04, Ubuntu 24.04, and Debian 12

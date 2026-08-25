@@ -69,6 +69,25 @@ unspecified provider route. The manager resolves the preferred provider first, t
 the alternate. It returns an explicit decision and reason; callers may not bypass
 it.
 
+Automatic task routing adds a capability registry above this gate. Codex model names,
+default flags, and supported reasoning efforts come only from the structured official
+app-server `model/list` response. Claude's validated CLI exposes supported effort
+choices but no equivalent structured model catalog, so its model remains the client
+default. Capability cache entries are keyed by client version and invalidated on a
+version change.
+
+For each task, IvoAI first determines the required tier from the objective score,
+then finds the lowest sufficient catalog model and supported effort. An exact
+model-specific zero rejects only that model; another sufficient model from the same
+provider is tried before the alternate provider. If more than one profile meets the
+quality floor, authoritative remaining quota can preserve the more constrained
+provider. Quota pressure never permits a profile below the required tier. Unknown
+telemetry remains unknown rather than becoming zero.
+
+The progression LIGHT → BALANCED → STRONG → MAX is not a vendor mapping. Model IDs
+are never hardcoded from tier names. Escalation advances one tier only after an
+evidence-based validation failure or risk reassessment.
+
 The dispatch gate runs:
 
 - before the conversation primary starts;

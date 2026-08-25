@@ -9,10 +9,28 @@ limite confirmado e pode transferir a continuidade para o outro cliente. A troca
 preserva os arquivos em andamento e usa um resumo seguro do último ponto confirmado;
 nenhuma chave de API paga é solicitada ou ativada como alternativa.
 
+Antes de iniciar um trabalho relevante, o modo AUTO consulta uma vez a memória e o
+Contexto privado, prepara um resumo compartilhado e divide o objetivo em tarefas com
+dependências. O próprio IvoAI decide se vale a pena criar workers: correções triviais
+ficam no agente principal; análises independentes podem rodar em paralelo. Cada tarefa
+recebe um requisito LIGHT, BALANCED, STRONG ou MAX, e o sistema escolhe o perfil mais
+leve que ainda atende a qualidade exigida, respeitando os limites das assinaturas.
+
+Workers são consultores somente leitura. Codex e Claude executam pelos clientes
+oficiais, compartilham o mesmo resumo de contexto e devolvem evidências ao agente
+principal, que continua sendo o único responsável por alterar arquivos e responder
+ao usuário. Assim, o produto reduz repetição de leitura e latência sem criar um silo
+de memória ou sacrificar controle.
+
 Uma segunda janela com `ivoai monitor --watch` mostra quem está conduzindo a
 conversa, workers, saúde dos serviços, limites semanal/mensal, origem e atualização
 dos dados. Quando uma plataforma não fornece determinada métrica, o produto informa
 `N/A / not exposed` em vez de inventar um percentual.
+
+O monitor também apresenta o plano, dependências, peso, tier, modelo/esforço quando
+confirmados, tarefas simultâneas e motivos de escalada. Quando os clientes não
+fornecem métricas oficiais de tokens, o ivoai informa que o dado está indisponível em
+vez de estimar uma economia.
 
 ## Visão geral
 

@@ -18,9 +18,12 @@ of the following for the current conversation:
 
 - the interface seen by the user;
 - the planner and primary agent;
-- the delegation decision maker;
+- the source of task signals and proposed decomposition;
 - the only writer/conversation owner;
 - the consolidator of bounded worker results.
+
+IvoAI retains final authority over whether delegation is economical and over quota,
+provider, model, and effort selection.
 
 Codex is given session-local developer instructions with a process-scoped `-c`
 override. Claude is given the same policy using its official
@@ -52,15 +55,58 @@ No `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, or other PAYG credential is accepted a
 fallback. Provider-key environment variables are removed from quota probes and
 workers. Ruflo keeps `provider_execution=false` and receives no prompts/results.
 
-## Delegation
+## First-turn planning and shared knowledge
 
-The primary can ask `orchestration_delegate` for bounded analyst, researcher,
-reviewer, tester, or security-review work. Every request passes through the quota
-manager before a worker slot or Ruflo task is created. An exhausted requested
-provider is replaced by the eligible alternate; if neither is eligible, no worker
-starts. Official clients run the inference (`codex exec` or `claude --print`), while
-Ruflo records only opaque swarm/task lifecycle state. Default concurrency is two and
-the hard supported maximum is three.
+The first substantive request has an enforced protocol rather than an optional prompt
+convention:
+
+1. attempt exactly one bounded `ivoai-memory` lookup and then one bounded
+   `ivoai-context` lookup before any Web lookup;
+2. save a session-scoped, secret-free SharedContextBrief through
+   `orchestration_bootstrap`;
+3. inspect quota and runtime capability state;
+4. decompose non-overlapping work into a dependency DAG and provide seven bounded
+   task signals;
+5. call `orchestration_plan`, which calculates scores, execution tiers, economic
+   delegation, and profiles;
+6. queue independent work with `orchestration_spawn_batch`, continue useful primary
+   work, then wait by notification rather than polling;
+7. validate results, escalate only with evidence, synthesize, and checkpoint.
+
+The brief content is held only in a private runtime file. Session JSON stores a hash,
+timestamp, source health, and reference count. Workers receive the same brief, which
+avoids repeating the same initial Memory/Context query. They can perform an additional
+lookup when the bounded brief genuinely lacks necessary detail. Related later turns
+use delta planning; a material objective or project change refreshes the brief.
+
+## DAG scheduling and delegation
+
+`orchestration_delegate` remains available for backward-compatible synchronous
+delegation. The default automatic protocol uses `orchestration_plan`, asynchronous
+`orchestration_spawn`/`orchestration_spawn_batch`, `orchestration_wait`, and
+`orchestration_primary_complete`. Tasks are capped at 12 and workers at three (two by
+default). Unknown dependencies, cycles, duplicate work, unsafe labels, arbitrary
+fields, or out-of-range scores are rejected.
+
+IvoAI calculates the capability score and maps it to LIGHT, BALANCED, STRONG, or MAX.
+It separately compares parallel/quality gain with worker startup and context-transfer
+overhead. A trivial task stays `primary` even when a model asks to delegate it.
+Dependency-ready workers start concurrently and return IDs immediately; dependent
+tasks remain queued until all prerequisites complete.
+
+Every worker passes through the quota and capability router. Official clients run
+inference (`codex exec` or `claude --print`); Codex workers use a read-only sandbox,
+Claude workers use plan mode with write tools disabled, and Ruflo records only opaque
+lifecycle state. Results are bounded by execution tier and retained in bridge memory.
+See [Automatic scheduler and model routing](auto-scheduler.md).
+
+## Progressive escalation
+
+Work begins at the lowest sufficient profile. The primary may call
+`orchestration_escalate` only after a completed or failed result and must provide an
+evidence-based reason. Each call advances exactly one tier. Unsupported effort falls
+back to the client default without a false capability claim; an exhausted exact model
+causes another sufficient model/provider to be considered before the task is blocked.
 
 ## Checkpoints and failover
 
@@ -100,8 +146,9 @@ The monitor renders Codex session/weekly/monthly only when those official bucket
 apply, and renders Claude Code 5-hour and weekly rows. It adds context and
 model-specific buckets and reset times only when authoritative data exists.
 It reports source and observation time, current/initial primary, failovers,
-checkpoint availability, Headroom use, workers, Ruflo, context, ai-memory, and server
-state. `status` reads the bounded quota cache while running short, parallel Server
+checkpoint availability, bootstrap health/reference count, task DAG, score, tier,
+model/effort provenance, execution mode, dependencies, duration, Headroom use,
+workers, Ruflo, context, ai-memory, and server state. `status` reads the bounded quota cache while running short, parallel Server
 and Ruflo health checks; it does not perform a heavy provider quota probe. `doctor`
 performs deeper active capability checks. Headroom version/help probes establish
 installation and compatibility only, not an interactive launch validation.

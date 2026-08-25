@@ -516,3 +516,27 @@ On WSL, VPN and split-horizon DNS setups, the first resolver attempt can take ab
 five seconds. Current status and Doctor probes allow that resolver window before
 declaring the server unreachable. A real failure remains bounded and does not block
 the official clients.
+
+## Automatic scheduler is degraded
+
+Run `ivoai doctor` and inspect **Automatic Scheduler**, **Parallel Worker Runtime**,
+the two model-routing rows, effort support, and Shared Knowledge Bootstrap. A model
+router can be `degraded` while the normal official TUI remains usable. Re-run
+`ivoai setup` if a managed client is missing; capability discovery is refreshed
+automatically when its version changes.
+
+If a planned task remains `queued`, use `ivoai monitor --watch` and inspect its
+`depends` row. Complete the primary-owned prerequisite or wait for its workers. A
+task shown with `mode=primary` and “worker overhead is not lower” is intentional, not
+a scheduler failure.
+
+If bootstrap is degraded, check the Memory and Context rows independently. AUTO may
+continue without them for self-contained work, but it reports the knowledge gap. Do
+not copy memory/context contents into session JSON or Ruflo as a workaround. A later
+materially different objective triggers a new bounded bootstrap; related follow-ups
+reuse the existing brief with delta planning.
+
+If effort says `unsupported`, IvoAI deliberately lets the official client select its
+default. It never guesses an effort or model. A model-specific exhausted quota blocks
+only that model; an all-provider block requires confirmed authoritative exhaustion or
+missing eligible subscription authentication.

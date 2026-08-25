@@ -169,7 +169,10 @@ transcript.
 
 Automatic mode starts the same provider-free Ruflo control plane used by explicit
 orchestrated sessions, injects the session-local orchestration MCP, and adds
-quota-aware worker routing and bounded continuity checkpoints. Run
+one-time Memory/Context bootstrap, a private shared brief, objective task scoring,
+economic delegation, quota/capability-aware model and effort routing, true async DAG
+workers, and bounded continuity checkpoints. Trivial work remains in the primary;
+independent valuable work runs concurrently. Run
 `ivoai monitor --watch` in a second terminal to see the current primary, model
 provenance, failover count, worker state, quota source/freshness/reset, and service
 health. Before Claude's first response its quota rows say `awaiting first response`;
@@ -177,7 +180,7 @@ unsupported fields say `N/A / not exposed`, and old observations are marked
 `stale`. Claude monthly is not fabricated.
 
 See [Automatic orchestration](auto-orchestration.md) and
-[Quota routing](quota-routing.md).
+[Automatic scheduler](auto-scheduler.md) and [Quota routing](quota-routing.md).
 
 `ivoai status` uses bounded live checks for Server and the Ruflo safe profile.
 Stored Server configuration is never labelled connected by itself. When Server is

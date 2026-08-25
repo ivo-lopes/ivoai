@@ -62,6 +62,14 @@ compromised host are outside ivoai's protection boundary.
   reuse from terminating an unrelated process.
 - Ruflo receives a clean provider-free environment and only opaque lifecycle IDs;
   it never receives delegation prompts or worker responses.
+- Automatic plans accept bounded declarative task metadata only. IvoAI rejects
+  unknown fields, unsafe IDs, cycles, unknown dependencies, duplicate work, arbitrary
+  executables, environment, endpoints, and credentials before dispatch.
+- The SharedContextBrief is secret-checked, size-bounded, stored only in a private
+  session runtime file, and represented in session JSON by metadata and a hash.
+- Automatic workers are advisory: Codex uses a read-only sandbox and Claude uses
+  plan permission mode with Bash/Edit/Write/NotebookEdit disabled. The primary is the
+  only authoritative writer.
 
 ## Reportable findings and severity context
 
@@ -76,6 +84,10 @@ For the session control plane, also report unsafe executable selection, symlink 
 permission bypass in session state, PID-reuse termination, provider environment
 leakage, prompt/result persistence, unbounded worker creation, orphan processes, or
 remote exposure of `ivoai-orchestrator`.
+
+For automatic scheduling, also report DAG validation bypass, profile/model injection,
+quota-gate bypass, cross-session result access, write-capable worker execution,
+SharedContextBrief secret persistence, or sending prompts/results to Ruflo.
 
 ## Out of scope and known limitations
 

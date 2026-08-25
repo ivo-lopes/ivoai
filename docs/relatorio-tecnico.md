@@ -1,6 +1,6 @@
 # Relatório técnico do ivoai
 
-## Orquestração automática quota-aware (v0.4.0)
+## Orquestração automática eficiente (v0.5.0)
 
 `ivoai auto` adiciona um supervisor ao Session Control Plane. O primary selecionado
 continua sendo a TUI oficial do Codex ou Claude Code, simultaneamente planner,
@@ -18,6 +18,35 @@ supervisor preserva o worktree, sinaliza e aguarda o grupo de processo correto e
 limita a dois failovers consecutivos. Métricas ausentes continuam desconhecidas e
 erros de rede não são promovidos a exaustão. Detalhes e contratos estão em
 `docs/auto-orchestration.md` e `docs/quota-routing.md`.
+
+O primeiro pedido substantivo acrescenta um protocolo determinístico: lookup bounded
+em ai-memory, lookup bounded em Context, SharedContextBrief privado, análise,
+decomposição, DAG, scoring, resolução de capability/quota, dispatch paralelo,
+validação, síntese e checkpoint. O conteúdo do brief fica no runtime `0700/0600`; o
+JSON de sessão mantém somente timestamp, estados das fontes, número de referências e
+hash.
+
+Cada task fornece `complexity`, `risk`, `reasoning_depth`, `context_breadth`,
+`verification_need`, `parallel_value` e `latency_sensitivity` em `0..100`. O IvoAI
+calcula o capability score com pesos 30/25/20/10/15 e resolve LIGHT (0–24), BALANCED
+(25–49), STRONG (50–74) ou MAX (75–100). Uma função separada compara benefício de
+paralelismo/qualidade com overhead de startup/contexto e pode manter a task no
+primary mesmo quando o planner solicitou delegação.
+
+O Capability Registry consulta `codex app-server`/`model/list` para modelos e efforts
+estruturados. Para Claude, apenas os efforts expostos pelo `--help` oficial são
+usados; sem catálogo estruturado, o model fica `client-default`. O router seleciona
+o menor perfil suficiente, aplica quota provider/model-specific e pressão de quota,
+e nunca inventa nome ou suporte. Effort não suportado vira
+`effort_source=unsupported` e não é enviado.
+
+`orchestration_spawn` e `orchestration_spawn_batch` são assíncronos. O scheduler usa
+notificações, limita o DAG a 12 tasks, respeita dependências e ocupa no máximo dois
+workers por padrão (hard cap três). Prompts/resultados permanecem na memória do
+bridge; Ruflo recebe IDs opacos. Codex worker usa sandbox read-only e Claude worker
+usa permission mode `plan` com ferramentas de escrita desabilitadas. Escalada avança
+um tier por vez e exige motivo. A especificação completa está em
+`docs/auto-scheduler.md`.
 
 ## 1. Objetivo e princípios
 
