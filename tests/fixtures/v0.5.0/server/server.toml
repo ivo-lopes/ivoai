@@ -1,0 +1,7 @@
+protocol_version = 1
+listen_address = "127.0.0.1:7744"
+qdrant_url = "http://127.0.0.1:6333"
+qdrant_collection = "ivoai_context_v1"
+embedding_url = "http://127.0.0.1:8080"
+embedding_dimensions = 384
+memory_url = "http://127.0.0.1:49374"

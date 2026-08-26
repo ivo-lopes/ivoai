@@ -1,0 +1,45 @@
+{
+  "format_version": 1,
+  "collected_at": "2026-01-01T00:00:00Z",
+  "ivoai_version": "0.5.0",
+  "os": "linux",
+  "architecture": "amd64",
+  "modes": ["server"],
+  "paths": {
+    "executable": "/fixture/usr/local/bin/ivoai",
+    "config_root": "/fixture/xdg/config/ivoai",
+    "data_root": "/fixture/xdg/data/ivoai",
+    "state_root": "/fixture/xdg/state/ivoai",
+    "cache_root": "/fixture/xdg/cache/ivoai"
+  },
+  "schemas": {
+    "config": 0,
+    "state": 0,
+    "ownership": 0
+  },
+  "server_protocol": 1,
+  "install_provenance": "external-or-unknown",
+  "rollback_available": false,
+  "components": [],
+  "connections": {
+    "chatgpt_connected": false,
+    "claude_connected": false,
+    "server_connected": false
+  },
+  "inventory_overall": "READY",
+  "services": {
+    "ivoai-context.service": "active",
+    "ivoai-dependencies.service": "active",
+    "ivoai-gateway.service": "active"
+  },
+  "backends": {
+    "context": "qdrant",
+    "embeddings": "local",
+    "memory": "ai-memory"
+  },
+  "legacy_runtime": {
+    "headroom_enabled": false,
+    "ruflo_enabled": false,
+    "ruflo_provider_execution": false
+  }
+}

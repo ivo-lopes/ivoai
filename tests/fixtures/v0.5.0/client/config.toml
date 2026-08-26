@@ -1,0 +1,96 @@
+[ivoai]
+version = 1
+
+[client]
+profile = 'default'
+
+[headroom]
+enabled = true
+
+[memory]
+enabled = true
+
+[orchestration]
+enabled = true
+provider_execution = false
+default_mode = 'direct'
+primary_executor = 'codex'
+review_executor = 'claude'
+max_workers = 2
+
+[orchestration.auto]
+enabled = true
+default_planner = 'codex'
+automatic_failover = true
+checkpoint_enabled = true
+quota_refresh_seconds = 45
+max_workers = 2
+
+[orchestration.auto.quota]
+enabled = true
+show_weekly = true
+show_monthly = true
+show_session = true
+show_context = true
+show_model_scoped = true
+
+[orchestration.auto.optimization]
+strategy = 'efficient'
+parallelism = true
+shared_context_bootstrap = true
+progressive_escalation = true
+
+[orchestration.auto.optimization.weights]
+complexity = 30
+risk = 25
+reasoning_depth = 20
+verification_need = 15
+context_breadth = 10
+
+[orchestration.auto.profiles]
+[orchestration.auto.profiles.codex]
+[orchestration.auto.profiles.codex.light]
+model = ''
+effort = ''
+
+[orchestration.auto.profiles.codex.balanced]
+model = ''
+effort = ''
+
+[orchestration.auto.profiles.codex.strong]
+model = ''
+effort = ''
+
+[orchestration.auto.profiles.codex.max]
+model = ''
+effort = ''
+
+[orchestration.auto.profiles.claude]
+[orchestration.auto.profiles.claude.light]
+model = ''
+effort = ''
+
+[orchestration.auto.profiles.claude.balanced]
+model = ''
+effort = ''
+
+[orchestration.auto.profiles.claude.strong]
+model = ''
+effort = ''
+
+[orchestration.auto.profiles.claude.max]
+model = ''
+effort = ''
+
+[connections]
+[connections.chatgpt]
+status = 'not-connected'
+
+[connections.claude]
+status = 'not-connected'
+
+[connections.server]
+status = 'not-connected'
+
+[mcp]
+[mcp.servers]

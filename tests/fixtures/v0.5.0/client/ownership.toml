@@ -1,0 +1,30 @@
+schema = 1
+
+[components.ivoai]
+managed = true
+path = '/home/fixture/.local/bin/ivoai'
+launchers = []
+
+[components.ai-memory]
+managed = true
+path = '/home/fixture/.local/share/ivoai/bin/ai-memory'
+
+[components.claude-code]
+managed = true
+path = '/home/fixture/.local/share/ivoai/bin/claude'
+
+[components.codex]
+managed = true
+path = '/home/fixture/.local/share/ivoai/bin/codex'
+
+[components.codex-code-mode-host]
+managed = true
+path = '/home/fixture/.local/share/ivoai/bin/codex-code-mode-host'
+
+[components.headroom]
+managed = true
+path = '/home/fixture/.local/share/ivoai/bin/headroom'
+
+[components.ruflo]
+managed = true
+path = '/home/fixture/.local/share/ivoai/bin/ruflo'

@@ -1,0 +1,70 @@
+[ivoai]
+version = 1
+
+[client]
+profile = 'default'
+
+[headroom]
+enabled = true
+
+[memory]
+enabled = true
+
+[orchestration]
+enabled = true
+provider_execution = false
+default_mode = 'direct'
+primary_executor = 'codex'
+review_executor = 'claude'
+max_workers = 2
+
+[orchestration.auto]
+enabled = true
+default_planner = 'codex'
+automatic_failover = true
+checkpoint_enabled = true
+quota_refresh_seconds = 45
+max_workers = 2
+
+[orchestration.auto.quota]
+enabled = true
+show_weekly = true
+show_monthly = true
+show_session = true
+show_context = true
+show_model_scoped = true
+
+[orchestration.auto.optimization]
+strategy = 'efficient'
+parallelism = true
+shared_context_bootstrap = true
+progressive_escalation = true
+
+[orchestration.auto.optimization.weights]
+complexity = 30
+risk = 25
+reasoning_depth = 20
+verification_need = 15
+context_breadth = 10
+
+[connections.chatgpt]
+status = 'connected'
+
+[connections.claude]
+status = 'connected'
+
+[connections.server]
+status = 'connected'
+url = 'https://ivoai.example.invalid'
+protocol = 1
+
+[mcp.servers.ivoai-context]
+url = 'https://ivoai.example.invalid/v1/context/mcp'
+enabled = true
+kind = 'context'
+
+[mcp.servers.ivoai-memory]
+url = 'https://ivoai.example.invalid/v1/memory'
+hooks_url = 'https://ivoai.example.invalid/v1/memory'
+enabled = true
+kind = 'memory'

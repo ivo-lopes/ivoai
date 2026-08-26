@@ -1,0 +1,26 @@
+schema = 1
+
+[components.ivoai]
+managed = true
+path = '/home/fixture/.local/bin/ivoai'
+launchers = []
+
+[components.codex]
+managed = false
+path = '/usr/bin/codex'
+
+[components.claude-code]
+managed = false
+path = '/usr/bin/claude'
+
+[components.ai-memory]
+managed = true
+path = '/home/fixture/.local/share/ivoai/bin/ai-memory'
+
+[components.headroom]
+managed = true
+path = '/home/fixture/.local/share/ivoai/bin/headroom'
+
+[components.ruflo]
+managed = true
+path = '/home/fixture/.local/share/ivoai/bin/ruflo'
