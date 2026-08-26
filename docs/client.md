@@ -64,8 +64,13 @@ Versions and installation sources are centralized in `manifest/components.yaml`.
 Setup checks the platform, downloads pinned artifacts, verifies the reviewed integrity
 data, installs managed wrappers, and reports independent failures. Headroom uses
 architecture-specific hash-locked constraints; Ruflo uses its complete npm lockfile.
-Updates are explicit through `ivoai update`. A successful update retains the previous
-binary; `ivoai update --rollback` restores it atomically and runs Doctor again.
+Updates are explicit through `ivoai update`. The updater verifies the candidate,
+creates a private snapshot of IVOAI-owned files, applies ordered target-owned
+migrations, promotes the binary, and runs Doctor. Failure restores both the binary
+and compatible config/state/ownership. Use `ivoai update --dry-run` for a non-committing
+compatibility plan; it still executes the checksum-verified candidate's bounded
+preflight probes. Use `ivoai update --rollback` for the last transaction. See the
+[production compatibility contract](production-compatibility.md).
 
 The healthy disconnected state is:
 

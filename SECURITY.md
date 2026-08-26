@@ -71,6 +71,17 @@ compromised host are outside ivoai's protection boundary.
   MCP servers, and allowlists only managed IvoAI Memory/Context read tools. Claude uses
   strict process-scoped MCP configuration, plan permission mode, and explicit
   filesystem/memory mutation denials. The primary is the only authoritative writer.
+- Updates snapshot only explicitly allowlisted IVOAI-owned regular files. Snapshot
+  and restore reject symlinks and path escapes, enforce private modes, bound total
+  size, verify SHA-256, and preserve third-party authentication stores.
+- A release candidate must declare supported source/target schemas and reversible
+  migration capability before promotion. Failed setup or Doctor restores the old
+  executable together with compatible config, state, ownership, and managed
+  component metadata; irreversible migrations fail closed.
+- Update authenticity currently trusts GitHub TLS plus the SHA-256 manifest published
+  in the same release. Both update and `--dry-run` execute the checksum-verified
+  candidate for bounded probes; compromise of the release publisher is therefore a
+  supply-chain boundary, not something the checksum alone can detect.
 
 ## Reportable findings and severity context
 

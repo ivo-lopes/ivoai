@@ -110,8 +110,12 @@ environment that excludes user and provider credentials.
 
 Managed launchers use atomic replacement. Downloads have size limits and timeouts.
 `latest` is never a component install target. Updates are explicit through
-`ivoai update`, preserve configuration and secrets, retain the previous managed
-binary for `ivoai update --rollback`, and then run doctor.
+`ivoai update` and use a versioned compatibility probe, private exact-file
+snapshots, an ordered reversible migration registry, atomic promotion, and
+post-update Doctor. Rollback restores both the previous executable and its
+compatible IVOAI-owned persistence. Unknown TOML fields are retained through a
+raw-document plus typed-projection merge. The complete invariant is documented in
+[production-compatibility.md](production-compatibility.md).
 
 Managed Codex includes the same-version `codex-code-mode-host` published as a
 separate official release asset. Both architecture-specific archives are independently

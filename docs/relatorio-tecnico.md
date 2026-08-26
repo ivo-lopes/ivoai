@@ -316,8 +316,20 @@ Backup inclui configuração necessária, catálogo/contexto, corpus, memória e
 de reconstrução. Restore valida o archive, interrompe serviços necessários e reinicia
 de forma controlada; o menu exige confirmação `RESTORE`.
 
-Update é explícito, preserva config/secrets, executa doctor e retém o binário anterior
-para rollback quando possível.
+Update é explícito e transacional. Antes da promoção, valida release, SHA-256,
+archive, versão do candidato e contrato de schemas; então cria snapshot privado
+somente de arquivos pertencentes ao IVOAI. O binário capaz de recuperar o journal
+é promovido atomicamente, aplica migrations ordenadas e reversíveis, reconcilia o
+runtime e então o Doctor valida o resultado.
+Falha em migration, setup ou Doctor restaura executável, config, state, ownership e
+metadados de componentes compatíveis. Campos TOML desconhecidos são preservados por
+merge entre documento bruto e projeção tipada. `--dry-run` baixa, valida e executa
+o candidato verificado apenas para preflight, sem commit de estado gerenciado; preconditions de cada migration são aplicadas
+dentro da transação real. O
+`--rollback` é idempotente. A matriz CI constrói a tag real v0.5.0 e prova
+o core real do updater v0.5.0 → candidate → rollback → v0.5.0 → candidate sem
+tocar autenticação de providers. Stores dinâmicos do server exigirão participante
+quiesced explícito antes de qualquer futura alteração de schema.
 
 ## 16. Qualidade e entrega
 

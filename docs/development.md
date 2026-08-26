@@ -27,6 +27,7 @@ go test -race ./...
 go vet ./...
 shellcheck install.sh scripts/*.sh
 scripts/install-smoke.sh
+scripts/upgrade-matrix.sh
 scripts/package-skill.sh
 unzip -t dist/ivoai-memory-context.zip
 go build ./cmd/ivoai
@@ -46,6 +47,16 @@ early. Routing tests cover the four score tiers, normalized weights, provider/mo
 quota exhaustion, quota pressure, unsupported effort, unavailable capabilities,
 duplicate-work rejection, and economic primary-vs-worker selection. No normal test
 invokes a real LLM.
+
+The upgrade harness builds the actual `v0.5.0` tag and the current candidate.
+A helper linked inside the archived v0.5.0 module runs the published updater's
+real download, checksum, extraction, version probe, and atomic promotion against
+a local release server. The candidate then performs setup/Doctor and its real
+legacy-compatible `update --rollback`; the harness validates v0.5.0 readability,
+unknown-field and provider-owned marker preservation, and update-after-rollback.
+Transaction unit tests cover the new journaled updater, server mode and injected
+migration, Doctor, interruption, size, disk, path and ownership failures. CI
+checks out full history so the historical tag is available.
 
 ## Installation coverage in CI
 

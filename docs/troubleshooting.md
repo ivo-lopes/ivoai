@@ -1,5 +1,24 @@
 # Troubleshooting
 
+## Update was interrupted or failed
+
+Do not delete the update directory or reinstall over it. Re-run `ivoai update` (or
+`sudo ivoai update` on a server); the updater detects an active private journal and
+restores the pre-update snapshot before attempting a new candidate. To explicitly
+return to the last compatible transaction, run:
+
+```sh
+ivoai update --rollback
+```
+
+For server installations use `sudo`. Run the matching Doctor afterward. A message
+about a corrupted journal is a fail-closed condition: preserve the update directory
+for diagnosis and collect `ivoai doctor --inventory --json`; do not hand-edit the
+journal or provider authentication files. Candidate compatibility can be checked
+without committing managed changes using `ivoai update --dry-run`. The command
+stages and executes the checksum-verified candidate for bounded compatibility
+probes, so use the same release-channel trust decision as a real update.
+
 ## Automatic mode does not start the selected client
 
 Run `ivoai doctor` and inspect the **Automatic Orchestration** section. A provider

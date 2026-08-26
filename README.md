@@ -164,7 +164,10 @@ skill all repeat the same priority without weakening platform security policy.
 ivoai status                 # concise client readiness
 ivoai doctor                 # human-readable diagnostics
 ivoai doctor --json          # stable automation output
-ivoai update                 # explicit, configuration-preserving update
+ivoai doctor --inventory --json # secret-free production inventory
+ivoai update --dry-run       # verify candidate and migration compatibility
+ivoai update                 # transactional binary + managed-state update
+ivoai update --rollback      # restore the prior compatible transaction
 ivoai project init           # optional project-specific identity
 ivoai session list           # non-sensitive session metadata
 ivoai monitor --watch        # primary, swarm, workers, services
@@ -192,6 +195,9 @@ execution.
 - [Server and reverse proxy](docs/server.md)
 - [Connections and Web MCP](docs/connections.md)
 - [Security model](docs/security.md)
+- [Production compatibility contract](docs/production-compatibility.md)
+- [Read-only production inventory](docs/production-inventory.md)
+- [Two-production canary rollout](docs/canary-rollout.md)
 - [Development](docs/development.md)
 - [Troubleshooting](docs/troubleshooting.md)
 - [Relatório executivo (PT-BR)](docs/relatorio-executivo.md)

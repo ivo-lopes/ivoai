@@ -1,5 +1,20 @@
 # Server
 
+## In-place updates
+
+Run `sudo ivoai update --dry-run` before a server update. This stages and executes
+the checksum-verified candidate for bounded preflight but commits no managed-state
+change. The server transaction
+uses `/var/lib/ivoai/updates`, snapshots only explicit IVOAI server assets and the
+managed executable, runs `setup --mode server`, and verifies with
+`ivoai server doctor`. It does not create client XDG state merely to update a
+server. On failure, `sudo ivoai update --rollback` restores the previous compatible
+checkpoint and reconciles systemd through the restored server setup. Live Qdrant,
+memory, enrollment, and Web OAuth stores are not blindly copied; a future format
+change to any of them must declare a quiesced reversible migration. Follow the
+[two-production canary procedure](canary-rollout.md); never
+update both production instances together.
+
 Server administration is available both through `ivoai server ...` subcommands and
 the **Server Administration** section of the interactive menu. Mutating local server
 actions are shown as unavailable unless ivoai is running on a supported Linux host
