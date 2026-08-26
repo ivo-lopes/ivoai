@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 )
 
@@ -42,6 +43,23 @@ func TestCheckDoesNotOfferDowngrade(t *testing.T) {
 	}
 	if available {
 		t.Fatal("older release offered as an update")
+	}
+}
+
+func TestCheckRejectsOversizedAndTrailingReleaseMetadata(t *testing.T) {
+	for name, body := range map[string]string{
+		"oversized": strings.Repeat(" ", (1<<20)+1),
+		"trailing":  `{"tag_name":"v0.2.0"} {}`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				_, _ = w.Write([]byte(body))
+			}))
+			defer server.Close()
+			if _, _, err := (Checker{Client: server.Client(), Endpoint: server.URL}).Check(context.Background(), "v0.1.0"); err == nil {
+				t.Fatal("unsafe release metadata was accepted")
+			}
+		})
 	}
 }
 
@@ -119,6 +137,61 @@ func TestRollbackRejectsSymlink(t *testing.T) {
 	}
 	if err := (Checker{}).Rollback(context.Background(), executable, rollback); err == nil {
 		t.Fatal("symlink rollback binary was accepted")
+	}
+}
+
+func TestPrepareRejectsInvalidChecksumWithoutChangingExecutable(t *testing.T) {
+	archive := updateArchive(t, []byte("#!/bin/sh\necho v0.6.0\n"))
+	asset := "ivoai_" + runtime.GOOS + "_" + runtime.GOARCH + ".tar.gz"
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if filepath.Base(r.URL.Path) == "checksums.txt" {
+			fmt.Fprintf(w, "%064d  %s\n", 0, asset)
+			return
+		}
+		_, _ = w.Write(archive)
+	}))
+	defer server.Close()
+	dir := t.TempDir()
+	executable := filepath.Join(dir, "ivoai")
+	original := []byte("#!/bin/sh\necho v0.5.0\n")
+	if err := os.WriteFile(executable, original, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	checker := Checker{Client: server.Client(), ReleaseBase: server.URL}
+	if _, err := checker.Prepare(context.Background(), Release{Version: "v0.6.0"}, executable); err == nil {
+		t.Fatal("invalid checksum was accepted")
+	}
+	after, err := os.ReadFile(executable)
+	if err != nil || !bytes.Equal(after, original) {
+		t.Fatalf("checksum failure changed executable: err=%v", err)
+	}
+}
+
+func TestPrepareRejectsCandidateWithWrongVersion(t *testing.T) {
+	archive := updateArchive(t, []byte("#!/bin/sh\necho v9.9.9\n"))
+	asset := "ivoai_" + runtime.GOOS + "_" + runtime.GOARCH + ".tar.gz"
+	sum := sha256.Sum256(archive)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if filepath.Base(r.URL.Path) == "checksums.txt" {
+			fmt.Fprintf(w, "%x  %s\n", sum, asset)
+			return
+		}
+		_, _ = w.Write(archive)
+	}))
+	defer server.Close()
+	dir := t.TempDir()
+	executable := filepath.Join(dir, "ivoai")
+	original := []byte("#!/bin/sh\necho v0.5.0\n")
+	if err := os.WriteFile(executable, original, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	checker := Checker{Client: server.Client(), ReleaseBase: server.URL}
+	if _, err := checker.Prepare(context.Background(), Release{Version: "v0.6.0"}, executable); err == nil || !strings.Contains(err.Error(), "probe failed") {
+		t.Fatalf("wrong-version candidate accepted: %v", err)
+	}
+	after, err := os.ReadFile(executable)
+	if err != nil || !bytes.Equal(after, original) {
+		t.Fatalf("candidate probe failure changed executable: err=%v", err)
 	}
 }
 

@@ -5,14 +5,23 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"reflect"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/ivo-lopes/ivoai/internal/platform"
 	"github.com/pelletier/go-toml/v2"
 )
 
-const SchemaVersion = 1
+const (
+	ConfigSchemaVersion    = 1
+	StateSchemaVersion     = 1
+	OwnershipSchemaVersion = 1
+	// SchemaVersion remains as a source-compatible alias for integrations that
+	// used the original shared v0.5.0 constant.
+	SchemaVersion = ConfigSchemaVersion
+)
 
 type Paths struct {
 	ConfigDir   string
@@ -157,7 +166,7 @@ type MCPServer struct {
 
 func Default() Config {
 	return Config{
-		IVOAI: IVOAIConfig{Version: SchemaVersion}, Client: ClientConfig{Profile: "default"},
+		IVOAI: IVOAIConfig{Version: ConfigSchemaVersion}, Client: ClientConfig{Profile: "default"},
 		Headroom: HeadroomConfig{Enabled: true}, Memory: MemoryConfig{Enabled: true},
 		Orchestration: OrchestrationConfig{Enabled: true, ProviderExecution: false, DefaultMode: "direct", PrimaryExecutor: "codex", ReviewExecutor: "claude", MaxWorkers: 2, Auto: defaultAutoConfig()},
 		Connections: ConnectionsConfig{
@@ -191,6 +200,12 @@ type OwnedItem struct {
 
 type Store struct{ Paths Paths }
 
+type Schemas struct {
+	Config    int `json:"config"`
+	State     int `json:"state"`
+	Ownership int `json:"ownership"`
+}
+
 func NewStore(paths Paths) *Store { return &Store{Paths: paths} }
 
 func (s *Store) Ensure() error {
@@ -207,7 +222,7 @@ func (s *Store) Ensure() error {
 
 func (s *Store) Load() (Config, error) {
 	c := Default()
-	b, err := os.ReadFile(s.Paths.Config)
+	b, err := platform.ReadRegularFile(s.Paths.Config, 4<<20)
 	if errors.Is(err, os.ErrNotExist) {
 		return c, nil
 	}
@@ -217,7 +232,7 @@ func (s *Store) Load() (Config, error) {
 	if err := toml.Unmarshal(b, &c); err != nil {
 		return Config{}, fmt.Errorf("parse config: %w", err)
 	}
-	if c.IVOAI.Version != SchemaVersion {
+	if c.IVOAI.Version != ConfigSchemaVersion {
 		return Config{}, fmt.Errorf("unsupported config schema %d", c.IVOAI.Version)
 	}
 	if c.MCP.Servers == nil {
@@ -309,7 +324,12 @@ func (s *Store) Save(c Config) error {
 	if err := s.Ensure(); err != nil {
 		return err
 	}
-	b, err := toml.Marshal(c)
+	b, err := s.marshalPreservingUnknown(s.Paths.Config, c, []string{"mcp.servers"}, []string{
+		"connections.chatgpt.url", "connections.chatgpt.protocol",
+		"connections.claude.url", "connections.claude.protocol",
+		"connections.server.url", "connections.server.protocol",
+		"mcp.servers.*.hooks_url",
+	})
 	if err != nil {
 		return fmt.Errorf("encode config: %w", err)
 	}
@@ -317,8 +337,23 @@ func (s *Store) Save(c Config) error {
 }
 
 func (s *Store) LoadState() (State, error) {
-	state := State{Schema: SchemaVersion, Components: map[string]ComponentState{}}
-	b, err := os.ReadFile(s.Paths.State)
+	state, err := s.LoadStateForUpdate()
+	if err != nil {
+		return State{}, err
+	}
+	if state.Schema != StateSchemaVersion {
+		return State{}, fmt.Errorf("unsupported state schema %d", state.Schema)
+	}
+	return state, nil
+}
+
+// LoadStateForUpdate decodes only the stable migration projection without
+// requiring the source schema to equal the candidate's current schema. Update
+// preflight needs ownership paths before the ordered migration registry runs;
+// normal application code must continue to use LoadState and fail closed.
+func (s *Store) LoadStateForUpdate() (State, error) {
+	state := State{Schema: StateSchemaVersion, Components: map[string]ComponentState{}}
+	b, err := platform.ReadRegularFile(s.Paths.State, 16<<20)
 	if errors.Is(err, os.ErrNotExist) {
 		return state, nil
 	}
@@ -327,6 +362,9 @@ func (s *Store) LoadState() (State, error) {
 	}
 	if err := toml.Unmarshal(b, &state); err != nil {
 		return State{}, fmt.Errorf("parse state: %w", err)
+	}
+	if state.Schema <= 0 {
+		return State{}, fmt.Errorf("invalid state schema %d", state.Schema)
 	}
 	if state.Components == nil {
 		state.Components = map[string]ComponentState{}
@@ -338,7 +376,10 @@ func (s *Store) SaveState(state State) error {
 	if err := s.Ensure(); err != nil {
 		return err
 	}
-	b, err := toml.Marshal(state)
+	if state.Schema != StateSchemaVersion {
+		return fmt.Errorf("encode state: unsupported state schema %d", state.Schema)
+	}
+	b, err := s.marshalPreservingUnknown(s.Paths.State, state, []string{"components"}, []string{"components.*.version", "components.*.path"})
 	if err != nil {
 		return fmt.Errorf("encode state: %w", err)
 	}
@@ -349,7 +390,10 @@ func (s *Store) SaveOwnership(ownership Ownership) error {
 	if err := s.Ensure(); err != nil {
 		return err
 	}
-	b, err := toml.Marshal(ownership)
+	if ownership.Schema != OwnershipSchemaVersion {
+		return fmt.Errorf("encode ownership: unsupported ownership schema %d", ownership.Schema)
+	}
+	b, err := s.marshalPreservingUnknown(s.Paths.Ownership, ownership, []string{"components"}, []string{"components.*.path", "components.*.launchers"})
 	if err != nil {
 		return fmt.Errorf("encode ownership: %w", err)
 	}
@@ -357,8 +401,22 @@ func (s *Store) SaveOwnership(ownership Ownership) error {
 }
 
 func (s *Store) LoadOwnership() (Ownership, error) {
-	ownership := Ownership{Schema: SchemaVersion, Components: map[string]OwnedItem{}}
-	b, err := os.ReadFile(s.Paths.Ownership)
+	ownership, err := s.LoadOwnershipForUpdate()
+	if err != nil {
+		return Ownership{}, err
+	}
+	if ownership.Schema != OwnershipSchemaVersion {
+		return Ownership{}, fmt.Errorf("unsupported ownership schema %d", ownership.Schema)
+	}
+	return ownership, nil
+}
+
+// LoadOwnershipForUpdate is the ownership counterpart to
+// LoadStateForUpdate. Its fields are the stable, minimal projection required
+// to snapshot IVOAI-owned component files while preserving the raw TOML.
+func (s *Store) LoadOwnershipForUpdate() (Ownership, error) {
+	ownership := Ownership{Schema: OwnershipSchemaVersion, Components: map[string]OwnedItem{}}
+	b, err := platform.ReadRegularFile(s.Paths.Ownership, 16<<20)
 	if errors.Is(err, os.ErrNotExist) {
 		return ownership, nil
 	}
@@ -368,8 +426,8 @@ func (s *Store) LoadOwnership() (Ownership, error) {
 	if err := toml.Unmarshal(b, &ownership); err != nil {
 		return Ownership{}, fmt.Errorf("parse ownership: %w", err)
 	}
-	if ownership.Schema != SchemaVersion {
-		return Ownership{}, fmt.Errorf("unsupported ownership schema %d", ownership.Schema)
+	if ownership.Schema <= 0 {
+		return Ownership{}, fmt.Errorf("invalid ownership schema %d", ownership.Schema)
 	}
 	if ownership.Components == nil {
 		ownership.Components = map[string]OwnedItem{}
@@ -377,4 +435,180 @@ func (s *Store) LoadOwnership() (Ownership, error) {
 	return ownership, nil
 }
 
+// InspectSchemas reads only the version envelopes needed by support inventory
+// and migration preflight. It does not decode secrets or provider stores.
+func (s *Store) InspectSchemas() (Schemas, error) {
+	result := Schemas{}
+	var failures []error
+	for _, item := range []struct {
+		path string
+		set  func(map[string]any) error
+	}{
+		{s.Paths.Config, func(value map[string]any) error {
+			section, ok := value["ivoai"].(map[string]any)
+			if !ok {
+				return errors.New("config schema envelope is missing")
+			}
+			result.Config = integerValue(section["version"])
+			if result.Config <= 0 {
+				return errors.New("config schema is invalid")
+			}
+			return nil
+		}},
+		{s.Paths.State, func(value map[string]any) error {
+			result.State = integerValue(value["schema"])
+			if result.State <= 0 {
+				return errors.New("state schema is invalid")
+			}
+			return nil
+		}},
+		{s.Paths.Ownership, func(value map[string]any) error {
+			result.Ownership = integerValue(value["schema"])
+			if result.Ownership <= 0 {
+				return errors.New("ownership schema is invalid")
+			}
+			return nil
+		}},
+	} {
+		data, err := platform.ReadRegularFile(item.path, 16<<20)
+		if errors.Is(err, os.ErrNotExist) {
+			continue
+		}
+		if err != nil {
+			failures = append(failures, err)
+			continue
+		}
+		var document map[string]any
+		if err := toml.Unmarshal(data, &document); err != nil {
+			failures = append(failures, fmt.Errorf("inspect %s schema: %w", filepath.Base(item.path), err))
+			continue
+		}
+		if err := item.set(document); err != nil {
+			failures = append(failures, fmt.Errorf("inspect %s schema: %w", filepath.Base(item.path), err))
+		}
+	}
+	return result, errors.Join(failures...)
+}
+
+func integerValue(value any) int {
+	switch typed := value.(type) {
+	case int64:
+		return int(typed)
+	case int:
+		return typed
+	case uint64:
+		converted := int(typed)
+		if converted < 0 || uint64(converted) != typed {
+			return 0
+		}
+		return converted
+	default:
+		return 0
+	}
+}
+
 func PlatformSummary() (string, string) { return runtime.GOOS, runtime.GOARCH }
+
+func (s *Store) marshalPreservingUnknown(filename string, value any, exactMaps, omittedKnownFields []string) ([]byte, error) {
+	typedBytes, err := toml.Marshal(value)
+	if err != nil {
+		return nil, err
+	}
+	var typed map[string]any
+	if err := toml.Unmarshal(typedBytes, &typed); err != nil {
+		return nil, err
+	}
+	existingBytes, err := platform.ReadRegularFile(filename, 16<<20)
+	if errors.Is(err, os.ErrNotExist) {
+		return typedBytes, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	var existing map[string]any
+	if err := toml.Unmarshal(existingBytes, &existing); err != nil {
+		return nil, fmt.Errorf("parse existing document before save: %w", err)
+	}
+	exact := make(map[string]bool, len(exactMaps))
+	for _, path := range exactMaps {
+		exact[path] = true
+	}
+	merged := mergeDocument(existing, typed, "", exact, omittedKnownFields)
+	if reflect.DeepEqual(merged, existing) {
+		return existingBytes, nil
+	}
+	return toml.Marshal(merged)
+}
+
+func mergeDocument(existing, typed map[string]any, prefix string, exact map[string]bool, omittedKnownFields []string) map[string]any {
+	result := cloneMap(existing)
+	for key := range result {
+		path := key
+		if prefix != "" {
+			path = prefix + "." + key
+		}
+		if _, present := typed[key]; !present && matchesKnownPath(path, omittedKnownFields) {
+			delete(result, key)
+		}
+	}
+	for key, typedValue := range typed {
+		path := key
+		if prefix != "" {
+			path = prefix + "." + key
+		}
+		typedMap, typedIsMap := typedValue.(map[string]any)
+		existingMap, existingIsMap := result[key].(map[string]any)
+		if typedIsMap {
+			if exact[path] {
+				selected := make(map[string]any, len(typedMap))
+				for childKey, childValue := range typedMap {
+					childMap, childIsMap := childValue.(map[string]any)
+					oldChild, oldChildIsMap := existingMap[childKey].(map[string]any)
+					if existingIsMap && childIsMap && oldChildIsMap {
+						selected[childKey] = mergeDocument(oldChild, childMap, path+"."+childKey, exact, omittedKnownFields)
+					} else {
+						selected[childKey] = childValue
+					}
+				}
+				result[key] = selected
+				continue
+			}
+			if !existingIsMap {
+				existingMap = map[string]any{}
+			}
+			result[key] = mergeDocument(existingMap, typedMap, path, exact, omittedKnownFields)
+			continue
+		}
+		result[key] = typedValue
+	}
+	return result
+}
+
+func matchesKnownPath(path string, patterns []string) bool {
+	parts := strings.Split(path, ".")
+	for _, pattern := range patterns {
+		patternParts := strings.Split(pattern, ".")
+		if len(parts) != len(patternParts) {
+			continue
+		}
+		matched := true
+		for index := range parts {
+			if patternParts[index] != "*" && patternParts[index] != parts[index] {
+				matched = false
+				break
+			}
+		}
+		if matched {
+			return true
+		}
+	}
+	return false
+}
+
+func cloneMap(source map[string]any) map[string]any {
+	result := make(map[string]any, len(source))
+	for key, value := range source {
+		result[key] = value
+	}
+	return result
+}

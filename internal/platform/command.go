@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"syscall"
 	"time"
 )
 
@@ -26,6 +27,9 @@ type RunOptions struct {
 	Timeout  time.Duration
 	TTY      bool
 	CleanEnv bool
+	// ParentDeathSignal binds bounded update helpers to the updater process so
+	// an orphan cannot keep mutating managed state after the journal lock dies.
+	ParentDeathSignal bool
 }
 
 type Result struct {
@@ -48,6 +52,9 @@ func (ExecRunner) Run(ctx context.Context, command string, args []string, o RunO
 		defer cancel()
 	}
 	cmd := exec.CommandContext(ctx, command, args...)
+	if o.ParentDeathSignal {
+		cmd.SysProcAttr = &syscall.SysProcAttr{Pdeathsig: syscall.SIGKILL}
+	}
 	cmd.Dir = o.Dir
 	if o.CleanEnv {
 		cmd.Env = append([]string(nil), o.Env...)
