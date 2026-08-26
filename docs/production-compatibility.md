@@ -102,7 +102,8 @@ The published v0.5.0 updater predates the journal protocol: it validates and
 promotes the candidate, then invokes plain `ivoai setup`. This foundation keeps
 that entry path compatible, auto-detects an existing server marker, and can
 consume v0.5.0's legacy rollback binary. Because this release does not bump a
-schema, the bridge is safe. Any future release that bumps a schema while still
+schema, the client and server bridges are exercised hermetically. Any future
+release that bumps a schema while still
 accepting a direct jump from v0.5.0 must retain and test a transactional legacy
 entry bridge; metadata understood only by the old binary cannot retroactively
 protect that first promotion.

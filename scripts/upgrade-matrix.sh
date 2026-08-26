@@ -76,4 +76,40 @@ provider_after="$(sha256sum "$CODEX_HOME/auth-marker" "$CLAUDE_CONFIG_DIR/auth-m
 "$IVOAI_INSTALL_DIR/ivoai" doctor --json >/dev/null
 
 (cd "$repo_root" && go test -count=1 ./internal/migration ./internal/update ./internal/app -run 'Transaction|UpdateContext|ServerUpdate|ServerRollback|CommittedRollback')
-printf 'upgrade matrix v0.5.0 updater -> candidate -> rollback -> candidate: PASS\n'
+
+# Repeat the historical bridge against a server-only installation. The v0.5.0
+# updater invoked plain `ivoai setup` after promotion, so the candidate must
+# auto-detect the existing server marker and must consume the rollback binary
+# from the legacy client-XDG slot without creating a client configuration.
+export HOME="$matrix_root/server-home"
+export XDG_CONFIG_HOME="$matrix_root/server-xdg/config"
+export XDG_DATA_HOME="$matrix_root/server-xdg/data"
+export XDG_STATE_HOME="$matrix_root/server-xdg/state"
+export XDG_CACHE_HOME="$matrix_root/server-xdg/cache"
+export CODEX_HOME="$matrix_root/server-provider/codex"
+export CLAUDE_CONFIG_DIR="$matrix_root/server-provider/claude"
+export IVOAI_INSTALL_DIR="$matrix_root/server-install"
+export IVOAI_SERVER_ROOT="$matrix_root/server-root"
+mkdir -p "$HOME" "$IVOAI_INSTALL_DIR" "$CODEX_HOME" "$CLAUDE_CONFIG_DIR"
+
+install -m 0755 "$matrix_root/bin/ivoai-v050" "$IVOAI_INSTALL_DIR/ivoai"
+"$IVOAI_INSTALL_DIR/ivoai" setup --mode server >/dev/null
+"$IVOAI_INSTALL_DIR/ivoai" server doctor >/dev/null
+
+server_rollback="$XDG_STATE_HOME/ivoai/updates/ivoai.previous"
+mkdir -p "$(dirname -- "$server_rollback")"
+"$matrix_root/bin/v050-updater" "$matrix_root/bin/ivoai-candidate" "$IVOAI_INSTALL_DIR/ivoai" "$server_rollback"
+[[ "$("$IVOAI_INSTALL_DIR/ivoai" version)" == "0.5.1" ]] || fail "published updater did not promote the server candidate"
+"$IVOAI_INSTALL_DIR/ivoai" setup >/dev/null
+"$IVOAI_INSTALL_DIR/ivoai" server doctor >/dev/null
+[[ ! -e "$XDG_CONFIG_HOME/ivoai/config.toml" ]] || fail "candidate server bridge created client configuration"
+
+"$IVOAI_INSTALL_DIR/ivoai" update --rollback >/dev/null
+[[ "$("$IVOAI_INSTALL_DIR/ivoai" version)" == "0.5.0" ]] || fail "candidate server rollback did not restore v0.5.0"
+"$IVOAI_INSTALL_DIR/ivoai" server doctor >/dev/null
+
+"$matrix_root/bin/v050-updater" "$matrix_root/bin/ivoai-candidate" "$IVOAI_INSTALL_DIR/ivoai" "$server_rollback"
+"$IVOAI_INSTALL_DIR/ivoai" setup >/dev/null
+"$IVOAI_INSTALL_DIR/ivoai" server doctor >/dev/null
+
+printf 'upgrade matrix client+server v0.5.0 updater -> candidate -> rollback -> candidate: PASS\n'

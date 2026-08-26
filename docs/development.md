@@ -54,6 +54,9 @@ real download, checksum, extraction, version probe, and atomic promotion against
 a local release server. The candidate then performs setup/Doctor and its real
 legacy-compatible `update --rollback`; the harness validates v0.5.0 readability,
 unknown-field and provider-owned marker preservation, and update-after-rollback.
+The same harness repeats the historical promotion, plain-setup bridge, rollback,
+old-server Doctor, and update-after-rollback against a server-only installation;
+it also asserts that the bridge does not create client configuration.
 Transaction unit tests cover the new journaled updater, server mode and injected
 migration, Doctor, interruption, size, disk, path and ownership failures. CI
 checks out full history so the historical tag is available.
