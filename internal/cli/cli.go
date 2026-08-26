@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -43,7 +44,7 @@ func Run(ctx context.Context, a *app.App, args []string) error {
 }
 
 func commandHeaderEnabled(args []string) bool {
-	if len(args) == 0 || args[0] == "_register-install" || args[0] == "_orchestrator-serve" || args[0] == "_quota-statusline" {
+	if len(args) == 0 || args[0] == "_register-install" || args[0] == "_orchestrator-serve" || args[0] == "_quota-statusline" || args[0] == "_update-metadata" || args[0] == "_update-migrate" {
 		return false
 	}
 	if args[0] == "doctor" && contains(args, "--json") {
@@ -71,6 +72,22 @@ func runCommand(ctx context.Context, a *app.App, args []string) error {
 		if err := fs.Parse(args[1:]); err != nil {
 			return err
 		}
+		modeExplicit := false
+		for _, argument := range args[1:] {
+			if argument == "--mode" || strings.HasPrefix(argument, "--mode=") {
+				modeExplicit = true
+				break
+			}
+		}
+		if !modeExplicit {
+			serverInstall, err := a.ExistingServerInstallation()
+			if err != nil {
+				return err
+			}
+			if serverInstall {
+				return runServer(ctx, append([]string{"setup"}, fs.Args()...), a)
+			}
+		}
 		if *mode == "server" {
 			return runServer(ctx, append([]string{"setup"}, fs.Args()...), a)
 		}
@@ -89,20 +106,44 @@ func runCommand(ctx context.Context, a *app.App, args []string) error {
 		fs := flag.NewFlagSet("update", flag.ContinueOnError)
 		fs.SetOutput(a.Err)
 		rollback := fs.Bool("rollback", false, "restore the binary retained by the last update")
+		dryRun := fs.Bool("dry-run", false, "stage and probe the verified candidate, then print the plan without committing managed changes")
+		force := fs.Bool("force", false, "allow rollback to overwrite managed files changed since the update")
 		if err := fs.Parse(args[1:]); err != nil {
 			return err
 		}
 		if fs.NArg() != 0 {
 			return errors.New("update accepts no positional arguments")
 		}
+		if *rollback && *dryRun {
+			return errors.New("update --rollback and --dry-run cannot be combined")
+		}
+		if *force && !*rollback {
+			return errors.New("update --force requires --rollback")
+		}
 		if *rollback {
+			if *force {
+				return a.ForceRollbackUpdate(ctx)
+			}
 			return a.RollbackUpdate(ctx)
+		}
+		if *dryRun {
+			return a.UpdateDryRun(ctx)
 		}
 		return a.Update(ctx)
 	case "uninstall":
 		return a.Uninstall(ctx)
 	case "_register-install":
 		return a.RegisterInstall()
+	case "_update-metadata":
+		if len(args) != 1 {
+			return errors.New("invalid update metadata invocation")
+		}
+		return json.NewEncoder(a.Out).Encode(a.UpdateCompatibility())
+	case "_update-migrate":
+		if len(args) != 1 {
+			return errors.New("invalid prepared update migration invocation")
+		}
+		return a.ApplyPreparedUpdateMigration(ctx)
 	case "connect":
 		return runConnect(ctx, a, args[1:])
 	case "disconnect":
@@ -211,8 +252,20 @@ func runDoctor(ctx context.Context, a *app.App, args []string) error {
 	fs := flag.NewFlagSet("doctor", flag.ContinueOnError)
 	fs.SetOutput(a.Err)
 	jsonOutput := fs.Bool("json", false, "JSON output")
+	inventory := fs.Bool("inventory", false, "include sanitized compatibility inventory")
 	if err := fs.Parse(args); err != nil {
 		return err
+	}
+	if *inventory {
+		value := a.SupportInventory(ctx)
+		if *jsonOutput {
+			return json.NewEncoder(a.Out).Encode(value)
+		}
+		fmt.Fprintf(a.Out, "ivoai compatibility inventory\nVersion: %s\nPlatform: %s/%s\nModes: %s\nExecutable: %s\nConfig root: %s\nData root: %s\nState root: %s\nCache root: %s\nSchemas: config=%d state=%d ownership=%d server-protocol=%d\nInstall provenance: %s\nRollback available: %t\nInventory: %s\n", value.IVOAI, value.OS, value.Architecture, strings.Join(value.Modes, ", "), value.Paths.Executable, value.Paths.ConfigRoot, value.Paths.DataRoot, value.Paths.StateRoot, value.Paths.CacheRoot, value.Schemas.Config, value.Schemas.State, value.Schemas.Ownership, value.ServerProtocol, value.InstallProvenance, value.RollbackAvailable, value.InventoryOverall)
+		for _, component := range value.Components {
+			fmt.Fprintf(a.Out, "  %s installed=%t managed=%t version=%s path=%s\n", component.Name, component.Installed, component.Managed, component.Version, component.Path)
+		}
+		return nil
 	}
 	report := a.Doctor(ctx)
 	if *jsonOutput {
@@ -416,7 +469,7 @@ func usage(w io.Writer) {
 Usage:
   ivoai                         interactive menu
   ivoai setup [--mode client]
-  ivoai status | doctor [--json] | version | update [--rollback] | uninstall
+  ivoai status | doctor [--json] [--inventory] | version | update [--dry-run|--rollback [--force]] | uninstall
   ivoai connect [list|chatgpt|claude|server|mcp ...]
   ivoai disconnect <chatgpt|claude|server>
   ivoai codex [-- agent arguments...]

@@ -4,6 +4,8 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"io"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -47,6 +49,53 @@ func TestMenuCanExitAndDoctorJSON(t *testing.T) {
 	}
 	if !strings.Contains(out.String(), `"ruflo"`) {
 		t.Fatalf("doctor JSON omits Ruflo: %s", out.String())
+	}
+	out.Reset()
+	if err := Run(context.Background(), a, []string{"doctor", "--inventory", "--json"}); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.HasPrefix(strings.TrimSpace(out.String()), "{") || strings.Contains(out.String(), "\x1b[") || !strings.Contains(out.String(), `"format_version":1`) {
+		t.Fatalf("inventory JSON is not machine-readable: %s", out.String())
+	}
+}
+
+func TestPlainSetupDetectsExistingServerForV050Bridge(t *testing.T) {
+	root := t.TempDir()
+	t.Setenv("HOME", filepath.Join(root, "home"))
+	t.Setenv("XDG_CONFIG_HOME", filepath.Join(root, "xdg-config"))
+	t.Setenv("XDG_DATA_HOME", filepath.Join(root, "xdg-data"))
+	t.Setenv("XDG_STATE_HOME", filepath.Join(root, "xdg-state"))
+	t.Setenv("XDG_CACHE_HOME", filepath.Join(root, "xdg-cache"))
+	t.Setenv("IVOAI_TEST_MODE", "1")
+	serverRoot := filepath.Join(root, "server")
+	t.Setenv("IVOAI_SERVER_ROOT", serverRoot)
+	serverConfigDir := filepath.Join(serverRoot, "etc", "ivoai")
+	if err := os.MkdirAll(serverConfigDir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(serverConfigDir, "server.toml"), []byte("protocol_version=1\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	var output bytes.Buffer
+	a, err := app.New("candidate", strings.NewReader(""), &output, &output)
+	if err != nil {
+		t.Fatal(err)
+	}
+	previousRunner := serverRunner
+	t.Cleanup(func() { serverRunner = previousRunner })
+	var routed []string
+	serverRunner = func(_ context.Context, args []string, _ io.Reader, _, _ io.Writer) error {
+		routed = append([]string(nil), args...)
+		return nil
+	}
+	if err := Run(context.Background(), a, []string{"setup"}); err != nil {
+		t.Fatal(err)
+	}
+	if len(routed) != 1 || routed[0] != "setup" {
+		t.Fatalf("plain setup did not preserve server mode: %v", routed)
+	}
+	if _, err := os.Stat(a.Store.Paths.Config); !os.IsNotExist(err) {
+		t.Fatalf("legacy server bridge created client config: %v", err)
 	}
 }
 

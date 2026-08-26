@@ -26,6 +26,7 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/project"
 	"github.com/ivo-lopes/ivoai/internal/quota"
 	"github.com/ivo-lopes/ivoai/internal/secrets"
+	"github.com/ivo-lopes/ivoai/internal/server"
 	"github.com/ivo-lopes/ivoai/internal/terminalui"
 	"github.com/ivo-lopes/ivoai/internal/update"
 	"golang.org/x/term"
@@ -40,6 +41,9 @@ type App struct {
 	QuotaManager     *quota.Manager
 	AutoPollInterval time.Duration
 	HTTPClient       *http.Client
+	// ExecutablePath is accepted only in IVOAI_TEST_MODE so hermetic update
+	// matrix tests never replace the running go test binary.
+	ExecutablePath string
 }
 
 const liveServiceProbeTimeout = 8 * time.Second
@@ -160,6 +164,29 @@ func (a *App) Setup(ctx context.Context) error {
 	}
 	a.success("ivoai client setup complete")
 	return nil
+}
+
+// ExistingServerInstallation detects the stable server marker without
+// modifying it. The published v0.5.0 updater invokes a new binary as plain
+// `ivoai setup`; this keeps that legacy bridge on the server setup path.
+func (a *App) ExistingServerInstallation() (bool, error) {
+	serverRoot := testServerRoot()
+	if os.Geteuid() != 0 && serverRoot == "" {
+		return false, nil
+	}
+	layout := server.DefaultLayout(serverRoot)
+	path := filepath.Join(layout.ConfigDir, "server.toml")
+	info, err := os.Lstat(path)
+	if errors.Is(err, os.ErrNotExist) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	if info.Mode()&os.ModeSymlink != 0 || !info.Mode().IsRegular() {
+		return false, errors.New("existing server marker must be a regular non-symlink file")
+	}
+	return true, nil
 }
 
 func (a *App) Status(ctx context.Context) error {
@@ -878,55 +905,19 @@ func currentDir() string {
 }
 
 func (a *App) Update(ctx context.Context) error {
-	checker := update.Checker{}
-	release, available, err := checker.Check(ctx, a.Version)
-	if err != nil {
-		return err
-	}
-	if !available {
-		fmt.Fprintf(a.Out, "ivoai %s is current\n", a.Version)
-		return nil
-	}
-	fmt.Fprintf(a.Out, "updating ivoai to %s (%s)\n", release.Version, release.URL)
-	if err := a.Store.Ensure(); err != nil {
-		return err
-	}
-	executable, err := os.Executable()
-	if err != nil {
-		return err
-	}
-	rollback := filepath.Join(a.Store.Paths.StateDir, "updates", "ivoai.previous")
-	if err := checker.Apply(ctx, release, executable, rollback); err != nil {
-		return err
-	}
-	if _, err := a.Runner.Run(ctx, executable, []string{"setup"}, platform.RunOptions{Stdout: a.Out, Stderr: a.Err, Timeout: 30 * time.Minute}); err != nil {
-		return fmt.Errorf("ivoai updated; new-version migration/setup failed (rollback binary: %s): %w", rollback, err)
-	}
-	if _, err := a.Runner.Run(ctx, executable, []string{"doctor", "--json"}, platform.RunOptions{Stdout: a.Out, Stderr: a.Err, Timeout: time.Minute}); err != nil {
-		return fmt.Errorf("update installed but post-update doctor failed (rollback binary: %s): %w", rollback, err)
-	}
-	fmt.Fprintf(a.Out, "update complete; rollback binary: %s\n", rollback)
-	return nil
+	return a.transactionalUpdate(ctx, update.Checker{})
+}
+
+func (a *App) UpdateDryRun(ctx context.Context) error {
+	return a.transactionalUpdateDryRun(ctx, update.Checker{})
 }
 
 func (a *App) RollbackUpdate(ctx context.Context) error {
-	executable, err := os.Executable()
-	if err != nil {
-		return err
-	}
-	executable, err = filepath.EvalSymlinks(executable)
-	if err != nil {
-		return err
-	}
-	rollback := filepath.Join(a.Store.Paths.StateDir, "updates", "ivoai.previous")
-	if err := (update.Checker{}).Rollback(ctx, executable, rollback); err != nil {
-		return err
-	}
-	if _, err := a.Runner.Run(ctx, executable, []string{"doctor", "--json"}, platform.RunOptions{Stdout: a.Out, Stderr: a.Err, Timeout: time.Minute}); err != nil {
-		return fmt.Errorf("rollback installed but post-rollback doctor failed: %w", err)
-	}
-	fmt.Fprintf(a.Out, "rollback complete; replaced binary retained at %s.newer\n", rollback)
-	return nil
+	return a.transactionalRollback(ctx)
+}
+
+func (a *App) ForceRollbackUpdate(ctx context.Context) error {
+	return a.transactionalRollbackMode(ctx, true)
 }
 
 func (a *App) Uninstall(ctx context.Context) error {

@@ -41,7 +41,7 @@ type menuAction struct {
 func PublicMenuActionIDs() []string {
 	return []string{
 		"auto",
-		"status", "doctor", "version", "setup", "update", "rollback", "uninstall",
+		"status", "doctor", "doctor.inventory", "version", "setup", "update.dry-run", "update", "rollback", "uninstall",
 		"connect.list", "connect.chatgpt", "disconnect.chatgpt", "connect.claude", "disconnect.claude", "connect.server", "disconnect.server",
 		"mcp.list", "mcp.add", "mcp.remove", "launch.codex", "launch.claude", "memory.status", "memory.configure",
 		"session.direct.codex", "session.direct.claude", "session.orchestrated.codex", "session.orchestrated.claude", "session.list", "session.monitor", "session.stop",
@@ -102,6 +102,7 @@ func (s *menuSession) dashboard() (bool, error) {
 	return s.loop("Dashboard", []menuAction{
 		{id: "status", label: "Status", description: "Show component and connection readiness", run: s.simple(func() error { return s.app.Status(s.ctx) })},
 		{id: "doctor", label: "Doctor", description: "Run live diagnostics", long: true, run: s.simple(func() error { return runDoctor(s.ctx, s.app, nil) })},
+		{id: "doctor.inventory", label: "Compatibility Inventory", description: "Collect read-only, secret-free upgrade evidence", run: s.simple(func() error { return runDoctor(s.ctx, s.app, []string{"--inventory"}) })},
 		{id: "version", label: "Version", description: "Print the installed ivoai version", run: s.simple(func() error { fmt.Fprintln(s.app.Out, s.app.Version); return nil })},
 	})
 }
@@ -109,8 +110,9 @@ func (s *menuSession) dashboard() (bool, error) {
 func (s *menuSession) maintenance() (bool, error) {
 	return s.loop("Setup & Maintenance", []menuAction{
 		{id: "setup", label: "Setup / Repair", description: "Install and reconcile all client components", long: true, run: s.simple(func() error { return s.app.Setup(s.ctx) })},
+		{id: "update.dry-run", label: "Check Update Compatibility", description: "Stage/probe the verified candidate and snapshot plan without committing changes", long: true, run: s.simple(func() error { return s.app.UpdateDryRun(s.ctx) })},
 		{id: "update", label: "Update", description: "Check and install compatible ivoai/component updates", long: true, run: s.simple(func() error { return s.app.Update(s.ctx) })},
-		{id: "rollback", label: "Rollback Update", description: "Restore the binary retained by the previous update", run: s.confirmedProgress("ROLLBACK", "Rolling back ivoai", func() error { return s.app.RollbackUpdate(s.ctx) })},
+		{id: "rollback", label: "Rollback Update", description: "Restore the prior compatible binary and IVOAI-owned state", run: s.confirmedProgress("ROLLBACK", "Rolling back ivoai", func() error { return s.app.RollbackUpdate(s.ctx) })},
 		{id: "uninstall", label: "Uninstall", description: "Remove only items managed by ivoai", run: s.confirmedProgressExit("UNINSTALL", "Uninstalling ivoai-managed files", func() error { return s.app.Uninstall(s.ctx) })},
 	})
 }

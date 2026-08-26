@@ -462,6 +462,7 @@ func TestLaunchInjectsServerTokenOnlyIntoChildEnvironment(t *testing.T) {
 	t.Setenv("XDG_STATE_HOME", filepath.Join(root, "state"))
 	t.Setenv("XDG_CACHE_HOME", filepath.Join(root, "cache"))
 	t.Setenv(connections.ServerTokenEnvironment, "pre-existing")
+	t.Setenv("AI_MEMORY_AUTH_TOKEN", "pre-existing-memory")
 	var output bytes.Buffer
 	a, err := New("test", strings.NewReader(""), &output, &output)
 	if err != nil {
@@ -495,8 +496,8 @@ func TestLaunchInjectsServerTokenOnlyIntoChildEnvironment(t *testing.T) {
 	if got := os.Getenv(connections.ServerTokenEnvironment); got != "pre-existing" {
 		t.Fatalf("parent environment was modified: %q", got)
 	}
-	if got := os.Getenv("AI_MEMORY_AUTH_TOKEN"); got != "" {
-		t.Fatalf("ai-memory token environment was not restored: %q", got)
+	if got := os.Getenv("AI_MEMORY_AUTH_TOKEN"); got != "pre-existing-memory" {
+		t.Fatal("ai-memory token environment was not restored")
 	}
 }
 
