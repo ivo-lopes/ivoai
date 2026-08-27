@@ -204,6 +204,23 @@ func renderMonitorSized(out io.Writer, value session.Session, width int) {
 		monitorRow(out, "  Strategy", clean(value.OptimizationStrategy), width)
 		monitorRow(out, "  Escalations", fmt.Sprint(value.EscalationCount), width)
 	}
+	if len(value.Observability) > 0 {
+		fmt.Fprintln(out, "\nObservability")
+		start := len(value.Observability) - 8
+		if start < 0 {
+			start = 0
+		}
+		for _, event := range value.Observability[start:] {
+			detail := event.Summary()
+			if event.RoutingReason != "" {
+				detail += " reason=" + string(event.RoutingReason)
+			}
+			if event.FallbackReason != "" {
+				detail += " fallback=" + string(event.FallbackReason)
+			}
+			monitorRow(out, "  Event", detail, width)
+		}
+	}
 	fmt.Fprintln(out, "\nServices")
 	monitorRow(out, "  Context", clean(value.ContextStatus), width)
 	monitorRow(out, "  ai-memory", clean(value.MemoryStatus), width)

@@ -10,6 +10,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ivo-lopes/ivoai/internal/core"
+	"github.com/ivo-lopes/ivoai/internal/observability"
+	"github.com/ivo-lopes/ivoai/internal/platform"
 	"github.com/ivo-lopes/ivoai/internal/quota"
 	"github.com/ivo-lopes/ivoai/internal/routing"
 	"github.com/ivo-lopes/ivoai/internal/session"
@@ -126,7 +129,12 @@ func (s *Server) bootstrap(_ context.Context, request *mcp.CallToolRequest) (*mc
 		value.KnowledgeBootstrap = metadata
 		value.MemoryStatus, value.ContextStatus = serviceMetadata(metadata.MemoryStatus), serviceMetadata(metadata.ContextStatus)
 		value.CurrentPhase = "task_analysis"
-		return nil
+		memoryState, memoryReason := knowledgeObservation(metadata.MemoryStatus)
+		if err := session.AppendObservation(value, observability.Event{Category: observability.CategoryMemory, Operation: observability.OperationMemoryBootstrap, State: memoryState, Component: core.ComponentMemory, RoutingReason: memoryReason}); err != nil {
+			return err
+		}
+		contextState, contextReason := knowledgeObservation(metadata.ContextStatus)
+		return session.AppendObservation(value, observability.Event{Category: observability.CategoryContext, Operation: observability.OperationContextBootstrap, State: contextState, Component: core.ComponentContext, RoutingReason: contextReason})
 	})
 	if err != nil {
 		return nil, err
@@ -139,6 +147,13 @@ func serviceMetadata(value string) string {
 		return "degraded"
 	}
 	return value
+}
+
+func knowledgeObservation(value string) (observability.State, observability.Reason) {
+	if value == "ready" || value == "configured" {
+		return observability.StateCompleted, observability.ReasonKnowledgeReady
+	}
+	return observability.StateDegraded, observability.ReasonKnowledgeDegraded
 }
 
 func (s *Server) plan(ctx context.Context, request *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -443,6 +458,7 @@ func (s *Server) completeTask(planID, taskID, workerID string, state session.Sta
 }
 
 func boundedDiagnostic(value string) string {
+	value = platform.Redact(value)
 	value = strings.ReplaceAll(strings.ReplaceAll(value, "\n", " "), "\r", " ")
 	if len(value) > 512 {
 		value = value[:512]
@@ -612,7 +628,7 @@ func (s *Server) appendWorker(task routing.Task, workerID string) error {
 	started := time.Now().UTC()
 	_, err := s.Store.Update(s.SessionID, func(value *session.Session) error {
 		value.Workers = append(value.Workers, session.Worker{ID: workerID, TaskID: task.ID, Role: task.Role, RequestedExecutor: task.PreferredExecutor, Executor: task.Profile.Provider, Model: session.ModelInfo{Name: displayModel(task.Profile.Model), Source: session.ModelSource(task.Profile.ModelSource)}, State: session.StateStarting, StartedAt: started, Tier: string(task.Tier), CapabilityScore: task.CapabilityScore, Effort: task.Profile.Effort, EffortSource: string(task.Profile.EffortSource)})
-		return nil
+		return session.AppendObservation(value, observability.Event{Category: observability.CategoryWorker, Operation: observability.OperationWorkerLifecycle, State: observability.StateRunning, TaskID: task.ID, WorkerID: workerID, Provider: task.Profile.Provider, Executor: task.Profile.Provider, Component: providerCoreComponent(task.Profile.Provider), RoutingReason: observability.ReasonCapabilityMatch})
 	})
 	return err
 }
@@ -630,10 +646,29 @@ func (s *Server) persistPlan(plan routing.Plan) error {
 		metadata = append(metadata, taskMetadata(task))
 	}
 	_, err := s.Store.Update(s.SessionID, func(value *session.Session) error {
+		newPlan := value.PlanID != plan.ID
 		value.PlanID, value.OptimizationStrategy, value.Tasks, value.CurrentPhase = plan.ID, plan.Strategy, metadata, "parallel_dispatch"
+		if !newPlan {
+			return nil
+		}
+		if err := session.AppendObservation(value, observability.Event{Category: observability.CategoryDAG, Operation: observability.OperationDAGPlan, State: observability.StateCompleted, Component: core.ComponentOrchestration, RoutingReason: observability.ReasonPolicyAllowed}); err != nil {
+			return err
+		}
+		for _, task := range plan.Tasks {
+			if err := session.AppendObservation(value, observability.Event{Category: observability.CategoryCapability, Operation: observability.OperationCapabilityResolve, State: observability.StateSelected, TaskID: task.ID, Provider: task.Profile.Provider, Executor: task.Profile.Provider, Component: providerCoreComponent(task.Profile.Provider), RoutingReason: observability.ReasonCapabilityMatch}); err != nil {
+				return err
+			}
+		}
 		return nil
 	})
 	return err
+}
+
+func providerCoreComponent(provider string) core.ComponentID {
+	if provider == "claude" {
+		return core.ComponentClaude
+	}
+	return core.ComponentCodex
 }
 
 func (s *Server) persistRuntimePlan(planID string) {

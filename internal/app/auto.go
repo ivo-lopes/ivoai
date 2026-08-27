@@ -16,6 +16,7 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/config"
 	"github.com/ivo-lopes/ivoai/internal/core"
 	"github.com/ivo-lopes/ivoai/internal/doctor"
+	"github.com/ivo-lopes/ivoai/internal/observability"
 	"github.com/ivo-lopes/ivoai/internal/orchestration"
 	"github.com/ivo-lopes/ivoai/internal/platform"
 	"github.com/ivo-lopes/ivoai/internal/quota"
@@ -72,6 +73,11 @@ func (a *App) Auto(ctx context.Context, planner string, agentArgs []string) erro
 		State: session.StateStarting, CurrentPhase: "quota_preflight", Quota: map[quota.Provider]quota.ProviderQuota{},
 		OptimizationStrategy: cfg.Orchestration.Auto.Optimization.Strategy,
 	}
+	for _, event := range initialAutoObservations(value) {
+		if err := session.AppendObservation(&value, event); err != nil {
+			return err
+		}
+	}
 	store := session.Store{Root: a.Store.Paths.SessionsDir}
 	if err := store.Create(value); err != nil {
 		return err
@@ -81,7 +87,17 @@ func (a *App) Auto(ctx context.Context, planner string, agentArgs []string) erro
 		current, _ := manager.Probe(ctx, provider, true)
 		value.Quota[provider] = current
 	}
-	_, _ = store.Update(id, func(current *session.Session) error { current.Quota = value.Quota; return nil })
+	_, _ = store.Update(id, func(current *session.Session) error {
+		current.Quota = value.Quota
+		for _, provider := range []quota.Provider{quota.ProviderCodex, quota.ProviderClaude} {
+			for _, event := range quotaObservations(provider, value.Quota[provider]) {
+				if err := session.AppendObservation(current, event); err != nil {
+					return err
+				}
+			}
+		}
+		return nil
+	})
 	decision, err := manager.Resolve(ctx, quota.Provider(planner), "", false)
 	if err != nil {
 		_, _ = store.Update(id, func(current *session.Session) error {
@@ -98,11 +114,17 @@ func (a *App) Auto(ctx context.Context, planner string, agentArgs []string) erro
 	}
 	value, err = store.Update(id, func(currentSession *session.Session) error {
 		currentSession.CurrentPrimary, currentSession.PrimaryExecutor = current, current
+		if err := session.AppendObservation(currentSession, observability.Event{Category: observability.CategoryExecutor, Operation: observability.OperationExecutorSelect, State: observability.StateSelected, Provider: current, Executor: current, Component: providerComponent(current), RoutingReason: observability.ReasonPrimaryAvailable}); err != nil {
+			return err
+		}
 		if decision.Fallback {
 			now := time.Now().UTC()
 			currentSession.FailoverCount = 1
 			currentSession.LastFailoverAt = &now
 			currentSession.LastFailoverReason = decision.Reason
+			if err := session.AppendObservation(currentSession, observability.Event{Category: observability.CategoryFallback, Operation: observability.OperationFallbackRoute, State: observability.StateSelected, Provider: planner, Executor: current, Component: providerComponent(current), RoutingReason: observability.ReasonAlternateSelected, FallbackReason: observability.ReasonProviderQuotaExhausted}); err != nil {
+				return err
+			}
 		}
 		return nil
 	})
@@ -126,7 +148,7 @@ func (a *App) Auto(ctx context.Context, planner string, agentArgs []string) erro
 		sessionValue.RufloHealthy, sessionValue.RufloSafeMode = true, true
 		sessionValue.CurrentPrimary, sessionValue.PrimaryExecutor = current, current
 		sessionValue.CurrentPhase = "starting_primary"
-		return nil
+		return session.AppendObservation(sessionValue, observability.Event{Category: observability.CategoryOrchestration, Operation: observability.OperationOrchestrationInitialize, State: observability.StateCompleted, Component: core.ComponentOrchestration, RoutingReason: observability.ReasonPolicyAllowed})
 	})
 	if err != nil {
 		_ = control.Stop(context.Background())
@@ -290,9 +312,58 @@ func (a *App) launchAutomaticPrimary(ctx context.Context, store session.Store, i
 			current.PrimaryProcessStart = session.ProcessStart(observation.PID)
 			current.HeadroomUsed = observation.CompressionUsed
 			current.State, current.CurrentPhase = session.StateRunning, "conversation"
-			return nil
+			reason := observability.ReasonHeadroomBypassed
+			if observation.CompressionUsed {
+				reason = observability.ReasonHeadroomEnabled
+			}
+			return session.AppendObservation(current, observability.Event{Category: observability.CategoryCompression, Operation: observability.OperationCompressionSelect, State: observability.StateSelected, Executor: executor, Component: core.ComponentCompression, RoutingReason: reason})
 		})
 	})
+}
+
+func initialAutoObservations(value session.Session) []observability.Event {
+	knowledgeState := func(status string) (observability.State, observability.Reason) {
+		if status == "ready" || status == "configured" {
+			return observability.StateCompleted, observability.ReasonKnowledgeReady
+		}
+		return observability.StateDegraded, observability.ReasonKnowledgeDegraded
+	}
+	memoryState, memoryReason := knowledgeState(value.MemoryStatus)
+	contextState, contextReason := knowledgeState(value.ContextStatus)
+	return []observability.Event{
+		{Category: observability.CategoryMemory, Operation: observability.OperationMemoryBootstrap, State: memoryState, Component: core.ComponentMemory, RoutingReason: memoryReason},
+		{Category: observability.CategoryContext, Operation: observability.OperationContextBootstrap, State: contextState, Component: core.ComponentContext, RoutingReason: contextReason},
+		{Category: observability.CategoryApproval, Operation: observability.OperationApprovalPolicy, State: observability.StateAllowed, Executor: value.PrimaryExecutor, Component: providerComponent(value.PrimaryExecutor), RoutingReason: observability.ReasonPolicyAllowed},
+		{Category: observability.CategoryOrchestration, Operation: observability.OperationOrchestrationInitialize, State: observability.StatePending, Component: core.ComponentOrchestration},
+	}
+}
+
+func quotaObservations(provider quota.Provider, value quota.ProviderQuota) []observability.Event {
+	events := make([]observability.Event, 0, len(value.Windows)+1)
+	if len(value.Windows) == 0 {
+		return []observability.Event{{Category: observability.CategoryQuota, Operation: observability.OperationQuotaProbe, State: observability.StateUnavailable, Provider: string(provider), Component: providerComponent(string(provider)), RoutingReason: observability.ReasonTelemetryNotExposed}}
+	}
+	for _, window := range value.Windows {
+		state := observability.StateCompleted
+		reason := observability.ReasonQuotaAvailable
+		if window.TelemetryState() == quota.TelemetryStale {
+			state, reason = observability.StateDegraded, observability.ReasonQuotaStale
+		} else if window.TelemetryState() == quota.TelemetryNotExposed || !window.Available {
+			state, reason = observability.StateUnavailable, observability.ReasonTelemetryNotExposed
+		} else if window.Authoritative && window.RemainingPercent <= 0 {
+			state, reason = observability.StateBlocked, observability.ReasonQuotaExhausted
+		}
+		remaining := window.RemainingPercent
+		events = append(events, observability.Event{Category: observability.CategoryQuota, Operation: observability.OperationQuotaProbe, State: state, Provider: string(provider), Component: providerComponent(string(provider)), RoutingReason: reason, WindowKind: string(window.Kind), TelemetryState: string(window.TelemetryState()), RemainingPercent: &remaining, ResetsAt: window.ResetsAt})
+	}
+	return events
+}
+
+func providerComponent(provider string) core.ComponentID {
+	if provider == "claude" {
+		return core.ComponentClaude
+	}
+	return core.ComponentCodex
 }
 
 func (a *App) autoAgentArgs(executor string, existing []string, id, runtimeDir, instructionsPath, handoff string, cfg config.Config) ([]string, error) {

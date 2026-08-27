@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/ivo-lopes/ivoai/internal/app"
+	"github.com/ivo-lopes/ivoai/internal/observability"
 	"github.com/ivo-lopes/ivoai/internal/quota"
 	"github.com/ivo-lopes/ivoai/internal/session"
 	"github.com/ivo-lopes/ivoai/internal/terminalui"
@@ -295,6 +296,21 @@ func TestMonitorRenderingFitsNarrowTerminalAndJSONHasNoANSI(t *testing.T) {
 	}
 	if strings.Contains(machine.String(), "\x1b[") || !strings.Contains(machine.String(), `"session_id"`) {
 		t.Fatalf("invalid machine output: %q", machine.String())
+	}
+}
+
+func TestMonitorShowsSecretFreeObservabilityReason(t *testing.T) {
+	now := time.Now().UTC()
+	value := session.Session{SessionID: "sess_0123456789abcdef0123456789abcdef", StartedAt: now, UpdatedAt: now, Mode: session.ModeAuto, PrimaryExecutor: "codex", CurrentPrimary: "codex", WorkingDirectory: "/tmp/project", PrimaryModel: session.UnknownModel(), Workers: []session.Worker{}, MaxWorkers: 2, State: session.StateRunning}
+	if err := session.AppendObservation(&value, observability.Event{Category: observability.CategoryCapability, Operation: observability.OperationCapabilityResolve, State: observability.StateSelected, TaskID: "inventory", Provider: "codex", Executor: "codex", Component: "codex", RoutingReason: observability.ReasonCapabilityMatch}); err != nil {
+		t.Fatal(err)
+	}
+	var output bytes.Buffer
+	renderMonitorSized(&output, value, 80)
+	for _, expected := range []string{"Observability", "capability.resolve", "reason=capability_match"} {
+		if !strings.Contains(output.String(), expected) {
+			t.Fatalf("monitor missing %q: %s", expected, output.String())
+		}
 	}
 }
 

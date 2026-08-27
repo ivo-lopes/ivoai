@@ -4,6 +4,7 @@ package session
 import (
 	"time"
 
+	"github.com/ivo-lopes/ivoai/internal/observability"
 	"github.com/ivo-lopes/ivoai/internal/quota"
 )
 
@@ -147,6 +148,24 @@ type Session struct {
 	PlanID               string                                 `json:"plan_id,omitempty"`
 	Tasks                []TaskMetadata                         `json:"tasks,omitempty"`
 	EscalationCount      int                                    `json:"escalation_count,omitempty"`
+	Observability        []observability.Event                  `json:"observability,omitempty"`
+}
+
+const MaxObservabilityEvents = 128
+
+// AppendObservation is the single bounded admission path for operational
+// event metadata persisted with a session.
+func AppendObservation(value *Session, event observability.Event) error {
+	event.SessionID = value.SessionID
+	normalized, err := observability.Normalize(event)
+	if err != nil {
+		return err
+	}
+	value.Observability = append(value.Observability, normalized)
+	if len(value.Observability) > MaxObservabilityEvents {
+		value.Observability = append([]observability.Event(nil), value.Observability[len(value.Observability)-MaxObservabilityEvents:]...)
+	}
+	return nil
 }
 
 func UnknownModel() ModelInfo { return ModelInfo{Name: "unknown", Source: ModelUnknown} }

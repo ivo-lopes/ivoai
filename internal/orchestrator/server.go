@@ -12,6 +12,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ivo-lopes/ivoai/internal/core"
+	"github.com/ivo-lopes/ivoai/internal/observability"
 	"github.com/ivo-lopes/ivoai/internal/quota"
 	"github.com/ivo-lopes/ivoai/internal/routing"
 	"github.com/ivo-lopes/ivoai/internal/session"
@@ -378,6 +380,15 @@ func (s *Server) finish(id string, state session.State, exitCode int, text strin
 	_, _ = s.Store.Update(s.SessionID, func(value *session.Session) error {
 		if worker := findWorker(value, id); worker != nil {
 			worker.State, worker.EndedAt, worker.ExitCode = state, &now, &exitCode
+			eventState := observability.StateCompleted
+			if state == session.StateFailed {
+				eventState = observability.StateFailed
+			}
+			component := core.ComponentCodex
+			if worker.Executor == "claude" {
+				component = core.ComponentClaude
+			}
+			return session.AppendObservation(value, observability.Event{Category: observability.CategoryWorker, Operation: observability.OperationWorkerLifecycle, State: eventState, TaskID: worker.TaskID, WorkerID: id, Provider: worker.Executor, Executor: worker.Executor, Component: component, DurationMilliseconds: now.Sub(worker.StartedAt).Milliseconds()})
 		}
 		return nil
 	})

@@ -275,6 +275,14 @@ func validate(value Session) error {
 	if !validState(value.State) || !validModel(value.PrimaryModel) {
 		return errors.New("invalid session state or model metadata")
 	}
+	if len(value.Observability) > MaxObservabilityEvents {
+		return errors.New("too many observability events")
+	}
+	for _, event := range value.Observability {
+		if event.SessionID != value.SessionID || event.Validate() != nil {
+			return errors.New("invalid session observability metadata")
+		}
+	}
 	if !oneOf(value.ContextStatus, "ready", "configured", "degraded", "disabled") || !oneOf(value.MemoryStatus, "ready", "configured", "degraded", "disabled") || !oneOf(value.ServerStatus, "reachable", "configured", "unreachable", "connected", "not-connected", "degraded") {
 		return errors.New("invalid service status metadata")
 	}

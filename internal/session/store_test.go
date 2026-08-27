@@ -7,8 +7,32 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ivo-lopes/ivoai/internal/observability"
 	"github.com/ivo-lopes/ivoai/internal/quota"
 )
+
+func TestSessionObservabilityIsBoundedAndSecretFree(t *testing.T) {
+	_, value := fixtureSession(t, filepath.Join(t.TempDir(), "sessions"))
+	for index := 0; index < MaxObservabilityEvents+5; index++ {
+		if err := AppendObservation(&value, observability.Event{Category: observability.CategoryWorker, Operation: observability.OperationWorkerLifecycle, State: observability.StateCompleted, FallbackReason: "Authorization: Bearer secret"}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if len(value.Observability) != MaxObservabilityEvents {
+		t.Fatalf("events=%d", len(value.Observability))
+	}
+	store := Store{Root: t.TempDir()}
+	if err := store.Create(value); err != nil {
+		t.Fatal(err)
+	}
+	body, err := os.ReadFile(store.path(value.SessionID))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(body), "secret") || !strings.Contains(string(body), `"redacted"`) {
+		t.Fatal("unsafe persisted observability")
+	}
+}
 
 func fixtureSession(t *testing.T, root string) (Store, Session) {
 	t.Helper()
