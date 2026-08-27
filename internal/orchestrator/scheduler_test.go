@@ -94,14 +94,21 @@ func TestSpawnBatchRunsIndependentTasksConcurrentlyAndHonorsDAG(t *testing.T) {
 	if _, err := server.wait(context.Background(), toolRequest(map[string]any{"plan_id": planID, "task_ids": []string{"a", "b", "c", "d", "e"}, "mode": "all", "timeout_seconds": 5})); err != nil {
 		t.Fatal(err)
 	}
-	elapsed := time.Since(start)
-	if elapsed >= 850*time.Millisecond {
-		t.Fatalf("parallel DAG took %s; sequential duration is about 900ms", elapsed)
-	}
 	adapter.mu.Lock()
 	defer adapter.mu.Unlock()
 	if delta := adapter.starts["A"].Sub(adapter.starts["B"]); delta > 75*time.Millisecond || delta < -75*time.Millisecond {
 		t.Fatalf("A and B did not start concurrently: delta=%s", delta)
+	}
+	overlapStart := adapter.starts["A"]
+	if adapter.starts["B"].After(overlapStart) {
+		overlapStart = adapter.starts["B"]
+	}
+	overlapEnd := adapter.ends["A"]
+	if adapter.ends["B"].Before(overlapEnd) {
+		overlapEnd = adapter.ends["B"]
+	}
+	if overlap := overlapEnd.Sub(overlapStart); overlap < adapter.delay/2 {
+		t.Fatalf("A and B did not overlap for long enough: overlap=%s delay=%s", overlap, adapter.delay)
 	}
 	if adapter.starts["C"].Before(adapter.ends["A"]) {
 		t.Fatal("C started before A completed")
@@ -115,6 +122,20 @@ func TestSpawnBatchRunsIndependentTasksConcurrentlyAndHonorsDAG(t *testing.T) {
 	}
 	if adapter.starts["E"].Before(adapter.ends["D"]) {
 		t.Fatal("E started before D completed")
+	}
+	earliest, latest := adapter.starts["A"], adapter.ends["A"]
+	var totalWork time.Duration
+	for _, task := range []string{"A", "B", "C", "D", "E"} {
+		if adapter.starts[task].Before(earliest) {
+			earliest = adapter.starts[task]
+		}
+		if adapter.ends[task].After(latest) {
+			latest = adapter.ends[task]
+		}
+		totalWork += adapter.ends[task].Sub(adapter.starts[task])
+	}
+	if makespan := latest.Sub(earliest); totalWork-makespan < adapter.delay/2 {
+		t.Fatalf("parallel execution did not reduce the measured makespan: work=%s makespan=%s", totalWork, makespan)
 	}
 }
 
