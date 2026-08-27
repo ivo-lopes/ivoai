@@ -94,6 +94,15 @@ paths. No update occurs silently; `ivoai update` reports the selected release an
 preserves config and secrets. `ivoai server logs` redacts its rendered output;
 journald should still be reviewed before logs are exported or shared.
 
+The Skill Control Plane uses a shared non-executing staging pipeline for future
+skills, components, and helpers. It requires immutable revisions and SHA-256,
+separately represents signature/attestation status, rejects traversal, links,
+duplicates, special files, decompression limits, and unexpected executables, and
+promotes only by an atomic private pointer after structural and policy validation.
+Discovery never executes a hook or command found in external content. Policy is
+deny-by-default and external prose cannot grant capabilities or orchestration
+authority. See [skill-control-plane.md](skill-control-plane.md).
+
 Report vulnerabilities privately to the repository owner. Do not include tokens,
 private documents, or production logs in reports.
 

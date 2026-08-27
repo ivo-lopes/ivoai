@@ -192,6 +192,7 @@ execution.
 - [Automatic orchestration](docs/auto-orchestration.md)
 - [Automatic scheduler and model routing](docs/auto-scheduler.md)
 - [Quota routing](docs/quota-routing.md)
+- [Skill Control Plane foundation](docs/skill-control-plane.md)
 - [Server and reverse proxy](docs/server.md)
 - [Connections and Web MCP](docs/connections.md)
 - [Security model](docs/security.md)

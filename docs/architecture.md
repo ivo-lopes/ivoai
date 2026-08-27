@@ -577,6 +577,13 @@ API.
 
 ## Security invariants
 
+The provider-neutral skill boundaries are implemented by a separate, versioned
+Skill Control Plane foundation. Registry, metadata-only indexing, dependency and
+conflict resolution, deny-by-default policy, and generic non-executing supply-chain
+staging are documented in [skill-control-plane.md](skill-control-plane.md). The
+foundation is additive: the current session path does not require a populated
+registry and no external skill can assume orchestrator authority.
+
 - Secrets never enter the main TOML, URLs, diagnostics, or logs. ivoai does not inject
   stored secrets into subprocess argv; enrollment uses standard input or a no-echo
   prompt by default.
