@@ -26,7 +26,7 @@ func (a ClaudeAdapter) Probe(ctx context.Context) (ProviderQuota, error) {
 		now = a.Now().UTC()
 	}
 	result := ProviderQuota{Provider: ProviderClaude, Eligible: true, Authenticated: true, Source: "claude statusline", ObservedAt: now, Reason: "awaiting first response"}
-	result.Windows = []Window{Unavailable(KindSession, TelemetryPending, result.Source, now), Unavailable(KindWeekly, TelemetryPending, result.Source, now)}
+	result.Windows = []Window{UnavailableDuration(KindSession, 300, TelemetryPending, result.Source, now), UnavailableDuration(KindWeekly, 10080, TelemetryPending, result.Source, now)}
 	if a.Binary == "" || !filepath.IsAbs(a.Binary) || filepath.Base(a.Binary) != "claude" {
 		result.Authenticated, result.Eligible, result.Reason = false, false, "Claude executable unavailable"
 		return result, errors.New(result.Reason)
@@ -106,8 +106,8 @@ func ParseClaudeStatusline(body []byte, observed time.Time) (ProviderQuota, erro
 	if input.RateLimits == nil {
 		value.Reason = "awaiting first response"
 		value.Windows = append(value.Windows,
-			Unavailable(KindSession, TelemetryPending, value.Source, observed),
-			Unavailable(KindWeekly, TelemetryPending, value.Source, observed),
+			UnavailableDuration(KindSession, 300, TelemetryPending, value.Source, observed),
+			UnavailableDuration(KindWeekly, 10080, TelemetryPending, value.Source, observed),
 		)
 		return value, nil
 	}
@@ -118,7 +118,11 @@ func ParseClaudeStatusline(body []byte, observed time.Time) (ProviderQuota, erro
 		kind, limit := item.kind, item.limit
 		if limit == nil {
 			if kind != KindMonthly {
-				value.Windows = append(value.Windows, Unavailable(kind, TelemetryNotExposed, value.Source, observed))
+				duration := int64(300)
+				if kind == KindWeekly {
+					duration = 10080
+				}
+				value.Windows = append(value.Windows, UnavailableDuration(kind, duration, TelemetryNotExposed, value.Source, observed))
 			}
 			continue
 		}
@@ -127,7 +131,13 @@ func ParseClaudeStatusline(body []byte, observed time.Time) (ProviderQuota, erro
 			parsed := time.Unix(limit.ResetsAt, 0).UTC()
 			reset = &parsed
 		}
-		window := FromUsed(kind, limit.UsedPercentage, reset, "claude statusline", observed.UTC())
+		duration := int64(0)
+		if kind == KindSession {
+			duration = 300
+		} else if kind == KindWeekly {
+			duration = 10080
+		}
+		window := FromUsedDuration(kind, duration, limit.UsedPercentage, reset, "claude statusline", observed.UTC())
 		value.Windows = append(value.Windows, window)
 		if kind != KindContext && window.RemainingPercent <= 0 {
 			value.HardLimitReached, value.Eligible, value.Reason = true, false, "Claude subscription quota exhausted"

@@ -6,6 +6,7 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"sync"
 	"testing"
@@ -43,7 +44,15 @@ func TestRemainingClampAndCodexWindows(t *testing.T) {
 		IndividualLimit: &codexIndividualLimit{RemainingPercent: 71, ResetsAt: 300},
 	}}
 	windows := codexWindows(payload, observed)
-	if len(windows) != 3 || windows[0].Kind != KindSession || windows[0].RemainingPercent != 75 || windows[1].Kind != KindWeekly || windows[1].RemainingPercent != 0 || windows[2].Kind != KindMonthly || windows[2].RemainingPercent != 71 {
+	fiveHour, fiveOK := windowByDuration(windows, 300)
+	weeklyWindow, weeklyOK := windowByDuration(windows, 10080)
+	individual := Window{}
+	for _, window := range windows {
+		if window.Kind == KindIndividual {
+			individual = window
+		}
+	}
+	if len(windows) != 3 || !fiveOK || fiveHour.Kind != KindRolling || fiveHour.RemainingPercent != 75 || !weeklyOK || weeklyWindow.Kind != KindWeekly || weeklyWindow.RemainingPercent != 0 || individual.Kind != KindIndividual || individual.RemainingPercent != 71 {
 		t.Fatalf("windows=%+v", windows)
 	}
 	if Clamp(-1) != 0 || Clamp(101) != 100 || math.Abs(FromUsed(KindWeekly, 33.5, nil, "test", observed).RemainingPercent-66.5) > 0.001 {
@@ -68,11 +77,70 @@ printf '%s\n' '{"id":2,"result":{"rateLimits":{"primary":{"usedPercent":14,"wind
 	if err != nil || !value.Authenticated || !value.Eligible {
 		t.Fatalf("value=%+v err=%v", value, err)
 	}
-	for kind, remaining := range map[Kind]float64{KindSession: 86, KindWeekly: 71, KindMonthly: 82} {
-		window, ok := value.Window(kind)
+	for duration, remaining := range map[int64]float64{300: 86, 10080: 71} {
+		window, ok := value.WindowByDuration(duration)
 		if !ok || window.RemainingPercent != remaining || window.Source != "codex app-server" {
-			t.Fatalf("kind=%s window=%+v", kind, window)
+			t.Fatalf("duration=%d window=%+v", duration, window)
 		}
+	}
+	if individual, ok := value.Window(KindIndividual); !ok || individual.RemainingPercent != 82 {
+		t.Fatalf("individual=%+v", individual)
+	}
+}
+
+func TestCodexPrimarySecondaryOrderIsSemanticallyEquivalent(t *testing.T) {
+	observed := time.Unix(100, 0).UTC()
+	five, weekly := int64(300), int64(10080)
+	a := codexWindows(codexRateResponse{RateLimits: codexLimit{Primary: &codexWindow{UsedPercent: 20, WindowDurationMins: &five}, Secondary: &codexWindow{UsedPercent: 30, WindowDurationMins: &weekly}}}, observed)
+	b := codexWindows(codexRateResponse{RateLimits: codexLimit{Primary: &codexWindow{UsedPercent: 30, WindowDurationMins: &weekly}, Secondary: &codexWindow{UsedPercent: 20, WindowDurationMins: &five}}}, observed)
+	if !reflect.DeepEqual(a, b) {
+		t.Fatalf("primary/secondary order changed semantics:\nA=%+v\nB=%+v", a, b)
+	}
+}
+
+func TestCodexPreservesArbitraryDurationsAndMissingFiveHour(t *testing.T) {
+	observed := time.Unix(100, 0).UTC()
+	oneHour, oneDay := int64(60), int64(1440)
+	windows := codexWindows(codexRateResponse{RateLimits: codexLimit{Primary: &codexWindow{UsedPercent: 10, WindowDurationMins: &oneHour}, Secondary: &codexWindow{UsedPercent: 20, WindowDurationMins: &oneDay}}}, observed)
+	for _, duration := range []int64{60, 1440} {
+		window, ok := windowByDuration(windows, duration)
+		if !ok || window.Kind != KindRolling || !window.Available {
+			t.Fatalf("duration %d was not preserved: %+v", duration, windows)
+		}
+	}
+	fiveHour, ok := windowByDuration(windows, 300)
+	if !ok || fiveHour.TelemetryState() != TelemetryNotExposed || fiveHour.Available || fiveHour.RemainingPercent != 0 {
+		t.Fatalf("missing 5h was fabricated or lost: %+v", fiveHour)
+	}
+}
+
+func TestCodexIndividualLimitIsNotMonthly(t *testing.T) {
+	windows := codexWindows(codexRateResponse{RateLimits: codexLimit{IndividualLimit: &codexIndividualLimit{RemainingPercent: 42, ResetsAt: 200}}}, time.Unix(100, 0))
+	individual, ok := func() (Window, bool) {
+		for _, window := range windows {
+			if window.Kind == KindIndividual {
+				return window, true
+			}
+		}
+		return Window{}, false
+	}()
+	if !ok || individual.RemainingPercent != 42 {
+		t.Fatalf("individual limit missing: %+v", windows)
+	}
+	if _, monthly := (ProviderQuota{Windows: windows}).Window(KindMonthly); monthly {
+		t.Fatalf("individual limit was mislabeled monthly: %+v", windows)
+	}
+}
+
+func TestCodexFiveHourExhaustionHasCanonicalReasonAndMissingDoesNotBlock(t *testing.T) {
+	exhausted := FromUsedDuration(KindRolling, 300, 100, nil, "fixture", time.Now())
+	if reason := codexWindowExhaustedReason(exhausted); reason != "Codex 5-hour quota exhausted" {
+		t.Fatalf("reason=%q", reason)
+	}
+	missing := UnavailableDuration(KindRolling, 300, TelemetryNotExposed, "fixture", time.Now())
+	value := ProviderQuota{Provider: ProviderCodex, Authenticated: true, Eligible: true, Windows: []Window{missing}}
+	if !eligibleForModel(value, "") {
+		t.Fatalf("missing 5h incorrectly blocked Codex: %+v", value)
 	}
 }
 

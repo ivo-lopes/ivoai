@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 	"strings"
 	"syscall"
 	"time"
@@ -81,10 +82,14 @@ func (a CodexAdapter) Probe(ctx context.Context) (ProviderQuota, error) {
 	for _, window := range result.Windows {
 		if window.Authoritative && window.Available && window.RemainingPercent <= 0 && window.Kind != KindContext && window.Kind != KindCredits && window.Kind != KindModelWeekly {
 			result.HardLimitReached = true
+			result.Reason = codexWindowExhaustedReason(window)
 		}
 	}
 	if result.HardLimitReached {
-		result.Eligible, result.Reason = false, "Codex subscription quota exhausted"
+		result.Eligible = false
+		if result.Reason == "" {
+			result.Reason = "Codex subscription quota exhausted"
+		}
 	}
 	return result, nil
 }
@@ -173,6 +178,12 @@ func codexWindows(payload codexRateResponse, observed time.Time) []Window {
 		base = value
 	}
 	result := windowsFromCodexLimit(base, observed, false)
+	if _, ok := windowByDuration(result, 300); !ok {
+		result = append(result, UnavailableDuration(KindRolling, 300, TelemetryNotExposed, "codex app-server", observed))
+	}
+	if _, ok := windowByDuration(result, 10080); !ok {
+		result = append(result, UnavailableDuration(KindWeekly, 10080, TelemetryNotExposed, "codex app-server", observed))
+	}
 	for id, value := range payload.RateLimitsByLimitID {
 		if id == "codex" {
 			continue
@@ -191,7 +202,25 @@ func codexWindows(payload codexRateResponse, observed time.Time) []Window {
 			result = append(result, window)
 		}
 	}
+	sort.SliceStable(result, func(i, j int) bool {
+		if result[i].Model != result[j].Model {
+			return result[i].Model < result[j].Model
+		}
+		if result[i].DurationMinutes != result[j].DurationMinutes {
+			return result[i].DurationMinutes < result[j].DurationMinutes
+		}
+		return result[i].Kind < result[j].Kind
+	})
 	return result
+}
+
+func windowByDuration(values []Window, duration int64) (Window, bool) {
+	for _, value := range values {
+		if value.Model == "" && value.DurationMinutes == duration {
+			return value, true
+		}
+	}
+	return Window{}, false
 }
 
 func windowsFromCodexLimit(value codexLimit, observed time.Time, _ bool) []Window {
@@ -200,8 +229,8 @@ func windowsFromCodexLimit(value codexLimit, observed time.Time, _ bool) []Windo
 		if candidate == nil {
 			continue
 		}
-		kind := KindSession
-		if candidate.WindowDurationMins != nil && *candidate.WindowDurationMins >= 6*24*60 {
+		kind := KindRolling
+		if candidate.WindowDurationMins != nil && *candidate.WindowDurationMins == 7*24*60 {
 			kind = KindWeekly
 		}
 		result = append(result, fromCodexWindow(kind, *candidate, observed))
@@ -209,7 +238,11 @@ func windowsFromCodexLimit(value codexLimit, observed time.Time, _ bool) []Windo
 	if value.IndividualLimit != nil {
 		reset := time.Unix(value.IndividualLimit.ResetsAt, 0).UTC()
 		remaining := Clamp(value.IndividualLimit.RemainingPercent)
-		result = append(result, Window{Kind: KindMonthly, UsedPercent: Clamp(100 - remaining), RemainingPercent: remaining, ResetsAt: &reset, Source: "codex app-server", ObservedAt: observed, Authoritative: true, Available: true})
+		state := TelemetryAvailable
+		if remaining <= 0 {
+			state = TelemetryExhausted
+		}
+		result = append(result, Window{Kind: KindIndividual, UsedPercent: Clamp(100 - remaining), RemainingPercent: remaining, ResetsAt: &reset, Source: "codex app-server", ObservedAt: observed, Authoritative: true, Available: true, State: state})
 	}
 	return result
 }
@@ -220,7 +253,27 @@ func fromCodexWindow(kind Kind, value codexWindow, observed time.Time) Window {
 		parsed := time.Unix(*value.ResetsAt, 0).UTC()
 		reset = &parsed
 	}
-	return FromUsed(kind, value.UsedPercent, reset, "codex app-server", observed)
+	duration := int64(0)
+	if value.WindowDurationMins != nil {
+		duration = *value.WindowDurationMins
+	}
+	return FromUsedDuration(kind, duration, value.UsedPercent, reset, "codex app-server", observed)
+}
+
+func codexWindowExhaustedReason(window Window) string {
+	switch window.DurationMinutes {
+	case 300:
+		return "Codex 5-hour quota exhausted"
+	case 10080:
+		return "Codex weekly quota exhausted"
+	}
+	if window.Kind == KindIndividual {
+		return "Codex individual quota exhausted"
+	}
+	if window.DurationMinutes > 0 && window.DurationMinutes%60 == 0 {
+		return fmt.Sprintf("Codex %d-hour quota exhausted", window.DurationMinutes/60)
+	}
+	return "Codex subscription quota exhausted"
 }
 
 func subscriptionEnvironment(binary string) []string {

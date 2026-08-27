@@ -16,8 +16,10 @@ type Kind string
 const (
 	KindContext     Kind = "context"
 	KindSession     Kind = "session"
+	KindRolling     Kind = "rolling"
 	KindWeekly      Kind = "weekly"
 	KindMonthly     Kind = "monthly"
+	KindIndividual  Kind = "individual"
 	KindModelWeekly Kind = "model_weekly"
 	KindCredits     Kind = "credits"
 )
@@ -35,6 +37,7 @@ const (
 type Window struct {
 	Kind             Kind           `json:"kind"`
 	Model            string         `json:"model,omitempty"`
+	DurationMinutes  int64          `json:"duration_minutes,omitempty"`
 	UsedPercent      float64        `json:"used_percent,omitempty"`
 	RemainingPercent float64        `json:"remaining_percent,omitempty"`
 	ResetsAt         *time.Time     `json:"resets_at,omitempty"`
@@ -81,16 +84,26 @@ func Clamp(value float64) float64 {
 }
 
 func FromUsed(kind Kind, used float64, reset *time.Time, source string, observed time.Time) Window {
+	return FromUsedDuration(kind, 0, used, reset, source, observed)
+}
+
+func FromUsedDuration(kind Kind, durationMinutes int64, used float64, reset *time.Time, source string, observed time.Time) Window {
 	used = Clamp(used)
 	state := TelemetryAvailable
 	if used >= 100 {
 		state = TelemetryExhausted
 	}
-	return Window{Kind: kind, UsedPercent: used, RemainingPercent: Clamp(100 - used), ResetsAt: reset, Source: source, ObservedAt: observed, Authoritative: true, Available: true, State: state}
+	return Window{Kind: kind, DurationMinutes: durationMinutes, UsedPercent: used, RemainingPercent: Clamp(100 - used), ResetsAt: reset, Source: source, ObservedAt: observed, Authoritative: true, Available: true, State: state}
 }
 
 func Unavailable(kind Kind, state TelemetryState, source string, observed time.Time) Window {
 	return Window{Kind: kind, State: state, Source: source, ObservedAt: observed.UTC()}
+}
+
+func UnavailableDuration(kind Kind, durationMinutes int64, state TelemetryState, source string, observed time.Time) Window {
+	value := Unavailable(kind, state, source, observed)
+	value.DurationMinutes = durationMinutes
+	return value
 }
 
 func (w Window) TelemetryState() TelemetryState {
@@ -113,6 +126,15 @@ func (q ProviderQuota) Window(kind Kind) (Window, bool) {
 		}
 	}
 	return Window{Kind: kind}, false
+}
+
+func (q ProviderQuota) WindowByDuration(durationMinutes int64) (Window, bool) {
+	for _, value := range q.Windows {
+		if value.Model == "" && value.DurationMinutes == durationMinutes {
+			return value, true
+		}
+	}
+	return Window{Kind: KindRolling, DurationMinutes: durationMinutes}, false
 }
 
 func Other(provider Provider) Provider {
