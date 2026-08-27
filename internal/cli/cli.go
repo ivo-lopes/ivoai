@@ -295,6 +295,7 @@ func runDoctor(ctx context.Context, a *app.App, args []string) error {
 		fmt.Fprintf(a.Out, "  Codex probe=%s auth=%s eligible=%s 5h-source=%s weekly-source=%s individual-source=%s\n", semanticBool(probe.Ready, color), semanticOptionalBool(probe.Authenticated, color), semanticOptionalBool(probe.Eligible, color), probe.FiveHourSource, probe.WeeklySource, probe.IndividualSource)
 	}
 	fmt.Fprintf(a.Out, "  failover Codex->Claude Code=%s Claude Code->Codex=%s\n", semanticOptionalBool(report.Automatic.CodexToClaude, color), semanticOptionalBool(report.Automatic.ClaudeToCodex, color))
+	fmt.Fprintf(a.Out, "\nSkill Control Plane\n  registry-readable=%s writable=%s schema=%d active=%d staged=%d quarantined=%d\n  provenance=%s policy-engine=%s supply-chain-staging=%s\n", semanticBool(report.SkillControlPlane.RegistryReadable, color), semanticBool(report.SkillControlPlane.RegistryWritable, color), report.SkillControlPlane.RegistrySchema, report.SkillControlPlane.Active, report.SkillControlPlane.Staged, report.SkillControlPlane.Quarantined, report.SkillControlPlane.ProvenanceHealth, semanticBool(report.SkillControlPlane.PolicyEngineReady, color), report.SkillControlPlane.StagingRootHealth)
 	overall := terminalui.Success(report.Overall, color)
 	if report.Overall != "READY" {
 		overall = terminalui.Warning(report.Overall, color)

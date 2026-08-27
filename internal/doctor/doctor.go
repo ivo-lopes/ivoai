@@ -3,6 +3,7 @@ package doctor
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -19,8 +20,12 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/headroom"
 	"github.com/ivo-lopes/ivoai/internal/orchestration"
 	"github.com/ivo-lopes/ivoai/internal/platform"
+	"github.com/ivo-lopes/ivoai/internal/policy"
 	"github.com/ivo-lopes/ivoai/internal/quota"
 	"github.com/ivo-lopes/ivoai/internal/routing"
+	"github.com/ivo-lopes/ivoai/internal/skills"
+	"github.com/ivo-lopes/ivoai/internal/supplychain"
+	"golang.org/x/sys/unix"
 )
 
 type Component struct {
@@ -88,6 +93,17 @@ type Automatic struct {
 	ClaudeEffortControl      string                `json:"claude_effort_control"`
 	SharedKnowledgeBootstrap bool                  `json:"shared_knowledge_bootstrap"`
 }
+type SkillControlPlane struct {
+	RegistryReadable  bool   `json:"registry_readable"`
+	RegistryWritable  bool   `json:"registry_writable"`
+	RegistrySchema    int    `json:"registry_schema"`
+	Active            int    `json:"active"`
+	Staged            int    `json:"staged"`
+	Quarantined       int    `json:"quarantined"`
+	ProvenanceHealth  string `json:"provenance_health"`
+	PolicyEngineReady bool   `json:"policy_engine_ready"`
+	StagingRootHealth string `json:"staging_root_health"`
+}
 type Report struct {
 	Overall           string               `json:"overall"`
 	OS                string               `json:"os"`
@@ -108,6 +124,7 @@ type Report struct {
 	Orchestration     Orchestration        `json:"orchestration"`
 	Automatic         Automatic            `json:"automatic_orchestration"`
 	ComponentMatrix   core.Matrix          `json:"component_matrix"`
+	SkillControlPlane SkillControlPlane    `json:"skill_control_plane"`
 	Issues            []string             `json:"issues"`
 }
 type Doctor struct {
@@ -149,6 +166,19 @@ func (d Doctor) Run(ctx context.Context) Report {
 	r.Orchestration = d.orchestration(ctx, cfg, state)
 	r.Automatic = d.automatic(ctx, cfg, state, r)
 	r.ComponentMatrix = componentMatrix(cfg, state, r)
+	r.SkillControlPlane = d.skillControlPlane()
+	if !r.SkillControlPlane.RegistryReadable {
+		r.Issues = append(r.Issues, "skill registry is unreadable or invalid")
+	}
+	if !r.SkillControlPlane.RegistryWritable {
+		r.Issues = append(r.Issues, "skill registry private state root is not writable")
+	}
+	if !r.SkillControlPlane.PolicyEngineReady {
+		r.Issues = append(r.Issues, "skill policy engine is not ready")
+	}
+	if r.SkillControlPlane.StagingRootHealth == "unhealthy" {
+		r.Issues = append(r.Issues, "supply-chain staging root is unsafe")
+	}
 	required := map[string]Component{"Codex": componentFromAuth(r.Codex), "Claude Code": componentFromAuth(r.Claude), "Headroom": {Installed: r.Headroom.Installed}, "ai-memory": r.Memory, "Ruflo": {Installed: r.Ruflo.Installed}}
 	if state.Components["codex"].Managed {
 		required["Codex code-mode host"] = r.CodexCodeModeHost
@@ -201,6 +231,59 @@ func (d Doctor) Run(ctx context.Context) Report {
 		r.Overall = "DEGRADED"
 	}
 	return r
+}
+
+func (d Doctor) skillControlPlane() SkillControlPlane {
+	result := SkillControlPlane{RegistrySchema: skills.RegistrySchemaVersion, ProvenanceHealth: "not_initialized", StagingRootHealth: "not_initialized"}
+	registryPath := skills.RegistryPath(d.Store.Paths.StateDir)
+	registry, err := (skills.Store{Path: registryPath}).Load()
+	result.RegistryReadable = err == nil
+	registryRoot := filepath.Dir(registryPath)
+	if _, statErr := os.Lstat(registryRoot); errors.Is(statErr, os.ErrNotExist) {
+		registryRoot = d.Store.Paths.StateDir
+	}
+	result.RegistryWritable = privateWritableDirectory(registryRoot)
+	if err == nil {
+		if len(registry.Entries) > 0 {
+			result.ProvenanceHealth = "healthy"
+		}
+		for _, entry := range registry.Entries {
+			if (entry.Lifecycle == skills.LifecycleActive || entry.Lifecycle == skills.LifecycleStaged) && !entry.Provenance.Integrity.Verified {
+				result.ProvenanceHealth = "pending"
+			}
+			switch entry.Lifecycle {
+			case skills.LifecycleActive:
+				result.Active++
+			case skills.LifecycleStaged:
+				result.Staged++
+			case skills.LifecycleQuarantined:
+				result.Quarantined++
+			}
+		}
+	} else {
+		result.ProvenanceHealth = "unhealthy"
+	}
+	result.PolicyEngineReady = policy.DefaultEngine().Validate() == nil
+	supplyRoot := filepath.Join(d.Store.Paths.DataDir, "supply-chain")
+	if _, statErr := os.Lstat(supplyRoot); statErr == nil {
+		if privateWritableDirectory(supplyRoot) {
+			if pointerErr := supplychain.ValidateRoot(supplyRoot); pointerErr == nil {
+				result.StagingRootHealth = "healthy"
+			} else {
+				result.StagingRootHealth = "unhealthy"
+			}
+		} else {
+			result.StagingRootHealth = "unhealthy"
+		}
+	} else if !errors.Is(statErr, os.ErrNotExist) {
+		result.StagingRootHealth = "unhealthy"
+	}
+	return result
+}
+
+func privateWritableDirectory(path string) bool {
+	info, err := os.Lstat(path)
+	return err == nil && info.Mode()&os.ModeSymlink == 0 && info.IsDir() && info.Mode().Perm() == 0o700 && unix.Access(path, unix.W_OK|unix.X_OK) == nil
 }
 
 func componentMatrix(cfg config.Config, state config.State, report Report) core.Matrix {

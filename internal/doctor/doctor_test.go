@@ -15,10 +15,49 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/orchestration"
 	"github.com/ivo-lopes/ivoai/internal/platform"
 	"github.com/ivo-lopes/ivoai/internal/quota"
+	"github.com/ivo-lopes/ivoai/internal/skills"
+	"github.com/ivo-lopes/ivoai/internal/supplychain"
 )
 
 type statusRunner struct {
 	output string
+}
+
+func TestSkillControlPlaneDiagnosticTreatsAbsentRegistryAsReady(t *testing.T) {
+	root := t.TempDir()
+	paths := config.Paths{StateDir: filepath.Join(root, "state"), DataDir: filepath.Join(root, "data")}
+	if err := platform.EnsurePrivateDir(paths.StateDir); err != nil {
+		t.Fatal(err)
+	}
+	if err := platform.EnsurePrivateDir(paths.DataDir); err != nil {
+		t.Fatal(err)
+	}
+	result := (Doctor{Store: config.NewStore(paths)}).skillControlPlane()
+	if !result.RegistryReadable || !result.RegistryWritable || !result.PolicyEngineReady || result.RegistrySchema != skills.RegistrySchemaVersion || result.Active != 0 || result.ProvenanceHealth != "not_initialized" || result.StagingRootHealth != "not_initialized" {
+		t.Fatalf("diagnostic=%+v", result)
+	}
+}
+
+func TestSkillControlPlaneDiagnosticDetectsCorruptRegistryAndHealthyStaging(t *testing.T) {
+	root := t.TempDir()
+	paths := config.Paths{StateDir: filepath.Join(root, "state"), DataDir: filepath.Join(root, "data")}
+	registry := skills.RegistryPath(paths.StateDir)
+	if err := platform.EnsurePrivateDir(filepath.Dir(registry)); err != nil {
+		t.Fatal(err)
+	}
+	if err := platform.EnsurePrivateDir(filepath.Join(paths.DataDir, "supply-chain")); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(registry, []byte("not-json"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	result := (Doctor{Store: config.NewStore(paths)}).skillControlPlane()
+	if result.RegistryReadable || result.ProvenanceHealth != "unhealthy" || result.StagingRootHealth != "healthy" {
+		t.Fatalf("diagnostic=%+v", result)
+	}
+	if pointers, err := supplychain.ListPointers(filepath.Join(paths.DataDir, "supply-chain")); err != nil || len(pointers) != 0 {
+		t.Fatalf("pointers=%v err=%v", pointers, err)
+	}
 }
 
 func TestQuotaDiagnosticExposesCodexFiveHourDurationWithoutInventingMonthly(t *testing.T) {

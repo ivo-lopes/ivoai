@@ -28,6 +28,7 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/quota"
 	"github.com/ivo-lopes/ivoai/internal/secrets"
 	"github.com/ivo-lopes/ivoai/internal/server"
+	"github.com/ivo-lopes/ivoai/internal/skills"
 	"github.com/ivo-lopes/ivoai/internal/terminalui"
 	"github.com/ivo-lopes/ivoai/internal/update"
 	"golang.org/x/term"
@@ -240,6 +241,10 @@ func (a *App) Status(ctx context.Context) error {
 		struct {
 			name   string
 			status statusValue
+		}{"Skill registry", skillRegistryStatus(skills.Store{Path: skills.RegistryPath(a.Store.Paths.StateDir)})},
+		struct {
+			name   string
+			status statusValue
 		}{"Auto", statusValue{autoStatus, autoKind}},
 		struct {
 			name   string
@@ -300,6 +305,28 @@ func (a *App) Status(ctx context.Context) error {
 		fmt.Fprintf(a.Out, "\nOverall: %s\n", terminalui.Success("READY — all connections active", terminalui.ColorEnabled(a.Out)))
 	}
 	return nil
+}
+
+func skillRegistryStatus(store skills.Store) statusValue {
+	registry, err := store.Load()
+	if err != nil {
+		return statusValue{"unhealthy", terminalui.StatusWarning}
+	}
+	active, staged, quarantined := 0, 0, 0
+	for _, entry := range registry.Entries {
+		switch entry.Lifecycle {
+		case skills.LifecycleActive:
+			active++
+		case skills.LifecycleStaged:
+			staged++
+		case skills.LifecycleQuarantined:
+			quarantined++
+		}
+	}
+	if len(registry.Entries) == 0 {
+		return statusValue{"ready / empty", terminalui.StatusSuccess}
+	}
+	return statusValue{fmt.Sprintf("ready / active=%d staged=%d quarantined=%d", active, staged, quarantined), terminalui.StatusSuccess}
 }
 
 func requiredComponentsReady(state config.State) bool {

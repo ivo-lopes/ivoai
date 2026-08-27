@@ -111,7 +111,7 @@ func TestSetupIsIdempotentAndReadyWithoutConnections(t *testing.T) {
 		t.Fatal(err)
 	}
 	status := out.String()
-	for _, expected := range []string{"Overall: READY", "Codex", "installed / not connected", "Ruflo", "provider execution disabled"} {
+	for _, expected := range []string{"Overall: READY", "Codex", "installed / not connected", "Ruflo", "provider execution disabled", "Skill registry", "ready / empty"} {
 		if !strings.Contains(status, expected) {
 			t.Fatalf("missing %q in:\n%s", expected, status)
 		}
@@ -122,6 +122,9 @@ func TestSetupIsIdempotentAndReadyWithoutConnections(t *testing.T) {
 	}
 	if report.SecretPermissions != "0600" {
 		t.Fatalf("secret mode %s", report.SecretPermissions)
+	}
+	if !report.SkillControlPlane.RegistryReadable || !report.SkillControlPlane.RegistryWritable || !report.SkillControlPlane.PolicyEngineReady || report.SkillControlPlane.RegistrySchema != 1 {
+		t.Fatalf("skill control plane=%+v", report.SkillControlPlane)
 	}
 }
 
