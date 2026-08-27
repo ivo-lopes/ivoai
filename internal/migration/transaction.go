@@ -572,7 +572,7 @@ func validateJournalSchemas(source, target Schemas) error {
 
 func validArtifact(artifact Artifact) bool {
 	switch artifact {
-	case ArtifactExecutable, ArtifactConfig, ArtifactState, ArtifactOwnership, ArtifactComponents, ArtifactServer:
+	case ArtifactExecutable, ArtifactConfig, ArtifactState, ArtifactOwnership, ArtifactComponents, ArtifactSkillRegistry, ArtifactServer:
 		return true
 	default:
 		return false

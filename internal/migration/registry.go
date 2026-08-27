@@ -18,7 +18,11 @@ const (
 	ArtifactState      Artifact = "state"
 	ArtifactOwnership  Artifact = "ownership"
 	ArtifactComponents Artifact = "components"
-	ArtifactServer     Artifact = "server"
+	// ArtifactSkillRegistry is a snapshot participant with an independent
+	// schema stored inside registry.json. It deliberately is not added to the
+	// global config/state schema graph.
+	ArtifactSkillRegistry Artifact = "skill_registry"
+	ArtifactServer        Artifact = "server"
 )
 
 type Schemas map[Artifact]int

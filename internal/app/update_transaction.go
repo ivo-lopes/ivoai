@@ -17,6 +17,7 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/migration"
 	"github.com/ivo-lopes/ivoai/internal/platform"
 	"github.com/ivo-lopes/ivoai/internal/server"
+	"github.com/ivo-lopes/ivoai/internal/skills"
 	"github.com/ivo-lopes/ivoai/internal/update"
 	"github.com/pelletier/go-toml/v2"
 )
@@ -368,6 +369,7 @@ func (a *App) resolveUpdateContext(executable string) (updateContext, error) {
 		migration.FileSpec{Name: "config", Artifact: migration.ArtifactConfig, Path: a.Store.Paths.Config, Root: a.Store.Paths.ConfigDir, Optional: true},
 		migration.FileSpec{Name: "state", Artifact: migration.ArtifactState, Path: a.Store.Paths.State, Root: a.Store.Paths.StateDir, Optional: true},
 		migration.FileSpec{Name: "ownership", Artifact: migration.ArtifactOwnership, Path: a.Store.Paths.Ownership, Root: a.Store.Paths.StateDir, Optional: true},
+		migration.FileSpec{Name: "skill-registry", Artifact: migration.ArtifactSkillRegistry, Path: skills.RegistryPath(a.Store.Paths.StateDir), Root: a.Store.Paths.StateDir, Optional: true},
 	)
 	state, stateErr := a.Store.LoadStateForUpdate()
 	ownership, ownershipErr := a.Store.LoadOwnershipForUpdate()

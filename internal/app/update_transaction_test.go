@@ -286,6 +286,24 @@ func TestUpdateContextSnapshotsOnlyIVOAIManagedComponents(t *testing.T) {
 	}
 }
 
+func TestUpdateContextIncludesIndependentSkillRegistryParticipant(t *testing.T) {
+	a, _, executable := transactionUpdateFixture(t, false)
+	ctx, err := a.resolveUpdateContext(executable)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := filepath.Join(a.Store.Paths.StateDir, "skills", "registry.json")
+	for _, spec := range ctx.files {
+		if spec.Artifact == migration.ArtifactSkillRegistry {
+			if spec.Name != "skill-registry" || spec.Path != want || !spec.Optional || spec.Root != a.Store.Paths.StateDir {
+				t.Fatalf("registry participant=%+v", spec)
+			}
+			return
+		}
+	}
+	t.Fatal("skill registry is missing from transactional update snapshots")
+}
+
 func TestUpdateContextInspectsOlderOrNewerSourceSchemaBeforeMigration(t *testing.T) {
 	a, _, executable := transactionUpdateFixture(t, false)
 	for _, path := range []string{a.Store.Paths.State, a.Store.Paths.Ownership} {
