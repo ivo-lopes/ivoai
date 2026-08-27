@@ -16,7 +16,7 @@ import (
 	"strings"
 	"time"
 
-	contextsvc "github.com/ivo-lopes/ivoai/internal/context"
+	"github.com/ivo-lopes/ivoai/internal/core"
 	"github.com/ivo-lopes/ivoai/internal/knowledgepolicy"
 	"github.com/ivo-lopes/ivoai/internal/webauth"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -59,7 +59,7 @@ type skillsGetResult struct {
 type MemoryCaller func(context.Context, string, json.RawMessage) (any, error)
 type Config struct {
 	Version string
-	Context *contextsvc.Service
+	Context core.ContextBackend
 	Memory  MemoryCaller
 }
 
@@ -197,7 +197,7 @@ func contains(ss []string, s string) bool {
 	return false
 }
 
-func addContextTools(s *mcp.Server, service *contextsvc.Service) {
+func addContextTools(s *mcp.Server, service core.ContextBackend) {
 	read := &mcp.ToolAnnotations{Title: "Read project context", ReadOnlyHint: true, OpenWorldHint: boolp(false), DestructiveHint: boolp(false), IdempotentHint: true}
 	documentOutput, searchOutput, statusOutput := contextSchemas()
 	add := func(name, title, desc string, input, output any, h mcp.ToolHandler) {

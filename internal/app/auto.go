@@ -14,6 +14,7 @@ import (
 
 	"github.com/ivo-lopes/ivoai/internal/agents"
 	"github.com/ivo-lopes/ivoai/internal/config"
+	"github.com/ivo-lopes/ivoai/internal/core"
 	"github.com/ivo-lopes/ivoai/internal/doctor"
 	"github.com/ivo-lopes/ivoai/internal/orchestration"
 	"github.com/ivo-lopes/ivoai/internal/platform"
@@ -113,7 +114,7 @@ func (a *App) Auto(ctx context.Context, planner string, agentArgs []string) erro
 	if err != nil {
 		return err
 	}
-	control := orchestration.ControlPlane{Manager: a.orchestrationManager(state), RuntimeDir: runtimeDir}
+	control := orchestration.RufloOrchestratorAdapter{Control: orchestration.ControlPlane{Manager: a.orchestrationManager(state), RuntimeDir: runtimeDir}, Managed: state.Components["ruflo"].Managed}
 	swarm, err := control.Initialize(ctx, cfg.Orchestration.Auto.MaxWorkers)
 	if err != nil {
 		_ = store.CleanupRuntime(id)
@@ -279,11 +280,15 @@ func (a *App) launchAutomaticPrimary(ctx context.Context, store session.Store, i
 		component = "claude-code"
 	}
 	runtime := agents.Runtime{Runner: a.Runner, In: a.In, Out: a.Out, Err: a.Err, AgentPath: state.Components[component].Path, HeadroomPath: state.Components["headroom"].Path, Environment: environment}
-	return runtime.LaunchObserved(ctx, executor, args, primaryHeadroomEnabled(cfg), func(observation agents.Observation) {
+	implementation, err := agents.ExecutorFor(executor, runtime, state.Components[component].Version, state.Components[component].Managed)
+	if err != nil {
+		return err
+	}
+	return implementation.StartSession(ctx, core.SessionRequest{Args: args, CompressionEnabled: primaryHeadroomEnabled(cfg)}, func(observation core.SessionObservation) {
 		_, _ = store.Update(id, func(current *session.Session) error {
 			current.PrimaryPID = observation.PID
 			current.PrimaryProcessStart = session.ProcessStart(observation.PID)
-			current.HeadroomUsed = observation.HeadroomUsed
+			current.HeadroomUsed = observation.CompressionUsed
 			current.State, current.CurrentPhase = session.StateRunning, "conversation"
 			return nil
 		})

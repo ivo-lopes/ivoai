@@ -19,6 +19,7 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/components"
 	"github.com/ivo-lopes/ivoai/internal/config"
 	"github.com/ivo-lopes/ivoai/internal/connections"
+	"github.com/ivo-lopes/ivoai/internal/core"
 	"github.com/ivo-lopes/ivoai/internal/doctor"
 	"github.com/ivo-lopes/ivoai/internal/memory"
 	"github.com/ivo-lopes/ivoai/internal/orchestration"
@@ -150,7 +151,7 @@ func (a *App) Setup(ctx context.Context) error {
 			a.warn("remote ai-memory integration is degraded; Codex and Claude Code remain usable", err)
 		}
 	} else if cfg.Memory.Enabled {
-		if err := mem.Configure(ctx, "", ""); err != nil {
+		if err := mem.Configure(ctx, core.MemoryConfiguration{InstallMCP: true, InstallHooks: true}); err != nil {
 			a.warn("ai-memory hooks are degraded; Codex and Claude Code remain usable", err)
 		}
 	} else if err := mem.Disable(ctx); err != nil {
@@ -514,15 +515,15 @@ func (a *App) ConnectServer(ctx context.Context, serverURL, code string) error {
 	state, _ := a.Store.LoadState()
 	mem := a.memoryManager(state)
 	quietMem := mem
-	quietMem.Out = nil
-	quietMem.Err = nil
+	quietMem.Manager.Out = nil
+	quietMem.Manager.Err = nil
 	a.reconcileAgentMCP(ctx, state, cfg)
 	_, memoryAvailable := cfg.MCP.Servers["ivoai-memory"]
 	if cfg.Memory.Enabled && memoryAvailable {
 		if err := quietMem.Disable(ctx); err != nil {
 			a.warn("previous ai-memory integration could not be fully removed", err)
 		}
-		if err := mem.ConfigureHooks(ctx, result.MemoryHooksURL, data.Server.Token); err != nil {
+		if err := mem.Configure(ctx, core.MemoryConfiguration{HooksBaseURL: result.MemoryHooksURL, Token: data.Server.Token, InstallHooks: true}); err != nil {
 			a.warn("server connected, but ai-memory hooks are degraded", err)
 		}
 	} else if !cfg.Memory.Enabled {
@@ -550,7 +551,7 @@ func (a *App) DisconnectServer(ctx context.Context) error {
 		return err
 	}
 	if cfg.Memory.Enabled {
-		if err := mem.Configure(ctx, "", ""); err != nil {
+		if err := mem.Configure(ctx, core.MemoryConfiguration{InstallMCP: true, InstallHooks: true}); err != nil {
 			a.warn("server disconnected; offline ai-memory hooks could not be restored", err)
 		}
 	}
@@ -579,12 +580,16 @@ func (a *App) Launch(ctx context.Context, target string, args []string) error {
 	if headroomBypassedForSharedKnowledge(cfg) {
 		a.warn(sharedKnowledgeHeadroomBypass, nil)
 	}
-	return (agents.Runtime{Runner: a.Runner, In: a.In, Out: a.Out, Err: a.Err, AgentPath: state.Components[key].Path, HeadroomPath: state.Components["headroom"].Path, Environment: environment}).Launch(ctx, target, args, useHeadroom)
+	executor, err := agents.ExecutorFor(target, agents.Runtime{Runner: a.Runner, In: a.In, Out: a.Out, Err: a.Err, AgentPath: state.Components[key].Path, HeadroomPath: state.Components["headroom"].Path, Environment: environment}, state.Components[key].Version, state.Components[key].Managed)
+	if err != nil {
+		return err
+	}
+	return executor.StartSession(ctx, core.SessionRequest{Args: args, CompressionEnabled: useHeadroom}, nil)
 }
 
 func (a *App) MemoryStatus(ctx context.Context) error {
 	state, _ := a.Store.LoadState()
-	status, err := (memory.Manager{Runner: a.Runner, Binary: state.Components["ai-memory"].Path}).Status(ctx)
+	status, err := a.memoryManager(state).Status(ctx)
 	if err == nil {
 		fmt.Fprintln(a.Out, semanticStatus(status, terminalui.ColorEnabled(a.Out)))
 	}
@@ -602,8 +607,8 @@ func (a *App) ReconfigureMemory(ctx context.Context) error {
 	state, _ := a.Store.LoadState()
 	mem := a.memoryManager(state)
 	quietMem := mem
-	quietMem.Out = nil
-	quietMem.Err = nil
+	quietMem.Manager.Out = nil
+	quietMem.Manager.Err = nil
 	if !cfg.Memory.Enabled {
 		if err := quietMem.Disable(ctx); err != nil {
 			return err
@@ -614,7 +619,7 @@ func (a *App) ReconfigureMemory(ctx context.Context) error {
 		return nil
 	}
 	if cfg.Connections.Server.Status != "connected" || data.Server == nil {
-		return mem.Configure(ctx, "", "")
+		return mem.Configure(ctx, core.MemoryConfiguration{InstallMCP: true, InstallHooks: true})
 	}
 	if err := quietMem.Disable(ctx); err != nil {
 		return err
@@ -628,11 +633,12 @@ func (a *App) ReconfigureMemory(ctx context.Context) error {
 	if memoryHooksURL == "" {
 		memoryHooksURL = strings.TrimSuffix(memoryServer.URL, "/mcp")
 	}
-	return mem.ConfigureHooks(ctx, memoryHooksURL, data.Server.Token)
+	return mem.Configure(ctx, core.MemoryConfiguration{HooksBaseURL: memoryHooksURL, Token: data.Server.Token, InstallHooks: true})
 }
 
-func (a *App) memoryManager(state config.State) memory.Manager {
-	return memory.Manager{Runner: a.Runner, Out: a.Out, Err: a.Err, HooksDir: a.Store.Paths.HooksDir, Binary: state.Components["ai-memory"].Path}
+func (a *App) memoryManager(state config.State) memory.AIMemoryBackend {
+	component := state.Components["ai-memory"]
+	return memory.AIMemoryBackend{Manager: memory.Manager{Runner: a.Runner, Out: a.Out, Err: a.Err, HooksDir: a.Store.Paths.HooksDir, Binary: component.Path}, Version: component.Version, Managed: component.Managed}
 }
 
 func (a *App) agentMCP(state config.State) connections.AgentMCP {

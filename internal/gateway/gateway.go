@@ -10,6 +10,7 @@ import (
 	"time"
 
 	contextsvc "github.com/ivo-lopes/ivoai/internal/context"
+	"github.com/ivo-lopes/ivoai/internal/core"
 	"github.com/ivo-lopes/ivoai/internal/enrollment"
 	"github.com/ivo-lopes/ivoai/internal/webauth"
 )
@@ -25,7 +26,7 @@ const (
 type Config struct {
 	ServerVersion   string
 	PublicBaseURL   string
-	Context         *contextsvc.Service
+	Context         ContextBackend
 	Enrollments     *enrollment.Store
 	Memory          http.Handler
 	MemoryHealth    func(context.Context) error
@@ -33,6 +34,14 @@ type Config struct {
 	EnrollmentAudit func(EnrollmentAudit)
 	WebOAuth        *webauth.Server
 	WebMCP          http.Handler
+}
+
+// ContextBackend composes the common read backend with the one inventory
+// operation used by the gateway's existing read-only remote admin endpoint.
+// Connector mutation remains outside the public/agent-facing contract.
+type ContextBackend interface {
+	core.ContextBackend
+	ConnectorNames() []string
 }
 
 // EnrollmentAudit contains only non-secret request metadata. Code contents,

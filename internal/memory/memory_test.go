@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ivo-lopes/ivoai/internal/core"
 	"github.com/ivo-lopes/ivoai/internal/platform"
 )
 
@@ -15,6 +16,23 @@ type captureRunner struct {
 		env  []string
 	}
 	failContaining string
+}
+
+func TestAIMemoryBackendAdaptsHealthAndConfiguration(t *testing.T) {
+	runner := &captureRunner{}
+	backend := AIMemoryBackend{Manager: Manager{Runner: runner, Binary: "/bin/ai-memory"}, Version: "1.29.0", Managed: true}
+	status := backend.Probe(context.Background())
+	if !status.Available || status.Health != core.HealthHealthy || !status.Capabilities.Supports(core.CapabilityMemoryHooks) {
+		t.Fatalf("probe = %+v", status)
+	}
+	if err := backend.Configure(context.Background(), core.MemoryConfiguration{HooksBaseURL: "https://ai.example.com", Token: "secret-token", InstallHooks: true}); err != nil {
+		t.Fatal(err)
+	}
+	for _, call := range runner.calls[1:] {
+		if strings.Contains(strings.Join(call.args, " "), "secret-token") || strings.Contains(strings.Join(call.env, " "), "secret-token") {
+			t.Fatal("hook adapter exposed a token")
+		}
+	}
 }
 
 func (r *captureRunner) LookPath(string) (string, error) { return "/bin/ai-memory", nil }

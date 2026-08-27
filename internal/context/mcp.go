@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+
+	"github.com/ivo-lopes/ivoai/internal/core"
 )
 
 type rpcRequest struct {
@@ -29,7 +31,7 @@ type rpcError struct {
 
 // MCPHandler exposes only read-only context tools. Connector mutation and
 // ingestion are deliberately absent from the agent-facing surface.
-type MCPHandler struct{ Service *Service }
+type MCPHandler struct{ Service core.ContextBackend }
 
 func (h MCPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")

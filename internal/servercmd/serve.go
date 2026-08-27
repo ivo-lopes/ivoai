@@ -29,7 +29,7 @@ const (
 	memoryURL    = "http://127.0.0.1:49374"
 )
 
-func contextService(layout server.Layout) (*contextsvc.Service, error) {
+func contextService(layout server.Layout) (*contextsvc.LegacyQdrantContextBackend, error) {
 	qdrantKey := strings.TrimSpace(os.Getenv("QDRANT__SERVICE__API_KEY"))
 	embeddingKey := strings.TrimSpace(os.Getenv("API_KEY"))
 	var err error
@@ -56,7 +56,7 @@ func contextService(layout server.Layout) (*contextsvc.Service, error) {
 	if err != nil {
 		return nil, err
 	}
-	return service, nil
+	return &contextsvc.LegacyQdrantContextBackend{Service: service, Version: "v1-d384", Managed: true}, nil
 }
 
 func serveContext(ctx context.Context, layout server.Layout, errOut io.Writer) error {

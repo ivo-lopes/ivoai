@@ -7,6 +7,8 @@ import (
 	"sort"
 	"sync"
 	"time"
+
+	"github.com/ivo-lopes/ivoai/internal/core"
 )
 
 // Service coordinates connectors, catalog, embeddings, and the rebuildable index.
@@ -18,6 +20,33 @@ type Service struct {
 
 	mu         sync.RWMutex
 	connectors map[string]Connector
+}
+
+// ID and Probe let in-memory/test compositions satisfy the common backend
+// contract. Production uses LegacyQdrantContextBackend, which supplies the
+// concrete implementation provenance without changing Service semantics.
+func (s *Service) ID() core.ComponentID { return core.ComponentContext }
+
+func (s *Service) Probe(ctx context.Context) core.ComponentStatus {
+	current := s.Status(ctx)
+	health := core.HealthDegraded
+	if current.Healthy {
+		health = core.HealthHealthy
+	}
+	return core.ComponentStatus{
+		ID: core.ComponentContext, Implementation: "context-service", Active: true,
+		Installed: true, Available: current.Healthy, Health: health, Lifecycle: core.LifecycleRunning,
+		Provenance: core.Provenance{Source: "runtime_verified"},
+		Capabilities: core.CapabilitySet{
+			core.CapabilityContextInitialize: core.SupportSupported,
+			core.CapabilityContextSearch:     core.SupportSupported,
+			core.CapabilityContextRead:       core.SupportSupported,
+			core.CapabilityContextRecent:     core.SupportSupported,
+			core.CapabilityContextStatus:     core.SupportSupported,
+			core.CapabilityContextIngest:     core.SupportSupported,
+		},
+		Compatibility: core.Compatibility{State: core.CompatibilityCompatible},
+	}
 }
 
 func NewService(embedder Embedder, store VectorStore, catalog Catalog) (*Service, error) {

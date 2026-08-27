@@ -11,8 +11,28 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+
+	"github.com/ivo-lopes/ivoai/internal/core"
 	"time"
 )
+
+func TestLegacyQdrantContextBackendAdaptsExistingService(t *testing.T) {
+	service, err := NewService(DeterministicEmbedder{DimensionsN: 8}, NewMemoryStore(), NewMemoryCatalog())
+	if err != nil {
+		t.Fatal(err)
+	}
+	backend := &LegacyQdrantContextBackend{Service: service, Version: "v1-d384", Managed: true}
+	if err := backend.Initialize(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	status := backend.Probe(context.Background())
+	if !status.Available || status.Implementation != "legacy-qdrant" || !status.Capabilities.Supports(core.CapabilityContextSearch) {
+		t.Fatalf("probe = %+v", status)
+	}
+	if backend.Status(context.Background()).Healthy != service.Status(context.Background()).Healthy {
+		t.Fatal("adapter changed context health semantics")
+	}
+}
 
 type mutableConnector struct {
 	name string

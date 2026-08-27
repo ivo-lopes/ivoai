@@ -14,6 +14,7 @@ import (
 
 	"github.com/ivo-lopes/ivoai/internal/agents"
 	"github.com/ivo-lopes/ivoai/internal/config"
+	"github.com/ivo-lopes/ivoai/internal/core"
 	"github.com/ivo-lopes/ivoai/internal/orchestration"
 	"github.com/ivo-lopes/ivoai/internal/orchestrator"
 	"github.com/ivo-lopes/ivoai/internal/platform"
@@ -62,7 +63,7 @@ func (a *App) SessionStart(ctx context.Context, executor string, mode session.Mo
 		return err
 	}
 	args = sharedKnowledgeAgentArgs(executor, args, cfg)
-	var control orchestration.ControlPlane
+	var control core.Orchestrator
 	if mode == session.ModeOrchestrated {
 		if !cfg.Orchestration.Enabled {
 			_ = store.Delete(id)
@@ -73,7 +74,7 @@ func (a *App) SessionStart(ctx context.Context, executor string, mode session.Mo
 			_ = store.Delete(id)
 			return runtimeErr
 		}
-		control = orchestration.ControlPlane{Manager: a.orchestrationManager(state), RuntimeDir: runtimeDir}
+		control = orchestration.RufloOrchestratorAdapter{Control: orchestration.ControlPlane{Manager: a.orchestrationManager(state), RuntimeDir: runtimeDir}, Managed: state.Components["ruflo"].Managed}
 		swarm, initErr := control.Initialize(ctx, cfg.Orchestration.MaxWorkers)
 		if initErr != nil {
 			_ = store.CleanupRuntime(id)
@@ -111,15 +112,19 @@ func (a *App) SessionStart(ctx context.Context, executor string, mode session.Mo
 		component = "claude-code"
 	}
 	runtime := agents.Runtime{Runner: a.Runner, In: a.In, Out: a.Out, Err: a.Err, AgentPath: state.Components[component].Path, HeadroomPath: state.Components["headroom"].Path, Environment: environment}
+	implementation, err := agents.ExecutorFor(executor, runtime, state.Components[component].Version, state.Components[component].Managed)
+	if err != nil {
+		return err
+	}
 	useHeadroom := primaryHeadroomEnabled(cfg)
 	if headroomBypassedForSharedKnowledge(cfg) {
 		a.warn(sharedKnowledgeHeadroomBypass, nil)
 	}
-	launchErr := runtime.LaunchObserved(ctx, executor, args, useHeadroom, func(observation agents.Observation) {
+	launchErr := implementation.StartSession(ctx, core.SessionRequest{Args: args, CompressionEnabled: useHeadroom}, func(observation core.SessionObservation) {
 		_, _ = store.Update(id, func(current *session.Session) error {
 			current.PrimaryPID = observation.PID
 			current.PrimaryProcessStart = session.ProcessStart(observation.PID)
-			current.HeadroomUsed = observation.HeadroomUsed
+			current.HeadroomUsed = observation.CompressionUsed
 			current.State = session.StateRunning
 			return nil
 		})
@@ -205,7 +210,7 @@ func (a *App) OrchestratorServe(ctx context.Context, id string) error {
 		Store: store, SessionID: id, Directory: value.WorkingDirectory, RuntimeDir: runtimeDir,
 		ReviewExecutor:        cfg.Orchestration.ReviewExecutor,
 		Adapter:               workers.Adapter{Runner: a.Runner, CodexPath: state.Components["codex"].Path, ClaudePath: state.Components["claude-code"].Path, HeadroomPath: state.Components["headroom"].Path, HeadroomEnabled: primaryHeadroomEnabled(cfg), KnowledgeServers: cfg.MCP.Servers},
-		Control:               orchestration.ControlPlane{Manager: a.orchestrationManager(state), RuntimeDir: runtimeDir},
+		Control:               orchestration.RufloOrchestratorAdapter{Control: orchestration.ControlPlane{Manager: a.orchestrationManager(state), RuntimeDir: runtimeDir}, Managed: state.Components["ruflo"].Managed},
 		Quota:                 a.automaticQuotaManager(cfg, state),
 		CheckpointEnabled:     cfg.Orchestration.Auto.CheckpointEnabled,
 		BootstrapRequired:     value.Mode == session.ModeAuto && cfg.Orchestration.Auto.Optimization.SharedContextBootstrap,
@@ -260,7 +265,7 @@ func (a *App) orchestratedAgentArgs(executor string, existing []string, id, runt
 	return append([]string{"--mcp-config", configPath}, existing...), nil
 }
 
-func (a *App) cleanupSession(store session.Store, id string, control orchestration.ControlPlane) error {
+func (a *App) cleanupSession(store session.Store, id string, control core.Orchestrator) error {
 	var cleanupErr error
 	value, err := store.Get(id)
 	if err == nil {
@@ -268,14 +273,14 @@ func (a *App) cleanupSession(store session.Store, id string, control orchestrati
 			if session.ProcessMatches(worker.PID, worker.ProcessStart) {
 				_ = syscall.Kill(-worker.PID, syscall.SIGTERM)
 			}
-			if worker.RufloTaskID != "" {
+			if worker.RufloTaskID != "" && control != nil {
 				_ = control.CancelLifecycle(context.Background(), worker.RufloTaskID)
 			}
 		}
-		if value.PrimaryRufloTaskID != "" {
+		if value.PrimaryRufloTaskID != "" && control != nil {
 			_ = control.CancelLifecycle(context.Background(), value.PrimaryRufloTaskID)
 		}
-		if value.Mode == session.ModeOrchestrated || value.Mode == session.ModeAuto {
+		if (value.Mode == session.ModeOrchestrated || value.Mode == session.ModeAuto) && control != nil {
 			cleanupErr = control.Stop(context.Background())
 		}
 	}

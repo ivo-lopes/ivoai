@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/ivo-lopes/ivoai/internal/config"
+	"github.com/ivo-lopes/ivoai/internal/core"
 	"github.com/ivo-lopes/ivoai/internal/headroom"
 	"github.com/ivo-lopes/ivoai/internal/knowledgepolicy"
 	"github.com/ivo-lopes/ivoai/internal/platform"
@@ -136,15 +137,14 @@ func (a Adapter) Run(ctx context.Context, request Request, observe func(Observat
 	// Memory/Context material. Workers carrying a SharedContextBrief therefore
 	// bypass compression just like the primary shared-knowledge path.
 	if a.HeadroomEnabled && a.HeadroomPath != "" && request.SharedContextBrief == "" {
-		status := (headroom.Manager{Runner: a.Runner, Binary: a.HeadroomPath}).Inspect(ctx, true)
-		compatible := status.CodexCompatible
+		component := core.ComponentCodex
 		if request.Executor == "claude" {
-			compatible = status.ClaudeCompatible
+			component = core.ComponentClaude
 		}
-		if status.Healthy && compatible {
-			command = a.HeadroomPath
-			commandArgs = append([]string{"wrap", request.Executor, "--"}, args...)
-			useHeadroom = true
+		provider := headroom.HeadroomCompressionProvider{Manager: headroom.Manager{Runner: a.Runner, Binary: a.HeadroomPath}, Enabled: true}
+		decision, _ := provider.Prepare(ctx, core.CompressionRequest{Executor: component, DirectPath: direct, Args: args})
+		if decision.Used {
+			command, commandArgs, useHeadroom = decision.Command, decision.Args, true
 		}
 	}
 	result, startErr := run(ctx, command, commandArgs, request, direct, useHeadroom, observe)

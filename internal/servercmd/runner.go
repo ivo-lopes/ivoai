@@ -881,7 +881,8 @@ func (r *runner) connector(ctx context.Context, layout server.Layout, manager se
 		return r.withQuiescedContext(ctx, manager, func() error {
 			service, err := contextService(layout)
 			if os.Getenv("IVOAI_TEST_MODE") == "1" {
-				service, err = contextsvc.NewService(contextsvc.DeterministicEmbedder{DimensionsN: 384}, contextsvc.NewMemoryStore(), &contextsvc.FileCatalog{Path: filepath.Join(layout.ContextDir, "catalog.json")})
+				fixture, fixtureErr := contextsvc.NewService(contextsvc.DeterministicEmbedder{DimensionsN: 384}, contextsvc.NewMemoryStore(), &contextsvc.FileCatalog{Path: filepath.Join(layout.ContextDir, "catalog.json")})
+				service, err = &contextsvc.LegacyQdrantContextBackend{Service: fixture, Version: "fixture"}, fixtureErr
 			}
 			if err != nil {
 				return err
@@ -927,7 +928,11 @@ func (r *runner) withQuiescedContext(ctx context.Context, manager server.Manager
 	return nil
 }
 
-func addConfiguredConnectors(service *contextsvc.Service, layout server.Layout) error {
+type contextConnectorAdministrator interface {
+	AddConnector(contextsvc.Connector) error
+}
+
+func addConfiguredConnectors(service contextConnectorAdministrator, layout server.Layout) error {
 	records, err := loadConnectors(layout)
 	if err != nil {
 		return err

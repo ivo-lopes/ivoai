@@ -8,11 +8,11 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
-	"path/filepath"
 	"strings"
 	"syscall"
 	"time"
 
+	"github.com/ivo-lopes/ivoai/internal/core"
 	"github.com/ivo-lopes/ivoai/internal/headroom"
 	"github.com/ivo-lopes/ivoai/internal/platform"
 	"golang.org/x/term"
@@ -24,6 +24,7 @@ type Runtime struct {
 	Out, Err     io.Writer
 	AgentPath    string
 	HeadroomPath string
+	Compression  core.CompressionProvider
 	Environment  []string
 }
 
@@ -58,26 +59,17 @@ func (r Runtime) LaunchObserved(ctx context.Context, agent string, args []string
 	}
 	wrappedUsed := false
 	if headroomEnabled {
-		status := (headroom.Manager{Runner: r.Runner, Binary: r.HeadroomPath}).Inspect(ctx, true)
-		compatible := status.CodexCompatible
-		if agent == "claude" {
-			compatible = status.ClaudeCompatible
+		provider := r.Compression
+		if provider == nil {
+			provider = headroom.HeadroomCompressionProvider{Manager: headroom.Manager{Runner: r.Runner, Binary: r.HeadroomPath}, Enabled: true}
 		}
-		if status.Healthy && compatible {
-			wrapped := r.HeadroomPath
-			if wrapped == "" {
-				wrapped, _ = r.Runner.LookPath("headroom")
-			}
-			if wrapped != "" {
-				command = wrapped
-				wrappedUsed = true
-				commandArgs = append([]string{"wrap", agent, "--"}, args...)
-				// Managed agents intentionally live outside the user's PATH so ivoai
-				// cannot shadow or overwrite pre-existing third-party installations.
-				// Headroom resolves the selected agent by name, so expose only the
-				// managed agent directory to this child process.
-				environment = prependPathTo(environment, filepath.Dir(direct))
-			}
+		component := core.ComponentCodex
+		if agent == "claude" {
+			component = core.ComponentClaude
+		}
+		decision, _ := provider.Prepare(ctx, core.CompressionRequest{Executor: component, DirectPath: direct, Args: args, Environment: environment})
+		if decision.Used {
+			command, commandArgs, environment, wrappedUsed = decision.Command, decision.Args, decision.Environment, true
 		}
 	}
 	err = runInteractive(ctx, command, commandArgs, environment, r.In, r.Out, r.Err, func(pid int) {
