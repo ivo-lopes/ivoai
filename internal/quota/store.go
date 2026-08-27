@@ -68,6 +68,22 @@ func (s Store) Save(value Snapshot) error {
 }
 
 func (s Store) Put(value ProviderQuota) error {
+	return s.mutate(func(snapshot *Snapshot) {
+		snapshot.Providers[value.Provider] = value
+	})
+}
+
+// Invalidate removes only one provider's reconstructible quota telemetry.
+// Explicit authentication transitions use it so stale hard limits from a
+// previous account can never gate the newly authenticated account.
+func (s Store) Invalidate(provider Provider) error {
+	if provider != ProviderCodex && provider != ProviderClaude {
+		return errors.New("invalid quota provider")
+	}
+	return s.mutate(func(snapshot *Snapshot) { delete(snapshot.Providers, provider) })
+}
+
+func (s Store) mutate(change func(*Snapshot)) error {
 	if err := platform.EnsurePrivateDir(s.Root); err != nil {
 		return err
 	}
@@ -97,7 +113,7 @@ func (s Store) Put(value ProviderQuota) error {
 	if err != nil {
 		return err
 	}
-	snapshot.Providers[value.Provider] = value
+	change(&snapshot)
 	snapshot.UpdatedAt = time.Now().UTC()
 	return s.Save(snapshot)
 }

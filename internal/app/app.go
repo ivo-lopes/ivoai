@@ -481,15 +481,39 @@ func (a *App) Doctor(ctx context.Context) doctor.Report {
 }
 
 func (a *App) ConnectAgent(ctx context.Context, target string) error {
-	state, _ := a.Store.LoadState()
-	key := target
-	if target == "claude" {
-		key = "claude-code"
+	state, err := a.Store.LoadState()
+	if err != nil {
+		return err
 	}
-	return (connections.AgentAuth{Runner: a.Runner, Store: a.Store, In: a.In, Out: a.Out, Err: a.Err, Binary: state.Components[key].Path}).Connect(ctx, target)
+	cfg, err := a.Store.Load()
+	if err != nil {
+		return err
+	}
+	key, provider := "codex", quota.ProviderCodex
+	if target == "claude" {
+		key, provider = "claude-code", quota.ProviderClaude
+	}
+	manager := a.automaticQuotaManager(cfg, state)
+	if _, err := manager.AuthenticationChanged(ctx, provider, false); err != nil {
+		return fmt.Errorf("invalidate %s quota after authentication transition: %w", provider, err)
+	}
+	if err := (connections.AgentAuth{Runner: a.Runner, Store: a.Store, In: a.In, Out: a.Out, Err: a.Err, Binary: state.Components[key].Path}).Connect(ctx, target); err != nil {
+		return err
+	}
+	if _, err := manager.Probe(ctx, provider, true); err != nil {
+		a.warn(fmt.Sprintf("%s connected; quota telemetry will refresh on the next successful official probe", displayProvider(string(provider))), err)
+	}
+	return nil
 }
 func (a *App) DisconnectAgent(ctx context.Context, target string) error {
-	return (connections.AgentAuth{Runner: a.Runner, Store: a.Store, In: a.In, Out: a.Out, Err: a.Err}).Disconnect(ctx, target)
+	if err := (connections.AgentAuth{Runner: a.Runner, Store: a.Store, In: a.In, Out: a.Out, Err: a.Err}).Disconnect(ctx, target); err != nil {
+		return err
+	}
+	provider := quota.ProviderCodex
+	if target == "claude" {
+		provider = quota.ProviderClaude
+	}
+	return (quota.Store{Root: a.Store.Paths.QuotaDir}).Invalidate(provider)
 }
 
 func (a *App) ConnectServer(ctx context.Context, serverURL, code string) error {

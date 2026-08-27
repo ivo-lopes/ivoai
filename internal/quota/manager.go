@@ -20,6 +20,19 @@ type Manager struct {
 	Now    func() time.Time
 }
 
+// AuthenticationChanged invalidates provider-local quota before optionally
+// probing the official client in the new authentication context. No provider
+// credentials or account fingerprints are inspected.
+func (m Manager) AuthenticationChanged(ctx context.Context, provider Provider, reprobe bool) (ProviderQuota, error) {
+	if err := m.Store.Invalidate(provider); err != nil {
+		return ProviderQuota{Provider: provider}, err
+	}
+	if !reprobe {
+		return ProviderQuota{Provider: provider}, nil
+	}
+	return m.Probe(ctx, provider, true)
+}
+
 // CanDispatch is the authoritative per-provider/model gate. Unknown telemetry
 // is not treated as zero; only authentication, hard limits, or an exact
 // authoritative model window can block dispatch.

@@ -269,6 +269,61 @@ func TestProbeFailureUsesStaleMetadataButReturnsError(t *testing.T) {
 	}
 }
 
+func TestAuthenticationTransitionInvalidatesPreviousAccountAndReprobes(t *testing.T) {
+	now := time.Now().UTC()
+	store := Store{Root: filepath.Join(t.TempDir(), "quota")}
+	accountA := ProviderQuota{Provider: ProviderCodex, Authenticated: true, Eligible: false, HardLimitReached: true, Reason: "old account exhausted", ObservedAt: now}
+	if err := store.Put(accountA); err != nil {
+		t.Fatal(err)
+	}
+	probe := &fakeProbe{value: ProviderQuota{Provider: ProviderCodex, Authenticated: true, Windows: []Window{FromUsed(KindSession, 20, nil, "fixture", now), FromUsed(KindWeekly, 30, nil, "fixture", now)}, ObservedAt: now}}
+	manager := Manager{Store: store, Probes: map[Provider]Probe{ProviderCodex: probe}, Now: func() time.Time { return now }}
+	accountB, err := manager.AuthenticationChanged(context.Background(), ProviderCodex, true)
+	if err != nil || !accountB.Eligible || accountB.HardLimitReached || probe.calls != 1 {
+		t.Fatalf("new account contaminated by prior quota: value=%+v calls=%d err=%v", accountB, probe.calls, err)
+	}
+	snapshot, err := store.Load()
+	if err != nil || snapshot.Providers[ProviderCodex].Reason == accountA.Reason {
+		t.Fatalf("old account remained in cache: %+v err=%v", snapshot, err)
+	}
+}
+
+func TestAuthenticationTransitionProbeFailureNeverResurrectsOldHardLimit(t *testing.T) {
+	now := time.Now().UTC()
+	store := Store{Root: filepath.Join(t.TempDir(), "quota")}
+	if err := store.Put(ProviderQuota{Provider: ProviderCodex, Authenticated: true, HardLimitReached: true, Reason: "old account exhausted", ObservedAt: now}); err != nil {
+		t.Fatal(err)
+	}
+	manager := Manager{Store: store, Probes: map[Provider]Probe{ProviderCodex: &fakeProbe{value: ProviderQuota{Provider: ProviderCodex, ObservedAt: now}, err: errors.New("probe unavailable")}}, Now: func() time.Time { return now }}
+	value, err := manager.AuthenticationChanged(context.Background(), ProviderCodex, true)
+	if err == nil || value.HardLimitReached || value.Eligible {
+		t.Fatalf("previous account quota was resurrected: %+v err=%v", value, err)
+	}
+	snapshot, loadErr := store.Load()
+	if loadErr != nil || len(snapshot.Providers) != 0 {
+		t.Fatalf("failed reprobe restored stale cache: %+v err=%v", snapshot, loadErr)
+	}
+}
+
+func TestInvalidatePreservesOtherProviderAndLegacySnapshot(t *testing.T) {
+	root := filepath.Join(t.TempDir(), "quota")
+	if err := os.MkdirAll(root, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	legacy := `{"providers":{"codex":{"provider":"codex","windows":[{"kind":"session","used_percent":100,"source":"legacy","observed_at":"2026-01-01T00:00:00Z","authoritative":true,"available":true}],"hard_limit_reached":true,"authenticated":true,"eligible":false,"source":"legacy","observed_at":"2026-01-01T00:00:00Z"},"claude":{"provider":"claude","windows":[],"authenticated":true,"eligible":true,"source":"legacy","observed_at":"2026-01-01T00:00:00Z"}},"updated_at":"2026-01-01T00:00:00Z"}`
+	if err := os.WriteFile(filepath.Join(root, "snapshot.json"), []byte(legacy), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	store := Store{Root: root}
+	if err := store.Invalidate(ProviderCodex); err != nil {
+		t.Fatal(err)
+	}
+	snapshot, err := store.Load()
+	if err != nil || len(snapshot.Providers) != 1 || snapshot.Providers[ProviderClaude].Provider != ProviderClaude {
+		t.Fatalf("legacy invalidation failed: %+v err=%v", snapshot, err)
+	}
+}
+
 func TestModelQuotaOnlyBlocksExactRequestedModel(t *testing.T) {
 	value := availableQuotaForTest(ProviderCodex)
 	value.Windows = append(value.Windows, Window{Kind: KindModelWeekly, Model: "limited-model", Available: true, Authoritative: true, RemainingPercent: 0})
