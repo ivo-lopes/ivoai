@@ -119,3 +119,22 @@ Future large changes follow coexistence, disabled/shadow/canary validation,
 default promotion, an observation release, and only then legacy removal. This
 foundation does not add OpenCode, OpenViking, Caveman, NativeOrchestrator, or
 remove Headroom/Ruflo.
+
+## Client and server on one host
+
+The current supported update unit is one installation mode and one transaction
+journal. A single managed executable that simultaneously owns both client XDG state
+and server state is not an officially supported upgrade topology today: ambiguous
+client+server journals fail closed instead of guessing which rollback set is
+authoritative. Supporting this topology later requires an explicit mode or
+transaction selection and a matrix covering both rollback domains. No evidence from
+the two production inventories is currently available to justify expanding that
+scope.
+
+## Supply-chain follow-up
+
+Update authenticity currently relies on GitHub TLS and checksums published through
+the same release channel. That detects corruption but is not an independent publisher
+signature. Artifact attestations, signed release provenance and a verification policy
+remain explicit future work; published commits and tags are not rewritten by this
+foundation.

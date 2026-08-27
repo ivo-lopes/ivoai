@@ -20,6 +20,41 @@ The core is organization-neutral. It contains no company domains, private addres
 user paths, or preconfigured connectors. Git is optional; project mode is an explicit
 override, not a prerequisite.
 
+## Replaceable core contracts
+
+The runtime boundaries in `internal/core` are deliberately small and are not part of
+the persisted config, state, ownership, component, or server schemas. They provide
+provider-neutral identities, capability support (`supported`, `unsupported`,
+`unknown`, or `not_exposed`), health, compatibility, provenance, lifecycle and
+explicit fallback metadata. Installed, available and healthy are separate facts;
+missing probe evidence remains unknown rather than being inferred from a provider or
+model name.
+
+The current adapters are:
+
+- `CodexExecutor` and `ClaudeExecutor` over the existing official interactive CLI
+  runtime. They expose session start and bounded cancellation; incremental send,
+  structured primary results and diff retrieval are not claimed.
+- `AIMemoryBackend` over the existing ai-memory client configurator. Memory content
+  calls remain behind the authenticated MCP boundary rather than expanding this
+  lifecycle interface.
+- `LegacyQdrantContextBackend` over the existing catalog, local embedding and Qdrant
+  context service. The agent-facing contract stays read-only; ingestion remains an
+  administrative composition.
+- `HeadroomCompressionProvider` over the existing wrapper probe and invocation. The
+  IVOAI fidelity policy still decides when exact Memory/Context results require a
+  bypass, and the official client remains the direct fallback.
+- `RufloOrchestratorAdapter` over the existing safe-profile control plane. It exposes
+  only ephemeral swarm and opaque lifecycle coordination; scheduling, routing,
+  inference, quota and durable memory remain owned by IVOAI.
+
+`SkillSource`, `SkillRegistry` and `ToolProvider` currently define only base identity,
+probe and discovery contracts. No new skill pack or tool provider is loaded by this
+foundation. Doctor builds a runtime-only component matrix from existing state and
+official probes so future selection and fallback can explain which implementation is
+active and why. The matrix is never written to session/config persistence and does not
+require a migration.
+
 ## System view
 
 ```text
