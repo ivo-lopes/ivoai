@@ -37,8 +37,9 @@ type CapabilityRule struct {
 }
 
 type Engine struct {
-	Capabilities map[string]CapabilityRule
-	Observe      func(observability.Event)
+	Capabilities          map[string]CapabilityRule
+	MinimumAutomaticTrust string
+	Observe               func(observability.Event)
 }
 
 type Request struct {
@@ -66,7 +67,7 @@ type Result struct {
 }
 
 func DefaultEngine() Engine {
-	return Engine{Capabilities: map[string]CapabilityRule{
+	return Engine{MinimumAutomaticTrust: "commit_pinned_local_digest", Capabilities: map[string]CapabilityRule{
 		"filesystem.read":         {Available: true, MaximumRisk: skills.RiskModerate},
 		"context.read":            {Available: true, MaximumRisk: skills.RiskModerate},
 		"memory.read":             {Available: true, MaximumRisk: skills.RiskModerate},
@@ -80,6 +81,80 @@ func DefaultEngine() Engine {
 		"sandbox.disable":         {Available: false, MaximumRisk: skills.RiskCritical},
 		"orchestration.authority": {Available: false, MaximumRisk: skills.RiskCritical},
 	}}
+}
+
+type TrustRequest struct {
+	SubjectID         string
+	TrustLevel        string
+	SignatureStatus   string
+	AttestationStatus string
+	Automatic         bool
+}
+
+// EvaluateTrust distinguishes integrity from authenticity. A locally recorded
+// digest over a commit-pinned artifact is sufficient for the default local
+// managed store, but is never represented as an independent signature or
+// attestation. Deployments may raise MinimumAutomaticTrust.
+func (e Engine) EvaluateTrust(request TrustRequest) Result {
+	result := Result{Decision: Deny, Scope: "supply_chain", Reason: "unverifiable_provenance"}
+	defer func() {
+		if e.Observe == nil {
+			return
+		}
+		state, reason := observability.StateDenied, observability.ReasonPolicyDenied
+		if result.Decision == Allow {
+			state, reason = observability.StateAllowed, observability.ReasonPolicyAllowed
+		}
+		event, err := observability.Normalize(observability.Event{Category: observability.CategorySkillPolicy, Operation: observability.OperationPolicyDecision, State: state, SubjectID: request.SubjectID, SubjectKind: string(SubjectSkill), PolicyDecision: string(result.Decision), TrustLevel: request.TrustLevel, RoutingReason: reason})
+		if err == nil {
+			e.Observe(event)
+		}
+	}()
+	if !safeID(request.SubjectID) || e.Validate() != nil {
+		result.Reason = "invalid_policy_engine"
+		return result
+	}
+	actual, ok := trustWeight(request.TrustLevel)
+	if !ok {
+		return result
+	}
+	minimum := e.MinimumAutomaticTrust
+	if minimum == "" {
+		minimum = "commit_pinned_local_digest"
+	}
+	required, ok := trustWeight(minimum)
+	if !ok {
+		result.Reason = "invalid_trust_policy"
+		return result
+	}
+	if request.Automatic && actual < required {
+		result.Reason = "trust_below_automatic_policy"
+		return result
+	}
+	if request.SignatureStatus == "verified" && actual < 4 || request.AttestationStatus == "verified" && actual < 3 {
+		result.Reason = "inconsistent_trust_metadata"
+		return result
+	}
+	result.Decision = Allow
+	result.Reason = "provenance_trust_allowed"
+	return result
+}
+
+func trustWeight(value string) (int, bool) {
+	switch value {
+	case "unverifiable":
+		return 0, true
+	case "commit_pinned_local_digest":
+		return 1, true
+	case "upstream_checksum":
+		return 2, true
+	case "independent_attestation":
+		return 3, true
+	case "independent_signature":
+		return 4, true
+	default:
+		return 0, false
+	}
 }
 
 func (e Engine) Evaluate(request Request) (result Result) {
@@ -112,7 +187,18 @@ func (e Engine) Evaluate(request Request) (result Result) {
 	declared := set(request.DeclaredCapabilities)
 	requested := sortedUnique(request.RequestedCapabilities)
 	if len(requested) == 0 {
-		result.Reason = "no_capability_requested"
+		if request.Risk == skills.RiskCritical {
+			result.Reason = "critical_risk_denied"
+			return result
+		}
+		if request.Risk == skills.RiskHigh {
+			result.Decision = RequireApproval
+			result.Reason = "human_approval_required"
+			result.Approval = Approval{Required: true, Scope: request.Scope}
+			return result
+		}
+		result.Decision = Allow
+		result.Reason = "no_runtime_capability_required"
 		return result
 	}
 	var approvals []string
@@ -183,6 +269,11 @@ func (e Engine) emit(request Request, result Result) {
 func (e Engine) Validate() error {
 	if len(e.Capabilities) == 0 || len(e.Capabilities) > 256 {
 		return errors.New("policy engine requires a bounded capability registry")
+	}
+	if e.MinimumAutomaticTrust != "" {
+		if _, ok := trustWeight(e.MinimumAutomaticTrust); !ok {
+			return errors.New("policy engine has an invalid automatic trust threshold")
+		}
 	}
 	for capability, rule := range e.Capabilities {
 		if !safeCapability(capability) || !validRisk(rule.MaximumRisk) || rule.Destructive && rule.Available {

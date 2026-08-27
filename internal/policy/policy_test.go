@@ -111,3 +111,41 @@ func TestPolicyEmitsBoundedDecisionMetadata(t *testing.T) {
 		t.Fatalf("result=%+v event=%+v", result, event)
 	}
 }
+
+func TestPolicyAllowsInstructionOnlyLowRiskAndGatesHigherRisk(t *testing.T) {
+	request := policyRequest()
+	if result := DefaultEngine().Evaluate(request); result.Decision != Allow || result.Reason != "no_runtime_capability_required" {
+		t.Fatalf("low risk result=%+v", result)
+	}
+	request.Risk = skills.RiskHigh
+	if result := DefaultEngine().Evaluate(request); result.Decision != RequireApproval {
+		t.Fatalf("high risk result=%+v", result)
+	}
+	request.Risk = skills.RiskCritical
+	if result := DefaultEngine().Evaluate(request); result.Decision != Deny {
+		t.Fatalf("critical risk result=%+v", result)
+	}
+}
+
+func TestAutomaticTrustPolicyDistinguishesIntegrityFromAuthenticity(t *testing.T) {
+	engine := DefaultEngine()
+	localDigest := TrustRequest{SubjectID: "synthetic-pack", TrustLevel: "commit_pinned_local_digest", SignatureStatus: "not_exposed", AttestationStatus: "not_exposed", Automatic: true}
+	if result := engine.EvaluateTrust(localDigest); result.Decision != Allow {
+		t.Fatalf("local digest result=%+v", result)
+	}
+	unverifiable := localDigest
+	unverifiable.TrustLevel = "unverifiable"
+	if result := engine.EvaluateTrust(unverifiable); result.Decision != Deny || result.Reason != "trust_below_automatic_policy" {
+		t.Fatalf("unverifiable result=%+v", result)
+	}
+	forged := localDigest
+	forged.SignatureStatus = "verified"
+	if result := engine.EvaluateTrust(forged); result.Decision != Deny || result.Reason != "inconsistent_trust_metadata" {
+		t.Fatalf("forged trust result=%+v", result)
+	}
+	strict := engine
+	strict.MinimumAutomaticTrust = "independent_attestation"
+	if result := strict.EvaluateTrust(localDigest); result.Decision != Deny {
+		t.Fatalf("strict policy result=%+v", result)
+	}
+}

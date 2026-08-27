@@ -99,6 +99,7 @@ type Compatibility struct {
 
 type Entry struct {
 	ID                   string        `json:"id"`
+	ArtifactID           string        `json:"artifact_id,omitempty"`
 	Name                 string        `json:"name"`
 	Description          string        `json:"description"`
 	Domain               string        `json:"domain"`
@@ -155,7 +156,7 @@ func (r *Registry) Normalize() error {
 }
 
 func (e Entry) Validate() error {
-	if !safeID(e.ID) || !boundedText(e.Name, 256) || !boundedText(e.Description, MaxDescriptionBytes) || e.Domain == "" || !safeLabel(e.Domain, 128) {
+	if !safeID(e.ID) || e.ArtifactID != "" && !safeID(e.ArtifactID) || !boundedText(e.Name, 256) || !boundedText(e.Description, MaxDescriptionBytes) || e.Domain == "" || !safeLabel(e.Domain, 128) {
 		return errors.New("invalid bounded identity metadata")
 	}
 	if !validLifecycle(e.Lifecycle) || !validRisk(e.Risk) || !validPhase(e.Phase) {
@@ -221,6 +222,7 @@ func (i Integrity) Validate() error {
 
 func normalizeEntry(e *Entry) {
 	e.ID = strings.TrimSpace(strings.ToLower(e.ID))
+	e.ArtifactID = strings.TrimSpace(strings.ToLower(e.ArtifactID))
 	e.Name = strings.TrimSpace(e.Name)
 	e.Description = strings.TrimSpace(e.Description)
 	e.Domain = strings.TrimSpace(strings.ToLower(e.Domain))

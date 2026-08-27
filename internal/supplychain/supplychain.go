@@ -141,6 +141,17 @@ type Manager struct {
 	Observe    func(observability.Event)
 }
 
+// Activation binds an artifact pointer transition to an authoritative
+// external index such as the skill Registry. Apply and Validate run only
+// after the immutable object and pointer are valid. Rollback must restore the
+// external index when either validation or the supply-chain journal commit
+// fails. All callbacks must be deterministic and idempotent.
+type Activation struct {
+	Apply    func() error
+	Validate func() error
+	Rollback func() error
+}
+
 type Pipeline struct {
 	Manager    Manager
 	Discoverer Discoverer
@@ -330,7 +341,11 @@ func (m Manager) StageArchive(ctx context.Context, source ResolvedSource, archiv
 	return Staged{TransactionID: id, Source: source, ObjectPath: object, ManifestDigest: manifestDigest}, nil
 }
 
-func (m Manager) Promote(staged Staged) (resultErr error) {
+func (m Manager) Promote(staged Staged) error {
+	return m.PromoteWithActivation(staged, Activation{})
+}
+
+func (m Manager) PromoteWithActivation(staged Staged, activation Activation) (resultErr error) {
 	defer func() {
 		state, reason := observability.StatePromoted, observability.ReasonIntegrityVerified
 		if resultErr != nil {
@@ -401,17 +416,40 @@ func (m Manager) Promote(staged Staged) (resultErr error) {
 		journalErr := m.saveTransaction(tx)
 		return errors.Join(fmt.Errorf("post-promotion integrity validation: %w", err), rollbackErr, journalErr)
 	}
+	if activation.Apply != nil {
+		if err := activation.Apply(); err != nil {
+			activationErr := callActivation(activation.Rollback)
+			rollbackErr := m.restorePromotion(staged.Source.ID, previousPointer, pointerExisted)
+			tx.State, tx.UpdatedAt = "rolled_back", m.now()
+			journalErr := m.saveTransaction(tx)
+			return errors.Join(fmt.Errorf("activate promoted artifact: %w", err), activationErr, rollbackErr, journalErr)
+		}
+	}
+	if activation.Validate != nil {
+		if err := activation.Validate(); err != nil {
+			activationErr := callActivation(activation.Rollback)
+			rollbackErr := m.restorePromotion(staged.Source.ID, previousPointer, pointerExisted)
+			tx.State, tx.UpdatedAt = "rolled_back", m.now()
+			journalErr := m.saveTransaction(tx)
+			return errors.Join(fmt.Errorf("validate promoted activation: %w", err), activationErr, rollbackErr, journalErr)
+		}
+	}
 	tx.State, tx.UpdatedAt = "committed", m.now()
 	if err := m.saveTransaction(tx); err != nil {
+		activationErr := callActivation(activation.Rollback)
 		rollbackErr := m.restorePromotion(staged.Source.ID, previousPointer, pointerExisted)
 		tx.State, tx.UpdatedAt = "rolled_back", m.now()
 		journalErr := m.saveTransaction(tx)
-		return errors.Join(err, rollbackErr, journalErr)
+		return errors.Join(err, activationErr, rollbackErr, journalErr)
 	}
 	return nil
 }
 
-func (m Manager) Rollback(id string) (rolled bool, resultErr error) {
+func (m Manager) Rollback(id string) (bool, error) {
+	return m.RollbackWithActivation(id, Activation{})
+}
+
+func (m Manager) RollbackWithActivation(id string, activation Activation) (rolled bool, resultErr error) {
 	defer func() {
 		state, reason := observability.StateRolledBack, observability.ReasonRollbackComplete
 		if resultErr != nil {
@@ -450,7 +488,24 @@ func (m Manager) Rollback(id string) (rolled bool, resultErr error) {
 	if _, err := validateStoredObject(m.objectPath(id, pointer.Active), &previousSource, ""); err != nil {
 		return false, errors.Join(fmt.Errorf("post-rollback integrity validation: %w", err), m.savePointer(current))
 	}
+	if activation.Apply != nil {
+		if err := activation.Apply(); err != nil {
+			return false, errors.Join(fmt.Errorf("activate rolled-back artifact: %w", err), callActivation(activation.Rollback), m.savePointer(current))
+		}
+	}
+	if activation.Validate != nil {
+		if err := activation.Validate(); err != nil {
+			return false, errors.Join(fmt.Errorf("validate rolled-back activation: %w", err), callActivation(activation.Rollback), m.savePointer(current))
+		}
+	}
 	return true, nil
+}
+
+func callActivation(callback func() error) error {
+	if callback == nil {
+		return nil
+	}
+	return callback()
 }
 
 func (m Manager) Active(id string) (ResolvedSource, string, error) {
@@ -476,6 +531,13 @@ func (m Manager) Active(id string) (ResolvedSource, string, error) {
 }
 
 func (m Manager) Recover() (int, error) {
+	return m.RecoverWithActivation(nil)
+}
+
+// RecoverWithActivation restores interrupted pointer transitions and then
+// asks the caller to reconcile its authoritative external index for each
+// affected artifact. The callback receives only a canonical artifact ID.
+func (m Manager) RecoverWithActivation(reconcile func(string) error) (int, error) {
 	if err := m.ensureRoot(); err != nil {
 		return 0, err
 	}
@@ -512,6 +574,11 @@ func (m Manager) Recover() (int, error) {
 			tx.State, tx.UpdatedAt = "rolled_back", m.now()
 			if err := m.saveTransaction(tx); err != nil {
 				return recovered, err
+			}
+			if reconcile != nil {
+				if err := reconcile(tx.Source.ID); err != nil {
+					return recovered, fmt.Errorf("reconcile recovered artifact %s: %w", tx.Source.ID, err)
+				}
 			}
 			recovered++
 			continue

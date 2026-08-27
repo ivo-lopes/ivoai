@@ -12,6 +12,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -259,9 +260,16 @@ func TestInterruptedPromotionRecoveryRestoresPreviousPointer(t *testing.T) {
 	if err := manager.savePointer(Pointer{Schema: SchemaVersion, ID: "synthetic", Active: strings.Repeat("b", 40), Previous: strings.Repeat("a", 40), UpdatedAt: time.Now().UTC()}); err != nil {
 		t.Fatal(err)
 	}
-	recovered, err := manager.Recover()
+	var reconciled []string
+	recovered, err := manager.RecoverWithActivation(func(id string) error {
+		reconciled = append(reconciled, id)
+		return nil
+	})
 	if err != nil || recovered != 1 {
 		t.Fatalf("recovered=%d err=%v", recovered, err)
+	}
+	if !reflect.DeepEqual(reconciled, []string{"synthetic"}) {
+		t.Fatalf("reconciled artifacts = %v", reconciled)
 	}
 	active, _, err := manager.Active("synthetic")
 	if err != nil || active.Revision != strings.Repeat("a", 40) {
