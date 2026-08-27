@@ -9,11 +9,46 @@ import (
 	"testing"
 
 	"github.com/ivo-lopes/ivoai/internal/config"
+	"github.com/ivo-lopes/ivoai/internal/core"
+	"github.com/ivo-lopes/ivoai/internal/headroom"
+	"github.com/ivo-lopes/ivoai/internal/orchestration"
 	"github.com/ivo-lopes/ivoai/internal/platform"
 )
 
 type statusRunner struct {
 	output string
+}
+
+func TestComponentMatrixExplainsCapabilitiesHealthAndFallback(t *testing.T) {
+	cfg := config.Default()
+	cfg.MCP.Servers["ivoai-context"] = config.MCPServer{Kind: "context", Enabled: true}
+	state := config.State{Components: map[string]config.ComponentState{
+		"codex":       {Installed: true, Managed: true, Version: "fixture", Path: "/managed/codex"},
+		"claude-code": {Installed: true, Managed: true, Version: "fixture", Path: "/managed/claude"},
+		"headroom":    {Installed: true, Managed: true, Version: "fixture", Path: "/managed/headroom"},
+		"ai-memory":   {Installed: true, Managed: true, Version: "fixture", Path: "/managed/ai-memory"},
+		"ruflo":       {Installed: true, Managed: true, Version: "fixture", Path: "/managed/ruflo"},
+	}}
+	report := Report{
+		Codex: Auth{Installed: true, Version: "codex fixture"}, Claude: Auth{Installed: true, Version: "claude fixture"},
+		Headroom:      headroom.Status{Installed: true, Healthy: true, CodexCompatible: true, ClaudeCompatible: true},
+		Memory:        Component{Installed: true, Hooks: true},
+		Ruflo:         orchestration.Status{Installed: true, SafeMode: true},
+		Server:        Server{Configured: true, Reachable: true, ProtocolCompatible: true},
+		Orchestration: Orchestration{CodexWorker: true, ClaudeWorker: true},
+	}
+	matrix := componentMatrix(cfg, state, report)
+	codex, err := matrix.Resolve(core.ComponentCodex, core.CapabilityAdvisoryExecute)
+	if err != nil || codex.Component.Implementation != "official-cli" {
+		t.Fatalf("codex selection=%+v err=%v", codex, err)
+	}
+	compression, err := matrix.Resolve(core.ComponentCompression, core.CapabilityCompressionWrap)
+	if err != nil || !compression.Component.Fallback.Allowed {
+		t.Fatalf("compression selection=%+v err=%v", compression, err)
+	}
+	if _, err := matrix.Resolve(core.ComponentContext, core.CapabilityContextIngest); err == nil {
+		t.Fatal("read-only remote Context advertised ingestion")
+	}
 }
 
 func (r statusRunner) LookPath(name string) (string, error) { return "/managed/" + name, nil }

@@ -15,6 +15,7 @@ import (
 
 	"github.com/ivo-lopes/ivoai/internal/config"
 	"github.com/ivo-lopes/ivoai/internal/connections"
+	"github.com/ivo-lopes/ivoai/internal/core"
 	"github.com/ivo-lopes/ivoai/internal/headroom"
 	"github.com/ivo-lopes/ivoai/internal/orchestration"
 	"github.com/ivo-lopes/ivoai/internal/platform"
@@ -96,6 +97,7 @@ type Report struct {
 	Server            Server               `json:"server"`
 	Orchestration     Orchestration        `json:"orchestration"`
 	Automatic         Automatic            `json:"automatic_orchestration"`
+	ComponentMatrix   core.Matrix          `json:"component_matrix"`
 	Issues            []string             `json:"issues"`
 }
 type Doctor struct {
@@ -136,6 +138,7 @@ func (d Doctor) Run(ctx context.Context) Report {
 	r.Server = d.server(ctx, cfg.Connections.Server)
 	r.Orchestration = d.orchestration(ctx, cfg, state)
 	r.Automatic = d.automatic(ctx, cfg, state, r)
+	r.ComponentMatrix = componentMatrix(cfg, state, r)
 	required := map[string]Component{"Codex": componentFromAuth(r.Codex), "Claude Code": componentFromAuth(r.Claude), "Headroom": {Installed: r.Headroom.Installed}, "ai-memory": r.Memory, "Ruflo": {Installed: r.Ruflo.Installed}}
 	if state.Components["codex"].Managed {
 		required["Codex code-mode host"] = r.CodexCodeModeHost
@@ -188,6 +191,109 @@ func (d Doctor) Run(ctx context.Context) Report {
 		r.Overall = "DEGRADED"
 	}
 	return r
+}
+
+func componentMatrix(cfg config.Config, state config.State, report Report) core.Matrix {
+	health := func(available bool) core.HealthState {
+		if available {
+			return core.HealthHealthy
+		}
+		return core.HealthUnavailable
+	}
+	compatibility := func(available bool, reason string) core.Compatibility {
+		if available {
+			return core.Compatibility{State: core.CompatibilityCompatible}
+		}
+		return core.Compatibility{State: core.CompatibilityUnknown, Reason: reason}
+	}
+	executor := func(id core.ComponentID, auth Auth, component config.ComponentState, worker bool) core.ComponentStatus {
+		workerSupport := core.SupportUnsupported
+		if worker {
+			workerSupport = core.SupportSupported
+		}
+		return core.ComponentStatus{
+			ID: id, Implementation: "official-cli", Active: true,
+			Installed: auth.Installed, Managed: component.Managed, Available: auth.Installed,
+			Health: health(auth.Installed), Lifecycle: core.LifecycleStopped,
+			Provenance: core.Provenance{Source: "official_probe", Version: auth.Version, Path: component.Path},
+			Capabilities: core.CapabilitySet{
+				core.CapabilitySessionStart:    core.SupportSupported,
+				core.CapabilitySessionAbort:    core.SupportSupported,
+				core.CapabilityAdvisoryExecute: workerSupport,
+			},
+			Compatibility: compatibility(auth.Installed, "official client is not available"),
+		}
+	}
+	values := []core.ComponentStatus{
+		executor(core.ComponentCodex, report.Codex, state.Components["codex"], report.Orchestration.CodexWorker),
+		executor(core.ComponentClaude, report.Claude, state.Components["claude-code"], report.Orchestration.ClaudeWorker),
+	}
+	memory := state.Components["ai-memory"]
+	memoryAvailable := report.Memory.Installed && (!cfg.Memory.Enabled || report.Memory.Hooks)
+	values = append(values, core.ComponentStatus{
+		ID: core.ComponentMemory, Implementation: "ai-memory", Active: cfg.Memory.Enabled,
+		Installed: report.Memory.Installed, Managed: memory.Managed, Available: memoryAvailable,
+		Health: health(memoryAvailable), Lifecycle: core.LifecycleStopped,
+		Provenance: core.Provenance{Source: "state_and_hook_probe", Version: report.Memory.Version, Path: memory.Path},
+		Capabilities: core.CapabilitySet{
+			core.CapabilityMemoryConfigure: core.SupportSupported,
+			core.CapabilityMemoryHooks:     core.SupportSupported,
+			core.CapabilityMemoryStatus:    core.SupportSupported,
+		},
+		Compatibility: compatibility(report.Memory.Installed, "ai-memory client is not installed"),
+	})
+	headroomAvailable := cfg.Headroom.Enabled && report.Headroom.Healthy && (report.Headroom.CodexCompatible || report.Headroom.ClaudeCompatible)
+	values = append(values, core.ComponentStatus{
+		ID: core.ComponentCompression, Implementation: "headroom", Active: cfg.Headroom.Enabled,
+		Installed: report.Headroom.Installed, Managed: state.Components["headroom"].Managed, Available: headroomAvailable,
+		Health: health(headroomAvailable), Lifecycle: core.LifecycleStopped,
+		Provenance: core.Provenance{Source: "official_probe", Version: report.Headroom.Version, Path: state.Components["headroom"].Path},
+		Capabilities: core.CapabilitySet{
+			core.CapabilityCompressionWrap:   map[bool]core.SupportState{true: core.SupportSupported, false: core.SupportUnsupported}[headroomAvailable],
+			core.CapabilityCompressionBypass: core.SupportSupported,
+		},
+		Compatibility: compatibility(headroomAvailable, "wrapper compatibility is unavailable"),
+		Fallback:      core.Fallback{Allowed: true, Reason: "direct official executor remains available"},
+	})
+	orchestrationAvailable := cfg.Orchestration.Enabled && report.Ruflo.Installed && report.Ruflo.SafeMode && !report.Ruflo.ProviderExecution && !report.Ruflo.DurableMemory
+	values = append(values, core.ComponentStatus{
+		ID: core.ComponentOrchestration, Implementation: "ruflo", Active: cfg.Orchestration.Enabled,
+		Installed: report.Ruflo.Installed, Managed: state.Components["ruflo"].Managed, Available: orchestrationAvailable,
+		Health: health(orchestrationAvailable), Lifecycle: core.LifecycleStopped,
+		Provenance: core.Provenance{Source: "safe_profile_probe", Version: report.Ruflo.Version, Path: state.Components["ruflo"].Path},
+		Capabilities: core.CapabilitySet{
+			core.CapabilityOrchestrationSwarm:     map[bool]core.SupportState{true: core.SupportSupported, false: core.SupportUnsupported}[orchestrationAvailable],
+			core.CapabilityOrchestrationLifecycle: map[bool]core.SupportState{true: core.SupportSupported, false: core.SupportUnsupported}[orchestrationAvailable],
+		},
+		Compatibility: compatibility(orchestrationAvailable, "safe coordination profile is unavailable"),
+		Fallback:      core.Fallback{Allowed: false, Reason: "orchestrated modes fail closed"},
+	})
+	contextConfigured := false
+	for _, server := range cfg.MCP.Servers {
+		if server.Kind == "context" && server.Enabled {
+			contextConfigured = true
+			break
+		}
+	}
+	contextAvailable := contextConfigured && report.Server.Reachable && report.Server.ProtocolCompatible
+	values = append(values, core.ComponentStatus{
+		ID: core.ComponentContext, Implementation: "remote-context-mcp", Active: contextConfigured,
+		Installed: contextConfigured, Available: contextAvailable, Health: health(contextAvailable), Lifecycle: core.LifecycleStopped,
+		Provenance: core.Provenance{Source: "server_discovery"},
+		Capabilities: core.CapabilitySet{
+			core.CapabilityContextSearch: core.SupportSupported,
+			core.CapabilityContextRead:   core.SupportSupported,
+			core.CapabilityContextRecent: core.SupportSupported,
+			core.CapabilityContextStatus: core.SupportSupported,
+			core.CapabilityContextIngest: core.SupportUnsupported,
+		},
+		Compatibility: compatibility(contextAvailable, "compatible remote Context MCP is unavailable"),
+	})
+	matrix, err := core.NewMatrix(values...)
+	if err != nil {
+		return core.Matrix{}
+	}
+	return matrix
 }
 
 func (d Doctor) automatic(ctx context.Context, cfg config.Config, state config.State, report Report) Automatic {
