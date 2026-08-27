@@ -308,7 +308,7 @@ func entryFromMetadata(values map[string][]string) (Entry, error) {
 		"schema": true, "id": true, "name": true, "description": true, "source_kind": true, "source_url": true,
 		"repository": true, "path": true, "default_branch": true, "commit": true, "tag": true, "version": true,
 		"checksum": true, "domain": true, "triggers": true, "keywords": true, "requires": true,
-		"optional_dependencies": true, "conflicts": true, "phase": true, "role": true, "capabilities": true,
+		"optional_dependencies": true, "conflicts": true, "phase": true, "role": true, "role_mode": true, "capabilities": true,
 		"risk": true, "executors": true, "operating_systems": true, "architectures": true, "minimum_ivoai": true,
 	}
 	for key := range values {
@@ -329,7 +329,7 @@ func entryFromMetadata(values map[string][]string) (Entry, error) {
 	entry := Entry{
 		ID: one("id"), Name: one("name"), Description: one("description"), Domain: one("domain"),
 		Triggers: values["triggers"], Keywords: values["keywords"], RequiredDependencies: values["requires"], OptionalDependencies: values["optional_dependencies"], Conflicts: values["conflicts"],
-		Phase: Phase(one("phase")), Role: one("role"), Capabilities: values["capabilities"], Risk: RiskTier(one("risk")), Lifecycle: LifecycleStaged,
+		Phase: Phase(one("phase")), Role: one("role"), RoleMode: RoleMode(one("role_mode")), Capabilities: values["capabilities"], Risk: RiskTier(one("risk")), Lifecycle: LifecycleStaged,
 		Compatibility: Compatibility{Executors: values["executors"], OperatingSystems: values["operating_systems"], Architectures: values["architectures"], MinimumIVOAI: one("minimum_ivoai")},
 		Provenance:    Provenance{Source: Source{Kind: one("source_kind"), URL: one("source_url"), Repository: one("repository"), Path: one("path"), DefaultBranch: one("default_branch")}, Revision: Revision{Commit: one("commit"), Tag: one("tag"), LogicalVersion: one("version")}, Integrity: Integrity{Algorithm: "sha256", Digest: checksum, SignatureStatus: "not_exposed", AttestationStatus: "not_exposed", TrustLevel: "checksum_only"}},
 	}

@@ -51,6 +51,13 @@ const (
 	PhaseInteractionProfile Phase = "interaction_profile"
 )
 
+type RoleMode string
+
+const (
+	RoleComposable RoleMode = "composable"
+	RoleExclusive  RoleMode = "exclusive"
+)
+
 type Integrity struct {
 	Algorithm         string `json:"algorithm"`
 	Digest            string `json:"digest"`
@@ -101,6 +108,7 @@ type Entry struct {
 	Conflicts            []string      `json:"conflicts,omitempty"`
 	Phase                Phase         `json:"phase"`
 	Role                 string        `json:"role,omitempty"`
+	RoleMode             RoleMode      `json:"role_mode,omitempty"`
 	Capabilities         []string      `json:"capabilities,omitempty"`
 	Risk                 RiskTier      `json:"risk"`
 	Compatibility        Compatibility `json:"compatibility"`
@@ -150,7 +158,7 @@ func (e Entry) Validate() error {
 	if !validLifecycle(e.Lifecycle) || !validRisk(e.Risk) || !validPhase(e.Phase) {
 		return errors.New("invalid lifecycle, risk, or execution phase")
 	}
-	if !safeLabel(e.Role, 128) || !safeReason(e.QuarantineReason) {
+	if !safeLabel(e.Role, 128) || !validRoleMode(e.RoleMode) || !safeReason(e.QuarantineReason) {
 		return errors.New("invalid role or quarantine reason")
 	}
 	for _, values := range [][]string{e.Triggers, e.Keywords, e.RequiredDependencies, e.OptionalDependencies, e.Conflicts, e.Capabilities, e.Compatibility.Executors, e.Compatibility.OperatingSystems, e.Compatibility.Architectures} {
@@ -163,9 +171,12 @@ func (e Entry) Validate() error {
 			}
 		}
 	}
-	for _, dependency := range append(append([]string{}, e.RequiredDependencies...), e.OptionalDependencies...) {
+	for _, dependency := range append(append(append([]string{}, e.RequiredDependencies...), e.OptionalDependencies...), e.Conflicts...) {
+		if !safeID(dependency) {
+			return errors.New("invalid dependency or conflict ID")
+		}
 		if dependency == e.ID {
-			return errors.New("skill cannot depend on itself")
+			return errors.New("skill cannot depend on or conflict with itself")
 		}
 	}
 	return e.Provenance.Validate()
@@ -310,4 +321,8 @@ func validPhase(value Phase) bool {
 	default:
 		return false
 	}
+}
+
+func validRoleMode(value RoleMode) bool {
+	return value == "" || value == RoleComposable || value == RoleExclusive
 }

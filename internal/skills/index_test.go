@@ -32,6 +32,7 @@ optional_dependencies: []
 conflicts: []
 phase: planning
 role: advisor
+role_mode: composable
 capabilities: [filesystem.read]
 risk: low
 executors: [codex, claude]
