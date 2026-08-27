@@ -2,6 +2,7 @@ package quota
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"math"
 	"os"
@@ -96,6 +97,43 @@ func TestCodexPrimarySecondaryOrderIsSemanticallyEquivalent(t *testing.T) {
 	if !reflect.DeepEqual(a, b) {
 		t.Fatalf("primary/secondary order changed semantics:\nA=%+v\nB=%+v", a, b)
 	}
+}
+
+func TestCodexWindowFixturesCoverDurationOrderAndMissingTelemetry(t *testing.T) {
+	observed := time.Unix(100, 0).UTC()
+	normal := codexWindows(loadCodexFixture(t, "codex_300_10080.json"), observed)
+	inverted := codexWindows(loadCodexFixture(t, "codex_10080_300.json"), observed)
+	if !reflect.DeepEqual(normal, inverted) {
+		t.Fatalf("inverted fixture changed normalized result:\nnormal=%+v\ninverted=%+v", normal, inverted)
+	}
+	weeklyOnly := codexWindows(loadCodexFixture(t, "codex_weekly_only.json"), observed)
+	fiveHour, ok := windowByDuration(weeklyOnly, 300)
+	if !ok || fiveHour.TelemetryState() != TelemetryNotExposed || fiveHour.Available {
+		t.Fatalf("weekly-only fixture fabricated 5h: %+v", weeklyOnly)
+	}
+	other := codexWindows(loadCodexFixture(t, "codex_60_1440.json"), observed)
+	for _, duration := range []int64{60, 1440} {
+		if window, ok := windowByDuration(other, duration); !ok || !window.Available {
+			t.Fatalf("duration %d fixture missing: %+v", duration, other)
+		}
+	}
+	individual := codexWindows(loadCodexFixture(t, "codex_individual.json"), observed)
+	if window, ok := (ProviderQuota{Windows: individual}).Window(KindIndividual); !ok || window.RemainingPercent != 42 {
+		t.Fatalf("individual fixture missing: %+v", individual)
+	}
+}
+
+func loadCodexFixture(t *testing.T, name string) codexRateResponse {
+	t.Helper()
+	body, err := os.ReadFile(filepath.Join("testdata", name))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var value codexRateResponse
+	if err := json.Unmarshal(body, &value); err != nil {
+		t.Fatal(err)
+	}
+	return value
 }
 
 func TestCodexPreservesArbitraryDurationsAndMissingFiveHour(t *testing.T) {
@@ -372,15 +410,34 @@ func TestAuthenticationTransitionInvalidatesPreviousAccountAndReprobes(t *testin
 	if err := store.Put(accountA); err != nil {
 		t.Fatal(err)
 	}
-	probe := &fakeProbe{value: ProviderQuota{Provider: ProviderCodex, Authenticated: true, Windows: []Window{FromUsed(KindSession, 20, nil, "fixture", now), FromUsed(KindWeekly, 30, nil, "fixture", now)}, ObservedAt: now}}
+	probe := &fakeProbe{value: ProviderQuota{Provider: ProviderCodex, Authenticated: true, Windows: []Window{FromUsedDuration(KindRolling, 300, 20, nil, "fixture", now), FromUsedDuration(KindWeekly, 10080, 30, nil, "fixture", now)}, ObservedAt: now}}
 	manager := Manager{Store: store, Probes: map[Provider]Probe{ProviderCodex: probe}, Now: func() time.Time { return now }}
 	accountB, err := manager.AuthenticationChanged(context.Background(), ProviderCodex, true)
 	if err != nil || !accountB.Eligible || accountB.HardLimitReached || probe.calls != 1 {
 		t.Fatalf("new account contaminated by prior quota: value=%+v calls=%d err=%v", accountB, probe.calls, err)
 	}
+	five, fiveOK := accountB.WindowByDuration(300)
+	weekly, weeklyOK := accountB.WindowByDuration(10080)
+	if !fiveOK || !weeklyOK || five.RemainingPercent != 80 || weekly.RemainingPercent != 70 {
+		t.Fatalf("new account windows=%+v", accountB.Windows)
+	}
 	snapshot, err := store.Load()
 	if err != nil || snapshot.Providers[ProviderCodex].Reason == accountA.Reason {
 		t.Fatalf("old account remained in cache: %+v err=%v", snapshot, err)
+	}
+}
+
+func TestRuntimeMarkExhaustedDoesNotContaminateValidAuthenticationTransition(t *testing.T) {
+	now := time.Now().UTC()
+	store := Store{Root: filepath.Join(t.TempDir(), "quota")}
+	probe := &fakeProbe{value: ProviderQuota{Provider: ProviderCodex, Authenticated: true, Windows: []Window{FromUsedDuration(KindRolling, 300, 10, nil, "fixture", now)}, ObservedAt: now}}
+	manager := Manager{Store: store, Probes: map[Provider]Probe{ProviderCodex: probe}, Now: func() time.Time { return now }}
+	if err := manager.MarkExhausted(ProviderCodex, "official runtime limit"); err != nil {
+		t.Fatal(err)
+	}
+	value, err := manager.AuthenticationChanged(context.Background(), ProviderCodex, true)
+	if err != nil || !value.Eligible || value.HardLimitReached {
+		t.Fatalf("runtime marker contaminated new auth context: %+v err=%v", value, err)
 	}
 }
 
@@ -406,8 +463,11 @@ func TestInvalidatePreservesOtherProviderAndLegacySnapshot(t *testing.T) {
 	if err := os.MkdirAll(root, 0o700); err != nil {
 		t.Fatal(err)
 	}
-	legacy := `{"providers":{"codex":{"provider":"codex","windows":[{"kind":"session","used_percent":100,"source":"legacy","observed_at":"2026-01-01T00:00:00Z","authoritative":true,"available":true}],"hard_limit_reached":true,"authenticated":true,"eligible":false,"source":"legacy","observed_at":"2026-01-01T00:00:00Z"},"claude":{"provider":"claude","windows":[],"authenticated":true,"eligible":true,"source":"legacy","observed_at":"2026-01-01T00:00:00Z"}},"updated_at":"2026-01-01T00:00:00Z"}`
-	if err := os.WriteFile(filepath.Join(root, "snapshot.json"), []byte(legacy), 0o600); err != nil {
+	legacy, err := os.ReadFile(filepath.Join("testdata", "snapshot_v050_no_duration.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "snapshot.json"), legacy, 0o600); err != nil {
 		t.Fatal(err)
 	}
 	store := Store{Root: root}

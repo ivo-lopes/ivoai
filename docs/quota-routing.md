@@ -12,9 +12,9 @@ ivoai starts the trusted managed `codex app-server --stdio`, performs the docume
 JSON-RPC initialization, and calls `account/rateLimits/read`. The official response
 can expose:
 
-- a short primary/session window;
-- a seven-day secondary/weekly window;
-- an `individualLimit` monthly/spend-control window;
+- rolling windows with their official duration (for example 300, 60, or 1440 minutes);
+- a seven-day/weekly window when duration is 10080 minutes;
+- an `individualLimit` provider-wide window whose cadence is not inferred;
 - additional named/model-scoped windows;
 - hard rate-limit or spend-control signals and reset timestamps.
 
@@ -52,13 +52,16 @@ All percentages are clamped into `0..100`. For used-percentage sources:
 remaining = clamp(100 - used)
 ```
 
-Every window records kind, optional model, used/remaining, optional reset time,
-source, observation time, authority, availability, and telemetry state. Context,
-session, weekly, monthly, model-specific, and credit windows are distinct. `pending`
+Every window records kind, official duration when exposed, optional model,
+used/remaining, optional reset time, source, observation time, authority,
+availability, and telemetry state. Context, rolling, session, weekly, individual,
+monthly, model-specific, and credit windows are distinct. `pending`
 means Claude has not yet returned rate limits, `not_exposed` means a subsequent
 structured payload omitted that field, `stale` preserves an old value with an
 explicit warning, and `exhausted` is an authoritative zero. Only the last state
-blocks routing.
+blocks routing. Primary and secondary are treated as transport slots: their order
+does not define semantics. A 300-minute Codex window is rendered as 5h; 10080 as
+weekly; 60 as 1h; 1440 as 1d. Unknown durations remain representable.
 
 ## Eligibility and routing
 
@@ -101,6 +104,14 @@ Authentication failures mark a provider unavailable. Confirmed hard limits trigg
 fallback. Network/probe failures retain bounded stale metadata, clearly label it
 stale, return the probe error, and do not invent exhaustion.
 
+An explicit `ivoai connect chatgpt|claude` is an authentication-context boundary:
+ivoai invalidates only that provider's quota before the official login/status flow
+and force-probes after success. `disconnect` invalidates the same provider without
+logging out the official client. This deliberately avoids token fingerprints or an
+invented account ID. If the post-login probe fails, old account quota is not
+restored. Legacy v0.5.0 snapshots without duration remain readable; no legacy
+session value is guessed to be a 5-hour Codex window.
+
 ## Cache and security
 
 The default refresh interval is 45 seconds and valid configuration is bounded to
@@ -114,3 +125,9 @@ and unknown providers.
 `ivoai status` reads this cache only. `ivoai doctor` actively checks sources.
 `ivoai monitor --watch` reads session snapshots and can run independently from the
 official TUI.
+
+Session observability is an additive bounded event list with explicit fields for
+component, operation, state, correlation IDs, duration and canonical routing/fallback
+reasons. The schema has no fields for prompts, responses, artifacts, headers,
+environments or credentials. Reasons are allowlisted and secret-shaped input is
+reduced to a redacted sentinel.

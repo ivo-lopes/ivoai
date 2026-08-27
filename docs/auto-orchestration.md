@@ -143,13 +143,15 @@ ivoai monitor --watch
 ivoai monitor --session <session-id> --json
 ```
 
-The monitor renders Codex session/weekly/monthly only when those official buckets
-apply, and renders Claude Code 5-hour and weekly rows. It adds context and
+The monitor renders Codex 5-hour and weekly windows by official duration, an
+individual provider-wide row without inventing its cadence, and any other rolling
+duration such as 1h or 1d. It renders Claude Code 5-hour and weekly rows. It adds context and
 model-specific buckets and reset times only when authoritative data exists.
 It reports source and observation time, current/initial primary, failovers,
 checkpoint availability, bootstrap health/reference count, task DAG, score, tier,
 model/effort provenance, execution mode, dependencies, duration, Headroom use,
-workers, Ruflo, context, ai-memory, and server state. `status` reads the bounded quota cache while running short, parallel Server
+workers, Ruflo, context, ai-memory, server state, and the latest bounded secret-free
+control-plane events. `status` reads the bounded quota cache while running short, parallel Server
 and Ruflo health checks; it does not perform a heavy provider quota probe. `doctor`
 performs deeper active capability checks. Headroom version/help probes establish
 installation and compatibility only, not an interactive launch validation.

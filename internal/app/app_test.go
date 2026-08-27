@@ -19,6 +19,7 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/connections"
 	"github.com/ivo-lopes/ivoai/internal/orchestration"
 	"github.com/ivo-lopes/ivoai/internal/platform"
+	"github.com/ivo-lopes/ivoai/internal/quota"
 	"github.com/ivo-lopes/ivoai/internal/secrets"
 	"github.com/ivo-lopes/ivoai/internal/terminalui"
 )
@@ -28,6 +29,53 @@ type missingRunner struct{}
 func (missingRunner) LookPath(string) (string, error) { return "", errors.New("not found") }
 func (missingRunner) Run(context.Context, string, []string, platform.RunOptions) (platform.Result, error) {
 	return platform.Result{}, errors.New("not found")
+}
+
+type authBoundaryRunner struct{ paths []string }
+
+func (r *authBoundaryRunner) LookPath(string) (string, error) {
+	return "", errors.New("managed path must be used")
+}
+func (r *authBoundaryRunner) Run(_ context.Context, path string, _ []string, _ platform.RunOptions) (platform.Result, error) {
+	r.paths = append(r.paths, path)
+	return platform.Result{Stdout: `{"authenticated":true}`}, nil
+}
+
+func TestConnectAndDisconnectAreQuotaAuthenticationBoundaries(t *testing.T) {
+	root := t.TempDir()
+	a := autoTestApp(t, root, "#!/bin/sh\nexit 0\n", "#!/bin/sh\nexit 0\n")
+	state, err := a.Store.LoadState()
+	if err != nil {
+		t.Fatal(err)
+	}
+	managedCodex := state.Components["codex"].Path
+	runner := &authBoundaryRunner{}
+	a.Runner = runner
+	now := time.Now().UTC()
+	quotaStore := quota.Store{Root: a.Store.Paths.QuotaDir}
+	if err := quotaStore.Put(quota.ProviderQuota{Provider: quota.ProviderCodex, Authenticated: true, HardLimitReached: true, Reason: "old account exhausted", ObservedAt: now}); err != nil {
+		t.Fatal(err)
+	}
+	a.QuotaManager = &quota.Manager{Store: quotaStore, Probes: map[quota.Provider]quota.Probe{quota.ProviderCodex: probeFunc(func(context.Context) (quota.ProviderQuota, error) {
+		return quota.ProviderQuota{Provider: quota.ProviderCodex, Authenticated: true, Windows: []quota.Window{quota.FromUsedDuration(quota.KindRolling, 300, 20, nil, "fixture", now)}, ObservedAt: now}, nil
+	})}}
+	if err := a.ConnectAgent(context.Background(), "chatgpt"); err != nil {
+		t.Fatal(err)
+	}
+	if len(runner.paths) == 0 || runner.paths[0] != managedCodex {
+		t.Fatalf("managed Codex path not used: got=%v want=%q", runner.paths, managedCodex)
+	}
+	snapshot, err := quotaStore.Load()
+	if err != nil || !snapshot.Providers[quota.ProviderCodex].Eligible || snapshot.Providers[quota.ProviderCodex].HardLimitReached {
+		t.Fatalf("connect retained old account quota: %+v err=%v", snapshot, err)
+	}
+	if err := a.DisconnectAgent(context.Background(), "chatgpt"); err != nil {
+		t.Fatal(err)
+	}
+	snapshot, err = quotaStore.Load()
+	if err != nil || len(snapshot.Providers) != 0 {
+		t.Fatalf("disconnect retained quota: %+v err=%v", snapshot, err)
+	}
 }
 
 func TestSetupIsIdempotentAndReadyWithoutConnections(t *testing.T) {

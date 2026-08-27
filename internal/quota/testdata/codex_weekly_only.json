@@ -1,0 +1,6 @@
+{
+  "rateLimits": {
+    "primary": {"usedPercent": 25, "windowDurationMins": 10080, "resetsAt": 300}
+  },
+  "rateLimitsByLimitId": {}
+}

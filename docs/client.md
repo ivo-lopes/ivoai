@@ -166,7 +166,7 @@ the session-local orchestrator bridge remain isolated per session.
 
 ## Automatic conversation mode
 
-`ivoai auto` shows cached Codex weekly and Claude Code 5-hour/weekly availability,
+`ivoai auto` shows cached Codex 5-hour/weekly and Claude Code 5-hour/weekly availability,
 asks which official client will own the conversation, and defaults to Codex. `--planner codex` and
 `--planner claude` make this selection non-interactive. The selected client opens in
 its normal official TUI; ivoai does not emulate a chat UI and does not capture its
@@ -183,6 +183,11 @@ provenance, failover count, worker state, quota source/freshness/reset, and serv
 health. Before Claude's first response its quota rows say `awaiting first response`;
 unsupported fields say `N/A / not exposed`, and old observations are marked
 `stale`. Claude monthly is not fabricated.
+
+Running `ivoai connect chatgpt` or `ivoai connect claude` invalidates the selected
+provider's reconstructible quota cache before the official authentication flow and
+reprobes afterward. This prevents a hard limit from a previous account from
+contaminating a new authentication context without reading provider credentials.
 
 See [Automatic orchestration](auto-orchestration.md) and
 [Automatic scheduler](auto-scheduler.md) and [Quota routing](quota-routing.md).

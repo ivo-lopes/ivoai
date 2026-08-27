@@ -34,6 +34,13 @@ publish telemetry. `N/A / not exposed` means a structured response was observed 
 omitted that field; `stale` means the displayed percentage is an older observation.
 Claude monthly is not assumed.
 
+Codex quota rows are classified by the duration returned by the official app-server.
+`Codex 5h: N/A / not exposed` is not an error and does not block routing. If quota
+from a previous account remains visible after a login performed directly in the
+provider CLI, run `ivoai connect chatgpt` or `ivoai connect claude` once: the command
+is the supported authentication boundary that invalidates and reprobes only that
+provider without copying or hashing credentials.
+
 ## Headroom proxy appears but the Codex/Claude Code TUI does not open
 
 IvoAI 0.4.0 could place `headroom wrap` in a new process group while leaving the

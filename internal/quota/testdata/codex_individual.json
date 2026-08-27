@@ -1,0 +1,6 @@
+{
+  "rateLimits": {
+    "individualLimit": {"remainingPercent": 42, "resetsAt": 300}
+  },
+  "rateLimitsByLimitId": {}
+}

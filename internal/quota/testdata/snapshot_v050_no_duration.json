@@ -1,0 +1,31 @@
+{
+  "providers": {
+    "codex": {
+      "provider": "codex",
+      "windows": [
+        {
+          "kind": "session",
+          "used_percent": 100,
+          "source": "legacy fixture",
+          "observed_at": "2026-01-01T00:00:00Z",
+          "authoritative": true,
+          "available": true
+        }
+      ],
+      "hard_limit_reached": true,
+      "authenticated": true,
+      "eligible": false,
+      "source": "legacy fixture",
+      "observed_at": "2026-01-01T00:00:00Z"
+    },
+    "claude": {
+      "provider": "claude",
+      "windows": [],
+      "authenticated": true,
+      "eligible": true,
+      "source": "legacy fixture",
+      "observed_at": "2026-01-01T00:00:00Z"
+    }
+  },
+  "updated_at": "2026-01-01T00:00:00Z"
+}
