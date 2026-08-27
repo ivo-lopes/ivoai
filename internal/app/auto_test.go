@@ -375,3 +375,14 @@ func TestCodexAutomaticArgsApproveOnlySharedKnowledgeReads(t *testing.T) {
 		t.Fatalf("automatic Codex arguments auto-approved a memory write: %q", joined)
 	}
 }
+
+func TestQuotaSummaryShowsCodexFiveHourAndWeeklySeparately(t *testing.T) {
+	now := time.Now().UTC()
+	values := map[quota.Provider]quota.ProviderQuota{quota.ProviderCodex: {Provider: quota.ProviderCodex, Windows: []quota.Window{quota.FromUsedDuration(quota.KindRolling, 300, 20, nil, "fixture", now), quota.FromUsedDuration(quota.KindWeekly, 10080, 30, nil, "fixture", now)}}}
+	var output bytes.Buffer
+	printQuotaSummary(&output, values)
+	text := output.String()
+	if !strings.Contains(text, "Codex       5h      80% remaining") || !strings.Contains(text, "weekly  70% remaining") {
+		t.Fatalf("Codex windows not shown separately: %s", text)
+	}
+}

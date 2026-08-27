@@ -322,14 +322,14 @@ func TestAutomaticMonitorShowsProviderWindowsWithSourceAndFreshness(t *testing.T
 		Mode: session.ModeAuto, Auto: true, InitialPlanner: "codex", CurrentPrimary: "claude", PrimaryExecutor: "claude",
 		PrimaryModel: session.UnknownModel(), WorkingDirectory: "/tmp/project", Workers: []session.Worker{}, MaxWorkers: 2,
 		State: session.StateRunning, CurrentPhase: "conversation", Quota: map[quota.Provider]quota.ProviderQuota{
-			quota.ProviderCodex:  {Provider: quota.ProviderCodex, Eligible: true, Windows: []quota.Window{{Kind: quota.KindWeekly, RemainingPercent: 71, UsedPercent: 29, ResetsAt: &reset, Source: "codex app-server", ObservedAt: now, Available: true, Authoritative: true}}},
+			quota.ProviderCodex:  {Provider: quota.ProviderCodex, Eligible: true, Windows: []quota.Window{{Kind: quota.KindRolling, DurationMinutes: 300, RemainingPercent: 80, UsedPercent: 20, ResetsAt: &reset, Source: "codex app-server", ObservedAt: now, Available: true, Authoritative: true}, {Kind: quota.KindWeekly, DurationMinutes: 10080, RemainingPercent: 71, UsedPercent: 29, ResetsAt: &reset, Source: "codex app-server", ObservedAt: now, Available: true, Authoritative: true}}},
 			quota.ProviderClaude: {Provider: quota.ProviderClaude, Eligible: true},
 		},
 	}
 	var output bytes.Buffer
 	renderMonitorSized(&output, value, 120)
 	text := output.String()
-	for _, expected := range []string{"Automatic Session", "Conversation", "Claude Code", "Failovers", "Codex", "Claude Code", "5h", "Weekly", "Monthly", "71% remaining", "codex app-server", "1970-01-01T00:01:40Z", "fresh", "awaiting first response"} {
+	for _, expected := range []string{"Automatic Session", "Conversation", "Claude Code", "Failovers", "Codex", "Claude Code", "5h", "Weekly", "Individual", "80% remaining", "71% remaining", "codex app-server", "1970-01-01T00:01:40Z", "fresh", "awaiting first response"} {
 		if !strings.Contains(text, expected) {
 			t.Fatalf("automatic monitor missing %q:\n%s", expected, text)
 		}

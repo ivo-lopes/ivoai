@@ -292,7 +292,7 @@ func runDoctor(ctx context.Context, a *app.App, args []string) error {
 			fmt.Fprintf(a.Out, "  Claude Code probe=%s auth=%s eligible=%s 5h-source=%s weekly-source=%s\n", semanticBool(probe.Ready, color), semanticOptionalBool(probe.Authenticated, color), semanticOptionalBool(probe.Eligible, color), probe.FiveHourSource, probe.WeeklySource)
 			continue
 		}
-		fmt.Fprintf(a.Out, "  Codex probe=%s auth=%s eligible=%s weekly-source=%s monthly-source=%s\n", semanticBool(probe.Ready, color), semanticOptionalBool(probe.Authenticated, color), semanticOptionalBool(probe.Eligible, color), probe.WeeklySource, probe.MonthlySource)
+		fmt.Fprintf(a.Out, "  Codex probe=%s auth=%s eligible=%s 5h-source=%s weekly-source=%s individual-source=%s\n", semanticBool(probe.Ready, color), semanticOptionalBool(probe.Authenticated, color), semanticOptionalBool(probe.Eligible, color), probe.FiveHourSource, probe.WeeklySource, probe.IndividualSource)
 	}
 	fmt.Fprintf(a.Out, "  failover Codex->Claude Code=%s Claude Code->Codex=%s\n", semanticOptionalBool(report.Automatic.CodexToClaude, color), semanticOptionalBool(report.Automatic.ClaudeToCodex, color))
 	overall := terminalui.Success(report.Overall, color)

@@ -53,14 +53,24 @@ type Orchestration struct {
 	ClaudeWorker     bool   `json:"claude_worker_capable"`
 }
 type QuotaProbe struct {
-	Ready          bool   `json:"ready"`
-	Authenticated  bool   `json:"authenticated"`
-	Eligible       bool   `json:"eligible"`
-	Source         string `json:"source"`
-	FiveHourSource string `json:"five_hour_source,omitempty"`
-	WeeklySource   string `json:"weekly_source"`
-	MonthlySource  string `json:"monthly_source"`
-	Reason         string `json:"reason,omitempty"`
+	Ready            bool               `json:"ready"`
+	Authenticated    bool               `json:"authenticated"`
+	Eligible         bool               `json:"eligible"`
+	Source           string             `json:"source"`
+	FiveHourSource   string             `json:"five_hour_source,omitempty"`
+	WeeklySource     string             `json:"weekly_source"`
+	MonthlySource    string             `json:"monthly_source"`
+	IndividualSource string             `json:"individual_source,omitempty"`
+	Windows          []QuotaWindowProbe `json:"windows,omitempty"`
+	Reason           string             `json:"reason,omitempty"`
+}
+type QuotaWindowProbe struct {
+	Kind             quota.Kind           `json:"kind"`
+	DurationMinutes  int64                `json:"duration_minutes,omitempty"`
+	TelemetryState   quota.TelemetryState `json:"telemetry_state"`
+	RemainingPercent *float64             `json:"remaining_percent,omitempty"`
+	ResetsAt         *time.Time           `json:"resets_at,omitempty"`
+	Source           string               `json:"source"`
 }
 type Automatic struct {
 	Enabled                  bool                  `json:"enabled"`
@@ -356,9 +366,13 @@ func (d Doctor) automatic(ctx context.Context, cfg config.Config, state config.S
 
 func quotaProbeDiagnostic(value quota.ProviderQuota, probeErr error) QuotaProbe {
 	weekly, weeklyOK := value.Window(quota.KindWeekly)
-	fiveHour, fiveHourOK := value.Window(quota.KindSession)
+	fiveHour, fiveHourOK := value.WindowByDuration(300)
+	if value.Provider == quota.ProviderClaude && !fiveHourOK {
+		fiveHour, fiveHourOK = value.Window(quota.KindSession)
+	}
 	monthly, monthlyOK := value.Window(quota.KindMonthly)
-	result := QuotaProbe{Ready: probeErr == nil && value.Authenticated, Authenticated: value.Authenticated, Eligible: value.Eligible, Source: value.Source, FiveHourSource: "N/A / not exposed", WeeklySource: "N/A / not exposed", MonthlySource: "N/A / not exposed", Reason: value.Reason}
+	individual, individualOK := value.Window(quota.KindIndividual)
+	result := QuotaProbe{Ready: probeErr == nil && value.Authenticated, Authenticated: value.Authenticated, Eligible: value.Eligible, Source: value.Source, FiveHourSource: "N/A / not exposed", WeeklySource: "N/A / not exposed", MonthlySource: "N/A / not exposed", IndividualSource: "N/A / not exposed", Reason: value.Reason}
 	if value.Provider == quota.ProviderClaude && !fiveHourOK {
 		result.FiveHourSource = "awaiting first response"
 	}
@@ -375,6 +389,17 @@ func quotaProbeDiagnostic(value quota.ProviderQuota, probeErr error) QuotaProbe 
 	if monthlyOK && monthly.Available && monthly.Authoritative {
 		result.MonthlySource = monthly.Source
 	}
+	if individualOK && individual.Available && individual.Authoritative {
+		result.IndividualSource = individual.Source
+	}
+	for _, window := range value.Windows {
+		entry := QuotaWindowProbe{Kind: window.Kind, DurationMinutes: window.DurationMinutes, TelemetryState: window.TelemetryState(), ResetsAt: window.ResetsAt, Source: window.Source}
+		if window.Available && window.Authoritative {
+			remaining := window.RemainingPercent
+			entry.RemainingPercent = &remaining
+		}
+		result.Windows = append(result.Windows, entry)
+	}
 	return result
 }
 
@@ -384,6 +409,11 @@ func quotaDiagnosticSource(window quota.Window) string {
 		return "awaiting first response"
 	case quota.TelemetryStale:
 		return window.Source + " / stale"
+	case quota.TelemetryAvailable, quota.TelemetryExhausted:
+		if window.Available && window.Authoritative {
+			return window.Source
+		}
+		return "N/A / not exposed"
 	default:
 		return "N/A / not exposed"
 	}

@@ -2,7 +2,10 @@
 // or storing provider credentials.
 package quota
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
 
 type Provider string
 
@@ -135,6 +138,16 @@ func (q ProviderQuota) WindowByDuration(durationMinutes int64) (Window, bool) {
 		}
 	}
 	return Window{Kind: KindRolling, DurationMinutes: durationMinutes}, false
+}
+
+func DurationLabel(minutes int64) string {
+	if minutes > 0 && minutes%(24*60) == 0 {
+		return fmt.Sprintf("%dd", minutes/(24*60))
+	}
+	if minutes > 0 && minutes%60 == 0 {
+		return fmt.Sprintf("%dh", minutes/60)
+	}
+	return fmt.Sprintf("%dm", minutes)
 }
 
 func Other(provider Provider) Provider {

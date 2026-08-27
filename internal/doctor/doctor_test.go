@@ -7,16 +7,31 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/ivo-lopes/ivoai/internal/config"
 	"github.com/ivo-lopes/ivoai/internal/core"
 	"github.com/ivo-lopes/ivoai/internal/headroom"
 	"github.com/ivo-lopes/ivoai/internal/orchestration"
 	"github.com/ivo-lopes/ivoai/internal/platform"
+	"github.com/ivo-lopes/ivoai/internal/quota"
 )
 
 type statusRunner struct {
 	output string
+}
+
+func TestQuotaDiagnosticExposesCodexFiveHourDurationWithoutInventingMonthly(t *testing.T) {
+	now := time.Now().UTC()
+	reset := now.Add(time.Hour)
+	value := quota.ProviderQuota{Provider: quota.ProviderCodex, Authenticated: true, Eligible: false, HardLimitReached: true, Source: "fixture", Reason: "Codex 5-hour quota exhausted", Windows: []quota.Window{quota.FromUsedDuration(quota.KindRolling, 300, 100, &reset, "fixture", now), quota.FromUsedDuration(quota.KindWeekly, 10080, 20, nil, "fixture", now)}}
+	diagnostic := quotaProbeDiagnostic(value, nil)
+	if diagnostic.FiveHourSource != "fixture" || diagnostic.WeeklySource != "fixture" || diagnostic.MonthlySource != "N/A / not exposed" || len(diagnostic.Windows) != 2 {
+		t.Fatalf("diagnostic=%+v", diagnostic)
+	}
+	if diagnostic.Windows[0].DurationMinutes != 300 || diagnostic.Windows[0].RemainingPercent == nil || *diagnostic.Windows[0].RemainingPercent != 0 || diagnostic.Windows[0].ResetsAt == nil {
+		t.Fatalf("five-hour diagnostic=%+v", diagnostic.Windows[0])
+	}
 }
 
 func TestComponentMatrixExplainsCapabilitiesHealthAndFallback(t *testing.T) {

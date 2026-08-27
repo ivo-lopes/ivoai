@@ -252,6 +252,10 @@ func (a *App) Status(ctx context.Context) error {
 		struct {
 			name   string
 			status statusValue
+		}{"Codex 5h", quotaStatusDuration(quota.ProviderCodex, quotaSnapshot.Providers[quota.ProviderCodex], 300)},
+		struct {
+			name   string
+			status statusValue
 		}{"Codex weekly", quotaStatus(quota.ProviderCodex, quotaSnapshot.Providers[quota.ProviderCodex], quota.KindWeekly)},
 		struct {
 			name   string
@@ -467,6 +471,18 @@ func optionalStatus(enabled bool) statusValue {
 func quotaStatus(provider quota.Provider, value quota.ProviderQuota, kind quota.Kind) statusValue {
 	text := quotaValueFor(provider, value, kind)
 	window, ok := value.Window(kind)
+	if !ok || window.TelemetryState() == quota.TelemetryPending || window.TelemetryState() == quota.TelemetryNotExposed {
+		return statusValue{text, terminalui.StatusNeutral}
+	}
+	if window.TelemetryState() == quota.TelemetryStale || window.TelemetryState() == quota.TelemetryExhausted {
+		return statusValue{text, terminalui.StatusWarning}
+	}
+	return statusValue{text, terminalui.StatusSuccess}
+}
+
+func quotaStatusDuration(provider quota.Provider, value quota.ProviderQuota, durationMinutes int64) statusValue {
+	text := quotaValueForDuration(provider, value, durationMinutes)
+	window, ok := value.WindowByDuration(durationMinutes)
 	if !ok || window.TelemetryState() == quota.TelemetryPending || window.TelemetryState() == quota.TelemetryNotExposed {
 		return statusValue{text, terminalui.StatusNeutral}
 	}

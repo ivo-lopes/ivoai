@@ -640,9 +640,23 @@ func (a *App) printNoProvider(values map[quota.Provider]quota.ProviderQuota) {
 func printQuotaSummary(out io.Writer, values map[quota.Provider]quota.ProviderQuota) {
 	codex := values[quota.ProviderCodex]
 	claude := values[quota.ProviderClaude]
-	fmt.Fprintf(out, "  Codex       weekly  %s\n", quotaValueFor(quota.ProviderCodex, codex, quota.KindWeekly))
+	fmt.Fprintf(out, "  Codex       5h      %s\n", quotaValueForDuration(quota.ProviderCodex, codex, 300))
+	fmt.Fprintf(out, "              weekly  %s\n", quotaValueForDuration(quota.ProviderCodex, codex, 10080))
 	fmt.Fprintf(out, "  Claude Code 5h      %s\n", quotaValueFor(quota.ProviderClaude, claude, quota.KindSession))
 	fmt.Fprintf(out, "              weekly  %s\n", quotaValueFor(quota.ProviderClaude, claude, quota.KindWeekly))
+}
+
+func quotaValueForDuration(provider quota.Provider, value quota.ProviderQuota, durationMinutes int64) string {
+	window, ok := value.WindowByDuration(durationMinutes)
+	if !ok {
+		// Legacy snapshots did not preserve durations. Weekly remains
+		// readable by kind; no legacy value is ever inferred to be 5h.
+		if durationMinutes == 10080 {
+			return quotaValueFor(provider, value, quota.KindWeekly)
+		}
+		return "N/A / not exposed"
+	}
+	return quotaWindowValue(window)
 }
 
 func quotaValueFor(provider quota.Provider, value quota.ProviderQuota, kind quota.Kind) string {
@@ -653,6 +667,10 @@ func quotaValueFor(provider quota.Provider, value quota.ProviderQuota, kind quot
 		}
 		return "N/A / not exposed"
 	}
+	return quotaWindowValue(window)
+}
+
+func quotaWindowValue(window quota.Window) string {
 	switch window.TelemetryState() {
 	case quota.TelemetryPending:
 		return "awaiting first response"

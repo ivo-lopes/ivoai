@@ -150,14 +150,18 @@ func renderMonitorSized(out io.Writer, value session.Session, width int) {
 		for _, provider := range []quota.Provider{quota.ProviderCodex, quota.ProviderClaude} {
 			current := value.Quota[provider]
 			fmt.Fprintln(out, "  "+providerDisplay(string(provider)))
-			sessionLabel := "    Session"
-			if provider == quota.ProviderClaude {
-				sessionLabel = "    5h"
-			}
-			quotaMonitorRow(out, sessionLabel, provider, current, quota.KindSession, width)
-			quotaMonitorRow(out, "    Weekly", provider, current, quota.KindWeekly, width)
 			if provider == quota.ProviderCodex {
-				quotaMonitorRow(out, "    Monthly", provider, current, quota.KindMonthly, width)
+				quotaMonitorDurationRow(out, "    5h", current, 300, width)
+				quotaMonitorDurationRow(out, "    Weekly", current, 10080, width)
+				for _, window := range current.Windows {
+					if window.Model == "" && window.DurationMinutes > 0 && window.DurationMinutes != 300 && window.DurationMinutes != 10080 {
+						quotaMonitorWindowRow(out, "    "+quota.DurationLabel(window.DurationMinutes), window, width)
+					}
+				}
+				quotaMonitorRow(out, "    Individual", provider, current, quota.KindIndividual, width)
+			} else {
+				quotaMonitorRow(out, "    5h", provider, current, quota.KindSession, width)
+				quotaMonitorRow(out, "    Weekly", provider, current, quota.KindWeekly, width)
 			}
 			monitorRow(out, "    Eligible", yesNo(current.Eligible), width)
 		}
@@ -257,6 +261,22 @@ func quotaMonitorRow(out io.Writer, label string, provider quota.Provider, value
 		monitorRow(out, label, "N/A / not exposed", width)
 		return
 	}
+	quotaMonitorWindowRow(out, label, window, width)
+}
+
+func quotaMonitorDurationRow(out io.Writer, label string, value quota.ProviderQuota, durationMinutes int64, width int) {
+	window, ok := value.WindowByDuration(durationMinutes)
+	if !ok && durationMinutes == 10080 {
+		window, ok = value.Window(quota.KindWeekly)
+	}
+	if !ok {
+		monitorRow(out, label, "N/A / not exposed", width)
+		return
+	}
+	quotaMonitorWindowRow(out, label, window, width)
+}
+
+func quotaMonitorWindowRow(out io.Writer, label string, window quota.Window, width int) {
 	state := window.TelemetryState()
 	if state == quota.TelemetryPending {
 		monitorRow(out, label, "awaiting first response", width)

@@ -144,6 +144,34 @@ func TestCodexFiveHourExhaustionHasCanonicalReasonAndMissingDoesNotBlock(t *test
 	}
 }
 
+func TestFiveHourHardLimitFallbackAndOfficialReprobeReenable(t *testing.T) {
+	now := time.Now().UTC()
+	fiveReset := now.Add(time.Hour)
+	codex := &fakeProbe{value: ProviderQuota{Provider: ProviderCodex, Authenticated: true, HardLimitReached: true, Reason: "Codex 5-hour quota exhausted", Windows: []Window{FromUsedDuration(KindRolling, 300, 100, &fiveReset, "fixture", now)}, ObservedAt: now}}
+	claude := &fakeProbe{value: ProviderQuota{Provider: ProviderClaude, Authenticated: true, Windows: []Window{FromUsedDuration(KindSession, 300, 20, nil, "fixture", now)}, ObservedAt: now}}
+	manager := Manager{Store: Store{Root: filepath.Join(t.TempDir(), "quota")}, Probes: map[Provider]Probe{ProviderCodex: codex, ProviderClaude: claude}, Now: func() time.Time { return now }}
+	decision, err := manager.Resolve(context.Background(), ProviderCodex, "", true)
+	if err != nil || decision.Resolved != ProviderClaude || !decision.Fallback || decision.Reason != "Codex 5-hour quota exhausted" {
+		t.Fatalf("5h hard limit did not route to Claude: %+v err=%v", decision, err)
+	}
+	now = fiveReset.Add(time.Second)
+	codex.value = ProviderQuota{Provider: ProviderCodex, Authenticated: true, Windows: []Window{FromUsedDuration(KindRolling, 300, 20, nil, "fixture", now)}, ObservedAt: now}
+	decision, err = manager.Resolve(context.Background(), ProviderCodex, "", true)
+	if err != nil || decision.Resolved != ProviderCodex || decision.Fallback {
+		t.Fatalf("valid post-reset probe did not re-enable Codex: %+v err=%v", decision, err)
+	}
+}
+
+func TestMissingFiveHourDoesNotCauseFalseFallback(t *testing.T) {
+	now := time.Now().UTC()
+	codex := &fakeProbe{value: ProviderQuota{Provider: ProviderCodex, Authenticated: true, Windows: []Window{UnavailableDuration(KindRolling, 300, TelemetryNotExposed, "fixture", now), FromUsedDuration(KindWeekly, 10080, 20, nil, "fixture", now)}, ObservedAt: now}}
+	manager := Manager{Store: Store{Root: filepath.Join(t.TempDir(), "quota")}, Probes: map[Provider]Probe{ProviderCodex: codex}, Now: func() time.Time { return now }}
+	decision, err := manager.Resolve(context.Background(), ProviderCodex, "", true)
+	if err != nil || decision.Resolved != ProviderCodex || decision.Fallback {
+		t.Fatalf("missing 5h caused false fallback: %+v err=%v", decision, err)
+	}
+}
+
 func TestClaudeAdapterAcceptsOnlyFirstPartySubscriptionAuth(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "claude")
 	adapter := ClaudeAdapter{Binary: path, Runner: quotaRunner{result: platform.Result{Stdout: `{"loggedIn":true,"apiProvider":"firstParty","authMethod":"oauth"}`}}, Store: Store{Root: filepath.Join(t.TempDir(), "quota")}}
