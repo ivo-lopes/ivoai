@@ -18,11 +18,13 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"reflect"
 	"sort"
 	"strings"
 	"time"
 	"unicode/utf8"
 
+	"github.com/ivo-lopes/ivoai/internal/observability"
 	"github.com/ivo-lopes/ivoai/internal/platform"
 	"golang.org/x/sys/unix"
 )
@@ -64,7 +66,7 @@ type ResolvedSource struct {
 }
 
 func (r ResolvedSource) Validate() error {
-	if !safeID(r.ID) || !validKind(r.Kind) || !validHTTPS(r.Source) || !immutableRevision(r.Revision) || len(r.LogicalVersion) > 128 || len(r.DefaultBranch) > 256 {
+	if !safeID(r.ID) || !validKind(r.Kind) || !validHTTPS(r.Source) || !immutableRevision(r.Revision) || !safeBoundedText(r.LogicalVersion, 128) || !safeBoundedText(r.DefaultBranch, 256) {
 		return errors.New("source did not resolve to safe immutable metadata")
 	}
 	if r.Integrity.Algorithm != "sha256" || len(r.Integrity.Digest) != 64 {
@@ -81,13 +83,21 @@ func (r ResolvedSource) Validate() error {
 	if len(r.Executables) > 64 {
 		return errors.New("resolved source declares too many executables")
 	}
+	if !sort.StringsAreSorted(r.Executables) {
+		return errors.New("resolved source executable paths must be deterministically ordered")
+	}
+	previous := ""
 	for _, value := range r.Executables {
+		if value == previous {
+			return errors.New("resolved source declares a duplicate executable path")
+		}
 		if _, err := safeArchivePath(value); err != nil {
 			return errors.New("resolved source declares an unsafe executable path")
 		}
 		if r.Kind == KindSkill {
 			return errors.New("skills cannot declare executable files during staging")
 		}
+		previous = value
 	}
 	return nil
 }
@@ -127,6 +137,8 @@ type Manager struct {
 	Now        func() time.Time
 	Structural Validator
 	Policy     Validator
+	Health     Validator
+	Observe    func(observability.Event)
 }
 
 type Pipeline struct {
@@ -136,9 +148,10 @@ type Pipeline struct {
 }
 
 type Staged struct {
-	TransactionID string         `json:"transaction_id"`
-	Source        ResolvedSource `json:"source"`
-	ObjectPath    string         `json:"object_path"`
+	TransactionID  string         `json:"transaction_id"`
+	Source         ResolvedSource `json:"source"`
+	ObjectPath     string         `json:"object_path"`
+	ManifestDigest string         `json:"manifest_digest"`
 }
 
 type Pointer struct {
@@ -150,16 +163,37 @@ type Pointer struct {
 }
 
 type transaction struct {
-	Schema    int            `json:"schema"`
-	ID        string         `json:"id"`
-	Source    ResolvedSource `json:"source"`
-	State     string         `json:"state"`
-	Staging   string         `json:"staging"`
-	Object    string         `json:"object,omitempty"`
-	UpdatedAt time.Time      `json:"updated_at"`
+	Schema         int            `json:"schema"`
+	ID             string         `json:"id"`
+	Source         ResolvedSource `json:"source"`
+	State          string         `json:"state"`
+	Staging        string         `json:"staging"`
+	Object         string         `json:"object,omitempty"`
+	ManifestDigest string         `json:"manifest_digest,omitempty"`
+	Previous       string         `json:"previous,omitempty"`
+	UpdatedAt      time.Time      `json:"updated_at"`
 }
 
-func (p Pipeline) Prepare(ctx context.Context, reference Reference) (Staged, error) {
+type manifestEntry struct {
+	Path   string `json:"path"`
+	Kind   string `json:"kind"`
+	Mode   uint32 `json:"mode"`
+	Size   int64  `json:"size,omitempty"`
+	SHA256 string `json:"sha256,omitempty"`
+}
+
+type objectManifest struct {
+	Schema  int             `json:"schema"`
+	Entries []manifestEntry `json:"entries"`
+}
+
+type storedProvenance struct {
+	Schema         int            `json:"schema"`
+	Source         ResolvedSource `json:"source"`
+	ManifestDigest string         `json:"manifest_digest"`
+}
+
+func (p Pipeline) Prepare(ctx context.Context, reference Reference) (staged Staged, resultErr error) {
 	if p.Discoverer == nil || p.Fetcher == nil {
 		return Staged{}, errors.New("supply-chain discovery and fetch adapters are required")
 	}
@@ -170,6 +204,10 @@ func (p Pipeline) Prepare(ctx context.Context, reference Reference) (Staged, err
 	if err := resolved.Validate(); err != nil {
 		return Staged{}, err
 	}
+	if resolved.ID != reference.ID || resolved.Kind != reference.Kind || reference.Source != "" && resolved.Source != reference.Source || reference.Version != "" && reference.Version != resolved.Revision && reference.Version != resolved.LogicalVersion {
+		return Staged{}, errors.New("resolved source does not match requested artifact")
+	}
+	p.Manager.emit(observability.Event{Category: observability.CategorySupplyChain, Operation: observability.OperationSupplyResolve, State: observability.StateCompleted, ArtifactID: resolved.ID, Revision: resolved.Revision, RoutingReason: observability.ReasonImmutableRevision, TrustLevel: resolved.Integrity.TrustLevel})
 	archive, err := p.Fetcher.Fetch(ctx, resolved)
 	if err != nil {
 		return Staged{}, fmt.Errorf("fetch resolved artifact: %w", err)
@@ -178,9 +216,19 @@ func (p Pipeline) Prepare(ctx context.Context, reference Reference) (Staged, err
 	return p.Manager.StageArchive(ctx, resolved, archive)
 }
 
-func (m Manager) StageArchive(ctx context.Context, source ResolvedSource, archive io.Reader) (Staged, error) {
+func (m Manager) StageArchive(ctx context.Context, source ResolvedSource, archive io.Reader) (staged Staged, resultErr error) {
+	defer func() {
+		state, reason := observability.StateStaged, observability.ReasonIntegrityVerified
+		if resultErr != nil {
+			state, reason = observability.StateFailed, observability.ReasonValidationFailed
+		}
+		m.emit(observability.Event{Category: observability.CategorySupplyChain, Operation: observability.OperationSupplyStage, State: state, ArtifactID: source.ID, Revision: source.Revision, RoutingReason: reason, TrustLevel: source.Integrity.TrustLevel})
+	}()
 	if err := source.Validate(); err != nil {
 		return Staged{}, err
+	}
+	if m.Structural == nil || m.Policy == nil || m.Health == nil {
+		return Staged{}, errors.New("supply-chain structural, policy, and health validators are required")
 	}
 	if err := m.ensureRoot(); err != nil {
 		return Staged{}, err
@@ -222,17 +270,24 @@ func (m Manager) StageArchive(ctx context.Context, source ResolvedSource, archiv
 	if err := extractArchive(ctx, compressed, content, limits, source.Executables); err != nil {
 		return Staged{}, err
 	}
-	if m.Structural != nil {
-		if err := m.Structural.Validate(ctx, source, content); err != nil {
-			return Staged{}, fmt.Errorf("staged structural validation: %w", err)
-		}
+	if err := m.Structural.Validate(ctx, source, content); err != nil {
+		return Staged{}, fmt.Errorf("staged structural validation: %w", err)
 	}
-	if m.Policy != nil {
-		if err := m.Policy.Validate(ctx, source, content); err != nil {
-			return Staged{}, fmt.Errorf("staged policy validation: %w", err)
-		}
+	if err := m.Policy.Validate(ctx, source, content); err != nil {
+		return Staged{}, fmt.Errorf("staged policy validation: %w", err)
 	}
-	provenance, err := json.MarshalIndent(source, "", "  ")
+	manifest, manifestDigest, err := createObjectManifest(content, limits)
+	if err != nil {
+		return Staged{}, err
+	}
+	manifestData, err := json.MarshalIndent(manifest, "", "  ")
+	if err != nil {
+		return Staged{}, err
+	}
+	if err := platform.AtomicWritePrivate(append(manifestData, '\n'), filepath.Join(content, ".ivoai-manifest.json")); err != nil {
+		return Staged{}, err
+	}
+	provenance, err := json.MarshalIndent(storedProvenance{Schema: SchemaVersion, Source: source, ManifestDigest: manifestDigest}, "", "  ")
 	if err != nil {
 		return Staged{}, err
 	}
@@ -247,16 +302,16 @@ func (m Manager) StageArchive(ctx context.Context, source ResolvedSource, archiv
 		if info.Mode()&os.ModeSymlink != 0 || !info.IsDir() {
 			return Staged{}, errors.New("existing immutable object is unsafe")
 		}
-		if err := validateStoredProvenance(object, source); err != nil {
+		if _, err := validateStoredObject(object, &source, manifestDigest); err != nil {
 			return Staged{}, err
 		}
 		cleanup = false
 		_ = os.RemoveAll(staging)
-		tx.State, tx.Object, tx.UpdatedAt = "staged", object, m.now()
+		tx.State, tx.Object, tx.ManifestDigest, tx.UpdatedAt = "staged", object, manifestDigest, m.now()
 		if err := m.saveTransaction(tx); err != nil {
 			return Staged{}, err
 		}
-		return Staged{TransactionID: id, Source: source, ObjectPath: object}, nil
+		return Staged{TransactionID: id, Source: source, ObjectPath: object, ManifestDigest: manifestDigest}, nil
 	} else if !errors.Is(err, os.ErrNotExist) {
 		return Staged{}, err
 	}
@@ -268,49 +323,107 @@ func (m Manager) StageArchive(ctx context.Context, source ResolvedSource, archiv
 	}
 	cleanup = false
 	_ = os.RemoveAll(staging)
-	tx.State, tx.Object, tx.UpdatedAt = "staged", object, m.now()
+	tx.State, tx.Object, tx.ManifestDigest, tx.UpdatedAt = "staged", object, manifestDigest, m.now()
 	if err := m.saveTransaction(tx); err != nil {
 		return Staged{}, err
 	}
-	return Staged{TransactionID: id, Source: source, ObjectPath: object}, nil
+	return Staged{TransactionID: id, Source: source, ObjectPath: object, ManifestDigest: manifestDigest}, nil
 }
 
-func (m Manager) Promote(staged Staged) error {
+func (m Manager) Promote(staged Staged) (resultErr error) {
+	defer func() {
+		state, reason := observability.StatePromoted, observability.ReasonIntegrityVerified
+		if resultErr != nil {
+			state, reason = observability.StateFailed, observability.ReasonValidationFailed
+		}
+		m.emit(observability.Event{Category: observability.CategorySupplyChain, Operation: observability.OperationSupplyPromote, State: state, ArtifactID: staged.Source.ID, Revision: staged.Source.Revision, RoutingReason: reason, TrustLevel: staged.Source.Integrity.TrustLevel})
+	}()
 	if err := m.ensureRoot(); err != nil {
 		return err
+	}
+	if m.Health == nil {
+		return errors.New("supply-chain health validator is required")
 	}
 	if err := staged.Source.Validate(); err != nil {
 		return err
 	}
 	want := m.objectPath(staged.Source.ID, staged.Source.Revision)
-	if filepath.Clean(staged.ObjectPath) != want || !safeTransactionID(staged.TransactionID) {
+	if filepath.Clean(staged.ObjectPath) != want || !safeTransactionID(staged.TransactionID) || !immutableRevision(staged.ManifestDigest) {
 		return errors.New("staged artifact does not belong to this supply-chain root")
 	}
-	if err := validateStoredProvenance(want, staged.Source); err != nil {
+	tx, err := m.loadTransaction(staged.TransactionID)
+	if err != nil {
+		return err
+	}
+	if tx.Object != want || tx.ManifestDigest != staged.ManifestDigest || !reflect.DeepEqual(tx.Source, staged.Source) {
+		return errors.New("staged artifact does not match its transaction journal")
+	}
+	if tx.State == "committed" {
+		pointer, err := m.loadPointer(staged.Source.ID)
+		if err == nil && pointer.Active == staged.Source.Revision {
+			return nil
+		}
+		return errors.New("committed supply-chain transaction does not match active pointer")
+	}
+	if tx.State != "staged" {
+		return errors.New("staged artifact transaction is not promotable")
+	}
+	if _, err := validateStoredObject(want, &staged.Source, staged.ManifestDigest); err != nil {
 		return err
 	}
 	pointer, err := m.loadPointer(staged.Source.ID)
+	pointerExisted := err == nil
 	if err != nil && !errors.Is(err, os.ErrNotExist) {
 		return err
 	}
 	if pointer.Active == staged.Source.Revision {
-		return nil
+		tx.State, tx.UpdatedAt = "committed", m.now()
+		return m.saveTransaction(tx)
+	}
+	previousPointer := pointer
+	tx.State, tx.Previous, tx.UpdatedAt = "promoting", pointer.Active, m.now()
+	if err := m.saveTransaction(tx); err != nil {
+		return err
 	}
 	pointer.Schema, pointer.ID, pointer.Previous, pointer.Active, pointer.UpdatedAt = SchemaVersion, staged.Source.ID, pointer.Active, staged.Source.Revision, m.now()
 	if err := m.savePointer(pointer); err != nil {
 		return err
 	}
-	tx, err := m.loadTransaction(staged.TransactionID)
-	if err == nil {
-		tx.State, tx.UpdatedAt = "promoted", m.now()
-		return m.saveTransaction(tx)
+	if err := m.Health.Validate(context.Background(), staged.Source, want); err != nil {
+		rollbackErr := m.restorePromotion(staged.Source.ID, previousPointer, pointerExisted)
+		tx.State, tx.UpdatedAt = "rolled_back", m.now()
+		journalErr := m.saveTransaction(tx)
+		return errors.Join(fmt.Errorf("post-promotion health validation: %w", err), rollbackErr, journalErr)
 	}
-	return err
+	if _, err := validateStoredObject(want, &staged.Source, staged.ManifestDigest); err != nil {
+		rollbackErr := m.restorePromotion(staged.Source.ID, previousPointer, pointerExisted)
+		tx.State, tx.UpdatedAt = "rolled_back", m.now()
+		journalErr := m.saveTransaction(tx)
+		return errors.Join(fmt.Errorf("post-promotion integrity validation: %w", err), rollbackErr, journalErr)
+	}
+	tx.State, tx.UpdatedAt = "committed", m.now()
+	if err := m.saveTransaction(tx); err != nil {
+		rollbackErr := m.restorePromotion(staged.Source.ID, previousPointer, pointerExisted)
+		tx.State, tx.UpdatedAt = "rolled_back", m.now()
+		journalErr := m.saveTransaction(tx)
+		return errors.Join(err, rollbackErr, journalErr)
+	}
+	return nil
 }
 
-func (m Manager) Rollback(id string) (bool, error) {
+func (m Manager) Rollback(id string) (rolled bool, resultErr error) {
+	defer func() {
+		state, reason := observability.StateRolledBack, observability.ReasonRollbackComplete
+		if resultErr != nil {
+			state, reason = observability.StateFailed, observability.ReasonValidationFailed
+		}
+		m.emit(observability.Event{Category: observability.CategorySupplyChain, Operation: observability.OperationSupplyRollback, State: state, ArtifactID: id, RoutingReason: reason})
+	}()
 	if err := m.ensureRoot(); err != nil {
 		return false, err
+	}
+	if m.Health == nil {
+		return false, errors.New("supply-chain health validator is required")
 	}
 	pointer, err := m.loadPointer(id)
 	if errors.Is(err, os.ErrNotExist) || pointer.Previous == "" {
@@ -319,14 +432,34 @@ func (m Manager) Rollback(id string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	if err := validateObjectDir(m.objectPath(id, pointer.Previous)); err != nil {
+	previousSource, err := validateStoredObject(m.objectPath(id, pointer.Previous), nil, "")
+	if err != nil || previousSource.ID != id || previousSource.Revision != pointer.Previous {
+		if err == nil {
+			err = errors.New("previous artifact provenance does not match rollback pointer")
+		}
 		return false, err
 	}
+	current := pointer
 	pointer.Active, pointer.Previous, pointer.UpdatedAt = pointer.Previous, "", m.now()
-	return true, m.savePointer(pointer)
+	if err := m.savePointer(pointer); err != nil {
+		return false, err
+	}
+	if err := m.Health.Validate(context.Background(), previousSource, m.objectPath(id, pointer.Active)); err != nil {
+		return false, errors.Join(fmt.Errorf("post-rollback health validation: %w", err), m.savePointer(current))
+	}
+	if _, err := validateStoredObject(m.objectPath(id, pointer.Active), &previousSource, ""); err != nil {
+		return false, errors.Join(fmt.Errorf("post-rollback integrity validation: %w", err), m.savePointer(current))
+	}
+	return true, nil
 }
 
 func (m Manager) Active(id string) (ResolvedSource, string, error) {
+	if err := validateManagedRoot(m.Root); err != nil {
+		return ResolvedSource{}, "", err
+	}
+	if err := validateManagedSubdirectory(m.Root, "state"); err != nil {
+		return ResolvedSource{}, "", err
+	}
 	pointer, err := m.loadPointer(id)
 	if err != nil {
 		return ResolvedSource{}, "", err
@@ -335,12 +468,8 @@ func (m Manager) Active(id string) (ResolvedSource, string, error) {
 		return ResolvedSource{}, "", os.ErrNotExist
 	}
 	path := m.objectPath(id, pointer.Active)
-	data, err := platform.ReadRegularFile(filepath.Join(path, ".ivoai-provenance.json"), 64<<10)
-	if err != nil {
-		return ResolvedSource{}, "", err
-	}
-	var source ResolvedSource
-	if err := json.Unmarshal(data, &source); err != nil || source.Validate() != nil || source.ID != id || source.Revision != pointer.Active {
+	source, err := validateStoredObject(path, nil, "")
+	if err != nil || source.ID != id || source.Revision != pointer.Active {
 		return ResolvedSource{}, "", errors.New("active artifact provenance is invalid")
 	}
 	return source, path, nil
@@ -366,6 +495,26 @@ func (m Manager) Recover() (int, error) {
 		tx, err := m.loadTransaction(id)
 		if err != nil {
 			return recovered, err
+		}
+		if tx.State == "promoting" {
+			pointer, pointerErr := m.loadPointer(tx.Source.ID)
+			if pointerErr == nil && pointer.Active == tx.Source.Revision {
+				previous := Pointer{Schema: SchemaVersion, ID: tx.Source.ID, Active: tx.Previous, UpdatedAt: m.now()}
+				if tx.Previous != "" {
+					previous.Previous = ""
+				}
+				if err := m.restorePromotion(tx.Source.ID, previous, tx.Previous != ""); err != nil {
+					return recovered, err
+				}
+			} else if pointerErr != nil && !errors.Is(pointerErr, os.ErrNotExist) {
+				return recovered, pointerErr
+			}
+			tx.State, tx.UpdatedAt = "rolled_back", m.now()
+			if err := m.saveTransaction(tx); err != nil {
+				return recovered, err
+			}
+			recovered++
+			continue
 		}
 		if tx.State != "staging" {
 			continue
@@ -511,14 +660,22 @@ func (m Manager) limits() Limits {
 	defaults := DefaultLimits()
 	if value.ArchiveBytes <= 0 {
 		value.ArchiveBytes = defaults.ArchiveBytes
+	} else if value.ArchiveBytes > defaults.ArchiveBytes {
+		value.ArchiveBytes = defaults.ArchiveBytes
 	}
 	if value.ExpandedBytes <= 0 {
+		value.ExpandedBytes = defaults.ExpandedBytes
+	} else if value.ExpandedBytes > defaults.ExpandedBytes {
 		value.ExpandedBytes = defaults.ExpandedBytes
 	}
 	if value.FileBytes <= 0 {
 		value.FileBytes = defaults.FileBytes
+	} else if value.FileBytes > defaults.FileBytes {
+		value.FileBytes = defaults.FileBytes
 	}
 	if value.Files <= 0 {
+		value.Files = defaults.Files
+	} else if value.Files > defaults.Files {
 		value.Files = defaults.Files
 	}
 	return value
@@ -533,7 +690,7 @@ func (m Manager) transactionPath(id string) string {
 }
 
 func (m Manager) savePointer(pointer Pointer) error {
-	if pointer.Schema != SchemaVersion || !safeID(pointer.ID) || pointer.Active != "" && !immutableRevision(pointer.Active) || pointer.Previous != "" && !immutableRevision(pointer.Previous) {
+	if pointer.Schema != SchemaVersion || !safeID(pointer.ID) || pointer.Active != "" && !immutableRevision(pointer.Active) || pointer.Previous != "" && !immutableRevision(pointer.Previous) || pointer.UpdatedAt.IsZero() {
 		return errors.New("invalid supply-chain active pointer")
 	}
 	data, err := json.MarshalIndent(pointer, "", "  ")
@@ -552,14 +709,14 @@ func (m Manager) loadPointer(id string) (Pointer, error) {
 		return Pointer{}, err
 	}
 	var pointer Pointer
-	if err := strictJSON(data, &pointer); err != nil || pointer.Schema != SchemaVersion || pointer.ID != id || pointer.Active != "" && !immutableRevision(pointer.Active) || pointer.Previous != "" && !immutableRevision(pointer.Previous) {
+	if err := strictJSON(data, &pointer); err != nil || pointer.Schema != SchemaVersion || pointer.ID != id || pointer.Active != "" && !immutableRevision(pointer.Active) || pointer.Previous != "" && !immutableRevision(pointer.Previous) || pointer.UpdatedAt.IsZero() {
 		return Pointer{}, errors.New("invalid supply-chain active pointer")
 	}
 	return pointer, nil
 }
 
 func (m Manager) saveTransaction(tx transaction) error {
-	if tx.Schema != SchemaVersion || !safeTransactionID(tx.ID) || filepath.Clean(tx.Staging) != filepath.Join(m.Root, "staging", tx.ID) {
+	if err := validateTransaction(m.Root, tx); err != nil || tx.UpdatedAt.IsZero() {
 		return errors.New("invalid supply-chain transaction")
 	}
 	data, err := json.MarshalIndent(tx, "", "  ")
@@ -578,10 +735,34 @@ func (m Manager) loadTransaction(id string) (transaction, error) {
 		return transaction{}, err
 	}
 	var tx transaction
-	if err := strictJSON(data, &tx); err != nil || tx.Schema != SchemaVersion || tx.ID != id || tx.Source.Validate() != nil || filepath.Clean(tx.Staging) != filepath.Join(m.Root, "staging", id) {
+	if err := strictJSON(data, &tx); err != nil || tx.ID != id || validateTransaction(m.Root, tx) != nil || tx.UpdatedAt.IsZero() {
 		return transaction{}, errors.New("invalid supply-chain transaction")
 	}
 	return tx, nil
+}
+
+func validateTransaction(root string, tx transaction) error {
+	if tx.Schema != SchemaVersion || !safeTransactionID(tx.ID) || tx.Source.Validate() != nil || filepath.Clean(tx.Staging) != filepath.Join(root, "staging", tx.ID) {
+		return errors.New("invalid supply-chain transaction")
+	}
+	switch tx.State {
+	case "staging":
+		if tx.Object != "" || tx.ManifestDigest != "" || tx.Previous != "" {
+			return errors.New("invalid staging transaction metadata")
+		}
+	case "rolled_back":
+		if tx.Object == "" && tx.ManifestDigest == "" && tx.Previous == "" {
+			return nil
+		}
+		fallthrough
+	case "staged", "promoting", "committed":
+		if filepath.Clean(tx.Object) != filepath.Join(root, "objects", tx.Source.ID, tx.Source.Revision) || !immutableRevision(tx.ManifestDigest) || tx.Previous != "" && !immutableRevision(tx.Previous) {
+			return errors.New("invalid resolved transaction metadata")
+		}
+	default:
+		return errors.New("invalid transaction state")
+	}
+	return nil
 }
 
 func strictJSON(data []byte, target any) error {
@@ -596,19 +777,148 @@ func strictJSON(data []byte, target any) error {
 	return nil
 }
 
-func validateStoredProvenance(root string, want ResolvedSource) error {
+func createObjectManifest(root string, limits Limits) (objectManifest, string, error) {
+	manifest := objectManifest{Schema: SchemaVersion, Entries: []manifestEntry{}}
+	var total int64
+	err := filepath.WalkDir(root, func(current string, entry fs.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+		if current == root {
+			return nil
+		}
+		relative, err := filepath.Rel(root, current)
+		if err != nil || !within(root, current) {
+			return errors.New("staged object escaped its root")
+		}
+		relative = filepath.ToSlash(relative)
+		if relative == ".ivoai-manifest.json" || relative == ".ivoai-provenance.json" {
+			return nil
+		}
+		if strings.HasPrefix(relative, ".ivoai-") {
+			return errors.New("staged object contains unexpected reserved metadata")
+		}
+		info, err := entry.Info()
+		if err != nil {
+			return err
+		}
+		if info.Mode()&os.ModeSymlink != 0 {
+			return errors.New("staged object contains a symlink")
+		}
+		item := manifestEntry{Path: relative, Mode: uint32(info.Mode().Perm())}
+		switch {
+		case info.IsDir():
+			item.Kind = "directory"
+			if info.Mode().Perm() != 0o700 {
+				return errors.New("staged object contains unsafe directory mode")
+			}
+		case info.Mode().IsRegular():
+			item.Kind, item.Size = "file", info.Size()
+			if info.Size() < 0 || info.Size() > limits.FileBytes || total+info.Size() > limits.ExpandedBytes {
+				return errors.New("staged object exceeds manifest size limit")
+			}
+			if info.Mode().Perm() != 0o600 && info.Mode().Perm() != 0o700 {
+				return errors.New("staged object contains unsafe file mode")
+			}
+			data, err := platform.ReadRegularFile(current, info.Size()+1)
+			if err != nil {
+				return err
+			}
+			digest := sha256.Sum256(data)
+			item.SHA256 = hex.EncodeToString(digest[:])
+			total += info.Size()
+		default:
+			return errors.New("staged object contains unsupported file type")
+		}
+		manifest.Entries = append(manifest.Entries, item)
+		if len(manifest.Entries) > limits.Files {
+			return errors.New("staged object exceeds manifest entry limit")
+		}
+		return nil
+	})
+	if err != nil {
+		return objectManifest{}, "", err
+	}
+	sort.Slice(manifest.Entries, func(i, j int) bool { return manifest.Entries[i].Path < manifest.Entries[j].Path })
+	data, err := json.Marshal(manifest)
+	if err != nil {
+		return objectManifest{}, "", err
+	}
+	digest := sha256.Sum256(data)
+	return manifest, hex.EncodeToString(digest[:]), nil
+}
+
+func validateStoredObject(root string, want *ResolvedSource, wantManifestDigest string) (ResolvedSource, error) {
+	if err := rejectSymlinkChain(root); err != nil {
+		return ResolvedSource{}, err
+	}
 	if err := validateObjectDir(root); err != nil {
-		return err
+		return ResolvedSource{}, err
 	}
 	data, err := platform.ReadRegularFile(filepath.Join(root, ".ivoai-provenance.json"), 64<<10)
 	if err != nil {
+		return ResolvedSource{}, err
+	}
+	var provenance storedProvenance
+	if err := strictJSON(data, &provenance); err != nil || provenance.Schema != SchemaVersion || provenance.Source.Validate() != nil || !immutableRevision(provenance.ManifestDigest) {
+		return ResolvedSource{}, errors.New("immutable object provenance mismatch")
+	}
+	if want != nil && !reflect.DeepEqual(provenance.Source, *want) || wantManifestDigest != "" && provenance.ManifestDigest != wantManifestDigest {
+		return ResolvedSource{}, errors.New("immutable object provenance mismatch")
+	}
+	manifestData, err := platform.ReadRegularFile(filepath.Join(root, ".ivoai-manifest.json"), 8<<20)
+	if err != nil {
+		return ResolvedSource{}, err
+	}
+	var storedManifest objectManifest
+	if err := strictJSON(manifestData, &storedManifest); err != nil || storedManifest.Schema != SchemaVersion {
+		return ResolvedSource{}, errors.New("immutable object manifest is invalid")
+	}
+	canonical, err := json.Marshal(storedManifest)
+	if err != nil {
+		return ResolvedSource{}, err
+	}
+	storedDigest := sha256.Sum256(canonical)
+	if hex.EncodeToString(storedDigest[:]) != provenance.ManifestDigest {
+		return ResolvedSource{}, errors.New("immutable object manifest digest mismatch")
+	}
+	actualManifest, actualDigest, err := createObjectManifest(root, DefaultLimits())
+	if err != nil || actualDigest != provenance.ManifestDigest || !reflect.DeepEqual(actualManifest, storedManifest) {
+		return ResolvedSource{}, errors.New("immutable object content integrity mismatch")
+	}
+	return provenance.Source, nil
+}
+
+func (m Manager) restorePromotion(id string, previous Pointer, existed bool) error {
+	if existed {
+		previous.Schema, previous.ID, previous.UpdatedAt = SchemaVersion, id, m.now()
+		return m.savePointer(previous)
+	}
+	path := m.pointerPath(id)
+	info, err := os.Lstat(path)
+	if errors.Is(err, os.ErrNotExist) {
+		return nil
+	}
+	if err != nil {
 		return err
 	}
-	var got ResolvedSource
-	if err := strictJSON(data, &got); err != nil || got.Validate() != nil || got.ID != want.ID || got.Revision != want.Revision || !strings.EqualFold(got.Integrity.Digest, want.Integrity.Digest) {
-		return errors.New("immutable object provenance mismatch")
+	if info.Mode()&os.ModeSymlink != 0 || !info.Mode().IsRegular() {
+		return errors.New("refusing unsafe supply-chain pointer rollback")
 	}
-	return nil
+	if err := os.Remove(path); err != nil {
+		return err
+	}
+	return platform.SyncDir(filepath.Dir(path))
+}
+
+func (m Manager) emit(event observability.Event) {
+	if m.Observe == nil {
+		return
+	}
+	normalized, err := observability.Normalize(event)
+	if err == nil {
+		m.Observe(normalized)
+	}
 }
 
 func validateObjectDir(path string) error {
@@ -658,7 +968,11 @@ func randomID() (string, error) {
 }
 
 func safeTransactionID(value string) bool {
-	return len(value) == 35 && strings.HasPrefix(value, "sc_") && immutableRevision(strings.TrimPrefix(value, "sc_")+strings.Repeat("0", 8))
+	if len(value) != 35 || !strings.HasPrefix(value, "sc_") {
+		return false
+	}
+	_, err := hex.DecodeString(strings.TrimPrefix(value, "sc_"))
+	return err == nil
 }
 
 func safeID(value string) bool {
@@ -690,7 +1004,7 @@ func validHTTPS(value string) bool {
 		return false
 	}
 	parsed, err := url.Parse(value)
-	return err == nil && parsed.Scheme == "https" && parsed.Host != "" && parsed.User == nil && parsed.Fragment == ""
+	return err == nil && parsed.Scheme == "https" && parsed.Host != "" && parsed.User == nil && parsed.Fragment == "" && parsed.RawQuery == ""
 }
 
 func safeStatus(value string) bool {
@@ -705,6 +1019,13 @@ func safeStatus(value string) bool {
 	return true
 }
 
+func safeBoundedText(value string, limit int) bool {
+	if len(value) > limit || !utf8.ValidString(value) || strings.TrimSpace(value) != value || strings.ContainsAny(value, "\x00\x1b\r\n") {
+		return false
+	}
+	return true
+}
+
 func (m Manager) now() time.Time {
 	if m.Now != nil {
 		return m.Now().UTC()
@@ -713,10 +1034,23 @@ func (m Manager) now() time.Time {
 }
 
 func ListPointers(root string) ([]Pointer, error) {
-	entries, err := os.ReadDir(filepath.Join(root, "state"))
+	if err := validateManagedRoot(root); errors.Is(err, os.ErrNotExist) {
+		return []Pointer{}, nil
+	} else if err != nil {
+		return nil, err
+	}
+	stateRoot := filepath.Join(root, "state")
+	stateInfo, err := os.Lstat(stateRoot)
 	if errors.Is(err, os.ErrNotExist) {
 		return []Pointer{}, nil
 	}
+	if err != nil {
+		return nil, err
+	}
+	if stateInfo.Mode()&os.ModeSymlink != 0 || !stateInfo.IsDir() || stateInfo.Mode().Perm() != 0o700 {
+		return nil, errors.New("supply-chain state root is unsafe")
+	}
+	entries, err := os.ReadDir(stateRoot)
 	if err != nil {
 		return nil, err
 	}
@@ -734,6 +1068,68 @@ func ListPointers(root string) ([]Pointer, error) {
 	}
 	sort.Slice(result, func(i, j int) bool { return result[i].ID < result[j].ID })
 	return result, nil
+}
+
+func validateManagedRoot(root string) error {
+	if !filepath.IsAbs(root) || filepath.Clean(root) == "/" {
+		return errors.New("supply-chain root must be an absolute non-root path")
+	}
+	if err := rejectSymlinkChain(root); err != nil {
+		return err
+	}
+	info, err := os.Lstat(root)
+	if err != nil {
+		return err
+	}
+	if info.Mode()&os.ModeSymlink != 0 || !info.IsDir() || info.Mode().Perm() != 0o700 {
+		return errors.New("supply-chain root is unsafe")
+	}
+	return nil
+}
+
+// ValidateRoot performs a read-only health check of the managed supply-chain
+// layout. Missing subdirectories are valid before first use; existing paths
+// must remain private directories and transaction metadata must be parseable.
+func ValidateRoot(root string) error {
+	if err := validateManagedRoot(root); err != nil {
+		return err
+	}
+	manager := Manager{Root: root}
+	for _, name := range []string{"staging", "objects", "state", "transactions"} {
+		if err := validateManagedSubdirectory(root, name); err != nil && !errors.Is(err, os.ErrNotExist) {
+			return err
+		}
+	}
+	transactions := filepath.Join(root, "transactions")
+	entries, err := os.ReadDir(transactions)
+	if errors.Is(err, os.ErrNotExist) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	for _, entry := range entries {
+		if entry.IsDir() || filepath.Ext(entry.Name()) != ".json" || !safeTransactionID(strings.TrimSuffix(entry.Name(), ".json")) {
+			return errors.New("supply-chain transaction root contains an unexpected entry")
+		}
+		if _, err := manager.loadTransaction(strings.TrimSuffix(entry.Name(), ".json")); err != nil {
+			return err
+		}
+	}
+	_, err = ListPointers(root)
+	return err
+}
+
+func validateManagedSubdirectory(root, name string) error {
+	path := filepath.Join(root, name)
+	info, err := os.Lstat(path)
+	if err != nil {
+		return err
+	}
+	if info.Mode()&os.ModeSymlink != 0 || !info.IsDir() || info.Mode().Perm() != 0o700 {
+		return fmt.Errorf("supply-chain %s root is unsafe", name)
+	}
+	return nil
 }
 
 // TransactionalPointerFiles returns only the small authoritative active-state

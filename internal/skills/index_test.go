@@ -86,8 +86,9 @@ func TestIndexerReadsOnlyFrontmatterAndUsesNoLLM(t *testing.T) {
 	if err != nil || len(index.Entries) != 1 {
 		t.Fatalf("index=%+v err=%v", index, err)
 	}
-	if reader.read >= len(document)/10 {
-		t.Fatalf("discovery read body bytes: %d of %d", reader.read, len(document))
+	bodyStart := strings.Index(document, "THIS BODY MUST NOT BE READ")
+	if bodyStart < 0 || reader.read > bodyStart {
+		t.Fatalf("discovery read body bytes: %d, body starts at %d", reader.read, bodyStart)
 	}
 }
 
@@ -103,6 +104,14 @@ func TestIndexerQuarantinesMalformedDuplicateMismatchSymlinkAndInvalidMetadata(t
 	}
 	duplicate := strings.Replace(metadataDocument("alpha", ""), "path: alpha/SKILL.md", "path: nested/alpha/SKILL.md", 1)
 	if err := os.WriteFile(filepath.Join(duplicateDir, "SKILL.md"), []byte(duplicate), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	thirdDir := filepath.Join(root, "third", "alpha")
+	if err := os.MkdirAll(thirdDir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	third := strings.Replace(metadataDocument("alpha", ""), "path: alpha/SKILL.md", "path: third/alpha/SKILL.md", 1)
+	if err := os.WriteFile(filepath.Join(thirdDir, "SKILL.md"), []byte(third), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	if err := os.Symlink(filepath.Join(root, "alpha", "SKILL.md"), filepath.Join(root, "linked")); err != nil {
@@ -126,6 +135,17 @@ func TestIndexerQuarantinesMalformedDuplicateMismatchSymlinkAndInvalidMetadata(t
 	}
 }
 
+func TestIndexerRejectsSymlinkedDiscoveryRoot(t *testing.T) {
+	realRoot := t.TempDir()
+	link := filepath.Join(t.TempDir(), "skills")
+	if err := os.Symlink(realRoot, link); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := (Indexer{}).Discover(link); err == nil {
+		t.Fatal("indexer followed symlinked discovery root")
+	}
+}
+
 func TestIndexerQuarantinesMissingAndSelfDependency(t *testing.T) {
 	root := t.TempDir()
 	missing := strings.Replace(metadataDocument("missing", ""), "requires: []", "requires: [absent]", 1)
@@ -138,6 +158,66 @@ func TestIndexerQuarantinesMissingAndSelfDependency(t *testing.T) {
 	}
 	if len(index.Entries) != 0 || len(index.Quarantined) != 2 {
 		t.Fatalf("index=%+v", index)
+	}
+}
+
+func TestIndexerPropagatesQuarantineThroughRequiredDependencies(t *testing.T) {
+	root := t.TempDir()
+	broken := strings.Replace(metadataDocument("broken", ""), "requires: []", "requires: [absent]", 1)
+	dependent := strings.Replace(metadataDocument("dependent", ""), "requires: []", "requires: [broken]", 1)
+	writeSkill(t, root, "broken", broken)
+	writeSkill(t, root, "dependent", dependent)
+	index, err := (Indexer{}).Discover(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(index.Entries) != 0 || len(index.Quarantined) != 2 {
+		t.Fatalf("index=%+v", index)
+	}
+}
+
+func TestIndexerQuarantinesInvalidUTF8Metadata(t *testing.T) {
+	root := t.TempDir()
+	document := []byte(metadataDocument("invalid-utf8", ""))
+	marker := []byte("description: Synthetic metadata for deterministic indexing")
+	position := strings.Index(string(document), string(marker))
+	if position < 0 {
+		t.Fatal("description marker missing")
+	}
+	document[position+len("description: ")] = 0xff
+	writeSkill(t, root, "invalid-utf8", string(document))
+	index, err := (Indexer{}).Discover(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(index.Entries) != 0 || len(index.Quarantined) != 1 || index.Quarantined[0].Reason != "invalid_utf8" {
+		t.Fatalf("index=%+v", index)
+	}
+}
+
+func TestIndexerQuarantinesUnsupportedSchemaTraversalAndOversizedMetadata(t *testing.T) {
+	root := t.TempDir()
+	unsupported := strings.Replace(metadataDocument("unsupported", ""), "schema: 1", "schema: 2", 1)
+	traversal := strings.Replace(metadataDocument("traversal", ""), "path: traversal/SKILL.md", "path: ../escape/SKILL.md", 1)
+	oversized := strings.Replace(metadataDocument("oversized", ""), "description: Synthetic metadata for deterministic indexing", "description: "+strings.Repeat("x", maxFrontmatterBytes), 1)
+	writeSkill(t, root, "unsupported", unsupported)
+	writeSkill(t, root, "traversal", traversal)
+	writeSkill(t, root, "oversized", oversized)
+	index, err := (Indexer{}).Discover(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(index.Entries) != 0 || len(index.Quarantined) != 3 {
+		t.Fatalf("index=%+v", index)
+	}
+	reasons := map[string]bool{}
+	for _, item := range index.Quarantined {
+		reasons[item.Reason] = true
+	}
+	for _, wanted := range []string{"unsupported_schema", "invalid_skill_source", "metadata_too_large"} {
+		if !reasons[wanted] {
+			t.Fatalf("missing %s in %+v", wanted, index.Quarantined)
+		}
 	}
 }
 

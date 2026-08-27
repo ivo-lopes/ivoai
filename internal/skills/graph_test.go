@@ -83,6 +83,18 @@ func TestResolverComposesComplementaryPhases(t *testing.T) {
 	}
 }
 
+func TestResolverOrdersSelectedOptionalDependency(t *testing.T) {
+	base, consumer := fixtureEntry("base"), fixtureEntry("consumer")
+	consumer.OptionalDependencies = []string{"base"}
+	resolution, err := resolveFixture(graphRegistry(consumer, base), "consumer", "base")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(resolution.Ordered) != 2 || resolution.Ordered[0].ID != "base" || resolution.Ordered[1].ID != "consumer" {
+		t.Fatalf("resolution=%+v", resolution)
+	}
+}
+
 func TestResolverRejectsUnavailableCapabilityExecutorRiskAndOrchestrationAuthorityConflict(t *testing.T) {
 	entry := fixtureEntry("entry")
 	entry.Capabilities = []string{"network.read"}
@@ -104,5 +116,24 @@ func TestResolverRejectsUnavailableCapabilityExecutorRiskAndOrchestrationAuthori
 	left.Role, right.Role = "control_plane", "advisor"
 	if _, err := resolveFixture(graphRegistry(left, right), "left", "right"); err == nil {
 		t.Fatal("orchestration authority conflict accepted")
+	}
+	authority := fixtureEntry("authority")
+	authority.Phase, authority.Role, authority.RoleMode = PhaseOrchestration, "control_plane", RoleExclusive
+	if _, err := resolveFixture(graphRegistry(authority), "authority"); err == nil {
+		t.Fatal("single external control-plane authority accepted")
+	}
+}
+
+func TestResolverAndSearchExcludeInactiveLifecycleEntries(t *testing.T) {
+	previous, quarantined := fixtureEntry("previous"), fixtureEntry("quarantined")
+	previous.Lifecycle, quarantined.Lifecycle = LifecyclePrevious, LifecycleQuarantined
+	registry := EmptyRegistry()
+	registry.Entries = []Entry{previous, quarantined}
+	if _, err := (Resolver{Registry: registry}).Resolve(ResolutionRequest{IDs: []string{"previous"}}); err == nil {
+		t.Fatal("previous skill resolved")
+	}
+	previous.Triggers, quarantined.Triggers = []string{"review"}, []string{"review"}
+	if candidates := (Index{Entries: []Entry{previous, quarantined}}).Search(SearchQuery{Text: "review", MaximumRisk: RiskHigh}); len(candidates) != 0 {
+		t.Fatalf("inactive candidates=%+v", candidates)
 	}
 }

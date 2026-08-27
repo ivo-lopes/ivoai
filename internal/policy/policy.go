@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/ivo-lopes/ivoai/internal/observability"
 	"github.com/ivo-lopes/ivoai/internal/skills"
 )
 
@@ -37,6 +38,7 @@ type CapabilityRule struct {
 
 type Engine struct {
 	Capabilities map[string]CapabilityRule
+	Observe      func(observability.Event)
 }
 
 type Request struct {
@@ -80,8 +82,13 @@ func DefaultEngine() Engine {
 	}}
 }
 
-func (e Engine) Evaluate(request Request) Result {
-	result := Result{Decision: Deny, Scope: request.Scope}
+func (e Engine) Evaluate(request Request) (result Result) {
+	result = Result{Decision: Deny, Scope: request.Scope}
+	defer func() { e.emit(request, result) }()
+	if err := e.Validate(); err != nil {
+		result.Reason = "invalid_policy_engine"
+		return result
+	}
 	if !safeID(request.SubjectID) || !validSubject(request.SubjectKind) || !safeScope(request.Scope) {
 		result.Reason = "invalid_request_metadata"
 		return result
@@ -98,6 +105,10 @@ func (e Engine) Evaluate(request Request) Result {
 		result.Reason = "unknown_risk"
 		return result
 	}
+	if len(request.DeclaredCapabilities) > 256 || len(request.RequestedCapabilities) > 256 {
+		result.Reason = "capability_request_too_large"
+		return result
+	}
 	declared := set(request.DeclaredCapabilities)
 	requested := sortedUnique(request.RequestedCapabilities)
 	if len(requested) == 0 {
@@ -106,6 +117,10 @@ func (e Engine) Evaluate(request Request) Result {
 	}
 	var approvals []string
 	for _, capability := range requested {
+		if !safeCapability(capability) {
+			result.Reason = "invalid_capability"
+			return result
+		}
 		if !declared[capability] {
 			result.Reason = "undeclared_capability"
 			return result
@@ -115,12 +130,12 @@ func (e Engine) Evaluate(request Request) Result {
 			result.Reason = "unknown_capability"
 			return result
 		}
+		if rule.Destructive {
+			result.Reason = "destructive_capability_denied"
+			return result
+		}
 		if !rule.Available {
-			if rule.Destructive {
-				result.Reason = "destructive_capability_denied"
-			} else {
-				result.Reason = "capability_unavailable"
-			}
+			result.Reason = "capability_unavailable"
 			return result
 		}
 		if riskWeight(request.Risk) > riskWeight(rule.MaximumRisk) {
@@ -146,12 +161,31 @@ func (e Engine) Evaluate(request Request) Result {
 	return result
 }
 
+func (e Engine) emit(request Request, result Result) {
+	if e.Observe == nil {
+		return
+	}
+	state, reason := observability.StateDenied, observability.ReasonPolicyDenied
+	if result.Decision == Allow {
+		state, reason = observability.StateAllowed, observability.ReasonPolicyAllowed
+	} else if result.Decision == RequireApproval {
+		state, reason = observability.StateApprovalRequired, observability.ReasonApprovalRequired
+	}
+	event, err := observability.Normalize(observability.Event{
+		Category: observability.CategorySkillPolicy, Operation: observability.OperationPolicyDecision, State: state,
+		SubjectID: request.SubjectID, SubjectKind: string(request.SubjectKind), RiskTier: string(request.Risk), PolicyDecision: string(result.Decision), RoutingReason: reason,
+	})
+	if err == nil {
+		e.Observe(event)
+	}
+}
+
 func (e Engine) Validate() error {
 	if len(e.Capabilities) == 0 || len(e.Capabilities) > 256 {
 		return errors.New("policy engine requires a bounded capability registry")
 	}
 	for capability, rule := range e.Capabilities {
-		if !safeCapability(capability) || !validRisk(rule.MaximumRisk) {
+		if !safeCapability(capability) || !validRisk(rule.MaximumRisk) || rule.Destructive && rule.Available {
 			return errors.New("invalid capability policy")
 		}
 	}

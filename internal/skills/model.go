@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"path"
 	"sort"
 	"strings"
 	"time"
@@ -135,11 +136,13 @@ func (r *Registry) Normalize() error {
 	if len(r.Entries) > MaxRegistryEntries {
 		return fmt.Errorf("skill registry exceeds %d entries", MaxRegistryEntries)
 	}
+	for index := range r.Entries {
+		normalizeEntry(&r.Entries[index])
+	}
 	sort.Slice(r.Entries, func(i, j int) bool { return r.Entries[i].ID < r.Entries[j].ID })
 	seen := make(map[string]struct{}, len(r.Entries))
 	for index := range r.Entries {
 		entry := &r.Entries[index]
-		normalizeEntry(entry)
 		if err := entry.Validate(); err != nil {
 			return fmt.Errorf("skill %q: %w", entry.ID, err)
 		}
@@ -152,14 +155,20 @@ func (r *Registry) Normalize() error {
 }
 
 func (e Entry) Validate() error {
-	if !safeID(e.ID) || !boundedText(e.Name, 256) || !boundedText(e.Description, MaxDescriptionBytes) || !safeLabel(e.Domain, 128) {
+	if !safeID(e.ID) || !boundedText(e.Name, 256) || !boundedText(e.Description, MaxDescriptionBytes) || e.Domain == "" || !safeLabel(e.Domain, 128) {
 		return errors.New("invalid bounded identity metadata")
 	}
 	if !validLifecycle(e.Lifecycle) || !validRisk(e.Risk) || !validPhase(e.Phase) {
 		return errors.New("invalid lifecycle, risk, or execution phase")
 	}
-	if !safeLabel(e.Role, 128) || !validRoleMode(e.RoleMode) || !safeReason(e.QuarantineReason) {
+	if !safeLabel(e.Role, 128) || !validRoleMode(e.RoleMode) || (e.Role == "") != (e.RoleMode == "") || !safeReason(e.QuarantineReason) {
 		return errors.New("invalid role or quarantine reason")
+	}
+	if e.Lifecycle == LifecycleActive && !e.Provenance.Integrity.Verified {
+		return errors.New("active skill requires verified integrity")
+	}
+	if (e.Lifecycle == LifecycleQuarantined) != (e.QuarantineReason != "") {
+		return errors.New("quarantined lifecycle and reason must agree")
 	}
 	for _, values := range [][]string{e.Triggers, e.Keywords, e.RequiredDependencies, e.OptionalDependencies, e.Conflicts, e.Capabilities, e.Compatibility.Executors, e.Compatibility.OperatingSystems, e.Compatibility.Architectures} {
 		if len(values) > MaxMetadataValues {
@@ -189,7 +198,7 @@ func (p Provenance) Validate() error {
 	if p.Source.Repository != "" && !validHTTPSURL(p.Source.Repository) {
 		return errors.New("invalid skill repository")
 	}
-	if !safeBranch(p.Source.DefaultBranch) || !immutableRevision(p.Revision.Commit) || !boundedText(p.Revision.LogicalVersion, 128) {
+	if !safeBranch(p.Source.DefaultBranch) || !immutableRevision(p.Revision.Commit) || !safeVersion(p.Revision.LogicalVersion) || !safeTag(p.Revision.Tag) {
 		return errors.New("skill revision must resolve to an immutable commit")
 	}
 	return p.Integrity.Validate()
@@ -248,7 +257,9 @@ func normalizedList(values []string) []string {
 	return result
 }
 
-func safeID(value string) bool { return safeLabel(value, 128) && !strings.Contains(value, "..") }
+func safeID(value string) bool {
+	return value != "" && safeLabel(value, 128) && !strings.Contains(value, "..")
+}
 
 func safeLabel(value string, limit int) bool {
 	if value == "" {
@@ -278,15 +289,23 @@ func safeReason(value string) bool {
 }
 
 func safeRelativePath(value string) bool {
-	if value == "" || strings.Contains(value, "\\") || strings.HasPrefix(value, "/") {
+	if value == "" || strings.TrimSpace(value) != value || strings.Contains(value, "\\") || strings.HasPrefix(value, "/") {
 		return false
 	}
-	clean := strings.TrimPrefix(strings.TrimSpace(value), "./")
-	return clean != "" && clean != "." && clean != ".." && !strings.HasPrefix(clean, "../") && !strings.Contains(clean, "/../")
+	clean := path.Clean(value)
+	return clean == value && clean != "." && clean != ".." && !strings.HasPrefix(clean, "../")
 }
 
 func safeBranch(value string) bool {
 	return value == "" || len(value) <= 256 && utf8.ValidString(value) && !strings.ContainsAny(value, "\x00\x1b\r\n ~^:?*[\\")
+}
+
+func safeVersion(value string) bool {
+	return value != "" && len(value) <= 128 && utf8.ValidString(value) && strings.TrimSpace(value) == value && !strings.ContainsAny(value, "\x00\x1b\r\n")
+}
+
+func safeTag(value string) bool {
+	return value == "" || len(value) <= 256 && utf8.ValidString(value) && strings.TrimSpace(value) == value && !strings.ContainsAny(value, "\x00\x1b\r\n ~^:?*[\\")
 }
 
 func immutableRevision(value string) bool {
@@ -299,7 +318,7 @@ func immutableRevision(value string) bool {
 
 func validHTTPSURL(value string) bool {
 	parsed, err := url.Parse(value)
-	return err == nil && parsed.Scheme == "https" && parsed.Host != "" && parsed.User == nil && parsed.Fragment == ""
+	return err == nil && parsed.Scheme == "https" && parsed.Host != "" && parsed.User == nil && parsed.Fragment == "" && parsed.RawQuery == ""
 }
 
 func validSourceKind(value string) bool {

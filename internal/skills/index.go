@@ -39,12 +39,16 @@ func (i Indexer) Discover(root string) (Index, error) {
 	if !filepath.IsAbs(root) {
 		return Index{}, errors.New("skill discovery root must be absolute")
 	}
+	if err := validateDiscoveryRoot(root); err != nil {
+		return Index{}, err
+	}
 	limit := i.MaxEntries
 	if limit <= 0 || limit > MaxRegistryEntries {
 		limit = MaxRegistryEntries
 	}
 	result := Index{Entries: []Entry{}, Quarantined: []Quarantine{}}
 	seen := map[string]int{}
+	duplicateIDs := map[string]bool{}
 	err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, walkErr error) error {
 		if walkErr != nil {
 			return walkErr
@@ -89,6 +93,10 @@ func (i Indexer) Discover(root string) (Index, error) {
 			result.Quarantined = append(result.Quarantined, Quarantine{Path: filepath.ToSlash(relative), ID: candidate.ID, Reason: boundedQuarantineReason(err)})
 			return nil
 		}
+		if duplicateIDs[candidate.ID] {
+			result.Quarantined = append(result.Quarantined, Quarantine{Path: filepath.ToSlash(relative), ID: candidate.ID, Reason: "duplicate_id"})
+			return nil
+		}
 		if previous, duplicate := seen[candidate.ID]; duplicate {
 			first := result.Entries[previous]
 			result.Entries = append(result.Entries[:previous], result.Entries[previous+1:]...)
@@ -98,6 +106,7 @@ func (i Indexer) Discover(root string) (Index, error) {
 				}
 			}
 			delete(seen, candidate.ID)
+			duplicateIDs[candidate.ID] = true
 			result.Quarantined = append(result.Quarantined,
 				Quarantine{Path: first.Provenance.Source.Path, ID: first.ID, Reason: "duplicate_id"},
 				Quarantine{Path: filepath.ToSlash(relative), ID: candidate.ID, Reason: "duplicate_id"},
@@ -111,26 +120,33 @@ func (i Indexer) Discover(root string) (Index, error) {
 	if err != nil {
 		return Index{}, err
 	}
-	available := make(map[string]bool, len(result.Entries))
-	for _, entry := range result.Entries {
-		available[entry.ID] = true
-	}
-	valid := result.Entries[:0]
-	for _, entry := range result.Entries {
-		missing := ""
-		for _, dependency := range entry.RequiredDependencies {
-			if !available[dependency] {
-				missing = dependency
-				break
+	for {
+		available := make(map[string]bool, len(result.Entries))
+		for _, entry := range result.Entries {
+			available[entry.ID] = true
+		}
+		valid := result.Entries[:0]
+		removed := 0
+		for _, entry := range result.Entries {
+			missing := false
+			for _, dependency := range entry.RequiredDependencies {
+				if !available[dependency] {
+					missing = true
+					break
+				}
 			}
+			if missing {
+				result.Quarantined = append(result.Quarantined, Quarantine{Path: entry.Provenance.Source.Path, ID: entry.ID, Reason: "missing_dependency"})
+				removed++
+				continue
+			}
+			valid = append(valid, entry)
 		}
-		if missing != "" {
-			result.Quarantined = append(result.Quarantined, Quarantine{Path: entry.Provenance.Source.Path, ID: entry.ID, Reason: "missing_dependency"})
-			continue
+		result.Entries = valid
+		if removed == 0 {
+			break
 		}
-		valid = append(valid, entry)
 	}
-	result.Entries = valid
 	sort.Slice(result.Entries, func(a, b int) bool { return result.Entries[a].ID < result.Entries[b].ID })
 	sort.Slice(result.Quarantined, func(a, b int) bool {
 		if result.Quarantined[a].Path == result.Quarantined[b].Path {
@@ -139,6 +155,31 @@ func (i Indexer) Discover(root string) (Index, error) {
 		return result.Quarantined[a].Path < result.Quarantined[b].Path
 	})
 	return result, nil
+}
+
+func validateDiscoveryRoot(root string) error {
+	current := string(filepath.Separator)
+	for _, part := range strings.Split(strings.TrimPrefix(root, string(filepath.Separator)), string(filepath.Separator)) {
+		if part == "" {
+			continue
+		}
+		current = filepath.Join(current, part)
+		info, err := os.Lstat(current)
+		if err != nil {
+			return err
+		}
+		if info.Mode()&os.ModeSymlink != 0 {
+			return errors.New("skill discovery root traverses a symlink")
+		}
+	}
+	info, err := os.Lstat(root)
+	if err != nil {
+		return err
+	}
+	if !info.IsDir() {
+		return errors.New("skill discovery root must be a directory")
+	}
+	return nil
 }
 
 func (i Indexer) readMetadata(path string) (map[string][]string, error) {
@@ -179,7 +220,13 @@ func parseFrontmatter(source io.Reader) (map[string][]string, error) {
 	reader := bufio.NewReaderSize(source, 16)
 	read := 0
 	line, err := readBoundedLine(reader, &read)
-	if err != nil || strings.TrimSpace(line) != "---" {
+	if err != nil {
+		if errors.Is(err, io.EOF) {
+			return nil, errors.New("malformed_frontmatter")
+		}
+		return nil, err
+	}
+	if strings.TrimSpace(line) != "---" {
 		return nil, errors.New("malformed_frontmatter")
 	}
 	values := map[string][]string{}
@@ -187,7 +234,10 @@ func parseFrontmatter(source io.Reader) (map[string][]string, error) {
 	for {
 		line, err = readBoundedLine(reader, &read)
 		if err != nil {
-			return nil, errors.New("malformed_frontmatter")
+			if errors.Is(err, io.EOF) {
+				return nil, errors.New("malformed_frontmatter")
+			}
+			return nil, err
 		}
 		trimmed := strings.TrimSpace(line)
 		if trimmed == "---" {
@@ -370,6 +420,9 @@ func (index Index) Search(query SearchQuery) []Candidate {
 	terms := normalizedTerms(query.Text)
 	var result []Candidate
 	for _, entry := range index.Entries {
+		if entry.Lifecycle != LifecycleStaged && entry.Lifecycle != LifecycleActive {
+			continue
+		}
 		if query.Domain != "" && entry.Domain != strings.ToLower(query.Domain) {
 			continue
 		}

@@ -25,6 +25,31 @@ func TestEventUsesExplicitAllowlistAndRedactsReasons(t *testing.T) {
 	}
 }
 
+func TestSkillControlPlaneEventsPersistMetadataOnly(t *testing.T) {
+	event, err := Normalize(Event{
+		Category: CategorySkillPolicy, Operation: OperationPolicyDecision, State: StateApprovalRequired,
+		SkillID: "synthetic-skill", RiskTier: "high", PolicyDecision: "REQUIRE_APPROVAL", RoutingReason: ReasonApprovalRequired,
+	})
+	if err != nil || event.SkillID != "synthetic-skill" {
+		t.Fatalf("event=%+v err=%v", event, err)
+	}
+	encoded, err := json.Marshal(event)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, forbidden := range []string{"prompt", "body", "script", "readme", "authorization", "environment"} {
+		if strings.Contains(strings.ToLower(string(encoded)), forbidden) {
+			t.Fatalf("event leaked forbidden field %q: %s", forbidden, encoded)
+		}
+	}
+	if _, err := Normalize(Event{Category: CategorySupplyChain, Operation: OperationSupplyStage, State: StateFailed, ArtifactID: "token=secret"}); err == nil {
+		t.Fatal("secret-shaped artifact ID accepted")
+	}
+	if _, err := Normalize(Event{Category: CategorySupplyChain, Operation: OperationSupplyPromote, State: StatePromoted, ArtifactID: "component", Revision: "main"}); err == nil {
+		t.Fatal("floating revision accepted in observability")
+	}
+}
+
 func TestEventRejectsUnknownDimensionsAndInvalidCorrelation(t *testing.T) {
 	now := time.Now().UTC()
 	for name, event := range map[string]Event{

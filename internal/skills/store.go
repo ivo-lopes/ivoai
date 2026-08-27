@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 
 	"github.com/ivo-lopes/ivoai/internal/core"
 	"github.com/ivo-lopes/ivoai/internal/platform"
@@ -22,6 +23,9 @@ type Store struct{ Path string }
 func RegistryPath(stateDir string) string { return filepath.Join(stateDir, "skills", "registry.json") }
 
 func (s Store) Load() (Registry, error) {
+	if err := validateRegistryPath(s.Path); err != nil {
+		return Registry{}, err
+	}
 	data, err := platform.ReadRegularFile(s.Path, maxRegistryBytes)
 	if errors.Is(err, os.ErrNotExist) {
 		return EmptyRegistry(), nil
@@ -45,6 +49,9 @@ func (s Store) Load() (Registry, error) {
 }
 
 func (s Store) Save(registry Registry) error {
+	if err := validateRegistryPath(s.Path); err != nil {
+		return err
+	}
 	if err := registry.Normalize(); err != nil {
 		return err
 	}
@@ -57,6 +64,30 @@ func (s Store) Save(registry Registry) error {
 		return errors.New("skill registry exceeds storage limit")
 	}
 	return platform.AtomicWritePrivate(data, s.Path)
+}
+
+func validateRegistryPath(value string) error {
+	if value == "" || !filepath.IsAbs(value) || filepath.Clean(value) == string(filepath.Separator) {
+		return errors.New("skill registry path must be absolute and private")
+	}
+	current := string(filepath.Separator)
+	for _, part := range strings.Split(strings.TrimPrefix(filepath.Dir(filepath.Clean(value)), string(filepath.Separator)), string(filepath.Separator)) {
+		if part == "" {
+			continue
+		}
+		current = filepath.Join(current, part)
+		info, err := os.Lstat(current)
+		if errors.Is(err, os.ErrNotExist) {
+			continue
+		}
+		if err != nil {
+			return err
+		}
+		if info.Mode()&os.ModeSymlink != 0 {
+			return fmt.Errorf("skill registry path traverses symlink: %s", current)
+		}
+	}
+	return nil
 }
 
 func (s Store) Resolve(_ context.Context, id string) (core.SkillDescriptor, error) {
@@ -83,8 +114,15 @@ func (s Store) Probe(_ context.Context) core.ComponentStatus {
 		health, available = core.HealthUnavailable, false
 		compatibility = core.Compatibility{State: core.CompatibilityIncompatible, Reason: "skill registry is unreadable"}
 	}
+	active := false
+	for _, entry := range registry.Entries {
+		if entry.Lifecycle == LifecycleActive {
+			active = true
+			break
+		}
+	}
 	return core.ComponentStatus{
-		ID: core.ComponentSkills, Implementation: "ivoai-skill-registry", Active: len(registry.Entries) > 0,
+		ID: core.ComponentSkills, Implementation: "ivoai-skill-registry", Active: active,
 		Installed: true, Managed: true, Available: available, Health: health, Lifecycle: core.LifecycleStopped,
 		Provenance:   core.Provenance{Source: "ivoai_private_state", Version: fmt.Sprintf("schema-%d", RegistrySchemaVersion)},
 		Capabilities: core.CapabilitySet{}, Compatibility: compatibility,

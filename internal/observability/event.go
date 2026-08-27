@@ -26,6 +26,10 @@ const (
 	CategoryWorker        Category = "worker"
 	CategoryApproval      Category = "approval"
 	CategoryQuota         Category = "quota"
+	CategorySkillRegistry Category = "skill_registry"
+	CategorySkillIndex    Category = "skill_index"
+	CategorySkillPolicy   Category = "skill_policy"
+	CategorySupplyChain   Category = "supply_chain"
 )
 
 type Operation string
@@ -43,21 +47,35 @@ const (
 	OperationApprovalPolicy          Operation = "approval.policy"
 	OperationQuotaProbe              Operation = "quota.probe"
 	OperationQuotaRoute              Operation = "quota.route"
+	OperationRegistryDiscovery       Operation = "skill_registry.discovery"
+	OperationSkillCandidate          Operation = "skill.candidate"
+	OperationSkillQuarantine         Operation = "skill.quarantine"
+	OperationSkillConflict           Operation = "skill.conflict"
+	OperationPolicyDecision          Operation = "skill_policy.decision"
+	OperationSupplyResolve           Operation = "supply_chain.resolve"
+	OperationSupplyStage             Operation = "supply_chain.stage"
+	OperationSupplyPromote           Operation = "supply_chain.promote"
+	OperationSupplyRollback          Operation = "supply_chain.rollback"
 )
 
 type State string
 
 const (
-	StatePending     State = "pending"
-	StateSelected    State = "selected"
-	StateRunning     State = "running"
-	StateCompleted   State = "completed"
-	StateDegraded    State = "degraded"
-	StateUnavailable State = "unavailable"
-	StateFailed      State = "failed"
-	StateBlocked     State = "blocked"
-	StateAllowed     State = "allowed"
-	StateDenied      State = "denied"
+	StatePending          State = "pending"
+	StateSelected         State = "selected"
+	StateRunning          State = "running"
+	StateCompleted        State = "completed"
+	StateDegraded         State = "degraded"
+	StateUnavailable      State = "unavailable"
+	StateFailed           State = "failed"
+	StateBlocked          State = "blocked"
+	StateAllowed          State = "allowed"
+	StateDenied           State = "denied"
+	StateQuarantined      State = "quarantined"
+	StateStaged           State = "staged"
+	StatePromoted         State = "promoted"
+	StateRolledBack       State = "rolled_back"
+	StateApprovalRequired State = "approval_required"
 )
 
 type Reason string
@@ -81,6 +99,15 @@ const (
 	ReasonKnowledgeReady         Reason = "knowledge_ready"
 	ReasonKnowledgeDegraded      Reason = "knowledge_degraded"
 	ReasonPolicyAllowed          Reason = "policy_allowed"
+	ReasonPolicyDenied           Reason = "policy_denied"
+	ReasonApprovalRequired       Reason = "approval_required"
+	ReasonInvalidMetadata        Reason = "invalid_metadata"
+	ReasonUnresolvedConflict     Reason = "unresolved_conflict"
+	ReasonIntegrityVerified      Reason = "integrity_verified"
+	ReasonIntegrityMismatch      Reason = "integrity_mismatch"
+	ReasonImmutableRevision      Reason = "immutable_revision"
+	ReasonValidationFailed       Reason = "validation_failed"
+	ReasonRollbackComplete       Reason = "rollback_complete"
 	ReasonRedacted               Reason = "redacted"
 )
 
@@ -107,6 +134,15 @@ type Event struct {
 	TelemetryState        string           `json:"telemetry_state,omitempty"`
 	RemainingPercent      *float64         `json:"remaining_percent,omitempty"`
 	ResetsAt              *time.Time       `json:"resets_at,omitempty"`
+	SkillID               string           `json:"skill_id,omitempty"`
+	ArtifactID            string           `json:"artifact_id,omitempty"`
+	Revision              string           `json:"revision,omitempty"`
+	RiskTier              string           `json:"risk_tier,omitempty"`
+	PolicyDecision        string           `json:"policy_decision,omitempty"`
+	SkillLifecycle        string           `json:"skill_lifecycle,omitempty"`
+	TrustLevel            string           `json:"trust_level,omitempty"`
+	SubjectID             string           `json:"subject_id,omitempty"`
+	SubjectKind           string           `json:"subject_kind,omitempty"`
 }
 
 var operationCategories = map[Operation]Category{
@@ -122,6 +158,15 @@ var operationCategories = map[Operation]Category{
 	OperationApprovalPolicy:          CategoryApproval,
 	OperationQuotaProbe:              CategoryQuota,
 	OperationQuotaRoute:              CategoryQuota,
+	OperationRegistryDiscovery:       CategorySkillRegistry,
+	OperationSkillCandidate:          CategorySkillIndex,
+	OperationSkillQuarantine:         CategorySkillIndex,
+	OperationSkillConflict:           CategorySkillIndex,
+	OperationPolicyDecision:          CategorySkillPolicy,
+	OperationSupplyResolve:           CategorySupplyChain,
+	OperationSupplyStage:             CategorySupplyChain,
+	OperationSupplyPromote:           CategorySupplyChain,
+	OperationSupplyRollback:          CategorySupplyChain,
 }
 
 // Normalize redacts the only free-text fields and validates every persisted
@@ -150,7 +195,7 @@ func (e Event) Validate() error {
 		return errors.New("invalid observability category or operation")
 	}
 	switch e.State {
-	case StatePending, StateSelected, StateRunning, StateCompleted, StateDegraded, StateUnavailable, StateFailed, StateBlocked, StateAllowed, StateDenied:
+	case StatePending, StateSelected, StateRunning, StateCompleted, StateDegraded, StateUnavailable, StateFailed, StateBlocked, StateAllowed, StateDenied, StateQuarantined, StateStaged, StatePromoted, StateRolledBack, StateApprovalRequired:
 	default:
 		return errors.New("invalid observability state")
 	}
@@ -178,6 +223,9 @@ func (e Event) Validate() error {
 	if !validReason(e.RoutingReason) || !validReason(e.FallbackReason) {
 		return errors.New("unsafe observability reason")
 	}
+	if !safeCanonicalID(e.SkillID, 128) || !safeCanonicalID(e.ArtifactID, 128) || !safeCanonicalID(e.SubjectID, 128) || !oneOf(e.SubjectKind, "", "skill", "tool", "hook", "executor") || !validRevision(e.Revision) || !oneOf(e.RiskTier, "", "low", "moderate", "high", "critical") || !oneOf(e.PolicyDecision, "", "ALLOW", "DENY", "REQUIRE_APPROVAL") || !oneOf(e.SkillLifecycle, "", "staged", "active", "quarantined", "previous") || !safeCanonicalID(e.TrustLevel, 64) {
+		return errors.New("invalid skill control-plane observability metadata")
+	}
 	return nil
 }
 
@@ -202,13 +250,43 @@ func safeWorker(value string) bool {
 	return value == "" || len(value) == 39 && strings.HasPrefix(value, "worker_") && safeLabel(value, 39)
 }
 
+func safeCanonicalID(value string, limit int) bool {
+	if value == "" {
+		return true
+	}
+	if len(value) > limit || platform.Redact(value) != value {
+		return false
+	}
+	for _, char := range value {
+		if !(char >= 'a' && char <= 'z' || char >= 'A' && char <= 'Z' || char >= '0' && char <= '9' || strings.ContainsRune("._:-", char)) {
+			return false
+		}
+	}
+	return true
+}
+
 func validReason(value Reason) bool {
 	switch value {
-	case "", ReasonDirect, ReasonPrimaryAvailable, ReasonCapabilityMatch, ReasonQuotaAvailable, ReasonQuotaExhausted, ReasonQuotaStale, ReasonTelemetryNotExposed, ReasonProbeFailed, ReasonAuthTransition, ReasonAlternateSelected, ReasonProviderUnavailable, ReasonProviderQuotaExhausted, ReasonModelQuotaExhausted, ReasonHeadroomEnabled, ReasonHeadroomBypassed, ReasonKnowledgeReady, ReasonKnowledgeDegraded, ReasonPolicyAllowed, ReasonRedacted:
+	case "", ReasonDirect, ReasonPrimaryAvailable, ReasonCapabilityMatch, ReasonQuotaAvailable, ReasonQuotaExhausted, ReasonQuotaStale, ReasonTelemetryNotExposed, ReasonProbeFailed, ReasonAuthTransition, ReasonAlternateSelected, ReasonProviderUnavailable, ReasonProviderQuotaExhausted, ReasonModelQuotaExhausted, ReasonHeadroomEnabled, ReasonHeadroomBypassed, ReasonKnowledgeReady, ReasonKnowledgeDegraded, ReasonPolicyAllowed, ReasonPolicyDenied, ReasonApprovalRequired, ReasonInvalidMetadata, ReasonUnresolvedConflict, ReasonIntegrityVerified, ReasonIntegrityMismatch, ReasonImmutableRevision, ReasonValidationFailed, ReasonRollbackComplete, ReasonRedacted:
 		return true
 	default:
 		return false
 	}
+}
+
+func validRevision(value string) bool {
+	if value == "" {
+		return true
+	}
+	if len(value) != 40 && len(value) != 64 {
+		return false
+	}
+	for _, char := range value {
+		if !(char >= '0' && char <= '9' || char >= 'a' && char <= 'f') {
+			return false
+		}
+	}
+	return true
 }
 
 func oneOf(value string, allowed ...string) bool {
@@ -230,6 +308,15 @@ func (e Event) Summary() string {
 	}
 	if correlation == "" {
 		correlation = string(e.Component)
+	}
+	if correlation == "" {
+		correlation = e.SkillID
+	}
+	if correlation == "" {
+		correlation = e.ArtifactID
+	}
+	if correlation == "" {
+		correlation = e.SubjectID
 	}
 	if correlation == "" {
 		return fmt.Sprintf("%s %s", e.Operation, e.State)

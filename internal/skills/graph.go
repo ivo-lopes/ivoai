@@ -41,7 +41,7 @@ func (r Resolver) Resolve(request ResolutionRequest) (Resolution, error) {
 	}
 	byID := make(map[string]Entry, len(registry.Entries))
 	for _, entry := range registry.Entries {
-		if entry.Lifecycle == LifecycleQuarantined {
+		if entry.Lifecycle != LifecycleStaged && entry.Lifecycle != LifecycleActive {
 			continue
 		}
 		byID[entry.ID] = entry
@@ -76,6 +76,9 @@ func (r Resolver) Resolve(request ResolutionRequest) (Resolution, error) {
 	}
 	for id := range selected {
 		entry := byID[id]
+		if entry.Role == "control_plane" || contains(entry.Capabilities, "orchestration.authority") {
+			return Resolution{}, &ResolutionError{Kind: "orchestration_authority_reserved", Skills: []string{id}}
+		}
 		if request.Executor != "" && len(entry.Compatibility.Executors) > 0 && !contains(entry.Compatibility.Executors, strings.ToLower(request.Executor)) {
 			return Resolution{}, &ResolutionError{Kind: "incompatible_executor", Skills: []string{id}, Detail: request.Executor}
 		}

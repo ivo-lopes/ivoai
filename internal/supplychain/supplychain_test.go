@@ -6,6 +6,8 @@ import (
 	"compress/gzip"
 	"context"
 	"crypto/sha256"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -13,6 +15,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/ivo-lopes/ivoai/internal/observability"
 )
 
 type archiveEntry struct {
@@ -21,6 +25,12 @@ type archiveEntry struct {
 	mode     int64
 	typeflag byte
 	link     string
+}
+
+var acceptingValidator = ValidatorFunc(func(context.Context, ResolvedSource, string) error { return nil })
+
+func testManager(root string) Manager {
+	return Manager{Root: root, Structural: acceptingValidator, Policy: acceptingValidator, Health: acceptingValidator}
 }
 
 func testArchive(t *testing.T, entries ...archiveEntry) []byte {
@@ -74,52 +84,69 @@ func stageFixture(t *testing.T, manager Manager, archive []byte, revision string
 func TestPipelineRequiresImmutableResolutionAndChecksum(t *testing.T) {
 	archive := testArchive(t, archiveEntry{name: "SKILL.md", body: "metadata"})
 	bad := resolvedFor(archive, "main")
-	if _, err := (Manager{Root: t.TempDir()}).StageArchive(context.Background(), bad, bytes.NewReader(archive)); err == nil {
+	if _, err := testManager(t.TempDir()).StageArchive(context.Background(), bad, bytes.NewReader(archive)); err == nil {
 		t.Fatal("floating revision accepted")
 	}
 	bad = resolvedFor(archive, strings.Repeat("a", 40))
 	bad.Integrity.Digest = strings.Repeat("0", 64)
-	if _, err := (Manager{Root: t.TempDir()}).StageArchive(context.Background(), bad, bytes.NewReader(archive)); err == nil {
+	if _, err := testManager(t.TempDir()).StageArchive(context.Background(), bad, bytes.NewReader(archive)); err == nil {
 		t.Fatal("checksum mismatch accepted")
 	}
 	bad = resolvedFor(archive, strings.Repeat("a", 40))
 	bad.Source = "https://"
-	if _, err := (Manager{Root: t.TempDir()}).StageArchive(context.Background(), bad, bytes.NewReader(archive)); err == nil {
+	if _, err := testManager(t.TempDir()).StageArchive(context.Background(), bad, bytes.NewReader(archive)); err == nil {
 		t.Fatal("invalid source accepted")
 	}
 }
 
 func TestArchiveSafetyRejectsTraversalLinksDuplicatesExecutablesAndLimits(t *testing.T) {
 	tests := map[string][]archiveEntry{
-		"traversal":  {{name: "../escape", body: "x"}},
-		"absolute":   {{name: "/escape", body: "x"}},
-		"symlink":    {{name: "link", typeflag: tar.TypeSymlink, link: "target"}},
-		"hardlink":   {{name: "link", typeflag: tar.TypeLink, link: "target"}},
-		"duplicate":  {{name: "same", body: "a"}, {name: "same", body: "b"}},
-		"executable": {{name: "install.sh", body: "exit 0", mode: 0o700}},
+		"traversal":    {{name: "../escape", body: "x"}},
+		"absolute":     {{name: "/escape", body: "x"}},
+		"backslash":    {{name: `dir\escape`, body: "x"}},
+		"reserved":     {{name: ".ivoai-provenance.json", body: "forged"}},
+		"symlink":      {{name: "link", typeflag: tar.TypeSymlink, link: "target"}},
+		"hardlink":     {{name: "link", typeflag: tar.TypeLink, link: "target"}},
+		"special-file": {{name: "pipe", typeflag: tar.TypeFifo}},
+		"duplicate":    {{name: "same", body: "a"}, {name: "same", body: "b"}},
+		"executable":   {{name: "install.sh", body: "exit 0", mode: 0o700}},
 	}
 	for name, entries := range tests {
 		t.Run(name, func(t *testing.T) {
 			archive := testArchive(t, entries...)
-			if _, err := (Manager{Root: t.TempDir()}).StageArchive(context.Background(), resolvedFor(archive, strings.Repeat("a", 40)), bytes.NewReader(archive)); err == nil {
+			if _, err := testManager(t.TempDir()).StageArchive(context.Background(), resolvedFor(archive, strings.Repeat("a", 40)), bytes.NewReader(archive)); err == nil {
 				t.Fatal("unsafe archive accepted")
 			}
 		})
 	}
 	archive := testArchive(t, archiveEntry{name: "large", body: strings.Repeat("x", 1024)})
-	manager := Manager{Root: t.TempDir(), Limits: Limits{ArchiveBytes: 1 << 20, ExpandedBytes: 512, FileBytes: 512, Files: 10}}
+	manager := testManager(t.TempDir())
+	manager.Limits = Limits{ArchiveBytes: 1 << 20, ExpandedBytes: 512, FileBytes: 512, Files: 10}
 	if _, err := manager.StageArchive(context.Background(), resolvedFor(archive, strings.Repeat("a", 40)), bytes.NewReader(archive)); err == nil {
 		t.Fatal("oversized expanded archive accepted")
 	}
-	if _, err := (Manager{Root: t.TempDir(), Limits: Limits{ArchiveBytes: 10, ExpandedBytes: 1 << 20, FileBytes: 1 << 20, Files: 10}}).StageArchive(context.Background(), resolvedFor(archive, strings.Repeat("a", 40)), bytes.NewReader(archive)); err == nil {
+	compressedManager := testManager(t.TempDir())
+	compressedManager.Limits = Limits{ArchiveBytes: 10, ExpandedBytes: 1 << 20, FileBytes: 1 << 20, Files: 10}
+	if _, err := compressedManager.StageArchive(context.Background(), resolvedFor(archive, strings.Repeat("a", 40)), bytes.NewReader(archive)); err == nil {
 		t.Fatal("oversized compressed archive accepted")
+	}
+	countArchive := testArchive(t, archiveEntry{name: "one", body: "1"}, archiveEntry{name: "two", body: "2"})
+	countManager := testManager(t.TempDir())
+	countManager.Limits = Limits{ArchiveBytes: 1 << 20, ExpandedBytes: 1 << 20, FileBytes: 1 << 20, Files: 1}
+	if _, err := countManager.StageArchive(context.Background(), resolvedFor(countArchive, strings.Repeat("a", 40)), bytes.NewReader(countArchive)); err == nil {
+		t.Fatal("file-count overflow accepted")
+	}
+	fileManager := testManager(t.TempDir())
+	fileManager.Limits = Limits{ArchiveBytes: 1 << 20, ExpandedBytes: 1 << 20, FileBytes: 4, Files: 10}
+	if _, err := fileManager.StageArchive(context.Background(), resolvedFor(archive, strings.Repeat("a", 40)), bytes.NewReader(archive)); err == nil {
+		t.Fatal("per-file overflow accepted")
 	}
 }
 
 func TestValidationFailurePreservesActiveAndStagingNeverExecutes(t *testing.T) {
 	root := t.TempDir()
 	archive := testArchive(t, archiveEntry{name: "SKILL.md", body: "do not execute: rm -rf /"}, archiveEntry{name: "hook.sh", body: "touch forbidden"})
-	manager := Manager{Root: root}
+	manager := testManager(root)
 	first := stageFixture(t, manager, archive, strings.Repeat("a", 40))
 	if err := manager.Promote(first); err != nil {
 		t.Fatal(err)
@@ -146,7 +173,8 @@ func TestValidationFailurePreservesActiveAndStagingNeverExecutes(t *testing.T) {
 
 func TestAtomicPointerPromotionRollbackAndIdempotency(t *testing.T) {
 	root := t.TempDir()
-	manager := Manager{Root: root, Now: func() time.Time { return time.Unix(100, 0) }}
+	manager := testManager(root)
+	manager.Now = func() time.Time { return time.Unix(100, 0) }
 	firstArchive := testArchive(t, archiveEntry{name: "SKILL.md", body: "first"})
 	secondArchive := testArchive(t, archiveEntry{name: "SKILL.md", body: "second"})
 	first := stageFixture(t, manager, firstArchive, strings.Repeat("a", 40))
@@ -185,7 +213,7 @@ func TestInterruptedStagingRecoveryAndUnmanagedContentPreserved(t *testing.T) {
 	if err := os.WriteFile(unmanaged, []byte("preserve"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	manager := Manager{Root: root}
+	manager := testManager(root)
 	if err := manager.ensureRoot(); err != nil {
 		t.Fatal(err)
 	}
@@ -212,6 +240,35 @@ func TestInterruptedStagingRecoveryAndUnmanagedContentPreserved(t *testing.T) {
 	}
 }
 
+func TestInterruptedPromotionRecoveryRestoresPreviousPointer(t *testing.T) {
+	root := t.TempDir()
+	manager := testManager(root)
+	first := stageFixture(t, manager, testArchive(t, archiveEntry{name: "SKILL.md", body: "first"}), strings.Repeat("a", 40))
+	if err := manager.Promote(first); err != nil {
+		t.Fatal(err)
+	}
+	second := stageFixture(t, manager, testArchive(t, archiveEntry{name: "SKILL.md", body: "second"}), strings.Repeat("b", 40))
+	tx, err := manager.loadTransaction(second.TransactionID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tx.State, tx.Previous, tx.UpdatedAt = "promoting", strings.Repeat("a", 40), time.Now().UTC()
+	if err := manager.saveTransaction(tx); err != nil {
+		t.Fatal(err)
+	}
+	if err := manager.savePointer(Pointer{Schema: SchemaVersion, ID: "synthetic", Active: strings.Repeat("b", 40), Previous: strings.Repeat("a", 40), UpdatedAt: time.Now().UTC()}); err != nil {
+		t.Fatal(err)
+	}
+	recovered, err := manager.Recover()
+	if err != nil || recovered != 1 {
+		t.Fatalf("recovered=%d err=%v", recovered, err)
+	}
+	active, _, err := manager.Active("synthetic")
+	if err != nil || active.Revision != strings.Repeat("a", 40) {
+		t.Fatalf("active=%+v err=%v", active, err)
+	}
+}
+
 type fakeDiscoverer struct{ source ResolvedSource }
 
 func (f fakeDiscoverer) Resolve(context.Context, Reference) (ResolvedSource, error) {
@@ -227,7 +284,7 @@ func (f fakeFetcher) Fetch(context.Context, ResolvedSource) (io.ReadCloser, erro
 func TestGenericPipelineStagesComponentsAndSkillsWithoutExecuting(t *testing.T) {
 	archive := testArchive(t, archiveEntry{name: "payload.txt", body: "data"})
 	source := resolvedFor(archive, strings.Repeat("c", 40))
-	pipeline := Pipeline{Manager: Manager{Root: t.TempDir()}, Discoverer: fakeDiscoverer{source: source}, Fetcher: fakeFetcher{archive: archive}}
+	pipeline := Pipeline{Manager: testManager(t.TempDir()), Discoverer: fakeDiscoverer{source: source}, Fetcher: fakeFetcher{archive: archive}}
 	staged, err := pipeline.Prepare(context.Background(), Reference{ID: source.ID, Kind: source.Kind, Source: source.Source})
 	if err != nil || staged.Source.Revision != source.Revision {
 		t.Fatalf("staged=%+v err=%v", staged, err)
@@ -240,12 +297,169 @@ func TestComponentMayDeclareBoundedExecutableWithoutRunningIt(t *testing.T) {
 	source.Kind = KindComponent
 	source.Executables = []string{"bin/helper"}
 	root := t.TempDir()
-	staged, err := (Manager{Root: root}).StageArchive(context.Background(), source, bytes.NewReader(archive))
+	staged, err := testManager(root).StageArchive(context.Background(), source, bytes.NewReader(archive))
 	if err != nil {
 		t.Fatal(err)
 	}
 	info, err := os.Stat(filepath.Join(staged.ObjectPath, "bin", "helper"))
 	if err != nil || info.Mode().Perm() != 0o700 {
 		t.Fatalf("mode=%v err=%v", info.Mode(), err)
+	}
+}
+
+func TestStagingSanitizesRegularFileModeAndHonorsCancellation(t *testing.T) {
+	archive := testArchive(t, archiveEntry{name: "payload.txt", body: "data", mode: 0o666})
+	manager := testManager(t.TempDir())
+	staged, err := manager.StageArchive(context.Background(), resolvedFor(archive, strings.Repeat("d", 40)), bytes.NewReader(archive))
+	if err != nil {
+		t.Fatal(err)
+	}
+	info, err := os.Stat(filepath.Join(staged.ObjectPath, "payload.txt"))
+	if err != nil || info.Mode().Perm() != 0o600 {
+		t.Fatalf("mode=%v err=%v", info.Mode(), err)
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	if _, err := testManager(t.TempDir()).StageArchive(ctx, resolvedFor(archive, strings.Repeat("e", 40)), bytes.NewReader(archive)); !errors.Is(err, context.Canceled) {
+		t.Fatalf("cancel err=%v", err)
+	}
+}
+
+func TestPipelineRejectsMissingValidatorsAndMismatchedResolution(t *testing.T) {
+	archive := testArchive(t, archiveEntry{name: "SKILL.md", body: "metadata"})
+	source := resolvedFor(archive, strings.Repeat("e", 40))
+	if _, err := (Manager{Root: t.TempDir()}).StageArchive(context.Background(), source, bytes.NewReader(archive)); err == nil {
+		t.Fatal("staging without structural, policy, and health validators succeeded")
+	}
+	pipeline := Pipeline{Manager: testManager(t.TempDir()), Discoverer: fakeDiscoverer{source: source}, Fetcher: fakeFetcher{archive: archive}}
+	if _, err := pipeline.Prepare(context.Background(), Reference{ID: "another", Kind: KindSkill, Source: source.Source}); err == nil {
+		t.Fatal("discoverer substituted a different artifact")
+	}
+}
+
+func TestPromotionRequiresMatchingTransactionAndUntamperedObject(t *testing.T) {
+	root := t.TempDir()
+	manager := testManager(root)
+	archive := testArchive(t, archiveEntry{name: "SKILL.md", body: "original"})
+	staged := stageFixture(t, manager, archive, strings.Repeat("e", 40))
+	forged := staged
+	forged.TransactionID = "sc_" + strings.Repeat("f", 32)
+	if err := manager.Promote(forged); err == nil {
+		t.Fatal("promotion without matching transaction succeeded")
+	}
+	if _, _, err := manager.Active("synthetic"); !os.IsNotExist(err) {
+		t.Fatalf("forged promotion changed active pointer: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(staged.ObjectPath, "SKILL.md"), []byte("tampered"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := manager.Promote(staged); err == nil {
+		t.Fatal("tampered staged object was promoted")
+	}
+	if _, _, err := manager.Active("synthetic"); !os.IsNotExist(err) {
+		t.Fatalf("tampered promotion changed active pointer: %v", err)
+	}
+}
+
+func TestPostPromotionHealthFailureRestoresPrevious(t *testing.T) {
+	root := t.TempDir()
+	manager := testManager(root)
+	first := stageFixture(t, manager, testArchive(t, archiveEntry{name: "SKILL.md", body: "first"}), strings.Repeat("a", 40))
+	if err := manager.Promote(first); err != nil {
+		t.Fatal(err)
+	}
+	second := stageFixture(t, manager, testArchive(t, archiveEntry{name: "SKILL.md", body: "second"}), strings.Repeat("b", 40))
+	manager.Health = ValidatorFunc(func(context.Context, ResolvedSource, string) error { return errors.New("health failed") })
+	if err := manager.Promote(second); err == nil {
+		t.Fatal("unhealthy candidate committed")
+	}
+	active, _, err := manager.Active("synthetic")
+	if err != nil || active.Revision != strings.Repeat("a", 40) {
+		t.Fatalf("active=%+v err=%v", active, err)
+	}
+}
+
+func TestRollbackRejectsCorruptPreviousAndPreservesActive(t *testing.T) {
+	root := t.TempDir()
+	manager := testManager(root)
+	first := stageFixture(t, manager, testArchive(t, archiveEntry{name: "SKILL.md", body: "first"}), strings.Repeat("a", 40))
+	second := stageFixture(t, manager, testArchive(t, archiveEntry{name: "SKILL.md", body: "second"}), strings.Repeat("b", 40))
+	if err := manager.Promote(first); err != nil {
+		t.Fatal(err)
+	}
+	if err := manager.Promote(second); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(first.ObjectPath, ".ivoai-provenance.json"), []byte("corrupt"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if rolled, err := manager.Rollback("synthetic"); err == nil || rolled {
+		t.Fatalf("rolled=%t err=%v", rolled, err)
+	}
+	active, _, err := manager.Active("synthetic")
+	if err != nil || active.Revision != strings.Repeat("b", 40) {
+		t.Fatalf("active=%+v err=%v", active, err)
+	}
+}
+
+func TestSupplyChainEmitsBoundedMetadataOnlyEvents(t *testing.T) {
+	root := t.TempDir()
+	manager := testManager(root)
+	var events []observability.Event
+	manager.Observe = func(event observability.Event) { events = append(events, event) }
+	staged := stageFixture(t, manager, testArchive(t, archiveEntry{name: "SKILL.md", body: "private body"}), strings.Repeat("a", 40))
+	if err := manager.Promote(staged); err != nil {
+		t.Fatal(err)
+	}
+	if len(events) < 2 || events[0].Operation != observability.OperationSupplyStage || events[len(events)-1].Operation != observability.OperationSupplyPromote {
+		t.Fatalf("events=%+v", events)
+	}
+	data, err := json.Marshal(events)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(data), "private body") || strings.Contains(string(data), root) {
+		t.Fatalf("event leaked content or path: %s", data)
+	}
+}
+
+func TestReadOperationsRejectSymlinkedManagedRoot(t *testing.T) {
+	realRoot := t.TempDir()
+	link := filepath.Join(t.TempDir(), "supply-chain")
+	if err := os.Symlink(realRoot, link); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := ListPointers(link); err == nil {
+		t.Fatal("pointer listing followed a symlinked supply-chain root")
+	}
+	if _, _, err := (Manager{Root: link}).Active("synthetic"); err == nil {
+		t.Fatal("active lookup followed a symlinked supply-chain root")
+	}
+}
+
+func TestReadOperationsRejectSymlinkedStateRoot(t *testing.T) {
+	root := t.TempDir()
+	if err := os.Chmod(root, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	stateTarget := t.TempDir()
+	if err := os.Symlink(stateTarget, filepath.Join(root, "state")); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := ListPointers(root); err == nil {
+		t.Fatal("pointer listing followed a symlinked state root")
+	}
+}
+
+func TestValidateRootRejectsUnsafeStagingSubdirectory(t *testing.T) {
+	root := t.TempDir()
+	if err := os.Chmod(root, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(t.TempDir(), filepath.Join(root, "staging")); err != nil {
+		t.Fatal(err)
+	}
+	if err := ValidateRoot(root); err == nil {
+		t.Fatal("health check accepted symlinked staging root")
 	}
 }
