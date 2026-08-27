@@ -51,6 +51,8 @@ const (
 	OperationSkillCandidate          Operation = "skill.candidate"
 	OperationSkillQuarantine         Operation = "skill.quarantine"
 	OperationSkillConflict           Operation = "skill.conflict"
+	OperationSkillGate               Operation = "skill.gate"
+	OperationSkillContentLoad        Operation = "skill.content_load"
 	OperationPolicyDecision          Operation = "skill_policy.decision"
 	OperationSupplyResolve           Operation = "supply_chain.resolve"
 	OperationSupplyStage             Operation = "supply_chain.stage"
@@ -162,6 +164,8 @@ var operationCategories = map[Operation]Category{
 	OperationSkillCandidate:          CategorySkillIndex,
 	OperationSkillQuarantine:         CategorySkillIndex,
 	OperationSkillConflict:           CategorySkillIndex,
+	OperationSkillGate:               CategorySkillRegistry,
+	OperationSkillContentLoad:        CategorySkillRegistry,
 	OperationPolicyDecision:          CategorySkillPolicy,
 	OperationSupplyResolve:           CategorySupplyChain,
 	OperationSupplyStage:             CategorySupplyChain,

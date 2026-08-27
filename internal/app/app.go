@@ -638,7 +638,15 @@ func (a *App) Launch(ctx context.Context, target string, args []string) error {
 	if err := validateManagedAgentRuntime(target, state); err != nil {
 		return err
 	}
-	args = sharedKnowledgeAgentArgs(target, args, cfg)
+	cwd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+	skillResult, err := a.evaluateSessionSkills(ctx, target, cwd, args)
+	if err != nil {
+		return err
+	}
+	args = managedAgentArgs(target, args, cfg, skillResult.Instructions)
 	environment, err := a.serverCredentialEnvironment()
 	if err != nil {
 		return err

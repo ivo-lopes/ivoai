@@ -136,6 +136,20 @@ func (a *App) Auto(ctx context.Context, planner string, agentArgs []string) erro
 	if err != nil {
 		return err
 	}
+	skillResult, err := a.evaluateSessionSkills(ctx, current, cwd, agentArgs)
+	if err != nil {
+		_ = store.CleanupRuntime(id)
+		_, _ = store.Update(id, func(current *session.Session) error { current.State = session.StateFailed; return nil })
+		return err
+	}
+	if _, err = store.Update(id, func(current *session.Session) error {
+		return appendSkillObservations(skillResult.Events, id, func(event observability.Event) error {
+			return session.AppendObservation(current, event)
+		})
+	}); err != nil {
+		_ = store.CleanupRuntime(id)
+		return err
+	}
 	control := orchestration.RufloOrchestratorAdapter{Control: orchestration.ControlPlane{Manager: a.orchestrationManager(state), RuntimeDir: runtimeDir}, Managed: state.Components["ruflo"].Managed}
 	swarm, err := control.Initialize(ctx, cfg.Orchestration.Auto.MaxWorkers)
 	if err != nil {
@@ -167,7 +181,11 @@ func (a *App) Auto(ctx context.Context, planner string, agentArgs []string) erro
 		_ = a.cleanupSession(store, id, control)
 	}()
 	instructionsPath := filepath.Join(runtimeDir, "automatic-instructions.md")
-	if err := platform.AtomicWritePrivate([]byte(automaticInstructions(cfg.Orchestration.Auto.CheckpointEnabled)), instructionsPath); err != nil {
+	instructions := automaticInstructions(cfg.Orchestration.Auto.CheckpointEnabled)
+	if skillResult.Instructions != "" {
+		instructions += "\n\n" + skillResult.Instructions
+	}
+	if err := platform.AtomicWritePrivate([]byte(instructions), instructionsPath); err != nil {
 		return err
 	}
 	environment, err := a.serverCredentialEnvironment()
@@ -243,6 +261,22 @@ func (a *App) Auto(ctx context.Context, planner string, agentArgs []string) erro
 		if err != nil {
 			return err
 		}
+		nextSkills, gateErr := a.evaluateSessionSkills(ctx, current, cwd, nil)
+		if gateErr != nil {
+			return gateErr
+		}
+		nextInstructions := automaticInstructions(cfg.Orchestration.Auto.CheckpointEnabled)
+		if nextSkills.Instructions != "" {
+			nextInstructions += "\n\n" + nextSkills.Instructions
+		}
+		if err := platform.AtomicWritePrivate([]byte(nextInstructions), instructionsPath); err != nil {
+			return err
+		}
+		_, _ = store.Update(id, func(currentSession *session.Session) error {
+			return appendSkillObservations(nextSkills.Events, id, func(event observability.Event) error {
+				return session.AppendObservation(currentSession, event)
+			})
+		})
 		fmt.Fprintf(a.Out, "\nAutomatic Failover\nFrom       %s\nTo         %s\nReason     %s\nCheckpoint %s\nWorking tree preserved\n\n", displayProvider(previous), displayProvider(current), reason, checkpointLabel(store, id))
 		agentArgs = nil
 	}

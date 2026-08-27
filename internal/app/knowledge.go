@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/ivo-lopes/ivoai/internal/config"
 	"github.com/ivo-lopes/ivoai/internal/knowledgepolicy"
@@ -27,11 +28,19 @@ var codexSharedKnowledgeReadApprovals = map[string][]string{
 }
 
 func sharedKnowledgeAgentArgs(executor string, existing []string, cfg config.Config) []string {
+	return managedAgentArgs(executor, existing, cfg, "")
+}
+
+func managedAgentArgs(executor string, existing []string, cfg config.Config, skillInstructions string) []string {
+	instructions := sharedKnowledgeInstructions
+	if strings.TrimSpace(skillInstructions) != "" {
+		instructions += "\n\n" + skillInstructions
+	}
 	if executor == "codex" {
-		args := []string{"-c", "developer_instructions=" + strconv.Quote(sharedKnowledgeInstructions)}
+		args := []string{"-c", "developer_instructions=" + strconv.Quote(instructions)}
 		return codexSharedKnowledgeReadApprovalArgs(append(args, existing...), cfg)
 	}
-	return append([]string{"--append-system-prompt", sharedKnowledgeInstructions}, existing...)
+	return append([]string{"--append-system-prompt", instructions}, existing...)
 }
 
 func codexSharedKnowledgeReadApprovalArgs(existing []string, cfg config.Config) []string {

@@ -15,6 +15,7 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/agents"
 	"github.com/ivo-lopes/ivoai/internal/config"
 	"github.com/ivo-lopes/ivoai/internal/core"
+	"github.com/ivo-lopes/ivoai/internal/observability"
 	"github.com/ivo-lopes/ivoai/internal/orchestration"
 	"github.com/ivo-lopes/ivoai/internal/orchestrator"
 	"github.com/ivo-lopes/ivoai/internal/platform"
@@ -62,7 +63,21 @@ func (a *App) SessionStart(ctx context.Context, executor string, mode session.Mo
 	if err := store.Create(value); err != nil {
 		return err
 	}
-	args = sharedKnowledgeAgentArgs(executor, args, cfg)
+	skillResult, err := a.evaluateSessionSkills(ctx, executor, cwd, args)
+	if err != nil {
+		_ = store.Delete(id)
+		return err
+	}
+	value, err = store.Update(id, func(current *session.Session) error {
+		return appendSkillObservations(skillResult.Events, id, func(event observability.Event) error {
+			return session.AppendObservation(current, event)
+		})
+	})
+	if err != nil {
+		_ = store.Delete(id)
+		return err
+	}
+	args = managedAgentArgs(executor, args, cfg, skillResult.Instructions)
 	var control core.Orchestrator
 	if mode == session.ModeOrchestrated {
 		if !cfg.Orchestration.Enabled {
