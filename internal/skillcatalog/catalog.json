@@ -1,0 +1,109 @@
+{
+  "schema": 1,
+  "sources": [
+    {
+      "id": "anthropic-cybersecurity-skills",
+      "display_name": "Anthropic Cybersecurity Skills",
+      "upstream": {"repository": "https://github.com/mukul975/Anthropic-Cybersecurity-Skills", "default_branch": "main", "license": "Apache-2.0", "observed_skill_count": 818},
+      "provenance": {"revision": "1b3f6b2286981381a5cc0566551ef3bb6bc38383", "resolution_source": "github_api", "signature_status": "not_exposed", "attestation_status": "not_exposed", "trust_level": "commit_pinned_local_digest"},
+      "skills": [{"path": "skills/analyzing-indicators-of-compromise/SKILL.md", "name": "analyzing-indicators-of-compromise", "description": "Analyze indicators of compromise and make bounded triage recommendations from threat-intelligence evidence.", "sha256": "83777979345a5a6cf8d73c2939cf4623c27dd7f234a3f4088c1cfc827b88dc98"}],
+      "classifications": [{"path": "skills/analyzing-indicators-of-compromise/SKILL.md", "canonical_id": "anthropic-ioc-analysis", "domain": "cybersecurity", "triggers": ["analyze indicators of compromise", "triage iocs"], "keywords": ["ioc", "threat intelligence"], "phase": "security", "role": "security_analysis", "role_mode": "composable", "risk": "moderate", "requested_capabilities": ["network.read", "tool.invoke"], "executors": ["claude", "codex"]}]
+    },
+    {
+      "id": "awesome-gpt-image-2",
+      "display_name": "awesome-gpt-image-2",
+      "upstream": {"repository": "https://github.com/freestylefly/awesome-gpt-image-2", "default_branch": "main", "license": "MIT", "observed_skill_count": 1},
+      "provenance": {"revision": "9a7b2e9c39f816d6c699c2a133e11b6d8bfdc464", "resolution_source": "github_api", "signature_status": "not_exposed", "attestation_status": "not_exposed", "trust_level": "commit_pinned_local_digest"},
+      "skills": [{"path": "agents/skills/gpt-image-2-style-library/SKILL.md", "name": "gpt-image-2-style-library", "description": "Choose visual styles and prompt templates from the repository's GPT-Image 2 style library.", "sha256": "689af6b0f12020cd3c528469aca6cc1e884faeb49016af7344f289f5277e17bf"}],
+      "classifications": [{"path": "agents/skills/gpt-image-2-style-library/SKILL.md", "canonical_id": "gpt-image-2-style-library", "domain": "image_generation", "triggers": ["choose image style", "improve image prompt"], "keywords": ["gpt image", "prompt style"], "phase": "art_direction", "role": "visual_director", "role_mode": "exclusive", "risk": "low", "executors": ["claude", "codex"]}]
+    },
+    {
+      "id": "caveman-skills",
+      "display_name": "Caveman skills",
+      "upstream": {"repository": "https://github.com/JuliusBrussee/caveman", "default_branch": "main", "license": "MIT for skills; mixed repository licensing", "observed_skill_count": 24},
+      "provenance": {"revision": "17f9f2ec2377b0bfe16b52ee03a462e7f0a02bc8", "resolution_source": "github_api", "signature_status": "not_exposed", "attestation_status": "not_exposed", "trust_level": "commit_pinned_local_digest"},
+      "skills": [{"path": "skills/surgical-patch/SKILL.md", "name": "surgical-patch", "description": "Fix bugs and small behavior changes at the narrowest responsible layer with focused regression proof.", "sha256": "35020b6a2da186c3a433c0c4cd785aeb0cb5ff19b2ceca53242eaaa40765f3b7"}],
+      "classifications": [{"path": "skills/surgical-patch/SKILL.md", "canonical_id": "caveman-surgical-patch", "domain": "software_engineering", "triggers": ["fix a bug narrowly", "make a small behavior change"], "keywords": ["regression", "surgical patch"], "phase": "implementation", "role": "engineering_method", "role_mode": "composable", "risk": "low", "executors": ["claude", "codex"]}]
+    },
+    {
+      "id": "codex-security-skills",
+      "display_name": "Codex Security skills",
+      "upstream": {"repository": "https://github.com/openai/codex-security", "default_branch": "main", "license": "Apache-2.0", "observed_skill_count": 15},
+      "provenance": {"revision": "9bd256af7667bda1a293e77fff90475f9fec1f3f", "resolution_source": "github_api", "signature_status": "not_exposed", "attestation_status": "not_exposed", "trust_level": "commit_pinned_local_digest"},
+      "skills": [{"path": "plugins/codex-security/skills/security-scan/SKILL.md", "name": "security-scan", "description": "Run a standard single-pass repository security audit through the official Codex Security workflow.", "sha256": "0500d9d59f30a2178528059a8bda89d299b812b71176f2ffea964129779b67d8"}],
+      "classifications": [{"path": "plugins/codex-security/skills/security-scan/SKILL.md", "canonical_id": "codex-security-scan", "domain": "cybersecurity", "triggers": ["security scan", "audit repository security"], "keywords": ["codex security", "vulnerability"], "phase": "security", "role": "security_analysis", "role_mode": "composable", "risk": "high", "requested_capabilities": ["tool.invoke"], "executors": ["codex"]}]
+    },
+    {
+      "id": "hallmark",
+      "display_name": "Hallmark",
+      "upstream": {"repository": "https://github.com/Nutlope/hallmark", "default_branch": "main", "license": "MIT", "observed_skill_count": 1},
+      "provenance": {"revision": "13ac0ec7e148655948100b6396439e481361d690", "resolution_source": "github_api", "signature_status": "not_exposed", "attestation_status": "not_exposed", "trust_level": "commit_pinned_local_digest"},
+      "skills": [{"path": "skills/hallmark/SKILL.md", "name": "hallmark", "description": "Apply an anti-slop design method to greenfield pages, audits, redesigns, and design extraction.", "sha256": "40daf188f75f1dad92fe806b2b6c7ca35c71030ddefdf3ed61deea0addbd1f2d"}],
+      "classifications": [{"path": "skills/hallmark/SKILL.md", "canonical_id": "hallmark", "domain": "frontend_design", "triggers": ["design a page", "redesign interface"], "keywords": ["anti slop", "frontend design"], "phase": "art_direction", "role": "visual_director", "role_mode": "exclusive", "risk": "moderate", "executors": ["claude", "codex"]}]
+    },
+    {
+      "id": "i-have-adhd",
+      "display_name": "i-have-adhd",
+      "upstream": {"repository": "https://github.com/ayghri/i-have-adhd", "default_branch": "main", "license": "MIT", "observed_skill_count": 2},
+      "provenance": {"revision": "cbe69fb83c08a37cf54d5ec9ec6bb88c8bc9973c", "resolution_source": "github_api", "signature_status": "not_exposed", "attestation_status": "not_exposed", "trust_level": "commit_pinned_local_digest"},
+      "skills": [{"path": "skills/i-have-adhd/SKILL.md", "name": "i-have-adhd", "description": "Shape responses for an ADHD reader with action-first structure, explicit state, and fewer tangents.", "sha256": "ae00f8287253ec836b7263352439a7a3a13beaa963a17819b9be06828a647b0e"}],
+      "classifications": [{"path": "skills/i-have-adhd/SKILL.md", "canonical_id": "i-have-adhd", "domain": "interaction", "triggers": ["adhd friendly output", "enable adhd mode"], "keywords": ["adhd", "output style"], "phase": "interaction_profile", "role": "interaction_profile", "role_mode": "exclusive", "risk": "low", "executors": ["claude", "codex"]}]
+    },
+    {
+      "id": "impeccable",
+      "display_name": "Impeccable",
+      "upstream": {"repository": "https://github.com/pbakaus/impeccable", "default_branch": "main", "license": "Apache-2.0", "observed_skill_count": 17},
+      "provenance": {"revision": "63b04e2530f5c7b41ea83c133daab24f34912456", "resolution_source": "github_api", "signature_status": "not_exposed", "attestation_status": "not_exposed", "trust_level": "commit_pinned_local_digest"},
+      "skills": [{"path": "plugin/skills/impeccable/SKILL.md", "name": "impeccable", "description": "Design, critique, audit, and polish production frontend interfaces with an opinionated visual method.", "sha256": "f512a0a2521ce56c4b680ff2e5e13d418c44abc6dc031ac94cc71f0c68602784"}],
+      "classifications": [{"path": "plugin/skills/impeccable/SKILL.md", "canonical_id": "impeccable", "domain": "frontend_design", "triggers": ["polish frontend", "audit interface design"], "keywords": ["frontend", "visual polish"], "phase": "art_direction", "role": "visual_director", "role_mode": "exclusive", "risk": "high", "requested_capabilities": ["shell.execute"], "executors": ["claude", "codex"]}]
+    },
+    {
+      "id": "marketing-skills",
+      "display_name": "MarketingSkills",
+      "upstream": {"repository": "https://github.com/coreyhaines31/marketingskills", "default_branch": "main", "license": "MIT", "observed_skill_count": 50},
+      "provenance": {"revision": "b1aaa3619e747f4a836c61e03084c4a531de1262", "resolution_source": "github_api", "signature_status": "not_exposed", "attestation_status": "not_exposed", "trust_level": "commit_pinned_local_digest"},
+      "skills": [{"path": "skills/content-strategy/SKILL.md", "name": "content-strategy", "description": "Plan content topics, pillars, roadmaps, and editorial strategy for marketing outcomes.", "sha256": "ae48c45cf052f4a2961ac672da851bc2c3540d97e3962fc7eab939c526e70e49"}],
+      "classifications": [{"path": "skills/content-strategy/SKILL.md", "canonical_id": "marketing-content-strategy", "domain": "marketing", "triggers": ["plan content strategy", "choose content topics"], "keywords": ["content marketing", "editorial calendar"], "phase": "planning", "role": "marketing_strategy", "role_mode": "composable", "risk": "low", "executors": ["claude", "codex"]}]
+    },
+    {
+      "id": "ponytail",
+      "display_name": "Ponytail",
+      "upstream": {"repository": "https://github.com/DietrichGebert/ponytail", "default_branch": "main", "license": "MIT", "observed_skill_count": 13},
+      "provenance": {"revision": "2ed6c52c9d7e5e56942508591085fd45dea277d3", "resolution_source": "github_api", "signature_status": "not_exposed", "attestation_status": "not_exposed", "trust_level": "commit_pinned_local_digest"},
+      "skills": [{"path": "skills/ponytail/SKILL.md", "name": "ponytail", "description": "Prefer the smallest sufficient coding solution and challenge unnecessary scope or dependencies.", "sha256": "4d004a7499245e5a1131b6a5489cf504952d60090776df86ef6fa135f1443a65"}],
+      "classifications": [{"path": "skills/ponytail/SKILL.md", "canonical_id": "ponytail", "domain": "software_engineering", "triggers": ["use the simplest solution", "avoid over engineering"], "keywords": ["minimal", "yagni"], "phase": "implementation", "role": "implementation_profile", "role_mode": "exclusive", "risk": "low", "executors": ["claude", "codex"]}]
+    },
+    {
+      "id": "reverse-skill",
+      "display_name": "reverse-skill",
+      "upstream": {"repository": "https://github.com/zhaoxuya520/reverse-skill", "default_branch": "main", "license": "MIT", "observed_skill_count": 87},
+      "provenance": {"revision": "37162cf9547c571c680c07005e9863d4610282dd", "resolution_source": "github_api", "signature_status": "not_exposed", "attestation_status": "not_exposed", "trust_level": "commit_pinned_local_digest"},
+      "skills": [{"path": "skills/reverse-engineering/SKILL.md", "name": "reverse-engineering", "description": "Analyze compiled, obfuscated, packed, virtualized, or firmware targets in explicitly authorized environments.", "sha256": "01cf104d9be01306c17b40206f95a23cb22e4fe0c01131f72f7dbe0e083d423d"}],
+      "classifications": [{"path": "skills/reverse-engineering/SKILL.md", "canonical_id": "reverse-engineering", "domain": "cybersecurity", "triggers": ["authorized reverse engineering", "analyze compiled target"], "keywords": ["binary analysis", "reverse engineering"], "phase": "security", "role": "security_analysis", "role_mode": "composable", "risk": "critical", "requested_capabilities": ["network.read", "shell.execute"], "executors": ["claude", "codex"]}]
+    },
+    {
+      "id": "superpowers",
+      "display_name": "Superpowers",
+      "upstream": {"repository": "https://github.com/obra/superpowers", "default_branch": "main", "license": "MIT", "observed_skill_count": 14},
+      "provenance": {"revision": "b36e0829c6d0140e93cfef2ca599b1b07d4a7797", "resolution_source": "github_api", "signature_status": "not_exposed", "attestation_status": "not_exposed", "trust_level": "commit_pinned_local_digest"},
+      "skills": [{"path": "skills/test-driven-development/SKILL.md", "name": "test-driven-development", "description": "Apply test-driven development to features and bug fixes with evidence that the regression test fails first.", "sha256": "462d6c5786d0eefba5b535845b96231542ae2c4d48fb2f8cc18dcc2291afdad1"}],
+      "classifications": [{"path": "skills/test-driven-development/SKILL.md", "canonical_id": "superpowers-test-driven-development", "domain": "software_engineering", "triggers": ["implement feature with tdd", "fix bug with regression test"], "keywords": ["tdd", "test first"], "phase": "implementation", "role": "engineering_method", "role_mode": "composable", "risk": "low", "executors": ["claude", "codex"]}]
+    },
+    {
+      "id": "taste-skill",
+      "display_name": "Taste Skill",
+      "upstream": {"repository": "https://github.com/Leonxlnx/taste-skill", "default_branch": "main", "license": "MIT", "observed_skill_count": 13},
+      "provenance": {"revision": "ccbc15639c97057cbfcf32ecebc38ef716e4bb37", "resolution_source": "github_api", "signature_status": "not_exposed", "attestation_status": "not_exposed", "trust_level": "commit_pinned_local_digest"},
+      "skills": [{"path": "skills/taste-skill/SKILL.md", "name": "design-taste-frontend", "description": "Apply an anti-slop frontend direction to landing pages, portfolios, and redesigns after inferring the brief.", "sha256": "fc6760a09148f089f8c9343ef6869081817f1555de40872335a4927d2a790154"}],
+      "classifications": [{"path": "skills/taste-skill/SKILL.md", "canonical_id": "taste-frontend", "domain": "frontend_design", "triggers": ["design landing page", "redesign portfolio"], "keywords": ["anti slop", "frontend taste"], "phase": "art_direction", "role": "visual_director", "role_mode": "exclusive", "risk": "moderate", "executors": ["claude", "codex"]}]
+    },
+    {
+      "id": "ui-ux-pro-max",
+      "display_name": "UI UX Pro Max",
+      "upstream": {"repository": "https://github.com/nextlevelbuilder/ui-ux-pro-max-skill", "default_branch": "main", "license": "MIT", "observed_skill_count": 13},
+      "provenance": {"revision": "8bd29e775453ebcae52b6e6514fbf134df0c5770", "resolution_source": "github_api", "signature_status": "not_exposed", "attestation_status": "not_exposed", "trust_level": "commit_pinned_local_digest"},
+      "skills": [{"path": ".claude/skills/ui-ux-pro-max/SKILL.md", "name": "ui-ux-pro-max", "description": "Provide UI and UX design intelligence for web, mobile, desktop, accessibility, interaction, and responsive layout.", "sha256": "185f1286a07f8f23893f9664569ec225c890a9892660714b8df1f9687cfbe68b"}],
+      "classifications": [{"path": ".claude/skills/ui-ux-pro-max/SKILL.md", "canonical_id": "ui-ux-pro-max", "domain": "frontend_design", "triggers": ["design user interface", "review user experience"], "keywords": ["responsive", "ui ux"], "phase": "art_direction", "role": "visual_director", "role_mode": "exclusive", "risk": "moderate", "executors": ["claude", "codex"]}]
+    }
+  ]
+}

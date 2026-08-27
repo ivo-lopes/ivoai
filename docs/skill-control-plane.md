@@ -1,9 +1,10 @@
 # Skill Control Plane foundation
 
 This document describes the foundation implemented by IVOAI-13, IVOAI-14,
-IVOAI-16, IVOAI-48, and IVOAI-49. It does not describe a mandatory session
-skill gate. Existing `ivoai auto`, `ivoai codex`, and `ivoai claude` sessions
-continue to operate when the registry is absent or empty.
+IVOAI-16, IVOAI-48, and IVOAI-49, plus safe pack updates, the managed-session
+Skill Gate, and the IVOAI-owned curated-source overlay. Existing `ivoai auto`,
+`ivoai codex`, and `ivoai claude` sessions continue to operate when the
+registry is absent or empty.
 
 ## Boundaries
 
@@ -169,6 +170,75 @@ Integrity, signature, attestation, and trust are distinct fields. A checksum
 delivered by the same GitHub release channel proves integrity, not independent
 authenticity. `not_exposed` is recorded rather than inventing a signature.
 
+## Safe skill-pack updates
+
+`internal/skillupdate` composes the shared supply-chain manager, Registry,
+metadata classifier, dependency resolver, Policy Engine, deterministic smoke,
+and doctor callback into one transaction. Discovery adapters resolve the
+upstream default branch dynamically but every staged and active identity is a
+commit SHA. A GitHub adapter uses only the public structured API, performs a
+bounded archive fetch, and records a locally calculated digest as
+`commit_pinned_local_digest`; that value is deliberately not called an
+independent signature or attestation.
+
+Promotion binds the supply-chain pointer and Registry update. Validation or
+doctor failure restores both. Rollback revalidates the previous immutable
+object and restores both authorities; recovery reconciles interrupted
+transactions. A no-change update verifies Registry/pointer consistency instead
+of silently succeeding. Discovery, staging, classification, smoke, and tests do
+not execute repository hooks, installers, Makefiles, package lifecycle hooks,
+scripts, or binaries.
+
+## Managed-session Skill Gate
+
+Before the official Codex or Claude UI receives the first substantive managed
+session instruction, the local gate performs:
+
+```text
+bounded session intent
+  -> local Registry search
+  -> metadata-only rank
+  -> dependency/conflict resolution
+  -> IVOAI Policy Engine
+  -> select 0..N
+  -> verify active pointer/provenance/content
+  -> load only selected full documents
+  -> bounded executor instruction
+```
+
+The gate performs no network request. An absent or empty Registry produces a
+normal zero-skill selection. A corrupt Registry, invalid policy, missing active
+object, pointer divergence, or content race activates no external skill and is
+observable as degraded; an explicitly required skill fails its operation.
+Policy decisions use only IVOAI-owned metadata. Content loaded after approval
+is still labelled untrusted and cannot change capability, risk, policy, or
+orchestration authority.
+
+## Curated upstream overlay
+
+`internal/skillcatalog/catalog.json` records a bounded pre-triage of the 13
+named upstream sources. It keeps three layers separate:
+
+1. upstream-provided name and description;
+2. IVOAI-observed repository, default branch, license, commit, and digest;
+3. IVOAI-owned domain, triggers, phase, role, conflicts, risk, requested
+   capabilities, and executor compatibility.
+
+The catalog does not vendor full third-party bodies. A classifier accepts only
+the reviewed commit and selected file digest. Updating an upstream commit
+therefore requires a reviewed catalog refresh before automatic promotion.
+Visual-direction packs share an exclusive role so the graph rejects competing
+directors. Ponytail remains an implementation skill, i-have-adhd an interaction
+profile, and selected Superpowers/Caveman entries remain ordinary skills.
+Shell-capable packs are denied by default and tool-using security packs require
+approval; neither Codex Security ToolProvider nor Caveman compression is
+introduced here.
+
+Repository revisions and license observations in the catalog are point-in-time
+provenance, not claims that an upstream will remain unchanged. Runtime discovery
+must resolve the current default branch and immutable revision again before a
+future refresh.
+
 ## Diagnostics and observability
 
 `ivoai status` reports the registry as ready/empty or shows bounded lifecycle
@@ -185,12 +255,13 @@ content, raw external files, credentials, headers, or environments.
 
 ## Deferred work
 
-This foundation intentionally does not:
+This block intentionally does not:
 
-- make a Skill Gate mandatory;
-- import real skill packs;
-- automatically synchronize or update skills;
-- execute skill hooks;
+- execute skill hooks or third-party setup;
 - implement the complete approval UX;
+- activate catalog entries before secure local materialization and policy;
 - replace Headroom, Ruflo, Context, or an executor;
-- change current agent-session behavior.
+- implement Codex Security ToolProvider or Caveman CompressionProvider.
+
+The security analysis and automated adversarial boundaries are documented in
+[skill-control-plane-threat-model.md](skill-control-plane-threat-model.md).
