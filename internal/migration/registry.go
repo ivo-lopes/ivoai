@@ -22,6 +22,7 @@ const (
 	// schema stored inside registry.json. It deliberately is not added to the
 	// global config/state schema graph.
 	ArtifactSkillRegistry Artifact = "skill_registry"
+	ArtifactSupplyChain   Artifact = "supply_chain"
 	ArtifactServer        Artifact = "server"
 )
 

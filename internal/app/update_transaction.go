@@ -18,6 +18,7 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/platform"
 	"github.com/ivo-lopes/ivoai/internal/server"
 	"github.com/ivo-lopes/ivoai/internal/skills"
+	"github.com/ivo-lopes/ivoai/internal/supplychain"
 	"github.com/ivo-lopes/ivoai/internal/update"
 	"github.com/pelletier/go-toml/v2"
 )
@@ -371,6 +372,15 @@ func (a *App) resolveUpdateContext(executable string) (updateContext, error) {
 		migration.FileSpec{Name: "ownership", Artifact: migration.ArtifactOwnership, Path: a.Store.Paths.Ownership, Root: a.Store.Paths.StateDir, Optional: true},
 		migration.FileSpec{Name: "skill-registry", Artifact: migration.ArtifactSkillRegistry, Path: skills.RegistryPath(a.Store.Paths.StateDir), Root: a.Store.Paths.StateDir, Optional: true},
 	)
+	supplyRoot := filepath.Join(a.Store.Paths.DataDir, "supply-chain")
+	supplyPointers, supplyErr := supplychain.TransactionalPointerFiles(supplyRoot)
+	if supplyErr != nil {
+		return updateContext{}, fmt.Errorf("inspect supply-chain transaction participants: %w", supplyErr)
+	}
+	for _, pointer := range supplyPointers {
+		id := strings.TrimSuffix(filepath.Base(pointer), ".json")
+		files = append(files, migration.FileSpec{Name: "supply-chain-" + safeUpdateName(id), Artifact: migration.ArtifactSupplyChain, Path: pointer, Root: a.Store.Paths.DataDir})
+	}
 	state, stateErr := a.Store.LoadStateForUpdate()
 	ownership, ownershipErr := a.Store.LoadOwnershipForUpdate()
 	if stateErr != nil && !errors.Is(stateErr, os.ErrNotExist) {

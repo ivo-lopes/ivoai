@@ -18,6 +18,7 @@ import (
 
 	"github.com/ivo-lopes/ivoai/internal/config"
 	"github.com/ivo-lopes/ivoai/internal/migration"
+	"github.com/ivo-lopes/ivoai/internal/supplychain"
 	"github.com/ivo-lopes/ivoai/internal/update"
 )
 
@@ -302,6 +303,35 @@ func TestUpdateContextIncludesIndependentSkillRegistryParticipant(t *testing.T) 
 		}
 	}
 	t.Fatal("skill registry is missing from transactional update snapshots")
+}
+
+func TestUpdateContextIncludesSupplyChainActivePointersOnly(t *testing.T) {
+	a, _, executable := transactionUpdateFixture(t, false)
+	root := filepath.Join(a.Store.Paths.DataDir, "supply-chain")
+	manager := supplychain.Manager{Root: root}
+	if err := os.MkdirAll(filepath.Join(root, "state"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	pointer := []byte(`{"schema":1,"id":"component","active":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","updated_at":"2026-08-27T00:00:00Z"}`)
+	if err := os.WriteFile(filepath.Join(root, "state", "component.json"), pointer, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := supplychain.ListPointers(manager.Root); err != nil {
+		t.Fatal(err)
+	}
+	ctx, err := a.resolveUpdateContext(executable)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, spec := range ctx.files {
+		if spec.Artifact == migration.ArtifactSupplyChain {
+			if spec.Path != filepath.Join(root, "state", "component.json") || spec.Root != a.Store.Paths.DataDir {
+				t.Fatalf("supply-chain participant=%+v", spec)
+			}
+			return
+		}
+	}
+	t.Fatal("supply-chain pointer missing from update snapshot")
 }
 
 func TestUpdateContextInspectsOlderOrNewerSourceSchemaBeforeMigration(t *testing.T) {
