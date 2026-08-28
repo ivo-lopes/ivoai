@@ -240,6 +240,19 @@ type CompressionProvider interface {
 	Prepare(context.Context, CompressionRequest) (CompressionDecision, error)
 }
 
+// CompressionFidelity classifies whether a representation may be compressed.
+// It is deliberately independent from any specific provider. Exact evidence
+// remains owned by WorkingContext/ArtifactStore even when a compressed
+// representation is used in a prompt.
+type CompressionFidelity string
+
+const (
+	CompressionCompressible  CompressionFidelity = "compressible"
+	CompressionExactRequired CompressionFidelity = "exact_required"
+	CompressionBypass        CompressionFidelity = "bypass"
+	CompressionUnsupported   CompressionFidelity = "unsupported"
+)
+
 type Swarm struct {
 	ID      string
 	Healthy bool

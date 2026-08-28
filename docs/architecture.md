@@ -44,6 +44,10 @@ The current adapters are:
 - `HeadroomCompressionProvider` over the existing wrapper probe and invocation. The
   IVOAI fidelity policy still decides when exact Memory/Context results require a
   bypass, and the official client remains the direct fallback.
+- [CompressionProvider: Caveman, Headroom e bypass direto](compression-provider.md)
+  records the additive Caveman migration boundary. Providers are mutually
+  exclusive; the v0.5-compatible Headroom/default behavior remains unchanged in
+  this phase.
 - `RufloOrchestratorAdapter` over the existing safe-profile control plane. It exposes
   only ephemeral swarm and opaque lifecycle coordination; scheduling, routing,
   inference, quota and durable memory remain owned by IVOAI.
