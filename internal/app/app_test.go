@@ -414,6 +414,9 @@ func (r *setupRunner) Run(_ context.Context, command string, args []string, opti
 		return platform.Result{}, errors.New("offline hook fixture")
 	}
 	if len(args) == 1 && args[0] == "--version" {
+		if filepath.Base(command) == "opencode" {
+			return platform.Result{Stdout: "1.18.25\n"}, nil
+		}
 		return platform.Result{Stdout: "fixture version"}, nil
 	}
 	return platform.Result{}, nil

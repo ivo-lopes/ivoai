@@ -141,9 +141,12 @@ func (i *Installer) Setup(ctx context.Context) error {
 		if spec.RequiresManaged != "" && !state.Components[spec.RequiresManaged].Managed {
 			continue
 		}
-		component, installErr := i.ensure(ctx, spec, state.Components[spec.Name])
-		state.Components[spec.Name] = component
-		ownership.Components[spec.Name] = config.OwnedItem{Managed: component.Managed, Path: component.Path}
+		previous := state.Components[spec.Name]
+		component, installErr := i.ensure(ctx, spec, previous)
+		if installErr == nil {
+			state.Components[spec.Name] = component
+			ownership.Components[spec.Name] = config.OwnedItem{Managed: component.Managed, Path: component.Path}
+		}
 		if saveErr := i.Store.SaveState(state); saveErr != nil {
 			return saveErr
 		}
@@ -198,11 +201,6 @@ func (i *Installer) ensure(ctx context.Context, spec Spec, previous config.Compo
 }
 
 func (i *Installer) ensureSupplyChain(ctx context.Context, spec Spec, previous config.ComponentState) (config.ComponentState, error) {
-	if previous.Installed && previous.Managed && previous.Version == spec.Version {
-		if info, err := os.Lstat(previous.Path); err == nil && info.Mode()&os.ModeSymlink == 0 && info.Mode().IsRegular() && info.Mode().Perm() == 0o700 {
-			return previous, nil
-		}
-	}
 	asset, ok := spec.Assets[runtime.GOOS+"/"+runtime.GOARCH]
 	if !ok {
 		return config.ComponentState{}, errors.New("no asset for current platform")

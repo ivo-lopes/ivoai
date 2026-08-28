@@ -9,6 +9,7 @@ import (
 	"crypto/sha512"
 	"encoding/base64"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
@@ -18,6 +19,7 @@ import (
 	"strings"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/ivo-lopes/ivoai/internal/config"
 	"github.com/ivo-lopes/ivoai/internal/platform"
@@ -33,6 +35,58 @@ func (absentRunner) Run(ctx context.Context, command string, args []string, opti
 
 type upgradeRunner struct{ lookups atomic.Int32 }
 
+type externalRunner struct{ path string }
+
+func (r externalRunner) LookPath(string) (string, error) { return r.path, nil }
+func (externalRunner) Run(context.Context, string, []string, platform.RunOptions) (platform.Result, error) {
+	return platform.Result{}, nil
+}
+
+type managedInstallerFixture struct {
+	installer *Installer
+	store     *config.Store
+	spec      Spec
+	requests  *atomic.Int32
+	root      string
+	object    string
+	payload   string
+	pointer   string
+}
+
+func newManagedInstallerFixture(t *testing.T) managedInstallerFixture {
+	t.Helper()
+	payload := []byte("reviewed managed component fixture")
+	sum := sha256.Sum256(payload)
+	requests := &atomic.Int32{}
+	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		requests.Add(1)
+		_, _ = w.Write(payload)
+	}))
+	t.Cleanup(server.Close)
+	root := t.TempDir()
+	paths := config.Paths{ConfigDir: filepath.Join(root, "config"), DataDir: filepath.Join(root, "data"), StateDir: filepath.Join(root, "state"), CacheDir: filepath.Join(root, "cache"), BinDir: filepath.Join(root, "data", "bin"), Config: filepath.Join(root, "config", "config.toml"), State: filepath.Join(root, "state", "state.toml"), Ownership: filepath.Join(root, "state", "ownership.toml"), HooksDir: filepath.Join(root, "data", "hooks")}
+	store := config.NewStore(paths)
+	revision := strings.Repeat("a", 40)
+	spec := Spec{Name: "managed-tool", Executable: "managed-tool", Version: "1.2.3", Strategy: StrategySupplyChain, Revision: revision, DefaultBranch: "stable", License: "MIT", PayloadFormat: "raw", PayloadPath: "bin/managed-tool", NoVersionProbe: true, SignatureStatus: "not_exposed", AttestationStatus: "not_exposed", TrustLevel: "upstream_checksum", Assets: map[string]Asset{runtime.GOOS + "/" + runtime.GOARCH: {URL: server.URL, SHA256: hex.EncodeToString(sum[:])}}}
+	installer := &Installer{Runner: absentRunner{}, Store: store, Catalog: []Spec{spec}, Client: server.Client()}
+	if err := installer.Setup(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	object := filepath.Join(paths.DataDir, "supply-chain", "objects", spec.Name, revision)
+	return managedInstallerFixture{installer: installer, store: store, spec: spec, requests: requests, root: root, object: object, payload: filepath.Join(object, "bin", "managed-tool"), pointer: filepath.Join(paths.DataDir, "supply-chain", "state", spec.Name+".json")}
+}
+
+func writeManagedPointer(t *testing.T, path, id, active string) {
+	t.Helper()
+	data, err := json.Marshal(map[string]any{"schema": supplychain.SchemaVersion, "id": id, "active": active, "updated_at": time.Now().UTC()})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := platform.AtomicWritePrivate(append(data, '\n'), path); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestManagedComponentLimitsAcceptReviewedOpenCodeBinary(t *testing.T) {
 	const reviewedOpenCodeBytes = 184682624
 	limits := componentSupplyChainLimits()
@@ -41,6 +95,151 @@ func TestManagedComponentLimitsAcceptReviewedOpenCodeBinary(t *testing.T) {
 	}
 	if limits.FileBytes < reviewedOpenCodeBytes || limits.FileBytes > 256<<20 {
 		t.Fatalf("file limit %d does not admit the reviewed OpenCode binary within the bounded ceiling", limits.FileBytes)
+	}
+}
+
+func TestManagedSupplyChainInstallerNoChangeRevalidatesAuthority(t *testing.T) {
+	t.Run("valid no-change does not redownload", func(t *testing.T) {
+		fixture := newManagedInstallerFixture(t)
+		if err := fixture.installer.Setup(context.Background()); err != nil {
+			t.Fatal(err)
+		}
+		if fixture.requests.Load() != 1 {
+			t.Fatalf("valid no-change downloads=%d", fixture.requests.Load())
+		}
+	})
+
+	t.Run("missing pointer is recovered through canonical pipeline", func(t *testing.T) {
+		fixture := newManagedInstallerFixture(t)
+		if err := os.Remove(fixture.pointer); err != nil {
+			t.Fatal(err)
+		}
+		if err := fixture.installer.Setup(context.Background()); err != nil {
+			t.Fatal(err)
+		}
+		if fixture.requests.Load() != 2 {
+			t.Fatalf("pointer recovery downloads=%d", fixture.requests.Load())
+		}
+		if _, _, err := (supplychain.Manager{Root: filepath.Join(fixture.store.Paths.DataDir, "supply-chain")}).Active(fixture.spec.Name); err != nil {
+			t.Fatalf("recovered pointer is not authoritative: %v", err)
+		}
+	})
+
+	for _, test := range []struct {
+		name   string
+		mutate func(*testing.T, managedInstallerFixture)
+	}{
+		{name: "divergent pointer", mutate: func(t *testing.T, fixture managedInstallerFixture) {
+			writeManagedPointer(t, fixture.pointer, fixture.spec.Name, strings.Repeat("b", 40))
+		}},
+		{name: "corrupt pointer", mutate: func(t *testing.T, fixture managedInstallerFixture) {
+			if err := platform.AtomicWritePrivate([]byte("not-json\n"), fixture.pointer); err != nil {
+				t.Fatal(err)
+			}
+		}},
+		{name: "payload tamper with executable mode retained", mutate: func(t *testing.T, fixture managedInstallerFixture) {
+			if err := platform.AtomicWritePrivate([]byte("tampered payload"), fixture.payload); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.Chmod(fixture.payload, 0o700); err != nil {
+				t.Fatal(err)
+			}
+		}},
+		{name: "manifest tamper", mutate: func(t *testing.T, fixture managedInstallerFixture) {
+			if err := platform.AtomicWritePrivate([]byte("{}\n"), filepath.Join(fixture.object, ".ivoai-manifest.json")); err != nil {
+				t.Fatal(err)
+			}
+		}},
+		{name: "provenance tamper", mutate: func(t *testing.T, fixture managedInstallerFixture) {
+			if err := platform.AtomicWritePrivate([]byte("{}\n"), filepath.Join(fixture.object, ".ivoai-provenance.json")); err != nil {
+				t.Fatal(err)
+			}
+		}},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			fixture := newManagedInstallerFixture(t)
+			test.mutate(t, fixture)
+			if err := fixture.installer.Setup(context.Background()); err == nil {
+				t.Fatal("tampered managed component was accepted")
+			}
+			if fixture.requests.Load() != 1 {
+				t.Fatalf("fail-closed validation downloaded again: %d", fixture.requests.Load())
+			}
+		})
+	}
+
+	t.Run("stale state path is reconciled", func(t *testing.T) {
+		fixture := newManagedInstallerFixture(t)
+		stale := filepath.Join(fixture.root, "stale-managed-tool")
+		if err := platform.AtomicWritePrivate([]byte("stale"), stale); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.Chmod(stale, 0o700); err != nil {
+			t.Fatal(err)
+		}
+		state, _ := fixture.store.LoadState()
+		component := state.Components[fixture.spec.Name]
+		component.Path = stale
+		state.Components[fixture.spec.Name] = component
+		if err := fixture.store.SaveState(state); err != nil {
+			t.Fatal(err)
+		}
+		if err := fixture.installer.Setup(context.Background()); err != nil {
+			t.Fatal(err)
+		}
+		state, _ = fixture.store.LoadState()
+		if state.Components[fixture.spec.Name].Path != fixture.payload || fixture.requests.Load() != 1 {
+			t.Fatalf("state was not reconciled: %+v downloads=%d", state.Components[fixture.spec.Name], fixture.requests.Load())
+		}
+	})
+
+	t.Run("ownership divergence is reconciled", func(t *testing.T) {
+		fixture := newManagedInstallerFixture(t)
+		ownership, _ := fixture.store.LoadOwnership()
+		ownership.Components[fixture.spec.Name] = config.OwnedItem{Managed: false, Path: "/unmanaged"}
+		if err := fixture.store.SaveOwnership(ownership); err != nil {
+			t.Fatal(err)
+		}
+		if err := fixture.installer.Setup(context.Background()); err != nil {
+			t.Fatal(err)
+		}
+		ownership, _ = fixture.store.LoadOwnership()
+		if item := ownership.Components[fixture.spec.Name]; !item.Managed || item.Path != fixture.payload || fixture.requests.Load() != 1 {
+			t.Fatalf("ownership was not reconciled: %+v downloads=%d", item, fixture.requests.Load())
+		}
+	})
+
+	t.Run("resolved provenance mismatch fails closed", func(t *testing.T) {
+		fixture := newManagedInstallerFixture(t)
+		fixture.spec.License = "Apache-2.0"
+		fixture.installer.Catalog = []Spec{fixture.spec}
+		if err := fixture.installer.Setup(context.Background()); err == nil {
+			t.Fatal("catalog provenance drift was accepted")
+		}
+		if fixture.requests.Load() != 1 {
+			t.Fatalf("provenance drift downloaded again: %d", fixture.requests.Load())
+		}
+	})
+}
+
+func TestManagedSupplyChainInstallerPreservesExternalComponent(t *testing.T) {
+	root := t.TempDir()
+	external := filepath.Join(root, "external-caveman")
+	if err := platform.AtomicWritePrivate([]byte("external"), external); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chmod(external, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	paths := config.Paths{ConfigDir: filepath.Join(root, "config"), DataDir: filepath.Join(root, "data"), StateDir: filepath.Join(root, "state"), CacheDir: filepath.Join(root, "cache"), BinDir: filepath.Join(root, "bin"), Config: filepath.Join(root, "config", "config.toml"), State: filepath.Join(root, "state", "state.toml"), Ownership: filepath.Join(root, "state", "ownership.toml"), HooksDir: filepath.Join(root, "data", "hooks")}
+	store := config.NewStore(paths)
+	spec := Spec{Name: "caveman", Executable: "caveman-proxy", Version: "1.1.3", Strategy: StrategySupplyChain, Revision: strings.Repeat("a", 40), DefaultBranch: "main", License: "BSL-1.1", PayloadFormat: "raw", PayloadPath: "bin/caveman-proxy", NoVersionProbe: true, SignatureStatus: "not_exposed", AttestationStatus: "not_exposed", TrustLevel: "upstream_checksum", Assets: map[string]Asset{runtime.GOOS + "/" + runtime.GOARCH: {URL: "https://invalid.example/artifact", SHA256: strings.Repeat("0", 64)}}}
+	if err := (&Installer{Runner: externalRunner{path: external}, Store: store, Catalog: []Spec{spec}}).Setup(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	state, _ := store.LoadState()
+	if component := state.Components[spec.Name]; component.Managed || component.Path != external {
+		t.Fatalf("external component ownership changed: %+v", component)
 	}
 }
 
@@ -126,7 +325,11 @@ func TestManagedSupplyChainRawComponentIsPrivateAndDoesNotTouchAgentConfig(t *te
 func TestManagedOpenCodeArchiveUsesPinnedSupplyChainAndOwnedAuthIsUntouched(t *testing.T) {
 	archive := testArchive(t, "opencode", []byte("#!/bin/sh\nprintf '1.18.25\\n'\n"))
 	sum := sha256.Sum256(archive)
-	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { _, _ = w.Write(archive) }))
+	var requests atomic.Int32
+	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		requests.Add(1)
+		_, _ = w.Write(archive)
+	}))
 	defer server.Close()
 	root := t.TempDir()
 	home := filepath.Join(root, "home")
@@ -137,6 +340,12 @@ func TestManagedOpenCodeArchiveUsesPinnedSupplyChainAndOwnedAuthIsUntouched(t *t
 	installer := Installer{Runner: absentRunner{}, Store: store, Catalog: []Spec{spec}, Client: server.Client()}
 	if err := installer.Setup(context.Background()); err != nil {
 		t.Fatal(err)
+	}
+	if err := installer.Setup(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if requests.Load() != 1 {
+		t.Fatalf("OpenCode no-change downloads=%d", requests.Load())
 	}
 	state, err := store.LoadState()
 	if err != nil || !state.Components["opencode"].Managed || state.Components["opencode"].Version != "1.18.25" {
