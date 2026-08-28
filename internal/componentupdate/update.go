@@ -68,6 +68,9 @@ func (m Manager) Update(ctx context.Context, reference supplychain.Reference) (R
 	}
 	manager := m.pipelineManager()
 	if active, root, activeErr := manager.Active(resolved.ID); activeErr == nil && active.Revision == resolved.Revision {
+		if err := manager.Health.Validate(ctx, active, root); err != nil {
+			return Result{}, fmt.Errorf("no-change managed component health failed: %w", err)
+		}
 		result, err := m.activate(ctx, active, root, true)
 		if err != nil {
 			return Result{}, fmt.Errorf("no-change managed component is inconsistent: %w", err)
@@ -216,7 +219,7 @@ func (m Manager) pipelineManager() supplychain.Manager {
 		if m.NoVersionProbe {
 			return nil
 		}
-		result, err := m.Runner.Run(ctx, path, m.VersionArg, platform.RunOptions{Timeout: m.timeout()})
+		result, err := m.Runner.Run(ctx, path, m.VersionArg, platform.RunOptions{Timeout: m.timeout(), CleanEnv: true, Env: []string{"PATH=/usr/bin:/bin"}})
 		if err != nil {
 			return err
 		}
@@ -250,7 +253,7 @@ func (m Manager) probeVersion(ctx context.Context, path string) string {
 	if m.NoVersionProbe {
 		return "unknown"
 	}
-	result, err := m.Runner.Run(ctx, path, m.VersionArg, platform.RunOptions{Timeout: m.timeout()})
+	result, err := m.Runner.Run(ctx, path, m.VersionArg, platform.RunOptions{Timeout: m.timeout(), CleanEnv: true, Env: []string{"PATH=/usr/bin:/bin"}})
 	if err != nil {
 		return "unknown"
 	}

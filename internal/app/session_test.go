@@ -48,6 +48,37 @@ func TestDirectSessionUsesExistingRuntimeWithoutRuflo(t *testing.T) {
 	}
 }
 
+func TestOpenCodeDirectSessionUsesSkillGateAndRejectsOrchestration(t *testing.T) {
+	root := t.TempDir()
+	marker := filepath.Join(root, "opencode-instructions")
+	opencode := appExecutable(t, root, "opencode", "#!/bin/sh\npath=$(printf '%s' \"$OPENCODE_CONFIG_CONTENT\" | sed 's/.*\\[\"\\([^\"]*\\)\"\\].*/\\1/')\ncp \"$path\" '"+marker+"'\n")
+	a := sessionTestApp(t, root, appExecutable(t, root, "codex", "#!/bin/sh\nexit 0\n"), appExecutable(t, root, "claude", "#!/bin/sh\nexit 0\n"), appExecutable(t, root, "ruflo", "#!/bin/sh\nexit 0\n"))
+	state, _ := a.Store.LoadState()
+	state.Components["opencode"] = config.ComponentState{Installed: true, Managed: true, Version: "fixture", Path: opencode}
+	if err := a.Store.SaveState(state); err != nil {
+		t.Fatal(err)
+	}
+	previous, _ := os.Getwd()
+	t.Cleanup(func() { _ = os.Chdir(previous) })
+	if err := os.Chdir(root); err != nil {
+		t.Fatal(err)
+	}
+	if err := a.SessionStart(context.Background(), "opencode", session.ModeDirect, []string{"--model", "provider/model"}); err != nil {
+		t.Fatal(err)
+	}
+	body, err := os.ReadFile(marker)
+	if err != nil || !strings.Contains(string(body), "memory_read_page") {
+		t.Fatalf("instructions=%q err=%v", body, err)
+	}
+	values, err := a.SessionList()
+	if err != nil || len(values) != 1 || values[0].PrimaryExecutor != "opencode" || values[0].HeadroomRequested || values[0].RufloEnabled || values[0].PrimaryModel.Name != "provider/model" {
+		t.Fatalf("sessions=%+v err=%v", values, err)
+	}
+	if err := a.SessionStart(context.Background(), "opencode", session.ModeOrchestrated, nil); err == nil || !strings.Contains(err.Error(), "deferred to IVOAI-22") {
+		t.Fatalf("orchestrated OpenCode error=%v", err)
+	}
+}
+
 func TestConcurrentDirectSessionsRemainIndependent(t *testing.T) {
 	root := t.TempDir()
 	release := filepath.Join(root, "release")

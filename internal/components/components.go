@@ -96,6 +96,12 @@ func DefaultCatalog() []Spec {
 				"linux/amd64": {URL: "https://github.com/JuliusBrussee/caveman/releases/download/bin-v1.1.3/caveman-proxy_linux_amd64", SHA256: "d883b9ab4b559e0c1935335c0e24400deb5c61d5e247f1ca239c4149f57885b0"},
 				"linux/arm64": {URL: "https://github.com/JuliusBrussee/caveman/releases/download/bin-v1.1.3/caveman-proxy_linux_arm64", SHA256: "2d6c1950bbce1a70c910a03bde88883817a8380f03f5ec25dd80186fed434ce7"},
 			}},
+		{Name: "opencode", Executable: "opencode", Version: "1.18.25", Strategy: StrategySupplyChain,
+			Revision: "cb7d8b2f5e44876ef98b661dc10590c915af3a9f", DefaultBranch: "dev", License: "MIT", PayloadFormat: "tar_gzip", PayloadPath: "opencode",
+			SignatureStatus: "not_exposed", AttestationStatus: "not_exposed", TrustLevel: "upstream_checksum", Assets: map[string]Asset{
+				"linux/amd64": {URL: "https://github.com/anomalyco/opencode/releases/download/v1.18.25/opencode-linux-x64.tar.gz", SHA256: "58a3729a6f3432dd6d2917fcc4a949788891a035818646ad480e12c947f56e78"},
+				"linux/arm64": {URL: "https://github.com/anomalyco/opencode/releases/download/v1.18.25/opencode-linux-arm64.tar.gz", SHA256: "35ef77897425e41b5183a2c21ac4fb1d4d944d82a94e3c920f57b5490af11ac5"},
+			}},
 		{Name: "ai-memory", Executable: "ai-memory", Version: "1.29.0", Strategy: StrategyBinary, Assets: map[string]Asset{
 			"linux/amd64": {URL: "https://github.com/akitaonrails/ai-memory/releases/download/v1.29.0/ai-memory-linux-x86_64.tar.gz", SHA256: "c666fa4ec778673ae995cd8aa4489b6184c7a3dc220a2c4e1c18792eda1321f1"},
 			"linux/arm64": {URL: "https://github.com/akitaonrails/ai-memory/releases/download/v1.29.0/ai-memory-linux-aarch64.tar.gz", SHA256: "828cb63f697f8b773d4e6c41c38d0d850310afed04f37479bb48e3a11969d689"},

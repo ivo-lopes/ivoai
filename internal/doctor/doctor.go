@@ -38,6 +38,7 @@ type Component struct {
 }
 type ManagedComponent struct {
 	Component
+	Healthy    bool   `json:"healthy"`
 	Revision   string `json:"revision,omitempty"`
 	Source     string `json:"source,omitempty"`
 	License    string `json:"license,omitempty"`
@@ -124,6 +125,7 @@ type Report struct {
 	Codex             Auth                 `json:"codex"`
 	CodexCodeModeHost Component            `json:"codex_code_mode_host"`
 	Claude            Auth                 `json:"claude"`
+	OpenCode          ManagedComponent     `json:"opencode"`
 	Headroom          headroom.Status      `json:"headroom"`
 	Caveman           ManagedComponent     `json:"caveman"`
 	Memory            Component            `json:"ai_memory"`
@@ -157,6 +159,8 @@ func (d Doctor) Run(ctx context.Context) Report {
 	r.Codex = d.agent(ctx, "codex", []string{"login", "status"}, state.Components["codex"])
 	r.CodexCodeModeHost = componentFromState(state.Components["codex-code-mode-host"])
 	r.Claude = d.agent(ctx, "claude", []string{"auth", "status"}, state.Components["claude-code"])
+	r.OpenCode = d.managedComponent("opencode", state.Components["opencode"])
+	d.probeManagedVersion(ctx, &r.OpenCode)
 	r.Headroom = (headroom.Manager{Runner: d.Runner, Binary: state.Components["headroom"].Path}).Inspect(ctx, cfg.Headroom.Enabled)
 	if fixture := state.Components["headroom"]; !r.Headroom.Installed && strings.HasSuffix(fixture.Version, "-fixture") {
 		r.Headroom.Installed, r.Headroom.Healthy, r.Headroom.CodexCompatible, r.Headroom.ClaudeCompatible, r.Headroom.Version, r.Headroom.InteractiveLaunch = true, true, true, true, fixture.Version, "fixture"
@@ -292,6 +296,7 @@ func (d Doctor) skillControlPlane() SkillControlPlane {
 
 func (d Doctor) managedComponent(id string, state config.ComponentState) ManagedComponent {
 	result := ManagedComponent{Component: componentFromState(state)}
+	result.Healthy = result.Installed
 	source, root, err := (supplychain.Manager{Root: filepath.Join(d.Store.Paths.DataDir, "supply-chain")}).Active(id)
 	if err != nil {
 		return result
@@ -302,6 +307,20 @@ func (d Doctor) managedComponent(id string, state config.ComponentState) Managed
 	}
 	result.Revision, result.Source, result.License, result.TrustLevel = source.Revision, source.Source, source.License, source.Integrity.TrustLevel
 	return result
+}
+
+func (d Doctor) probeManagedVersion(ctx context.Context, component *ManagedComponent) {
+	if component == nil || !component.Installed || component.Path == "" || d.Runner == nil {
+		return
+	}
+	result, err := d.Runner.Run(ctx, component.Path, []string{"--version"}, platform.RunOptions{Timeout: 10 * time.Second, CleanEnv: true, Env: []string{"PATH=/usr/bin:/bin"}})
+	if err != nil {
+		component.Healthy = false
+		return
+	}
+	if version := strings.TrimSpace(result.Stdout); version != "" {
+		component.Version = version
+	}
 }
 
 func privateWritableDirectory(path string) bool {
@@ -343,6 +362,7 @@ func componentMatrix(cfg config.Config, state config.State, report Report) core.
 	values := []core.ComponentStatus{
 		executor(core.ComponentCodex, report.Codex, state.Components["codex"], report.Orchestration.CodexWorker),
 		executor(core.ComponentClaude, report.Claude, state.Components["claude-code"], report.Orchestration.ClaudeWorker),
+		executor(core.ComponentOpenCode, Auth{Installed: report.OpenCode.Installed && report.OpenCode.Healthy, Version: report.OpenCode.Version}, state.Components["opencode"], false),
 	}
 	memory := state.Components["ai-memory"]
 	memoryAvailable := report.Memory.Installed && (!cfg.Memory.Enabled || report.Memory.Hooks)
@@ -358,7 +378,7 @@ func componentMatrix(cfg config.Config, state config.State, report Report) core.
 		},
 		Compatibility: compatibility(report.Memory.Installed, "ai-memory client is not installed"),
 	})
-	cavemanAvailable := report.Caveman.Installed
+	cavemanAvailable := report.Caveman.Installed && report.Caveman.Healthy
 	values = append(values, core.ComponentStatus{
 		ID: core.ComponentCompression, Implementation: "caveman", Active: false,
 		Installed: report.Caveman.Installed, Managed: state.Components["caveman"].Managed, Available: cavemanAvailable,

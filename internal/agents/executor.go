@@ -22,8 +22,15 @@ type ClaudeExecutor struct {
 	Managed bool
 }
 
-func (e CodexExecutor) ID() core.ComponentID  { return core.ComponentCodex }
-func (e ClaudeExecutor) ID() core.ComponentID { return core.ComponentClaude }
+type OpenCodeExecutor struct {
+	Runtime Runtime
+	Version string
+	Managed bool
+}
+
+func (e CodexExecutor) ID() core.ComponentID    { return core.ComponentCodex }
+func (e ClaudeExecutor) ID() core.ComponentID   { return core.ComponentClaude }
+func (e OpenCodeExecutor) ID() core.ComponentID { return core.ComponentOpenCode }
 
 func (e CodexExecutor) Probe(ctx context.Context) core.ComponentStatus {
 	return probeExecutor(ctx, e.Runtime, core.ComponentCodex, "codex", e.Version, e.Managed)
@@ -33,12 +40,23 @@ func (e ClaudeExecutor) Probe(ctx context.Context) core.ComponentStatus {
 	return probeExecutor(ctx, e.Runtime, core.ComponentClaude, "claude", e.Version, e.Managed)
 }
 
+func (e OpenCodeExecutor) Probe(ctx context.Context) core.ComponentStatus {
+	return probeExecutor(ctx, e.Runtime, core.ComponentOpenCode, "opencode", e.Version, e.Managed)
+}
+
 func (e CodexExecutor) StartSession(ctx context.Context, request core.SessionRequest, observe func(core.SessionObservation)) error {
 	return startSession(ctx, e.Runtime, "codex", request, observe)
 }
 
 func (e ClaudeExecutor) StartSession(ctx context.Context, request core.SessionRequest, observe func(core.SessionObservation)) error {
 	return startSession(ctx, e.Runtime, "claude", request, observe)
+}
+
+func (e OpenCodeExecutor) StartSession(ctx context.Context, request core.SessionRequest, observe func(core.SessionObservation)) error {
+	// OpenCode remains direct-only until Caveman cutover (IVOAI-40) and is not
+	// adapted to the legacy Headroom wrapper.
+	request.CompressionEnabled = false
+	return startSession(ctx, e.Runtime, "opencode", request, observe)
 }
 
 func startSession(ctx context.Context, runtime Runtime, name string, request core.SessionRequest, observe func(core.SessionObservation)) error {
@@ -96,6 +114,8 @@ func ExecutorFor(name string, runtime Runtime, version string, managed bool) (co
 		return CodexExecutor{Runtime: runtime, Version: version, Managed: managed}, nil
 	case "claude":
 		return ClaudeExecutor{Runtime: runtime, Version: version, Managed: managed}, nil
+	case "opencode":
+		return OpenCodeExecutor{Runtime: runtime, Version: version, Managed: managed}, nil
 	default:
 		return nil, fmt.Errorf("unsupported agent %q", name)
 	}
@@ -103,3 +123,4 @@ func ExecutorFor(name string, runtime Runtime, version string, managed bool) (co
 
 var _ core.Executor = CodexExecutor{}
 var _ core.Executor = ClaudeExecutor{}
+var _ core.Executor = OpenCodeExecutor{}

@@ -316,6 +316,8 @@ func providerDisplay(value string) string {
 		return "Claude Code"
 	case "codex":
 		return "Codex"
+	case "opencode":
+		return "OpenCode"
 	default:
 		return "N/A"
 	}

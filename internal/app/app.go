@@ -215,6 +215,7 @@ func (a *App) Status(ctx context.Context) error {
 		{"Codex", componentStatus(state.Components["codex"], cfg.Connections.ChatGPT.Status)},
 		{"Codex tools", codexToolHostStatus(state)},
 		{"Claude Code", componentStatus(state.Components["claude-code"], cfg.Connections.Claude.Status)},
+		{"OpenCode", optionalManagedStatus(state.Components["opencode"], "ready / direct primary")},
 		{"Headroom", headroomStatus(state.Components["headroom"], cfg.Headroom.Enabled)},
 		{"Caveman", optionalManagedStatus(state.Components["caveman"], "installed / cutover pending")},
 		{"Context", contextHealthStatus(cfg, serverHealth)},
@@ -661,8 +662,16 @@ func (a *App) Launch(ctx context.Context, target string, args []string) error {
 	if err != nil {
 		return err
 	}
-	useHeadroom := primaryHeadroomEnabled(cfg)
-	if headroomBypassedForSharedKnowledge(cfg) {
+	cleanup := func() {}
+	if target == "opencode" {
+		environment, cleanup, err = openCodeInstructionEnvironment(environment, a.Store.Paths.StateDir, managedInstructions(skillResult.Instructions))
+		if err != nil {
+			return err
+		}
+	}
+	defer cleanup()
+	useHeadroom := target != "opencode" && primaryHeadroomEnabled(cfg)
+	if target != "opencode" && headroomBypassedForSharedKnowledge(cfg) {
 		a.warn(sharedKnowledgeHeadroomBypass, nil)
 	}
 	executor, err := agents.ExecutorFor(target, agents.Runtime{Runner: a.Runner, In: a.In, Out: a.Out, Err: a.Err, AgentPath: state.Components[key].Path, HeadroomPath: state.Components["headroom"].Path, Environment: environment}, state.Components[key].Version, state.Components[key].Managed)

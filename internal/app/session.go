@@ -27,11 +27,14 @@ import (
 )
 
 func (a *App) SessionStart(ctx context.Context, executor string, mode session.Mode, args []string) error {
-	if executor != "codex" && executor != "claude" {
-		return errors.New("session executor must be codex or claude")
+	if executor != "codex" && executor != "claude" && executor != "opencode" {
+		return errors.New("session executor must be codex, claude, or opencode")
 	}
 	if mode != session.ModeDirect && mode != session.ModeOrchestrated {
 		return errors.New("session mode must be direct or orchestrated")
+	}
+	if executor == "opencode" && mode != session.ModeDirect {
+		return errors.New("OpenCode orchestrated/AUTO execution is deferred to IVOAI-22; use direct mode")
 	}
 	cfg, err := a.Store.Load()
 	if err != nil {
@@ -56,7 +59,7 @@ func (a *App) SessionStart(ctx context.Context, executor string, mode session.Mo
 	value := session.Session{
 		SessionID: id, StartedAt: now, UpdatedAt: now, Mode: mode, PrimaryExecutor: executor,
 		WorkingDirectory: cwd, PrimaryModel: session.ResolveModel("", session.ParseModelArgument(args), executor, agentModelConfig(executor)),
-		HeadroomRequested: cfg.Headroom.Enabled, RufloEnabled: mode == session.ModeOrchestrated,
+		HeadroomRequested: cfg.Headroom.Enabled && executor != "opencode", RufloEnabled: mode == session.ModeOrchestrated,
 		ProviderExecution: false, Workers: []session.Worker{}, MaxWorkers: cfg.Orchestration.MaxWorkers,
 		ContextStatus: contextStatus(cfg), MemoryStatus: memoryStatus(cfg, state), ServerStatus: serverStatus(cfg), State: session.StateStarting,
 	}
@@ -123,6 +126,15 @@ func (a *App) SessionStart(ctx context.Context, executor string, mode session.Mo
 	if err != nil {
 		return err
 	}
+	cleanupInstructions := func() {}
+	if executor == "opencode" {
+		environment, cleanupInstructions, err = openCodeInstructionEnvironment(environment, a.Store.Paths.StateDir, managedInstructions(skillResult.Instructions))
+		if err != nil {
+			a.finishSession(store, id, session.StateFailed, 1)
+			return err
+		}
+	}
+	defer cleanupInstructions()
 	component := executor
 	if executor == "claude" {
 		component = "claude-code"
@@ -132,8 +144,8 @@ func (a *App) SessionStart(ctx context.Context, executor string, mode session.Mo
 	if err != nil {
 		return err
 	}
-	useHeadroom := primaryHeadroomEnabled(cfg)
-	if headroomBypassedForSharedKnowledge(cfg) {
+	useHeadroom := executor != "opencode" && primaryHeadroomEnabled(cfg)
+	if executor != "opencode" && headroomBypassedForSharedKnowledge(cfg) {
 		a.warn(sharedKnowledgeHeadroomBypass, nil)
 	}
 	launchErr := implementation.StartSession(ctx, core.SessionRequest{Args: args, CompressionEnabled: useHeadroom}, func(observation core.SessionObservation) {
@@ -350,6 +362,13 @@ func agentModelConfig(executor string) string {
 			return filepath.Join(configured, "config.toml")
 		}
 		return filepath.Join(home, ".codex", "config.toml")
+	}
+	if executor == "opencode" {
+		configHome := filepath.Join(home, ".config")
+		if configured := strings.TrimSpace(os.Getenv("XDG_CONFIG_HOME")); filepath.IsAbs(configured) {
+			configHome = configured
+		}
+		return filepath.Join(configHome, "opencode", "opencode.json")
 	}
 	if configured := strings.TrimSpace(os.Getenv("CLAUDE_CONFIG_DIR")); filepath.IsAbs(configured) {
 		return filepath.Join(configured, "settings.json")

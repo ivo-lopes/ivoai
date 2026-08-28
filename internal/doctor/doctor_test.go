@@ -79,6 +79,7 @@ func TestComponentMatrixExplainsCapabilitiesHealthAndFallback(t *testing.T) {
 	state := config.State{Components: map[string]config.ComponentState{
 		"codex":       {Installed: true, Managed: true, Version: "fixture", Path: "/managed/codex"},
 		"claude-code": {Installed: true, Managed: true, Version: "fixture", Path: "/managed/claude"},
+		"opencode":    {Installed: true, Managed: true, Version: "fixture", Path: "/managed/opencode"},
 		"headroom":    {Installed: true, Managed: true, Version: "fixture", Path: "/managed/headroom"},
 		"caveman":     {Installed: true, Managed: true, Version: "fixture", Path: "/managed/caveman"},
 		"ai-memory":   {Installed: true, Managed: true, Version: "fixture", Path: "/managed/ai-memory"},
@@ -87,7 +88,8 @@ func TestComponentMatrixExplainsCapabilitiesHealthAndFallback(t *testing.T) {
 	report := Report{
 		Codex: Auth{Installed: true, Version: "codex fixture"}, Claude: Auth{Installed: true, Version: "claude fixture"},
 		Headroom:      headroom.Status{Installed: true, Healthy: true, CodexCompatible: true, ClaudeCompatible: true},
-		Caveman:       ManagedComponent{Component: Component{Installed: true, Managed: true, Version: "fixture", Path: "/managed/caveman"}},
+		Caveman:       ManagedComponent{Component: Component{Installed: true, Managed: true, Version: "fixture", Path: "/managed/caveman"}, Healthy: true},
+		OpenCode:      ManagedComponent{Component: Component{Installed: true, Managed: true, Version: "fixture", Path: "/managed/opencode"}, Healthy: true},
 		Memory:        Component{Installed: true, Hooks: true},
 		Ruflo:         orchestration.Status{Installed: true, SafeMode: true},
 		Server:        Server{Configured: true, Reachable: true, ProtocolCompatible: true},
@@ -108,6 +110,10 @@ func TestComponentMatrixExplainsCapabilitiesHealthAndFallback(t *testing.T) {
 	}
 	if _, err := matrix.Resolve(core.ComponentContext, core.CapabilityContextIngest); err == nil {
 		t.Fatal("read-only remote Context advertised ingestion")
+	}
+	opencode, err := matrix.Resolve(core.ComponentOpenCode, core.CapabilitySessionStart)
+	if err != nil || opencode.Component.Capabilities.Supports(core.CapabilityAdvisoryExecute) {
+		t.Fatalf("OpenCode direct-only selection=%+v err=%v", opencode, err)
 	}
 }
 

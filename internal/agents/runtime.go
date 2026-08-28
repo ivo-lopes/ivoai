@@ -38,7 +38,7 @@ func (r Runtime) Launch(ctx context.Context, agent string, args []string, headro
 }
 
 func (r Runtime) LaunchObserved(ctx context.Context, agent string, args []string, headroomEnabled bool, observe func(Observation)) error {
-	if agent != "codex" && agent != "claude" {
+	if agent != "codex" && agent != "claude" && agent != "opencode" {
 		return fmt.Errorf("unsupported agent %q", agent)
 	}
 	direct := r.AgentPath
@@ -66,6 +66,8 @@ func (r Runtime) LaunchObserved(ctx context.Context, agent string, args []string
 		component := core.ComponentCodex
 		if agent == "claude" {
 			component = core.ComponentClaude
+		} else if agent == "opencode" {
+			component = core.ComponentOpenCode
 		}
 		decision, _ := provider.Prepare(ctx, core.CompressionRequest{Executor: component, DirectPath: direct, Args: args, Environment: environment})
 		if decision.Used {

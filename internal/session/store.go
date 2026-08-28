@@ -264,7 +264,7 @@ func validate(value Session) error {
 	if value.Mode != ModeDirect && value.Mode != ModeOrchestrated && value.Mode != ModeAuto {
 		return errors.New("invalid session mode")
 	}
-	if value.PrimaryExecutor != "codex" && value.PrimaryExecutor != "claude" {
+	if value.PrimaryExecutor != "codex" && value.PrimaryExecutor != "claude" && value.PrimaryExecutor != "opencode" {
 		return errors.New("invalid primary executor")
 	}
 	if value.WorkingDirectory == "" || !filepath.IsAbs(value.WorkingDirectory) || strings.ContainsAny(value.WorkingDirectory, "\x00\x1b\r\n") {

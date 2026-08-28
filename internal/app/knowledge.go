@@ -1,6 +1,7 @@
 package app
 
 import (
+	"encoding/json"
 	"errors"
 	"os"
 	"path/filepath"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/ivo-lopes/ivoai/internal/config"
 	"github.com/ivo-lopes/ivoai/internal/knowledgepolicy"
+	"github.com/ivo-lopes/ivoai/internal/platform"
 )
 
 const sharedKnowledgeInstructions = knowledgepolicy.ResearchFirstInstructions + `
@@ -32,15 +34,97 @@ func sharedKnowledgeAgentArgs(executor string, existing []string, cfg config.Con
 }
 
 func managedAgentArgs(executor string, existing []string, cfg config.Config, skillInstructions string) []string {
-	instructions := sharedKnowledgeInstructions
-	if strings.TrimSpace(skillInstructions) != "" {
-		instructions += "\n\n" + skillInstructions
-	}
+	instructions := managedInstructions(skillInstructions)
 	if executor == "codex" {
 		args := []string{"-c", "developer_instructions=" + strconv.Quote(instructions)}
 		return codexSharedKnowledgeReadApprovalArgs(append(args, existing...), cfg)
 	}
+	if executor == "opencode" {
+		return append([]string(nil), existing...)
+	}
 	return append([]string{"--append-system-prompt", instructions}, existing...)
+}
+
+func managedInstructions(skillInstructions string) string {
+	instructions := sharedKnowledgeInstructions
+	if strings.TrimSpace(skillInstructions) != "" {
+		instructions += "\n\n" + skillInstructions
+	}
+	return instructions
+}
+
+// openCodeInstructionEnvironment uses OpenCode's official process-local
+// OPENCODE_CONFIG_CONTENT instructions setting. It preserves any caller-owned
+// inline configuration and points it at a private, ephemeral IVOAI instruction
+// file; no OpenCode global or project configuration is modified.
+func openCodeInstructionEnvironment(environment []string, stateDir, instructions string) ([]string, func(), error) {
+	runtimeRoot := filepath.Join(stateDir, "opencode-runtime")
+	if err := platform.EnsurePrivateDir(runtimeRoot); err != nil {
+		return nil, nil, err
+	}
+	directory, err := os.MkdirTemp(runtimeRoot, "session-")
+	if err != nil {
+		return nil, nil, err
+	}
+	cleanup := func() {
+		_ = os.Remove(filepath.Join(directory, "instructions.md"))
+		_ = os.Remove(directory)
+	}
+	if err := os.Chmod(directory, 0o700); err != nil {
+		cleanup()
+		return nil, nil, err
+	}
+	path := filepath.Join(directory, "instructions.md")
+	if err := platform.AtomicWritePrivate([]byte(instructions), path); err != nil {
+		cleanup()
+		return nil, nil, err
+	}
+
+	content := map[string]json.RawMessage{}
+	if existing := environmentValue(environment, "OPENCODE_CONFIG_CONTENT"); existing != "" {
+		if err := json.Unmarshal([]byte(existing), &content); err != nil {
+			cleanup()
+			return nil, nil, errors.New("existing OPENCODE_CONFIG_CONTENT is invalid JSON")
+		}
+	}
+	var paths []string
+	if raw, ok := content["instructions"]; ok {
+		if err := json.Unmarshal(raw, &paths); err != nil {
+			cleanup()
+			return nil, nil, errors.New("existing OpenCode instructions configuration is invalid")
+		}
+	}
+	paths = append(paths, path)
+	rawPaths, _ := json.Marshal(paths)
+	content["instructions"] = rawPaths
+	encoded, err := json.Marshal(content)
+	if err != nil {
+		cleanup()
+		return nil, nil, err
+	}
+	return setAppEnvironment(environment, "OPENCODE_CONFIG_CONTENT", string(encoded)), cleanup, nil
+}
+
+func environmentValue(environment []string, key string) string {
+	prefix := key + "="
+	for _, entry := range environment {
+		if strings.HasPrefix(entry, prefix) {
+			return strings.TrimPrefix(entry, prefix)
+		}
+	}
+	return ""
+}
+
+func setAppEnvironment(environment []string, key, value string) []string {
+	prefix := key + "="
+	result := append([]string(nil), environment...)
+	for index, entry := range result {
+		if strings.HasPrefix(entry, prefix) {
+			result[index] = prefix + value
+			return result
+		}
+	}
+	return append(result, prefix+value)
 }
 
 func codexSharedKnowledgeReadApprovalArgs(existing []string, cfg config.Config) []string {

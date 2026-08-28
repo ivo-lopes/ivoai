@@ -148,7 +148,7 @@ func runCommand(ctx context.Context, a *app.App, args []string) error {
 		return runConnect(ctx, a, args[1:])
 	case "disconnect":
 		return runDisconnect(ctx, a, args[1:])
-	case "codex", "claude":
+	case "codex", "claude", "opencode":
 		return a.Launch(ctx, args[0], trimDoubleDash(args[1:]))
 	case "auto":
 		fs := flag.NewFlagSet("auto", flag.ContinueOnError)
@@ -208,7 +208,7 @@ func runSession(ctx context.Context, a *app.App, args []string) error {
 	case "start":
 		fs := flag.NewFlagSet("session start", flag.ContinueOnError)
 		fs.SetOutput(a.Err)
-		executor := fs.String("executor", "codex", "codex or claude")
+		executor := fs.String("executor", "codex", "codex, claude, or opencode (direct only)")
 		mode := fs.String("mode", "direct", "direct or orchestrated")
 		if err := fs.Parse(args[1:]); err != nil {
 			return err
@@ -280,8 +280,9 @@ func runDoctor(ctx context.Context, a *app.App, args []string) error {
 	fmt.Fprintf(a.Out, "ivoai doctor\nOS: %s\nArchitecture: %s\nivoai: %s\nConfig: %s\nState: %s\nSecret permissions: %s\n", report.OS, report.Architecture, report.Version, report.ConfigPath, report.StatePath, report.SecretPermissions)
 	fmt.Fprintf(a.Out, "\nCodex: installed=%s version=%s authenticated=%s\n", semanticBool(report.Codex.Installed, color), report.Codex.Version, semanticOptionalBool(report.Codex.Authenticated, color))
 	fmt.Fprintf(a.Out, "Claude Code: installed=%s version=%s authenticated=%s\n", semanticBool(report.Claude.Installed, color), report.Claude.Version, semanticOptionalBool(report.Claude.Authenticated, color))
+	fmt.Fprintf(a.Out, "OpenCode: installed=%s managed=%s healthy=%s version=%s revision=%s license=%s auth-owned-by=opencode auto-worker=false\n", semanticOptionalBool(report.OpenCode.Installed, color), semanticOptionalBool(report.OpenCode.Managed, color), semanticOptionalBool(report.OpenCode.Healthy, color), report.OpenCode.Version, report.OpenCode.Revision, report.OpenCode.License)
 	fmt.Fprintf(a.Out, "Headroom: installed=%s enabled=%s healthy=%s version=%s interactive-launch=%s\nCodex via Headroom: %s\nClaude Code via Headroom: %s\n", semanticBool(report.Headroom.Installed, color), semanticOptionalBool(report.Headroom.Enabled, color), semanticBool(report.Headroom.Healthy, color), report.Headroom.Version, report.Headroom.InteractiveLaunch, semanticOK(report.Headroom.CodexCompatible, color), semanticOK(report.Headroom.ClaudeCompatible, color))
-	fmt.Fprintf(a.Out, "Caveman: installed=%s managed=%s version=%s revision=%s license=%s trust=%s active=false\n", semanticOptionalBool(report.Caveman.Installed, color), semanticOptionalBool(report.Caveman.Managed, color), report.Caveman.Version, report.Caveman.Revision, report.Caveman.License, report.Caveman.TrustLevel)
+	fmt.Fprintf(a.Out, "Caveman: installed=%s managed=%s healthy=%s version=%s revision=%s license=%s trust=%s active=false\n", semanticOptionalBool(report.Caveman.Installed, color), semanticOptionalBool(report.Caveman.Managed, color), semanticOptionalBool(report.Caveman.Healthy, color), report.Caveman.Version, report.Caveman.Revision, report.Caveman.License, report.Caveman.TrustLevel)
 	fmt.Fprintf(a.Out, "ai-memory: installed=%s version=%s hooks=%s server=%s\n", semanticBool(report.Memory.Installed, color), report.Memory.Version, semanticBool(report.Memory.Hooks, color), configured(report.Server.Configured))
 	fmt.Fprintf(a.Out, "Ruflo: installed=%s version=%s safe-mode=%s provider-execution=%s\n", semanticBool(report.Ruflo.Installed, color), report.Ruflo.Version, semanticBool(report.Ruflo.SafeMode, color), semanticDisabledIsSafe(report.Ruflo.ProviderExecution, color))
 	fmt.Fprintf(a.Out, "Orchestration: enabled=%s bridge=%s session-permissions=%s max-workers=%d codex-worker=%s claude-worker=%s\n", semanticOptionalBool(report.Orchestration.Enabled, color), semanticBool(report.Orchestration.BridgeAvailable, color), report.Orchestration.SessionPerms, report.Orchestration.MaxWorkers, semanticBool(report.Orchestration.CodexWorker, color), semanticBool(report.Orchestration.ClaudeWorker, color))
@@ -476,8 +477,9 @@ Usage:
   ivoai disconnect <chatgpt|claude|server>
   ivoai codex [-- agent arguments...]
   ivoai claude [-- agent arguments...]
+  ivoai opencode [-- agent arguments...]
   ivoai auto [--planner codex|claude] [-- agent arguments...]
-  ivoai session start --executor <codex|claude> --mode <direct|orchestrated> [-- agent arguments...]
+  ivoai session start --executor <codex|claude|opencode> --mode <direct|orchestrated> [-- agent arguments...]
   ivoai session list [--json] | show [--json] <id> | stop <id>
   ivoai monitor [--watch] [--session <id>] [--json]
   ivoai memory [status|configure]

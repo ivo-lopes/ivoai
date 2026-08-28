@@ -41,6 +41,7 @@ type fakeRunner struct {
 	external string
 	fail     bool
 	runs     int
+	options  []platform.RunOptions
 }
 
 func (f *fakeRunner) LookPath(string) (string, error) {
@@ -50,8 +51,9 @@ func (f *fakeRunner) LookPath(string) (string, error) {
 	return f.external, nil
 }
 
-func (f *fakeRunner) Run(_ context.Context, command string, _ []string, _ platform.RunOptions) (platform.Result, error) {
+func (f *fakeRunner) Run(_ context.Context, command string, _ []string, options platform.RunOptions) (platform.Result, error) {
 	f.runs++
+	f.options = append(f.options, options)
 	if f.fail {
 		return platform.Result{}, errors.New("health failed")
 	}
@@ -92,6 +94,11 @@ func TestManagedComponentUpdateNoChangeRollbackAndRecoveryState(t *testing.T) {
 	}
 	if info, err := os.Stat(manager.Supply.Root); err != nil || info.Mode().Perm() != 0o700 {
 		t.Fatalf("supply root mode=%v err=%v", info.Mode(), err)
+	}
+	for _, options := range runner.options {
+		if !options.CleanEnv || len(options.Env) != 1 || options.Env[0] != "PATH=/usr/bin:/bin" {
+			t.Fatalf("health probe inherited provider environment: %+v", options)
+		}
 	}
 }
 

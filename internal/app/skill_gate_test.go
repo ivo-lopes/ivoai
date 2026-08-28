@@ -13,19 +13,26 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ivo-lopes/ivoai/internal/config"
 	"github.com/ivo-lopes/ivoai/internal/quota"
 	"github.com/ivo-lopes/ivoai/internal/skills"
 	"github.com/ivo-lopes/ivoai/internal/supplychain"
 )
 
-func TestManagedDirectLaunchesApplySkillGateToCodexAndClaude(t *testing.T) {
-	for _, executor := range []string{"codex", "claude"} {
+func TestManagedDirectLaunchesApplySkillGateToAllDirectExecutors(t *testing.T) {
+	for _, executor := range []string{"codex", "claude", "opencode"} {
 		t.Run(executor, func(t *testing.T) {
 			root := t.TempDir()
 			arguments := filepath.Join(root, executor+"-args")
 			codex := appExecutable(t, root, "codex", "#!/bin/sh\nprintf '%s\\n' \"$@\" > '"+arguments+"'\n")
 			claude := appExecutable(t, root, "claude", "#!/bin/sh\nprintf '%s\\n' \"$@\" > '"+arguments+"'\n")
+			opencode := appExecutable(t, root, "opencode", "#!/bin/sh\npath=$(printf '%s' \"$OPENCODE_CONFIG_CONTENT\" | sed 's/.*\\[\"\\([^\"]*\\)\"\\].*/\\1/')\ncp \"$path\" '"+arguments+"'\n")
 			a := sessionTestApp(t, root, codex, claude, appExecutable(t, root, "ruflo", "#!/bin/sh\nexit 0\n"))
+			state, _ := a.Store.LoadState()
+			state.Components["opencode"] = config.ComponentState{Installed: true, Path: opencode, Version: "fixture"}
+			if err := a.Store.SaveState(state); err != nil {
+				t.Fatal(err)
+			}
 			installAppTestSkill(t, a, filepath.Base(root), "VALIDATED SKILL BODY")
 			previous, _ := os.Getwd()
 			t.Cleanup(func() { _ = os.Chdir(previous) })
@@ -44,6 +51,9 @@ func TestManagedDirectLaunchesApplySkillGateToCodexAndClaude(t *testing.T) {
 			}
 			if executor == "claude" && !strings.Contains(string(body), "--append-system-prompt") {
 				t.Fatalf("Claude did not use its official instruction channel: %q", body)
+			}
+			if executor == "opencode" && strings.Contains(string(body), "--append-system-prompt") {
+				t.Fatalf("OpenCode received a foreign instruction flag: %q", body)
 			}
 		})
 	}
@@ -95,7 +105,7 @@ func installAppTestSkill(t *testing.T, a *App, trigger, content string) {
 	if err := manager.Promote(staged); err != nil {
 		t.Fatal(err)
 	}
-	entry := skills.Entry{ID: "demo", ArtifactID: source.ID, Name: "demo", Description: "Synthetic managed skill", Domain: "testing", Triggers: []string{trigger}, Phase: skills.PhaseImplementation, Role: "helper", RoleMode: skills.RoleComposable, Risk: skills.RiskLow, Lifecycle: skills.LifecycleActive, Compatibility: skills.Compatibility{Executors: []string{"codex", "claude"}}, Provenance: skills.Provenance{Source: skills.Source{Kind: "git", URL: source.Source, Repository: source.Source, Path: "skills/demo/SKILL.md", DefaultBranch: source.DefaultBranch}, Revision: skills.Revision{Commit: revision, LogicalVersion: revision}, Integrity: skills.Integrity{Algorithm: "sha256", Digest: digest, Verified: true, SignatureStatus: "not_exposed", AttestationStatus: "not_exposed", TrustLevel: "commit_pinned_local_digest"}}}
+	entry := skills.Entry{ID: "demo", ArtifactID: source.ID, Name: "demo", Description: "Synthetic managed skill", Domain: "testing", Triggers: []string{trigger}, Phase: skills.PhaseImplementation, Role: "helper", RoleMode: skills.RoleComposable, Risk: skills.RiskLow, Lifecycle: skills.LifecycleActive, Compatibility: skills.Compatibility{Executors: []string{"codex", "claude", "opencode"}}, Provenance: skills.Provenance{Source: skills.Source{Kind: "git", URL: source.Source, Repository: source.Source, Path: "skills/demo/SKILL.md", DefaultBranch: source.DefaultBranch}, Revision: skills.Revision{Commit: revision, LogicalVersion: revision}, Integrity: skills.Integrity{Algorithm: "sha256", Digest: digest, Verified: true, SignatureStatus: "not_exposed", AttestationStatus: "not_exposed", TrustLevel: "commit_pinned_local_digest"}}}
 	if err := (skills.Store{Path: skills.RegistryPath(a.Store.Paths.StateDir)}).Save(skills.Registry{Schema: skills.RegistrySchemaVersion, Entries: []skills.Entry{entry}}); err != nil {
 		t.Fatal(err)
 	}

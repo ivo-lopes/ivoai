@@ -78,7 +78,9 @@ The healthy disconnected state is:
 ivoai          ready
 Codex          installed / not connected
 Claude Code    installed / not connected
+OpenCode       ready / direct primary
 Headroom       ready
+Caveman        installed / cutover pending
 ai-memory      installed / not connected
 Ruflo          ready / provider execution disabled
 Server         not-connected
@@ -88,8 +90,13 @@ Overall: READY — external connections pending
 
 ## Agent launch
 
-`ivoai codex` and `ivoai claude` preserve the terminal, working directory, signals,
-and agent exit code. When enabled and healthy, Headroom's supported wrapper is used.
+`ivoai codex`, `ivoai claude`, and `ivoai opencode` preserve the terminal, working
+directory, signals, and agent exit code. OpenCode uses its official TUI and
+process-local `OPENCODE_CONFIG_CONTENT` instruction channel for the mandatory Skill
+Gate without modifying global/project agent configuration. Its provider auth store
+continues to belong exclusively to OpenCode.
+
+Codex and Claude use Headroom when enabled and healthy.
 If Headroom is unavailable, unhealthy, or incompatible during preflight, ivoai
 starts the official agent directly. Once a selected wrapper process starts, its exit
 status is propagated instead of being hidden. Memory and context hooks are best
@@ -113,7 +120,8 @@ artificial lookups. An explicit request to remember information is written throu
 RAG index, not a conversational write store, so an agent must not claim it wrote a
 chat fact to Context.
 
-The same process-scoped policy is injected into Codex and Claude workers. It does not
+The same process-scoped policy is injected into Codex and Claude workers. OpenCode is
+direct-only until IVOAI-22, so it is not advertised as an advisory worker. It does not
 modify user-owned agent configuration, and it never treats retrieved text as
 instructions.
 

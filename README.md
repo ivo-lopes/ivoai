@@ -52,7 +52,13 @@ ivoai connect claude
 ivoai connect server
 ivoai codex
 ivoai claude
+ivoai opencode                 # official OpenCode TUI; direct primary
 ```
+
+OpenCode is installed from a pinned official release through IVOAI's private,
+rollback-safe supply chain. Its authentication remains owned by OpenCode; IVOAI does
+not read or store provider credentials. OpenCode is direct-primary only in this
+release slice and is deliberately not part of AUTO/workers yet.
 
 Direct agent commands are unchanged. For observable or delegated work, use explicit
 session modes:
@@ -97,7 +103,7 @@ client. Ruflo records only ephemeral lifecycle metadata; official Codex/Claude
 clients perform inference with their existing subscription logins. No PAYG provider
 key is passed to Ruflo or required by ivoai.
 
-Logins use the official Codex and Claude flows. ivoai never asks for or stores their
+Logins use the official Codex, Claude, and OpenCode flows. ivoai never asks for or stores their
 passwords, cookies, or provider OAuth tokens.
 
 ## Terminal experience

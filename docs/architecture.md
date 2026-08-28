@@ -32,7 +32,7 @@ model name.
 
 The current adapters are:
 
-- `CodexExecutor` and `ClaudeExecutor` over the existing official interactive CLI
+- `CodexExecutor`, `ClaudeExecutor`, and direct-only `OpenCodeExecutor` over the existing official interactive CLI
   runtime. They expose session start and bounded cancellation; incremental send,
   structured primary results and diff retrieval are not claimed.
 - `AIMemoryBackend` over the existing ai-memory client configurator. Memory content

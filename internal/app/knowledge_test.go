@@ -1,6 +1,7 @@
 package app
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -8,6 +9,37 @@ import (
 
 	"github.com/ivo-lopes/ivoai/internal/config"
 )
+
+func TestOpenCodeUsesPrivateProcessLocalInstructionConfig(t *testing.T) {
+	root := t.TempDir()
+	environment, cleanup, err := openCodeInstructionEnvironment([]string{`OPENCODE_CONFIG_CONTENT={"model":"provider/model","instructions":["existing.md"]}`}, root, "managed skill body")
+	if err != nil {
+		t.Fatal(err)
+	}
+	value := environmentValue(environment, "OPENCODE_CONFIG_CONTENT")
+	var configValue struct {
+		Model        string   `json:"model"`
+		Instructions []string `json:"instructions"`
+	}
+	if err := json.Unmarshal([]byte(value), &configValue); err != nil {
+		t.Fatal(err)
+	}
+	if configValue.Model != "provider/model" || len(configValue.Instructions) != 2 || configValue.Instructions[0] != "existing.md" {
+		t.Fatalf("config=%+v", configValue)
+	}
+	path := configValue.Instructions[1]
+	body, err := os.ReadFile(path)
+	if err != nil || string(body) != "managed skill body" {
+		t.Fatalf("body=%q err=%v", body, err)
+	}
+	if info, err := os.Stat(path); err != nil || info.Mode().Perm() != 0o600 {
+		t.Fatalf("mode=%v err=%v", info.Mode(), err)
+	}
+	cleanup()
+	if _, err := os.Stat(path); !os.IsNotExist(err) {
+		t.Fatalf("ephemeral instruction survived cleanup: %v", err)
+	}
+}
 
 func TestSharedKnowledgeContractUsesOfficialClientInstructionChannels(t *testing.T) {
 	cfg := config.Default()

@@ -2,6 +2,8 @@ package agents
 
 import (
 	"context"
+	"errors"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -9,8 +11,8 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/platform"
 )
 
-func TestOfficialExecutorAdaptersPreserveCodexAndClaudeLaunch(t *testing.T) {
-	for _, name := range []string{"codex", "claude"} {
+func TestOfficialExecutorAdaptersPreserveDirectLaunch(t *testing.T) {
+	for _, name := range []string{"codex", "claude", "opencode"} {
 		t.Run(name, func(t *testing.T) {
 			root := t.TempDir()
 			marker := filepath.Join(root, "ran")
@@ -31,6 +33,30 @@ func TestOfficialExecutorAdaptersPreserveCodexAndClaudeLaunch(t *testing.T) {
 				t.Fatalf("observation = %+v", observation)
 			}
 		})
+	}
+}
+
+func TestOpenCodeExecutorBypassesLegacyCompression(t *testing.T) {
+	root := t.TempDir()
+	marker := filepath.Join(root, "ran")
+	binary := writeExecutable(t, root, "opencode", "#!/bin/sh\n: > \"$1\"\n")
+	executor := OpenCodeExecutor{Runtime: Runtime{Runner: platform.ExecRunner{}, AgentPath: binary}}
+	if err := executor.StartSession(context.Background(), core.SessionRequest{Args: []string{marker}, CompressionEnabled: true}, nil); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(marker); err != nil {
+		t.Fatal("OpenCode direct session did not run")
+	}
+}
+
+func TestOpenCodeExecutorPropagatesOfficialClientExitStatus(t *testing.T) {
+	root := t.TempDir()
+	binary := writeExecutable(t, root, "opencode", "#!/bin/sh\nexit 23\n")
+	executor := OpenCodeExecutor{Runtime: Runtime{Runner: platform.ExecRunner{}, AgentPath: binary}}
+	err := executor.StartSession(context.Background(), core.SessionRequest{}, nil)
+	var exitErr *ExitError
+	if !errors.As(err, &exitErr) || exitErr.Code != 23 {
+		t.Fatalf("exit error=%v", err)
 	}
 }
 

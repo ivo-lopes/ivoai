@@ -177,6 +177,33 @@ components:
       - "The BSL Additional Use Grant observed at v2.3.1 permits internal, CI and first-party self-hosted use; third-party managed service use requires commercial licensing."
       - "No Caveman memory, MCP, browse, learn, pixel, hooks, statusline or global setup is enabled."
 
+  - name: opencode
+    role: [client]
+    validated_version: "1.18.25"
+    minimum_version: "1.18.25"
+    revision: "cb7d8b2f5e44876ef98b661dc10590c915af3a9f"
+    default_branch: dev
+    license: MIT
+    source: "https://github.com/anomalyco/opencode/releases/tag/v1.18.25"
+    documentation: "https://opencode.ai/docs/"
+    architectures: [linux/amd64, linux/arm64]
+    install_strategy: managed_supply_chain_release_archive
+    checksum_strategy: github_release_asset_digest_sha256
+    assets:
+      linux/amd64:
+        url: "https://github.com/anomalyco/opencode/releases/download/v1.18.25/opencode-linux-x64.tar.gz"
+        sha256: "58a3729a6f3432dd6d2917fcc4a949788891a035818646ad480e12c947f56e78"
+      linux/arm64:
+        url: "https://github.com/anomalyco/opencode/releases/download/v1.18.25/opencode-linux-arm64.tar.gz"
+        sha256: "35ef77897425e41b5183a2c21ac4fb1d4d944d82a94e3c920f57b5490af11ac5"
+    auth:
+      default: "opencode auth login"
+      subscription_or_provider_owned: true
+      payg_key_required_by_ivoai: false
+    notes:
+      - "Authentication remains entirely owned by OpenCode; IVOAI never reads or persists its auth store."
+      - "Direct primary sessions are supported; AUTO/worker use is deferred to IVOAI-22."
+
   - name: ai-memory
     role: [client, server]
     validated_version: "1.29.0"

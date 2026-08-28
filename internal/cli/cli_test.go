@@ -141,7 +141,7 @@ func TestPublicMenuActionCoverageIsUnique(t *testing.T) {
 		}
 		seen[id] = true
 	}
-	for _, required := range []string{"auto", "setup", "connect.chatgpt", "connect.claude", "connect.server", "launch.codex", "launch.claude", "session.direct.codex", "session.orchestrated.claude", "session.monitor", "session.stop", "server.restore", "remote.doctor", "uninstall"} {
+	for _, required := range []string{"auto", "setup", "connect.chatgpt", "connect.claude", "connect.server", "launch.codex", "launch.claude", "launch.opencode", "session.direct.codex", "session.direct.opencode", "session.orchestrated.claude", "session.monitor", "session.stop", "server.restore", "remote.doctor", "uninstall"} {
 		if !seen[required] {
 			t.Fatalf("public command missing from menu: %s", required)
 		}

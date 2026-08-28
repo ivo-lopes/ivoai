@@ -15,6 +15,7 @@ type ComponentID string
 const (
 	ComponentCodex          ComponentID = "codex"
 	ComponentClaude         ComponentID = "claude"
+	ComponentOpenCode       ComponentID = "opencode"
 	ComponentMemory         ComponentID = "memory"
 	ComponentContext        ComponentID = "context"
 	ComponentCompression    ComponentID = "compression"
