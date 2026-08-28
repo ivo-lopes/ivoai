@@ -36,6 +36,13 @@ type Component struct {
 	Fixture   bool   `json:"fixture,omitempty"`
 	Hooks     bool   `json:"hooks,omitempty"`
 }
+type ManagedComponent struct {
+	Component
+	Revision   string `json:"revision,omitempty"`
+	Source     string `json:"source,omitempty"`
+	License    string `json:"license,omitempty"`
+	TrustLevel string `json:"trust_level,omitempty"`
+}
 type Auth struct {
 	Installed     bool   `json:"installed"`
 	Version       string `json:"version,omitempty"`
@@ -118,6 +125,7 @@ type Report struct {
 	CodexCodeModeHost Component            `json:"codex_code_mode_host"`
 	Claude            Auth                 `json:"claude"`
 	Headroom          headroom.Status      `json:"headroom"`
+	Caveman           ManagedComponent     `json:"caveman"`
 	Memory            Component            `json:"ai_memory"`
 	Ruflo             orchestration.Status `json:"ruflo"`
 	Server            Server               `json:"server"`
@@ -153,6 +161,7 @@ func (d Doctor) Run(ctx context.Context) Report {
 	if fixture := state.Components["headroom"]; !r.Headroom.Installed && strings.HasSuffix(fixture.Version, "-fixture") {
 		r.Headroom.Installed, r.Headroom.Healthy, r.Headroom.CodexCompatible, r.Headroom.ClaudeCompatible, r.Headroom.Version, r.Headroom.InteractiveLaunch = true, true, true, true, fixture.Version, "fixture"
 	}
+	r.Caveman = d.managedComponent("caveman", state.Components["caveman"])
 	r.Memory = componentFromState(state.Components["ai-memory"])
 	r.Memory.Hooks = hooksInstalled(d.Store.Paths.HooksDir)
 	if r.Memory.Fixture {
@@ -281,6 +290,20 @@ func (d Doctor) skillControlPlane() SkillControlPlane {
 	return result
 }
 
+func (d Doctor) managedComponent(id string, state config.ComponentState) ManagedComponent {
+	result := ManagedComponent{Component: componentFromState(state)}
+	source, root, err := (supplychain.Manager{Root: filepath.Join(d.Store.Paths.DataDir, "supply-chain")}).Active(id)
+	if err != nil {
+		return result
+	}
+	want := filepath.Join(root, filepath.FromSlash(source.PayloadPath))
+	if filepath.Clean(state.Path) != filepath.Clean(want) {
+		return result
+	}
+	result.Revision, result.Source, result.License, result.TrustLevel = source.Revision, source.Source, source.License, source.Integrity.TrustLevel
+	return result
+}
+
 func privateWritableDirectory(path string) bool {
 	info, err := os.Lstat(path)
 	return err == nil && info.Mode()&os.ModeSymlink == 0 && info.IsDir() && info.Mode().Perm() == 0o700 && unix.Access(path, unix.W_OK|unix.X_OK) == nil
@@ -334,6 +357,19 @@ func componentMatrix(cfg config.Config, state config.State, report Report) core.
 			core.CapabilityMemoryStatus:    core.SupportSupported,
 		},
 		Compatibility: compatibility(report.Memory.Installed, "ai-memory client is not installed"),
+	})
+	cavemanAvailable := report.Caveman.Installed
+	values = append(values, core.ComponentStatus{
+		ID: core.ComponentCompression, Implementation: "caveman", Active: false,
+		Installed: report.Caveman.Installed, Managed: state.Components["caveman"].Managed, Available: cavemanAvailable,
+		Health: health(cavemanAvailable), Lifecycle: core.LifecycleStopped,
+		Provenance: core.Provenance{Source: "managed_supply_chain", Version: report.Caveman.Version, Path: state.Components["caveman"].Path},
+		Capabilities: core.CapabilitySet{
+			core.CapabilityCompressionWrap:   map[bool]core.SupportState{true: core.SupportSupported, false: core.SupportUnsupported}[cavemanAvailable],
+			core.CapabilityCompressionBypass: core.SupportSupported,
+		},
+		Compatibility: compatibility(cavemanAvailable, "managed Caveman runtime is unavailable"),
+		Fallback:      core.Fallback{Allowed: false, Reason: "cutover is deferred to IVOAI-40"},
 	})
 	headroomAvailable := cfg.Headroom.Enabled && report.Headroom.Healthy && (report.Headroom.CodexCompatible || report.Headroom.ClaudeCompatible)
 	values = append(values, core.ComponentStatus{

@@ -22,8 +22,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ivo-lopes/ivoai/internal/componentupdate"
 	"github.com/ivo-lopes/ivoai/internal/config"
 	"github.com/ivo-lopes/ivoai/internal/platform"
+	"github.com/ivo-lopes/ivoai/internal/supplychain"
 )
 
 //go:embed assets/package.json
@@ -44,6 +46,7 @@ const (
 	StrategyBinary      Strategy = "verified-archive"
 	StrategyUVIsolated  Strategy = "isolated-uv-tool"
 	StrategyNPMIsolated Strategy = "isolated-npm-prefix"
+	StrategySupplyChain Strategy = "managed-supply-chain"
 )
 
 type Asset struct{ URL, SHA256 string }
@@ -54,6 +57,10 @@ type Spec struct {
 	Assets                             map[string]Asset
 	RequiresManaged                    string
 	NoVersionProbe                     bool
+	Revision, DefaultBranch, License   string
+	PayloadFormat, PayloadPath         string
+	SignatureStatus, AttestationStatus string
+	TrustLevel                         string
 }
 
 const (
@@ -83,6 +90,12 @@ func DefaultCatalog() []Spec {
 			"linux/amd64": {URL: "https://github.com/headroomlabs-ai/headroom/releases/download/v0.36.0/headroom_ai-0.36.0-cp310-abi3-manylinux_2_28_x86_64.whl", SHA256: "fab6af014363c5a9a6bb41913a84df6f1daaecb56edf005925940e4501937f42"},
 			"linux/arm64": {URL: "https://github.com/headroomlabs-ai/headroom/releases/download/v0.36.0/headroom_ai-0.36.0-cp310-abi3-manylinux_2_28_aarch64.whl", SHA256: "a00f3d7a705e15bc52a529c1476a775badb8d0e2e3fb72ec96f952814121697c"},
 		}},
+		{Name: "caveman", Executable: "caveman-proxy", Version: "1.1.3", Strategy: StrategySupplyChain,
+			Revision: "0d2f052babfd613ec9b4186c86ec6f133cdfd4d7", DefaultBranch: "main", License: "BSL-1.1", PayloadFormat: "raw", PayloadPath: "bin/caveman-proxy", NoVersionProbe: true,
+			SignatureStatus: "keysig_published_unverified", AttestationStatus: "not_exposed", TrustLevel: "upstream_checksum", Assets: map[string]Asset{
+				"linux/amd64": {URL: "https://github.com/JuliusBrussee/caveman/releases/download/bin-v1.1.3/caveman-proxy_linux_amd64", SHA256: "d883b9ab4b559e0c1935335c0e24400deb5c61d5e247f1ca239c4149f57885b0"},
+				"linux/arm64": {URL: "https://github.com/JuliusBrussee/caveman/releases/download/bin-v1.1.3/caveman-proxy_linux_arm64", SHA256: "2d6c1950bbce1a70c910a03bde88883817a8380f03f5ec25dd80186fed434ce7"},
+			}},
 		{Name: "ai-memory", Executable: "ai-memory", Version: "1.29.0", Strategy: StrategyBinary, Assets: map[string]Asset{
 			"linux/amd64": {URL: "https://github.com/akitaonrails/ai-memory/releases/download/v1.29.0/ai-memory-linux-x86_64.tar.gz", SHA256: "c666fa4ec778673ae995cd8aa4489b6184c7a3dc220a2c4e1c18792eda1321f1"},
 			"linux/arm64": {URL: "https://github.com/akitaonrails/ai-memory/releases/download/v1.29.0/ai-memory-linux-aarch64.tar.gz", SHA256: "828cb63f697f8b773d4e6c41c38d0d850310afed04f37479bb48e3a11969d689"},
@@ -145,6 +158,9 @@ func (i *Installer) ensure(ctx context.Context, spec Spec, previous config.Compo
 	if os.Getenv("IVOAI_TEST_MODE") == "1" {
 		return i.fixture(spec)
 	}
+	if spec.Strategy == StrategySupplyChain {
+		return i.ensureSupplyChain(ctx, spec, previous)
+	}
 	if previous.Installed && previous.Managed && previous.Version == spec.Version {
 		if info, err := os.Stat(previous.Path); err == nil && info.Mode().IsRegular() && info.Mode().Perm()&0o077 == 0 {
 			return previous, nil
@@ -173,6 +189,32 @@ func (i *Installer) ensure(ctx context.Context, spec Spec, previous config.Compo
 		}
 	}
 	return config.ComponentState{Installed: true, Managed: true, Version: spec.Version, Path: path}, nil
+}
+
+func (i *Installer) ensureSupplyChain(ctx context.Context, spec Spec, previous config.ComponentState) (config.ComponentState, error) {
+	if previous.Installed && previous.Managed && previous.Version == spec.Version {
+		if info, err := os.Lstat(previous.Path); err == nil && info.Mode()&os.ModeSymlink == 0 && info.Mode().IsRegular() && info.Mode().Perm() == 0o700 {
+			return previous, nil
+		}
+	}
+	asset, ok := spec.Assets[runtime.GOOS+"/"+runtime.GOARCH]
+	if !ok {
+		return config.ComponentState{}, errors.New("no asset for current platform")
+	}
+	executables := []string{spec.PayloadPath}
+	source := supplychain.ResolvedSource{
+		ID: spec.Name, Kind: supplychain.KindComponent, Source: asset.URL, Revision: spec.Revision,
+		LogicalVersion: spec.Version, DefaultBranch: spec.DefaultBranch, PayloadFormat: spec.PayloadFormat,
+		PayloadPath: spec.PayloadPath, License: spec.License, Executables: executables,
+		Integrity: supplychain.Integrity{Algorithm: "sha256", Digest: asset.SHA256, SignatureStatus: spec.SignatureStatus, AttestationStatus: spec.AttestationStatus, TrustLevel: spec.TrustLevel},
+	}
+	manager := componentupdate.Manager{
+		Supply:     supplychain.Manager{Root: filepath.Join(i.Store.Paths.DataDir, "supply-chain"), Limits: supplychain.Limits{ArchiveBytes: 128 << 20, ExpandedBytes: 512 << 20, FileBytes: 128 << 20, Files: 4096}},
+		Discoverer: componentupdate.StaticDiscoverer{Source: source}, Fetcher: componentupdate.HTTPFetcher{Client: i.Client},
+		Store: i.Store, Runner: i.Runner, Executable: spec.Executable, VersionArg: []string{"--version"}, NoVersionProbe: spec.NoVersionProbe,
+	}
+	result, err := manager.Update(ctx, supplychain.Reference{ID: spec.Name, Kind: supplychain.KindComponent, Source: asset.URL, Version: spec.Version})
+	return result.State, err
 }
 
 func versionAtLeast(actual, minimum string) bool {

@@ -72,6 +72,45 @@ func TestVerifiedBinaryInstallIsIdempotent(t *testing.T) {
 	}
 }
 
+func TestManagedSupplyChainRawComponentIsPrivateAndDoesNotTouchAgentConfig(t *testing.T) {
+	payload := []byte("reviewed caveman proxy fixture")
+	sum := sha256.Sum256(payload)
+	var requests atomic.Int32
+	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		requests.Add(1)
+		_, _ = w.Write(payload)
+	}))
+	defer server.Close()
+	root := t.TempDir()
+	t.Setenv("HOME", filepath.Join(root, "home"))
+	paths := config.Paths{ConfigDir: filepath.Join(root, "config"), DataDir: filepath.Join(root, "data"), StateDir: filepath.Join(root, "state"), CacheDir: filepath.Join(root, "cache"), BinDir: filepath.Join(root, "data", "bin"), Config: filepath.Join(root, "config", "config.toml"), State: filepath.Join(root, "state", "state.toml"), Ownership: filepath.Join(root, "state", "ownership.toml"), HooksDir: filepath.Join(root, "data", "hooks")}
+	store := config.NewStore(paths)
+	spec := Spec{Name: "caveman", Executable: "caveman-proxy", Version: "1.1.3", Strategy: StrategySupplyChain, Revision: strings.Repeat("a", 40), DefaultBranch: "main", License: "BSL-1.1", PayloadFormat: "raw", PayloadPath: "bin/caveman-proxy", NoVersionProbe: true, SignatureStatus: "not_exposed", AttestationStatus: "not_exposed", TrustLevel: "upstream_checksum", Assets: map[string]Asset{runtime.GOOS + "/" + runtime.GOARCH: {URL: server.URL, SHA256: hex.EncodeToString(sum[:])}}}
+	installer := Installer{Runner: absentRunner{}, Store: store, Catalog: []Spec{spec}, Client: server.Client()}
+	if err := installer.Setup(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if err := installer.Setup(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if requests.Load() != 1 {
+		t.Fatalf("downloads=%d", requests.Load())
+	}
+	state, err := store.LoadState()
+	if err != nil {
+		t.Fatal(err)
+	}
+	component := state.Components["caveman"]
+	if !component.Managed || !strings.Contains(component.Path, filepath.Join("supply-chain", "objects", "caveman")) {
+		t.Fatalf("component=%+v", component)
+	}
+	for _, path := range []string{filepath.Join(root, "home", ".codex"), filepath.Join(root, "home", ".claude"), filepath.Join(root, "home", ".config", "opencode")} {
+		if _, err := os.Lstat(path); !errors.Is(err, os.ErrNotExist) {
+			t.Fatalf("installer modified agent config %s: %v", path, err)
+		}
+	}
+}
+
 func TestVersionlessManagedCompanionIsInstalledOnlyWithManagedParent(t *testing.T) {
 	archive := testArchive(t, "tool-host", []byte("#!/bin/sh\nexit 0\n"))
 	sum := sha256.Sum256(archive)

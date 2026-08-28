@@ -61,13 +61,34 @@ type ResolvedSource struct {
 	Revision       string       `json:"revision"`
 	LogicalVersion string       `json:"logical_version,omitempty"`
 	DefaultBranch  string       `json:"default_branch,omitempty"`
+	PayloadFormat  string       `json:"payload_format,omitempty"`
+	PayloadPath    string       `json:"payload_path,omitempty"`
+	License        string       `json:"license,omitempty"`
 	Executables    []string     `json:"executables,omitempty"`
 	Integrity      Integrity    `json:"integrity"`
 }
 
 func (r ResolvedSource) Validate() error {
-	if !safeID(r.ID) || !validKind(r.Kind) || !validHTTPS(r.Source) || !immutableRevision(r.Revision) || !safeBoundedText(r.LogicalVersion, 128) || !safeBoundedText(r.DefaultBranch, 256) {
+	if !safeID(r.ID) || !validKind(r.Kind) || !validHTTPS(r.Source) || !immutableRevision(r.Revision) || !safeBoundedText(r.LogicalVersion, 128) || !safeBoundedText(r.DefaultBranch, 256) || !safeBoundedText(r.License, 128) {
 		return errors.New("source did not resolve to safe immutable metadata")
+	}
+	if r.PayloadFormat != "" && r.PayloadFormat != "tar_gzip" && r.PayloadFormat != "raw" {
+		return errors.New("resolved source has unsupported payload format")
+	}
+	if r.PayloadFormat == "raw" {
+		if r.Kind == KindSkill || r.PayloadPath == "" {
+			return errors.New("raw payload requires a non-skill destination path")
+		}
+		if _, err := safeArchivePath(r.PayloadPath); err != nil {
+			return errors.New("resolved source has unsafe raw payload path")
+		}
+	} else if r.PayloadPath != "" {
+		if r.Kind == KindSkill {
+			return errors.New("skills cannot declare a component payload path")
+		}
+		if _, err := safeArchivePath(r.PayloadPath); err != nil {
+			return errors.New("resolved source has unsafe payload path")
+		}
 	}
 	if r.Integrity.Algorithm != "sha256" || len(r.Integrity.Digest) != 64 {
 		return errors.New("resolved source requires sha256 integrity")
@@ -128,7 +149,11 @@ type Limits struct {
 }
 
 func DefaultLimits() Limits {
-	return Limits{ArchiveBytes: 64 << 20, ExpandedBytes: 256 << 20, FileBytes: 32 << 20, Files: 4096}
+	// Current reviewed component assets include a ~37 MiB raw Caveman proxy
+	// and a ~60 MiB compressed OpenCode archive whose single binary is larger
+	// than the historical skill-oriented 32 MiB file cap. These remain strict,
+	// bounded ceilings rather than unbounded component downloads.
+	return Limits{ArchiveBytes: 128 << 20, ExpandedBytes: 512 << 20, FileBytes: 256 << 20, Files: 4096}
 }
 
 type Manager struct {
@@ -278,7 +303,31 @@ func (m Manager) StageArchive(ctx context.Context, source ResolvedSource, archiv
 	if err := platform.EnsurePrivateDir(content); err != nil {
 		return Staged{}, err
 	}
-	if err := extractArchive(ctx, compressed, content, limits, source.Executables); err != nil {
+	if source.PayloadFormat == "raw" {
+		if int64(len(compressed)) > limits.FileBytes || int64(len(compressed)) > limits.ExpandedBytes {
+			return Staged{}, errors.New("raw artifact exceeds expanded size limit")
+		}
+		select {
+		case <-ctx.Done():
+			return Staged{}, ctx.Err()
+		default:
+		}
+		target := filepath.Join(content, filepath.FromSlash(source.PayloadPath))
+		if !pathWithin(content, target) {
+			return Staged{}, errors.New("raw artifact path escaped staging root")
+		}
+		if err := platform.EnsurePrivateDir(filepath.Dir(target)); err != nil {
+			return Staged{}, err
+		}
+		if err := platform.AtomicWritePrivate(compressed, target); err != nil {
+			return Staged{}, err
+		}
+		if containsString(source.Executables, source.PayloadPath) {
+			if err := os.Chmod(target, 0o700); err != nil {
+				return Staged{}, err
+			}
+		}
+	} else if err := extractArchive(ctx, compressed, content, limits, source.Executables); err != nil {
 		return Staged{}, err
 	}
 	if err := m.Structural.Validate(ctx, source, content); err != nil {
@@ -1040,6 +1089,16 @@ func safeTransactionID(value string) bool {
 	}
 	_, err := hex.DecodeString(strings.TrimPrefix(value, "sc_"))
 	return err == nil
+}
+
+func pathWithin(root, target string) bool {
+	relative, err := filepath.Rel(filepath.Clean(root), filepath.Clean(target))
+	return err == nil && relative != ".." && !strings.HasPrefix(relative, ".."+string(filepath.Separator)) && !filepath.IsAbs(relative)
+}
+
+func containsString(values []string, target string) bool {
+	index := sort.SearchStrings(values, target)
+	return index < len(values) && values[index] == target
 }
 
 func safeID(value string) bool {

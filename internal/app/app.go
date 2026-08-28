@@ -216,6 +216,7 @@ func (a *App) Status(ctx context.Context) error {
 		{"Codex tools", codexToolHostStatus(state)},
 		{"Claude Code", componentStatus(state.Components["claude-code"], cfg.Connections.Claude.Status)},
 		{"Headroom", headroomStatus(state.Components["headroom"], cfg.Headroom.Enabled)},
+		{"Caveman", optionalManagedStatus(state.Components["caveman"], "installed / cutover pending")},
 		{"Context", contextHealthStatus(cfg, serverHealth)},
 		{"ai-memory", memoryHealthStatus(cfg, state.Components["ai-memory"], serverHealth)},
 		{"Research", researchPriorityStatus(cfg)},
@@ -392,6 +393,15 @@ func headroomStatus(s config.ComponentState, enabled bool) statusValue {
 		return statusValue{"installed / disabled", terminalui.StatusNeutral}
 	}
 	return statusValue{"installed / enabled / interactive not validated", terminalui.StatusWarning}
+}
+func optionalManagedStatus(s config.ComponentState, ready string) statusValue {
+	if !componentPresent(s) {
+		return statusValue{"not installed / optional", terminalui.StatusNeutral}
+	}
+	if !s.Managed {
+		return statusValue{"external / unmanaged", terminalui.StatusNeutral}
+	}
+	return statusValue{ready, terminalui.StatusSuccess}
 }
 func safeStatus(s orchestration.Status) statusValue {
 	if !s.Installed {

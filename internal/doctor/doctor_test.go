@@ -80,12 +80,14 @@ func TestComponentMatrixExplainsCapabilitiesHealthAndFallback(t *testing.T) {
 		"codex":       {Installed: true, Managed: true, Version: "fixture", Path: "/managed/codex"},
 		"claude-code": {Installed: true, Managed: true, Version: "fixture", Path: "/managed/claude"},
 		"headroom":    {Installed: true, Managed: true, Version: "fixture", Path: "/managed/headroom"},
+		"caveman":     {Installed: true, Managed: true, Version: "fixture", Path: "/managed/caveman"},
 		"ai-memory":   {Installed: true, Managed: true, Version: "fixture", Path: "/managed/ai-memory"},
 		"ruflo":       {Installed: true, Managed: true, Version: "fixture", Path: "/managed/ruflo"},
 	}}
 	report := Report{
 		Codex: Auth{Installed: true, Version: "codex fixture"}, Claude: Auth{Installed: true, Version: "claude fixture"},
 		Headroom:      headroom.Status{Installed: true, Healthy: true, CodexCompatible: true, ClaudeCompatible: true},
+		Caveman:       ManagedComponent{Component: Component{Installed: true, Managed: true, Version: "fixture", Path: "/managed/caveman"}},
 		Memory:        Component{Installed: true, Hooks: true},
 		Ruflo:         orchestration.Status{Installed: true, SafeMode: true},
 		Server:        Server{Configured: true, Reachable: true, ProtocolCompatible: true},
@@ -99,6 +101,10 @@ func TestComponentMatrixExplainsCapabilitiesHealthAndFallback(t *testing.T) {
 	compression, err := matrix.Resolve(core.ComponentCompression, core.CapabilityCompressionWrap)
 	if err != nil || !compression.Component.Fallback.Allowed {
 		t.Fatalf("compression selection=%+v err=%v", compression, err)
+	}
+	compressionEntries := matrix.Entries(core.ComponentCompression)
+	if len(compressionEntries) != 2 || compressionEntries[0].Implementation != "headroom" || compressionEntries[1].Implementation != "caveman" || compressionEntries[1].Active {
+		t.Fatalf("compression entries=%+v", compressionEntries)
 	}
 	if _, err := matrix.Resolve(core.ComponentContext, core.CapabilityContextIngest); err == nil {
 		t.Fatal("read-only remote Context advertised ingestion")

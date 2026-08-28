@@ -315,6 +315,29 @@ func TestComponentMayDeclareBoundedExecutableWithoutRunningIt(t *testing.T) {
 	}
 }
 
+func TestRawComponentStagesVerifiedExecutableWithoutRunningIt(t *testing.T) {
+	payload := []byte("raw binary fixture")
+	sum := sha256.Sum256(payload)
+	source := ResolvedSource{
+		ID: "raw-component", Kind: KindComponent, Source: "https://example.invalid/component",
+		Revision: strings.Repeat("d", 40), LogicalVersion: "1.0.0", PayloadFormat: "raw", PayloadPath: "bin/component",
+		License: "BSL-1.1", Executables: []string{"bin/component"},
+		Integrity: Integrity{Algorithm: "sha256", Digest: fmt.Sprintf("%x", sum[:]), SignatureStatus: "not_exposed", AttestationStatus: "not_exposed", TrustLevel: "checksum_only"},
+	}
+	staged, err := testManager(t.TempDir()).StageArchive(context.Background(), source, bytes.NewReader(payload))
+	if err != nil {
+		t.Fatal(err)
+	}
+	data, err := os.ReadFile(filepath.Join(staged.ObjectPath, "bin", "component"))
+	if err != nil || !bytes.Equal(data, payload) {
+		t.Fatalf("payload=%q err=%v", data, err)
+	}
+	info, err := os.Stat(filepath.Join(staged.ObjectPath, "bin", "component"))
+	if err != nil || info.Mode().Perm() != 0o700 {
+		t.Fatalf("mode=%v err=%v", info.Mode(), err)
+	}
+}
+
 func TestStagingSanitizesRegularFileModeAndHonorsCancellation(t *testing.T) {
 	archive := testArchive(t, archiveEntry{name: "payload.txt", body: "data", mode: 0o666})
 	manager := testManager(t.TempDir())
