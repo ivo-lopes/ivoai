@@ -96,6 +96,12 @@ func DefaultCatalog() []Spec {
 				"linux/amd64": {URL: "https://github.com/JuliusBrussee/caveman/releases/download/bin-v1.1.3/caveman-proxy_linux_amd64", SHA256: "d883b9ab4b559e0c1935335c0e24400deb5c61d5e247f1ca239c4149f57885b0"},
 				"linux/arm64": {URL: "https://github.com/JuliusBrussee/caveman/releases/download/bin-v1.1.3/caveman-proxy_linux_arm64", SHA256: "2d6c1950bbce1a70c910a03bde88883817a8380f03f5ec25dd80186fed434ce7"},
 			}},
+		{Name: "caveman-mcp", Executable: "caveman-mcp", Version: "1.1.3", Strategy: StrategySupplyChain, RequiresManaged: "caveman",
+			Revision: "0d2f052babfd613ec9b4186c86ec6f133cdfd4d7", DefaultBranch: "main", License: "BSL-1.1", PayloadFormat: "raw", PayloadPath: "bin/caveman-mcp", NoVersionProbe: true,
+			SignatureStatus: "keysig_published_unverified", AttestationStatus: "not_exposed", TrustLevel: "upstream_checksum", Assets: map[string]Asset{
+				"linux/amd64": {URL: "https://github.com/JuliusBrussee/caveman/releases/download/bin-v1.1.3/caveman-mcp_linux_amd64", SHA256: "c5c9a850f388570e2b822ac86ac35ad0e9f2c8ec0162b966f5536013042c058d"},
+				"linux/arm64": {URL: "https://github.com/JuliusBrussee/caveman/releases/download/bin-v1.1.3/caveman-mcp_linux_arm64", SHA256: "433b16942095ef0a615ba474c398c3a4f46c589dc447d4505025953c934f13e0"},
+			}},
 		{Name: "opencode", Executable: "opencode", Version: "1.18.25", Strategy: StrategySupplyChain,
 			Revision: "cb7d8b2f5e44876ef98b661dc10590c915af3a9f", DefaultBranch: "dev", License: "MIT", PayloadFormat: "tar_gzip", PayloadPath: "opencode",
 			SignatureStatus: "not_exposed", AttestationStatus: "not_exposed", TrustLevel: "upstream_checksum", Assets: map[string]Asset{

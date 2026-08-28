@@ -259,6 +259,7 @@ func (a *App) OrchestratorServe(ctx context.Context, id string) error {
 		Registry:              routing.Discoverer{CodexPath: state.Components["codex"].Path, ClaudePath: state.Components["claude-code"].Path, CachePath: filepath.Join(a.Store.Paths.CacheDir, "capabilities.json")}.Discover(ctx),
 		Overrides:             routingOverrides(cfg.Orchestration.Auto.Profiles),
 		WorkingContext:        workingStore,
+		Compressor:            a.workingContextCompressor(cfg, state, runtimeDir),
 	}
 	runErr := server.Run(ctx)
 	if workingStore != nil {

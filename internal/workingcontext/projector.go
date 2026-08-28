@@ -17,6 +17,24 @@ import (
 
 const DefaultContextBudget = 8 << 10
 
+type CompactRequest struct {
+	Input       []byte
+	PayloadType string
+	Budget      int
+}
+
+type CompactResult struct {
+	Representation string
+	TokensBefore   int
+	TokensAfter    int
+	Basis          string
+	RecoveryHandle string
+}
+
+type RepresentationCompressor interface {
+	Compact(context.Context, CompactRequest) (CompactResult, error)
+}
+
 func ContextBudgetForTier(tier string) int {
 	switch tier {
 	case "LIGHT":
@@ -46,8 +64,9 @@ type ProjectionInput struct {
 }
 
 type Projector struct {
-	Store   ArtifactWriter
-	Observe func(observability.Event)
+	Store      ArtifactWriter
+	Compressor RepresentationCompressor
+	Observe    func(observability.Event)
 }
 
 func (p Projector) Project(ctx context.Context, input ProjectionInput) WorkerResult {
@@ -86,6 +105,14 @@ func (p Projector) Project(ctx context.Context, input ProjectionInput) WorkerRes
 	result.Findings = findings(input.Raw, resultRef)
 	result.StateDelta = StateDelta{Proposed: []ProposedChange{{Kind: ChangeObservation, Target: "worker", Summary: statusSummary(status, input.ExitCode), Evidence: []ResultRef{resultRef}}}}
 	result.Summary, result.Truncated = projectSummary(input.Raw, status, input.ExitCode, result.ImportantErrors, ref.ID, budget, mediaType)
+	if fidelity == core.CompressionCompressible && p.Compressor != nil {
+		compact, compactErr := p.Compressor.Compact(ctx, CompactRequest{Input: append([]byte(nil), input.Raw...), PayloadType: string(payloadType), Budget: budget})
+		if compactErr == nil && len(compact.Representation) > 0 && len(compact.Representation) < len(input.Raw) {
+			result.Summary, result.Truncated = compactSummary(compact.Representation, status, input.ExitCode, result.ImportantErrors, ref.ID, budget, len(input.Raw))
+		} else if compactErr != nil {
+			result.Degraded = true
+		}
+	}
 	result.Truncated = result.Truncated || input.Truncated
 	if err := result.Validate(); err != nil {
 		return p.storeUnavailable(input.Owner, status, fmt.Errorf("project bounded worker result: %w", err))
@@ -95,6 +122,25 @@ func (p Projector) Project(ctx context.Context, input ProjectionInput) WorkerRes
 		p.emit(input.Owner, observability.OperationWorkingContextBudget, observability.StateCompleted, observability.ReasonContextBudgetApplied, ref, len(result.Findings), len(result.Evidence), true)
 	}
 	return result
+}
+
+func compactSummary(representation string, status ResultStatus, exitCode int, important []string, artifactID string, budget, originalSize int) (string, bool) {
+	header := fmt.Sprintf("Worker status: %s (exit %d). Exact evidence: %s.", status, exitCode, artifactID)
+	parts := []string{header}
+	for _, critical := range important {
+		parts = append(parts, "Critical: "+critical)
+	}
+	prefix := strings.Join(parts, "\n") + "\n\nCompact representation:\n"
+	remaining := budget - len(prefix)
+	if remaining < 0 {
+		remaining = 0
+	}
+	representation = platform.Redact(representation)
+	truncated := len(representation) > remaining
+	if truncated {
+		representation = representation[:remaining]
+	}
+	return prefix + representation, truncated || len(representation) < originalSize
 }
 
 func (p Projector) storeUnavailable(owner Ownership, status ResultStatus, cause error) WorkerResult {

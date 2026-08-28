@@ -83,7 +83,19 @@ output bruto como fallback para o prompt. Isso pode perder a evidência exata da
 execução, mas nunca provoca uma injeção silenciosa e ilimitada.
 
 WorkingContext não implementa scheduling nem substitui a evidência por compressão.
-Um CompressionProvider pode projetar representações menores somente depois do
-ArtifactStore e sem alterar ResultRef/WorkerResult como fonte da evidência exata.
+Quando Caveman é selecionado, o componente managed `caveman-mcp` pode projetar
+representações menores somente depois do ArtifactStore e sem alterar
+ResultRef/WorkerResult como fonte da evidência exata. O helper é o asset local
+stdio BSL-1.1 `bin-v1.1.3`, pinado na mesma revisão do runtime; não usa `npx`, não
+é registrado como MCP do primary e opera com recovery store efêmero privado.
+Falha, timeout, resposta malformed/oversized ou indisponibilidade do helper retorna
+ao projector determinístico bounded; output bruto grande nunca vira fallback de
+prompt. JSON, logs, code, diffs, search results e texto são tipos compressible;
+exact-required e bypass nunca chamam o helper.
+
+Storage budget, context budget e compressão são controles separados. Caveman não
+altera o limite de 16 MiB por artefato, isolamento de ownership, TTL/GC nem o range
+máximo de leitura de 1 MiB.
+
 Um futuro orquestrador pode consumir os mesmos contratos sem mudar a autoridade do
 primary.

@@ -8,6 +8,7 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/config"
 	"github.com/ivo-lopes/ivoai/internal/core"
 	"github.com/ivo-lopes/ivoai/internal/observability"
+	"github.com/ivo-lopes/ivoai/internal/workingcontext"
 )
 
 func (a *App) sessionCompression(cfg config.Config, state config.State, executor, runtimeDir string) (core.CompressionProvider, bool, string) {
@@ -34,6 +35,22 @@ func (a *App) sessionCompression(cfg config.Config, state config.State, executor
 		}
 		return nil, primaryHeadroomEnabled(cfg), "headroom"
 	}
+}
+
+func (a *App) workingContextCompressor(cfg config.Config, state config.State, runtimeDir string) workingcontext.RepresentationCompressor {
+	if cfg.Compression.Provider != "caveman" {
+		return nil
+	}
+	spec, ok := componentSpec("caveman-mcp")
+	if !ok {
+		return nil
+	}
+	expected, err := components.ResolvedSource(spec)
+	if err != nil {
+		return nil
+	}
+	component := state.Components["caveman-mcp"]
+	return caveman.MCPCompressor{Binary: component.Path, RuntimeDir: runtimeDir, SupplyRoot: filepath.Join(a.Store.Paths.DataDir, "supply-chain"), Expected: expected, Managed: component.Managed}
 }
 
 func compressionObservation(executor, requested string, observation core.SessionObservation) observability.Event {

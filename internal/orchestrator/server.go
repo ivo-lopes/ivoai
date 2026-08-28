@@ -44,6 +44,7 @@ type Server struct {
 	Registry              routing.Registry
 	Overrides             map[string]map[routing.Tier]routing.ProfileOverride
 	WorkingContext        workingcontext.ArtifactStore
+	Compressor            workingcontext.RepresentationCompressor
 
 	mu      sync.Mutex
 	results map[string]workerResult
@@ -484,10 +485,10 @@ func (s *Server) projectWorkerResult(taskID, workerID string, state session.Stat
 	if errors.Is(runErr, context.Canceled) {
 		status = workingcontext.ResultCancelled
 	}
-	projector := workingcontext.Projector{Store: s.WorkingContext, Observe: func(event observability.Event) {
+	projector := workingcontext.Projector{Store: s.WorkingContext, Compressor: s.Compressor, Observe: func(event observability.Event) {
 		_, _ = s.Store.Update(s.SessionID, func(current *session.Session) error { return session.AppendObservation(current, event) })
 	}}
-	return projector.Project(context.Background(), workingcontext.ProjectionInput{Owner: workingcontext.Ownership{SessionID: s.SessionID, TaskID: taskID, WorkerID: workerID}, Raw: raw.Evidence(), MediaType: "application/vnd.ivoai.worker-evidence", Status: status, ExitCode: raw.ExitCode, Failure: runErr, ContextBudget: budget, Truncated: raw.Truncated})
+	return projector.Project(context.Background(), workingcontext.ProjectionInput{Owner: workingcontext.Ownership{SessionID: s.SessionID, TaskID: taskID, WorkerID: workerID}, Raw: raw.Evidence(), MediaType: "application/vnd.ivoai.worker-evidence", Status: status, ExitCode: raw.ExitCode, Failure: runErr, ContextBudget: budget, Truncated: raw.Truncated, PayloadType: "worker_output", AssociationID: workerID})
 }
 
 func artifactIDArgument(request *mcp.CallToolRequest) (string, error) {

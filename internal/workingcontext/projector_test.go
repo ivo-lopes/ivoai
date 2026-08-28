@@ -14,6 +14,16 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/observability"
 )
 
+type testCompressor struct {
+	calls int
+	fn    func(CompactRequest) (CompactResult, error)
+}
+
+func (c *testCompressor) Compact(_ context.Context, request CompactRequest) (CompactResult, error) {
+	c.calls++
+	return c.fn(request)
+}
+
 func TestProjectorEnforcesExactFidelityAndAssociation(t *testing.T) {
 	store, err := NewLocalStore(filepath.Join(t.TempDir(), "working-context"), LocalOptions{ID: sequentialIDs()})
 	if err != nil {
@@ -48,6 +58,53 @@ func TestProjectorFailureOverridesCompressibleClassification(t *testing.T) {
 	result := (Projector{Store: store}).Project(context.Background(), ProjectionInput{Owner: testOwner("1", ""), Raw: []byte("test failed"), Status: ResultFailed, PayloadType: "log", Fidelity: core.CompressionCompressible})
 	if result.Fidelity != core.CompressionExactRequired {
 		t.Fatalf("failed result fidelity=%s", result.Fidelity)
+	}
+}
+
+func TestProjectorCompressesOnlyAfterArtifactAndPreservesResultRef(t *testing.T) {
+	store, err := NewLocalStore(filepath.Join(t.TempDir(), "working-context"), LocalOptions{ID: sequentialIDs()})
+	if err != nil {
+		t.Fatal(err)
+	}
+	order := []string{}
+	compressor := &testCompressor{fn: func(request CompactRequest) (CompactResult, error) {
+		order = append(order, "compress")
+		return CompactResult{Representation: "compact", TokensBefore: 100, TokensAfter: 2, Basis: "inferred", RecoveryHandle: "ccr_auxiliary"}, nil
+	}}
+	raw := []byte(strings.Repeat("compressible log row\n", 100))
+	result := (Projector{Store: store, Compressor: compressor, Observe: func(event observability.Event) {
+		if event.Operation == observability.OperationArtifactStoreWrite {
+			order = append(order, "store")
+		}
+	}}).Project(context.Background(), ProjectionInput{Owner: testOwner("1", ""), Raw: raw, Status: ResultCompleted, PayloadType: "log"})
+	if strings.Join(order, ",") != "store,compress" || compressor.calls != 1 || !strings.Contains(result.Summary, "compact") || len(result.Evidence) != 1 {
+		t.Fatalf("order=%v calls=%d result=%+v", order, compressor.calls, result)
+	}
+	reader, _, err := store.Read(context.Background(), testOwner("1", ""), result.Evidence[0].Artifact.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	recovered, readErr := io.ReadAll(reader)
+	reader.Close()
+	if readErr != nil || !bytes.Equal(recovered, raw) {
+		t.Fatalf("original evidence changed: bytes=%d err=%v", len(recovered), readErr)
+	}
+}
+
+func TestProjectorExactAndCompressionFailureUseBoundedFallback(t *testing.T) {
+	store, err := NewLocalStore(filepath.Join(t.TempDir(), "working-context"), LocalOptions{ID: sequentialIDs()})
+	if err != nil {
+		t.Fatal(err)
+	}
+	compressor := &testCompressor{fn: func(CompactRequest) (CompactResult, error) { return CompactResult{}, errors.New("fixture unavailable") }}
+	exact := (Projector{Store: store, Compressor: compressor}).Project(context.Background(), ProjectionInput{Owner: testOwner("1", ""), Raw: []byte("security evidence"), Status: ResultCompleted, PayloadType: "security_evidence"})
+	if compressor.calls != 0 || exact.Fidelity != core.CompressionExactRequired {
+		t.Fatalf("exact payload reached compressor: %+v calls=%d", exact, compressor.calls)
+	}
+	raw := []byte(strings.Repeat("row\n", 10_000))
+	degraded := (Projector{Store: store, Compressor: compressor}).Project(context.Background(), ProjectionInput{Owner: testOwner("2", ""), Raw: raw, Status: ResultCompleted, PayloadType: "text", ContextBudget: 1024})
+	if compressor.calls != 1 || !degraded.Degraded || len(degraded.Summary) > 1024 || strings.Contains(degraded.Summary, string(raw)) {
+		t.Fatalf("unsafe degraded projection: %+v calls=%d", degraded, compressor.calls)
 	}
 }
 
