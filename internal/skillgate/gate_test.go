@@ -193,6 +193,61 @@ func TestMaliciousBodyCannotChangePolicyOrObservability(t *testing.T) {
 	}
 }
 
+func TestGateEnforcesAggregateBundleBudget(t *testing.T) {
+	root := t.TempDir()
+	gate := testGate(root)
+	files := map[string]string{}
+	entries := make([]skills.Entry, 0, 5)
+	body := strings.Repeat("bounded-body-", 18_000)
+	if len(body) >= maxSkillBytes {
+		t.Fatalf("test body must remain below the individual limit: %d", len(body))
+	}
+	for _, id := range []string{"skill-a", "skill-b", "skill-c", "skill-d", "skill-z"} {
+		files["skills/"+id+"/SKILL.md"] = body + id
+	}
+	archive := gateArchive(t, files)
+	source := promoteGatePack(t, &gate, archive, gateRevisionA)
+	for _, id := range []string{"skill-a", "skill-b", "skill-c", "skill-d", "skill-z"} {
+		entry := gateEntry(id, source, "skills/"+id+"/SKILL.md", nil, nil, skills.RiskLow)
+		entry.Triggers = []string{"aggregate"}
+		entries = append(entries, entry)
+	}
+	saveGateRegistry(t, gate.Registry, entries)
+
+	first, err := gate.Evaluate(context.Background(), Input{Intent: "aggregate", Executor: "codex"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	second, err := gate.Evaluate(context.Background(), Input{Intent: "aggregate", Executor: "codex"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !first.Degraded || first.Reason != "skill_bundle_limit" {
+		t.Fatalf("optional overflow did not degrade: %+v", first)
+	}
+	if len(first.Instructions) > maxBundleBytes {
+		t.Fatalf("bundle exceeded aggregate budget: %d > %d", len(first.Instructions), maxBundleBytes)
+	}
+	if first.Instructions != second.Instructions || strings.Join(first.Selected, ",") != strings.Join(second.Selected, ",") {
+		t.Fatal("aggregate selection is not deterministic")
+	}
+	for _, id := range first.Selected {
+		if !strings.Contains(first.Instructions, "## "+id+"\n\n"+body+id) {
+			t.Fatalf("skill %s was partially included", id)
+		}
+	}
+	encoded, err := json.Marshal(first.Events)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if bytes.Contains(encoded, []byte(body[:128])) {
+		t.Fatal("skill body leaked to observability")
+	}
+	if _, err := gate.Evaluate(context.Background(), Input{Intent: "aggregate", Executor: "codex", Required: []string{"skill-z"}}); err == nil || !strings.Contains(err.Error(), "aggregate skill instruction budget") {
+		t.Fatalf("required overflow did not fail explicitly: %v", err)
+	}
+}
+
 func testGate(root string) Gate {
 	accept := supplychain.ValidatorFunc(func(context.Context, supplychain.ResolvedSource, string) error { return nil })
 	return Gate{Registry: skills.Store{Path: filepath.Join(root, "state", "registry.json")}, Supply: supplychain.Manager{Root: filepath.Join(root, "supply"), Structural: accept, Policy: accept, Health: accept}, Policy: policy.DefaultEngine()}
