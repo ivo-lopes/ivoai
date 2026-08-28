@@ -56,7 +56,9 @@ The bridge offers:
 - `orchestration_agents` — primary and worker metadata;
 - `orchestration_delegate` — bounded delegation to an official Codex or Claude
   worker;
-- `orchestration_result` — an in-memory bounded result;
+- `orchestration_result` — a bounded structured worker result;
+- `orchestration_artifact_read` — explicit exact evidence recovery by opaque ref;
+- `orchestration_artifact_read_range` — explicit bounded range recovery;
 - `orchestration_cancel` — cancellation of a worker owned by the session.
 
 In automatic sessions it additionally offers read-only `orchestration_quota` and,
@@ -98,8 +100,8 @@ On the first substantive request, Memory and Context are each attempted once and
 bounded SharedContextBrief is shared with workers. IvoAI validates the task DAG,
 calculates weighted capability tiers, keeps uneconomic work in the primary, and
 launches independent advisory workers concurrently. Workers are structurally
-read-only; the primary remains the only writer. Full task text and results never
-enter session JSON. Details of scoring and routing are in
+read-only; the primary remains the only writer. Full task text and result bodies never
+enter session JSON; only bounded WorkingContext ResultRefs do. Details of scoring and routing are in
 [auto-scheduler.md](auto-scheduler.md).
 
 Those session instructions enforce the same research priority used by direct mode:
@@ -107,13 +109,18 @@ Those session instructions enforce the same research priority used by direct mod
 internal stages have been attempted. Worker adapters receive the policy through the
 official process-scoped Codex and Claude instruction flags as well.
 
-Delegation tasks and results never enter Ruflo or the session JSON. Ruflo receives
+Delegation tasks and result bodies never enter Ruflo or the session JSON. Ruflo receives
 only opaque session/worker IDs through provider-free task lifecycle commands. The
 worker adapter uses `codex exec --json --output-last-message` or
 `claude --print --output-format json`, selected from trusted component paths. Worker
 provider-key environment variables are removed; subscription authentication stays
 inside each official client. Research instructions neither add provider credentials
 nor route inference through Ruflo.
+
+Worker output is untrusted. IvoAI persists its exact bytes first in the private
+transient ArtifactStore, then projects a bounded provider-neutral WorkerResult. A
+StateDelta is only a proposed observation; it cannot grant capability, change policy,
+disable a sandbox, or apply worktree mutations. See [WorkingContext](working-context.md).
 
 ## Roles of the components
 
@@ -128,6 +135,8 @@ nor route inference through Ruflo.
   `CLAUDE_FLOW_MEMORY_BACKEND=memory`, never a competing durable store.
 - **IvoAI Context:** independent RAG/context service. The session control plane only
   reports its health and leaves the existing MCP integration intact.
+- **WorkingContext:** transient exact worker evidence and bounded ResultRefs for the
+  current execution; it is neither durable memory nor RAG.
 
 ## Model provenance
 

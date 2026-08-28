@@ -68,7 +68,8 @@ ivoai CLI/wizard                       one public HTTPS origin
   +-- fail-safe memory hooks              +-- context MCP (read-only)
   +-- session control plane               +-- ai-memory MCP
   |     +-- direct observability
-  |     `-- AUTO bootstrap + DAG scheduler
+  |     +-- AUTO bootstrap + DAG scheduler
+  |     `-- WorkingContext + private ArtifactStore
   |                                      |
   +-- Headroom -- Codex/Claude            +-- Web MCP + OAuth 2.1
         `------ direct fallback           +-- context service
@@ -246,15 +247,21 @@ Ruflo gets a clean environment with `RUFLO_PROVIDER=ivoai-disabled` and
 
 The local stdio `ivoai-orchestrator` MCP is injected only for the lifetime of that
 primary. It maps delegation to trusted official Codex/Claude executables and maps
-opaque lifecycle IDs to Ruflo task commands. Results are bounded to 1 MiB and kept in
-the bridge process, never in session state. Worker concurrency defaults to two and is
-hard-capped at three. The bridge is not registered in or routed by the public server
-gateway. See [orchestration.md](orchestration.md).
+opaque lifecycle IDs to Ruflo task commands. Exact worker evidence is written first
+to the private transient WorkingContext ArtifactStore. The bridge gives the primary
+only a bounded provider-neutral `WorkerResult` (summary, findings, advisory
+`StateDelta`, and opaque `ResultRef`s). Session state stores only those bounded
+references, never worker bodies. Explicit local read-only tools recover an exact
+artifact or bounded range after ownership, TTL, size, and digest validation. Worker
+concurrency defaults to two and is hard-capped at three. The bridge is not registered
+in or routed by the public server gateway. See [orchestration.md](orchestration.md)
+and [WorkingContext](working-context.md).
 
 Automatic plans add metadata-only task IDs, dependencies, scores, tiers, profile
 sources, execution state, duration, and escalation reasons to session state. Full
 task instructions, SharedContextBrief content, worker responses, credentials, and
-environments remain in the private runtime/bridge and are never sent to Ruflo. Codex
+environments are never sent to Ruflo. Exact responses remain private in the transient
+ArtifactStore; session metadata and failover handoffs contain only ResultRefs. Codex
 workers are sandboxed read-only and disable inherited MCPs except managed Memory/Context
 read tools. Claude workers use strict process-scoped MCP configuration and plan
 permission mode with mutation tools disabled. The primary alone applies changes.

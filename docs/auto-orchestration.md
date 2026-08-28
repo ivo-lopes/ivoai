@@ -94,12 +94,23 @@ overhead. A trivial task stays `primary` even when a model asks to delegate it.
 Dependency-ready workers start concurrently and return IDs immediately; dependent
 tasks remain queued until all prerequisites complete.
 
+Exact worker output is persisted first in the private WorkingContext ArtifactStore.
+The primary receives only a bounded `WorkerResult` with summary, findings, advisory
+`StateDelta`, and opaque evidence references. Full output is never interpolated
+automatically into the primary instruction, SharedContextBrief, checkpoint, handoff,
+or session JSON.
+
 Every worker passes through the quota and capability router. Official clients run
 inference (`codex exec` or `claude --print`); Codex workers use a read-only sandbox
 plus MCP read allowlists, Claude workers use strict process-scoped MCP configuration
 and plan mode with mutation tools disabled, and Ruflo records only opaque lifecycle
-state. Results are bounded by execution tier and retained in bridge memory.
-See [Automatic scheduler and model routing](auto-scheduler.md).
+state. When bounded evidence is insufficient, the primary can explicitly recover an
+exact artifact or a validated byte range through the local orchestrator MCP.
+References are session-scoped and survive Codex/Claude failover without copying
+bodies. Storage and prompt budgets are separate: the former preserves evidence, while
+the latter limits only automatic context. See
+[Automatic scheduler and model routing](auto-scheduler.md) and
+[WorkingContext](working-context.md).
 
 ## Progressive escalation
 
@@ -176,3 +187,6 @@ differ.
 - Pending, not-exposed, and stale quota are distinct and never converted to `0%`.
 - Both confirmed exhausted providers produce a bounded waiting/blocked state; ivoai
   does not retry forever or activate PAYG inference.
+- WorkingContext failure activates no raw-output prompt fallback: the structured result
+  is explicitly degraded and the official primary remains usable without external
+  worker evidence.
