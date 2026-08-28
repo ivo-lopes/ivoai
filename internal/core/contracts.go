@@ -157,8 +157,9 @@ type SessionRequest struct {
 }
 
 type SessionObservation struct {
-	PID             int
-	CompressionUsed bool
+	PID                 int
+	CompressionUsed     bool
+	CompressionProvider string
 }
 
 type Executor interface {
@@ -227,6 +228,8 @@ type CompressionRequest struct {
 	DirectPath  string
 	Args        []string
 	Environment []string
+	RuntimeDir  string
+	Fidelity    CompressionFidelity
 }
 
 type CompressionDecision struct {
@@ -234,11 +237,23 @@ type CompressionDecision struct {
 	Args        []string
 	Environment []string
 	Used        bool
+	Provider    string
+}
+
+// CompressionLease owns any provider resources prepared for one executor
+// session. Done reports provider failure after the executor has started; a nil
+// channel means the provider has no independent lifecycle. Close is bounded and
+// idempotent. Implementations must never encode provider-specific paths, ports,
+// credentials or process metadata in this interface.
+type CompressionLease interface {
+	Decision() CompressionDecision
+	Done() <-chan error
+	Close(context.Context) error
 }
 
 type CompressionProvider interface {
 	Component
-	Prepare(context.Context, CompressionRequest) (CompressionDecision, error)
+	Prepare(context.Context, CompressionRequest) (CompressionLease, error)
 }
 
 // CompressionFidelity classifies whether a representation may be compressed.

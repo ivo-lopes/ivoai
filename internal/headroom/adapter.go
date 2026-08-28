@@ -47,22 +47,22 @@ func (p HeadroomCompressionProvider) Probe(ctx context.Context) core.ComponentSt
 	}
 }
 
-func (p HeadroomCompressionProvider) Prepare(ctx context.Context, request core.CompressionRequest) (core.CompressionDecision, error) {
+func (p HeadroomCompressionProvider) Prepare(ctx context.Context, request core.CompressionRequest) (core.CompressionLease, error) {
 	decision := core.CompressionDecision{Command: request.DirectPath, Args: append([]string(nil), request.Args...), Environment: append([]string(nil), request.Environment...)}
 	if !p.Enabled {
-		return decision, nil
+		return staticLease{decision: decision}, nil
 	}
 	value := p.Manager.Inspect(ctx, true)
 	compatible := request.Executor == core.ComponentCodex && value.CodexCompatible || request.Executor == core.ComponentClaude && value.ClaudeCompatible
 	if !value.Healthy || !compatible {
-		return decision, nil
+		return staticLease{decision: decision}, nil
 	}
 	path := p.Manager.Binary
 	if path == "" {
 		var err error
 		path, err = p.Manager.Runner.LookPath("headroom")
 		if err != nil || path == "" {
-			return decision, nil
+			return staticLease{decision: decision}, nil
 		}
 	}
 	name := string(request.Executor)
@@ -70,8 +70,15 @@ func (p HeadroomCompressionProvider) Prepare(ctx context.Context, request core.C
 	decision.Args = append([]string{"wrap", name, "--"}, request.Args...)
 	decision.Environment = prependPath(request.Environment, filepath.Dir(request.DirectPath))
 	decision.Used = true
-	return decision, nil
+	decision.Provider = "headroom"
+	return staticLease{decision: decision}, nil
 }
+
+type staticLease struct{ decision core.CompressionDecision }
+
+func (l staticLease) Decision() core.CompressionDecision { return l.decision }
+func (staticLease) Done() <-chan error                   { return nil }
+func (staticLease) Close(context.Context) error          { return nil }
 
 func support(value bool) core.SupportState {
 	if value {

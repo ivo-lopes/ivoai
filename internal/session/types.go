@@ -120,6 +120,9 @@ type Session struct {
 	PrimaryModel         ModelInfo                              `json:"primary_model"`
 	HeadroomRequested    bool                                   `json:"headroom_requested"`
 	HeadroomUsed         bool                                   `json:"headroom_used"`
+	CompressionProvider  string                                 `json:"compression_provider,omitempty"`
+	CompressionRequested bool                                   `json:"compression_requested,omitempty"`
+	CompressionUsed      bool                                   `json:"compression_used,omitempty"`
 	RufloEnabled         bool                                   `json:"ruflo_enabled"`
 	RufloHealthy         bool                                   `json:"ruflo_healthy"`
 	RufloSafeMode        bool                                   `json:"ruflo_safe_mode"`

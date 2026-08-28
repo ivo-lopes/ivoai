@@ -8,9 +8,10 @@ direta. Caveman e Headroom nunca formam uma cadeia. Até o cutover futuro, o
 comportamento operacional continua usando Headroom ou bypass exatamente como na
 v0.5.0; esta fundação não muda o default.
 
-O Caveman será o sucessor planejado do Headroom apenas como
-`CompressionProvider`. Ele não é MemoryBackend, ContextBackend, ArtifactStore,
-Skill Registry, executor, orquestrador, policy engine ou secret manager.
+O Caveman é integrado como implementação selecionável de
+`CompressionProvider`, mas ainda não é o default universal. Ele não é
+MemoryBackend, ContextBackend, ArtifactStore, Skill Registry, executor,
+orquestrador, policy engine ou secret manager.
 
 ## Fidelidade e WorkingContext
 
@@ -24,12 +25,18 @@ perda e são tratadas como exact-required ou bypass pela política futura.
 
 ## Lifecycle e fallback
 
-Antes de usar um provider, o IVOAI exige instalação, health, compatibilidade e a
-capability `compression.wrap`. Falha de preflight, health ou inicialização antes
-do início efetivo do agente permite fallback explícito ao cliente oficial direto.
-Depois que um wrapper iniciou a sessão, o IVOAI não abre uma segunda sessão
-silenciosamente. Exit status, sinais e controle do terminal continuam pertencendo
-ao processo interativo oficial.
+Antes de usar Caveman, o IVOAI revalida o objeto imutável ativo no supply chain,
+executa `caveman-proxy version --json`, cria um runtime privado da sessão, inicia
+diretamente o proxy gerenciado e aguarda `/health/ready`. O processo escuta apenas
+em `127.0.0.1` numa porta efêmera. `CAVEMAN_HOME` e `CAVEMAN_CONFIG` apontam para
+`<session-runtime>/caveman/proxy-*`; diretórios usam modo `0700` e a configuração
+usa `0600`. Nenhuma captura é habilitada.
+
+Falha de preflight, health ou inicialização antes do início efetivo do agente
+permite fallback explícito ao cliente oficial direto. Depois que o agente iniciou,
+uma queda do proxy encerra aquela sessão e é reportada; o IVOAI não abre uma
+segunda sessão silenciosamente. Ctrl-C, SIGTERM, cancelamento e saída do executor
+encerram o proxy e removem seu runtime transitório.
 
 Versões gerenciadas usam staging, provenance, promoção atômica e rollback do
 supply-chain manager existente. Headroom permanece disponível durante a janela de
@@ -40,6 +47,13 @@ compatibilidade; sua remoção requer uma release de observação posterior.
 Credenciais pertencem aos CLIs oficiais. Um proxy pode transportar autenticação em
 memória para o provider, mas o IVOAI não persiste bearer tokens, cookies, headers
 de autenticação nem payloads em config, state, journal, observabilidade ou logs.
+
+Para Codex, a configuração process-local aponta um provider compatível com
+`requires_openai_auth=true` para a rota `/chatgpt`; o próprio Codex continua dono
+de `Authorization` e `ChatGPT-Account-ID`. Para Claude Code, somente a base URL é
+redirecionada e nenhum token sintético é definido. Para OpenCode, o JSON em
+`OPENCODE_CONFIG_CONTENT` é mesclado, preservando instructions, providers e auth
+existentes; nenhum arquivo global ou de projeto é alterado.
 
 No Caveman v2.3.1, a CLI e skills são MIT, enquanto o runtime/proxy usado para
 compressão é BSL-1.1. O Additional Use Grant observado permite avaliação interna,
@@ -62,5 +76,11 @@ IVOAI-40, respectivamente.
   `b5ec6351396b643a17cbbec4a6eee8b3fb9dd782`.
 - Runtime bundle: `bin-v1.1.3`, commit imutável
   `0d2f052babfd613ec9b4186c86ec6f133cdfd4d7`.
+- Proxy Linux amd64: SHA-256
+  `d883b9ab4b559e0c1935335c0e24400deb5c61d5e247f1ca239c4149f57885b0`.
 - Fonte oficial: <https://github.com/JuliusBrussee/caveman>.
 - Licenciamento: `LICENSING.md` da revisão do produto acima.
+
+O asset pinado responde ao probe estruturado, mas informa `version: "dev"`.
+Portanto o IVOAI não o apresenta como versão semântica verificada em runtime: a
+revisão imutável e o digest do supply chain permanecem a autoridade.

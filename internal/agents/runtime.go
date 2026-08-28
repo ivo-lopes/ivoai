@@ -26,11 +26,14 @@ type Runtime struct {
 	HeadroomPath string
 	Compression  core.CompressionProvider
 	Environment  []string
+	RuntimeDir   string
 }
 
 type Observation struct {
-	PID          int
-	HeadroomUsed bool
+	PID                 int
+	HeadroomUsed        bool
+	CompressionUsed     bool
+	CompressionProvider string
 }
 
 func (r Runtime) Launch(ctx context.Context, agent string, args []string, headroomEnabled bool) error {
@@ -58,6 +61,8 @@ func (r Runtime) LaunchObserved(ctx context.Context, agent string, args []string
 		environment = setEnvironment(environment, "DISABLE_AUTOUPDATER", "1")
 	}
 	wrappedUsed := false
+	compressionProvider := ""
+	var lease core.CompressionLease
 	if headroomEnabled {
 		provider := r.Compression
 		if provider == nil {
@@ -69,27 +74,48 @@ func (r Runtime) LaunchObserved(ctx context.Context, agent string, args []string
 		} else if agent == "opencode" {
 			component = core.ComponentOpenCode
 		}
-		decision, _ := provider.Prepare(ctx, core.CompressionRequest{Executor: component, DirectPath: direct, Args: args, Environment: environment})
+		lease, err = provider.Prepare(ctx, core.CompressionRequest{Executor: component, DirectPath: direct, Args: args, Environment: environment, RuntimeDir: r.RuntimeDir, Fidelity: core.CompressionCompressible})
+		if err != nil {
+			if r.Err != nil {
+				fmt.Fprintf(r.Err, "warning: compression preflight failed; launching %s directly: %v\n", agent, err)
+			}
+			lease = nil
+		}
+		decision := core.CompressionDecision{}
+		if lease != nil {
+			decision = lease.Decision()
+		}
 		if decision.Used {
-			command, commandArgs, environment, wrappedUsed = decision.Command, decision.Args, decision.Environment, true
+			command, commandArgs, environment, wrappedUsed, compressionProvider = decision.Command, decision.Args, decision.Environment, true, decision.Provider
 		}
 	}
-	err = runInteractive(ctx, command, commandArgs, environment, r.In, r.Out, r.Err, func(pid int) {
+	if lease != nil {
+		defer lease.Close(context.Background())
+	}
+	var providerDone <-chan error
+	if lease != nil {
+		providerDone = lease.Done()
+	}
+	err = runInteractiveWithProvider(ctx, command, commandArgs, environment, r.In, r.Out, r.Err, func(pid int) {
 		if observe != nil {
-			observe(Observation{PID: pid, HeadroomUsed: wrappedUsed})
+			observe(Observation{PID: pid, HeadroomUsed: wrappedUsed && compressionProvider == "headroom", CompressionUsed: wrappedUsed, CompressionProvider: compressionProvider})
 		}
-	})
+	}, providerDone)
 	var startErr *StartError
 	if wrappedUsed && errors.As(err, &startErr) {
 		if r.Err != nil {
-			fmt.Fprintf(r.Err, "warning: Headroom could not start; launching %s directly: %v\n", agent, startErr)
+			fmt.Fprintf(r.Err, "warning: %s could not start the executor; launching %s directly: %v\n", compressionProvider, agent, startErr)
 		}
 		// Preserve agent-specific protections (notably Claude's managed-update
 		// guard) when the selected Headroom executable disappears between the
 		// successful preflight and process start.
+		if lease != nil {
+			_ = lease.Close(context.Background())
+			lease = nil
+		}
 		return runInteractive(ctx, direct, args, environment, r.In, r.Out, r.Err, func(pid int) {
 			if observe != nil {
-				observe(Observation{PID: pid, HeadroomUsed: false})
+				observe(Observation{PID: pid, HeadroomUsed: false, CompressionUsed: false})
 			}
 		})
 	}
@@ -97,6 +123,10 @@ func (r Runtime) LaunchObserved(ctx context.Context, agent string, args []string
 }
 
 func runInteractive(ctx context.Context, command string, args, environment []string, in io.Reader, out, errOut io.Writer, observe func(int)) error {
+	return runInteractiveWithProvider(ctx, command, args, environment, in, out, errOut, observe, nil)
+}
+
+func runInteractiveWithProvider(ctx context.Context, command string, args, environment []string, in io.Reader, out, errOut io.Writer, observe func(int), providerDone <-chan error) error {
 	if terminal, ok := in.(*os.File); ok && term.IsTerminal(int(terminal.Fd())) {
 		if state, stateErr := term.GetState(int(terminal.Fd())); stateErr == nil {
 			defer func() { _ = term.Restore(int(terminal.Fd()), state) }()
@@ -149,6 +179,18 @@ func runInteractive(ctx context.Context, command string, args, environment []str
 				return &ExitError{Code: exitErr.ExitCode(), Err: waitErr}
 			}
 			return waitErr
+		case providerErr, ok := <-providerDone:
+			if !ok || providerErr == nil {
+				providerErr = errors.New("compression provider stopped")
+			}
+			_ = cmd.Process.Signal(syscall.SIGTERM)
+			select {
+			case <-done:
+			case <-time.After(2 * time.Second):
+				_ = cmd.Process.Kill()
+				<-done
+			}
+			return fmt.Errorf("compression provider failed after agent start: %w", providerErr)
 		case <-ctx.Done():
 			_ = cmd.Process.Signal(syscall.SIGTERM)
 			select {

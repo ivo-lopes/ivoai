@@ -146,9 +146,13 @@ func (a Adapter) Run(ctx context.Context, request Request, observe func(Observat
 			component = core.ComponentClaude
 		}
 		provider := headroom.HeadroomCompressionProvider{Manager: headroom.Manager{Runner: a.Runner, Binary: a.HeadroomPath}, Enabled: true}
-		decision, _ := provider.Prepare(ctx, core.CompressionRequest{Executor: component, DirectPath: direct, Args: args})
-		if decision.Used {
-			command, commandArgs, useHeadroom = decision.Command, decision.Args, true
+		lease, prepareErr := provider.Prepare(ctx, core.CompressionRequest{Executor: component, DirectPath: direct, Args: args, Fidelity: core.CompressionCompressible})
+		if prepareErr == nil && lease != nil {
+			defer lease.Close(context.Background())
+			decision := lease.Decision()
+			if decision.Used {
+				command, commandArgs, useHeadroom = decision.Command, decision.Args, true
+			}
 		}
 	}
 	result, startErr := run(ctx, command, commandArgs, request, direct, useHeadroom, observe)

@@ -201,24 +201,32 @@ func (i *Installer) ensure(ctx context.Context, spec Spec, previous config.Compo
 }
 
 func (i *Installer) ensureSupplyChain(ctx context.Context, spec Spec, previous config.ComponentState) (config.ComponentState, error) {
-	asset, ok := spec.Assets[runtime.GOOS+"/"+runtime.GOARCH]
-	if !ok {
-		return config.ComponentState{}, errors.New("no asset for current platform")
-	}
-	executables := []string{spec.PayloadPath}
-	source := supplychain.ResolvedSource{
-		ID: spec.Name, Kind: supplychain.KindComponent, Source: asset.URL, Revision: spec.Revision,
-		LogicalVersion: spec.Version, DefaultBranch: spec.DefaultBranch, PayloadFormat: spec.PayloadFormat,
-		PayloadPath: spec.PayloadPath, License: spec.License, Executables: executables,
-		Integrity: supplychain.Integrity{Algorithm: "sha256", Digest: asset.SHA256, SignatureStatus: spec.SignatureStatus, AttestationStatus: spec.AttestationStatus, TrustLevel: spec.TrustLevel},
+	source, err := ResolvedSource(spec)
+	if err != nil {
+		return config.ComponentState{}, err
 	}
 	manager := componentupdate.Manager{
 		Supply:     supplychain.Manager{Root: filepath.Join(i.Store.Paths.DataDir, "supply-chain"), Limits: componentSupplyChainLimits()},
 		Discoverer: componentupdate.StaticDiscoverer{Source: source}, Fetcher: componentupdate.HTTPFetcher{Client: i.Client},
 		Store: i.Store, Runner: i.Runner, Executable: spec.Executable, VersionArg: []string{"--version"}, NoVersionProbe: spec.NoVersionProbe,
 	}
-	result, err := manager.Update(ctx, supplychain.Reference{ID: spec.Name, Kind: supplychain.KindComponent, Source: asset.URL, Version: spec.Version})
+	result, err := manager.Update(ctx, supplychain.Reference{ID: spec.Name, Kind: supplychain.KindComponent, Source: source.Source, Version: spec.Version})
 	return result.State, err
+}
+
+// ResolvedSource returns the immutable, architecture-specific supply-chain
+// identity used by both installation and runtime integrity preflight.
+func ResolvedSource(spec Spec) (supplychain.ResolvedSource, error) {
+	asset, ok := spec.Assets[runtime.GOOS+"/"+runtime.GOARCH]
+	if !ok {
+		return supplychain.ResolvedSource{}, errors.New("no asset for current platform")
+	}
+	return supplychain.ResolvedSource{
+		ID: spec.Name, Kind: supplychain.KindComponent, Source: asset.URL, Revision: spec.Revision,
+		LogicalVersion: spec.Version, DefaultBranch: spec.DefaultBranch, PayloadFormat: spec.PayloadFormat,
+		PayloadPath: spec.PayloadPath, License: spec.License, Executables: []string{spec.PayloadPath},
+		Integrity: supplychain.Integrity{Algorithm: "sha256", Digest: asset.SHA256, SignatureStatus: spec.SignatureStatus, AttestationStatus: spec.AttestationStatus, TrustLevel: spec.TrustLevel},
+	}, nil
 }
 
 func componentSupplyChainLimits() supplychain.Limits {

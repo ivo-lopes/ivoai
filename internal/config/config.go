@@ -70,6 +70,7 @@ type Config struct {
 	IVOAI         IVOAIConfig         `toml:"ivoai"`
 	Client        ClientConfig        `toml:"client"`
 	Headroom      HeadroomConfig      `toml:"headroom"`
+	Compression   CompressionConfig   `toml:"compression"`
 	Memory        MemoryConfig        `toml:"memory"`
 	Orchestration OrchestrationConfig `toml:"orchestration"`
 	Connections   ConnectionsConfig   `toml:"connections"`
@@ -84,6 +85,11 @@ type ClientConfig struct {
 }
 type HeadroomConfig struct {
 	Enabled bool `toml:"enabled"`
+}
+type CompressionConfig struct {
+	// Provider is additive and backward compatible. Empty configurations from
+	// v0.5.0 normalize to headroom, preserving the published behavior.
+	Provider string `toml:"provider"`
 }
 type MemoryConfig struct {
 	Enabled bool `toml:"enabled"`
@@ -167,7 +173,7 @@ type MCPServer struct {
 func Default() Config {
 	return Config{
 		IVOAI: IVOAIConfig{Version: ConfigSchemaVersion}, Client: ClientConfig{Profile: "default"},
-		Headroom: HeadroomConfig{Enabled: true}, Memory: MemoryConfig{Enabled: true},
+		Headroom: HeadroomConfig{Enabled: true}, Compression: CompressionConfig{Provider: "headroom"}, Memory: MemoryConfig{Enabled: true},
 		Orchestration: OrchestrationConfig{Enabled: true, ProviderExecution: false, DefaultMode: "direct", PrimaryExecutor: "codex", ReviewExecutor: "claude", MaxWorkers: 2, Auto: defaultAutoConfig()},
 		Connections: ConnectionsConfig{
 			ChatGPT: Connection{Status: "not-connected"}, Claude: Connection{Status: "not-connected"}, Server: Connection{Status: "not-connected"},
@@ -237,6 +243,12 @@ func (s *Store) Load() (Config, error) {
 	}
 	if c.MCP.Servers == nil {
 		c.MCP.Servers = map[string]MCPServer{}
+	}
+	if c.Compression.Provider == "" {
+		c.Compression.Provider = "headroom"
+	}
+	if err := ValidateCompression(c.Compression); err != nil {
+		return Config{}, err
 	}
 	// Zero values come from pre-session-control-plane configurations. Migrate
 	// them in memory and persist on the next normal setup/config write.
@@ -308,6 +320,15 @@ func ValidateOrchestration(value OrchestrationConfig) error {
 	return nil
 }
 
+func ValidateCompression(value CompressionConfig) error {
+	switch value.Provider {
+	case "headroom", "caveman", "direct":
+		return nil
+	default:
+		return errors.New("compression provider must be headroom, caveman, or direct")
+	}
+}
+
 func defaultAutoConfig() AutoConfig {
 	return AutoConfig{
 		Enabled: true, DefaultPlanner: "codex", AutomaticFailover: true, CheckpointEnabled: true,
@@ -318,6 +339,9 @@ func defaultAutoConfig() AutoConfig {
 }
 
 func (s *Store) Save(c Config) error {
+	if err := ValidateCompression(c.Compression); err != nil {
+		return err
+	}
 	if err := ValidateOrchestration(c.Orchestration); err != nil {
 		return err
 	}

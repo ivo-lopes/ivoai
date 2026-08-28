@@ -25,15 +25,17 @@ func TestHeadroomAdapterPreservesWrapInvocationAndDirectFallback(t *testing.T) {
 	if !status.Available || !status.Capabilities.Supports(core.CapabilityCompressionWrap) || !status.Fallback.Allowed {
 		t.Fatalf("probe = %+v", status)
 	}
-	decision, err := provider.Prepare(context.Background(), core.CompressionRequest{Executor: core.ComponentCodex, DirectPath: "/managed/bin/codex", Args: []string{"--model", "fixture"}, Environment: []string{"PATH=/usr/bin"}})
+	lease, err := provider.Prepare(context.Background(), core.CompressionRequest{Executor: core.ComponentCodex, DirectPath: "/managed/bin/codex", Args: []string{"--model", "fixture"}, Environment: []string{"PATH=/usr/bin"}})
 	if err != nil {
 		t.Fatal(err)
 	}
+	decision := lease.Decision()
 	if !decision.Used || decision.Command != "/managed/headroom" || strings.Join(decision.Args, " ") != "wrap codex -- --model fixture" || decision.Environment[0] != "PATH=/managed/bin:/usr/bin" {
 		t.Fatalf("decision = %+v", decision)
 	}
 	provider.Enabled = false
-	direct, err := provider.Prepare(context.Background(), core.CompressionRequest{Executor: core.ComponentCodex, DirectPath: "/managed/bin/codex", Args: []string{"--help"}})
+	directLease, err := provider.Prepare(context.Background(), core.CompressionRequest{Executor: core.ComponentCodex, DirectPath: "/managed/bin/codex", Args: []string{"--help"}})
+	direct := directLease.Decision()
 	if err != nil || direct.Used || direct.Command != "/managed/bin/codex" {
 		t.Fatalf("direct = %+v err=%v", direct, err)
 	}

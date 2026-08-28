@@ -59,12 +59,17 @@ func (a *App) SessionStart(ctx context.Context, executor string, mode session.Mo
 	value := session.Session{
 		SessionID: id, StartedAt: now, UpdatedAt: now, Mode: mode, PrimaryExecutor: executor,
 		WorkingDirectory: cwd, PrimaryModel: session.ResolveModel("", session.ParseModelArgument(args), executor, agentModelConfig(executor)),
-		HeadroomRequested: cfg.Headroom.Enabled && executor != "opencode", RufloEnabled: mode == session.ModeOrchestrated,
+		HeadroomRequested: cfg.Compression.Provider == "headroom" && cfg.Headroom.Enabled && executor != "opencode", CompressionProvider: cfg.Compression.Provider, CompressionRequested: cfg.Compression.Provider != "direct", RufloEnabled: mode == session.ModeOrchestrated,
 		ProviderExecution: false, Workers: []session.Worker{}, MaxWorkers: cfg.Orchestration.MaxWorkers,
 		ContextStatus: contextStatus(cfg), MemoryStatus: memoryStatus(cfg, state), ServerStatus: serverStatus(cfg), State: session.StateStarting,
 	}
 	store := session.Store{Root: a.Store.Paths.SessionsDir}
 	if err := store.Create(value); err != nil {
+		return err
+	}
+	runtimeDir, err := store.RuntimeDir(id)
+	if err != nil {
+		_ = store.Delete(id)
 		return err
 	}
 	skillResult, err := a.evaluateSessionSkills(ctx, executor, cwd, args)
@@ -87,11 +92,6 @@ func (a *App) SessionStart(ctx context.Context, executor string, mode session.Mo
 		if !cfg.Orchestration.Enabled {
 			_ = store.Delete(id)
 			return errors.New("orchestration is disabled; enable it and run ivoai setup")
-		}
-		runtimeDir, runtimeErr := store.RuntimeDir(id)
-		if runtimeErr != nil {
-			_ = store.Delete(id)
-			return runtimeErr
 		}
 		control = orchestration.RufloOrchestratorAdapter{Control: orchestration.ControlPlane{Manager: a.orchestrationManager(state), RuntimeDir: runtimeDir}, Managed: state.Components["ruflo"].Managed}
 		swarm, initErr := control.Initialize(ctx, cfg.Orchestration.MaxWorkers)
@@ -139,22 +139,29 @@ func (a *App) SessionStart(ctx context.Context, executor string, mode session.Mo
 	if executor == "claude" {
 		component = "claude-code"
 	}
-	runtime := agents.Runtime{Runner: a.Runner, In: a.In, Out: a.Out, Err: a.Err, AgentPath: state.Components[component].Path, HeadroomPath: state.Components["headroom"].Path, Environment: environment}
+	compressionProvider, compressionEnabled, requestedCompression := a.sessionCompression(cfg, state, executor, runtimeDir)
+	if compressionBypassedForSharedKnowledge(cfg) {
+		compressionEnabled = false
+	}
+	runtime := agents.Runtime{Runner: a.Runner, In: a.In, Out: a.Out, Err: a.Err, AgentPath: state.Components[component].Path, HeadroomPath: state.Components["headroom"].Path, Compression: compressionProvider, Environment: environment, RuntimeDir: runtimeDir}
 	implementation, err := agents.ExecutorFor(executor, runtime, state.Components[component].Version, state.Components[component].Managed)
 	if err != nil {
 		return err
 	}
-	useHeadroom := executor != "opencode" && primaryHeadroomEnabled(cfg)
-	if executor != "opencode" && headroomBypassedForSharedKnowledge(cfg) {
-		a.warn(sharedKnowledgeHeadroomBypass, nil)
+	if !compressionEnabled && compressionBypassedForSharedKnowledge(cfg) {
+		a.warn(sharedKnowledgeCompressionBypass(requestedCompression), nil)
 	}
-	launchErr := implementation.StartSession(ctx, core.SessionRequest{Args: args, CompressionEnabled: useHeadroom}, func(observation core.SessionObservation) {
+	launchErr := implementation.StartSession(ctx, core.SessionRequest{Args: args, CompressionEnabled: compressionEnabled}, func(observation core.SessionObservation) {
 		_, _ = store.Update(id, func(current *session.Session) error {
 			current.PrimaryPID = observation.PID
 			current.PrimaryProcessStart = session.ProcessStart(observation.PID)
-			current.HeadroomUsed = observation.CompressionUsed
+			current.HeadroomUsed = observation.CompressionUsed && observation.CompressionProvider == "headroom"
+			current.CompressionUsed = observation.CompressionUsed
+			if observation.CompressionProvider != "" {
+				current.CompressionProvider = observation.CompressionProvider
+			}
 			current.State = session.StateRunning
-			return nil
+			return session.AppendObservation(current, compressionObservation(executor, cfg.Compression.Provider, observation))
 		})
 	})
 	exitCode, finalState := 0, session.StateCompleted

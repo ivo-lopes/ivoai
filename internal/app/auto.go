@@ -67,7 +67,7 @@ func (a *App) Auto(ctx context.Context, planner string, agentArgs []string) erro
 		SessionID: id, StartedAt: now, UpdatedAt: now, Mode: session.ModeAuto, Auto: true,
 		InitialPlanner: planner, CurrentPrimary: planner, PrimaryExecutor: planner,
 		WorkingDirectory: cwd, PrimaryModel: session.ResolveModel("", session.ParseModelArgument(agentArgs), planner, agentModelConfig(planner)),
-		HeadroomRequested: cfg.Headroom.Enabled, RufloEnabled: true, ProviderExecution: false,
+		HeadroomRequested: cfg.Compression.Provider == "headroom" && cfg.Headroom.Enabled, CompressionProvider: cfg.Compression.Provider, CompressionRequested: cfg.Compression.Provider != "direct", RufloEnabled: true, ProviderExecution: false,
 		Workers: []session.Worker{}, MaxWorkers: cfg.Orchestration.Auto.MaxWorkers,
 		ContextStatus: contextState, MemoryStatus: memoryState, ServerStatus: serverState,
 		State: session.StateStarting, CurrentPhase: "quota_preflight", Quota: map[quota.Provider]quota.ProviderQuota{},
@@ -205,7 +205,7 @@ func (a *App) Auto(ctx context.Context, planner string, agentArgs []string) erro
 		limitReason := make(chan string, 1)
 		monitorDone := make(chan struct{})
 		go a.monitorPrimaryQuota(launchCtx, manager, quota.Provider(current), limitReason, cancelLaunch, cfg.Orchestration.Auto.QuotaRefreshSeconds, monitorDone)
-		launchErr := a.launchAutomaticPrimary(launchCtx, store, id, current, launchArgs, state, cfg, environment)
+		launchErr := a.launchAutomaticPrimary(launchCtx, store, id, current, launchArgs, state, cfg, environment, runtimeDir)
 		cancelLaunch()
 		<-monitorDone
 		reason := ""
@@ -330,27 +330,31 @@ func (a *App) selectPlanner(defaultPlanner string) (string, error) {
 	}
 }
 
-func (a *App) launchAutomaticPrimary(ctx context.Context, store session.Store, id, executor string, args []string, state config.State, cfg config.Config, environment []string) error {
+func (a *App) launchAutomaticPrimary(ctx context.Context, store session.Store, id, executor string, args []string, state config.State, cfg config.Config, environment []string, runtimeDir string) error {
 	component := executor
 	if executor == "claude" {
 		component = "claude-code"
 	}
-	runtime := agents.Runtime{Runner: a.Runner, In: a.In, Out: a.Out, Err: a.Err, AgentPath: state.Components[component].Path, HeadroomPath: state.Components["headroom"].Path, Environment: environment}
+	compressionProvider, compressionEnabled, _ := a.sessionCompression(cfg, state, executor, runtimeDir)
+	if compressionBypassedForSharedKnowledge(cfg) {
+		compressionEnabled = false
+	}
+	runtime := agents.Runtime{Runner: a.Runner, In: a.In, Out: a.Out, Err: a.Err, AgentPath: state.Components[component].Path, HeadroomPath: state.Components["headroom"].Path, Compression: compressionProvider, Environment: environment, RuntimeDir: runtimeDir}
 	implementation, err := agents.ExecutorFor(executor, runtime, state.Components[component].Version, state.Components[component].Managed)
 	if err != nil {
 		return err
 	}
-	return implementation.StartSession(ctx, core.SessionRequest{Args: args, CompressionEnabled: primaryHeadroomEnabled(cfg)}, func(observation core.SessionObservation) {
+	return implementation.StartSession(ctx, core.SessionRequest{Args: args, CompressionEnabled: compressionEnabled}, func(observation core.SessionObservation) {
 		_, _ = store.Update(id, func(current *session.Session) error {
 			current.PrimaryPID = observation.PID
 			current.PrimaryProcessStart = session.ProcessStart(observation.PID)
-			current.HeadroomUsed = observation.CompressionUsed
-			current.State, current.CurrentPhase = session.StateRunning, "conversation"
-			reason := observability.ReasonHeadroomBypassed
-			if observation.CompressionUsed {
-				reason = observability.ReasonHeadroomEnabled
+			current.HeadroomUsed = observation.CompressionUsed && observation.CompressionProvider == "headroom"
+			current.CompressionUsed = observation.CompressionUsed
+			if observation.CompressionProvider != "" {
+				current.CompressionProvider = observation.CompressionProvider
 			}
-			return session.AppendObservation(current, observability.Event{Category: observability.CategoryCompression, Operation: observability.OperationCompressionSelect, State: observability.StateSelected, Executor: executor, Component: core.ComponentCompression, RoutingReason: reason})
+			current.State, current.CurrentPhase = session.StateRunning, "conversation"
+			return session.AppendObservation(current, compressionObservation(executor, cfg.Compression.Provider, observation))
 		})
 	})
 }
@@ -657,7 +661,7 @@ func (a *App) printAutoPreflight(values map[quota.Provider]quota.ProviderQuota, 
 	if cfg.Headroom.Enabled {
 		headroomState = "ENABLED / INTERACTIVE PREFLIGHT PENDING"
 	}
-	if headroomBypassedForSharedKnowledge(cfg) {
+	if compressionBypassedForSharedKnowledge(cfg) {
 		headroomState = "BYPASSED / PRESERVING EXACT SHARED KNOWLEDGE"
 	}
 	fmt.Fprintf(a.Out, "\nSelected        %s\nRuflo           CONFIGURED / VALIDATING SAFE MODE\nai-memory       %s\nContext         %s\nServer          %s\nHeadroom        %s\n\n", displayProvider(selected), strings.ToUpper(current.MemoryStatus), strings.ToUpper(current.ContextStatus), strings.ToUpper(current.ServerStatus), headroomState)

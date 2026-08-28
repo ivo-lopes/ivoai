@@ -107,6 +107,8 @@ const (
 	ReasonModelQuotaExhausted    Reason = "model_quota_exhausted"
 	ReasonHeadroomEnabled        Reason = "headroom_enabled"
 	ReasonHeadroomBypassed       Reason = "headroom_bypassed"
+	ReasonCavemanEnabled         Reason = "caveman_enabled"
+	ReasonCavemanFallback        Reason = "caveman_fallback"
 	ReasonKnowledgeReady         Reason = "knowledge_ready"
 	ReasonKnowledgeDegraded      Reason = "knowledge_degraded"
 	ReasonPolicyAllowed          Reason = "policy_allowed"
@@ -234,7 +236,7 @@ func (e Event) Validate() error {
 	if e.SessionID != "" && (len(e.SessionID) != 37 || !strings.HasPrefix(e.SessionID, "sess_")) {
 		return errors.New("invalid observability session ID")
 	}
-	if !safeLabel(e.TaskID, 64) || !safeWorker(e.WorkerID) || !oneOf(e.Provider, "", "codex", "claude") || !oneOf(e.Executor, "", "codex", "claude") {
+	if !safeLabel(e.TaskID, 64) || !safeWorker(e.WorkerID) || !oneOf(e.Provider, "", "codex", "claude", "opencode", "caveman", "headroom", "direct") || !oneOf(e.Executor, "", "codex", "claude", "opencode") {
 		return errors.New("invalid observability correlation metadata")
 	}
 	if e.Component != "" && !oneOf(string(e.Component), "codex", "claude", "memory", "context", "compression", "orchestration", "working_context", "skills", "tools") {
@@ -302,7 +304,7 @@ func safeCanonicalID(value string, limit int) bool {
 
 func validReason(value Reason) bool {
 	switch value {
-	case "", ReasonDirect, ReasonPrimaryAvailable, ReasonCapabilityMatch, ReasonQuotaAvailable, ReasonQuotaExhausted, ReasonQuotaStale, ReasonTelemetryNotExposed, ReasonProbeFailed, ReasonAuthTransition, ReasonAlternateSelected, ReasonProviderUnavailable, ReasonProviderQuotaExhausted, ReasonModelQuotaExhausted, ReasonHeadroomEnabled, ReasonHeadroomBypassed, ReasonKnowledgeReady, ReasonKnowledgeDegraded, ReasonPolicyAllowed, ReasonPolicyDenied, ReasonApprovalRequired, ReasonInvalidMetadata, ReasonUnresolvedConflict, ReasonIntegrityVerified, ReasonIntegrityMismatch, ReasonImmutableRevision, ReasonValidationFailed, ReasonRollbackComplete, ReasonRedacted, ReasonArtifactStored, ReasonArtifactRecovered, ReasonContextBudgetApplied, ReasonStoreUnavailable, ReasonAccessDenied, ReasonArtifactExpired, ReasonResultProjected:
+	case "", ReasonDirect, ReasonPrimaryAvailable, ReasonCapabilityMatch, ReasonQuotaAvailable, ReasonQuotaExhausted, ReasonQuotaStale, ReasonTelemetryNotExposed, ReasonProbeFailed, ReasonAuthTransition, ReasonAlternateSelected, ReasonProviderUnavailable, ReasonProviderQuotaExhausted, ReasonModelQuotaExhausted, ReasonHeadroomEnabled, ReasonHeadroomBypassed, ReasonCavemanEnabled, ReasonCavemanFallback, ReasonKnowledgeReady, ReasonKnowledgeDegraded, ReasonPolicyAllowed, ReasonPolicyDenied, ReasonApprovalRequired, ReasonInvalidMetadata, ReasonUnresolvedConflict, ReasonIntegrityVerified, ReasonIntegrityMismatch, ReasonImmutableRevision, ReasonValidationFailed, ReasonRollbackComplete, ReasonRedacted, ReasonArtifactStored, ReasonArtifactRecovered, ReasonContextBudgetApplied, ReasonStoreUnavailable, ReasonAccessDenied, ReasonArtifactExpired, ReasonResultProjected:
 		return true
 	default:
 		return false

@@ -19,6 +19,17 @@ Concurrent sessions may be active, so do not assume the newest session owns shar
 
 const sharedKnowledgeHeadroomBypass = "Headroom bypassed: its lossy compression can truncate exact shared-memory or Context tool results; launching the official client directly"
 
+func sharedKnowledgeCompressionBypass(provider string) string {
+	if provider == "headroom" {
+		return sharedKnowledgeHeadroomBypass
+	}
+	return "Compression bypassed: authoritative shared-memory or Context tool results require exact fidelity; launching the official client directly"
+}
+
+func compressionBypassedForSharedKnowledge(cfg config.Config) bool {
+	return cfg.Compression.Provider != "direct" && headroomBypassedForSharedKnowledge(cfg)
+}
+
 // ai-memory 1.29.0 does not annotate its MCP tools as read-only. Recent Codex
 // releases conservatively require approval for unannotated tools, which makes a
 // headless `codex exec --ask-for-approval never` unable to perform even a memory

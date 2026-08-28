@@ -670,15 +670,31 @@ func (a *App) Launch(ctx context.Context, target string, args []string) error {
 		}
 	}
 	defer cleanup()
-	useHeadroom := target != "opencode" && primaryHeadroomEnabled(cfg)
-	if target != "opencode" && headroomBypassedForSharedKnowledge(cfg) {
-		a.warn(sharedKnowledgeHeadroomBypass, nil)
+	runtimeRoot := filepath.Join(a.Store.Paths.StateDir, "direct-runtime")
+	if err := platform.EnsurePrivateDir(runtimeRoot); err != nil {
+		return err
 	}
-	executor, err := agents.ExecutorFor(target, agents.Runtime{Runner: a.Runner, In: a.In, Out: a.Out, Err: a.Err, AgentPath: state.Components[key].Path, HeadroomPath: state.Components["headroom"].Path, Environment: environment}, state.Components[key].Version, state.Components[key].Managed)
+	runtimeDir, err := os.MkdirTemp(runtimeRoot, "session-")
 	if err != nil {
 		return err
 	}
-	return executor.StartSession(ctx, core.SessionRequest{Args: args, CompressionEnabled: useHeadroom}, nil)
+	if err := os.Chmod(runtimeDir, 0o700); err != nil {
+		_ = os.RemoveAll(runtimeDir)
+		return err
+	}
+	defer os.RemoveAll(runtimeDir)
+	compressionProvider, compressionEnabled, requestedCompression := a.sessionCompression(cfg, state, target, runtimeDir)
+	if compressionBypassedForSharedKnowledge(cfg) {
+		compressionEnabled = false
+	}
+	if !compressionEnabled && compressionBypassedForSharedKnowledge(cfg) {
+		a.warn(sharedKnowledgeCompressionBypass(requestedCompression), nil)
+	}
+	executor, err := agents.ExecutorFor(target, agents.Runtime{Runner: a.Runner, In: a.In, Out: a.Out, Err: a.Err, AgentPath: state.Components[key].Path, HeadroomPath: state.Components["headroom"].Path, Compression: compressionProvider, Environment: environment, RuntimeDir: runtimeDir}, state.Components[key].Version, state.Components[key].Managed)
+	if err != nil {
+		return err
+	}
+	return executor.StartSession(ctx, core.SessionRequest{Args: args, CompressionEnabled: compressionEnabled}, nil)
 }
 
 func (a *App) MemoryStatus(ctx context.Context) error {

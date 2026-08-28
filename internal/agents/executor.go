@@ -53,16 +53,13 @@ func (e ClaudeExecutor) StartSession(ctx context.Context, request core.SessionRe
 }
 
 func (e OpenCodeExecutor) StartSession(ctx context.Context, request core.SessionRequest, observe func(core.SessionObservation)) error {
-	// OpenCode remains direct-only until Caveman cutover (IVOAI-40) and is not
-	// adapted to the legacy Headroom wrapper.
-	request.CompressionEnabled = false
 	return startSession(ctx, e.Runtime, "opencode", request, observe)
 }
 
 func startSession(ctx context.Context, runtime Runtime, name string, request core.SessionRequest, observe func(core.SessionObservation)) error {
 	return runtime.LaunchObserved(ctx, name, request.Args, request.CompressionEnabled, func(value Observation) {
 		if observe != nil {
-			observe(core.SessionObservation{PID: value.PID, CompressionUsed: value.HeadroomUsed})
+			observe(core.SessionObservation{PID: value.PID, CompressionUsed: value.CompressionUsed, CompressionProvider: value.CompressionProvider})
 		}
 	})
 }
