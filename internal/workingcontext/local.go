@@ -157,7 +157,7 @@ func (s *LocalStore) Put(ctx context.Context, request PutRequest, input io.Reade
 		return ArtifactRef{}, errors.New("artifact byte quota exceeded")
 	}
 	now := s.now().UTC()
-	ref := ArtifactRef{ID: id, Kind: request.Kind, Size: written, SHA256: hex.EncodeToString(hash.Sum(nil)), MediaType: request.MediaType, CreatedAt: now, ExpiresAt: now.Add(ttl), Owner: request.Owner, Sensitivity: request.Sensitivity, Complete: true}
+	ref := ArtifactRef{ID: id, Kind: request.Kind, Size: written, SHA256: hex.EncodeToString(hash.Sum(nil)), MediaType: request.MediaType, CreatedAt: now, ExpiresAt: now.Add(ttl), Owner: request.Owner, Sensitivity: request.Sensitivity, Complete: !request.Truncated, Truncated: request.Truncated}
 	if err := ref.Validate(); err != nil {
 		return ArtifactRef{}, err
 	}

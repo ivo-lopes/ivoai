@@ -23,6 +23,7 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/session"
 	"github.com/ivo-lopes/ivoai/internal/terminalui"
 	"github.com/ivo-lopes/ivoai/internal/workers"
+	"github.com/ivo-lopes/ivoai/internal/workingcontext"
 )
 
 func (a *App) SessionStart(ctx context.Context, executor string, mode session.Mode, args []string) error {
@@ -221,6 +222,10 @@ func (a *App) OrchestratorServe(ctx context.Context, id string) error {
 	if err != nil {
 		return err
 	}
+	workingStore, workingErr := workingcontext.NewLocalStore(filepath.Join(a.Store.Paths.CacheDir, "working-context"), workingcontext.LocalOptions{})
+	if workingErr != nil {
+		a.warn("WorkingContext artifact store is degraded; raw worker output will not be injected into primary context", workingErr)
+	}
 	server := orchestrator.Server{
 		Store: store, SessionID: id, Directory: value.WorkingDirectory, RuntimeDir: runtimeDir,
 		ReviewExecutor:        cfg.Orchestration.ReviewExecutor,
@@ -234,8 +239,13 @@ func (a *App) OrchestratorServe(ctx context.Context, id string) error {
 		Weights:               routing.Weights{Complexity: cfg.Orchestration.Auto.Optimization.Weights.Complexity, Risk: cfg.Orchestration.Auto.Optimization.Weights.Risk, ReasoningDepth: cfg.Orchestration.Auto.Optimization.Weights.ReasoningDepth, VerificationNeed: cfg.Orchestration.Auto.Optimization.Weights.VerificationNeed, ContextBreadth: cfg.Orchestration.Auto.Optimization.Weights.ContextBreadth},
 		Registry:              routing.Discoverer{CodexPath: state.Components["codex"].Path, ClaudePath: state.Components["claude-code"].Path, CachePath: filepath.Join(a.Store.Paths.CacheDir, "capabilities.json")}.Discover(ctx),
 		Overrides:             routingOverrides(cfg.Orchestration.Auto.Profiles),
+		WorkingContext:        workingStore,
 	}
-	return server.Run(ctx)
+	runErr := server.Run(ctx)
+	if workingStore != nil {
+		_, _ = workingStore.GC(context.Background())
+	}
+	return runErr
 }
 
 func routingOverrides(value config.AutoProfilesConfig) map[string]map[routing.Tier]routing.ProfileOverride {

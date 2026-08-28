@@ -94,6 +94,27 @@ func TestSpawnBatchRunsIndependentTasksConcurrentlyAndHonorsDAG(t *testing.T) {
 	if _, err := server.wait(context.Background(), toolRequest(map[string]any{"plan_id": planID, "task_ids": []string{"a", "b", "c", "d", "e"}, "mode": "all", "timeout_seconds": 5})); err != nil {
 		t.Fatal(err)
 	}
+	updated, err := store.Get(id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(updated.Workers) != 5 {
+		t.Fatalf("workers=%d", len(updated.Workers))
+	}
+	seenRefs := map[string]struct{}{}
+	for _, worker := range updated.Workers {
+		if len(worker.ResultRefs) != 1 {
+			t.Fatalf("worker %s refs=%d", worker.ID, len(worker.ResultRefs))
+		}
+		ref := worker.ResultRefs[0].Artifact
+		if ref.Owner.SessionID != id || ref.Owner.TaskID != worker.TaskID || ref.Owner.WorkerID != worker.ID {
+			t.Fatalf("worker ref ownership mismatch: worker=%+v ref=%+v", worker, ref)
+		}
+		if _, duplicate := seenRefs[ref.ID]; duplicate {
+			t.Fatalf("duplicate concurrent artifact ref %s", ref.ID)
+		}
+		seenRefs[ref.ID] = struct{}{}
+	}
 	adapter.mu.Lock()
 	defer adapter.mu.Unlock()
 	if delta := adapter.starts["A"].Sub(adapter.starts["B"]); delta > 75*time.Millisecond || delta < -75*time.Millisecond {

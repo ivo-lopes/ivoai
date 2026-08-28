@@ -16,6 +16,19 @@ import (
 
 const DefaultContextBudget = 8 << 10
 
+func ContextBudgetForTier(tier string) int {
+	switch tier {
+	case "LIGHT":
+		return 4 << 10
+	case "STRONG":
+		return 12 << 10
+	case "MAX":
+		return 16 << 10
+	default:
+		return DefaultContextBudget
+	}
+}
+
 type ProjectionInput struct {
 	Owner         Ownership
 	Raw           []byte
@@ -25,6 +38,7 @@ type ProjectionInput struct {
 	Failure       error
 	ContextBudget int
 	TTL           time.Duration
+	Truncated     bool
 }
 
 type Projector struct {
@@ -52,7 +66,7 @@ func (p Projector) Project(ctx context.Context, input ProjectionInput) WorkerRes
 		return p.storeUnavailable(input.Owner, status, errors.New("artifact store is unavailable"))
 	}
 	// Exact evidence is committed before any bounded representation is derived.
-	ref, err := p.Store.Put(ctx, PutRequest{Kind: ArtifactWorkerOutput, MediaType: mediaType, Owner: input.Owner, Sensitivity: SensitivityRestricted, TTL: input.TTL}, bytes.NewReader(input.Raw))
+	ref, err := p.Store.Put(ctx, PutRequest{Kind: ArtifactWorkerOutput, MediaType: mediaType, Owner: input.Owner, Sensitivity: SensitivityRestricted, TTL: input.TTL, Truncated: input.Truncated}, bytes.NewReader(input.Raw))
 	if err != nil {
 		return p.storeUnavailable(input.Owner, status, err)
 	}
@@ -63,6 +77,7 @@ func (p Projector) Project(ctx context.Context, input ProjectionInput) WorkerRes
 	result.Findings = findings(input.Raw, resultRef)
 	result.StateDelta = StateDelta{Proposed: []ProposedChange{{Kind: ChangeObservation, Target: "worker", Summary: statusSummary(status, input.ExitCode), Evidence: []ResultRef{resultRef}}}}
 	result.Summary, result.Truncated = projectSummary(input.Raw, status, input.ExitCode, result.ImportantErrors, ref.ID, budget, mediaType)
+	result.Truncated = result.Truncated || input.Truncated
 	if err := result.Validate(); err != nil {
 		return p.storeUnavailable(input.Owner, status, fmt.Errorf("project bounded worker result: %w", err))
 	}
@@ -74,6 +89,9 @@ func (p Projector) Project(ctx context.Context, input ProjectionInput) WorkerRes
 }
 
 func (p Projector) storeUnavailable(owner Ownership, status ResultStatus, cause error) WorkerResult {
+	if status == ResultCompleted {
+		status = ResultDegraded
+	}
 	message := boundedLine(platform.Redact(cause.Error()), MaxImportantErrorSize)
 	result := WorkerResult{Status: status, Summary: "WorkingContext degraded: exact worker evidence could not be stored. Raw output was not injected into primary context.", ImportantErrors: []string{message}, Degraded: true, Truncated: true}
 	p.emit(owner, observability.OperationWorkingContextDegraded, observability.StateDegraded, observability.ReasonStoreUnavailable, ArtifactRef{}, 0, 0, true)

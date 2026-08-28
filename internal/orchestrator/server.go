@@ -4,9 +4,12 @@ package orchestrator
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"sync"
@@ -18,6 +21,7 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/routing"
 	"github.com/ivo-lopes/ivoai/internal/session"
 	"github.com/ivo-lopes/ivoai/internal/workers"
+	"github.com/ivo-lopes/ivoai/internal/workingcontext"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
@@ -39,6 +43,7 @@ type Server struct {
 	Weights               routing.Weights
 	Registry              routing.Registry
 	Overrides             map[string]map[routing.Tier]routing.ProfileOverride
+	WorkingContext        workingcontext.ArtifactStore
 
 	mu      sync.Mutex
 	results map[string]workerResult
@@ -59,9 +64,9 @@ type LifecycleControl interface {
 }
 
 type workerResult struct {
-	Text     string `json:"text,omitempty"`
-	State    string `json:"state"`
-	ExitCode int    `json:"exit_code,omitempty"`
+	Result   workingcontext.WorkerResult `json:"result"`
+	State    string                      `json:"state"`
+	ExitCode int                         `json:"exit_code,omitempty"`
 }
 
 func (s *Server) Run(ctx context.Context) error {
@@ -93,6 +98,24 @@ func (s *Server) initializeContext(ctx context.Context) {
 	}
 	if s.runCtx == nil {
 		s.runCtx = ctx
+	}
+	if s.WorkingContext == nil && filepath.IsAbs(s.RuntimeDir) {
+		if local, err := workingcontext.NewLocalStore(filepath.Join(s.RuntimeDir, "working-context"), workingcontext.LocalOptions{}); err == nil {
+			s.WorkingContext = local
+		}
+	}
+	if value, err := s.Store.Get(s.SessionID); err == nil {
+		for _, worker := range value.Workers {
+			if len(worker.ResultRefs) == 0 || s.results[worker.ID].State != "" {
+				continue
+			}
+			status := workingcontext.ResultCompleted
+			if worker.State == session.StateFailed {
+				status = workingcontext.ResultFailed
+			}
+			s.results[worker.ID] = workerResult{State: string(worker.State), Result: workingcontext.WorkerResult{Status: status, Summary: "Prior worker evidence remains available by ResultRef after primary failover.", Evidence: append([]workingcontext.ResultRef(nil), worker.ResultRefs...)}}
+			s.order = append(s.order, worker.ID)
+		}
 	}
 	if s.Weights == (routing.Weights{}) {
 		s.Weights = routing.DefaultWeights()
@@ -127,7 +150,9 @@ func (s *Server) addTools(server *mcp.Server) {
 		"preferred_executor": map[string]any{"type": "string", "enum": []string{"codex", "claude"}},
 		"model":              map[string]any{"type": "string", "minLength": 1, "maxLength": 128},
 	}, "role", "task"), Annotations: write}, s.delegate)
-	server.AddTool(&mcp.Tool{Name: "orchestration_result", Description: "Read a bounded worker result retained only in this bridge process.", InputSchema: object(map[string]any{"worker_id": map[string]any{"type": "string"}}, "worker_id"), Annotations: read}, s.result)
+	server.AddTool(&mcp.Tool{Name: "orchestration_result", Description: "Read a bounded structured WorkerResult; only opaque evidence references survive primary failover.", InputSchema: object(map[string]any{"worker_id": map[string]any{"type": "string"}}, "worker_id"), Annotations: read}, s.result)
+	server.AddTool(&mcp.Tool{Name: "orchestration_artifact_read", Description: "Explicitly recover exact private worker evidence by opaque ResultRef for the active session.", InputSchema: object(map[string]any{"artifact_id": map[string]any{"type": "string", "pattern": `^artifact_[0-9a-f]{32}$`}}, "artifact_id"), Annotations: read}, s.artifactRead)
+	server.AddTool(&mcp.Tool{Name: "orchestration_artifact_read_range", Description: "Explicitly recover a bounded byte range from private worker evidence by opaque ResultRef.", InputSchema: object(map[string]any{"artifact_id": map[string]any{"type": "string", "pattern": `^artifact_[0-9a-f]{32}$`}, "offset": map[string]any{"type": "integer", "minimum": 0}, "length": map[string]any{"type": "integer", "minimum": 1, "maximum": 1048576}}, "artifact_id", "offset", "length"), Annotations: read}, s.artifactReadRange)
 	server.AddTool(&mcp.Tool{Name: "orchestration_cancel", Description: "Cancel a worker owned by this active session.", InputSchema: object(map[string]any{"worker_id": map[string]any{"type": "string"}}, "worker_id"), Annotations: write}, s.cancel)
 	value, _ := s.Store.Get(s.SessionID)
 	if value.Mode == session.ModeAuto {
@@ -221,7 +246,8 @@ func (s *Server) delegate(ctx context.Context, request *mcp.CallToolRequest) (*m
 	}
 	taskID, err := s.Control.RegisterLifecycle(ctx, "worker", workerID)
 	if err != nil {
-		s.finish(workerID, session.StateFailed, 1, "")
+		projected := s.projectWorkerResult("", workerID, session.StateFailed, workers.Result{ExitCode: 1}, err, workingcontext.DefaultContextBudget)
+		s.finish(workerID, session.StateFailed, 1, projected)
 		return nil, err
 	}
 	_, _ = s.Store.Update(s.SessionID, func(value *session.Session) error {
@@ -287,12 +313,13 @@ func (s *Server) delegate(ctx context.Context, request *mcp.CallToolRequest) (*m
 			return nil
 		})
 	}
-	s.finish(workerID, state, exitCode, result.Text)
+	projected := s.projectWorkerResult("", workerID, state, result, runErr, workingcontext.DefaultContextBudget)
+	s.finish(workerID, state, exitCode, projected)
 	_ = s.Control.CancelLifecycle(context.Background(), taskID)
 	if runErr != nil {
 		return nil, runErr
 	}
-	return toolResult(map[string]any{"worker_id": workerID, "executor": args.Executor, "model": result.Model, "headroom_used": result.HeadroomUsed, "result": result.Text})
+	return toolResult(map[string]any{"worker_id": workerID, "executor": args.Executor, "model": result.Model, "headroom_used": result.HeadroomUsed, "result": projected})
 }
 
 func quotaLimitError(executor, message string) bool {
@@ -360,6 +387,52 @@ func (s *Server) result(_ context.Context, request *mcp.CallToolRequest) (*mcp.C
 	return toolResult(value)
 }
 
+func (s *Server) artifactRead(ctx context.Context, request *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	id, err := artifactIDArgument(request)
+	if err != nil {
+		return nil, err
+	}
+	if s.WorkingContext == nil {
+		return nil, errors.New("working context artifact store is unavailable")
+	}
+	reader, ref, err := s.WorkingContext.Read(ctx, workingcontext.Ownership{SessionID: s.SessionID}, id)
+	if err != nil {
+		s.observeArtifactAccess(id, false, 0, err)
+		return nil, err
+	}
+	body, err := io.ReadAll(reader)
+	closeErr := reader.Close()
+	if err != nil {
+		return nil, err
+	}
+	if closeErr != nil {
+		return nil, closeErr
+	}
+	s.observeArtifactAccess(id, false, int64(len(body)), nil)
+	return toolResult(map[string]any{"ref": ref, "encoding": "base64", "data": base64.StdEncoding.EncodeToString(body)})
+}
+
+func (s *Server) artifactReadRange(ctx context.Context, request *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	var args struct {
+		ArtifactID string `json:"artifact_id"`
+		Offset     int64  `json:"offset"`
+		Length     int64  `json:"length"`
+	}
+	if strictArguments(request, &args) != nil || args.Offset < 0 || args.Length < 1 || args.Length > 1<<20 {
+		return nil, errors.New("valid bounded artifact range is required")
+	}
+	if s.WorkingContext == nil {
+		return nil, errors.New("working context artifact store is unavailable")
+	}
+	body, ref, err := s.WorkingContext.ReadRange(ctx, workingcontext.Ownership{SessionID: s.SessionID}, args.ArtifactID, args.Offset, args.Length)
+	if err != nil {
+		s.observeArtifactAccess(args.ArtifactID, true, 0, err)
+		return nil, err
+	}
+	s.observeArtifactAccess(args.ArtifactID, true, int64(len(body)), nil)
+	return toolResult(map[string]any{"ref": ref, "offset": args.Offset, "length": len(body), "encoding": "base64", "data": base64.StdEncoding.EncodeToString(body)})
+}
+
 func (s *Server) cancel(_ context.Context, request *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	id, err := workerIDArgument(request)
 	if err != nil {
@@ -375,11 +448,12 @@ func (s *Server) cancel(_ context.Context, request *mcp.CallToolRequest) (*mcp.C
 	return toolResult(map[string]any{"worker_id": id, "cancelled": true})
 }
 
-func (s *Server) finish(id string, state session.State, exitCode int, text string) {
+func (s *Server) finish(id string, state session.State, exitCode int, result workingcontext.WorkerResult) {
 	now := time.Now().UTC()
 	_, _ = s.Store.Update(s.SessionID, func(value *session.Session) error {
 		if worker := findWorker(value, id); worker != nil {
 			worker.State, worker.EndedAt, worker.ExitCode = state, &now, &exitCode
+			worker.ResultRefs = append([]workingcontext.ResultRef(nil), result.Evidence...)
 			eventState := observability.StateCompleted
 			if state == session.StateFailed {
 				eventState = observability.StateFailed
@@ -397,9 +471,46 @@ func (s *Server) finish(id string, state session.State, exitCode int, text strin
 		delete(s.results, s.order[0])
 		s.order = s.order[1:]
 	}
-	s.results[id] = workerResult{Text: text, State: string(state), ExitCode: exitCode}
+	s.results[id] = workerResult{Result: result, State: string(state), ExitCode: exitCode}
 	s.order = append(s.order, id)
 	s.mu.Unlock()
+}
+
+func (s *Server) projectWorkerResult(taskID, workerID string, state session.State, raw workers.Result, runErr error, budget int) workingcontext.WorkerResult {
+	status := workingcontext.ResultCompleted
+	if state == session.StateFailed {
+		status = workingcontext.ResultFailed
+	}
+	if errors.Is(runErr, context.Canceled) {
+		status = workingcontext.ResultCancelled
+	}
+	projector := workingcontext.Projector{Store: s.WorkingContext, Observe: func(event observability.Event) {
+		_, _ = s.Store.Update(s.SessionID, func(current *session.Session) error { return session.AppendObservation(current, event) })
+	}}
+	return projector.Project(context.Background(), workingcontext.ProjectionInput{Owner: workingcontext.Ownership{SessionID: s.SessionID, TaskID: taskID, WorkerID: workerID}, Raw: raw.Evidence(), MediaType: "application/vnd.ivoai.worker-evidence", Status: status, ExitCode: raw.ExitCode, Failure: runErr, ContextBudget: budget, Truncated: raw.Truncated})
+}
+
+func artifactIDArgument(request *mcp.CallToolRequest) (string, error) {
+	var args struct {
+		ArtifactID string `json:"artifact_id"`
+	}
+	if strictArguments(request, &args) != nil || len(args.ArtifactID) != 41 || !strings.HasPrefix(args.ArtifactID, "artifact_") {
+		return "", errors.New("valid artifact_id is required")
+	}
+	return args.ArtifactID, nil
+}
+
+func (s *Server) observeArtifactAccess(id string, ranged bool, size int64, accessErr error) {
+	operation, state, reason := observability.OperationArtifactStoreRead, observability.StateCompleted, observability.ReasonArtifactRecovered
+	if ranged {
+		operation = observability.OperationArtifactStoreRangeRead
+	}
+	if accessErr != nil {
+		operation, state, reason = observability.OperationArtifactStoreDenied, observability.StateDenied, observability.ReasonAccessDenied
+	}
+	_, _ = s.Store.Update(s.SessionID, func(current *session.Session) error {
+		return session.AppendObservation(current, observability.Event{Category: observability.CategoryWorkingContext, Operation: operation, State: state, Component: core.ComponentWorkingContext, ArtifactID: id, ArtifactBytes: size, RoutingReason: reason})
+	})
 }
 
 func findWorker(value *session.Session, id string) *session.Worker {

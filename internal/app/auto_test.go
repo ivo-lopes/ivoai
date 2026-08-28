@@ -14,6 +14,7 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/config"
 	"github.com/ivo-lopes/ivoai/internal/quota"
 	"github.com/ivo-lopes/ivoai/internal/session"
+	"github.com/ivo-lopes/ivoai/internal/workingcontext"
 )
 
 type probeFunc func(context.Context) (quota.ProviderQuota, error)
@@ -25,6 +26,21 @@ func available(provider quota.Provider) quota.ProviderQuota {
 	return quota.ProviderQuota{Provider: provider, Authenticated: true, Eligible: true, Source: "fixture", ObservedAt: now, Windows: []quota.Window{
 		quota.FromUsed(quota.KindWeekly, 20, nil, "fixture", now),
 	}}
+}
+
+func TestFailoverHandoffContainsOnlyWorkingContextReferences(t *testing.T) {
+	now := time.Now().UTC()
+	value := session.Session{Workers: []session.Worker{{
+		ID: "worker_0123456789abcdef0123456789abcdef", TaskID: "review",
+		ResultRefs: []workingcontext.ResultRef{{
+			Role:     workingcontext.EvidencePrimary,
+			Artifact: workingcontext.ArtifactRef{ID: "artifact_0123456789abcdef0123456789abcdef", Kind: workingcontext.ArtifactWorkerOutput, Size: 123, SHA256: strings.Repeat("a", 64), MediaType: "text/plain", CreatedAt: now, ExpiresAt: now.Add(time.Hour), Owner: workingcontext.Ownership{SessionID: "sess_0123456789abcdef0123456789abcdef"}, Sensitivity: workingcontext.SensitivityInternal, Complete: true},
+		}},
+	}}}
+	result := workingContextHandoff(value)
+	if !strings.Contains(result, "artifact_0123456789abcdef0123456789abcdef") || strings.Contains(result, "raw worker body") {
+		t.Fatalf("handoff=%q", result)
+	}
 }
 
 func exhausted(provider quota.Provider) quota.ProviderQuota {

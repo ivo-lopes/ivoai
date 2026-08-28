@@ -89,8 +89,19 @@ func TestProjectorProviderNeutralSmallAndMalformedOutputs(t *testing.T) {
 func TestProjectorStoreFailureIsExplicitAndNeverFallsBackToRaw(t *testing.T) {
 	raw := "Authorization: Bearer must-not-enter-summary\n" + strings.Repeat("x", 1<<20)
 	result := (Projector{}).Project(context.Background(), ProjectionInput{Owner: testOwner("1", ""), Raw: []byte(raw), Status: ResultCompleted})
-	if !result.Degraded || !result.Truncated || len(result.Evidence) != 0 || strings.Contains(result.Summary, "must-not-enter") || strings.Contains(result.Summary, strings.Repeat("x", 100)) {
+	if result.Status != ResultDegraded || !result.Degraded || !result.Truncated || len(result.Evidence) != 0 || strings.Contains(result.Summary, "must-not-enter") || strings.Contains(result.Summary, strings.Repeat("x", 100)) {
 		t.Fatalf("unsafe degradation: %+v", result)
+	}
+}
+
+func TestProjectorMarksPartialEvidenceAsTruncated(t *testing.T) {
+	store, err := NewLocalStore(filepath.Join(t.TempDir(), "working-context"), LocalOptions{ID: sequentialIDs()})
+	if err != nil {
+		t.Fatal(err)
+	}
+	result := (Projector{Store: store}).Project(context.Background(), ProjectionInput{Owner: testOwner("1", ""), Raw: []byte("captured prefix"), Status: ResultFailed, Truncated: true})
+	if len(result.Evidence) != 1 || !result.Truncated || result.Evidence[0].Artifact.Complete || !result.Evidence[0].Artifact.Truncated {
+		t.Fatalf("partial evidence state=%+v", result)
 	}
 }
 

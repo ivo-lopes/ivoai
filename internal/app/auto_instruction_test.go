@@ -7,7 +7,7 @@ import (
 
 func TestAutomaticInstructionsEnforceFirstTurnSchedulerProtocol(t *testing.T) {
 	value := automaticInstructions(true)
-	for _, required := range []string{"exactly one bounded relevant lookup in ivoai-memory", "exactly one bounded relevant lookup in ivoai-context", "orchestration_bootstrap", "orchestration_capabilities", "orchestration_plan", "orchestration_spawn_batch", "orchestration_wait", "lowest sufficient capability", "only authoritative writer", "provider_execution=false"} {
+	for _, required := range []string{"exactly one bounded relevant lookup in ivoai-memory", "exactly one bounded relevant lookup in ivoai-context", "orchestration_bootstrap", "orchestration_capabilities", "orchestration_plan", "orchestration_spawn_batch", "orchestration_wait", "lowest sufficient capability", "only authoritative writer", "provider_execution=false", "ArtifactStore", "orchestration_artifact_read", "StateDelta is advisory", "Raw output must never be copied automatically"} {
 		if !strings.Contains(value, required) {
 			t.Fatalf("automatic instructions missing %q", required)
 		}

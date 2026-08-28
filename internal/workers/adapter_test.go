@@ -1,6 +1,7 @@
 package workers
 
 import (
+	"bytes"
 	"context"
 	"os"
 	"path/filepath"
@@ -11,6 +12,19 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/platform"
 	"github.com/ivo-lopes/ivoai/internal/session"
 )
+
+func TestResultEvidencePreservesProviderStreamsDeterministically(t *testing.T) {
+	result := Result{Text: "result\x00bytes", Stdout: "stdout\n", Stderr: "stderr\xff", ExitCode: 7}
+	first, second := result.Evidence(), result.Evidence()
+	if !bytes.Equal(first, second) {
+		t.Fatal("worker evidence envelope is not deterministic")
+	}
+	for _, expected := range [][]byte{[]byte("result\x00bytes"), []byte("stdout\n"), []byte("stderr\xff"), []byte("exit-code:7"), []byte("truncated:false")} {
+		if !bytes.Contains(first, expected) {
+			t.Fatalf("evidence is missing %q", expected)
+		}
+	}
+}
 
 func TestCodexAdapterUsesOfficialExecAndDoesNotExposeProviderKeys(t *testing.T) {
 	root := t.TempDir()

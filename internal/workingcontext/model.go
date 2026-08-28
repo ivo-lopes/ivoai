@@ -91,7 +91,7 @@ func (r ArtifactRef) Validate() error {
 	if !validKind(r.Kind) || r.Size < 0 || r.MediaType == "" || len(r.MediaType) > 128 || strings.ContainsAny(r.MediaType, "\x00\r\n\x1b") {
 		return errors.New("artifact reference metadata is invalid")
 	}
-	if r.CreatedAt.IsZero() || !r.ExpiresAt.After(r.CreatedAt) || !r.Sensitivity.Persistable() || (r.Complete && r.Truncated) {
+	if r.CreatedAt.IsZero() || !r.ExpiresAt.After(r.CreatedAt) || !r.Sensitivity.Persistable() || r.Complete == r.Truncated {
 		return errors.New("artifact reference lifecycle is invalid")
 	}
 	return r.Owner.Validate()

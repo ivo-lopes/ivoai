@@ -26,8 +26,9 @@ import (
 )
 
 const (
-	MaxTaskBytes   = 32 << 10
-	MaxResultBytes = 1 << 20
+	MaxTaskBytes      = 32 << 10
+	MaxResultBytes    = 1 << 20
+	MaxRawResultBytes = 15 << 20
 )
 
 var providerEnvironment = map[string]struct{}{
@@ -61,9 +62,12 @@ type Observation struct {
 
 type Result struct {
 	Text         string
+	Stdout       string
+	Stderr       string
 	ExitCode     int
 	Model        session.ModelInfo
 	HeadroomUsed bool
+	Truncated    bool
 }
 
 type Adapter struct {
@@ -155,7 +159,7 @@ func (a Adapter) Run(ctx context.Context, request Request, observe func(Observat
 		return result, startErr
 	}
 	if request.Executor == "codex" {
-		body, readErr := readBounded(resultFile, resultBudget(request.ResultBudget))
+		body, readErr := readBounded(resultFile, MaxRawResultBytes)
 		if readErr != nil {
 			return result, fmt.Errorf("read Codex worker result: %w", readErr)
 		}
@@ -163,8 +167,22 @@ func (a Adapter) Run(ctx context.Context, request Request, observe func(Observat
 	} else {
 		result.Text = claudeResult(result.Text)
 	}
+	if result.evidenceSize() > MaxRawResultBytes {
+		return result, errors.New("worker evidence exceeded the 15 MiB aggregate raw evidence limit")
+	}
 	result.Model = session.ResolveModel("", request.Model, request.Executor, "")
 	return result, nil
+}
+
+// Evidence preserves the exact result/stdout/stderr byte sequences in a
+// deterministic private artifact. It is never suitable for automatic prompt
+// interpolation.
+func (r Result) Evidence() []byte {
+	return []byte(fmt.Sprintf("IVOAI-WORKER-EVIDENCE-V1\nresult-bytes:%d\nstdout-bytes:%d\nstderr-bytes:%d\nexit-code:%d\ntruncated:%t\n\n%s%s%s", len(r.Text), len(r.Stdout), len(r.Stderr), r.ExitCode, r.Truncated, r.Text, r.Stdout, r.Stderr))
+}
+
+func (r Result) evidenceSize() int {
+	return len(r.Text) + len(r.Stdout) + len(r.Stderr)
 }
 
 var readOnlyKnowledgeTools = map[string][]string{
@@ -355,8 +373,8 @@ func run(ctx context.Context, command string, args []string, request Request, di
 	cmd.Env = workerEnvironment(direct, request.Executor)
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 	var stdout, stderr limitedBuffer
-	stdout.limit = request.ResultBudget
-	stderr.limit = 64 << 10
+	stdout.limit = MaxRawResultBytes
+	stderr.limit = MaxRawResultBytes
 	cmd.Stdout, cmd.Stderr = &stdout, &stderr
 	if err := cmd.Start(); err != nil {
 		return Result{}, fmt.Errorf("start worker: %w", err)
@@ -381,9 +399,13 @@ func run(ctx context.Context, command string, args []string, request Request, di
 			err = ctx.Err()
 		}
 	}
-	result := Result{Text: stdout.String(), HeadroomUsed: headroomUsed}
+	result := Result{Text: stdout.String(), Stdout: stdout.String(), Stderr: stderr.String(), HeadroomUsed: headroomUsed}
 	if stdout.overflow || stderr.overflow {
-		return result, errors.New("worker output exceeded the 1 MiB safety limit")
+		result.Truncated = true
+		return result, errors.New("worker output exceeded the 15 MiB raw evidence limit")
+	}
+	if len(result.Stdout)+len(result.Stderr) > MaxRawResultBytes {
+		return result, errors.New("worker output exceeded the 15 MiB aggregate raw evidence limit")
 	}
 	if err == nil {
 		return result, nil
@@ -421,13 +443,15 @@ func readBounded(path string, limit int) (string, error) {
 		return "", err
 	}
 	defer file.Close()
-	limit = resultBudget(limit)
+	if limit < 1 || limit > MaxRawResultBytes {
+		limit = MaxRawResultBytes
+	}
 	body, err := io.ReadAll(io.LimitReader(file, int64(limit+1)))
 	if err != nil {
 		return "", err
 	}
 	if len(body) > limit {
-		return "", errors.New("worker result exceeded the 1 MiB safety limit")
+		return "", errors.New("worker result exceeded the 15 MiB raw evidence limit")
 	}
 	return string(body), nil
 }

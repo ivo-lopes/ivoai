@@ -17,6 +17,7 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/routing"
 	"github.com/ivo-lopes/ivoai/internal/session"
 	"github.com/ivo-lopes/ivoai/internal/workers"
+	"github.com/ivo-lopes/ivoai/internal/workingcontext"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
@@ -384,7 +385,7 @@ func (s *Server) executeTask(planID, taskID, workerID string) {
 
 	taskLifecycle, err := s.Control.RegisterLifecycle(workerCtx, "worker", workerID)
 	if err != nil {
-		s.completeTask(planID, taskID, workerID, session.StateFailed, 1, "", false, err)
+		s.completeTask(planID, taskID, workerID, session.StateFailed, 1, workers.Result{}, false, err)
 		return
 	}
 	_, _ = s.Store.Update(s.SessionID, func(current *session.Session) error {
@@ -423,11 +424,12 @@ func (s *Server) executeTask(planID, taskID, workerID string) {
 			exitCode = 1
 		}
 	}
-	s.completeTask(planID, taskID, workerID, state, exitCode, result.Text, result.HeadroomUsed, runErr)
+	s.completeTask(planID, taskID, workerID, state, exitCode, result, result.HeadroomUsed, runErr)
 }
 
-func (s *Server) completeTask(planID, taskID, workerID string, state session.State, exitCode int, text string, headroom bool, runErr error) {
-	s.finish(workerID, state, exitCode, text)
+func (s *Server) completeTask(planID, taskID, workerID string, state session.State, exitCode int, raw workers.Result, headroom bool, runErr error) {
+	projected := s.projectWorkerResult(taskID, workerID, state, raw, runErr, workingcontext.ContextBudgetForTier(string(rawTier(s, planID, taskID))))
+	s.finish(workerID, state, exitCode, projected)
 	s.mu.Lock()
 	delete(s.cancels, workerID)
 	if plan := s.plans[planID]; plan != nil {
@@ -437,7 +439,7 @@ func (s *Server) completeTask(planID, taskID, workerID string, state session.Sta
 			if !task.StartedAt.IsZero() {
 				task.Task.DurationMilliseconds = time.Since(task.StartedAt).Milliseconds()
 			}
-			task.Result = workerResult{Text: text, State: string(state), ExitCode: exitCode}
+			task.Result = workerResult{Result: projected, State: string(state), ExitCode: exitCode}
 			if runErr != nil {
 				task.Task.EscalationReason = boundedDiagnostic(runErr.Error())
 			}
@@ -455,6 +457,15 @@ func (s *Server) completeTask(planID, taskID, workerID string, state session.Sta
 	}
 	s.signalLocked()
 	s.mu.Unlock()
+}
+
+func rawTier(s *Server, planID, taskID string) routing.Tier {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if plan := s.plans[planID]; plan != nil && plan.Tasks[taskID] != nil {
+		return plan.Tasks[taskID].Task.Tier
+	}
+	return routing.TierBalanced
 }
 
 func boundedDiagnostic(value string) string {

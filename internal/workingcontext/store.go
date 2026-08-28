@@ -12,6 +12,7 @@ type PutRequest struct {
 	Owner       Ownership
 	Sensitivity Sensitivity
 	TTL         time.Duration
+	Truncated   bool
 }
 
 type ArtifactWriter interface {

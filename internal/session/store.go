@@ -16,6 +16,7 @@ import (
 
 	"github.com/ivo-lopes/ivoai/internal/platform"
 	"github.com/ivo-lopes/ivoai/internal/quota"
+	"github.com/ivo-lopes/ivoai/internal/workingcontext"
 	"golang.org/x/sys/unix"
 )
 
@@ -359,6 +360,14 @@ func validate(value Session) error {
 		}
 		if worker.RufloTaskID != "" && !safeText(worker.RufloTaskID, 128) {
 			return errors.New("invalid worker Ruflo lifecycle metadata")
+		}
+		if len(worker.ResultRefs) > workingcontext.MaxResultRefs {
+			return errors.New("too many worker result references")
+		}
+		for _, ref := range worker.ResultRefs {
+			if err := ref.Validate(); err != nil || ref.Artifact.Owner.SessionID != value.SessionID || ref.Artifact.Owner.WorkerID != worker.ID || ref.Artifact.Owner.TaskID != worker.TaskID {
+				return errors.New("invalid worker result reference ownership")
+			}
 		}
 		if _, duplicate := workerIDs[worker.ID]; duplicate {
 			return errors.New("duplicate worker ID")

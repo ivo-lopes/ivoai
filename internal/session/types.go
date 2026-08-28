@@ -6,6 +6,7 @@ import (
 
 	"github.com/ivo-lopes/ivoai/internal/observability"
 	"github.com/ivo-lopes/ivoai/internal/quota"
+	"github.com/ivo-lopes/ivoai/internal/workingcontext"
 )
 
 type Mode string
@@ -84,25 +85,26 @@ type ModelInfo struct {
 }
 
 type Worker struct {
-	ID                string     `json:"id"`
-	Role              string     `json:"role"`
-	Executor          string     `json:"executor"`
-	Model             ModelInfo  `json:"model"`
-	PID               int        `json:"pid,omitempty"`
-	ProcessStart      string     `json:"process_start,omitempty"`
-	State             State      `json:"state"`
-	StartedAt         time.Time  `json:"started_at"`
-	EndedAt           *time.Time `json:"ended_at,omitempty"`
-	ExitCode          *int       `json:"exit_code,omitempty"`
-	RufloTaskID       string     `json:"ruflo_task_id,omitempty"`
-	HeadroomUsed      bool       `json:"headroom_used"`
-	RequestedExecutor string     `json:"requested_executor,omitempty"`
-	FallbackReason    string     `json:"fallback_reason,omitempty"`
-	TaskID            string     `json:"task_id,omitempty"`
-	Tier              string     `json:"tier,omitempty"`
-	CapabilityScore   int        `json:"capability_score,omitempty"`
-	Effort            string     `json:"effort,omitempty"`
-	EffortSource      string     `json:"effort_source,omitempty"`
+	ID                string                     `json:"id"`
+	Role              string                     `json:"role"`
+	Executor          string                     `json:"executor"`
+	Model             ModelInfo                  `json:"model"`
+	PID               int                        `json:"pid,omitempty"`
+	ProcessStart      string                     `json:"process_start,omitempty"`
+	State             State                      `json:"state"`
+	StartedAt         time.Time                  `json:"started_at"`
+	EndedAt           *time.Time                 `json:"ended_at,omitempty"`
+	ExitCode          *int                       `json:"exit_code,omitempty"`
+	RufloTaskID       string                     `json:"ruflo_task_id,omitempty"`
+	HeadroomUsed      bool                       `json:"headroom_used"`
+	RequestedExecutor string                     `json:"requested_executor,omitempty"`
+	FallbackReason    string                     `json:"fallback_reason,omitempty"`
+	TaskID            string                     `json:"task_id,omitempty"`
+	Tier              string                     `json:"tier,omitempty"`
+	CapabilityScore   int                        `json:"capability_score,omitempty"`
+	Effort            string                     `json:"effort,omitempty"`
+	EffortSource      string                     `json:"effort_source,omitempty"`
+	ResultRefs        []workingcontext.ResultRef `json:"result_refs,omitempty"`
 }
 
 type Session struct {
