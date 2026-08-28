@@ -41,6 +41,17 @@ completo fica recuperável pela referência. Conteúdo `secret`, `credential` ou
 `raw_auth` não é aceito no store comum. `internal` e `restricted` são privados e nunca
 entram em observabilidade como body.
 
+Cada projeção recebe uma classe provider-neutral: `compressible`,
+`exact_required`, `bypass` ou `unsupported`. A classificação é determinística e
+fail-safe. Respostas de Memory/Context, metadata do Skill Registry, evidência de
+segurança, erros, stack traces, falhas de testes/build e payloads que influenciam
+policy ou autoridade são `exact_required`; tipos desconhecidos também preferem
+fidelidade. Falha ou cancelamento sempre sobrepõe uma sugestão compressible.
+
+Um `association_id` bounded opcional liga ResultRef à chamada/resultado que
+originou a evidência. Chamadas distintas preservam refs distintas e nunca são
+mescladas implicitamente.
+
 ## ArtifactStore local
 
 O store reside em `$XDG_CACHE_HOME/ivoai/working-context` (ou o cache XDG equivalente).
@@ -71,8 +82,8 @@ Se o store estiver indisponível, o IVOAI retorna WorkingContext `degraded` e n�
 output bruto como fallback para o prompt. Isso pode perder a evidência exata daquela
 execução, mas nunca provoca uma injeção silenciosa e ilimitada.
 
-WorkingContext não implementa compressão semântica nem scheduling. Um futuro
-CompressionProvider poderá projetar summaries sem alterar ArtifactRef/WorkerResult;
-um futuro orquestrador poderá consumir os mesmos contratos sem mudar a autoridade do
-primary. Caveman, OpenCode, OpenViking e NativeOrchestrator não são implementados por
-esta camada.
+WorkingContext não implementa scheduling nem substitui a evidência por compressão.
+Um CompressionProvider pode projetar representações menores somente depois do
+ArtifactStore e sem alterar ResultRef/WorkerResult como fonte da evidência exata.
+Um futuro orquestrador pode consumir os mesmos contratos sem mudar a autoridade do
+primary.

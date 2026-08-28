@@ -6,13 +6,15 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/ivo-lopes/ivoai/internal/core"
 )
 
 func TestContractsAreProviderNeutralBoundedAndOpaque(t *testing.T) {
 	now := time.Now().UTC()
 	owner := Ownership{SessionID: "sess_0123456789abcdef0123456789abcdef", TaskID: "review", WorkerID: "worker_0123456789abcdef0123456789abcdef"}
 	ref := ArtifactRef{ID: "artifact_0123456789abcdef0123456789abcdef", Kind: ArtifactWorkerOutput, Size: 7, SHA256: strings.Repeat("a", 64), MediaType: "text/plain; charset=utf-8", CreatedAt: now, ExpiresAt: now.Add(time.Hour), Owner: owner, Sensitivity: SensitivityInternal, Complete: true}
-	result := WorkerResult{Status: ResultCompleted, Summary: "bounded", Evidence: []ResultRef{{Artifact: ref, Role: EvidencePrimary}}, StateDelta: StateDelta{Proposed: []ProposedChange{{Kind: ChangeObservation, Summary: "advisory only", Evidence: []ResultRef{{Artifact: ref, Role: EvidenceFinding}}}}}}
+	result := WorkerResult{Status: ResultCompleted, PayloadType: "worker_output", Fidelity: core.CompressionCompressible, Summary: "bounded", Evidence: []ResultRef{{Artifact: ref, Role: EvidencePrimary}}, StateDelta: StateDelta{Proposed: []ProposedChange{{Kind: ChangeObservation, Summary: "advisory only", Evidence: []ResultRef{{Artifact: ref, Role: EvidenceFinding}}}}}}
 	if err := result.Validate(); err != nil {
 		t.Fatal(err)
 	}

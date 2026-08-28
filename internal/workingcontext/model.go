@@ -8,6 +8,8 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/ivo-lopes/ivoai/internal/core"
 )
 
 const (
@@ -106,13 +108,17 @@ const (
 )
 
 type ResultRef struct {
-	Artifact ArtifactRef  `json:"artifact"`
-	Role     EvidenceRole `json:"role"`
+	Artifact      ArtifactRef  `json:"artifact"`
+	Role          EvidenceRole `json:"role"`
+	AssociationID string       `json:"association_id,omitempty"`
 }
 
 func (r ResultRef) Validate() error {
 	if r.Role != EvidencePrimary && r.Role != EvidenceFinding && r.Role != EvidenceFailure {
 		return errors.New("result reference role is invalid")
+	}
+	if r.AssociationID != "" && !labelPattern.MatchString(r.AssociationID) {
+		return errors.New("result reference association is invalid")
 	}
 	return r.Artifact.Validate()
 }
@@ -207,18 +213,20 @@ func (d StateDelta) Validate() error {
 }
 
 type WorkerResult struct {
-	Status          ResultStatus `json:"status"`
-	Summary         string       `json:"summary"`
-	Findings        []Finding    `json:"findings,omitempty"`
-	Evidence        []ResultRef  `json:"evidence"`
-	StateDelta      StateDelta   `json:"state_delta"`
-	ImportantErrors []string     `json:"important_errors,omitempty"`
-	Degraded        bool         `json:"degraded,omitempty"`
-	Truncated       bool         `json:"truncated,omitempty"`
+	Status          ResultStatus             `json:"status"`
+	PayloadType     string                   `json:"payload_type,omitempty"`
+	Fidelity        core.CompressionFidelity `json:"fidelity"`
+	Summary         string                   `json:"summary"`
+	Findings        []Finding                `json:"findings,omitempty"`
+	Evidence        []ResultRef              `json:"evidence"`
+	StateDelta      StateDelta               `json:"state_delta"`
+	ImportantErrors []string                 `json:"important_errors,omitempty"`
+	Degraded        bool                     `json:"degraded,omitempty"`
+	Truncated       bool                     `json:"truncated,omitempty"`
 }
 
 func (r WorkerResult) Validate() error {
-	if !validResultStatus(r.Status) || len(r.Summary) > MaxSummaryBytes || strings.ContainsRune(r.Summary, '\x00') || len(r.Findings) > MaxFindings || len(r.Evidence) > MaxResultRefs || len(r.ImportantErrors) > MaxImportantErrors {
+	if !validResultStatus(r.Status) || !validFidelity(r.Fidelity) || len(r.PayloadType) > 64 || strings.ContainsAny(r.PayloadType, "\x00\r\n\x1b") || len(r.Summary) > MaxSummaryBytes || strings.ContainsRune(r.Summary, '\x00') || len(r.Findings) > MaxFindings || len(r.Evidence) > MaxResultRefs || len(r.ImportantErrors) > MaxImportantErrors {
 		return errors.New("worker result is invalid or exceeds its bound")
 	}
 	for _, finding := range r.Findings {
@@ -240,6 +248,10 @@ func (r WorkerResult) Validate() error {
 		}
 	}
 	return nil
+}
+
+func validFidelity(value core.CompressionFidelity) bool {
+	return value == core.CompressionCompressible || value == core.CompressionExactRequired || value == core.CompressionBypass || value == core.CompressionUnsupported
 }
 
 func validKind(value ArtifactKind) bool {

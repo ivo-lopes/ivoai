@@ -10,8 +10,46 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ivo-lopes/ivoai/internal/core"
 	"github.com/ivo-lopes/ivoai/internal/observability"
 )
+
+func TestProjectorEnforcesExactFidelityAndAssociation(t *testing.T) {
+	store, err := NewLocalStore(filepath.Join(t.TempDir(), "working-context"), LocalOptions{ID: sequentialIDs()})
+	if err != nil {
+		t.Fatal(err)
+	}
+	owner := testOwner("1", "")
+	raw := []byte("authoritative memory response must remain byte exact")
+	result := (Projector{Store: store}).Project(context.Background(), ProjectionInput{Owner: owner, Raw: raw, Status: ResultCompleted, PayloadType: "memory_response", AssociationID: "tool_call_1"})
+	if result.Fidelity != core.CompressionExactRequired || result.PayloadType != "memory_response" || len(result.Evidence) != 1 || result.Evidence[0].AssociationID != "tool_call_1" {
+		t.Fatalf("unexpected exact result: %+v", result)
+	}
+	reader, _, err := store.Read(context.Background(), owner, result.Evidence[0].Artifact.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := io.ReadAll(reader)
+	reader.Close()
+	if err != nil || !bytes.Equal(got, raw) {
+		t.Fatalf("exact recovery=%q err=%v", got, err)
+	}
+	other := (Projector{Store: store}).Project(context.Background(), ProjectionInput{Owner: owner, Raw: []byte("second"), Status: ResultCompleted, PayloadType: "context_response", AssociationID: "tool_call_2"})
+	if other.Evidence[0].Artifact.ID == result.Evidence[0].Artifact.ID || other.Evidence[0].AssociationID == result.Evidence[0].AssociationID {
+		t.Fatal("independent tool results lost their evidence association")
+	}
+}
+
+func TestProjectorFailureOverridesCompressibleClassification(t *testing.T) {
+	store, err := NewLocalStore(filepath.Join(t.TempDir(), "working-context"), LocalOptions{ID: sequentialIDs()})
+	if err != nil {
+		t.Fatal(err)
+	}
+	result := (Projector{Store: store}).Project(context.Background(), ProjectionInput{Owner: testOwner("1", ""), Raw: []byte("test failed"), Status: ResultFailed, PayloadType: "log", Fidelity: core.CompressionCompressible})
+	if result.Fidelity != core.CompressionExactRequired {
+		t.Fatalf("failed result fidelity=%s", result.Fidelity)
+	}
+}
 
 func TestProjectorPersistsExactEvidenceBeforeBoundedProjection(t *testing.T) {
 	store, err := NewLocalStore(filepath.Join(t.TempDir(), "working-context"), LocalOptions{ID: sequentialIDs()})

@@ -9,6 +9,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/ivo-lopes/ivoai/internal/compression"
 	"github.com/ivo-lopes/ivoai/internal/core"
 	"github.com/ivo-lopes/ivoai/internal/observability"
 	"github.com/ivo-lopes/ivoai/internal/platform"
@@ -39,6 +40,9 @@ type ProjectionInput struct {
 	ContextBudget int
 	TTL           time.Duration
 	Truncated     bool
+	Fidelity      core.CompressionFidelity
+	PayloadType   string
+	AssociationID string
 }
 
 type Projector struct {
@@ -71,8 +75,13 @@ func (p Projector) Project(ctx context.Context, input ProjectionInput) WorkerRes
 		return p.storeUnavailable(input.Owner, status, err)
 	}
 	p.emit(input.Owner, observability.OperationArtifactStoreWrite, observability.StateCompleted, observability.ReasonArtifactStored, ref, 0, 1, false)
-	resultRef := ResultRef{Artifact: ref, Role: EvidencePrimary}
-	result := WorkerResult{Status: status, Evidence: []ResultRef{resultRef}}
+	resultRef := ResultRef{Artifact: ref, Role: EvidencePrimary, AssociationID: input.AssociationID}
+	payloadType := compression.NormalizePayloadType(input.PayloadType)
+	if payloadType == "" {
+		payloadType = compression.PayloadWorkerOutput
+	}
+	fidelity := compression.Classify(compression.FidelityInput{PayloadType: payloadType, Explicit: input.Fidelity, Failed: status == ResultFailed || status == ResultCancelled})
+	result := WorkerResult{Status: status, PayloadType: string(payloadType), Fidelity: fidelity, Evidence: []ResultRef{resultRef}}
 	result.ImportantErrors = importantErrors(status, input.ExitCode, input.Failure, input.Raw)
 	result.Findings = findings(input.Raw, resultRef)
 	result.StateDelta = StateDelta{Proposed: []ProposedChange{{Kind: ChangeObservation, Target: "worker", Summary: statusSummary(status, input.ExitCode), Evidence: []ResultRef{resultRef}}}}
@@ -93,7 +102,7 @@ func (p Projector) storeUnavailable(owner Ownership, status ResultStatus, cause 
 		status = ResultDegraded
 	}
 	message := boundedLine(platform.Redact(cause.Error()), MaxImportantErrorSize)
-	result := WorkerResult{Status: status, Summary: "WorkingContext degraded: exact worker evidence could not be stored. Raw output was not injected into primary context.", ImportantErrors: []string{message}, Degraded: true, Truncated: true}
+	result := WorkerResult{Status: status, PayloadType: string(compression.PayloadWorkerOutput), Fidelity: core.CompressionExactRequired, Summary: "WorkingContext degraded: exact worker evidence could not be stored. Raw output was not injected into primary context.", ImportantErrors: []string{message}, Degraded: true, Truncated: true}
 	p.emit(owner, observability.OperationWorkingContextDegraded, observability.StateDegraded, observability.ReasonStoreUnavailable, ArtifactRef{}, 0, 0, true)
 	return result
 }
@@ -168,7 +177,7 @@ func findings(raw []byte, evidence ResultRef) []Finding {
 			category, importance = "worker_error", ImportanceModerate
 		}
 		if category != "" {
-			result = append(result, Finding{Category: category, Importance: importance, Summary: boundedLine(line, MaxFindingSummary), Evidence: []ResultRef{{Artifact: evidence.Artifact, Role: EvidenceFinding}}})
+			result = append(result, Finding{Category: category, Importance: importance, Summary: boundedLine(line, MaxFindingSummary), Evidence: []ResultRef{{Artifact: evidence.Artifact, Role: EvidenceFinding, AssociationID: evidence.AssociationID}}})
 			if len(result) == MaxFindings {
 				break
 			}
