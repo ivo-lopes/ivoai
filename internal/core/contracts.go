@@ -13,14 +13,15 @@ import (
 type ComponentID string
 
 const (
-	ComponentCodex         ComponentID = "codex"
-	ComponentClaude        ComponentID = "claude"
-	ComponentMemory        ComponentID = "memory"
-	ComponentContext       ComponentID = "context"
-	ComponentCompression   ComponentID = "compression"
-	ComponentOrchestration ComponentID = "orchestration"
-	ComponentSkills        ComponentID = "skills"
-	ComponentTools         ComponentID = "tools"
+	ComponentCodex          ComponentID = "codex"
+	ComponentClaude         ComponentID = "claude"
+	ComponentMemory         ComponentID = "memory"
+	ComponentContext        ComponentID = "context"
+	ComponentCompression    ComponentID = "compression"
+	ComponentOrchestration  ComponentID = "orchestration"
+	ComponentWorkingContext ComponentID = "working_context"
+	ComponentSkills         ComponentID = "skills"
+	ComponentTools          ComponentID = "tools"
 )
 
 type Capability string

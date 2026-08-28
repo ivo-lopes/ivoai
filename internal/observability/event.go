@@ -15,21 +15,22 @@ import (
 type Category string
 
 const (
-	CategoryExecutor      Category = "executor"
-	CategoryCapability    Category = "capability"
-	CategoryFallback      Category = "fallback"
-	CategoryMemory        Category = "memory"
-	CategoryContext       Category = "context"
-	CategoryCompression   Category = "compression"
-	CategoryOrchestration Category = "orchestration"
-	CategoryDAG           Category = "dag"
-	CategoryWorker        Category = "worker"
-	CategoryApproval      Category = "approval"
-	CategoryQuota         Category = "quota"
-	CategorySkillRegistry Category = "skill_registry"
-	CategorySkillIndex    Category = "skill_index"
-	CategorySkillPolicy   Category = "skill_policy"
-	CategorySupplyChain   Category = "supply_chain"
+	CategoryExecutor       Category = "executor"
+	CategoryCapability     Category = "capability"
+	CategoryFallback       Category = "fallback"
+	CategoryMemory         Category = "memory"
+	CategoryContext        Category = "context"
+	CategoryCompression    Category = "compression"
+	CategoryOrchestration  Category = "orchestration"
+	CategoryDAG            Category = "dag"
+	CategoryWorker         Category = "worker"
+	CategoryApproval       Category = "approval"
+	CategoryQuota          Category = "quota"
+	CategorySkillRegistry  Category = "skill_registry"
+	CategorySkillIndex     Category = "skill_index"
+	CategorySkillPolicy    Category = "skill_policy"
+	CategorySupplyChain    Category = "supply_chain"
+	CategoryWorkingContext Category = "working_context"
 )
 
 type Operation string
@@ -58,6 +59,14 @@ const (
 	OperationSupplyStage             Operation = "supply_chain.stage"
 	OperationSupplyPromote           Operation = "supply_chain.promote"
 	OperationSupplyRollback          Operation = "supply_chain.rollback"
+	OperationArtifactStoreWrite      Operation = "artifact_store.write"
+	OperationArtifactStoreRead       Operation = "artifact_store.read"
+	OperationArtifactStoreRangeRead  Operation = "artifact_store.range_read"
+	OperationArtifactStoreGC         Operation = "artifact_store.gc"
+	OperationArtifactStoreDenied     Operation = "artifact_store.denied"
+	OperationWorkerResultProjected   Operation = "worker_result.projected"
+	OperationWorkingContextBudget    Operation = "working_context.budget"
+	OperationWorkingContextDegraded  Operation = "working_context.degraded"
 )
 
 type State string
@@ -111,6 +120,13 @@ const (
 	ReasonValidationFailed       Reason = "validation_failed"
 	ReasonRollbackComplete       Reason = "rollback_complete"
 	ReasonRedacted               Reason = "redacted"
+	ReasonArtifactStored         Reason = "artifact_stored"
+	ReasonArtifactRecovered      Reason = "artifact_recovered"
+	ReasonContextBudgetApplied   Reason = "context_budget_applied"
+	ReasonStoreUnavailable       Reason = "store_unavailable"
+	ReasonAccessDenied           Reason = "access_denied"
+	ReasonArtifactExpired        Reason = "artifact_expired"
+	ReasonResultProjected        Reason = "result_projected"
 )
 
 // Event is deliberately an allowlist rather than a generic attributes map.
@@ -145,6 +161,10 @@ type Event struct {
 	TrustLevel            string           `json:"trust_level,omitempty"`
 	SubjectID             string           `json:"subject_id,omitempty"`
 	SubjectKind           string           `json:"subject_kind,omitempty"`
+	ArtifactBytes         int64            `json:"artifact_bytes,omitempty"`
+	FindingCount          int              `json:"finding_count,omitempty"`
+	ReferenceCount        int              `json:"reference_count,omitempty"`
+	Truncated             bool             `json:"truncated,omitempty"`
 }
 
 var operationCategories = map[Operation]Category{
@@ -171,6 +191,14 @@ var operationCategories = map[Operation]Category{
 	OperationSupplyStage:             CategorySupplyChain,
 	OperationSupplyPromote:           CategorySupplyChain,
 	OperationSupplyRollback:          CategorySupplyChain,
+	OperationArtifactStoreWrite:      CategoryWorkingContext,
+	OperationArtifactStoreRead:       CategoryWorkingContext,
+	OperationArtifactStoreRangeRead:  CategoryWorkingContext,
+	OperationArtifactStoreGC:         CategoryWorkingContext,
+	OperationArtifactStoreDenied:     CategoryWorkingContext,
+	OperationWorkerResultProjected:   CategoryWorkingContext,
+	OperationWorkingContextBudget:    CategoryWorkingContext,
+	OperationWorkingContextDegraded:  CategoryWorkingContext,
 }
 
 // Normalize redacts the only free-text fields and validates every persisted
@@ -209,7 +237,7 @@ func (e Event) Validate() error {
 	if !safeLabel(e.TaskID, 64) || !safeWorker(e.WorkerID) || !oneOf(e.Provider, "", "codex", "claude") || !oneOf(e.Executor, "", "codex", "claude") {
 		return errors.New("invalid observability correlation metadata")
 	}
-	if e.Component != "" && !oneOf(string(e.Component), "codex", "claude", "memory", "context", "compression", "orchestration", "skills", "tools") {
+	if e.Component != "" && !oneOf(string(e.Component), "codex", "claude", "memory", "context", "compression", "orchestration", "working_context", "skills", "tools") {
 		return errors.New("invalid observability component")
 	}
 	if e.Capability != "" && !safeLabel(string(e.Capability), 96) {
@@ -229,6 +257,9 @@ func (e Event) Validate() error {
 	}
 	if !safeCanonicalID(e.SkillID, 128) || !safeCanonicalID(e.ArtifactID, 128) || !safeCanonicalID(e.SubjectID, 128) || !oneOf(e.SubjectKind, "", "skill", "tool", "hook", "executor") || !validRevision(e.Revision) || !oneOf(e.RiskTier, "", "low", "moderate", "high", "critical") || !oneOf(e.PolicyDecision, "", "ALLOW", "DENY", "REQUIRE_APPROVAL") || !oneOf(e.SkillLifecycle, "", "staged", "active", "quarantined", "previous") || !safeCanonicalID(e.TrustLevel, 64) {
 		return errors.New("invalid skill control-plane observability metadata")
+	}
+	if e.ArtifactBytes < 0 || e.ArtifactBytes > 1<<40 || e.FindingCount < 0 || e.FindingCount > 1024 || e.ReferenceCount < 0 || e.ReferenceCount > 1024 {
+		return errors.New("invalid working-context observability metadata")
 	}
 	return nil
 }
@@ -271,7 +302,7 @@ func safeCanonicalID(value string, limit int) bool {
 
 func validReason(value Reason) bool {
 	switch value {
-	case "", ReasonDirect, ReasonPrimaryAvailable, ReasonCapabilityMatch, ReasonQuotaAvailable, ReasonQuotaExhausted, ReasonQuotaStale, ReasonTelemetryNotExposed, ReasonProbeFailed, ReasonAuthTransition, ReasonAlternateSelected, ReasonProviderUnavailable, ReasonProviderQuotaExhausted, ReasonModelQuotaExhausted, ReasonHeadroomEnabled, ReasonHeadroomBypassed, ReasonKnowledgeReady, ReasonKnowledgeDegraded, ReasonPolicyAllowed, ReasonPolicyDenied, ReasonApprovalRequired, ReasonInvalidMetadata, ReasonUnresolvedConflict, ReasonIntegrityVerified, ReasonIntegrityMismatch, ReasonImmutableRevision, ReasonValidationFailed, ReasonRollbackComplete, ReasonRedacted:
+	case "", ReasonDirect, ReasonPrimaryAvailable, ReasonCapabilityMatch, ReasonQuotaAvailable, ReasonQuotaExhausted, ReasonQuotaStale, ReasonTelemetryNotExposed, ReasonProbeFailed, ReasonAuthTransition, ReasonAlternateSelected, ReasonProviderUnavailable, ReasonProviderQuotaExhausted, ReasonModelQuotaExhausted, ReasonHeadroomEnabled, ReasonHeadroomBypassed, ReasonKnowledgeReady, ReasonKnowledgeDegraded, ReasonPolicyAllowed, ReasonPolicyDenied, ReasonApprovalRequired, ReasonInvalidMetadata, ReasonUnresolvedConflict, ReasonIntegrityVerified, ReasonIntegrityMismatch, ReasonImmutableRevision, ReasonValidationFailed, ReasonRollbackComplete, ReasonRedacted, ReasonArtifactStored, ReasonArtifactRecovered, ReasonContextBudgetApplied, ReasonStoreUnavailable, ReasonAccessDenied, ReasonArtifactExpired, ReasonResultProjected:
 		return true
 	default:
 		return false
