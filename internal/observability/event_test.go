@@ -79,4 +79,32 @@ func TestEventPreservesBoundedCorrelationAndComponentRoutingReason(t *testing.T)
 	}
 }
 
+func TestCompressionTelemetryIsBoundedMetadataOnly(t *testing.T) {
+	event, err := Normalize(Event{Category: CategoryCompression, Operation: OperationCompressionResult, State: StateCompleted, Provider: "caveman", Executor: "codex", Component: "compression", PayloadType: "json", FidelityClass: "compressible", BytesBefore: 4096, BytesAfter: 1024, TokensEstimatedBefore: 1000, TokensEstimatedAfter: 250, TokenBasis: "inferred", CompressionRatio: .25, RecoveryCount: 1, CompressionResult: "applied", RoutingReason: ReasonCompressionApplied, DurationMilliseconds: 12})
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, err := json.Marshal(event)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, forbidden := range []string{"prompt", "authorization", "cookie", "api_key", "environment", "raw_output", "diff_content"} {
+		if strings.Contains(strings.ToLower(string(body)), forbidden) {
+			t.Fatalf("compression telemetry leaked %q: %s", forbidden, body)
+		}
+	}
+	if !strings.Contains(string(body), `"token_basis":"inferred"`) {
+		t.Fatalf("estimated basis missing: %s", body)
+	}
+	for name, invalid := range map[string]Event{
+		"payload": {Category: CategoryCompression, Operation: OperationCompressionResult, State: StateCompleted, PayloadType: "../../secret"},
+		"basis":   {Category: CategoryCompression, Operation: OperationCompressionResult, State: StateCompleted, TokenBasis: "provider_reported"},
+		"ratio":   {Category: CategoryCompression, Operation: OperationCompressionResult, State: StateCompleted, CompressionRatio: 1.1},
+	} {
+		if _, err := Normalize(invalid); err == nil {
+			t.Fatalf("invalid %s telemetry accepted", name)
+		}
+	}
+}
+
 func floatp(value float64) *float64 { return &value }

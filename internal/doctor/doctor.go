@@ -113,29 +113,30 @@ type SkillControlPlane struct {
 	StagingRootHealth string `json:"staging_root_health"`
 }
 type Report struct {
-	Overall           string               `json:"overall"`
-	OS                string               `json:"os"`
-	Architecture      string               `json:"architecture"`
-	Version           string               `json:"ivoai_version"`
-	TestMode          bool                 `json:"test_mode"`
-	ConfigPath        string               `json:"config_path"`
-	StatePath         string               `json:"state_path"`
-	SecretPath        string               `json:"secret_path"`
-	SecretPermissions string               `json:"secret_permissions"`
-	Codex             Auth                 `json:"codex"`
-	CodexCodeModeHost Component            `json:"codex_code_mode_host"`
-	Claude            Auth                 `json:"claude"`
-	OpenCode          ManagedComponent     `json:"opencode"`
-	Headroom          headroom.Status      `json:"headroom"`
-	Caveman           ManagedComponent     `json:"caveman"`
-	Memory            Component            `json:"ai_memory"`
-	Ruflo             orchestration.Status `json:"ruflo"`
-	Server            Server               `json:"server"`
-	Orchestration     Orchestration        `json:"orchestration"`
-	Automatic         Automatic            `json:"automatic_orchestration"`
-	ComponentMatrix   core.Matrix          `json:"component_matrix"`
-	SkillControlPlane SkillControlPlane    `json:"skill_control_plane"`
-	Issues            []string             `json:"issues"`
+	Overall             string               `json:"overall"`
+	OS                  string               `json:"os"`
+	Architecture        string               `json:"architecture"`
+	Version             string               `json:"ivoai_version"`
+	TestMode            bool                 `json:"test_mode"`
+	ConfigPath          string               `json:"config_path"`
+	StatePath           string               `json:"state_path"`
+	SecretPath          string               `json:"secret_path"`
+	SecretPermissions   string               `json:"secret_permissions"`
+	Codex               Auth                 `json:"codex"`
+	CodexCodeModeHost   Component            `json:"codex_code_mode_host"`
+	Claude              Auth                 `json:"claude"`
+	OpenCode            ManagedComponent     `json:"opencode"`
+	Headroom            headroom.Status      `json:"headroom"`
+	Caveman             ManagedComponent     `json:"caveman"`
+	CompressionProvider string               `json:"compression_provider"`
+	Memory              Component            `json:"ai_memory"`
+	Ruflo               orchestration.Status `json:"ruflo"`
+	Server              Server               `json:"server"`
+	Orchestration       Orchestration        `json:"orchestration"`
+	Automatic           Automatic            `json:"automatic_orchestration"`
+	ComponentMatrix     core.Matrix          `json:"component_matrix"`
+	SkillControlPlane   SkillControlPlane    `json:"skill_control_plane"`
+	Issues              []string             `json:"issues"`
 }
 type Doctor struct {
 	Store        *config.Store
@@ -148,7 +149,7 @@ type Doctor struct {
 func (d Doctor) Run(ctx context.Context) Report {
 	cfg, cfgErr := d.Store.Load()
 	state, stateErr := d.Store.LoadState()
-	r := Report{Overall: "READY", OS: runtime.GOOS, Architecture: runtime.GOARCH, Version: d.Version, TestMode: os.Getenv("IVOAI_TEST_MODE") == "1", ConfigPath: d.Store.Paths.Config, StatePath: d.Store.Paths.State, SecretPath: d.Store.Paths.Secrets}
+	r := Report{Overall: "READY", OS: runtime.GOOS, Architecture: runtime.GOARCH, Version: d.Version, TestMode: os.Getenv("IVOAI_TEST_MODE") == "1", ConfigPath: d.Store.Paths.Config, StatePath: d.Store.Paths.State, SecretPath: d.Store.Paths.Secrets, CompressionProvider: cfg.Compression.Provider}
 	if cfgErr != nil {
 		r.Issues = append(r.Issues, cfgErr.Error())
 	}
@@ -380,7 +381,7 @@ func componentMatrix(cfg config.Config, state config.State, report Report) core.
 	})
 	cavemanAvailable := report.Caveman.Installed && report.Caveman.Healthy
 	values = append(values, core.ComponentStatus{
-		ID: core.ComponentCompression, Implementation: "caveman", Active: false,
+		ID: core.ComponentCompression, Implementation: "caveman", Active: cfg.Compression.Provider == "caveman",
 		Installed: report.Caveman.Installed, Managed: state.Components["caveman"].Managed, Available: cavemanAvailable,
 		Health: health(cavemanAvailable), Lifecycle: core.LifecycleStopped,
 		Provenance: core.Provenance{Source: "managed_supply_chain", Version: report.Caveman.Version, Path: state.Components["caveman"].Path},
@@ -389,11 +390,11 @@ func componentMatrix(cfg config.Config, state config.State, report Report) core.
 			core.CapabilityCompressionBypass: core.SupportSupported,
 		},
 		Compatibility: compatibility(cavemanAvailable, "managed Caveman runtime is unavailable"),
-		Fallback:      core.Fallback{Allowed: false, Reason: "cutover is deferred to IVOAI-40"},
+		Fallback:      core.Fallback{Allowed: true, Reason: "direct official executor remains available before launch"},
 	})
 	headroomAvailable := cfg.Headroom.Enabled && report.Headroom.Healthy && (report.Headroom.CodexCompatible || report.Headroom.ClaudeCompatible)
 	values = append(values, core.ComponentStatus{
-		ID: core.ComponentCompression, Implementation: "headroom", Active: cfg.Headroom.Enabled,
+		ID: core.ComponentCompression, Implementation: "headroom", Active: cfg.Compression.Provider == "headroom" && cfg.Headroom.Enabled,
 		Installed: report.Headroom.Installed, Managed: state.Components["headroom"].Managed, Available: headroomAvailable,
 		Health: health(headroomAvailable), Lifecycle: core.LifecycleStopped,
 		Provenance: core.Provenance{Source: "official_probe", Version: report.Headroom.Version, Path: state.Components["headroom"].Path},

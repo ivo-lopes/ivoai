@@ -56,16 +56,21 @@ func (a *App) workingContextCompressor(cfg config.Config, state config.State, ru
 func compressionObservation(executor, requested string, observation core.SessionObservation) observability.Event {
 	provider := observation.CompressionProvider
 	reason := observability.ReasonDirect
+	state := observability.StateSelected
 	if provider == "headroom" && observation.CompressionUsed {
 		reason = observability.ReasonHeadroomEnabled
 	} else if provider == "caveman" && observation.CompressionUsed {
 		reason = observability.ReasonCavemanEnabled
 	} else if requested == "caveman" {
 		provider, reason = "direct", observability.ReasonCavemanFallback
+		state = observability.StateDegraded
 	} else if requested == "headroom" {
 		provider, reason = "direct", observability.ReasonHeadroomBypassed
 	}
-	return observability.Event{Category: observability.CategoryCompression, Operation: observability.OperationCompressionSelect, State: observability.StateSelected, Executor: executor, Provider: provider, Component: core.ComponentCompression, RoutingReason: reason}
+	if observation.CompressionFallback {
+		state = observability.StateDegraded
+	}
+	return observability.Event{Category: observability.CategoryCompression, Operation: observability.OperationCompressionSelect, State: state, Executor: executor, Provider: provider, Component: core.ComponentCompression, RoutingReason: reason, DurationMilliseconds: observation.CompressionPreflightMilliseconds}
 }
 
 func componentSpec(name string) (components.Spec, bool) {

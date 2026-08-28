@@ -108,6 +108,17 @@ func TestComponentMatrixExplainsCapabilitiesHealthAndFallback(t *testing.T) {
 	if len(compressionEntries) != 2 || compressionEntries[0].Implementation != "headroom" || compressionEntries[1].Implementation != "caveman" || compressionEntries[1].Active {
 		t.Fatalf("compression entries=%+v", compressionEntries)
 	}
+	cfg.Compression.Provider = "caveman"
+	cavemanMatrix := componentMatrix(cfg, state, report)
+	selected, err := cavemanMatrix.Resolve(core.ComponentCompression, core.CapabilityCompressionWrap)
+	if err != nil || selected.Component.Implementation != "caveman" || !selected.Component.Active {
+		t.Fatalf("caveman selection=%+v err=%v", selected, err)
+	}
+	for _, entry := range cavemanMatrix.Entries(core.ComponentCompression) {
+		if entry.Implementation == "headroom" && entry.Active {
+			t.Fatal("Headroom and Caveman were active simultaneously")
+		}
+	}
 	if _, err := matrix.Resolve(core.ComponentContext, core.CapabilityContextIngest); err == nil {
 		t.Fatal("read-only remote Context advertised ingestion")
 	}

@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/ivo-lopes/ivoai/internal/app"
+	"github.com/ivo-lopes/ivoai/internal/observability"
 	"github.com/ivo-lopes/ivoai/internal/platform"
 	"github.com/ivo-lopes/ivoai/internal/quota"
 	"github.com/ivo-lopes/ivoai/internal/session"
@@ -138,7 +139,14 @@ func renderMonitorSized(out io.Writer, value session.Session, width int) {
 	monitorRow(out, "  Executor", clean(value.PrimaryExecutor), width)
 	monitorRow(out, "  Model", clean(value.PrimaryModel.Name)+" ("+strings.ReplaceAll(string(value.PrimaryModel.Source), "_", " ")+")", width)
 	monitorRow(out, "  PID", fmt.Sprint(value.PrimaryPID), width)
-	monitorRow(out, "  Headroom", activeLabel(value.HeadroomUsed), width)
+	monitorRow(out, "  Compression", clean(value.CompressionProvider)+" / "+activeLabel(value.CompressionUsed), width)
+	if event, ok := latestCompressionEvent(value); ok {
+		monitorRow(out, "  Fidelity", clean(event.FidelityClass)+" / "+clean(event.CompressionResult), width)
+		monitorRow(out, "  Bytes", fmt.Sprintf("%d -> %d", event.BytesBefore, event.BytesAfter), width)
+		if event.TokenBasis != "unavailable" && event.TokenBasis != "" {
+			monitorRow(out, "  Est. tokens", fmt.Sprintf("%d -> %d (%s)", event.TokensEstimatedBefore, event.TokensEstimatedAfter, event.TokenBasis), width)
+		}
+	}
 	fmt.Fprintln(out, "\nOrchestration")
 	monitorRow(out, "  Ruflo", activeLabel(value.RufloHealthy), width)
 	monitorRow(out, "  Safe Mode", yesNo(value.RufloSafeMode), width)
@@ -347,6 +355,15 @@ func activeWorkers(values []session.Worker) int {
 		}
 	}
 	return count
+}
+
+func latestCompressionEvent(value session.Session) (observability.Event, bool) {
+	for index := len(value.Observability) - 1; index >= 0; index-- {
+		if value.Observability[index].Operation == observability.OperationCompressionResult {
+			return value.Observability[index], true
+		}
+	}
+	return observability.Event{}, false
 }
 
 func activeLabel(value bool) string {

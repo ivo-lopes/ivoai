@@ -25,6 +25,7 @@ type CompactRequest struct {
 
 type CompactResult struct {
 	Representation string
+	Provider       string
 	TokensBefore   int
 	TokensAfter    int
 	Basis          string
@@ -106,12 +107,25 @@ func (p Projector) Project(ctx context.Context, input ProjectionInput) WorkerRes
 	result.StateDelta = StateDelta{Proposed: []ProposedChange{{Kind: ChangeObservation, Target: "worker", Summary: statusSummary(status, input.ExitCode), Evidence: []ResultRef{resultRef}}}}
 	result.Summary, result.Truncated = projectSummary(input.Raw, status, input.ExitCode, result.ImportantErrors, ref.ID, budget, mediaType)
 	if fidelity == core.CompressionCompressible && p.Compressor != nil {
+		started := time.Now()
 		compact, compactErr := p.Compressor.Compact(ctx, CompactRequest{Input: append([]byte(nil), input.Raw...), PayloadType: string(payloadType), Budget: budget})
 		if compactErr == nil && len(compact.Representation) > 0 && len(compact.Representation) < len(input.Raw) {
 			result.Summary, result.Truncated = compactSummary(compact.Representation, status, input.ExitCode, result.ImportantErrors, ref.ID, budget, len(input.Raw))
+			p.emitCompression(input.Owner, compact.Provider, payloadType, fidelity, len(input.Raw), len(compact.Representation), compact.TokensBefore, compact.TokensAfter, compact.Basis, compact.RecoveryHandle != "", time.Since(started), observability.StateCompleted, observability.ReasonCompressionApplied, "applied")
 		} else if compactErr != nil {
 			result.Degraded = true
+			p.emitCompression(input.Owner, compact.Provider, payloadType, fidelity, len(input.Raw), len(input.Raw), 0, 0, "unavailable", false, time.Since(started), observability.StateDegraded, observability.ReasonCompressionUnavailable, "degraded")
+		} else {
+			p.emitCompression(input.Owner, compact.Provider, payloadType, fidelity, len(input.Raw), len(input.Raw), compact.TokensBefore, compact.TokensAfter, compact.Basis, false, time.Since(started), observability.StateCompleted, observability.ReasonDirect, "passthrough")
 		}
+	} else {
+		reason := observability.ReasonDirect
+		if fidelity == core.CompressionExactRequired {
+			reason = observability.ReasonExactRequired
+		} else if fidelity == core.CompressionBypass {
+			reason = observability.ReasonExplicitBypass
+		}
+		p.emitCompression(input.Owner, "direct", payloadType, fidelity, len(input.Raw), len(input.Raw), 0, 0, "unavailable", false, 0, observability.StateCompleted, reason, "bypassed")
 	}
 	result.Truncated = result.Truncated || input.Truncated
 	if err := result.Validate(); err != nil {
@@ -122,6 +136,31 @@ func (p Projector) Project(ctx context.Context, input ProjectionInput) WorkerRes
 		p.emit(input.Owner, observability.OperationWorkingContextBudget, observability.StateCompleted, observability.ReasonContextBudgetApplied, ref, len(result.Findings), len(result.Evidence), true)
 	}
 	return result
+}
+
+func (p Projector) emitCompression(owner Ownership, provider string, payloadType compression.PayloadType, fidelity core.CompressionFidelity, before, after, tokensBefore, tokensAfter int, basis string, recovery bool, duration time.Duration, state observability.State, reason observability.Reason, result string) {
+	if p.Observe == nil {
+		return
+	}
+	if provider == "" {
+		provider = "caveman"
+	}
+	ratio := float64(0)
+	if before > 0 {
+		ratio = float64(after) / float64(before)
+	}
+	if basis != "inferred" && basis != "estimated" {
+		basis = "unavailable"
+		tokensBefore, tokensAfter = 0, 0
+	}
+	recoveryCount := 0
+	if recovery {
+		recoveryCount = 1
+	}
+	event, err := observability.Normalize(observability.Event{Category: observability.CategoryCompression, Operation: observability.OperationCompressionResult, State: state, SessionID: owner.SessionID, TaskID: owner.TaskID, WorkerID: owner.WorkerID, Provider: provider, Component: core.ComponentCompression, DurationMilliseconds: duration.Milliseconds(), RoutingReason: reason, PayloadType: string(payloadType), FidelityClass: string(fidelity), BytesBefore: int64(before), BytesAfter: int64(after), TokensEstimatedBefore: int64(tokensBefore), TokensEstimatedAfter: int64(tokensAfter), TokenBasis: basis, CompressionRatio: ratio, RecoveryCount: recoveryCount, CompressionResult: result})
+	if err == nil {
+		p.Observe(event)
+	}
 }
 
 func compactSummary(representation string, status ResultStatus, exitCode int, important []string, artifactID string, budget, originalSize int) (string, bool) {

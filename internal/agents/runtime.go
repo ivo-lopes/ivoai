@@ -30,10 +30,12 @@ type Runtime struct {
 }
 
 type Observation struct {
-	PID                 int
-	HeadroomUsed        bool
-	CompressionUsed     bool
-	CompressionProvider string
+	PID                              int
+	HeadroomUsed                     bool
+	CompressionUsed                  bool
+	CompressionProvider              string
+	CompressionFallback              bool
+	CompressionPreflightMilliseconds int64
 }
 
 func (r Runtime) Launch(ctx context.Context, agent string, args []string, headroomEnabled bool) error {
@@ -62,6 +64,8 @@ func (r Runtime) LaunchObserved(ctx context.Context, agent string, args []string
 	}
 	wrappedUsed := false
 	compressionProvider := ""
+	compressionFallback := false
+	var compressionPreflight time.Duration
 	var lease core.CompressionLease
 	if headroomEnabled {
 		provider := r.Compression
@@ -74,8 +78,11 @@ func (r Runtime) LaunchObserved(ctx context.Context, agent string, args []string
 		} else if agent == "opencode" {
 			component = core.ComponentOpenCode
 		}
+		preflightStarted := time.Now()
 		lease, err = provider.Prepare(ctx, core.CompressionRequest{Executor: component, DirectPath: direct, Args: args, Environment: environment, RuntimeDir: r.RuntimeDir, Fidelity: core.CompressionCompressible})
+		compressionPreflight = time.Since(preflightStarted)
 		if err != nil {
+			compressionFallback = true
 			if r.Err != nil {
 				fmt.Fprintf(r.Err, "warning: compression preflight failed; launching %s directly: %v\n", agent, err)
 			}
@@ -98,7 +105,7 @@ func (r Runtime) LaunchObserved(ctx context.Context, agent string, args []string
 	}
 	err = runInteractiveWithProvider(ctx, command, commandArgs, environment, r.In, r.Out, r.Err, func(pid int) {
 		if observe != nil {
-			observe(Observation{PID: pid, HeadroomUsed: wrappedUsed && compressionProvider == "headroom", CompressionUsed: wrappedUsed, CompressionProvider: compressionProvider})
+			observe(Observation{PID: pid, HeadroomUsed: wrappedUsed && compressionProvider == "headroom", CompressionUsed: wrappedUsed, CompressionProvider: compressionProvider, CompressionFallback: compressionFallback, CompressionPreflightMilliseconds: compressionPreflight.Milliseconds()})
 		}
 	}, providerDone)
 	var startErr *StartError
@@ -115,7 +122,7 @@ func (r Runtime) LaunchObserved(ctx context.Context, agent string, args []string
 		}
 		return runInteractive(ctx, direct, args, environment, r.In, r.Out, r.Err, func(pid int) {
 			if observe != nil {
-				observe(Observation{PID: pid, HeadroomUsed: false, CompressionUsed: false})
+				observe(Observation{PID: pid, HeadroomUsed: false, CompressionUsed: false, CompressionFallback: true, CompressionPreflightMilliseconds: compressionPreflight.Milliseconds()})
 			}
 		})
 	}

@@ -59,7 +59,7 @@ func (e OpenCodeExecutor) StartSession(ctx context.Context, request core.Session
 func startSession(ctx context.Context, runtime Runtime, name string, request core.SessionRequest, observe func(core.SessionObservation)) error {
 	return runtime.LaunchObserved(ctx, name, request.Args, request.CompressionEnabled, func(value Observation) {
 		if observe != nil {
-			observe(core.SessionObservation{PID: value.PID, CompressionUsed: value.CompressionUsed, CompressionProvider: value.CompressionProvider})
+			observe(core.SessionObservation{PID: value.PID, CompressionUsed: value.CompressionUsed, CompressionProvider: value.CompressionProvider, CompressionFallback: value.CompressionFallback, CompressionPreflightMilliseconds: value.CompressionPreflightMilliseconds})
 		}
 	})
 }

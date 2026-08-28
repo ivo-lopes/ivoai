@@ -353,7 +353,7 @@ func (a *App) finishSession(store session.Store, id string, final session.State,
 
 func (a *App) printSessionSummary(value session.Session, orchestrated bool) {
 	color := terminalui.ColorEnabled(a.Out)
-	fmt.Fprintf(a.Out, "IvoAI Session\n  Session       %s\n  Executor      %s\n  Mode          %s\n  Model         %s (%s)\n  Headroom      requested=%t\n", value.SessionID, value.PrimaryExecutor, strings.ToUpper(string(value.Mode)), value.PrimaryModel.Name, strings.ReplaceAll(string(value.PrimaryModel.Source), "_", " "), value.HeadroomRequested)
+	fmt.Fprintf(a.Out, "IvoAI Session\n  Session       %s\n  Executor      %s\n  Mode          %s\n  Model         %s (%s)\n  Compression   provider=%s requested=%t\n", value.SessionID, value.PrimaryExecutor, strings.ToUpper(string(value.Mode)), value.PrimaryModel.Name, strings.ReplaceAll(string(value.PrimaryModel.Source), "_", " "), value.CompressionProvider, value.CompressionRequested)
 	if orchestrated {
 		fmt.Fprintf(a.Out, "  Ruflo         %s\n  Swarm         %s\n", terminalui.Success("ACTIVE / provider disabled", color), value.SwarmID)
 	}

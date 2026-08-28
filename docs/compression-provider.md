@@ -84,3 +84,18 @@ IVOAI-40, respectivamente.
 O asset pinado responde ao probe estruturado, mas informa `version: "dev"`.
 Portanto o IVOAI não o apresenta como versão semântica verificada em runtime: a
 revisão imutável e o digest do supply chain permanecem a autoridade.
+
+## Telemetria segura
+
+Eventos de compressão usam somente dimensões bounded: executor/provider, tipo de
+payload, classe de fidelidade, bytes antes/depois, tokens estimados antes/depois,
+ratio, latência, recovery count, resultado, bypass e fallback. Tokens retornados
+pelo Caveman são sempre rotulados como `inferred`/`estimated`; não representam
+billing nem telemetria autoritativa do provider. Prompt, response, output bruto,
+código, diff, paths, environment, cookies e headers de auth não fazem parte do
+schema de eventos.
+
+Doctor/status mostram o provider configurado e a saúde dos componentes. Monitor
+mostra o provider realmente usado na sessão e o último resultado de compressão
+bounded, incluindo fidelidade e bytes; falhas de telemetria nunca impedem a
+execução nem substituem a evidência original.

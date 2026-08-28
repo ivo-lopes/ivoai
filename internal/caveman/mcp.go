@@ -104,7 +104,7 @@ func (c MCPCompressor) Compact(ctx context.Context, request workingcontext.Compa
 	if payload.RecoveryHandle != nil && strings.HasPrefix(*payload.RecoveryHandle, "ccr_") && len(*payload.RecoveryHandle) <= 128 {
 		handle = *payload.RecoveryHandle
 	}
-	return workingcontext.CompactResult{Representation: payload.Compressed, TokensBefore: payload.TokensBefore, TokensAfter: payload.TokensAfter, Basis: payload.Basis, RecoveryHandle: handle}, nil
+	return workingcontext.CompactResult{Representation: payload.Compressed, Provider: "caveman", TokensBefore: payload.TokensBefore, TokensAfter: payload.TokensAfter, Basis: payload.Basis, RecoveryHandle: handle}, nil
 }
 
 func (c MCPCompressor) validate() error {

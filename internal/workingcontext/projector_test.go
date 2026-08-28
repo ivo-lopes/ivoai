@@ -67,18 +67,24 @@ func TestProjectorCompressesOnlyAfterArtifactAndPreservesResultRef(t *testing.T)
 		t.Fatal(err)
 	}
 	order := []string{}
+	var compressionEvent observability.Event
 	compressor := &testCompressor{fn: func(request CompactRequest) (CompactResult, error) {
 		order = append(order, "compress")
-		return CompactResult{Representation: "compact", TokensBefore: 100, TokensAfter: 2, Basis: "inferred", RecoveryHandle: "ccr_auxiliary"}, nil
+		return CompactResult{Representation: "compact", Provider: "caveman", TokensBefore: 100, TokensAfter: 2, Basis: "inferred", RecoveryHandle: "ccr_auxiliary"}, nil
 	}}
 	raw := []byte(strings.Repeat("compressible log row\n", 100))
 	result := (Projector{Store: store, Compressor: compressor, Observe: func(event observability.Event) {
 		if event.Operation == observability.OperationArtifactStoreWrite {
 			order = append(order, "store")
+		} else if event.Operation == observability.OperationCompressionResult {
+			compressionEvent = event
 		}
 	}}).Project(context.Background(), ProjectionInput{Owner: testOwner("1", ""), Raw: raw, Status: ResultCompleted, PayloadType: "log"})
 	if strings.Join(order, ",") != "store,compress" || compressor.calls != 1 || !strings.Contains(result.Summary, "compact") || len(result.Evidence) != 1 {
 		t.Fatalf("order=%v calls=%d result=%+v", order, compressor.calls, result)
+	}
+	if compressionEvent.Provider != "caveman" || compressionEvent.TokenBasis != "inferred" || compressionEvent.TokensEstimatedBefore != 100 || compressionEvent.RecoveryCount != 1 || compressionEvent.BytesAfter != int64(len("compact")) {
+		t.Fatalf("compression telemetry=%+v", compressionEvent)
 	}
 	reader, _, err := store.Read(context.Background(), testOwner("1", ""), result.Evidence[0].Artifact.ID)
 	if err != nil {

@@ -157,9 +157,11 @@ type SessionRequest struct {
 }
 
 type SessionObservation struct {
-	PID                 int
-	CompressionUsed     bool
-	CompressionProvider string
+	PID                              int
+	CompressionUsed                  bool
+	CompressionProvider              string
+	CompressionFallback              bool
+	CompressionPreflightMilliseconds int64
 }
 
 type Executor interface {

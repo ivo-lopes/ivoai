@@ -42,6 +42,7 @@ const (
 	OperationMemoryBootstrap         Operation = "memory.bootstrap"
 	OperationContextBootstrap        Operation = "context.bootstrap"
 	OperationCompressionSelect       Operation = "compression.select"
+	OperationCompressionResult       Operation = "compression.result"
 	OperationOrchestrationInitialize Operation = "orchestration.initialize"
 	OperationDAGPlan                 Operation = "dag.plan"
 	OperationWorkerLifecycle         Operation = "worker.lifecycle"
@@ -109,6 +110,10 @@ const (
 	ReasonHeadroomBypassed       Reason = "headroom_bypassed"
 	ReasonCavemanEnabled         Reason = "caveman_enabled"
 	ReasonCavemanFallback        Reason = "caveman_fallback"
+	ReasonCompressionApplied     Reason = "compression_applied"
+	ReasonCompressionUnavailable Reason = "compression_unavailable"
+	ReasonExactRequired          Reason = "exact_required"
+	ReasonExplicitBypass         Reason = "explicit_bypass"
 	ReasonKnowledgeReady         Reason = "knowledge_ready"
 	ReasonKnowledgeDegraded      Reason = "knowledge_degraded"
 	ReasonPolicyAllowed          Reason = "policy_allowed"
@@ -167,6 +172,16 @@ type Event struct {
 	FindingCount          int              `json:"finding_count,omitempty"`
 	ReferenceCount        int              `json:"reference_count,omitempty"`
 	Truncated             bool             `json:"truncated,omitempty"`
+	PayloadType           string           `json:"payload_type,omitempty"`
+	FidelityClass         string           `json:"fidelity_class,omitempty"`
+	BytesBefore           int64            `json:"bytes_before,omitempty"`
+	BytesAfter            int64            `json:"bytes_after,omitempty"`
+	TokensEstimatedBefore int64            `json:"tokens_estimated_before,omitempty"`
+	TokensEstimatedAfter  int64            `json:"tokens_estimated_after,omitempty"`
+	TokenBasis            string           `json:"token_basis,omitempty"`
+	CompressionRatio      float64          `json:"compression_ratio,omitempty"`
+	RecoveryCount         int              `json:"recovery_count,omitempty"`
+	CompressionResult     string           `json:"compression_result,omitempty"`
 }
 
 var operationCategories = map[Operation]Category{
@@ -176,6 +191,7 @@ var operationCategories = map[Operation]Category{
 	OperationMemoryBootstrap:         CategoryMemory,
 	OperationContextBootstrap:        CategoryContext,
 	OperationCompressionSelect:       CategoryCompression,
+	OperationCompressionResult:       CategoryCompression,
 	OperationOrchestrationInitialize: CategoryOrchestration,
 	OperationDAGPlan:                 CategoryDAG,
 	OperationWorkerLifecycle:         CategoryWorker,
@@ -263,6 +279,12 @@ func (e Event) Validate() error {
 	if e.ArtifactBytes < 0 || e.ArtifactBytes > 1<<40 || e.FindingCount < 0 || e.FindingCount > 1024 || e.ReferenceCount < 0 || e.ReferenceCount > 1024 {
 		return errors.New("invalid working-context observability metadata")
 	}
+	if !oneOf(e.PayloadType, "", "text", "json", "log", "code", "diff", "search_result", "worker_output", "memory_response", "context_response", "skill_registry", "security_evidence", "error", "stack_trace", "test_failure", "build_failure") || !oneOf(e.FidelityClass, "", "compressible", "exact_required", "bypass", "unsupported") || !oneOf(e.TokenBasis, "", "inferred", "estimated", "unavailable") || !oneOf(e.CompressionResult, "", "applied", "passthrough", "bypassed", "degraded", "failed") {
+		return errors.New("invalid compression observability labels")
+	}
+	if e.BytesBefore < 0 || e.BytesBefore > 1<<40 || e.BytesAfter < 0 || e.BytesAfter > 1<<40 || e.TokensEstimatedBefore < 0 || e.TokensEstimatedBefore > 1<<40 || e.TokensEstimatedAfter < 0 || e.TokensEstimatedAfter > 1<<40 || e.CompressionRatio < 0 || e.CompressionRatio > 1 || e.RecoveryCount < 0 || e.RecoveryCount > 1024 {
+		return errors.New("invalid compression observability metrics")
+	}
 	return nil
 }
 
@@ -304,7 +326,7 @@ func safeCanonicalID(value string, limit int) bool {
 
 func validReason(value Reason) bool {
 	switch value {
-	case "", ReasonDirect, ReasonPrimaryAvailable, ReasonCapabilityMatch, ReasonQuotaAvailable, ReasonQuotaExhausted, ReasonQuotaStale, ReasonTelemetryNotExposed, ReasonProbeFailed, ReasonAuthTransition, ReasonAlternateSelected, ReasonProviderUnavailable, ReasonProviderQuotaExhausted, ReasonModelQuotaExhausted, ReasonHeadroomEnabled, ReasonHeadroomBypassed, ReasonCavemanEnabled, ReasonCavemanFallback, ReasonKnowledgeReady, ReasonKnowledgeDegraded, ReasonPolicyAllowed, ReasonPolicyDenied, ReasonApprovalRequired, ReasonInvalidMetadata, ReasonUnresolvedConflict, ReasonIntegrityVerified, ReasonIntegrityMismatch, ReasonImmutableRevision, ReasonValidationFailed, ReasonRollbackComplete, ReasonRedacted, ReasonArtifactStored, ReasonArtifactRecovered, ReasonContextBudgetApplied, ReasonStoreUnavailable, ReasonAccessDenied, ReasonArtifactExpired, ReasonResultProjected:
+	case "", ReasonDirect, ReasonPrimaryAvailable, ReasonCapabilityMatch, ReasonQuotaAvailable, ReasonQuotaExhausted, ReasonQuotaStale, ReasonTelemetryNotExposed, ReasonProbeFailed, ReasonAuthTransition, ReasonAlternateSelected, ReasonProviderUnavailable, ReasonProviderQuotaExhausted, ReasonModelQuotaExhausted, ReasonHeadroomEnabled, ReasonHeadroomBypassed, ReasonCavemanEnabled, ReasonCavemanFallback, ReasonCompressionApplied, ReasonCompressionUnavailable, ReasonExactRequired, ReasonExplicitBypass, ReasonKnowledgeReady, ReasonKnowledgeDegraded, ReasonPolicyAllowed, ReasonPolicyDenied, ReasonApprovalRequired, ReasonInvalidMetadata, ReasonUnresolvedConflict, ReasonIntegrityVerified, ReasonIntegrityMismatch, ReasonImmutableRevision, ReasonValidationFailed, ReasonRollbackComplete, ReasonRedacted, ReasonArtifactStored, ReasonArtifactRecovered, ReasonContextBudgetApplied, ReasonStoreUnavailable, ReasonAccessDenied, ReasonArtifactExpired, ReasonResultProjected:
 		return true
 	default:
 		return false

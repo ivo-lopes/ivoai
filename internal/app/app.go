@@ -207,6 +207,15 @@ func (a *App) Status(ctx context.Context) error {
 	go func() { serverResult <- doctor.ProbeServer(probeContext, cfg.Connections.Server, a.statusHTTPClient()) }()
 	go func() { rufloResult <- a.orchestrationManager(state).Inspect(probeContext) }()
 	serverHealth, rufloHealth := <-serverResult, <-rufloResult
+	compressionStatus := readyStatus(false)
+	switch cfg.Compression.Provider {
+	case "direct":
+		compressionStatus = statusValue{Text: "ready / direct", Kind: terminalui.StatusSuccess}
+	case "headroom":
+		compressionStatus = headroomStatus(state.Components["headroom"], cfg.Headroom.Enabled)
+	case "caveman":
+		compressionStatus = optionalManagedStatus(state.Components["caveman"], "selected / caveman")
+	}
 	rows := []struct {
 		name   string
 		status statusValue
@@ -217,7 +226,7 @@ func (a *App) Status(ctx context.Context) error {
 		{"Claude Code", componentStatus(state.Components["claude-code"], cfg.Connections.Claude.Status)},
 		{"OpenCode", optionalManagedStatus(state.Components["opencode"], "ready / direct primary")},
 		{"Headroom", headroomStatus(state.Components["headroom"], cfg.Headroom.Enabled)},
-		{"Caveman", optionalManagedStatus(state.Components["caveman"], "installed / cutover pending")},
+		{"Compression", compressionStatus},
 		{"Context", contextHealthStatus(cfg, serverHealth)},
 		{"ai-memory", memoryHealthStatus(cfg, state.Components["ai-memory"], serverHealth)},
 		{"Research", researchPriorityStatus(cfg)},
