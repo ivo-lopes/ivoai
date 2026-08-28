@@ -21,6 +21,7 @@ import (
 
 	"github.com/ivo-lopes/ivoai/internal/config"
 	"github.com/ivo-lopes/ivoai/internal/platform"
+	"github.com/ivo-lopes/ivoai/internal/supplychain"
 )
 
 type absentRunner struct{}
@@ -31,6 +32,17 @@ func (absentRunner) Run(ctx context.Context, command string, args []string, opti
 }
 
 type upgradeRunner struct{ lookups atomic.Int32 }
+
+func TestManagedComponentLimitsAcceptReviewedOpenCodeBinary(t *testing.T) {
+	const reviewedOpenCodeBytes = 184682624
+	limits := componentSupplyChainLimits()
+	if limits != supplychain.DefaultLimits() {
+		t.Fatalf("component limits diverged from canonical supply-chain limits: %+v", limits)
+	}
+	if limits.FileBytes < reviewedOpenCodeBytes || limits.FileBytes > 256<<20 {
+		t.Fatalf("file limit %d does not admit the reviewed OpenCode binary within the bounded ceiling", limits.FileBytes)
+	}
+}
 
 func (r *upgradeRunner) LookPath(string) (string, error) {
 	r.lookups.Add(1)

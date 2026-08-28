@@ -215,12 +215,16 @@ func (i *Installer) ensureSupplyChain(ctx context.Context, spec Spec, previous c
 		Integrity: supplychain.Integrity{Algorithm: "sha256", Digest: asset.SHA256, SignatureStatus: spec.SignatureStatus, AttestationStatus: spec.AttestationStatus, TrustLevel: spec.TrustLevel},
 	}
 	manager := componentupdate.Manager{
-		Supply:     supplychain.Manager{Root: filepath.Join(i.Store.Paths.DataDir, "supply-chain"), Limits: supplychain.Limits{ArchiveBytes: 128 << 20, ExpandedBytes: 512 << 20, FileBytes: 128 << 20, Files: 4096}},
+		Supply:     supplychain.Manager{Root: filepath.Join(i.Store.Paths.DataDir, "supply-chain"), Limits: componentSupplyChainLimits()},
 		Discoverer: componentupdate.StaticDiscoverer{Source: source}, Fetcher: componentupdate.HTTPFetcher{Client: i.Client},
 		Store: i.Store, Runner: i.Runner, Executable: spec.Executable, VersionArg: []string{"--version"}, NoVersionProbe: spec.NoVersionProbe,
 	}
 	result, err := manager.Update(ctx, supplychain.Reference{ID: spec.Name, Kind: supplychain.KindComponent, Source: asset.URL, Version: spec.Version})
 	return result.State, err
+}
+
+func componentSupplyChainLimits() supplychain.Limits {
+	return supplychain.DefaultLimits()
 }
 
 func versionAtLeast(actual, minimum string) bool {
