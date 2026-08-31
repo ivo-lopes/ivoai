@@ -15,7 +15,6 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/agents"
 	"github.com/ivo-lopes/ivoai/internal/config"
 	"github.com/ivo-lopes/ivoai/internal/core"
-	"github.com/ivo-lopes/ivoai/internal/doctor"
 	"github.com/ivo-lopes/ivoai/internal/observability"
 	"github.com/ivo-lopes/ivoai/internal/orchestration"
 	"github.com/ivo-lopes/ivoai/internal/platform"
@@ -26,6 +25,10 @@ import (
 const maxAutomaticFailovers = 2
 
 func (a *App) Auto(ctx context.Context, planner string, agentArgs []string) error {
+	return a.AutoWithKnowledge(ctx, planner, agentArgs, nil)
+}
+
+func (a *App) AutoWithKnowledge(ctx context.Context, planner string, agentArgs, selectors []string) error {
 	cfg, err := a.Store.Load()
 	if err != nil {
 		return err
@@ -136,6 +139,18 @@ func (a *App) Auto(ctx context.Context, planner string, agentArgs []string) erro
 	if err != nil {
 		return err
 	}
+	knowledge, err := a.prepareSessionKnowledge(ctx, cfg, selectors, current, runtimeDir, os.Environ(), func(event observability.Event) {
+		_, _ = store.Update(id, func(current *session.Session) error { return session.AppendObservation(current, event) })
+	})
+	if err != nil {
+		return err
+	}
+	defer knowledge.close()
+	cfg = knowledge.config
+	value, _ = store.Update(id, func(current *session.Session) error {
+		current.KnowledgeSources = knowledge.aliases()
+		return nil
+	})
 	skillResult, err := a.evaluateSessionSkills(ctx, current, cwd, agentArgs)
 	if err != nil {
 		_ = store.CleanupRuntime(id)
@@ -188,10 +203,7 @@ func (a *App) Auto(ctx context.Context, planner string, agentArgs []string) erro
 	if err := platform.AtomicWritePrivate([]byte(instructions), instructionsPath); err != nil {
 		return err
 	}
-	environment, err := a.serverCredentialEnvironment()
-	if err != nil {
-		return err
-	}
+	environment := knowledge.environment
 
 	var handoff string
 	for {
@@ -200,6 +212,11 @@ func (a *App) Auto(ctx context.Context, planner string, agentArgs []string) erro
 			a.finishSession(store, id, session.StateFailed, 1)
 			return argsErr
 		}
+		knowledgeArgs, knowledgeArgsErr := processLocalKnowledgeArgs(current, runtimeDir, cfg)
+		if knowledgeArgsErr != nil {
+			return knowledgeArgsErr
+		}
+		launchArgs = append(knowledgeArgs, launchArgs...)
 		fmt.Fprintf(a.Out, "Starting %s...\n", displayProvider(current))
 		launchCtx, cancelLaunch := context.WithCancel(ctx)
 		limitReason := make(chan string, 1)
@@ -669,7 +686,7 @@ func (a *App) printAutoPreflight(values map[quota.Provider]quota.ProviderQuota, 
 
 func (a *App) autoServiceStatuses(ctx context.Context, cfg config.Config, state config.State) (string, string, string) {
 	contextState, memoryState, serverState := contextStatus(cfg), memoryStatus(cfg, state), serverStatus(cfg)
-	health := doctor.ProbeServer(ctx, cfg.Connections.Server, a.statusHTTPClient())
+	_, health := a.probeServerProfiles(ctx, cfg)
 	if !health.Configured {
 		return contextState, memoryState, serverState
 	}

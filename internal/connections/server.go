@@ -15,6 +15,7 @@ import (
 
 	"github.com/ivo-lopes/ivoai/internal/config"
 	"github.com/ivo-lopes/ivoai/internal/secrets"
+	"github.com/ivo-lopes/ivoai/internal/serverpool"
 )
 
 const ProtocolVersion = 1
@@ -50,6 +51,7 @@ type enrollmentResponse struct {
 }
 
 type ConnectResult struct {
+	Profile        config.ServerProfile
 	Discovery      Discovery
 	ContextMCPURL  string
 	MemoryMCPURL   string
@@ -57,11 +59,37 @@ type ConnectResult struct {
 	Warnings       []string
 }
 
+type ConnectOptions struct {
+	Alias           string
+	Purpose         string
+	RedundancyGroup string
+	Priority        int
+	BaseURL         string
+	Code            string
+	ClientName      string
+}
+
+type ProfileHealth struct {
+	Reachable          bool `json:"reachable"`
+	Ready              bool `json:"ready"`
+	ProtocolCompatible bool `json:"protocol_compatible"`
+	ContextAvailable   bool `json:"context_available"`
+	MemoryAvailable    bool `json:"memory_available"`
+}
+
 type ServerConnector struct {
-	Client  *http.Client
-	Store   *config.Store
-	Secrets secrets.Store
-	Now     func() time.Time
+	Client     *http.Client
+	Store      *config.Store
+	Secrets    secrets.Store
+	Now        func() time.Time
+	SaveConfig func(config.Config) error
+}
+
+func (s ServerConnector) saveConfig(value config.Config) error {
+	if s.SaveConfig != nil {
+		return s.SaveConfig(value)
+	}
+	return s.Store.Save(value)
 }
 
 func SecureHTTPClient() *http.Client {
@@ -78,13 +106,46 @@ func SecureHTTPClient() *http.Client {
 }
 
 func (s ServerConnector) Connect(ctx context.Context, baseURL, code, clientName string) (ConnectResult, error) {
+	return s.ConnectProfile(ctx, ConnectOptions{Alias: "default", Purpose: "default", BaseURL: baseURL, Code: code, ClientName: clientName})
+}
+
+func (s ServerConnector) ConnectProfile(ctx context.Context, options ConnectOptions) (ConnectResult, error) {
 	var result ConnectResult
-	base, err := ValidateBaseURL(baseURL)
+	if options.Alias == "" {
+		options.Alias = "default"
+	}
+	if err := serverpool.ValidateAlias(options.Alias); err != nil {
+		return result, err
+	}
+	if options.Purpose == "" {
+		options.Purpose = options.Alias
+	}
+	if err := serverpool.ValidateLabel("server purpose", options.Purpose); err != nil {
+		return result, err
+	}
+	if options.RedundancyGroup != "" {
+		if err := serverpool.ValidateLabel("redundancy group", options.RedundancyGroup); err != nil {
+			return result, err
+		}
+	}
+	base, err := ValidateBaseURL(options.BaseURL)
 	if err != nil {
 		return result, err
 	}
-	if strings.TrimSpace(code) == "" {
+	if strings.TrimSpace(options.Code) == "" {
 		return result, errors.New("enrollment code is required")
+	}
+	c, err := s.Store.Load()
+	if err != nil {
+		return result, err
+	}
+	if _, err := serverpool.New(c.Connections.Servers); err != nil {
+		return result, fmt.Errorf("validate existing server profiles: %w", err)
+	}
+	originalConfig := cloneConnectionConfig(c)
+	originalSecrets, err := s.Secrets.Load()
+	if err != nil {
+		return result, err
 	}
 	if s.Client == nil {
 		s.Client = SecureHTTPClient()
@@ -125,37 +186,76 @@ func (s ServerConnector) Connect(ctx context.Context, baseURL, code, clientName 
 	if err := s.ready(ctx, base, discovery.ReadyEndpoint); err != nil {
 		return result, err
 	}
-	credential, err := s.enroll(ctx, base, discovery.EnrollmentEndpoint, code, clientName)
+	profileID := ""
+	if previous, exists := c.Connections.Servers[options.Alias]; exists {
+		profileID = previous.ID
+	}
+	if profileID == "" && options.Alias == "default" {
+		profileID = config.LegacyServerID
+	}
+	if profileID == "" {
+		profileID, err = serverpool.NewID()
+		if err != nil {
+			return result, err
+		}
+	}
+	profile := config.ServerProfile{
+		ID: profileID, Alias: options.Alias, URL: strings.TrimRight(base.String(), "/"),
+		Status: "enrolling", Enabled: false, Purpose: options.Purpose,
+		RedundancyGroup: options.RedundancyGroup, Priority: options.Priority,
+		Protocol: discovery.ProtocolVersion, ContextMCPURL: contextEndpoint,
+		MemoryMCPURL: memoryEndpoint, MemoryHooksURL: memoryHooksEndpoint,
+		ServerVersion: discovery.ServerVersion, Features: discovery.Features,
+	}
+	if c.Connections.Servers == nil {
+		c.Connections.Servers = map[string]config.ServerProfile{}
+	}
+	c.Connections.Servers[options.Alias] = profile
+	if options.Alias == "default" {
+		c.Connections.Server = config.Connection{Status: "not-connected"}
+		delete(c.MCP.Servers, "ivoai-context")
+		delete(c.MCP.Servers, "ivoai-memory")
+	}
+	// Persist a fail-closed enrollment marker before consuming the one-time code.
+	// A crash can leave this profile unavailable, but can never pair a new token
+	// with the previous server URL.
+	if err := s.saveConfig(c); err != nil {
+		return result, fmt.Errorf("prepare server enrollment: %w", err)
+	}
+	credential, err := s.enroll(ctx, base, discovery.EnrollmentEndpoint, options.Code, options.ClientName)
 	if err != nil {
+		_ = s.saveConfig(originalConfig)
 		return result, err
 	}
 	if credential.Token == "" || credential.ClientID == "" {
+		_ = s.saveConfig(originalConfig)
 		return result, errors.New("server returned an incomplete client credential")
 	}
-	// Enrollment codes are one-time. Persist the scoped credential before
-	// optional service probes so a transient MCP failure never strands it.
-	secretData, err := s.Secrets.Load()
-	if err != nil {
-		return result, err
+	storedCredential := secrets.ClientCredential{Token: credential.Token, ClientID: credential.ClientID, Scopes: credential.Scopes, IssuedAt: s.Now().UTC(), ExpiresAt: credential.ExpiresAt}
+	if err := s.Secrets.Set(profileID, storedCredential); err != nil {
+		rollbackErr := s.saveConfig(originalConfig)
+		return result, errors.Join(err, rollbackErr)
 	}
-	secretData.Server = &secrets.ClientCredential{Token: credential.Token, ClientID: credential.ClientID, Scopes: credential.Scopes, IssuedAt: s.Now().UTC(), ExpiresAt: credential.ExpiresAt}
-	if err := s.Secrets.Save(secretData); err != nil {
-		return result, err
+	profile.Status = "connected"
+	profile.Enabled = true
+	c.Connections.Servers[options.Alias] = profile
+	// Preserve the v0.5 singleton and MCP entries only as the default profile's
+	// rollback bridge. They are never used to route a second upstream token.
+	if options.Alias == "default" {
+		c.Connections.Server = config.Connection{Status: "connected", URL: profile.URL, Protocol: profile.Protocol}
+		c.MCP.Servers["ivoai-context"] = config.MCPServer{URL: contextEndpoint, Enabled: true, Kind: "context"}
+		if memoryEndpoint != "" {
+			c.MCP.Servers["ivoai-memory"] = config.MCPServer{URL: memoryEndpoint, HooksURL: memoryHooksEndpoint, Enabled: true, Kind: "memory"}
+		} else {
+			delete(c.MCP.Servers, "ivoai-memory")
+		}
 	}
-	c, err := s.Store.Load()
-	if err != nil {
-		return result, err
+	if err := s.saveConfig(c); err != nil {
+		secretErr := s.Secrets.Save(originalSecrets)
+		configErr := s.saveConfig(originalConfig)
+		return result, errors.Join(fmt.Errorf("commit server enrollment: %w", err), secretErr, configErr)
 	}
-	c.Connections.Server = config.Connection{Status: "connected", URL: strings.TrimRight(base.String(), "/"), Protocol: discovery.ProtocolVersion}
-	c.MCP.Servers["ivoai-context"] = config.MCPServer{URL: contextEndpoint, Enabled: true, Kind: "context"}
-	if memoryEndpoint != "" {
-		c.MCP.Servers["ivoai-memory"] = config.MCPServer{URL: memoryEndpoint, HooksURL: memoryHooksEndpoint, Enabled: true, Kind: "memory"}
-	} else {
-		delete(c.MCP.Servers, "ivoai-memory")
-	}
-	if err := s.Store.Save(c); err != nil {
-		return result, fmt.Errorf("save enrolled server state (credential was preserved for recovery): %w", err)
-	}
+	result.Profile = profile
 	if err := s.probeMCP(ctx, contextEndpoint, credential.Token); err != nil {
 		result.Warnings = append(result.Warnings, fmt.Sprintf("context MCP validation degraded: %v", err))
 	}
@@ -219,17 +319,125 @@ func (s ServerConnector) probeMCP(ctx context.Context, endpoint, token string) e
 }
 
 func (s ServerConnector) Disconnect() error {
+	return s.DisconnectProfile("default")
+}
+
+func (s ServerConnector) DisconnectProfile(alias string) error {
+	if err := serverpool.ValidateAlias(alias); err != nil {
+		return err
+	}
 	c, err := s.Store.Load()
 	if err != nil {
 		return err
 	}
+	if _, err := serverpool.New(c.Connections.Servers); err != nil {
+		return fmt.Errorf("validate existing server profiles: %w", err)
+	}
+	profile, exists := c.Connections.Servers[alias]
+	if !exists {
+		return fmt.Errorf("server profile %q is not connected", alias)
+	}
+	delete(c.Connections.Servers, alias)
+	if alias == "default" {
+		c.Connections.Server = config.Connection{Status: "not-connected"}
+		delete(c.MCP.Servers, "ivoai-context")
+		delete(c.MCP.Servers, "ivoai-memory")
+	}
+	secretData, err := s.Secrets.Load()
+	if err != nil {
+		return err
+	}
+	originalSecrets := cloneSecrets(secretData)
+	delete(secretData.Servers, profile.ID)
+	if profile.ID == config.LegacyServerID {
+		secretData.Server = nil
+	}
+	if err := s.Secrets.Save(secretData); err != nil {
+		return err
+	}
+	if err := s.saveConfig(c); err != nil {
+		return errors.Join(err, s.Secrets.Save(originalSecrets))
+	}
+	return nil
+}
+
+func (s ServerConnector) DisconnectAll() error {
+	c, err := s.Store.Load()
+	if err != nil {
+		return err
+	}
+	if _, err := serverpool.New(c.Connections.Servers); err != nil {
+		return fmt.Errorf("validate existing server profiles: %w", err)
+	}
+	ids := make([]string, 0, len(c.Connections.Servers))
+	for _, profile := range c.Connections.Servers {
+		ids = append(ids, profile.ID)
+	}
+	c.Connections.Servers = map[string]config.ServerProfile{}
 	c.Connections.Server = config.Connection{Status: "not-connected"}
 	delete(c.MCP.Servers, "ivoai-context")
 	delete(c.MCP.Servers, "ivoai-memory")
-	if err := s.Store.Save(c); err != nil {
+	secretData, err := s.Secrets.Load()
+	if err != nil {
 		return err
 	}
-	return s.Secrets.RemoveServer()
+	originalSecrets := cloneSecrets(secretData)
+	for _, id := range ids {
+		delete(secretData.Servers, id)
+	}
+	secretData.Server = nil
+	if err := s.Secrets.Save(secretData); err != nil {
+		return err
+	}
+	if err := s.saveConfig(c); err != nil {
+		return errors.Join(err, s.Secrets.Save(originalSecrets))
+	}
+	return nil
+}
+
+func (s ServerConnector) TestProfile(ctx context.Context, profile config.ServerProfile, credential secrets.ClientCredential) (ProfileHealth, error) {
+	result := ProfileHealth{}
+	if !profile.Enabled || profile.Status != "connected" {
+		return result, errors.New("server profile is disabled or disconnected")
+	}
+	base, err := ValidateBaseURL(profile.URL)
+	if err != nil {
+		return result, err
+	}
+	if s.Client == nil {
+		s.Client = SecureHTTPClient()
+	}
+	discovery, err := s.discover(ctx, base)
+	if err != nil {
+		return result, err
+	}
+	result.Reachable = true
+	result.ProtocolCompatible = discovery.ProtocolVersion == ProtocolVersion
+	if !result.ProtocolCompatible {
+		return result, fmt.Errorf("incompatible server protocol %d", discovery.ProtocolVersion)
+	}
+	if err := s.health(ctx, base, discovery.HealthEndpoint); err != nil {
+		return result, err
+	}
+	if err := s.ready(ctx, base, discovery.ReadyEndpoint); err != nil {
+		return result, err
+	}
+	result.Ready = true
+	contextEndpoint := resolveEndpoint(base, discovery.ContextMCPEndpoint)
+	if contextEndpoint != "" {
+		if err := s.probeMCP(ctx, contextEndpoint, credential.Token); err == nil {
+			result.ContextAvailable = true
+		}
+	}
+	if discovery.Features["memory"] {
+		memoryEndpoint := resolveEndpoint(base, discovery.MemoryMCPEndpoint)
+		if memoryEndpoint != "" {
+			if err := s.probeMCP(ctx, memoryEndpoint, credential.Token); err == nil {
+				result.MemoryAvailable = true
+			}
+		}
+	}
+	return result, nil
 }
 
 func (s ServerConnector) discover(ctx context.Context, base *url.URL) (Discovery, error) {
@@ -305,7 +513,25 @@ func (s ServerConnector) getJSON(ctx context.Context, endpoint, token string, ta
 	return decodeLimited(resp.Body, target)
 }
 func decodeLimited(r io.Reader, target any) error {
-	return json.NewDecoder(io.LimitReader(r, maxResponse)).Decode(target)
+	body, err := io.ReadAll(io.LimitReader(r, maxResponse+1))
+	if err != nil {
+		return err
+	}
+	if len(body) > maxResponse {
+		return errors.New("server response exceeds size limit")
+	}
+	decoder := json.NewDecoder(bytes.NewReader(body))
+	if err := decoder.Decode(target); err != nil {
+		return err
+	}
+	var trailing any
+	if err := decoder.Decode(&trailing); !errors.Is(err, io.EOF) {
+		if err == nil {
+			return errors.New("server response contains multiple JSON values")
+		}
+		return fmt.Errorf("server response contains trailing data: %w", err)
+	}
+	return nil
 }
 
 // ValidateBaseURL validates an ivoai server origin. Plain HTTP is accepted
@@ -329,7 +555,7 @@ func ValidateBaseURL(raw string) (*url.URL, error) {
 }
 func resolveEndpoint(base *url.URL, endpoint string) string {
 	ref, err := url.Parse(endpoint)
-	if err != nil {
+	if err != nil || ref.User != nil || ref.Fragment != "" || ref.RawQuery != "" {
 		return ""
 	}
 	if ref.IsAbs() {
@@ -337,6 +563,9 @@ func resolveEndpoint(base *url.URL, endpoint string) string {
 			return ""
 		}
 		return ref.String()
+	}
+	if ref.Host != "" {
+		return ""
 	}
 	if !strings.HasPrefix(endpoint, "/") {
 		endpoint = "/" + endpoint
@@ -346,4 +575,38 @@ func resolveEndpoint(base *url.URL, endpoint string) string {
 	copy.RawQuery = ""
 	copy.Fragment = ""
 	return copy.String()
+}
+
+func cloneConnectionConfig(value config.Config) config.Config {
+	copy := value
+	copy.Connections.Servers = make(map[string]config.ServerProfile, len(value.Connections.Servers))
+	for alias, profile := range value.Connections.Servers {
+		profileCopy := profile
+		profileCopy.Features = make(map[string]bool, len(profile.Features))
+		for feature, enabled := range profile.Features {
+			profileCopy.Features[feature] = enabled
+		}
+		copy.Connections.Servers[alias] = profileCopy
+	}
+	copy.MCP.Servers = make(map[string]config.MCPServer, len(value.MCP.Servers))
+	for name, server := range value.MCP.Servers {
+		copy.MCP.Servers[name] = server
+	}
+	return copy
+}
+
+func cloneSecrets(value secrets.Data) secrets.Data {
+	copy := value
+	copy.Servers = make(map[string]secrets.ClientCredential, len(value.Servers))
+	for id, credential := range value.Servers {
+		credentialCopy := credential
+		credentialCopy.Scopes = append([]string(nil), credential.Scopes...)
+		copy.Servers[id] = credentialCopy
+	}
+	if value.Server != nil {
+		credential := *value.Server
+		credential.Scopes = append([]string(nil), value.Server.Scopes...)
+		copy.Server = &credential
+	}
+	return copy
 }

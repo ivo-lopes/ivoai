@@ -178,6 +178,7 @@ func (p Pool) Resolve(selectors []string) (Selection, error) {
 					return Selection{}, err
 				}
 				matched := false
+				available := false
 				for alias, profile := range p.profiles {
 					if alias != selector && profile.Purpose != selector {
 						continue
@@ -186,10 +187,14 @@ func (p Pool) Resolve(selectors []string) (Selection, error) {
 					if profile.Enabled && profile.Status == "connected" && !seen[alias] {
 						profiles = append(profiles, profile)
 						seen[alias] = true
+						available = true
 					}
 				}
 				if !matched {
 					return Selection{}, fmt.Errorf("unknown knowledge source %q", selector)
+				}
+				if !available {
+					return Selection{}, fmt.Errorf("knowledge source %q is disabled or disconnected", selector)
 				}
 			}
 		}

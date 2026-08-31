@@ -27,6 +27,10 @@ import (
 )
 
 func (a *App) SessionStart(ctx context.Context, executor string, mode session.Mode, args []string) error {
+	return a.SessionStartWithKnowledge(ctx, executor, mode, args, nil)
+}
+
+func (a *App) SessionStartWithKnowledge(ctx context.Context, executor string, mode session.Mode, args, selectors []string) error {
 	if executor != "codex" && executor != "claude" && executor != "opencode" {
 		return errors.New("session executor must be codex, claude, or opencode")
 	}
@@ -72,6 +76,19 @@ func (a *App) SessionStart(ctx context.Context, executor string, mode session.Mo
 		_ = store.Delete(id)
 		return err
 	}
+	knowledge, err := a.prepareSessionKnowledge(ctx, cfg, selectors, executor, runtimeDir, os.Environ(), func(event observability.Event) {
+		_, _ = store.Update(id, func(current *session.Session) error { return session.AppendObservation(current, event) })
+	})
+	if err != nil {
+		_ = store.Delete(id)
+		return err
+	}
+	defer knowledge.close()
+	cfg = knowledge.config
+	value, _ = store.Update(id, func(current *session.Session) error {
+		current.KnowledgeSources = knowledge.aliases()
+		return nil
+	})
 	skillResult, err := a.evaluateSessionSkills(ctx, executor, cwd, args)
 	if err != nil {
 		_ = store.Delete(id)
@@ -86,7 +103,7 @@ func (a *App) SessionStart(ctx context.Context, executor string, mode session.Mo
 		_ = store.Delete(id)
 		return err
 	}
-	args = managedAgentArgs(executor, args, cfg, skillResult.Instructions)
+	args = append(knowledge.args, managedAgentArgs(executor, args, cfg, skillResult.Instructions)...)
 	var control core.Orchestrator
 	if mode == session.ModeOrchestrated {
 		if !cfg.Orchestration.Enabled {
@@ -122,10 +139,7 @@ func (a *App) SessionStart(ctx context.Context, executor string, mode session.Mo
 		}
 	}
 	a.printSessionSummary(value, mode == session.ModeOrchestrated)
-	environment, err := a.serverCredentialEnvironment()
-	if err != nil {
-		return err
-	}
+	environment := knowledge.environment
 	cleanupInstructions := func() {}
 	if executor == "opencode" {
 		environment, cleanupInstructions, err = openCodeInstructionEnvironment(environment, a.Store.Paths.StateDir, managedInstructions(skillResult.Instructions))
@@ -248,7 +262,7 @@ func (a *App) OrchestratorServe(ctx context.Context, id string) error {
 	server := orchestrator.Server{
 		Store: store, SessionID: id, Directory: value.WorkingDirectory, RuntimeDir: runtimeDir,
 		ReviewExecutor:        cfg.Orchestration.ReviewExecutor,
-		Adapter:               workers.Adapter{Runner: a.Runner, CodexPath: state.Components["codex"].Path, ClaudePath: state.Components["claude-code"].Path, HeadroomPath: state.Components["headroom"].Path, HeadroomEnabled: primaryHeadroomEnabled(cfg), KnowledgeServers: cfg.MCP.Servers},
+		Adapter:               workers.Adapter{Runner: a.Runner, CodexPath: state.Components["codex"].Path, ClaudePath: state.Components["claude-code"].Path, HeadroomPath: state.Components["headroom"].Path, HeadroomEnabled: primaryHeadroomEnabled(cfg), KnowledgeServers: runtimeKnowledgeServers(cfg.MCP.Servers)},
 		Control:               orchestration.RufloOrchestratorAdapter{Control: orchestration.ControlPlane{Manager: a.orchestrationManager(state), RuntimeDir: runtimeDir}, Managed: state.Components["ruflo"].Managed},
 		Quota:                 a.automaticQuotaManager(cfg, state),
 		CheckpointEnabled:     cfg.Orchestration.Auto.CheckpointEnabled,
@@ -385,6 +399,11 @@ func agentModelConfig(executor string) string {
 }
 
 func contextStatus(cfg config.Config) string {
+	for _, profile := range cfg.Connections.Servers {
+		if profile.Enabled && profile.Status == "connected" && profile.ContextMCPURL != "" {
+			return "configured"
+		}
+	}
 	if server, ok := cfg.MCP.Servers["ivoai-context"]; ok && server.Enabled {
 		return "configured"
 	}
@@ -405,6 +424,9 @@ func memoryStatus(cfg config.Config, state config.State) string {
 }
 
 func serverStatus(cfg config.Config) string {
+	if len(cfg.Connections.Servers) > 0 {
+		return "configured"
+	}
 	if cfg.Connections.Server.Status == "connected" {
 		return "configured"
 	}

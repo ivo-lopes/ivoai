@@ -31,6 +31,7 @@ const (
 	CategorySkillPolicy    Category = "skill_policy"
 	CategorySupplyChain    Category = "supply_chain"
 	CategoryWorkingContext Category = "working_context"
+	CategoryConnection     Category = "connection"
 )
 
 type Operation string
@@ -68,6 +69,7 @@ const (
 	OperationWorkerResultProjected   Operation = "worker_result.projected"
 	OperationWorkingContextBudget    Operation = "working_context.budget"
 	OperationWorkingContextDegraded  Operation = "working_context.degraded"
+	OperationKnowledgeRoute          Operation = "knowledge.route"
 )
 
 type State string
@@ -182,6 +184,12 @@ type Event struct {
 	CompressionRatio      float64          `json:"compression_ratio,omitempty"`
 	RecoveryCount         int              `json:"recovery_count,omitempty"`
 	CompressionResult     string           `json:"compression_result,omitempty"`
+	SourceID              string           `json:"source_id,omitempty"`
+	SourceAlias           string           `json:"source_alias,omitempty"`
+	Purpose               string           `json:"purpose,omitempty"`
+	SelectedSourceCount   int              `json:"selected_source_count,omitempty"`
+	Failover              bool             `json:"failover,omitempty"`
+	PartialFailure        bool             `json:"partial_failure,omitempty"`
 }
 
 var operationCategories = map[Operation]Category{
@@ -217,6 +225,7 @@ var operationCategories = map[Operation]Category{
 	OperationWorkerResultProjected:   CategoryWorkingContext,
 	OperationWorkingContextBudget:    CategoryWorkingContext,
 	OperationWorkingContextDegraded:  CategoryWorkingContext,
+	OperationKnowledgeRoute:          CategoryConnection,
 }
 
 // Normalize redacts the only free-text fields and validates every persisted
@@ -254,6 +263,9 @@ func (e Event) Validate() error {
 	}
 	if !safeLabel(e.TaskID, 64) || !safeWorker(e.WorkerID) || !oneOf(e.Provider, "", "codex", "claude", "opencode", "caveman", "headroom", "direct") || !oneOf(e.Executor, "", "codex", "claude", "opencode") {
 		return errors.New("invalid observability correlation metadata")
+	}
+	if !safeLabel(e.SourceID, 128) || !safeLabel(e.SourceAlias, 64) || !safeLabel(e.Purpose, 64) || e.SelectedSourceCount < 0 || e.SelectedSourceCount > 8 {
+		return errors.New("invalid knowledge source observability metadata")
 	}
 	if e.Component != "" && !oneOf(string(e.Component), "codex", "claude", "memory", "context", "compression", "orchestration", "working_context", "skills", "tools") {
 		return errors.New("invalid observability component")

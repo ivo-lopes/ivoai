@@ -54,3 +54,85 @@ func TestHostileAliasRejected(t *testing.T) {
 		}
 	}
 }
+
+func TestResolveServerCountMatrix(t *testing.T) {
+	empty, err := New(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	selection, err := empty.Resolve(nil)
+	if err != nil || len(selection.Groups) != 0 {
+		t.Fatalf("zero servers selection=%+v err=%v", selection, err)
+	}
+
+	one, err := New(map[string]config.ServerProfile{
+		"voicecorp": profile("srv_voicecorp", "voicecorp", "voicecorp", "", 10),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	selection, err = one.Resolve(nil)
+	if err != nil || len(selection.Groups) != 1 || selection.Groups[0].Purpose != "voicecorp" {
+		t.Fatalf("one server selection=%+v err=%v", selection, err)
+	}
+
+	profiles := map[string]config.ServerProfile{
+		"voicecorp": profile("srv_voicecorp", "voicecorp", "voicecorp", "", 10),
+		"mindsite":  profile("srv_mindsite", "mindsite", "mindsite", "", 10),
+	}
+	two, err := New(profiles)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := two.Resolve(nil); err == nil {
+		t.Fatal("two purposes were selected implicitly")
+	}
+	selection, err = two.Resolve([]string{"voicecorp", "mindsite"})
+	if err != nil || len(selection.Groups) != 2 {
+		t.Fatalf("two explicit servers selection=%+v err=%v", selection, err)
+	}
+
+	profiles["research"] = profile("srv_research", "research", "research", "", 10)
+	three, err := New(profiles)
+	if err != nil {
+		t.Fatal(err)
+	}
+	selection, err = three.Resolve([]string{"research", "mindsite", "voicecorp"})
+	if err != nil || len(selection.Groups) != 3 {
+		t.Fatalf("three explicit servers selection=%+v err=%v", selection, err)
+	}
+	if selection.Groups[0].Purpose != "mindsite" || selection.Groups[1].Purpose != "research" || selection.Groups[2].Purpose != "voicecorp" {
+		t.Fatalf("selection order is not deterministic: %+v", selection.Groups)
+	}
+}
+
+func TestPoolRejectsCrossOriginAndURLUserinfo(t *testing.T) {
+	base := profile("srv_voicecorp", "voicecorp", "voicecorp", "", 10)
+	base.URL = "https://user:secret@voicecorp.example.invalid"
+	if _, err := New(map[string]config.ServerProfile{"voicecorp": base}); err == nil {
+		t.Fatal("URL userinfo accepted")
+	}
+	base.URL = "https://voicecorp.example.invalid"
+	base.ContextMCPURL = "https://mindsite.example.invalid/mcp/context"
+	if _, err := New(map[string]config.ServerProfile{"voicecorp": base}); err == nil {
+		t.Fatal("cross-origin discovery endpoint accepted")
+	}
+}
+
+func TestExplicitUnavailableSourceFails(t *testing.T) {
+	for _, status := range []struct {
+		enabled bool
+		state   string
+	}{{enabled: false, state: "connected"}, {enabled: true, state: "disconnected"}} {
+		value := profile("srv_mindsite", "mindsite", "mindsite", "", 10)
+		value.Enabled = status.enabled
+		value.Status = status.state
+		pool, err := New(map[string]config.ServerProfile{"mindsite": value})
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := pool.Resolve([]string{"mindsite"}); err == nil {
+			t.Fatalf("explicit unavailable source accepted: %+v", status)
+		}
+	}
+}

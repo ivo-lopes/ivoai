@@ -2,10 +2,12 @@ package doctor
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -15,9 +17,42 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/orchestration"
 	"github.com/ivo-lopes/ivoai/internal/platform"
 	"github.com/ivo-lopes/ivoai/internal/quota"
+	"github.com/ivo-lopes/ivoai/internal/secrets"
 	"github.com/ivo-lopes/ivoai/internal/skills"
 	"github.com/ivo-lopes/ivoai/internal/supplychain"
 )
+
+func TestDoctorReportsMultipleServersWithoutSecrets(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, request *http.Request) {
+		switch request.URL.Path {
+		case "/.well-known/ivoai":
+			json.NewEncoder(w).Encode(map[string]any{"protocol_version": 1, "health_endpoint": "/health", "ready_endpoint": "/ready"})
+		case "/health", "/ready":
+			w.WriteHeader(http.StatusOK)
+		default:
+			http.NotFound(w, request)
+		}
+	}))
+	defer server.Close()
+	root := t.TempDir()
+	paths := config.Paths{ConfigDir: root, StateDir: root, DataDir: root, Secrets: filepath.Join(root, "secrets.json")}
+	cfg := config.Default()
+	for _, alias := range []string{"mindsite", "voicecorp"} {
+		id := "srv_id_" + alias
+		cfg.Connections.Servers[alias] = config.ServerProfile{ID: id, Alias: alias, URL: server.URL, Status: "connected", Enabled: true, Purpose: alias, Protocol: 1, ContextMCPURL: server.URL + "/context", Features: map[string]bool{"context": true}}
+		if err := (secrets.Store{Path: paths.Secrets}).Set(id, secrets.ClientCredential{Token: "not-reported-" + alias}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	profiles := (Doctor{Store: config.NewStore(paths), HTTPClient: server.Client()}).serverProfiles(context.Background(), cfg)
+	if len(profiles) != 2 || profiles[0].Alias != "mindsite" || profiles[1].Alias != "voicecorp" || !profiles[0].CredentialConfigured || !profiles[1].Reachable {
+		t.Fatalf("profiles=%+v", profiles)
+	}
+	encoded, _ := json.Marshal(profiles)
+	if strings.Contains(string(encoded), "not-reported") {
+		t.Fatal("doctor leaked a server credential")
+	}
+}
 
 type statusRunner struct {
 	output string

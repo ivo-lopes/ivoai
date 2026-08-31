@@ -13,6 +13,7 @@ import (
 
 	"github.com/ivo-lopes/ivoai/internal/config"
 	"github.com/ivo-lopes/ivoai/internal/quota"
+	"github.com/ivo-lopes/ivoai/internal/secrets"
 	"github.com/ivo-lopes/ivoai/internal/session"
 	"github.com/ivo-lopes/ivoai/internal/workingcontext"
 )
@@ -106,6 +107,42 @@ func TestAutoStartupFallbackNeverLaunchesExhaustedProvider(t *testing.T) {
 	values, _ := a.SessionList()
 	if len(values) != 1 || values[0].InitialPlanner != "codex" || values[0].CurrentPrimary != "claude" || values[0].FailoverCount != 1 || values[0].State != session.StateCompleted {
 		t.Fatalf("unexpected automatic session: %+v", values)
+	}
+}
+
+func TestAutoFailoverPreservesSelectedKnowledgeSource(t *testing.T) {
+	root := t.TempDir()
+	marker := filepath.Join(root, "claude-knowledge")
+	a := autoTestApp(t, root, "#!/bin/sh\nexit 99\n", "#!/bin/sh\n{ printf '%s\\n%s\\n' \"$IVOAI_SERVER_TOKEN\" \"$*\"; cat \"$2\"; } > '"+marker+"'\n")
+	cfg, err := a.Store.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	profile := config.ServerProfile{ID: "srv_mindsite_auto", Alias: "mindsite", URL: "http://127.0.0.1:9", Status: "connected", Enabled: true, Purpose: "mindsite", ContextMCPURL: "http://127.0.0.1:9/context", MemoryMCPURL: "http://127.0.0.1:9/memory", MemoryHooksURL: "http://127.0.0.1:9/hooks"}
+	cfg.Connections.Servers[profile.Alias] = profile
+	if err := a.Store.Save(cfg); err != nil {
+		t.Fatal(err)
+	}
+	if err := (secrets.Store{Path: a.Store.Paths.Secrets}).Set(profile.ID, secrets.ClientCredential{Token: "upstream-mindsite-token"}); err != nil {
+		t.Fatal(err)
+	}
+	a.QuotaManager = &quota.Manager{Store: quota.Store{Root: a.Store.Paths.QuotaDir}, Probes: map[quota.Provider]quota.Probe{
+		quota.ProviderCodex:  probeFunc(func(context.Context) (quota.ProviderQuota, error) { return exhausted(quota.ProviderCodex), nil }),
+		quota.ProviderClaude: probeFunc(func(context.Context) (quota.ProviderQuota, error) { return available(quota.ProviderClaude), nil }),
+	}}
+	if err := a.AutoWithKnowledge(context.Background(), "codex", nil, []string{"mindsite"}); err != nil {
+		t.Fatal(err)
+	}
+	body, err := os.ReadFile(marker)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(body), "upstream-mindsite-token") || !strings.Contains(string(body), "--mcp-config") || !strings.Contains(string(body), "http://127.0.0.1:") {
+		t.Fatalf("failover did not preserve isolated local knowledge routing: %q", body)
+	}
+	values, err := a.SessionList()
+	if err != nil || len(values) != 1 || len(values[0].KnowledgeSources) != 1 || values[0].KnowledgeSources[0] != "mindsite" || values[0].CurrentPrimary != "claude" {
+		t.Fatalf("session selection=%+v err=%v", values, err)
 	}
 }
 

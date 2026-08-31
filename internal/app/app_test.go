@@ -221,6 +221,53 @@ func TestStatusAndDoctorAgreeWhenConfiguredServerIsUnreachable(t *testing.T) {
 	}
 }
 
+func TestStatusReportsMultipleServerPurposesWithoutSecrets(t *testing.T) {
+	runner := &setupRunner{}
+	a, output := managedSetupApp(t, true, runner)
+	if err := a.Setup(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, request *http.Request) {
+		switch request.URL.Path {
+		case "/.well-known/ivoai":
+			_ = json.NewEncoder(w).Encode(connections.Discovery{ProtocolVersion: connections.ProtocolVersion, HealthEndpoint: "/health", ReadyEndpoint: "/ready"})
+		case "/health", "/ready":
+			w.WriteHeader(http.StatusNoContent)
+		default:
+			http.NotFound(w, request)
+		}
+	}))
+	defer server.Close()
+	cfg, err := a.Store.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, alias := range []string{"voicecorp", "mindsite"} {
+		id := "srv_status_" + alias
+		cfg.Connections.Servers[alias] = config.ServerProfile{ID: id, Alias: alias, URL: server.URL, Status: "connected", Enabled: true, Purpose: alias, Protocol: 1, ContextMCPURL: server.URL + "/context", MemoryMCPURL: server.URL + "/memory"}
+		if err := (secrets.Store{Path: a.Store.Paths.Secrets}).Set(id, secrets.ClientCredential{Token: "status-secret-" + alias}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := a.Store.Save(cfg); err != nil {
+		t.Fatal(err)
+	}
+	a.HTTPClient = server.Client()
+	output.Reset()
+	if err := a.Status(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	value := output.String()
+	for _, expected := range []string{"Server mindsite", "purpose=mindsite", "Server voicecorp", "purpose=voicecorp", "protocol=1", "credential=true", "features=context,memory"} {
+		if !strings.Contains(value, expected) {
+			t.Fatalf("status missing %q:\n%s", expected, value)
+		}
+	}
+	if strings.Contains(value, "status-secret") {
+		t.Fatalf("status leaked credential: %s", value)
+	}
+}
+
 func TestStatusDoesNotDeclareReachableServerDownDuringSlowDNSClassLatency(t *testing.T) {
 	runner := &setupRunner{}
 	a, output := managedSetupApp(t, true, runner)
@@ -508,7 +555,7 @@ func TestDisabledMemoryIsExcludedFromAgentMCPRegistration(t *testing.T) {
 	}
 }
 
-func TestLaunchInjectsServerTokenOnlyIntoChildEnvironment(t *testing.T) {
+func TestLaunchNeverInjectsUpstreamServerTokenIntoChildEnvironment(t *testing.T) {
 	root := t.TempDir()
 	t.Setenv("HOME", root)
 	t.Setenv("XDG_CONFIG_HOME", filepath.Join(root, "config"))
@@ -544,8 +591,8 @@ func TestLaunchInjectsServerTokenOnlyIntoChildEnvironment(t *testing.T) {
 	if err := a.Launch(context.Background(), "codex", nil); err != nil {
 		t.Fatal(err)
 	}
-	if output.String() != "scoped-secret/scoped-secret" {
-		t.Fatalf("agent did not receive scoped credential: %q", output.String())
+	if output.String() != "/" {
+		t.Fatalf("agent received an upstream credential: %q", output.String())
 	}
 	if got := os.Getenv(connections.ServerTokenEnvironment); got != "pre-existing" {
 		t.Fatalf("parent environment was modified: %q", got)
@@ -668,13 +715,12 @@ func TestConnectServerUsesDiscoveredMCPAndHooksEndpoints(t *testing.T) {
 	}
 	allCommands := strings.Join(commands, "\n")
 	allEnvironment := strings.Join(environments, "\n")
-	for _, endpoint := range []string{server.URL + "/v1/context/mcp", server.URL + "/v1/memory/mcp"} {
-		if !strings.Contains(allCommands, endpoint) {
-			t.Fatalf("discovered endpoint %q not registered:\n%s", endpoint, allCommands)
-		}
+	profile, err := a.ShowServer("default")
+	if err != nil || profile.Features["memory"] != true {
+		t.Fatalf("discovered server profile not persisted: %#v err=%v", profile, err)
 	}
-	if !strings.Contains(allEnvironment, "AI_MEMORY_SERVER_URL="+server.URL+"/v1/memory") {
-		t.Fatalf("hook base endpoint not configured:\n%s", allEnvironment)
+	if strings.Contains(allCommands+allEnvironment, server.URL) {
+		t.Fatalf("upstream endpoint was written to global agent configuration:\n%s\n%s", allCommands, allEnvironment)
 	}
 	if strings.Contains(allCommands, "server-scoped-token") {
 		t.Fatalf("server token leaked into command argv:\n%s", allCommands)
@@ -697,7 +743,7 @@ func TestConnectServerUsesDiscoveredMCPAndHooksEndpoints(t *testing.T) {
 	}
 	allCommands = strings.Join(commands, "\n")
 	allEnvironment = strings.Join(environments, "\n")
-	if !strings.Contains(allCommands, "uninstall --apply") || !strings.Contains(allCommands, "mcp remove ivoai-context") {
+	if !strings.Contains(allCommands, "install-mcp --client") || !strings.Contains(allCommands, "mcp remove ivoai-context") {
 		t.Fatalf("managed integration cleanup missing:\n%s", allCommands)
 	}
 	if strings.Contains(allCommands+allEnvironment, "server-scoped-token") || strings.Contains(allEnvironment, server.URL) {

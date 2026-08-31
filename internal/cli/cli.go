@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/ivo-lopes/ivoai/internal/app"
+	"github.com/ivo-lopes/ivoai/internal/connections"
 	"github.com/ivo-lopes/ivoai/internal/platform"
 	"github.com/ivo-lopes/ivoai/internal/session"
 	"github.com/ivo-lopes/ivoai/internal/terminalui"
@@ -149,15 +150,23 @@ func runCommand(ctx context.Context, a *app.App, args []string) error {
 	case "disconnect":
 		return runDisconnect(ctx, a, args[1:])
 	case "codex", "claude", "opencode":
-		return a.Launch(ctx, args[0], trimDoubleDash(args[1:]))
+		rest, sources, err := extractKnowledgeSources(args[1:])
+		if err != nil {
+			return err
+		}
+		return a.LaunchWithKnowledge(ctx, args[0], trimDoubleDash(rest), sources)
 	case "auto":
+		rest, sources, err := extractKnowledgeSources(args[1:])
+		if err != nil {
+			return err
+		}
 		fs := flag.NewFlagSet("auto", flag.ContinueOnError)
 		fs.SetOutput(a.Err)
 		planner := fs.String("planner", "", "codex or claude")
-		if err := fs.Parse(args[1:]); err != nil {
+		if err := fs.Parse(rest); err != nil {
 			return err
 		}
-		return a.Auto(ctx, *planner, trimDoubleDash(fs.Args()))
+		return a.AutoWithKnowledge(ctx, *planner, trimDoubleDash(fs.Args()), sources)
 	case "session":
 		return runSession(ctx, a, args[1:])
 	case "monitor":
@@ -206,14 +215,18 @@ func runSession(ctx context.Context, a *app.App, args []string) error {
 	}
 	switch args[0] {
 	case "start":
+		rest, sources, err := extractKnowledgeSources(args[1:])
+		if err != nil {
+			return err
+		}
 		fs := flag.NewFlagSet("session start", flag.ContinueOnError)
 		fs.SetOutput(a.Err)
 		executor := fs.String("executor", "codex", "codex, claude, or opencode (direct only)")
 		mode := fs.String("mode", "direct", "direct or orchestrated")
-		if err := fs.Parse(args[1:]); err != nil {
+		if err := fs.Parse(rest); err != nil {
 			return err
 		}
-		return a.SessionStart(ctx, *executor, session.Mode(*mode), trimDoubleDash(fs.Args()))
+		return a.SessionStartWithKnowledge(ctx, *executor, session.Mode(*mode), trimDoubleDash(fs.Args()), sources)
 	case "list":
 		fs := flag.NewFlagSet("session list", flag.ContinueOnError)
 		fs.SetOutput(a.Err)
@@ -284,6 +297,16 @@ func runDoctor(ctx context.Context, a *app.App, args []string) error {
 	fmt.Fprintf(a.Out, "Headroom: installed=%s enabled=%s healthy=%s version=%s interactive-launch=%s\nCodex via Headroom: %s\nClaude Code via Headroom: %s\n", semanticBool(report.Headroom.Installed, color), semanticOptionalBool(report.Headroom.Enabled, color), semanticBool(report.Headroom.Healthy, color), report.Headroom.Version, report.Headroom.InteractiveLaunch, semanticOK(report.Headroom.CodexCompatible, color), semanticOK(report.Headroom.ClaudeCompatible, color))
 	fmt.Fprintf(a.Out, "Caveman: installed=%s managed=%s healthy=%s version=%s revision=%s license=%s trust=%s selected-provider=%s\n", semanticOptionalBool(report.Caveman.Installed, color), semanticOptionalBool(report.Caveman.Managed, color), semanticOptionalBool(report.Caveman.Healthy, color), report.Caveman.Version, report.Caveman.Revision, report.Caveman.License, report.Caveman.TrustLevel, report.CompressionProvider)
 	fmt.Fprintf(a.Out, "ai-memory: installed=%s version=%s hooks=%s server=%s\n", semanticBool(report.Memory.Installed, color), report.Memory.Version, semanticBool(report.Memory.Hooks, color), configured(report.Server.Configured))
+	if len(report.Servers) > 0 {
+		fmt.Fprintln(a.Out, "Servers:")
+		for _, server := range report.Servers {
+			group := ""
+			if server.RedundancyGroup != "" {
+				group = fmt.Sprintf(" group=%s priority=%d", server.RedundancyGroup, server.Priority)
+			}
+			fmt.Fprintf(a.Out, "  %s purpose=%s reachable=%s ready=%s protocol-compatible=%s credential=%s%s\n", server.Alias, server.Purpose, semanticOptionalBool(server.Reachable, color), semanticOptionalBool(server.Ready, color), semanticOptionalBool(server.ProtocolCompatible, color), configured(server.CredentialConfigured), group)
+		}
+	}
 	fmt.Fprintf(a.Out, "Ruflo: installed=%s version=%s safe-mode=%s provider-execution=%s\n", semanticBool(report.Ruflo.Installed, color), report.Ruflo.Version, semanticBool(report.Ruflo.SafeMode, color), semanticDisabledIsSafe(report.Ruflo.ProviderExecution, color))
 	fmt.Fprintf(a.Out, "Orchestration: enabled=%s bridge=%s session-permissions=%s max-workers=%d codex-worker=%s claude-worker=%s\n", semanticOptionalBool(report.Orchestration.Enabled, color), semanticBool(report.Orchestration.BridgeAvailable, color), report.Orchestration.SessionPerms, report.Orchestration.MaxWorkers, semanticBool(report.Orchestration.CodexWorker, color), semanticBool(report.Orchestration.ClaudeWorker, color))
 	fmt.Fprintf(a.Out, "\nAutomatic Orchestration\n  enabled=%s default=%s failover=%s checkpoint=%s\n", semanticOptionalBool(report.Automatic.Enabled, color), report.Automatic.DefaultPlanner, semanticOptionalBool(report.Automatic.AutomaticFailover, color), semanticBool(report.Automatic.CheckpointReady, color))
@@ -351,6 +374,9 @@ func runConnect(ctx context.Context, a *app.App, args []string) error {
 	}
 	switch args[0] {
 	case "chatgpt", "claude":
+		if len(args) != 1 {
+			return errors.New("agent connect accepts no additional arguments")
+		}
 		return a.ConnectAgent(ctx, args[0])
 	case "server":
 		return connectServer(ctx, a, args[1:])
@@ -363,9 +389,73 @@ func runConnect(ctx context.Context, a *app.App, args []string) error {
 func connectionList(a *app.App) error { return a.Status(context.Background()) }
 
 func connectServer(ctx context.Context, a *app.App, args []string) error {
+	if len(args) > 0 {
+		switch args[0] {
+		case "list":
+			fs := flag.NewFlagSet("connect server list", flag.ContinueOnError)
+			fs.SetOutput(a.Err)
+			jsonOutput := fs.Bool("json", false, "JSON output")
+			if err := fs.Parse(args[1:]); err != nil || fs.NArg() != 0 {
+				return errors.New("usage: ivoai connect server list [--json]")
+			}
+			values, err := a.ListServers()
+			if err != nil {
+				return err
+			}
+			return writeServerViews(a.Out, values, *jsonOutput)
+		case "show", "test":
+			action := args[0]
+			alias, jsonOutput, parseErr := oneAliasAndJSON(args[1:])
+			if parseErr != nil {
+				return fmt.Errorf("usage: ivoai connect server %s <alias> [--json]", action)
+			}
+			var value app.ServerView
+			var err error
+			if action == "test" {
+				value, err = a.TestServer(ctx, alias)
+			} else {
+				value, err = a.ShowServer(alias)
+			}
+			if err != nil {
+				return err
+			}
+			return writeServerViews(a.Out, []app.ServerView{value}, jsonOutput)
+		case "add":
+			if len(args) < 2 {
+				return errors.New("usage: ivoai connect server add <alias> --url <https-url> [--purpose <purpose>] [--code-stdin]")
+			}
+			return connectServerProfile(ctx, a, args[1], args[2:])
+		}
+	}
+	return connectServerProfile(ctx, a, "default", args)
+}
+
+func oneAliasAndJSON(args []string) (string, bool, error) {
+	alias := ""
+	jsonOutput := false
+	for _, argument := range args {
+		if argument == "--json" {
+			jsonOutput = true
+			continue
+		}
+		if strings.HasPrefix(argument, "-") || alias != "" {
+			return "", false, errors.New("invalid server selector")
+		}
+		alias = argument
+	}
+	if alias == "" {
+		return "", false, errors.New("server alias is required")
+	}
+	return alias, jsonOutput, nil
+}
+
+func connectServerProfile(ctx context.Context, a *app.App, alias string, args []string) error {
 	fs := flag.NewFlagSet("connect server", flag.ContinueOnError)
 	fs.SetOutput(a.Err)
 	serverURL := fs.String("url", "", "server base URL")
+	purpose := fs.String("purpose", alias, "knowledge purpose")
+	group := fs.String("redundancy-group", "", "logical redundancy group")
+	priority := fs.Int("priority", 100, "lower values are preferred within a redundancy group")
 	code := fs.String("enrollment-code", "", "one-time enrollment code")
 	codeStdin := fs.Bool("code-stdin", false, "read enrollment code from stdin")
 	if err := fs.Parse(args); err != nil {
@@ -390,21 +480,50 @@ func connectServer(ctx context.Context, a *app.App, args []string) error {
 			return err
 		}
 	}
-	return runProgress(ctx, a, "Connecting ivoai server", func() error { return a.ConnectServer(ctx, *serverURL, *code) })
+	options := connections.ConnectOptions{Alias: alias, Purpose: *purpose, RedundancyGroup: *group, Priority: *priority, BaseURL: *serverURL, Code: *code}
+	return runProgress(ctx, a, "Connecting ivoai server", func() error { return a.ConnectServerProfile(ctx, options) })
 }
 
 func runDisconnect(ctx context.Context, a *app.App, args []string) error {
-	if len(args) != 1 {
-		return errors.New("usage: ivoai disconnect <chatgpt|claude|server>")
+	if len(args) < 1 {
+		return errors.New("usage: ivoai disconnect <chatgpt|claude|server [alias|--all]>")
 	}
 	switch args[0] {
 	case "chatgpt", "claude":
+		if len(args) != 1 {
+			return errors.New("agent disconnect accepts no additional arguments")
+		}
 		return a.DisconnectAgent(ctx, args[0])
 	case "server":
-		return a.DisconnectServer(ctx)
+		if len(args) == 1 {
+			return a.DisconnectServer(ctx)
+		}
+		if len(args) != 2 {
+			return errors.New("usage: ivoai disconnect server [alias|--all]")
+		}
+		return a.DisconnectServerProfile(ctx, args[1], args[1] == "--all")
 	default:
 		return fmt.Errorf("unsupported connection %q", args[0])
 	}
+}
+
+func writeServerViews(w io.Writer, values []app.ServerView, jsonOutput bool) error {
+	if jsonOutput {
+		return json.NewEncoder(w).Encode(values)
+	}
+	if len(values) == 0 {
+		fmt.Fprintln(w, "No ivoai servers connected.")
+		return nil
+	}
+	fmt.Fprintln(w, "Servers")
+	for _, value := range values {
+		group := ""
+		if value.RedundancyGroup != "" {
+			group = fmt.Sprintf(" group=%s priority=%d", value.RedundancyGroup, value.Priority)
+		}
+		fmt.Fprintf(w, "  %-16s purpose=%-16s status=%s protocol=%d credential=%s%s\n", value.Alias, value.Purpose, value.Status, value.Protocol, configured(value.CredentialConfigured), group)
+	}
+	return nil
 }
 func runMCP(a *app.App, args []string) error {
 	if len(args) == 0 || args[0] == "list" {
@@ -466,6 +585,36 @@ func trimDoubleDash(args []string) []string {
 	return args
 }
 
+func extractKnowledgeSources(args []string) ([]string, []string, error) {
+	rest := make([]string, 0, len(args))
+	sources := []string{}
+	for index := 0; index < len(args); index++ {
+		argument := args[index]
+		if argument == "--" {
+			rest = append(rest, args[index:]...)
+			break
+		}
+		if argument == "--knowledge-source" {
+			if index+1 >= len(args) || strings.TrimSpace(args[index+1]) == "" {
+				return nil, nil, errors.New("--knowledge-source requires an alias or purpose")
+			}
+			sources = append(sources, args[index+1])
+			index++
+			continue
+		}
+		if strings.HasPrefix(argument, "--knowledge-source=") {
+			value := strings.TrimSpace(strings.TrimPrefix(argument, "--knowledge-source="))
+			if value == "" {
+				return nil, nil, errors.New("--knowledge-source requires an alias or purpose")
+			}
+			sources = append(sources, value)
+			continue
+		}
+		rest = append(rest, argument)
+	}
+	return rest, sources, nil
+}
+
 func usage(w io.Writer) {
 	fmt.Fprintln(w, `ivoai - personal AI client and server platform
 
@@ -473,13 +622,13 @@ Usage:
   ivoai                         interactive menu
   ivoai setup [--mode client]
   ivoai status | doctor [--json] [--inventory] | version | update [--dry-run|--rollback [--force]] | uninstall
-  ivoai connect [list|chatgpt|claude|server|mcp ...]
-  ivoai disconnect <chatgpt|claude|server>
-  ivoai codex [-- agent arguments...]
-  ivoai claude [-- agent arguments...]
+  ivoai connect [list|chatgpt|claude|server [add|list|show|test]|mcp ...]
+  ivoai disconnect <chatgpt|claude|server [alias|--all]>
+  ivoai codex [--knowledge-source <alias|purpose>] [-- agent arguments...]
+  ivoai claude [--knowledge-source <alias|purpose>] [-- agent arguments...]
   ivoai opencode [-- agent arguments...]
-  ivoai auto [--planner codex|claude] [-- agent arguments...]
-  ivoai session start --executor <codex|claude|opencode> --mode <direct|orchestrated> [-- agent arguments...]
+  ivoai auto [--planner codex|claude] [--knowledge-source <alias|purpose>] [-- agent arguments...]
+  ivoai session start --executor <codex|claude|opencode> --mode <direct|orchestrated> [--knowledge-source <alias|purpose>] [-- agent arguments...]
   ivoai session list [--json] | show [--json] <id> | stop <id>
   ivoai monitor [--watch] [--session <id>] [--json]
   ivoai memory [status|configure]

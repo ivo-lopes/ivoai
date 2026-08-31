@@ -28,6 +28,7 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/quota"
 	"github.com/ivo-lopes/ivoai/internal/secrets"
 	"github.com/ivo-lopes/ivoai/internal/server"
+	"github.com/ivo-lopes/ivoai/internal/serverpool"
 	"github.com/ivo-lopes/ivoai/internal/skills"
 	"github.com/ivo-lopes/ivoai/internal/terminalui"
 	"github.com/ivo-lopes/ivoai/internal/update"
@@ -98,7 +99,7 @@ func (a *App) MenuSnapshot() (MenuSnapshot, error) {
 		ComponentsReady:       requiredComponentsReady(state),
 		ChatGPTConnected:      cfg.Connections.ChatGPT.Status == "connected",
 		ClaudeConnected:       cfg.Connections.Claude.Status == "connected",
-		ServerConnected:       cfg.Connections.Server.Status == "connected",
+		ServerConnected:       len(cfg.Connections.Servers) > 0 || cfg.Connections.Server.Status == "connected",
 		MemoryEnabled:         cfg.Memory.Enabled,
 		HeadroomEnabled:       cfg.Headroom.Enabled,
 		RufloEnabled:          cfg.Orchestration.Enabled,
@@ -134,6 +135,14 @@ func (a *App) Setup(ctx context.Context) error {
 		if err := secretStore.Save(secrets.Data{}); err != nil {
 			return err
 		}
+	} else {
+		data, err := secretStore.Load()
+		if err != nil {
+			return err
+		}
+		if err := secretStore.Save(data); err != nil {
+			return err
+		}
 	}
 	installer := components.Installer{Runner: a.Runner, Store: a.Store, Out: a.Out}
 	if err := installer.Setup(ctx); err != nil {
@@ -147,7 +156,7 @@ func (a *App) Setup(ctx context.Context) error {
 		a.warn("Ruflo safe profile is degraded", err)
 	}
 	mem := a.memoryManager(state)
-	if cfg.Memory.Enabled && cfg.Connections.Server.Status == "connected" {
+	if cfg.Memory.Enabled && len(cfg.Connections.Servers) > 0 {
 		if err := a.ReconfigureMemory(ctx); err != nil {
 			a.warn("remote ai-memory integration is degraded; Codex and Claude Code remain usable", err)
 		}
@@ -157,8 +166,10 @@ func (a *App) Setup(ctx context.Context) error {
 		}
 	} else if err := mem.Disable(ctx); err != nil {
 		a.warn("ai-memory is disabled but its previous integration could not be removed", err)
-	} else if cfg.Connections.Server.Status == "connected" {
-		a.reconcileAgentMCP(ctx, state, cfg)
+	} else if len(cfg.Connections.Servers) > 0 {
+		if err := a.agentMCP(state).RemoveRemote(ctx); err != nil {
+			a.warn("legacy global server MCP entries could not be removed", err)
+		}
 	}
 	state.SetupCompletedAt = time.Now().UTC()
 	if err := a.Store.SaveState(state); err != nil {
@@ -196,17 +207,23 @@ func (a *App) Status(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	if _, err := serverpool.New(cfg.Connections.Servers); err != nil {
+		return fmt.Errorf("validate server profiles: %w", err)
+	}
+	secretData, err := (secrets.Store{Path: a.Store.Paths.Secrets}).Load()
+	if err != nil {
+		return err
+	}
 	state, err := a.Store.LoadState()
 	if err != nil {
 		return err
 	}
 	probeContext, cancelProbes := context.WithTimeout(ctx, liveServiceProbeTimeout)
 	defer cancelProbes()
-	serverResult := make(chan doctor.Server, 1)
 	rufloResult := make(chan orchestration.Status, 1)
-	go func() { serverResult <- doctor.ProbeServer(probeContext, cfg.Connections.Server, a.statusHTTPClient()) }()
 	go func() { rufloResult <- a.orchestrationManager(state).Inspect(probeContext) }()
-	serverHealth, rufloHealth := <-serverResult, <-rufloResult
+	serverProfiles, serverHealth := a.probeServerProfiles(probeContext, cfg)
+	rufloHealth := <-rufloResult
 	compressionStatus := readyStatus(false)
 	switch cfg.Compression.Provider {
 	case "direct":
@@ -232,6 +249,25 @@ func (a *App) Status(ctx context.Context) error {
 		{"Research", researchPriorityStatus(cfg)},
 		{"Ruflo", safeStatus(rufloHealth)},
 		{"Server", liveServerStatus(serverHealth)},
+	}
+	for _, profile := range serverProfiles {
+		status := liveServerStatus(profile.Health)
+		_, credentialConfigured := secretData.Servers[profile.ID]
+		features := []string{}
+		if profile.ContextMCPURL != "" {
+			features = append(features, "context")
+		}
+		if profile.MemoryMCPURL != "" {
+			features = append(features, "memory")
+		}
+		status.Text = fmt.Sprintf("%s / purpose=%s / protocol=%d / credential=%t / features=%s", status.Text, profile.Purpose, profile.Protocol, credentialConfigured, strings.Join(features, ","))
+		if profile.RedundancyGroup != "" {
+			status.Text += fmt.Sprintf(" / group=%s priority=%d", profile.RedundancyGroup, profile.Priority)
+		}
+		rows = append(rows, struct {
+			name   string
+			status statusValue
+		}{"Server " + profile.Alias, status})
 	}
 	quotaSnapshot, quotaErr := (quota.Store{Root: a.Store.Paths.QuotaDir}).Load()
 	autoReady := cfg.Orchestration.Auto.Enabled && cfg.Orchestration.Auto.Quota.Enabled && componentPresent(state.Components["codex"]) && componentPresent(state.Components["claude-code"]) && rufloHealth.SafeMode && !rufloHealth.ProviderExecution && !rufloHealth.DurableMemory
@@ -316,6 +352,54 @@ func (a *App) Status(ctx context.Context) error {
 		fmt.Fprintf(a.Out, "\nOverall: %s\n", terminalui.Success("READY — all connections active", terminalui.ColorEnabled(a.Out)))
 	}
 	return nil
+}
+
+type statusServerProfile struct {
+	config.ServerProfile
+	Health doctor.Server
+}
+
+func (a *App) probeServerProfiles(ctx context.Context, cfg config.Config) ([]statusServerProfile, doctor.Server) {
+	if len(cfg.Connections.Servers) == 0 {
+		legacy := doctor.ProbeServer(ctx, cfg.Connections.Server, a.statusHTTPClient())
+		return nil, legacy
+	}
+	aliases := make([]string, 0, len(cfg.Connections.Servers))
+	for alias := range cfg.Connections.Servers {
+		aliases = append(aliases, alias)
+	}
+	sort.Strings(aliases)
+	type outcome struct {
+		alias  string
+		health doctor.Server
+	}
+	channel := make(chan outcome, len(aliases))
+	for _, alias := range aliases {
+		profile := cfg.Connections.Servers[alias]
+		go func(alias string, profile config.ServerProfile) {
+			health := doctor.ProbeServer(ctx, config.Connection{Status: profile.Status, URL: profile.URL, Protocol: profile.Protocol}, a.statusHTTPClient())
+			channel <- outcome{alias: alias, health: health}
+		}(alias, profile)
+	}
+	byAlias := map[string]doctor.Server{}
+	for range aliases {
+		value := <-channel
+		byAlias[value.alias] = value.health
+	}
+	result := make([]statusServerProfile, 0, len(aliases))
+	aggregate := doctor.Server{Configured: true, TLS: true, ProtocolCompatible: true}
+	for _, alias := range aliases {
+		profile := cfg.Connections.Servers[alias]
+		health := byAlias[alias]
+		result = append(result, statusServerProfile{ServerProfile: profile, Health: health})
+		aggregate.Reachable = aggregate.Reachable || health.Reachable
+		aggregate.TLS = aggregate.TLS && health.TLS
+		aggregate.ProtocolCompatible = aggregate.ProtocolCompatible && health.ProtocolCompatible
+	}
+	if len(result) == 1 {
+		aggregate.URL = result[0].URL
+	}
+	return result, aggregate
 }
 
 func skillRegistryStatus(store skills.Store) statusValue {
@@ -580,8 +664,13 @@ func (a *App) DisconnectAgent(ctx context.Context, target string) error {
 }
 
 func (a *App) ConnectServer(ctx context.Context, serverURL, code string) error {
+	return a.ConnectServerProfile(ctx, connections.ConnectOptions{Alias: "default", Purpose: "default", BaseURL: serverURL, Code: code})
+}
+
+func (a *App) ConnectServerProfile(ctx context.Context, options connections.ConnectOptions) error {
 	connector := connections.ServerConnector{Store: a.Store, Secrets: secrets.Store{Path: a.Store.Paths.Secrets}}
-	result, err := connector.Connect(ctx, serverURL, code, project.Identity(currentDir()))
+	options.ClientName = project.Identity(currentDir())
+	result, err := connector.ConnectProfile(ctx, options)
 	if err != nil {
 		return err
 	}
@@ -592,7 +681,7 @@ func (a *App) ConnectServer(ctx context.Context, serverURL, code string) error {
 	if err != nil {
 		return err
 	}
-	if data.Server == nil {
+	if _, exists := data.Servers[result.Profile.ID]; !exists {
 		return errors.New("server connected without stored credential")
 	}
 	cfg, err := a.Store.Load()
@@ -604,24 +693,104 @@ func (a *App) ConnectServer(ctx context.Context, serverURL, code string) error {
 	quietMem := mem
 	quietMem.Manager.Out = nil
 	quietMem.Manager.Err = nil
-	a.reconcileAgentMCP(ctx, state, cfg)
-	_, memoryAvailable := cfg.MCP.Servers["ivoai-memory"]
-	if cfg.Memory.Enabled && memoryAvailable {
-		if err := quietMem.Disable(ctx); err != nil {
-			a.warn("previous ai-memory integration could not be fully removed", err)
+	if err := a.agentMCP(state).RemoveRemote(ctx); err != nil {
+		a.warn("legacy global server MCP entries could not be fully removed", err)
+	}
+	if cfg.Memory.Enabled {
+		if err := mem.Configure(ctx, core.MemoryConfiguration{InstallHooks: true}); err != nil {
+			a.warn("server connected, but generic ai-memory hooks are degraded", err)
 		}
-		if err := mem.Configure(ctx, core.MemoryConfiguration{HooksBaseURL: result.MemoryHooksURL, Token: data.Server.Token, InstallHooks: true}); err != nil {
-			a.warn("server connected, but ai-memory hooks are degraded", err)
-		}
-	} else if !cfg.Memory.Enabled {
+	} else {
 		if err := quietMem.Disable(ctx); err != nil {
 			a.warn("ai-memory is disabled but its previous integration could not be removed", err)
 		}
 	}
-	a.success("ivoai server connected")
+	a.success("ivoai server connected: " + result.Profile.Alias)
 	return nil
 }
+
+type ServerView struct {
+	ID                   string                    `json:"server_id"`
+	Alias                string                    `json:"alias"`
+	URL                  string                    `json:"url"`
+	Purpose              string                    `json:"purpose"`
+	RedundancyGroup      string                    `json:"redundancy_group,omitempty"`
+	Priority             int                       `json:"priority"`
+	Protocol             int                       `json:"protocol"`
+	Enabled              bool                      `json:"enabled"`
+	Status               string                    `json:"status"`
+	CredentialConfigured bool                      `json:"credential_configured"`
+	Features             map[string]bool           `json:"features,omitempty"`
+	Health               connections.ProfileHealth `json:"health,omitempty"`
+}
+
+func (a *App) ListServers() ([]ServerView, error) {
+	cfg, err := a.Store.Load()
+	if err != nil {
+		return nil, err
+	}
+	pool, err := serverpool.New(cfg.Connections.Servers)
+	if err != nil {
+		return nil, err
+	}
+	data, err := (secrets.Store{Path: a.Store.Paths.Secrets}).Load()
+	if err != nil {
+		return nil, err
+	}
+	result := make([]ServerView, 0, len(cfg.Connections.Servers))
+	for _, profile := range pool.Profiles() {
+		_, credential := data.Servers[profile.ID]
+		result = append(result, serverView(profile, credential))
+	}
+	return result, nil
+}
+
+func (a *App) ShowServer(alias string) (ServerView, error) {
+	values, err := a.ListServers()
+	if err != nil {
+		return ServerView{}, err
+	}
+	for _, value := range values {
+		if value.Alias == alias {
+			return value, nil
+		}
+	}
+	return ServerView{}, fmt.Errorf("server profile %q was not found", alias)
+}
+
+func (a *App) TestServer(ctx context.Context, alias string) (ServerView, error) {
+	cfg, err := a.Store.Load()
+	if err != nil {
+		return ServerView{}, err
+	}
+	if _, err := serverpool.New(cfg.Connections.Servers); err != nil {
+		return ServerView{}, fmt.Errorf("validate server profiles: %w", err)
+	}
+	profile, exists := cfg.Connections.Servers[alias]
+	if !exists {
+		return ServerView{}, fmt.Errorf("server profile %q was not found", alias)
+	}
+	credential, exists, err := (secrets.Store{Path: a.Store.Paths.Secrets}).Get(profile.ID)
+	if err != nil {
+		return ServerView{}, err
+	}
+	if !exists {
+		return serverView(profile, false), errors.New("server credential is not configured")
+	}
+	health, err := (connections.ServerConnector{Client: a.statusHTTPClient()}).TestProfile(ctx, profile, credential)
+	value := serverView(profile, true)
+	value.Health = health
+	return value, err
+}
+
+func serverView(profile config.ServerProfile, credential bool) ServerView {
+	return ServerView{ID: profile.ID, Alias: profile.Alias, URL: profile.URL, Purpose: profile.Purpose, RedundancyGroup: profile.RedundancyGroup, Priority: profile.Priority, Protocol: profile.Protocol, Enabled: profile.Enabled, Status: profile.Status, CredentialConfigured: credential, Features: profile.Features}
+}
 func (a *App) DisconnectServer(ctx context.Context) error {
+	return a.DisconnectServerProfile(ctx, "default", false)
+}
+
+func (a *App) DisconnectServerProfile(ctx context.Context, alias string, all bool) error {
 	cfg, err := a.Store.Load()
 	if err != nil {
 		return err
@@ -631,14 +800,21 @@ func (a *App) DisconnectServer(ctx context.Context) error {
 		a.warn("server MCP entries could not be fully removed from the agent clients", err)
 	}
 	mem := a.memoryManager(state)
-	if err := mem.Disable(ctx); err != nil {
-		a.warn("remote ai-memory integration could not be fully removed", err)
-	}
-	if err := (connections.ServerConnector{Store: a.Store, Secrets: secrets.Store{Path: a.Store.Paths.Secrets}}).Disconnect(); err != nil {
+	connector := connections.ServerConnector{Store: a.Store, Secrets: secrets.Store{Path: a.Store.Paths.Secrets}}
+	if all {
+		if err := connector.DisconnectAll(); err != nil {
+			return err
+		}
+	} else if err := connector.DisconnectProfile(alias); err != nil {
 		return err
 	}
 	if cfg.Memory.Enabled {
-		if err := mem.Configure(ctx, core.MemoryConfiguration{InstallMCP: true, InstallHooks: true}); err != nil {
+		remaining, _ := a.Store.Load()
+		configuration := core.MemoryConfiguration{InstallHooks: true}
+		if len(remaining.Connections.Servers) == 0 {
+			configuration.InstallMCP = true
+		}
+		if err := mem.Configure(ctx, configuration); err != nil {
 			a.warn("server disconnected; offline ai-memory hooks could not be restored", err)
 		}
 	}
@@ -646,6 +822,10 @@ func (a *App) DisconnectServer(ctx context.Context) error {
 }
 
 func (a *App) Launch(ctx context.Context, target string, args []string) error {
+	return a.LaunchWithKnowledge(ctx, target, args, nil)
+}
+
+func (a *App) LaunchWithKnowledge(ctx context.Context, target string, args, selectors []string) error {
 	cfg, err := a.Store.Load()
 	if err != nil {
 		return err
@@ -666,19 +846,6 @@ func (a *App) Launch(ctx context.Context, target string, args []string) error {
 	if err != nil {
 		return err
 	}
-	args = managedAgentArgs(target, args, cfg, skillResult.Instructions)
-	environment, err := a.serverCredentialEnvironment()
-	if err != nil {
-		return err
-	}
-	cleanup := func() {}
-	if target == "opencode" {
-		environment, cleanup, err = openCodeInstructionEnvironment(environment, a.Store.Paths.StateDir, managedInstructions(skillResult.Instructions))
-		if err != nil {
-			return err
-		}
-	}
-	defer cleanup()
 	runtimeRoot := filepath.Join(a.Store.Paths.StateDir, "direct-runtime")
 	if err := platform.EnsurePrivateDir(runtimeRoot); err != nil {
 		return err
@@ -692,6 +859,22 @@ func (a *App) Launch(ctx context.Context, target string, args []string) error {
 		return err
 	}
 	defer os.RemoveAll(runtimeDir)
+	knowledge, err := a.prepareSessionKnowledge(ctx, cfg, selectors, target, runtimeDir, os.Environ(), nil)
+	if err != nil {
+		return err
+	}
+	defer knowledge.close()
+	cfg = knowledge.config
+	args = append(knowledge.args, managedAgentArgs(target, args, cfg, skillResult.Instructions)...)
+	environment := knowledge.environment
+	cleanup := func() {}
+	if target == "opencode" {
+		environment, cleanup, err = openCodeInstructionEnvironment(environment, a.Store.Paths.StateDir, managedInstructions(skillResult.Instructions))
+		if err != nil {
+			return err
+		}
+	}
+	defer cleanup()
 	compressionProvider, compressionEnabled, requestedCompression := a.sessionCompression(cfg, state, target, runtimeDir)
 	if compressionBypassedForSharedKnowledge(cfg) {
 		compressionEnabled = false
@@ -719,10 +902,6 @@ func (a *App) ReconfigureMemory(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	data, err := (secrets.Store{Path: a.Store.Paths.Secrets}).Load()
-	if err != nil {
-		return err
-	}
 	state, _ := a.Store.LoadState()
 	mem := a.memoryManager(state)
 	quietMem := mem
@@ -732,27 +911,23 @@ func (a *App) ReconfigureMemory(ctx context.Context) error {
 		if err := quietMem.Disable(ctx); err != nil {
 			return err
 		}
-		if cfg.Connections.Server.Status == "connected" {
-			a.reconcileAgentMCP(ctx, state, cfg)
+		if len(cfg.Connections.Servers) > 0 {
+			if err := a.agentMCP(state).RemoveRemote(ctx); err != nil {
+				a.warn("legacy global server MCP entries could not be removed", err)
+			}
 		}
 		return nil
 	}
-	if cfg.Connections.Server.Status != "connected" || data.Server == nil {
+	if len(cfg.Connections.Servers) == 0 {
 		return mem.Configure(ctx, core.MemoryConfiguration{InstallMCP: true, InstallHooks: true})
 	}
 	if err := quietMem.Disable(ctx); err != nil {
 		return err
 	}
-	a.reconcileAgentMCP(ctx, state, cfg)
-	if _, memoryAvailable := cfg.MCP.Servers["ivoai-memory"]; !memoryAvailable {
-		return nil
+	if err := a.agentMCP(state).RemoveRemote(ctx); err != nil {
+		a.warn("legacy global server MCP entries could not be removed", err)
 	}
-	memoryServer := cfg.MCP.Servers["ivoai-memory"]
-	memoryHooksURL := memoryServer.HooksURL
-	if memoryHooksURL == "" {
-		memoryHooksURL = strings.TrimSuffix(memoryServer.URL, "/mcp")
-	}
-	return mem.Configure(ctx, core.MemoryConfiguration{HooksBaseURL: memoryHooksURL, Token: data.Server.Token, InstallHooks: true})
+	return mem.Configure(ctx, core.MemoryConfiguration{InstallHooks: true})
 }
 
 func (a *App) memoryManager(state config.State) memory.AIMemoryBackend {
@@ -762,16 +937,6 @@ func (a *App) memoryManager(state config.State) memory.AIMemoryBackend {
 
 func (a *App) agentMCP(state config.State) connections.AgentMCP {
 	return connections.AgentMCP{Runner: a.Runner, CodexBinary: state.Components["codex"].Path, ClaudeBinary: state.Components["claude-code"].Path}
-}
-
-func (a *App) reconcileAgentMCP(ctx context.Context, state config.State, cfg config.Config) {
-	manager := a.agentMCP(state)
-	if err := manager.RemoveRemote(ctx); err != nil {
-		a.warn("previous server MCP entries could not be fully removed", err)
-	}
-	if err := manager.ConfigureRemote(ctx, enabledServerMCPs(cfg)); err != nil {
-		a.warn("server MCP registration is degraded", err)
-	}
 }
 
 func enabledServerMCPs(cfg config.Config) map[string]config.MCPServer {
@@ -787,20 +952,6 @@ func enabledServerMCPs(cfg config.Config) map[string]config.MCPServer {
 
 func (a *App) orchestrationManager(state config.State) orchestration.Manager {
 	return orchestration.Manager{Runner: a.Runner, Binary: state.Components["ruflo"].Path, CodexBinary: state.Components["codex"].Path, ClaudeBinary: state.Components["claude-code"].Path, ProfileDir: a.Store.Paths.DataDir}
-}
-
-func (a *App) serverCredentialEnvironment() ([]string, error) {
-	data, err := (secrets.Store{Path: a.Store.Paths.Secrets}).Load()
-	if err != nil {
-		return nil, err
-	}
-	environment := os.Environ()
-	if data.Server == nil || data.Server.Token == "" {
-		return environment, nil
-	}
-	environment = setProcessEnvironment(environment, connections.ServerTokenEnvironment, data.Server.Token)
-	environment = setProcessEnvironment(environment, "AI_MEMORY_AUTH_TOKEN", data.Server.Token)
-	return environment, nil
 }
 
 func setProcessEnvironment(environment []string, key, value string) []string {

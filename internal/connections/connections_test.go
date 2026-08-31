@@ -1,6 +1,7 @@
 package connections
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -260,6 +261,184 @@ func TestEnrollmentCredentialSurvivesDegradedMCPProbe(t *testing.T) {
 	credential, _ := secretStore.Load()
 	if cfg.Connections.Server.Status != "connected" || credential.Server == nil || credential.Server.Token != token {
 		t.Fatalf("recoverable connection state not preserved: %#v %#v", cfg.Connections.Server, credential.Server)
+	}
+}
+
+func TestMultiServerEnrollmentIsIndependentAndSelective(t *testing.T) {
+	newServer := func(token string, reject bool) *httptest.Server {
+		return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			switch r.URL.Path {
+			case "/.well-known/ivoai":
+				json.NewEncoder(w).Encode(Discovery{ProtocolVersion: ProtocolVersion, HealthEndpoint: "/health", ReadyEndpoint: "/ready", ContextMCPEndpoint: "/context", MemoryMCPEndpoint: "/memory", MemoryHooksEndpoint: "/hooks", EnrollmentEndpoint: "/enroll", Features: map[string]bool{"context": true, "memory": true}})
+			case "/health":
+				json.NewEncoder(w).Encode(map[string]string{"status": "healthy"})
+			case "/ready":
+				json.NewEncoder(w).Encode(map[string]string{"status": "ready"})
+			case "/enroll":
+				if reject {
+					http.Error(w, "refused", http.StatusUnauthorized)
+					return
+				}
+				w.WriteHeader(http.StatusCreated)
+				json.NewEncoder(w).Encode(enrollmentResponse{Token: token, ClientID: "client-" + token, Scopes: []string{"context:read", "memory:read"}})
+			case "/context", "/memory":
+				if r.Header.Get("Authorization") != "Bearer "+token {
+					http.Error(w, "wrong credential", http.StatusUnauthorized)
+					return
+				}
+				json.NewEncoder(w).Encode(map[string]any{"jsonrpc": "2.0", "id": 1, "result": map[string]any{"tools": []any{}}})
+			default:
+				http.NotFound(w, r)
+			}
+		}))
+	}
+	a := newServer("token-a", false)
+	b := newServer("token-b", false)
+	c := newServer("token-c", true)
+	defer a.Close()
+	defer b.Close()
+	defer c.Close()
+	store := connStore(t.TempDir())
+	if err := store.Save(config.Default()); err != nil {
+		t.Fatal(err)
+	}
+	secretStore := secrets.Store{Path: store.Paths.Secrets}
+	connector := ServerConnector{Store: store, Secrets: secretStore}
+	for _, options := range []ConnectOptions{
+		{Alias: "voicecorp", Purpose: "voicecorp", BaseURL: a.URL, Code: "a", ClientName: "test"},
+		{Alias: "mindsite", Purpose: "mindsite", BaseURL: b.URL, Code: "b", ClientName: "test"},
+	} {
+		if _, err := connector.ConnectProfile(context.Background(), options); err != nil {
+			t.Fatal(err)
+		}
+	}
+	before, _ := store.Load()
+	voiceID := before.Connections.Servers["voicecorp"].ID
+	mindID := before.Connections.Servers["mindsite"].ID
+	if voiceID == mindID || len(before.Connections.Servers) != 2 {
+		t.Fatalf("profiles=%#v", before.Connections.Servers)
+	}
+	credentials, _ := secretStore.Load()
+	if credentials.Servers[voiceID].Token != "token-a" || credentials.Servers[mindID].Token != "token-b" {
+		t.Fatalf("credentials=%#v", credentials.Servers)
+	}
+	if _, err := connector.ConnectProfile(context.Background(), ConnectOptions{Alias: "voicecorp", Purpose: "voicecorp", BaseURL: a.URL, Code: "a2", ClientName: "test"}); err != nil {
+		t.Fatal(err)
+	}
+	reconnected, _ := store.Load()
+	if reconnected.Connections.Servers["voicecorp"].ID != voiceID || reconnected.Connections.Servers["mindsite"].ID != mindID {
+		t.Fatal("reconnect changed stable identities or unrelated profile")
+	}
+	if _, err := connector.ConnectProfile(context.Background(), ConnectOptions{Alias: "failed", Purpose: "failed", BaseURL: c.URL, Code: "c", ClientName: "test"}); err == nil {
+		t.Fatal("failed enrollment was accepted")
+	}
+	afterFailure, _ := store.Load()
+	if len(afterFailure.Connections.Servers) != 2 {
+		t.Fatal("failed enrollment changed existing profiles")
+	}
+	if err := connector.DisconnectProfile("voicecorp"); err != nil {
+		t.Fatal(err)
+	}
+	after, _ := store.Load()
+	remaining, ok := after.Connections.Servers["mindsite"]
+	if !ok || remaining.ID != mindID {
+		t.Fatalf("unrelated profile changed: %#v", after.Connections.Servers)
+	}
+	credentials, _ = secretStore.Load()
+	if _, ok := credentials.Servers[voiceID]; ok || credentials.Servers[mindID].Token != "token-b" {
+		t.Fatalf("selective credential removal failed: %#v", credentials.Servers)
+	}
+}
+
+func TestReconnectCommitFailureRestoresProfileAndCredential(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, request *http.Request) {
+		switch request.URL.Path {
+		case "/.well-known/ivoai":
+			json.NewEncoder(w).Encode(Discovery{ProtocolVersion: ProtocolVersion, HealthEndpoint: "/health", ReadyEndpoint: "/ready", ContextMCPEndpoint: "/context", EnrollmentEndpoint: "/enroll", Features: map[string]bool{"context": true}})
+		case "/health":
+			json.NewEncoder(w).Encode(map[string]string{"status": "healthy"})
+		case "/ready":
+			json.NewEncoder(w).Encode(map[string]string{"status": "ready"})
+		case "/enroll":
+			w.WriteHeader(http.StatusCreated)
+			json.NewEncoder(w).Encode(enrollmentResponse{Token: "new-token", ClientID: "new-client"})
+		default:
+			http.NotFound(w, request)
+		}
+	}))
+	defer server.Close()
+	store := connStore(t.TempDir())
+	cfg := config.Default()
+	cfg.Connections.Servers["voicecorp"] = config.ServerProfile{ID: "srv_stable_voicecorp", Alias: "voicecorp", URL: "https://old.example.invalid", Status: "connected", Enabled: true, Purpose: "voicecorp", ContextMCPURL: "https://old.example.invalid/context"}
+	if err := store.Save(cfg); err != nil {
+		t.Fatal(err)
+	}
+	secretStore := secrets.Store{Path: store.Paths.Secrets}
+	if err := secretStore.Set("srv_stable_voicecorp", secrets.ClientCredential{Token: "old-token", ClientID: "old-client"}); err != nil {
+		t.Fatal(err)
+	}
+	saves := 0
+	connector := ServerConnector{Client: server.Client(), Store: store, Secrets: secretStore, SaveConfig: func(value config.Config) error {
+		saves++
+		if saves == 2 {
+			return errors.New("injected final config failure")
+		}
+		return store.Save(value)
+	}}
+	if _, err := connector.ConnectProfile(context.Background(), ConnectOptions{Alias: "voicecorp", Purpose: "voicecorp", BaseURL: server.URL, Code: "one-time", ClientName: "test"}); err == nil {
+		t.Fatal("injected commit failure was hidden")
+	}
+	reloaded, err := store.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	credential, ok, err := secretStore.Get("srv_stable_voicecorp")
+	if err != nil || !ok {
+		t.Fatalf("credential unavailable after rollback: ok=%v err=%v", ok, err)
+	}
+	if reloaded.Connections.Servers["voicecorp"].URL != "https://old.example.invalid" || credential.Token != "old-token" {
+		t.Fatalf("reconnect failure crossed state: profile=%+v credential=%+v", reloaded.Connections.Servers["voicecorp"], credential)
+	}
+}
+
+func TestCredentialOperationsRejectDuplicateServerIdentity(t *testing.T) {
+	store := connStore(t.TempDir())
+	cfg := config.Default()
+	for _, alias := range []string{"voicecorp", "mindsite"} {
+		cfg.Connections.Servers[alias] = config.ServerProfile{ID: "srv_duplicate_identity", Alias: alias, URL: "https://" + alias + ".example.invalid", Status: "connected", Enabled: true, Purpose: alias, ContextMCPURL: "https://" + alias + ".example.invalid/context"}
+	}
+	if err := store.Save(cfg); err != nil {
+		t.Fatal(err)
+	}
+	connector := ServerConnector{Store: store, Secrets: secrets.Store{Path: store.Paths.Secrets}}
+	if err := connector.DisconnectProfile("mindsite"); err == nil {
+		t.Fatal("disconnect accepted duplicate server identity")
+	}
+	if _, err := connector.ConnectProfile(context.Background(), ConnectOptions{Alias: "voicecorp", Purpose: "voicecorp", BaseURL: "https://voicecorp.example.invalid", Code: "unused"}); err == nil {
+		t.Fatal("reconnect accepted duplicate server identity")
+	}
+}
+
+func TestDecodeLimitedRejectsOversizedAndTrailingJSON(t *testing.T) {
+	var target map[string]any
+	oversized := append([]byte(`{"ok":true}`), bytes.Repeat([]byte(" "), maxResponse)...)
+	if err := decodeLimited(bytes.NewReader(oversized), &target); err == nil {
+		t.Fatal("oversized JSON prefix accepted")
+	}
+	if err := decodeLimited(strings.NewReader(`{"ok":true}{"second":true}`), &target); err == nil {
+		t.Fatal("multiple JSON values accepted")
+	}
+}
+
+func TestResolveEndpointRejectsUserinfoAndCrossOrigin(t *testing.T) {
+	base, err := ValidateBaseURL("https://voicecorp.example.invalid")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, endpoint := range []string{"https://user:secret@voicecorp.example.invalid/context", "https://mindsite.example.invalid/context", "//mindsite.example.invalid/context", "/context?token=secret"} {
+		if got := resolveEndpoint(base, endpoint); got != "" {
+			t.Fatalf("unsafe endpoint %q resolved to %q", endpoint, got)
+		}
 	}
 }
 

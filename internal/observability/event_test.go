@@ -107,4 +107,31 @@ func TestCompressionTelemetryIsBoundedMetadataOnly(t *testing.T) {
 	}
 }
 
+func TestKnowledgeRouteTelemetryIsBoundedMetadataOnly(t *testing.T) {
+	event, err := Normalize(Event{
+		Category: CategoryConnection, Operation: OperationKnowledgeRoute, State: StateCompleted,
+		SourceID: "srv_0123456789abcdef", SourceAlias: "mindsite-primary", Purpose: "mindsite",
+		SelectedSourceCount: 2, Failover: true, PartialFailure: true,
+		RoutingReason: ReasonKnowledgeDegraded, DurationMilliseconds: 18,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, err := json.Marshal(event)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, forbidden := range []string{"authorization", "bearer", "token-a", "memory body", "context body", "raw_payload", "environment"} {
+		if strings.Contains(strings.ToLower(string(body)), forbidden) {
+			t.Fatalf("knowledge routing telemetry leaked %q: %s", forbidden, body)
+		}
+	}
+	if !strings.Contains(string(body), `"selected_source_count":2`) || !strings.Contains(string(body), `"failover":true`) {
+		t.Fatalf("routing metadata missing: %s", body)
+	}
+	if _, err := Normalize(Event{Category: CategoryConnection, Operation: OperationKnowledgeRoute, State: StateFailed, SourceAlias: "voicecorp\nAuthorization: Bearer secret"}); err == nil {
+		t.Fatal("unsafe source alias accepted")
+	}
+}
+
 func floatp(value float64) *float64 { return &value }

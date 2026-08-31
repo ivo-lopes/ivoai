@@ -135,6 +135,7 @@ type Session struct {
 	ContextStatus        string                                 `json:"context_status"`
 	MemoryStatus         string                                 `json:"memory_status"`
 	ServerStatus         string                                 `json:"server_status"`
+	KnowledgeSources     []string                               `json:"knowledge_sources,omitempty"`
 	ExitCode             *int                                   `json:"exit_code,omitempty"`
 	State                State                                  `json:"state"`
 	Auto                 bool                                   `json:"auto"`

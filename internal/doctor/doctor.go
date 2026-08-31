@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"sort"
 	"strings"
 	"time"
 
@@ -23,6 +24,7 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/policy"
 	"github.com/ivo-lopes/ivoai/internal/quota"
 	"github.com/ivo-lopes/ivoai/internal/routing"
+	"github.com/ivo-lopes/ivoai/internal/secrets"
 	"github.com/ivo-lopes/ivoai/internal/skills"
 	"github.com/ivo-lopes/ivoai/internal/supplychain"
 	"golang.org/x/sys/unix"
@@ -55,6 +57,19 @@ type Server struct {
 	TLS                bool   `json:"tls"`
 	ProtocolCompatible bool   `json:"protocol_compatible"`
 	URL                string `json:"url,omitempty"`
+}
+type ServerProfile struct {
+	Server
+	ID                   string          `json:"server_id"`
+	Alias                string          `json:"alias"`
+	Purpose              string          `json:"purpose"`
+	RedundancyGroup      string          `json:"redundancy_group,omitempty"`
+	Priority             int             `json:"priority"`
+	Protocol             int             `json:"protocol"`
+	Enabled              bool            `json:"enabled"`
+	Ready                bool            `json:"ready"`
+	CredentialConfigured bool            `json:"credential_configured"`
+	Features             map[string]bool `json:"features,omitempty"`
 }
 type Orchestration struct {
 	Enabled          bool   `json:"enabled"`
@@ -132,6 +147,7 @@ type Report struct {
 	Memory              Component            `json:"ai_memory"`
 	Ruflo               orchestration.Status `json:"ruflo"`
 	Server              Server               `json:"server"`
+	Servers             []ServerProfile      `json:"servers,omitempty"`
 	Orchestration       Orchestration        `json:"orchestration"`
 	Automatic           Automatic            `json:"automatic_orchestration"`
 	ComponentMatrix     core.Matrix          `json:"component_matrix"`
@@ -176,7 +192,8 @@ func (d Doctor) Run(ctx context.Context) Report {
 	if fixture := state.Components["ruflo"]; !r.Ruflo.Installed && strings.HasSuffix(fixture.Version, "-fixture") {
 		r.Ruflo.Installed, r.Ruflo.Version = true, fixture.Version
 	}
-	r.Server = d.server(ctx, cfg.Connections.Server)
+	r.Servers = d.serverProfiles(ctx, cfg)
+	r.Server = aggregateServers(cfg.Connections.Server, r.Servers)
 	r.Orchestration = d.orchestration(ctx, cfg, state)
 	r.Automatic = d.automatic(ctx, cfg, state, r)
 	r.ComponentMatrix = componentMatrix(cfg, state, r)
@@ -238,13 +255,67 @@ func (d Doctor) Run(ctx context.Context) Report {
 	if cfg.Connections.Claude.Status == "connected" && !r.Claude.Authenticated {
 		r.Issues = append(r.Issues, "Claude connection authentication is not valid")
 	}
-	if r.Server.Configured && (!r.Server.Reachable || !r.Server.ProtocolCompatible || (!r.Server.TLS && !loopbackServer(r.Server.URL))) {
-		r.Issues = append(r.Issues, "configured server is unreachable, incompatible, or not protected by TLS")
+	for _, profile := range r.Servers {
+		if profile.Configured && (!profile.Reachable || !profile.ProtocolCompatible || (!profile.TLS && !loopbackServer(profile.URL))) {
+			r.Issues = append(r.Issues, fmt.Sprintf("server %s is unreachable, incompatible, or not protected by TLS", profile.Alias))
+		}
+		if !profile.CredentialConfigured {
+			r.Issues = append(r.Issues, fmt.Sprintf("server %s has no configured credential", profile.Alias))
+		}
 	}
 	if len(r.Issues) > 0 {
 		r.Overall = "DEGRADED"
 	}
 	return r
+}
+
+func (d Doctor) serverProfiles(ctx context.Context, cfg config.Config) []ServerProfile {
+	aliases := make([]string, 0, len(cfg.Connections.Servers))
+	for alias := range cfg.Connections.Servers {
+		aliases = append(aliases, alias)
+	}
+	sort.Strings(aliases)
+	secretData, _ := (secrets.Store{Path: d.Store.Paths.Secrets}).Load()
+	type outcome struct {
+		alias string
+		probe Server
+	}
+	channel := make(chan outcome, len(aliases))
+	for _, alias := range aliases {
+		profile := cfg.Connections.Servers[alias]
+		go func(alias string, profile config.ServerProfile) {
+			channel <- outcome{alias: alias, probe: d.server(ctx, config.Connection{Status: profile.Status, URL: profile.URL, Protocol: profile.Protocol})}
+		}(alias, profile)
+	}
+	probes := map[string]Server{}
+	for range aliases {
+		value := <-channel
+		probes[value.alias] = value.probe
+	}
+	result := make([]ServerProfile, 0, len(aliases))
+	for _, alias := range aliases {
+		profile := cfg.Connections.Servers[alias]
+		probe := probes[alias]
+		_, credential := secretData.Servers[profile.ID]
+		result = append(result, ServerProfile{Server: probe, ID: profile.ID, Alias: alias, Purpose: profile.Purpose, RedundancyGroup: profile.RedundancyGroup, Priority: profile.Priority, Protocol: profile.Protocol, Enabled: profile.Enabled, Ready: probe.Reachable, CredentialConfigured: credential, Features: profile.Features})
+	}
+	return result
+}
+
+func aggregateServers(legacy config.Connection, profiles []ServerProfile) Server {
+	if len(profiles) == 0 {
+		return Server{Configured: legacy.Status == "connected", URL: legacy.URL}
+	}
+	result := Server{Configured: true, Reachable: false, TLS: true, ProtocolCompatible: true}
+	if len(profiles) == 1 {
+		result.URL = profiles[0].URL
+	}
+	for _, profile := range profiles {
+		result.Reachable = result.Reachable || profile.Reachable
+		result.TLS = result.TLS && profile.TLS
+		result.ProtocolCompatible = result.ProtocolCompatible && profile.ProtocolCompatible
+	}
+	return result
 }
 
 func (d Doctor) skillControlPlane() SkillControlPlane {
@@ -419,13 +490,20 @@ func componentMatrix(cfg config.Config, state config.State, report Report) core.
 		Fallback:      core.Fallback{Allowed: false, Reason: "orchestrated modes fail closed"},
 	})
 	contextConfigured := false
+	contextAvailable := false
+	for _, profile := range report.Servers {
+		if profile.Features["context"] || cfg.Connections.Servers[profile.Alias].ContextMCPURL != "" {
+			contextConfigured = true
+			contextAvailable = contextAvailable || profile.Reachable && profile.ProtocolCompatible
+		}
+	}
 	for _, server := range cfg.MCP.Servers {
 		if server.Kind == "context" && server.Enabled {
 			contextConfigured = true
 			break
 		}
 	}
-	contextAvailable := contextConfigured && report.Server.Reachable && report.Server.ProtocolCompatible
+	contextAvailable = contextAvailable || contextConfigured && report.Server.Reachable && report.Server.ProtocolCompatible
 	values = append(values, core.ComponentStatus{
 		ID: core.ComponentContext, Implementation: "remote-context-mcp", Active: contextConfigured,
 		Installed: contextConfigured, Available: contextAvailable, Health: health(contextAvailable), Lifecycle: core.LifecycleStopped,

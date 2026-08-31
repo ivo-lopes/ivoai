@@ -61,3 +61,38 @@ func TestMultiServerSecretStoreRejectsSymlink(t *testing.T) {
 		t.Fatal("symlink secret store accepted")
 	}
 }
+
+func TestThreeServerCredentialsSurviveRestart(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "secrets.json")
+	store := Store{Path: path}
+	for id, token := range map[string]string{"srv_voicecorp": "token-a", "srv_mindsite": "token-b", "srv_research": "token-c"} {
+		if err := store.Set(id, ClientCredential{Token: token, ClientID: "client-" + id, Scopes: []string{"context:read"}}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	restarted := Store{Path: path}
+	data, err := restarted.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(data.Servers) != 3 || data.Servers["srv_voicecorp"].Token != "token-a" || data.Servers["srv_mindsite"].Token != "token-b" || data.Servers["srv_research"].Token != "token-c" {
+		t.Fatalf("credentials did not survive restart independently: %#v", data.Servers)
+	}
+	body, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(body) == "" || data.Server != nil {
+		t.Fatal("non-legacy credentials unexpectedly populated the singleton rollback field")
+	}
+}
+
+func TestMultiServerSecretStoreRejectsWrongMode(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "secrets.json")
+	if err := os.WriteFile(path, []byte(`{"schema":2,"servers":{}}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := (Store{Path: path}).Load(); err == nil {
+		t.Fatal("world-readable secret store accepted")
+	}
+}
