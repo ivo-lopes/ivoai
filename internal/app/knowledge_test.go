@@ -2,12 +2,15 @@ package app
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/ivo-lopes/ivoai/internal/config"
+	"github.com/ivo-lopes/ivoai/internal/core"
+	"github.com/ivo-lopes/ivoai/internal/observability"
 )
 
 func TestOpenCodeUsesPrivateProcessLocalInstructionConfig(t *testing.T) {
@@ -141,6 +144,57 @@ func TestHeadroomIsBypassedOnlyForActiveSharedKnowledge(t *testing.T) {
 	cfg.Headroom.Enabled = false
 	if primaryHeadroomEnabled(cfg) || headroomBypassedForSharedKnowledge(cfg) {
 		t.Fatal("disabled Headroom was reported as a shared-knowledge bypass")
+	}
+}
+
+func TestAuthoritativeKnowledgeBypassMatrixIsProviderNeutral(t *testing.T) {
+	providers := []string{"direct", "headroom", "caveman"}
+	for _, provider := range providers {
+		for _, headroomEnabled := range []bool{false, true} {
+			for _, memoryEnabled := range []bool{false, true} {
+				for _, contextEnabled := range []bool{false, true} {
+					name := fmt.Sprintf("provider=%s/headroom=%t/memory=%t/context=%t", provider, headroomEnabled, memoryEnabled, contextEnabled)
+					t.Run(name, func(t *testing.T) {
+						cfg := config.Default()
+						cfg.Compression.Provider = provider
+						cfg.Headroom.Enabled = headroomEnabled
+						cfg.Memory.Enabled = memoryEnabled
+						cfg.MCP.Servers = map[string]config.MCPServer{
+							"ivoai-memory":  {Enabled: memoryEnabled, Kind: "memory"},
+							"ivoai-context": {Enabled: contextEnabled, Kind: "context"},
+						}
+						policy := sharedKnowledgeCompressionPolicyFor(cfg, 1)
+						authoritative := memoryEnabled || contextEnabled
+						wantBypass := provider != "direct" && authoritative
+						wantEffective := provider
+						if wantBypass {
+							wantEffective = "direct"
+						}
+						if policy.AuthoritativeActive != authoritative || policy.Bypassed != wantBypass || policy.EffectiveProvider != wantEffective || policy.RequestedProvider != provider || policy.SelectedSourceCount != 1 {
+							t.Fatalf("policy=%+v authoritative=%t bypass=%t effective=%s", policy, authoritative, wantBypass, wantEffective)
+						}
+						if compressionBypassedForSharedKnowledge(cfg) != wantBypass {
+							t.Fatal("compatibility helper disagrees with provider-neutral policy")
+						}
+					})
+				}
+			}
+		}
+	}
+}
+
+func TestCompressionBypassObservationIsBoundedAndProviderNeutral(t *testing.T) {
+	cfg := config.Default()
+	cfg.Compression.Provider = "caveman"
+	cfg.Headroom.Enabled = false
+	cfg.MCP.Servers = map[string]config.MCPServer{"ivoai-context": {Enabled: true, Kind: "context"}}
+	policy := sharedKnowledgeCompressionPolicyFor(cfg, 2)
+	event := compressionObservation("codex", core.SessionObservation{}, policy)
+	if event.Provider != "direct" || event.RequestedProvider != "caveman" || !event.CompressionBypassed || !event.AuthoritativeKnowledge || event.SelectedSourceCount != 2 || event.RoutingReason != observability.ReasonAuthoritativeSharedKnowledge {
+		t.Fatalf("event=%+v", event)
+	}
+	if _, err := observability.Normalize(event); err != nil {
+		t.Fatalf("normalize bypass event: %v", err)
 	}
 }
 

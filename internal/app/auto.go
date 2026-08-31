@@ -134,7 +134,6 @@ func (a *App) AutoWithKnowledge(ctx context.Context, planner string, agentArgs, 
 	if err != nil {
 		return err
 	}
-	a.printAutoPreflight(value.Quota, current, value, cfg)
 	runtimeDir, err := store.RuntimeDir(id)
 	if err != nil {
 		return err
@@ -147,6 +146,7 @@ func (a *App) AutoWithKnowledge(ctx context.Context, planner string, agentArgs, 
 	}
 	defer knowledge.close()
 	cfg = knowledge.config
+	a.printAutoPreflight(value.Quota, current, value, cfg)
 	value, _ = store.Update(id, func(current *session.Session) error {
 		current.KnowledgeSources = knowledge.aliases()
 		return nil
@@ -222,7 +222,7 @@ func (a *App) AutoWithKnowledge(ctx context.Context, planner string, agentArgs, 
 		limitReason := make(chan string, 1)
 		monitorDone := make(chan struct{})
 		go a.monitorPrimaryQuota(launchCtx, manager, quota.Provider(current), limitReason, cancelLaunch, cfg.Orchestration.Auto.QuotaRefreshSeconds, monitorDone)
-		launchErr := a.launchAutomaticPrimary(launchCtx, store, id, current, launchArgs, state, cfg, environment, runtimeDir)
+		launchErr := a.launchAutomaticPrimary(launchCtx, store, id, current, launchArgs, state, cfg, environment, runtimeDir, sharedKnowledgeCompressionPolicyFor(cfg, len(knowledge.aliases())))
 		cancelLaunch()
 		<-monitorDone
 		reason := ""
@@ -347,13 +347,13 @@ func (a *App) selectPlanner(defaultPlanner string) (string, error) {
 	}
 }
 
-func (a *App) launchAutomaticPrimary(ctx context.Context, store session.Store, id, executor string, args []string, state config.State, cfg config.Config, environment []string, runtimeDir string) error {
+func (a *App) launchAutomaticPrimary(ctx context.Context, store session.Store, id, executor string, args []string, state config.State, cfg config.Config, environment []string, runtimeDir string, compressionPolicy sharedKnowledgeCompressionPolicy) error {
 	component := executor
 	if executor == "claude" {
 		component = "claude-code"
 	}
 	compressionProvider, compressionEnabled, _ := a.sessionCompression(cfg, state, executor, runtimeDir)
-	if compressionBypassedForSharedKnowledge(cfg) {
+	if compressionPolicy.Bypassed {
 		compressionEnabled = false
 	}
 	runtime := agents.Runtime{Runner: a.Runner, In: a.In, Out: a.Out, Err: a.Err, AgentPath: state.Components[component].Path, HeadroomPath: state.Components["headroom"].Path, Compression: compressionProvider, Environment: environment, RuntimeDir: runtimeDir}
@@ -363,15 +363,14 @@ func (a *App) launchAutomaticPrimary(ctx context.Context, store session.Store, i
 	}
 	return implementation.StartSession(ctx, core.SessionRequest{Args: args, CompressionEnabled: compressionEnabled}, func(observation core.SessionObservation) {
 		_, _ = store.Update(id, func(current *session.Session) error {
+			compressionEvent := compressionObservation(executor, observation, compressionPolicy)
 			current.PrimaryPID = observation.PID
 			current.PrimaryProcessStart = session.ProcessStart(observation.PID)
 			current.HeadroomUsed = observation.CompressionUsed && observation.CompressionProvider == "headroom"
 			current.CompressionUsed = observation.CompressionUsed
-			if observation.CompressionProvider != "" {
-				current.CompressionProvider = observation.CompressionProvider
-			}
+			current.CompressionProvider = compressionEvent.Provider
 			current.State, current.CurrentPhase = session.StateRunning, "conversation"
-			return session.AppendObservation(current, compressionObservation(executor, cfg.Compression.Provider, observation))
+			return session.AppendObservation(current, compressionEvent)
 		})
 	})
 }
@@ -674,14 +673,16 @@ ai-memory remains durable shared operational memory for Codex, Claude Code, work
 func (a *App) printAutoPreflight(values map[quota.Provider]quota.ProviderQuota, selected string, current session.Session, cfg config.Config) {
 	fmt.Fprintln(a.Out, "\nQuota")
 	printQuotaSummary(a.Out, values)
-	headroomState := "DISABLED"
-	if cfg.Headroom.Enabled {
-		headroomState = "ENABLED / INTERACTIVE PREFLIGHT PENDING"
+	policy := sharedKnowledgeCompressionPolicyFor(cfg, 0)
+	compressionState := strings.ToUpper(policy.RequestedProvider) + " / INTERACTIVE PREFLIGHT PENDING"
+	if policy.RequestedProvider == "direct" {
+		compressionState = "DIRECT"
+	} else if policy.Bypassed {
+		compressionState = strings.ToUpper(policy.RequestedProvider) + " REQUESTED / DIRECT EFFECTIVE / BYPASSED / PRESERVING EXACT SHARED KNOWLEDGE"
+	} else if policy.RequestedProvider == "headroom" && !cfg.Headroom.Enabled {
+		compressionState = "HEADROOM DISABLED / DIRECT EFFECTIVE"
 	}
-	if compressionBypassedForSharedKnowledge(cfg) {
-		headroomState = "BYPASSED / PRESERVING EXACT SHARED KNOWLEDGE"
-	}
-	fmt.Fprintf(a.Out, "\nSelected        %s\nRuflo           CONFIGURED / VALIDATING SAFE MODE\nai-memory       %s\nContext         %s\nServer          %s\nHeadroom        %s\n\n", displayProvider(selected), strings.ToUpper(current.MemoryStatus), strings.ToUpper(current.ContextStatus), strings.ToUpper(current.ServerStatus), headroomState)
+	fmt.Fprintf(a.Out, "\nSelected        %s\nRuflo           CONFIGURED / VALIDATING SAFE MODE\nai-memory       %s\nContext         %s\nServer          %s\nCompression     %s\n\n", displayProvider(selected), strings.ToUpper(current.MemoryStatus), strings.ToUpper(current.ContextStatus), strings.ToUpper(current.ServerStatus), compressionState)
 }
 
 func (a *App) autoServiceStatuses(ctx context.Context, cfg config.Config, state config.State) (string, string, string) {

@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/ivo-lopes/ivoai/internal/config"
+	"github.com/ivo-lopes/ivoai/internal/observability"
 	"github.com/ivo-lopes/ivoai/internal/platform"
 	"github.com/ivo-lopes/ivoai/internal/session"
 )
@@ -294,6 +295,45 @@ func TestObservedSessionBypassesHeadroomForExactSharedKnowledge(t *testing.T) {
 	values, err := a.SessionList()
 	if err != nil || len(values) != 1 || !values[0].HeadroomRequested || values[0].HeadroomUsed {
 		t.Fatalf("unexpected Headroom telemetry: sessions=%+v err=%v", values, err)
+	}
+}
+
+func TestObservedSessionBypassesCavemanWithoutHeadroomForExactSharedKnowledge(t *testing.T) {
+	root := t.TempDir()
+	agentMarker := filepath.Join(root, "codex-ran")
+	codex := appExecutable(t, root, "codex", "#!/bin/sh\nprintf direct > '"+agentMarker+"'\n")
+	a := sessionTestApp(t, root, codex, appExecutable(t, root, "claude", "#!/bin/sh\nexit 0\n"), appExecutable(t, root, "ruflo", "#!/bin/sh\nexit 0\n"))
+	cfg, _ := a.Store.Load()
+	cfg.Compression.Provider = "caveman"
+	cfg.Headroom.Enabled = false
+	cfg.MCP.Servers["ivoai-context"] = config.MCPServer{Enabled: true, Kind: "context"}
+	if err := a.Store.Save(cfg); err != nil {
+		t.Fatal(err)
+	}
+	previous, _ := os.Getwd()
+	t.Cleanup(func() { _ = os.Chdir(previous) })
+	if err := os.Chdir(root); err != nil {
+		t.Fatal(err)
+	}
+	if err := a.SessionStart(context.Background(), "codex", session.ModeDirect, nil); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(agentMarker); err != nil {
+		t.Fatalf("official Codex did not run: %v", err)
+	}
+	values, err := a.SessionList()
+	if err != nil || len(values) != 1 || values[0].CompressionProvider != "direct" || values[0].CompressionUsed {
+		t.Fatalf("session=%+v err=%v", values, err)
+	}
+	found := false
+	for _, event := range values[0].Observability {
+		if event.Operation != observability.OperationCompressionSelect {
+			continue
+		}
+		found = event.Provider == "direct" && event.RequestedProvider == "caveman" && event.CompressionBypassed && event.AuthoritativeKnowledge && event.RoutingReason == observability.ReasonAuthoritativeSharedKnowledge
+	}
+	if !found {
+		t.Fatalf("provider-neutral bypass event missing: %+v", values[0].Observability)
 	}
 }
 

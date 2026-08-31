@@ -26,8 +26,40 @@ func sharedKnowledgeCompressionBypass(provider string) string {
 	return "Compression bypassed: authoritative shared-memory or Context tool results require exact fidelity; launching the official client directly"
 }
 
+type sharedKnowledgeCompressionPolicy struct {
+	RequestedProvider   string
+	EffectiveProvider   string
+	AuthoritativeActive bool
+	SelectedSourceCount int
+	Bypassed            bool
+}
+
+// sharedKnowledgeCompressionPolicyFor evaluates only the MCP projection built
+// for the current session. prepareSessionKnowledge replaces this map with the
+// selected sources, so an unselected server cannot affect another session.
+// The fidelity decision is deliberately independent from Headroom: any lossy
+// provider must yield to direct execution while authoritative Memory or Context
+// is reachable through the session.
+func sharedKnowledgeCompressionPolicyFor(cfg config.Config, selectedSourceCount int) sharedKnowledgeCompressionPolicy {
+	requested := cfg.Compression.Provider
+	if requested == "" {
+		requested = "headroom"
+	}
+	active := authoritativeSharedKnowledgeActive(cfg)
+	bypassed := requested != "direct" && active
+	effective := requested
+	if bypassed {
+		effective = "direct"
+	}
+	return sharedKnowledgeCompressionPolicy{
+		RequestedProvider: requested, EffectiveProvider: effective,
+		AuthoritativeActive: active, SelectedSourceCount: selectedSourceCount,
+		Bypassed: bypassed,
+	}
+}
+
 func compressionBypassedForSharedKnowledge(cfg config.Config) bool {
-	return cfg.Compression.Provider != "direct" && headroomBypassedForSharedKnowledge(cfg)
+	return sharedKnowledgeCompressionPolicyFor(cfg, 0).Bypassed
 }
 
 // ai-memory 1.29.0 does not annotate its MCP tools as read-only. Recent Codex
@@ -164,20 +196,24 @@ func primaryHeadroomEnabled(cfg config.Config) bool {
 	if !cfg.Headroom.Enabled {
 		return false
 	}
+	return !authoritativeSharedKnowledgeActive(cfg)
+}
+
+func authoritativeSharedKnowledgeActive(cfg config.Config) bool {
 	for _, name := range []string{"ivoai-memory", "ivoai-context"} {
 		server, ok := cfg.MCP.Servers[name]
 		if !ok || !server.Enabled {
 			continue
 		}
 		if name != "ivoai-memory" || cfg.Memory.Enabled {
-			return false
+			return true
 		}
 	}
-	return true
+	return false
 }
 
 func headroomBypassedForSharedKnowledge(cfg config.Config) bool {
-	return cfg.Headroom.Enabled && !primaryHeadroomEnabled(cfg)
+	return cfg.Headroom.Enabled && authoritativeSharedKnowledgeActive(cfg)
 }
 
 // Codex's stable Code Mode router fails closed without its separately released

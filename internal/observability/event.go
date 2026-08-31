@@ -95,101 +95,105 @@ const (
 type Reason string
 
 const (
-	ReasonDirect                 Reason = "direct"
-	ReasonPrimaryAvailable       Reason = "primary_available"
-	ReasonCapabilityMatch        Reason = "capability_match"
-	ReasonQuotaAvailable         Reason = "quota_available"
-	ReasonQuotaExhausted         Reason = "quota_exhausted"
-	ReasonQuotaStale             Reason = "quota_stale"
-	ReasonTelemetryNotExposed    Reason = "telemetry_not_exposed"
-	ReasonProbeFailed            Reason = "probe_failed"
-	ReasonAuthTransition         Reason = "auth_transition"
-	ReasonAlternateSelected      Reason = "alternate_selected"
-	ReasonProviderUnavailable    Reason = "provider_unavailable"
-	ReasonProviderQuotaExhausted Reason = "provider_quota_exhausted"
-	ReasonModelQuotaExhausted    Reason = "model_quota_exhausted"
-	ReasonHeadroomEnabled        Reason = "headroom_enabled"
-	ReasonHeadroomBypassed       Reason = "headroom_bypassed"
-	ReasonCavemanEnabled         Reason = "caveman_enabled"
-	ReasonCavemanFallback        Reason = "caveman_fallback"
-	ReasonCompressionApplied     Reason = "compression_applied"
-	ReasonCompressionUnavailable Reason = "compression_unavailable"
-	ReasonExactRequired          Reason = "exact_required"
-	ReasonExplicitBypass         Reason = "explicit_bypass"
-	ReasonKnowledgeReady         Reason = "knowledge_ready"
-	ReasonKnowledgeDegraded      Reason = "knowledge_degraded"
-	ReasonPolicyAllowed          Reason = "policy_allowed"
-	ReasonPolicyDenied           Reason = "policy_denied"
-	ReasonApprovalRequired       Reason = "approval_required"
-	ReasonInvalidMetadata        Reason = "invalid_metadata"
-	ReasonUnresolvedConflict     Reason = "unresolved_conflict"
-	ReasonIntegrityVerified      Reason = "integrity_verified"
-	ReasonIntegrityMismatch      Reason = "integrity_mismatch"
-	ReasonImmutableRevision      Reason = "immutable_revision"
-	ReasonValidationFailed       Reason = "validation_failed"
-	ReasonRollbackComplete       Reason = "rollback_complete"
-	ReasonRedacted               Reason = "redacted"
-	ReasonArtifactStored         Reason = "artifact_stored"
-	ReasonArtifactRecovered      Reason = "artifact_recovered"
-	ReasonContextBudgetApplied   Reason = "context_budget_applied"
-	ReasonStoreUnavailable       Reason = "store_unavailable"
-	ReasonAccessDenied           Reason = "access_denied"
-	ReasonArtifactExpired        Reason = "artifact_expired"
-	ReasonResultProjected        Reason = "result_projected"
+	ReasonDirect                       Reason = "direct"
+	ReasonPrimaryAvailable             Reason = "primary_available"
+	ReasonCapabilityMatch              Reason = "capability_match"
+	ReasonQuotaAvailable               Reason = "quota_available"
+	ReasonQuotaExhausted               Reason = "quota_exhausted"
+	ReasonQuotaStale                   Reason = "quota_stale"
+	ReasonTelemetryNotExposed          Reason = "telemetry_not_exposed"
+	ReasonProbeFailed                  Reason = "probe_failed"
+	ReasonAuthTransition               Reason = "auth_transition"
+	ReasonAlternateSelected            Reason = "alternate_selected"
+	ReasonProviderUnavailable          Reason = "provider_unavailable"
+	ReasonProviderQuotaExhausted       Reason = "provider_quota_exhausted"
+	ReasonModelQuotaExhausted          Reason = "model_quota_exhausted"
+	ReasonHeadroomEnabled              Reason = "headroom_enabled"
+	ReasonHeadroomBypassed             Reason = "headroom_bypassed"
+	ReasonCavemanEnabled               Reason = "caveman_enabled"
+	ReasonCavemanFallback              Reason = "caveman_fallback"
+	ReasonCompressionApplied           Reason = "compression_applied"
+	ReasonCompressionUnavailable       Reason = "compression_unavailable"
+	ReasonAuthoritativeSharedKnowledge Reason = "authoritative_shared_knowledge"
+	ReasonExactRequired                Reason = "exact_required"
+	ReasonExplicitBypass               Reason = "explicit_bypass"
+	ReasonKnowledgeReady               Reason = "knowledge_ready"
+	ReasonKnowledgeDegraded            Reason = "knowledge_degraded"
+	ReasonPolicyAllowed                Reason = "policy_allowed"
+	ReasonPolicyDenied                 Reason = "policy_denied"
+	ReasonApprovalRequired             Reason = "approval_required"
+	ReasonInvalidMetadata              Reason = "invalid_metadata"
+	ReasonUnresolvedConflict           Reason = "unresolved_conflict"
+	ReasonIntegrityVerified            Reason = "integrity_verified"
+	ReasonIntegrityMismatch            Reason = "integrity_mismatch"
+	ReasonImmutableRevision            Reason = "immutable_revision"
+	ReasonValidationFailed             Reason = "validation_failed"
+	ReasonRollbackComplete             Reason = "rollback_complete"
+	ReasonRedacted                     Reason = "redacted"
+	ReasonArtifactStored               Reason = "artifact_stored"
+	ReasonArtifactRecovered            Reason = "artifact_recovered"
+	ReasonContextBudgetApplied         Reason = "context_budget_applied"
+	ReasonStoreUnavailable             Reason = "store_unavailable"
+	ReasonAccessDenied                 Reason = "access_denied"
+	ReasonArtifactExpired              Reason = "artifact_expired"
+	ReasonResultProjected              Reason = "result_projected"
 )
 
 // Event is deliberately an allowlist rather than a generic attributes map.
 // It cannot represent prompts, responses, artifacts, headers, environments,
 // credentials, cookies, provider auth records, or private knowledge content.
 type Event struct {
-	ObservedAt            time.Time        `json:"observed_at"`
-	Category              Category         `json:"category"`
-	Operation             Operation        `json:"operation"`
-	State                 State            `json:"state"`
-	SessionID             string           `json:"session_id,omitempty"`
-	TaskID                string           `json:"task_id,omitempty"`
-	WorkerID              string           `json:"worker_id,omitempty"`
-	Provider              string           `json:"provider,omitempty"`
-	Executor              string           `json:"executor,omitempty"`
-	Component             core.ComponentID `json:"component,omitempty"`
-	Capability            core.Capability  `json:"capability,omitempty"`
-	DurationMilliseconds  int64            `json:"duration_ms,omitempty"`
-	RoutingReason         Reason           `json:"routing_reason,omitempty"`
-	FallbackReason        Reason           `json:"fallback_reason,omitempty"`
-	WindowKind            string           `json:"window_kind,omitempty"`
-	WindowDurationMinutes int64            `json:"window_duration_minutes,omitempty"`
-	TelemetryState        string           `json:"telemetry_state,omitempty"`
-	RemainingPercent      *float64         `json:"remaining_percent,omitempty"`
-	ResetsAt              *time.Time       `json:"resets_at,omitempty"`
-	SkillID               string           `json:"skill_id,omitempty"`
-	ArtifactID            string           `json:"artifact_id,omitempty"`
-	Revision              string           `json:"revision,omitempty"`
-	RiskTier              string           `json:"risk_tier,omitempty"`
-	PolicyDecision        string           `json:"policy_decision,omitempty"`
-	SkillLifecycle        string           `json:"skill_lifecycle,omitempty"`
-	TrustLevel            string           `json:"trust_level,omitempty"`
-	SubjectID             string           `json:"subject_id,omitempty"`
-	SubjectKind           string           `json:"subject_kind,omitempty"`
-	ArtifactBytes         int64            `json:"artifact_bytes,omitempty"`
-	FindingCount          int              `json:"finding_count,omitempty"`
-	ReferenceCount        int              `json:"reference_count,omitempty"`
-	Truncated             bool             `json:"truncated,omitempty"`
-	PayloadType           string           `json:"payload_type,omitempty"`
-	FidelityClass         string           `json:"fidelity_class,omitempty"`
-	BytesBefore           int64            `json:"bytes_before,omitempty"`
-	BytesAfter            int64            `json:"bytes_after,omitempty"`
-	TokensEstimatedBefore int64            `json:"tokens_estimated_before,omitempty"`
-	TokensEstimatedAfter  int64            `json:"tokens_estimated_after,omitempty"`
-	TokenBasis            string           `json:"token_basis,omitempty"`
-	CompressionRatio      float64          `json:"compression_ratio,omitempty"`
-	RecoveryCount         int              `json:"recovery_count,omitempty"`
-	CompressionResult     string           `json:"compression_result,omitempty"`
-	SourceID              string           `json:"source_id,omitempty"`
-	SourceAlias           string           `json:"source_alias,omitempty"`
-	Purpose               string           `json:"purpose,omitempty"`
-	SelectedSourceCount   int              `json:"selected_source_count,omitempty"`
-	Failover              bool             `json:"failover,omitempty"`
-	PartialFailure        bool             `json:"partial_failure,omitempty"`
+	ObservedAt             time.Time        `json:"observed_at"`
+	Category               Category         `json:"category"`
+	Operation              Operation        `json:"operation"`
+	State                  State            `json:"state"`
+	SessionID              string           `json:"session_id,omitempty"`
+	TaskID                 string           `json:"task_id,omitempty"`
+	WorkerID               string           `json:"worker_id,omitempty"`
+	Provider               string           `json:"provider,omitempty"`
+	RequestedProvider      string           `json:"requested_provider,omitempty"`
+	Executor               string           `json:"executor,omitempty"`
+	Component              core.ComponentID `json:"component,omitempty"`
+	Capability             core.Capability  `json:"capability,omitempty"`
+	DurationMilliseconds   int64            `json:"duration_ms,omitempty"`
+	RoutingReason          Reason           `json:"routing_reason,omitempty"`
+	FallbackReason         Reason           `json:"fallback_reason,omitempty"`
+	WindowKind             string           `json:"window_kind,omitempty"`
+	WindowDurationMinutes  int64            `json:"window_duration_minutes,omitempty"`
+	TelemetryState         string           `json:"telemetry_state,omitempty"`
+	RemainingPercent       *float64         `json:"remaining_percent,omitempty"`
+	ResetsAt               *time.Time       `json:"resets_at,omitempty"`
+	SkillID                string           `json:"skill_id,omitempty"`
+	ArtifactID             string           `json:"artifact_id,omitempty"`
+	Revision               string           `json:"revision,omitempty"`
+	RiskTier               string           `json:"risk_tier,omitempty"`
+	PolicyDecision         string           `json:"policy_decision,omitempty"`
+	SkillLifecycle         string           `json:"skill_lifecycle,omitempty"`
+	TrustLevel             string           `json:"trust_level,omitempty"`
+	SubjectID              string           `json:"subject_id,omitempty"`
+	SubjectKind            string           `json:"subject_kind,omitempty"`
+	ArtifactBytes          int64            `json:"artifact_bytes,omitempty"`
+	FindingCount           int              `json:"finding_count,omitempty"`
+	ReferenceCount         int              `json:"reference_count,omitempty"`
+	Truncated              bool             `json:"truncated,omitempty"`
+	PayloadType            string           `json:"payload_type,omitempty"`
+	FidelityClass          string           `json:"fidelity_class,omitempty"`
+	BytesBefore            int64            `json:"bytes_before,omitempty"`
+	BytesAfter             int64            `json:"bytes_after,omitempty"`
+	TokensEstimatedBefore  int64            `json:"tokens_estimated_before,omitempty"`
+	TokensEstimatedAfter   int64            `json:"tokens_estimated_after,omitempty"`
+	TokenBasis             string           `json:"token_basis,omitempty"`
+	CompressionRatio       float64          `json:"compression_ratio,omitempty"`
+	RecoveryCount          int              `json:"recovery_count,omitempty"`
+	CompressionResult      string           `json:"compression_result,omitempty"`
+	CompressionBypassed    bool             `json:"compression_bypassed,omitempty"`
+	AuthoritativeKnowledge bool             `json:"authoritative_knowledge,omitempty"`
+	SourceID               string           `json:"source_id,omitempty"`
+	SourceAlias            string           `json:"source_alias,omitempty"`
+	Purpose                string           `json:"purpose,omitempty"`
+	SelectedSourceCount    int              `json:"selected_source_count,omitempty"`
+	Failover               bool             `json:"failover,omitempty"`
+	PartialFailure         bool             `json:"partial_failure,omitempty"`
 }
 
 var operationCategories = map[Operation]Category{
@@ -261,7 +265,7 @@ func (e Event) Validate() error {
 	if e.SessionID != "" && (len(e.SessionID) != 37 || !strings.HasPrefix(e.SessionID, "sess_")) {
 		return errors.New("invalid observability session ID")
 	}
-	if !safeLabel(e.TaskID, 64) || !safeWorker(e.WorkerID) || !oneOf(e.Provider, "", "codex", "claude", "opencode", "caveman", "headroom", "direct") || !oneOf(e.Executor, "", "codex", "claude", "opencode") {
+	if !safeLabel(e.TaskID, 64) || !safeWorker(e.WorkerID) || !oneOf(e.Provider, "", "codex", "claude", "opencode", "caveman", "headroom", "direct") || !oneOf(e.RequestedProvider, "", "caveman", "headroom", "direct") || !oneOf(e.Executor, "", "codex", "claude", "opencode") {
 		return errors.New("invalid observability correlation metadata")
 	}
 	if !safeLabel(e.SourceID, 128) || !safeLabel(e.SourceAlias, 64) || !safeLabel(e.Purpose, 64) || e.SelectedSourceCount < 0 || e.SelectedSourceCount > 8 {
@@ -338,7 +342,7 @@ func safeCanonicalID(value string, limit int) bool {
 
 func validReason(value Reason) bool {
 	switch value {
-	case "", ReasonDirect, ReasonPrimaryAvailable, ReasonCapabilityMatch, ReasonQuotaAvailable, ReasonQuotaExhausted, ReasonQuotaStale, ReasonTelemetryNotExposed, ReasonProbeFailed, ReasonAuthTransition, ReasonAlternateSelected, ReasonProviderUnavailable, ReasonProviderQuotaExhausted, ReasonModelQuotaExhausted, ReasonHeadroomEnabled, ReasonHeadroomBypassed, ReasonCavemanEnabled, ReasonCavemanFallback, ReasonCompressionApplied, ReasonCompressionUnavailable, ReasonExactRequired, ReasonExplicitBypass, ReasonKnowledgeReady, ReasonKnowledgeDegraded, ReasonPolicyAllowed, ReasonPolicyDenied, ReasonApprovalRequired, ReasonInvalidMetadata, ReasonUnresolvedConflict, ReasonIntegrityVerified, ReasonIntegrityMismatch, ReasonImmutableRevision, ReasonValidationFailed, ReasonRollbackComplete, ReasonRedacted, ReasonArtifactStored, ReasonArtifactRecovered, ReasonContextBudgetApplied, ReasonStoreUnavailable, ReasonAccessDenied, ReasonArtifactExpired, ReasonResultProjected:
+	case "", ReasonDirect, ReasonPrimaryAvailable, ReasonCapabilityMatch, ReasonQuotaAvailable, ReasonQuotaExhausted, ReasonQuotaStale, ReasonTelemetryNotExposed, ReasonProbeFailed, ReasonAuthTransition, ReasonAlternateSelected, ReasonProviderUnavailable, ReasonProviderQuotaExhausted, ReasonModelQuotaExhausted, ReasonHeadroomEnabled, ReasonHeadroomBypassed, ReasonCavemanEnabled, ReasonCavemanFallback, ReasonCompressionApplied, ReasonCompressionUnavailable, ReasonAuthoritativeSharedKnowledge, ReasonExactRequired, ReasonExplicitBypass, ReasonKnowledgeReady, ReasonKnowledgeDegraded, ReasonPolicyAllowed, ReasonPolicyDenied, ReasonApprovalRequired, ReasonInvalidMetadata, ReasonUnresolvedConflict, ReasonIntegrityVerified, ReasonIntegrityMismatch, ReasonImmutableRevision, ReasonValidationFailed, ReasonRollbackComplete, ReasonRedacted, ReasonArtifactStored, ReasonArtifactRecovered, ReasonContextBudgetApplied, ReasonStoreUnavailable, ReasonAccessDenied, ReasonArtifactExpired, ReasonResultProjected:
 		return true
 	default:
 		return false

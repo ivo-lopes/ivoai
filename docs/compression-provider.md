@@ -21,7 +21,17 @@ WorkingContext e ArtifactStore continuam preservando a evidência byte-exact;
 compressão pode reduzir apenas a representação colocada no contexto. Respostas
 autoritativas de Memory/Context, metadata do Skill Registry, evidência de
 segurança, erros, stack traces e falhas de testes permanecem recuperáveis sem
-perda e são tratadas como exact-required ou bypass pela política futura.
+perda e são tratadas como exact-required ou bypass.
+
+Para a sessão primária, qualquer fonte Memory ou Context autoritativa presente
+na projeção MCP da própria sessão força execução direta enquanto o caminho de
+compressão não oferecer proteção seletiva byte-exact para tool results. A regra
+é provider-neutral: vale igualmente quando Caveman ou Headroom foi solicitado e
+não depende de `headroom.enabled`. Ela é avaliada depois da seleção das fontes;
+servidores não selecionados não alteram outra sessão, enquanto federação
+explícita protege todas as fontes selecionadas. A observabilidade registra apenas
+provider solicitado/efetivo, bypass, motivo e quantidade de fontes, nunca o
+conteúdo de Memory/Context.
 
 ## Lifecycle e fallback
 
@@ -66,9 +76,9 @@ Isto é registro técnico do upstream, não parecer jurídico.
 
 Esta fase não habilita memória, MCP, browse, learn, pixel conversion, skills,
 hooks, statusline ou setup global do Caveman; não altera `~/.codex`, `~/.claude`,
-config do OpenCode ou shell rc; e não realiza o cutover. A política fina de
-fidelidade e a integração runtime dos três executores pertencem a IVOAI-41 e
-IVOAI-40, respectivamente.
+config do OpenCode ou shell rc; e não realiza o cutover. Compressão seletiva de
+resultados Memory/Context permanece fora de escopo até que possa preservar bytes
+e associações de chamadas de forma comprovável.
 
 ## Provenance validada
 

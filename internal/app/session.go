@@ -154,7 +154,8 @@ func (a *App) SessionStartWithKnowledge(ctx context.Context, executor string, mo
 		component = "claude-code"
 	}
 	compressionProvider, compressionEnabled, requestedCompression := a.sessionCompression(cfg, state, executor, runtimeDir)
-	if compressionBypassedForSharedKnowledge(cfg) {
+	compressionPolicy := sharedKnowledgeCompressionPolicyFor(cfg, len(knowledge.aliases()))
+	if compressionPolicy.Bypassed {
 		compressionEnabled = false
 	}
 	runtime := agents.Runtime{Runner: a.Runner, In: a.In, Out: a.Out, Err: a.Err, AgentPath: state.Components[component].Path, HeadroomPath: state.Components["headroom"].Path, Compression: compressionProvider, Environment: environment, RuntimeDir: runtimeDir}
@@ -162,20 +163,19 @@ func (a *App) SessionStartWithKnowledge(ctx context.Context, executor string, mo
 	if err != nil {
 		return err
 	}
-	if !compressionEnabled && compressionBypassedForSharedKnowledge(cfg) {
+	if !compressionEnabled && compressionPolicy.Bypassed {
 		a.warn(sharedKnowledgeCompressionBypass(requestedCompression), nil)
 	}
 	launchErr := implementation.StartSession(ctx, core.SessionRequest{Args: args, CompressionEnabled: compressionEnabled}, func(observation core.SessionObservation) {
 		_, _ = store.Update(id, func(current *session.Session) error {
+			compressionEvent := compressionObservation(executor, observation, compressionPolicy)
 			current.PrimaryPID = observation.PID
 			current.PrimaryProcessStart = session.ProcessStart(observation.PID)
 			current.HeadroomUsed = observation.CompressionUsed && observation.CompressionProvider == "headroom"
 			current.CompressionUsed = observation.CompressionUsed
-			if observation.CompressionProvider != "" {
-				current.CompressionProvider = observation.CompressionProvider
-			}
+			current.CompressionProvider = compressionEvent.Provider
 			current.State = session.StateRunning
-			return session.AppendObservation(current, compressionObservation(executor, cfg.Compression.Provider, observation))
+			return session.AppendObservation(current, compressionEvent)
 		})
 	})
 	exitCode, finalState := 0, session.StateCompleted

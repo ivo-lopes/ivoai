@@ -21,8 +21,8 @@ func TestDirectSessionReceivesOnlyLoopbackCapability(t *testing.T) {
 	t.Setenv("XDG_DATA_HOME", filepath.Join(root, "data"))
 	t.Setenv("XDG_STATE_HOME", filepath.Join(root, "state"))
 	t.Setenv("XDG_CACHE_HOME", filepath.Join(root, "cache"))
-	var output bytes.Buffer
-	a, err := New("test", strings.NewReader(""), &output, &output)
+	var output, stderr bytes.Buffer
+	a, err := New("test", strings.NewReader(""), &output, &stderr)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -61,6 +61,9 @@ func TestDirectSessionReceivesOnlyLoopbackCapability(t *testing.T) {
 	}
 	if !strings.Contains(lines[3], "mcp_servers.ivoai-context.url=\"http://127.0.0.1:") || strings.Contains(output.String(), "voicecorp.invalid") || strings.Contains(output.String(), "upstream-secret") {
 		t.Fatalf("upstream metadata leaked to child: %q", output.String())
+	}
+	if !strings.Contains(strings.ToLower(stderr.String()), "bypassed") || strings.Contains(stderr.String(), "upstream-secret") {
+		t.Fatalf("provider-neutral bypass warning=%q", stderr.String())
 	}
 }
 
@@ -149,4 +152,50 @@ func TestDisabledMemoryIsNotReenabledInSessionEnvironment(t *testing.T) {
 	if !strings.Contains(joined, "IVOAI_CONTEXT_MCP_URL=http://127.0.0.1:") || knowledge.config.MCP.Servers["ivoai-memory"].Enabled {
 		t.Fatalf("context-only routing was not preserved: env=%s config=%+v", joined, knowledge.config.MCP.Servers)
 	}
+}
+
+func TestCompressionPolicyUsesOnlySessionSelectedSources(t *testing.T) {
+	root := t.TempDir()
+	t.Setenv("HOME", root)
+	t.Setenv("XDG_CONFIG_HOME", filepath.Join(root, "config"))
+	t.Setenv("XDG_DATA_HOME", filepath.Join(root, "data"))
+	t.Setenv("XDG_STATE_HOME", filepath.Join(root, "state"))
+	t.Setenv("XDG_CACHE_HOME", filepath.Join(root, "cache"))
+	a, err := New("test", strings.NewReader(""), io.Discard, io.Discard)
+	if err != nil {
+		t.Fatal(err)
+	}
+	voice := config.ServerProfile{ID: "srv_voice_exact", Alias: "voicecorp", URL: "https://voice.invalid", Status: "connected", Enabled: true, Purpose: "voicecorp", ContextMCPURL: "https://voice.invalid/context", Features: map[string]bool{"context": true}}
+	mind := config.ServerProfile{ID: "srv_mind_inactive", Alias: "mindsite", URL: "https://mind.invalid", Status: "connected", Enabled: true, Purpose: "mindsite"}
+	replica := config.ServerProfile{ID: "srv_voice_replica", Alias: "voicecorp-2", URL: "https://voice-2.invalid", Status: "connected", Enabled: true, Purpose: "voice-redundancy", RedundancyGroup: "voice-prod", Priority: 10, ContextMCPURL: "https://voice-2.invalid/context", Features: map[string]bool{"context": true}}
+	standby := config.ServerProfile{ID: "srv_voice_standby", Alias: "voicecorp-3", URL: "https://voice-3.invalid", Status: "connected", Enabled: true, Purpose: "voice-redundancy", RedundancyGroup: "voice-prod", Priority: 20, ContextMCPURL: "https://voice-3.invalid/context", Features: map[string]bool{"context": true}}
+	cfg := config.Default()
+	cfg.Compression.Provider = "caveman"
+	cfg.Headroom.Enabled = false
+	cfg.Connections.Servers = map[string]config.ServerProfile{voice.Alias: voice, mind.Alias: mind, replica.Alias: replica, standby.Alias: standby}
+	if err := a.Store.Save(cfg); err != nil {
+		t.Fatal(err)
+	}
+	credentialStore := secrets.Store{Path: a.Store.Paths.Secrets}
+	for _, profile := range []config.ServerProfile{voice, mind, replica, standby} {
+		if err := credentialStore.Set(profile.ID, secrets.ClientCredential{Token: "isolated-" + profile.ID}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	check := func(selectors []string, wantActive, wantBypass bool, wantCount int) {
+		t.Helper()
+		knowledge, err := a.prepareSessionKnowledge(context.Background(), cfg, selectors, "codex", t.TempDir(), nil, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer knowledge.close()
+		policy := sharedKnowledgeCompressionPolicyFor(knowledge.config, len(knowledge.aliases()))
+		if policy.AuthoritativeActive != wantActive || policy.Bypassed != wantBypass || policy.SelectedSourceCount != wantCount {
+			t.Fatalf("selectors=%v policy=%+v", selectors, policy)
+		}
+	}
+	check([]string{"mindsite"}, false, false, 1)
+	check([]string{"voicecorp"}, true, true, 1)
+	check([]string{"voicecorp", "mindsite"}, true, true, 2)
+	check([]string{"voice-redundancy"}, true, true, 2)
 }

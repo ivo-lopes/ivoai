@@ -876,10 +876,11 @@ func (a *App) LaunchWithKnowledge(ctx context.Context, target string, args, sele
 	}
 	defer cleanup()
 	compressionProvider, compressionEnabled, requestedCompression := a.sessionCompression(cfg, state, target, runtimeDir)
-	if compressionBypassedForSharedKnowledge(cfg) {
+	compressionPolicy := sharedKnowledgeCompressionPolicyFor(cfg, len(knowledge.aliases()))
+	if compressionPolicy.Bypassed {
 		compressionEnabled = false
 	}
-	if !compressionEnabled && compressionBypassedForSharedKnowledge(cfg) {
+	if !compressionEnabled && compressionPolicy.Bypassed {
 		a.warn(sharedKnowledgeCompressionBypass(requestedCompression), nil)
 	}
 	executor, err := agents.ExecutorFor(target, agents.Runtime{Runner: a.Runner, In: a.In, Out: a.Out, Err: a.Err, AgentPath: state.Components[key].Path, HeadroomPath: state.Components["headroom"].Path, Compression: compressionProvider, Environment: environment, RuntimeDir: runtimeDir}, state.Components[key].Version, state.Components[key].Managed)

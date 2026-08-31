@@ -53,11 +53,14 @@ func (a *App) workingContextCompressor(cfg config.Config, state config.State, ru
 	return caveman.MCPCompressor{Binary: component.Path, RuntimeDir: runtimeDir, SupplyRoot: filepath.Join(a.Store.Paths.DataDir, "supply-chain"), Expected: expected, Managed: component.Managed}
 }
 
-func compressionObservation(executor, requested string, observation core.SessionObservation) observability.Event {
+func compressionObservation(executor string, observation core.SessionObservation, policy sharedKnowledgeCompressionPolicy) observability.Event {
+	requested := policy.RequestedProvider
 	provider := observation.CompressionProvider
 	reason := observability.ReasonDirect
 	state := observability.StateSelected
-	if provider == "headroom" && observation.CompressionUsed {
+	if policy.Bypassed {
+		provider, reason = "direct", observability.ReasonAuthoritativeSharedKnowledge
+	} else if provider == "headroom" && observation.CompressionUsed {
 		reason = observability.ReasonHeadroomEnabled
 	} else if provider == "caveman" && observation.CompressionUsed {
 		reason = observability.ReasonCavemanEnabled
@@ -70,7 +73,7 @@ func compressionObservation(executor, requested string, observation core.Session
 	if observation.CompressionFallback {
 		state = observability.StateDegraded
 	}
-	return observability.Event{Category: observability.CategoryCompression, Operation: observability.OperationCompressionSelect, State: state, Executor: executor, Provider: provider, Component: core.ComponentCompression, RoutingReason: reason, DurationMilliseconds: observation.CompressionPreflightMilliseconds}
+	return observability.Event{Category: observability.CategoryCompression, Operation: observability.OperationCompressionSelect, State: state, Executor: executor, Provider: provider, RequestedProvider: requested, Component: core.ComponentCompression, RoutingReason: reason, DurationMilliseconds: observation.CompressionPreflightMilliseconds, CompressionBypassed: policy.Bypassed, AuthoritativeKnowledge: policy.AuthoritativeActive, SelectedSourceCount: policy.SelectedSourceCount}
 }
 
 func componentSpec(name string) (components.Spec, bool) {
