@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/ivo-lopes/ivoai/internal/config"
@@ -198,4 +199,60 @@ func TestCompressionPolicyUsesOnlySessionSelectedSources(t *testing.T) {
 	check([]string{"voicecorp"}, true, true, 1)
 	check([]string{"voicecorp", "mindsite"}, true, true, 2)
 	check([]string{"voice-redundancy"}, true, true, 2)
+}
+
+func TestParallelSessionsKeepIndependentCompressionPolicy(t *testing.T) {
+	root := t.TempDir()
+	t.Setenv("HOME", root)
+	t.Setenv("XDG_CONFIG_HOME", filepath.Join(root, "config"))
+	t.Setenv("XDG_DATA_HOME", filepath.Join(root, "data"))
+	t.Setenv("XDG_STATE_HOME", filepath.Join(root, "state"))
+	t.Setenv("XDG_CACHE_HOME", filepath.Join(root, "cache"))
+	a, err := New("test", strings.NewReader(""), io.Discard, io.Discard)
+	if err != nil {
+		t.Fatal(err)
+	}
+	voice := config.ServerProfile{ID: "srv_parallel_voice", Alias: "voicecorp", URL: "https://voice.invalid", Status: "connected", Enabled: true, Purpose: "voicecorp", ContextMCPURL: "https://voice.invalid/context", Features: map[string]bool{"context": true}}
+	mind := config.ServerProfile{ID: "srv_parallel_mind", Alias: "mindsite", URL: "https://mind.invalid", Status: "connected", Enabled: true, Purpose: "mindsite"}
+	cfg := config.Default()
+	cfg.Compression.Provider = "caveman"
+	cfg.Headroom.Enabled = false
+	cfg.Connections.Servers = map[string]config.ServerProfile{voice.Alias: voice, mind.Alias: mind}
+	credentialStore := secrets.Store{Path: a.Store.Paths.Secrets}
+	for _, profile := range []config.ServerProfile{voice, mind} {
+		if err := credentialStore.Set(profile.ID, secrets.ClientCredential{Token: "isolated-" + profile.ID}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	type outcome struct {
+		selector string
+		policy   sharedKnowledgeCompressionPolicy
+		err      error
+	}
+	results := make(chan outcome, 2)
+	var group sync.WaitGroup
+	for _, selector := range []string{"voicecorp", "mindsite"} {
+		group.Add(1)
+		go func(selector string) {
+			defer group.Done()
+			knowledge, err := a.prepareSessionKnowledge(context.Background(), cfg, []string{selector}, "codex", filepath.Join(root, "runtime", selector), nil, nil)
+			if err != nil {
+				results <- outcome{selector: selector, err: err}
+				return
+			}
+			defer knowledge.close()
+			results <- outcome{selector: selector, policy: sharedKnowledgeCompressionPolicyFor(knowledge.config, len(knowledge.aliases()))}
+		}(selector)
+	}
+	group.Wait()
+	close(results)
+	for result := range results {
+		if result.err != nil {
+			t.Fatal(result.err)
+		}
+		wantBypass := result.selector == "voicecorp"
+		if result.policy.Bypassed != wantBypass || result.policy.SelectedSourceCount != 1 {
+			t.Fatalf("selector=%s policy=%+v", result.selector, result.policy)
+		}
+	}
 }

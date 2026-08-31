@@ -113,6 +113,31 @@ func TestCodexMCPIsolationFailsClosedOnUnstructuredInventory(t *testing.T) {
 	}
 }
 
+func TestAuthoritativeWorkerKnowledgeBypassesHeadroom(t *testing.T) {
+	root := t.TempDir()
+	headroomMarker := filepath.Join(root, "headroom-invoked")
+	codex := executable(t, root, "codex", `#!/bin/sh
+if [ "$1" = "mcp" ]; then printf '%s' '[{"name":"ivoai-memory"}]'; exit 0; fi
+result=""
+previous=""
+for arg in "$@"; do
+  [ "$previous" = "--output-last-message" ] && result="$arg"
+  previous="$arg"
+done
+cat >/dev/null
+printf 'exact worker result' > "$result"
+`)
+	headroom := executable(t, root, "headroom", "#!/bin/sh\nprintf invoked > "+headroomMarker+"\nexit 99\n")
+	adapter := Adapter{Runner: platform.ExecRunner{}, CodexPath: codex, HeadroomPath: headroom, HeadroomEnabled: true, KnowledgeServers: map[string]config.MCPServer{"ivoai-memory": {URL: "http://127.0.0.1:1234/mcp/memory", Enabled: true, Kind: "memory"}}}
+	result, err := adapter.Run(context.Background(), Request{Executor: "codex", Task: "read authoritative memory", Directory: root, Runtime: filepath.Join(root, "runtime")}, nil)
+	if err != nil || result.Text != "exact worker result" || result.HeadroomUsed {
+		t.Fatalf("result=%+v err=%v", result, err)
+	}
+	if _, err := os.Stat(headroomMarker); !os.IsNotExist(err) {
+		t.Fatalf("Headroom touched authoritative worker path: %v", err)
+	}
+}
+
 func assertResearchPriority(t *testing.T, value string) {
 	t.Helper()
 	memory := strings.Index(value, "(1) ivoai-memory")

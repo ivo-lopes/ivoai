@@ -177,7 +177,7 @@ func (r *Router) handleMCP(w http.ResponseWriter, request *http.Request, kind st
 		writeRPCError(w, rpc.ID, -32600, "invalid JSON-RPC request")
 		return
 	}
-	write := kind == "memory" && isWriteTool(rpc.Method, rpc.Params.Name)
+	write := kind == "memory" && memoryToolRequiresSingleDestination(rpc.Method, rpc.Params.Name)
 	groups := r.groupsFor(kind)
 	if len(groups) == 0 {
 		writeRPCError(w, rpc.ID, -32021, kind+" is not available for the selected sources")
@@ -421,6 +421,22 @@ func isWriteTool(method, name string) bool {
 		return true
 	default:
 		return false
+	}
+}
+
+// memoryToolRequiresSingleDestination fails closed for newly introduced or
+// unrecognized Memory tools. An unknown tool may mutate state; treating it as a
+// write prevents cross-purpose fan-out and retry onto a redundancy peer until
+// its read-only semantics are explicitly reviewed.
+func memoryToolRequiresSingleDestination(method, name string) bool {
+	if method != "tools/call" {
+		return false
+	}
+	switch name {
+	case "memory_query", "memory_recent", "memory_read_page", "memory_status":
+		return false
+	default:
+		return true
 	}
 }
 

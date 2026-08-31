@@ -57,10 +57,19 @@ func (c MCPCompressor) Compact(ctx context.Context, request workingcontext.Compa
 	if !filepath.IsAbs(c.RuntimeDir) {
 		return workingcontext.CompactResult{}, errors.New("Caveman MCP requires an absolute session runtime")
 	}
-	runtimeRoot := filepath.Join(c.RuntimeDir, "caveman", "mcp")
-	if err := platform.EnsurePrivateDir(runtimeRoot); err != nil {
+	runtimeBase := filepath.Join(c.RuntimeDir, "caveman", "mcp")
+	if err := platform.EnsurePrivateDir(runtimeBase); err != nil {
 		return workingcontext.CompactResult{}, err
 	}
+	runtimeRoot, err := os.MkdirTemp(runtimeBase, "call-")
+	if err != nil {
+		return workingcontext.CompactResult{}, err
+	}
+	if err := os.Chmod(runtimeRoot, 0o700); err != nil {
+		_ = os.RemoveAll(runtimeRoot)
+		return workingcontext.CompactResult{}, err
+	}
+	defer os.RemoveAll(runtimeRoot)
 	timeout := c.Timeout
 	if timeout <= 0 {
 		timeout = defaultMCPTimeout
@@ -97,7 +106,7 @@ func (c MCPCompressor) Compact(ctx context.Context, request workingcontext.Compa
 	if err := json.Unmarshal([]byte(body), &payload); err != nil {
 		return workingcontext.CompactResult{}, errors.New("Caveman MCP returned malformed compression metadata")
 	}
-	if len(payload.Compressed) > maxMCPOutput || payload.TokensBefore < 0 || payload.TokensAfter < 0 || !safeBasis(payload.Basis) {
+	if len(payload.Compressed) > maxMCPOutput || payload.TokensBefore < 0 || payload.TokensAfter < 0 || (payload.TokensBefore > 0 && payload.TokensAfter > payload.TokensBefore) || !safeBasis(payload.Basis) {
 		return workingcontext.CompactResult{}, errors.New("Caveman MCP returned invalid bounded metadata")
 	}
 	handle := ""

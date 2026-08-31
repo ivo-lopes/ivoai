@@ -101,6 +101,11 @@ func (p Projector) Project(ctx context.Context, input ProjectionInput) WorkerRes
 		payloadType = compression.PayloadWorkerOutput
 	}
 	fidelity := compression.Classify(compression.FidelityInput{PayloadType: payloadType, Explicit: input.Fidelity, Failed: status == ResultFailed || status == ResultCancelled})
+	// Binary data cannot be safely converted to the string-only compression
+	// contract. Preserve it as exact evidence and expose only its ResultRef.
+	if !utf8.Valid(input.Raw) || strings.HasPrefix(strings.ToLower(mediaType), "application/octet-stream") {
+		fidelity = core.CompressionExactRequired
+	}
 	result := WorkerResult{Status: status, PayloadType: string(payloadType), Fidelity: fidelity, Evidence: []ResultRef{resultRef}}
 	result.ImportantErrors = importantErrors(status, input.ExitCode, input.Failure, input.Raw)
 	result.Findings = findings(input.Raw, resultRef)

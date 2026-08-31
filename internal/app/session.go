@@ -259,10 +259,11 @@ func (a *App) OrchestratorServe(ctx context.Context, id string) error {
 	if workingErr != nil {
 		a.warn("WorkingContext artifact store is degraded; raw worker output will not be injected into primary context", workingErr)
 	}
+	knowledgeServers := runtimeKnowledgeServers(cfg.MCP.Servers)
 	server := orchestrator.Server{
 		Store: store, SessionID: id, Directory: value.WorkingDirectory, RuntimeDir: runtimeDir,
 		ReviewExecutor:        cfg.Orchestration.ReviewExecutor,
-		Adapter:               workers.Adapter{Runner: a.Runner, CodexPath: state.Components["codex"].Path, ClaudePath: state.Components["claude-code"].Path, HeadroomPath: state.Components["headroom"].Path, HeadroomEnabled: primaryHeadroomEnabled(cfg), KnowledgeServers: runtimeKnowledgeServers(cfg.MCP.Servers)},
+		Adapter:               workers.Adapter{Runner: a.Runner, CodexPath: state.Components["codex"].Path, ClaudePath: state.Components["claude-code"].Path, HeadroomPath: state.Components["headroom"].Path, HeadroomEnabled: cfg.Compression.Provider == "headroom" && cfg.Headroom.Enabled, KnowledgeServers: knowledgeServers},
 		Control:               orchestration.RufloOrchestratorAdapter{Control: orchestration.ControlPlane{Manager: a.orchestrationManager(state), RuntimeDir: runtimeDir}, Managed: state.Components["ruflo"].Managed},
 		Quota:                 a.automaticQuotaManager(cfg, state),
 		CheckpointEnabled:     cfg.Orchestration.Auto.CheckpointEnabled,

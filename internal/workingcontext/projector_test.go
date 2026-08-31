@@ -160,9 +160,15 @@ func TestProjectorPreservesCancellationAndBinaryWithoutInlineRaw(t *testing.T) {
 	}
 	owner := testOwner("1", "")
 	raw := []byte{0xff, 0xfe, 0x00, 0x01}
-	result := (Projector{Store: store}).Project(context.Background(), ProjectionInput{Owner: owner, Raw: raw, MediaType: "application/octet-stream", Status: ResultCancelled, ExitCode: 130})
+	compressor := &testCompressor{fn: func(CompactRequest) (CompactResult, error) {
+		return CompactResult{Representation: "must-not-run", Provider: "caveman"}, nil
+	}}
+	result := (Projector{Store: store, Compressor: compressor}).Project(context.Background(), ProjectionInput{Owner: owner, Raw: raw, MediaType: "application/octet-stream", Status: ResultCancelled, ExitCode: 130})
 	if result.Status != ResultCancelled || !result.Truncated || !strings.Contains(result.Summary, "Binary/non-UTF-8") || !containsString(result.ImportantErrors, "worker execution was cancelled") {
 		t.Fatalf("result=%+v", result)
+	}
+	if compressor.calls != 0 || result.Fidelity != core.CompressionExactRequired {
+		t.Fatalf("binary evidence reached compression: calls=%d fidelity=%s", compressor.calls, result.Fidelity)
 	}
 	if strings.Contains(result.Summary, string(raw)) {
 		t.Fatal("binary raw output entered summary")

@@ -138,9 +138,10 @@ func (a Adapter) Run(ctx context.Context, request Request, observe func(Observat
 	command, commandArgs := direct, args
 	useHeadroom := false
 	// Headroom 0.36.0 has no verified exclusion contract for authoritative
-	// Memory/Context material. Workers carrying a SharedContextBrief therefore
-	// bypass compression just like the primary shared-knowledge path.
-	if a.HeadroomEnabled && a.HeadroomPath != "" && request.SharedContextBrief == "" {
+	// Memory/Context material. The worker's session-local MCP projection, not
+	// global config or the presence of a brief, is the authority for this
+	// provider-neutral fidelity boundary.
+	if a.HeadroomEnabled && a.HeadroomPath != "" && request.SharedContextBrief == "" && !authoritativeKnowledgeActive(a.KnowledgeServers) {
 		component := core.ComponentCodex
 		if request.Executor == "claude" {
 			component = core.ComponentClaude
@@ -176,6 +177,15 @@ func (a Adapter) Run(ctx context.Context, request Request, observe func(Observat
 	}
 	result.Model = session.ResolveModel("", request.Model, request.Executor, "")
 	return result, nil
+}
+
+func authoritativeKnowledgeActive(servers map[string]config.MCPServer) bool {
+	for _, name := range []string{"ivoai-memory", "ivoai-context"} {
+		if server, ok := servers[name]; ok && server.Enabled {
+			return true
+		}
+	}
+	return false
 }
 
 // Evidence preserves the exact result/stdout/stderr byte sequences in a

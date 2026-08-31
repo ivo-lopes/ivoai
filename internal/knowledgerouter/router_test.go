@@ -3,6 +3,7 @@ package knowledgerouter
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -30,6 +31,7 @@ type fakeSource struct {
 	down       atomic.Bool
 	mu         sync.Mutex
 	bodies     [][]byte
+	response   []byte
 }
 
 func newFakeSource(t *testing.T, purpose, token string) *fakeSource {
@@ -70,10 +72,27 @@ func newFakeSource(t *testing.T, purpose, token string) *fakeSource {
 			_, _ = w.Write(bytes.Repeat([]byte("x"), maxResponseBytes+1))
 			return
 		}
+		if value.response != nil {
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write(value.response)
+			return
+		}
 		writeJSON(w, map[string]any{"jsonrpc": "2.0", "id": 1, "result": map[string]any{"content": []any{map[string]any{"type": "text", "text": purpose + ":projects/foo"}}}})
 	}))
 	t.Cleanup(value.server.Close)
 	return value
+}
+
+func TestSingleSourceAuthoritativeResponseIsByteExact(t *testing.T) {
+	voice := newFakeSource(t, "voicecorp", "token-a")
+	original := []byte("{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"byte-exact\\nline-2\"}]}}")
+	voice.response = original
+	profiles := map[string]config.ServerProfile{"voicecorp": profile("voicecorp", "voicecorp", "", 0, voice)}
+	router := startTestRouter(t, profiles, []string{"voicecorp"}, map[string]*fakeSource{"voicecorp": voice})
+	payload, status := callRouter(t, router, "/mcp/context", `{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"context_search"}}`)
+	if status != http.StatusOK || !bytes.Equal(payload, original) || sha256.Sum256(payload) != sha256.Sum256(original) {
+		t.Fatalf("authoritative response changed: status=%d got=%q want=%q", status, payload, original)
+	}
 }
 
 func profile(alias, purpose, group string, priority int, source *fakeSource) config.ServerProfile {
@@ -158,6 +177,32 @@ func TestAmbiguousCrossPurposeWriteFailsBeforeUpstream(t *testing.T) {
 	payload, _ := callRouter(t, router, "/mcp/memory", `{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"memory_write_page"}}`)
 	if !bytes.Contains(payload, []byte("exactly one knowledge destination")) || a.requests.Load() != 0 || b.requests.Load() != 0 {
 		t.Fatalf("write was not fail-closed: %s a=%d b=%d", payload, a.requests.Load(), b.requests.Load())
+	}
+}
+
+func TestUnknownMemoryToolFailsClosedAsPotentialWrite(t *testing.T) {
+	a := newFakeSource(t, "a", "token-a")
+	b := newFakeSource(t, "b", "token-b")
+	profiles := map[string]config.ServerProfile{"a": profile("a", "a", "", 0, a), "b": profile("b", "b", "", 0, b)}
+	router := startTestRouter(t, profiles, []string{"a", "b"}, map[string]*fakeSource{"a": a, "b": b})
+	payload, _ := callRouter(t, router, "/mcp/memory", `{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"future_memory_tool"}}`)
+	if !bytes.Contains(payload, []byte("exactly one knowledge destination")) || a.requests.Load() != 0 || b.requests.Load() != 0 {
+		t.Fatalf("unknown Memory tool fanned out: %s a=%d b=%d", payload, a.requests.Load(), b.requests.Load())
+	}
+}
+
+func TestUnknownMemoryToolDoesNotFailOverAcrossReplicas(t *testing.T) {
+	primary := newFakeSource(t, "mindsite-primary", "token-primary")
+	secondary := newFakeSource(t, "mindsite-secondary", "token-secondary")
+	primary.down.Store(true)
+	profiles := map[string]config.ServerProfile{
+		"mindsite-1": profile("mindsite-1", "mindsite", "prod", 10, primary),
+		"mindsite-2": profile("mindsite-2", "mindsite", "prod", 20, secondary),
+	}
+	router := startTestRouter(t, profiles, []string{"mindsite"}, map[string]*fakeSource{"mindsite-1": primary, "mindsite-2": secondary})
+	_, _ = callRouter(t, router, "/mcp/memory", `{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"future_memory_tool"}}`)
+	if primary.requests.Load() != 1 || secondary.requests.Load() != 0 {
+		t.Fatalf("unknown Memory tool retried after uncertain failure: primary=%d secondary=%d", primary.requests.Load(), secondary.requests.Load())
 	}
 }
 
