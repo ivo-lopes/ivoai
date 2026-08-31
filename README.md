@@ -21,16 +21,19 @@ ChatGPT Web, and Claude Web.
 ## How it fits together
 
 ```text
-Desktop / notebook                         Private Linux server
+Desktop / notebook                         Private Linux servers
 
 ivoai auto ── shared knowledge ── DAG scheduler ── Codex/Claude TUI
     │          ├── quota + model/effort routing  │
     │          ├── async read-only workers       │
     │          └── safe Ruflo lifecycle          │
-ivoai menu ── Session Control                   HTTPS gateway
-    │                                            ├── OAuth + Web MCP
-    │ HTTPS + scoped credential                 ├── context/RAG ── Qdrant
-    └───────────────────────────────────────────└── ai-memory
+ivoai menu ── Session Control                   per-session knowledge router
+    │                                            ├── Voicecorp server
+    │ local capability + isolated credentials   │   ├── Context/RAG
+    └────────────────────────────────────────────┤   └── ai-memory
+                                                 └── Mindsite server
+                                                     ├── Context/RAG
+                                                     └── ai-memory
 ```
 
 Optional services fail independently: an unavailable server, memory service,
@@ -49,7 +52,10 @@ subcommands:
 ```sh
 ivoai connect chatgpt
 ivoai connect claude
-ivoai connect server
+ivoai connect server                    # legacy default profile
+ivoai connect server add voicecorp --url https://voicecorp.example.invalid --code-stdin
+ivoai connect server add mindsite --url https://mindsite.example.invalid --code-stdin
+ivoai connect server list
 ivoai codex
 ivoai claude
 ivoai opencode                 # official OpenCode TUI; direct primary
@@ -75,7 +81,15 @@ For the quota-aware conversational mode, run:
 ivoai auto                         # choose the primary; Codex is the default
 ivoai auto --planner codex         # official Codex TUI
 ivoai auto --planner claude        # official Claude Code TUI
+ivoai codex --knowledge-source mindsite
+ivoai claude --knowledge-source voicecorp
 ```
+
+Named servers remain connected simultaneously. Purpose isolation is the default;
+repeat `--knowledge-source` only for intentional cross-purpose read federation.
+Upstream tokens remain inside ivoai's per-session loopback router, so concurrent
+Voicecorp and Mindsite sessions do not rewrite global agent configuration or share
+credentials. See [Multi-server knowledge sources](docs/multi-server.md).
 
 The selected official client remains the conversation owner, planner, primary, and
 only authoritative writer. On the first substantive request, automatic mode attempts

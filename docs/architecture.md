@@ -20,6 +20,46 @@ The core is organization-neutral. It contains no company domains, private addres
 user paths, or preconfigured connectors. Git is optional; project mode is an explicit
 override, not a prerequisite.
 
+## Multi-server knowledge plane
+
+The client-side knowledge path is provider-neutral and does not make every enrolled
+server globally visible to every agent:
+
+```text
+managed session (Codex / Claude / AUTO workers)
+        │ local capability, selected sources
+        ▼
+per-session loopback KnowledgeRouter
+        │
+        ├── ServerPool purpose A ── primary/standby redundancy
+        └── ServerPool purpose B ── independent Memory/Context
+```
+
+`ServerProfile` records an opaque ID, alias, purpose, optional redundancy group,
+priority, protocol, endpoints and features. Credentials are stored separately by
+opaque ID. The pool deterministically groups equivalent replicas while preserving
+purpose boundaries. No company name appears in core routing logic.
+
+The router binds an ephemeral `127.0.0.1` listener for each session. It issues a
+random short-lived local capability, retains upstream credentials in process,
+rejects cross-origin redirects and forwards each credential only to its matching
+profile. Codex receives process-local MCP arguments and Claude a private runtime MCP
+file. AUTO uses the same router through failover; workers inherit local endpoints.
+No global mutable MCP rewrite is needed, so sessions for different purposes can run
+concurrently.
+
+Single-source authoritative responses are preserved. Explicit federated
+`tools/call` reads fan out concurrently with per-source deadlines and deterministically
+merge source-attributed results. Requests are capped at 4 MiB and upstream responses
+at 16 MiB. Writes require exactly one logical destination; a redundancy write is
+primary-only and is not retried after an uncertain side effect. Read failover is
+limited to the same purpose/redundancy group and uses bounded circuit state.
+
+This router is not MemoryBackend, ContextBackend, WorkingContext or replication.
+ai-memory remains durable operational memory at the selected server; Context remains
+read-only private knowledge; ArtifactStore remains exact transient evidence. See
+[Multi-server knowledge sources](multi-server.md).
+
 ## Replaceable core contracts
 
 The runtime boundaries in `internal/core` are deliberately small and are not part of

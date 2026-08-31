@@ -20,14 +20,21 @@ Code's control. Disconnecting ivoai does not remove the official client login.
 
 ## ivoai server
 
-Interactive connection asks for a base HTTPS URL and enrollment code. Automation can
-provide the URL by flag and the code through standard input, avoiding shell history.
-For example:
+Interactive connection asks for a base HTTPS URL and enrollment code. Named profiles
+keep independent purposes and credentials. Automation can provide the URL by flag
+and the code through standard input, avoiding shell history. For example:
 
 ```sh
-printf '%s\n' "$IVOAI_ENROLLMENT_CODE" | \
-  ivoai connect server --url https://ai.example.com --code-stdin
+printf '%s\n' "$IVOAI_ENROLLMENT_CODE" | ivoai connect server add mindsite \
+  --url https://ai.example.com --purpose mindsite --code-stdin
+ivoai connect server list
+ivoai connect server show mindsite
+ivoai connect server test mindsite
 ```
+
+The legacy `ivoai connect server --url ... --code-stdin` remains supported and maps
+to the `default` profile. `ivoai disconnect server <alias>` removes only that
+profile and credential; `ivoai disconnect server --all` is the explicit bulk form.
 
 `--enrollment-code` is also supported for constrained automation, but standard input
 is preferred because command arguments may be visible in process listings and shell
@@ -38,26 +45,29 @@ The client:
 1. validates the URL and TLS certificate;
 2. reads `/.well-known/ivoai` and checks protocol 1, health, and feature endpoints;
 3. consumes the one-time enrollment code;
-4. saves the client-scoped secret with mode `0600`, records the connection, and
-   updates the internal MCP registry;
+4. saves the client-scoped secret with mode `0600`, keyed by an opaque server ID,
+   and records the profile without globally exposing that upstream;
 5. probes the context MCP and any advertised memory MCP with the new credential,
    reporting failures as warnings without discarding the consumed enrollment;
-6. configures ai-memory hooks best-effort, reporting a degraded integration without
-   discarding the valid server connection.
+6. configures generic ai-memory hooks best-effort; each managed session later binds
+   them to its private loopback knowledge router.
 
 Current clients carry the one-time code in the `Authorization` header using the
 ivoai enrollment scheme; the JSON body contains only client identity and requested
 scopes. The gateway accepts the legacy JSON field for rolling upgrades, but rejects
 requests that ambiguously provide both transports.
 
-HTTP is rejected for non-loopback servers. Disconnect deletes only ivoai's scoped
-credential and managed registry entries.
+HTTP is rejected for non-loopback servers. Reconnecting one alias leaves all other
+profiles untouched, and a failed enrollment cannot remove an existing profile.
+See [Multi-server knowledge sources](multi-server.md) for purpose isolation,
+explicit federation, redundancy and concurrent sessions.
 
 ## MCP registry
 
-Context and memory are modeled as entries in a shared internal MCP registry rather
-than embedded per-agent special cases. The following commands manage additional
-HTTP MCP registry entries without editing configuration files:
+Additional user HTTP MCPs remain in the shared internal registry. IVOAI server
+Memory/Context are different: selected sources are rendered through a per-session
+loopback router, so connecting several upstreams does not expose all of them to every
+agent. The following commands manage additional registry entries:
 
 ```sh
 ivoai connect mcp list

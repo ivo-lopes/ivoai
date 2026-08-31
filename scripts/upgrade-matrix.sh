@@ -51,6 +51,8 @@ install -m 0755 "$matrix_root/bin/ivoai-v050" "$IVOAI_INSTALL_DIR/ivoai"
 "$IVOAI_INSTALL_DIR/ivoai" setup >/dev/null
 "$IVOAI_INSTALL_DIR/ivoai" doctor --json >/dev/null
 printf '\n[compatibility_fixture]\nfuture_field = "preserve-me"\n' >>"$XDG_CONFIG_HOME/ivoai/config.toml"
+printf '%s\n' '{"server":{"token":"typed-placeholder","client_id":"legacy-client","scopes":["context:read"]}}' >"$XDG_CONFIG_HOME/ivoai/secrets.json"
+chmod 0600 "$XDG_CONFIG_HOME/ivoai/secrets.json"
 
 rollback="$XDG_STATE_HOME/ivoai/updates/ivoai.previous"
 mkdir -p "$(dirname -- "$rollback")"
@@ -60,12 +62,17 @@ mkdir -p "$(dirname -- "$rollback")"
 "$IVOAI_INSTALL_DIR/ivoai" status >/dev/null
 "$IVOAI_INSTALL_DIR/ivoai" doctor --json >/dev/null
 grep -Eq "future_field[[:space:]]*=[[:space:]]*['\"]preserve-me['\"]" "$XDG_CONFIG_HOME/ivoai/config.toml" || fail "candidate erased an unknown config field"
+grep -Eq '"schema"[[:space:]]*:[[:space:]]*2' "$XDG_CONFIG_HOME/ivoai/secrets.json" || fail "candidate did not migrate the v0.5 secret store"
+grep -q '"srv_legacy_default"' "$XDG_CONFIG_HOME/ivoai/secrets.json" || fail "candidate did not create the default server credential profile"
+grep -q '"token": "typed-placeholder"' "$XDG_CONFIG_HOME/ivoai/secrets.json" || fail "candidate lost the legacy server credential"
 
 # With no new-format journal, the candidate must consume the legacy rollback
 # binary, restore v0.5.0, and reconcile setup/doctor.
 "$IVOAI_INSTALL_DIR/ivoai" update --rollback >/dev/null
 [[ "$("$IVOAI_INSTALL_DIR/ivoai" version)" == "0.5.0" ]] || fail "candidate rollback did not restore v0.5.0"
 "$IVOAI_INSTALL_DIR/ivoai" doctor --json >/dev/null
+grep -q '"server"' "$XDG_CONFIG_HOME/ivoai/secrets.json" || fail "rollback bridge lost the v0.5 server credential field"
+grep -q '"token": "typed-placeholder"' "$XDG_CONFIG_HOME/ivoai/secrets.json" || fail "v0.5 rollback cannot read the original server credential"
 
 provider_after="$(sha256sum "$CODEX_HOME/auth-marker" "$CLAUDE_CONFIG_DIR/auth-marker")"
 [[ "$provider_before" == "$provider_after" ]] || fail "provider-owned authentication data changed"

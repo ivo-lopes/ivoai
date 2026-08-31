@@ -96,6 +96,21 @@ process-local `OPENCODE_CONFIG_CONTENT` instruction channel for the mandatory Sk
 Gate without modifying global/project agent configuration. Its provider auth store
 continues to belong exclusively to OpenCode.
 
+Codex and Claude sessions can select an enrolled knowledge purpose without changing
+global agent configuration:
+
+```sh
+ivoai codex --knowledge-source mindsite
+ivoai claude --knowledge-source voicecorp
+ivoai auto --knowledge-source mindsite
+```
+
+Repeat `--knowledge-source`, or pass a comma-separated value, only for explicit read
+federation. With multiple purposes an omitted selection fails instead of guessing;
+a single server and migrated legacy `default` remain implicit. The agent receives
+only private loopback MCP endpoints and a short-lived local capability. Upstream
+credentials stay inside ivoai. See [Multi-server knowledge sources](multi-server.md).
+
 Codex and Claude use Headroom when enabled and healthy.
 If Headroom is unavailable, unhealthy, or incompatible during preflight, ivoai
 starts the official agent directly. Once a selected wrapper process starts, its exit
@@ -169,8 +184,10 @@ Multiple primaries may run at once, including two Codex sessions plus one Claude
 session. Each has an independent random session ID, PID/start marker and private
 runtime directory. Session metadata and quota updates are file-locked and atomic;
 stopping or cleaning one session targets only its recorded processes and runtime.
-The shared memory service is intentionally common, while transient Ruflo state and
-the session-local orchestrator bridge remain isolated per session.
+Memory is shared only within the explicitly selected source/purpose. Concurrent
+Voicecorp and Mindsite sessions have separate loopback routers and capabilities,
+while transient Ruflo state and the session-local orchestrator bridge remain
+isolated per session. Session metadata stores selected aliases, never credentials.
 
 ## Automatic conversation mode
 
@@ -192,6 +209,10 @@ health. Before Claude's first response its quota rows say `awaiting first respon
 unsupported fields say `N/A / not exposed`, and old observations are marked
 `stale`. Claude monthly is not fabricated.
 
+The knowledge selection remains fixed through Codex↔Claude failover and workers
+inherit the same session-local endpoints. Failover never expands the source set or
+copies an upstream credential into a handoff.
+
 Running `ivoai connect chatgpt` or `ivoai connect claude` invalidates the selected
 provider's reconstructible quota cache before the official authentication flow and
 reprobes afterward. This prevents a hard limit from a previous account from
@@ -200,11 +221,13 @@ contaminating a new authentication context without reading provider credentials.
 See [Automatic orchestration](auto-orchestration.md) and
 [Automatic scheduler](auto-scheduler.md) and [Quota routing](quota-routing.md).
 
-`ivoai status` uses bounded live checks for Server and the Ruflo safe profile.
-Stored Server configuration is never labelled connected by itself. When Server is
-unreachable, Context and remote ai-memory are degraded while local Codex and Claude
-Code remain available. Headroom installation/compatibility is reported separately
-from an interactive launch validation.
+`ivoai status` uses bounded live checks for every Server profile and the Ruflo safe
+profile. It reports alias, purpose, protocol, bounded features, credential
+configured/not configured, redundancy group and priority without printing a secret.
+Stored configuration is never labelled healthy by itself. One unreachable source
+does not remove another; local Codex and Claude remain available. Headroom
+installation/compatibility is reported separately from an interactive launch
+validation.
 
 ## Project identity
 

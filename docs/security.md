@@ -1,5 +1,33 @@
 # Security
 
+## Multi-server credential boundary
+
+Every enrolled server has an opaque stable `server_id`; its credential is stored in
+the private secret store under that ID, never under an untrusted alias. Aliases,
+purposes and redundancy groups use a bounded safe character set. Base URLs reject
+userinfo, queries and fragments, require HTTPS outside loopback, and discovered
+service endpoints must remain same-origin.
+
+Managed sessions receive only an ephemeral loopback router and a random local
+capability. `IVOAI_KNOWLEDGE_SESSION_TOKEN` and the compatibility
+`IVOAI_SERVER_TOKEN` contain that local capability—not an upstream bearer. The
+router binds `127.0.0.1`, compares the capability in constant time, rejects
+cross-origin redirects and revokes it when the session ends. Upstream token A is
+looked up by opaque ID and attached only to source A; it is never rendered into
+agent arguments, MCP files, session state, observability or logs.
+
+Purpose isolation is fail-closed. Reads fan out only when sources were selected
+explicitly. A write with multiple purposes or multiple independent destinations is
+rejected before contacting an upstream. Redundancy read failover stays within one
+purpose/group; writes are not automatically replayed because the primary may already
+have applied the side effect. Partial federated failures retain source attribution.
+
+Enrollment first persists an unavailable marker, then the new scoped credential,
+then atomically marks the profile connected. Runtime commit failures restore the
+previous profile and credential. An interruption can therefore degrade the one
+profile but cannot pair a new token with an old URL. Duplicate/tampered server IDs
+are rejected before credential-bearing connect, test or disconnect operations.
+
 ## Trust boundaries
 
 - Official agent credentials belong to Codex CLI and Claude Code, not ivoai.

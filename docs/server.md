@@ -96,6 +96,12 @@ The gateway exposes liveness at `/health`, readiness at `/ready`, and non-sensit
 protocol discovery at `/.well-known/ivoai`. Protocol version 1 is checked before a
 client persists connection state.
 
+Each server instance issues its own scoped enrollment credential. Multi-server
+pooling, purpose selection, explicit read federation and primary/standby routing are
+client-side responsibilities; an ivoai server does not learn about peer instances,
+replicate another organization's data or implement a hidden quorum. See
+[Multi-server knowledge sources](multi-server.md).
+
 ## Public HTTPS gateway
 
 Setup listens on `127.0.0.1:7744` without TLS. For the usual deployment, keep that

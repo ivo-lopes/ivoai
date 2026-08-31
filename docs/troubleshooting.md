@@ -531,6 +531,34 @@ approval is required, confirm the launch went through the current `ivoai codex`,
 session, or automatic command rather than invoking an older Codex binary directly.
 Memory writes are intentionally not auto-approved.
 
+## Multiple servers and knowledge selection
+
+Inspect profiles independently:
+
+```sh
+ivoai connect server list
+ivoai connect server show mindsite
+ivoai connect server test mindsite
+ivoai doctor
+```
+
+If ivoai reports that multiple knowledge purposes are connected, launch with an
+explicit source such as `ivoai codex --knowledge-source mindsite`. Repeat the flag
+only when cross-purpose read federation is intentional. An ambiguous Memory write is
+rejected; restart the operation with exactly one destination rather than disconnecting
+the other organization.
+
+A partial federated response means at least one selected source timed out, returned
+HTTP failure, exceeded the response limit or returned malformed JSON-RPC. The result
+keeps per-source attribution. Test each alias separately. One failed profile does not
+delete another, and `ivoai disconnect server mindsite` leaves Voicecorp intact.
+
+The MCP names inside two concurrent agent processes may both be `ivoai-memory` and
+`ivoai-context`; this is expected. Each points to a different session-local loopback
+router and local capability. Do not compare the names to infer the upstream. Check
+the session's selected aliases and `ivoai connect server list`; no global agent
+configuration is rewritten when another session starts.
+
 If Codex reports that `codex-code-mode-host` is missing, update ivoai. Current
 setup installs the separate, version-matched official companion release asset beside
 managed Codex and verifies its reviewed SHA-256. A launch is refused if that managed

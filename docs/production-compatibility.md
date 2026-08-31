@@ -93,16 +93,19 @@ rollback-safe.
 
 ## Schema and unknown fields
 
-Config, state and ownership schemas are independently versioned. The current
-foundation intentionally remains at schema 1, making v0.5.0 to this candidate a
-no-op schema migration. Future releases add reversible ordered steps to the one
-target-owned migration registry.
+Config, state and ownership schemas are independently versioned and remain at schema
+1. The private client secret store is independently versioned at schema 2: the
+v0.5.0 singleton credential migrates reversibly to the opaque
+`srv_legacy_default` entry while retaining the legacy `server` rollback mirror. It
+participates in the same private update snapshot and requires no reenrollment.
+Future changes continue to use reversible ordered steps in the one target-owned
+migration registry.
 
 The published v0.5.0 updater predates the journal protocol: it validates and
 promotes the candidate, then invokes plain `ivoai setup`. This foundation keeps
 that entry path compatible, auto-detects an existing server marker, and can
-consume v0.5.0's legacy rollback binary. Because this release does not bump a
-schema, the client and server bridges are exercised hermetically. Any future
+consume v0.5.0's legacy rollback binary. The client and server bridges, including
+the secret-store step, are exercised hermetically. Any future
 release that bumps a schema while still
 accepting a direct jump from v0.5.0 must retain and test a transactional legacy
 entry bridge; metadata understood only by the old binary cannot retroactively
