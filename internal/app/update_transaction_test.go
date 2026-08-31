@@ -420,7 +420,7 @@ func candidateScript(version string, failDoctor bool) []byte {
 	return []byte(fmt.Sprintf(`#!/bin/sh
 case "$1" in
   version) echo %s ;;
-  _update-metadata) echo '{"protocol_version":1,"version":"%s","target_schemas":{"config":1,"state":1,"ownership":1,"components":1,"server":1},"supported_source_schemas":{"config":[1],"state":[1],"ownership":[1],"components":[1],"server":[1]},"rollback_safe":true}' ;;
+  _update-metadata) echo '{"protocol_version":1,"version":"%s","target_schemas":{"config":1,"state":1,"ownership":1,"secrets":2,"components":1,"server":1},"supported_source_schemas":{"config":[1],"state":[1],"ownership":[1],"secrets":[1,2],"components":[1],"server":[1]},"rollback_safe":true}' ;;
   _update-migrate) test -n "$IVOAI_UPDATE_TRANSACTION" -a -n "$IVOAI_UPDATE_ROOT" -a -n "$IVOAI_UPDATE_PARENT_PID" ;;
   setup) exit 0 ;;
   doctor) %s ;;

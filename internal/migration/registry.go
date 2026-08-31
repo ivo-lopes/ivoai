@@ -17,6 +17,7 @@ const (
 	ArtifactConfig     Artifact = "config"
 	ArtifactState      Artifact = "state"
 	ArtifactOwnership  Artifact = "ownership"
+	ArtifactSecrets    Artifact = "secrets"
 	ArtifactComponents Artifact = "components"
 	// ArtifactSkillRegistry is a snapshot participant with an independent
 	// schema stored inside registry.json. It deliberately is not added to the

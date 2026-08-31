@@ -16,6 +16,7 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/config"
 	"github.com/ivo-lopes/ivoai/internal/migration"
 	"github.com/ivo-lopes/ivoai/internal/platform"
+	"github.com/ivo-lopes/ivoai/internal/secrets"
 	"github.com/ivo-lopes/ivoai/internal/server"
 	"github.com/ivo-lopes/ivoai/internal/skills"
 	"github.com/ivo-lopes/ivoai/internal/supplychain"
@@ -368,6 +369,7 @@ func (a *App) resolveUpdateContext(executable string) (updateContext, error) {
 	updateRoot := filepath.Join(a.Store.Paths.StateDir, "updates")
 	files = append(files,
 		migration.FileSpec{Name: "config", Artifact: migration.ArtifactConfig, Path: a.Store.Paths.Config, Root: a.Store.Paths.ConfigDir, Optional: true},
+		migration.FileSpec{Name: "secrets", Artifact: migration.ArtifactSecrets, Path: a.Store.Paths.Secrets, Root: a.Store.Paths.ConfigDir, Optional: true},
 		migration.FileSpec{Name: "state", Artifact: migration.ArtifactState, Path: a.Store.Paths.State, Root: a.Store.Paths.StateDir, Optional: true},
 		migration.FileSpec{Name: "ownership", Artifact: migration.ArtifactOwnership, Path: a.Store.Paths.Ownership, Root: a.Store.Paths.StateDir, Optional: true},
 		migration.FileSpec{Name: "skill-registry", Artifact: migration.ArtifactSkillRegistry, Path: skills.RegistryPath(a.Store.Paths.StateDir), Root: a.Store.Paths.StateDir, Optional: true},
@@ -427,6 +429,20 @@ func (a *App) resolveUpdateContext(executable string) (updateContext, error) {
 	}
 	if inspected.Ownership > 0 {
 		schemas[migration.ArtifactOwnership] = inspected.Ownership
+	}
+	if data, readErr := platform.ReadRegularFile(a.Store.Paths.Secrets, 1<<20); readErr == nil {
+		var envelope struct {
+			Schema int `json:"schema"`
+		}
+		if jsonErr := json.Unmarshal(data, &envelope); jsonErr != nil {
+			return updateContext{}, fmt.Errorf("inspect secret store schema: %w", jsonErr)
+		}
+		if envelope.Schema == 0 {
+			envelope.Schema = 1
+		}
+		schemas[migration.ArtifactSecrets] = envelope.Schema
+	} else if !errors.Is(readErr, os.ErrNotExist) {
+		return updateContext{}, fmt.Errorf("inspect secret store schema: %w", readErr)
 	}
 	allowedRoots := []string{filepath.Dir(executable), a.Store.Paths.ConfigDir, a.Store.Paths.StateDir, a.Store.Paths.DataDir}
 	if os.Getenv("IVOAI_TEST_MODE") == "1" {
@@ -507,7 +523,60 @@ func testServerRoot() string {
 // release. Schema 1 is intentionally a no-op for the v0.5.0 compatibility
 // foundation; future schema changes add explicit reversible steps here.
 func updateMigrationRegistry() migration.Registry {
-	return migration.Registry{}
+	return migration.Registry{Steps: []migration.Step{{
+		ID: "secrets-1-to-2", Artifact: migration.ArtifactSecrets, From: 1, To: secrets.SchemaVersion,
+		Precondition: func(_ context.Context, workspace migration.Workspace) error {
+			path := workspace.Files[migration.ArtifactSecrets]
+			if path == "" {
+				return nil
+			}
+			_, err := (secrets.Store{Path: path}).Load()
+			return err
+		},
+		Apply: func(_ context.Context, workspace migration.Workspace) error {
+			path := workspace.Files[migration.ArtifactSecrets]
+			if path == "" {
+				return nil
+			}
+			store := secrets.Store{Path: path}
+			data, err := store.Load()
+			if err != nil {
+				return err
+			}
+			return store.Save(data)
+		},
+		Validate: func(_ context.Context, workspace migration.Workspace) error {
+			path := workspace.Files[migration.ArtifactSecrets]
+			if path == "" {
+				return nil
+			}
+			data, err := (secrets.Store{Path: path}).Load()
+			if err != nil {
+				return err
+			}
+			if data.Schema != secrets.SchemaVersion {
+				return fmt.Errorf("secret store schema %d did not migrate", data.Schema)
+			}
+			return nil
+		},
+		Rollback: func(_ context.Context, workspace migration.Workspace) error {
+			path := workspace.Files[migration.ArtifactSecrets]
+			if path == "" {
+				return nil
+			}
+			data, err := (secrets.Store{Path: path}).Load()
+			if err != nil {
+				return err
+			}
+			legacy, err := json.MarshalIndent(struct {
+				Server *secrets.ClientCredential `json:"server,omitempty"`
+			}{Server: data.Server}, "", "  ")
+			if err != nil {
+				return err
+			}
+			return platform.AtomicWritePrivate(append(legacy, '\n'), path)
+		},
+	}}}
 }
 
 func currentSchemas() migration.Schemas {
@@ -515,6 +584,7 @@ func currentSchemas() migration.Schemas {
 		migration.ArtifactConfig:     config.ConfigSchemaVersion,
 		migration.ArtifactState:      config.StateSchemaVersion,
 		migration.ArtifactOwnership:  config.OwnershipSchemaVersion,
+		migration.ArtifactSecrets:    secrets.SchemaVersion,
 		migration.ArtifactComponents: 1,
 		migration.ArtifactServer:     1,
 	}

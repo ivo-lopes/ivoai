@@ -155,10 +155,34 @@ type Connection struct {
 	URL      string `toml:"url,omitempty"`
 	Protocol int    `toml:"protocol,omitempty"`
 }
+
+// LegacyServerID is the stable identity assigned to a pre-multi-server
+// connection. It intentionally does not depend on the editable alias.
+const LegacyServerID = "srv_legacy_default"
+
+// ServerProfile is one independently enrolled ivoai-server. Server is kept in
+// ConnectionsConfig as a v0.5-compatible mirror; new code must use Servers.
+type ServerProfile struct {
+	ID              string          `toml:"id"`
+	Alias           string          `toml:"alias,omitempty"`
+	URL             string          `toml:"url"`
+	Status          string          `toml:"status"`
+	Enabled         bool            `toml:"enabled"`
+	Purpose         string          `toml:"purpose,omitempty"`
+	RedundancyGroup string          `toml:"redundancy_group,omitempty"`
+	Priority        int             `toml:"priority,omitempty"`
+	Protocol        int             `toml:"protocol,omitempty"`
+	ContextMCPURL   string          `toml:"context_mcp_url,omitempty"`
+	MemoryMCPURL    string          `toml:"memory_mcp_url,omitempty"`
+	MemoryHooksURL  string          `toml:"memory_hooks_url,omitempty"`
+	ServerVersion   string          `toml:"server_version,omitempty"`
+	Features        map[string]bool `toml:"features,omitempty"`
+}
 type ConnectionsConfig struct {
-	ChatGPT Connection `toml:"chatgpt"`
-	Claude  Connection `toml:"claude"`
-	Server  Connection `toml:"server"`
+	ChatGPT Connection               `toml:"chatgpt"`
+	Claude  Connection               `toml:"claude"`
+	Server  Connection               `toml:"server"`
+	Servers map[string]ServerProfile `toml:"servers,omitempty"`
 }
 type MCPConfig struct {
 	Servers map[string]MCPServer `toml:"servers"`
@@ -176,7 +200,7 @@ func Default() Config {
 		Headroom: HeadroomConfig{Enabled: true}, Compression: CompressionConfig{Provider: "headroom"}, Memory: MemoryConfig{Enabled: true},
 		Orchestration: OrchestrationConfig{Enabled: true, ProviderExecution: false, DefaultMode: "direct", PrimaryExecutor: "codex", ReviewExecutor: "claude", MaxWorkers: 2, Auto: defaultAutoConfig()},
 		Connections: ConnectionsConfig{
-			ChatGPT: Connection{Status: "not-connected"}, Claude: Connection{Status: "not-connected"}, Server: Connection{Status: "not-connected"},
+			ChatGPT: Connection{Status: "not-connected"}, Claude: Connection{Status: "not-connected"}, Server: Connection{Status: "not-connected"}, Servers: map[string]ServerProfile{},
 		}, MCP: MCPConfig{Servers: map[string]MCPServer{}},
 	}
 }
@@ -244,6 +268,7 @@ func (s *Store) Load() (Config, error) {
 	if c.MCP.Servers == nil {
 		c.MCP.Servers = map[string]MCPServer{}
 	}
+	normalizeLegacyServers(&c)
 	if c.Compression.Provider == "" {
 		c.Compression.Provider = "headroom"
 	}
@@ -329,6 +354,40 @@ func ValidateCompression(value CompressionConfig) error {
 	}
 }
 
+func normalizeLegacyServers(c *Config) {
+	if c.Connections.Servers == nil {
+		c.Connections.Servers = map[string]ServerProfile{}
+	}
+	if len(c.Connections.Servers) == 0 && c.Connections.Server.Status == "connected" && strings.TrimSpace(c.Connections.Server.URL) != "" {
+		profile := ServerProfile{
+			ID: LegacyServerID, Alias: "default", URL: c.Connections.Server.URL,
+			Status: "connected", Enabled: true, Purpose: "default",
+			Protocol: c.Connections.Server.Protocol, Features: map[string]bool{},
+		}
+		if contextServer, ok := c.MCP.Servers["ivoai-context"]; ok {
+			profile.ContextMCPURL = contextServer.URL
+		}
+		if memoryServer, ok := c.MCP.Servers["ivoai-memory"]; ok {
+			profile.MemoryMCPURL = memoryServer.URL
+			profile.MemoryHooksURL = memoryServer.HooksURL
+			profile.Features["memory"] = memoryServer.Enabled
+		}
+		c.Connections.Servers["default"] = profile
+	}
+	for alias, profile := range c.Connections.Servers {
+		if profile.Alias == "" {
+			profile.Alias = alias
+		}
+		if profile.Purpose == "" {
+			profile.Purpose = alias
+		}
+		if profile.Features == nil {
+			profile.Features = map[string]bool{}
+		}
+		c.Connections.Servers[alias] = profile
+	}
+}
+
 func defaultAutoConfig() AutoConfig {
 	return AutoConfig{
 		Enabled: true, DefaultPlanner: "codex", AutomaticFailover: true, CheckpointEnabled: true,
@@ -339,6 +398,7 @@ func defaultAutoConfig() AutoConfig {
 }
 
 func (s *Store) Save(c Config) error {
+	normalizeLegacyServers(&c)
 	if err := ValidateCompression(c.Compression); err != nil {
 		return err
 	}
@@ -348,10 +408,13 @@ func (s *Store) Save(c Config) error {
 	if err := s.Ensure(); err != nil {
 		return err
 	}
-	b, err := s.marshalPreservingUnknown(s.Paths.Config, c, []string{"mcp.servers"}, []string{
+	b, err := s.marshalPreservingUnknown(s.Paths.Config, c, []string{"mcp.servers", "connections.servers"}, []string{
+		"connections.servers",
 		"connections.chatgpt.url", "connections.chatgpt.protocol",
 		"connections.claude.url", "connections.claude.protocol",
 		"connections.server.url", "connections.server.protocol",
+		"connections.servers.*.alias", "connections.servers.*.url", "connections.servers.*.purpose", "connections.servers.*.redundancy_group",
+		"connections.servers.*.context_mcp_url", "connections.servers.*.memory_mcp_url", "connections.servers.*.memory_hooks_url", "connections.servers.*.server_version",
 		"mcp.servers.*.hooks_url",
 	})
 	if err != nil {
