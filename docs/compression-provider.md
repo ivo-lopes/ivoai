@@ -109,3 +109,7 @@ Doctor/status mostram o provider configurado e a saúde dos componentes. Monitor
 mostra o provider realmente usado na sessão e o último resultado de compressão
 bounded, incluindo fidelidade e bytes; falhas de telemetria nunca impedem a
 execução nem substituem a evidência original.
+
+O corpus, os gates byte-exact e os smokes opt-in dos artefatos pinados estão em
+[Caveman canary and fidelity evaluation](caveman-canary.md). Um resultado de
+performance nunca substitui esses gates e não altera o provider default.
