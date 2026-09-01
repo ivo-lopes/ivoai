@@ -135,7 +135,7 @@ func (s *menuSession) agents() (bool, error) {
 	return s.loop("Agents", []menuAction{
 		{id: "launch.codex", label: "Launch Codex", description: "Use Headroom when healthy, with direct fallback", run: func() (bool, error) { return true, s.app.Launch(s.ctx, "codex", nil) }},
 		{id: "launch.claude", label: "Launch Claude Code", description: "Use Headroom when healthy, with direct fallback", run: func() (bool, error) { return true, s.app.Launch(s.ctx, "claude", nil) }},
-		{id: "launch.opencode", label: "Launch OpenCode", description: "Official OpenCode TUI; direct compression bypass until Caveman cutover", run: func() (bool, error) { return true, s.app.Launch(s.ctx, "opencode", nil) }},
+		{id: "launch.opencode", label: "Launch OpenCode", description: "Official OpenCode TUI; direct compression under the subscription-only policy", run: func() (bool, error) { return true, s.app.Launch(s.ctx, "opencode", nil) }},
 	})
 }
 

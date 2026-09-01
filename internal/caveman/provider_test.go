@@ -173,7 +173,7 @@ func TestProviderReadinessTimeoutFallsBackBeforeLaunch(t *testing.T) {
 
 func TestProviderCrashAfterReadinessIsObservable(t *testing.T) {
 	provider := testProvider(t, "crash")
-	lease, err := provider.Prepare(context.Background(), core.CompressionRequest{Executor: core.ComponentOpenCode, DirectPath: "/bin/opencode", RuntimeDir: t.TempDir(), Fidelity: core.CompressionCompressible})
+	lease, err := provider.Prepare(context.Background(), core.CompressionRequest{Executor: core.ComponentClaude, DirectPath: "/bin/claude", RuntimeDir: t.TempDir(), Fidelity: core.CompressionCompressible})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -196,7 +196,7 @@ func TestProviderProbeDoesNotInventVersion(t *testing.T) {
 	}
 }
 
-func TestPrepareExecutorPreservesAuthenticationAndMergesOpenCode(t *testing.T) {
+func TestPrepareExecutorPreservesSubscriptionAuthentication(t *testing.T) {
 	codex, err := prepareExecutor(core.CompressionRequest{Executor: core.ComponentCodex, DirectPath: "/bin/codex", Args: []string{"--model", "fixture"}}, "http://127.0.0.1:4321")
 	if err != nil {
 		t.Fatal(err)
@@ -205,22 +205,31 @@ func TestPrepareExecutorPreservesAuthenticationAndMergesOpenCode(t *testing.T) {
 	if !strings.Contains(joined, "requires_openai_auth=true") || !strings.Contains(joined, "/chatgpt") || strings.Contains(joined, "OPENAI_API_KEY") {
 		t.Fatalf("Codex args=%q", joined)
 	}
-	existing := `{"instructions":["/managed/skill.md"],"provider":{"openai":{"options":{"timeout":9}},"custom":{"options":{"baseURL":"https://example.invalid"}}}}`
-	opencode, err := prepareExecutor(core.CompressionRequest{Executor: core.ComponentOpenCode, DirectPath: "/bin/opencode", Environment: []string{"OPENCODE_CONFIG_CONTENT=" + existing, "OPENCODE_FAKE_AUTH=executor-owned"}}, "http://127.0.0.1:4321")
-	if err != nil {
-		t.Fatal(err)
+}
+
+func TestProviderRejectsOpenCodeBeforeProxyStartup(t *testing.T) {
+	provider := testProvider(t)
+	var ports atomic.Int32
+	provider.Port = func() (int, error) {
+		ports.Add(1)
+		return availablePort()
 	}
-	raw := environmentValue(opencode.Environment, "OPENCODE_CONFIG_CONTENT")
-	if !strings.Contains(raw, "/managed/skill.md") || environmentValue(opencode.Environment, "OPENCODE_FAKE_AUTH") != "executor-owned" {
-		t.Fatalf("OpenCode merge lost existing state: %s", raw)
+	_, err := provider.Prepare(context.Background(), core.CompressionRequest{Executor: core.ComponentOpenCode, DirectPath: "/bin/opencode", RuntimeDir: t.TempDir(), Fidelity: core.CompressionCompressible})
+	if err == nil || !strings.Contains(err.Error(), "subscription-only") || ports.Load() != 0 {
+		t.Fatalf("error=%v proxy_starts=%d", err, ports.Load())
 	}
-	var value map[string]any
-	if json.Unmarshal([]byte(raw), &value) != nil {
-		t.Fatal("merged OpenCode configuration is invalid")
+}
+
+func TestOpenCodeExactRequiredRemainsDirect(t *testing.T) {
+	provider := testProvider(t)
+	var ports atomic.Int32
+	provider.Port = func() (int, error) {
+		ports.Add(1)
+		return availablePort()
 	}
-	providers := value["provider"].(map[string]any)
-	if providers["custom"].(map[string]any)["options"].(map[string]any)["baseURL"] != "https://example.invalid" {
-		t.Fatal("unrelated OpenCode provider was modified")
+	lease, err := provider.Prepare(context.Background(), core.CompressionRequest{Executor: core.ComponentOpenCode, DirectPath: "/bin/opencode", Args: []string{"run", "fixture"}, RuntimeDir: t.TempDir(), Fidelity: core.CompressionExactRequired})
+	if err != nil || lease.Decision().Used || lease.Decision().Command != "/bin/opencode" || ports.Load() != 0 {
+		t.Fatalf("lease=%+v error=%v proxy_starts=%d", lease, err, ports.Load())
 	}
 }
 

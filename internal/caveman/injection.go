@@ -1,8 +1,6 @@
 package caveman
 
 import (
-	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -28,50 +26,10 @@ func prepareExecutor(request core.CompressionRequest, endpoint string) (core.Com
 		// subscription OAuth/API-key mechanism and sends it through the process-
 		// local base URL just as it would to the first-party endpoint.
 		decision.Environment = setEnvironment(decision.Environment, "ANTHROPIC_BASE_URL", endpoint+"/w/claude")
-	case core.ComponentOpenCode:
-		merged, err := mergeOpenCodeConfig(environmentValue(decision.Environment, "OPENCODE_CONFIG_CONTENT"), endpoint+"/w/opencode/v1")
-		if err != nil {
-			return core.CompressionDecision{}, err
-		}
-		decision.Environment = setEnvironment(decision.Environment, "OPENCODE_CONFIG_CONTENT", merged)
 	default:
 		return core.CompressionDecision{}, fmt.Errorf("unsupported executor %q", request.Executor)
 	}
 	return decision, nil
-}
-
-func mergeOpenCodeConfig(raw, baseURL string) (string, error) {
-	if len(raw) > maxInlineConfig {
-		return "", errors.New("OpenCode inline configuration exceeds the safe limit")
-	}
-	root := map[string]any{}
-	if strings.TrimSpace(raw) != "" {
-		if err := json.Unmarshal([]byte(raw), &root); err != nil {
-			return "", errors.New("existing OPENCODE_CONFIG_CONTENT is invalid JSON")
-		}
-	}
-	providers := ensureMap(root, "provider")
-	for _, name := range []string{"openai", "anthropic"} {
-		provider := ensureMap(providers, name)
-		options := ensureMap(provider, "options")
-		options["baseURL"] = baseURL
-		headers := ensureMap(options, "headers")
-		headers["X-Cave-Agent"] = "opencode"
-	}
-	encoded, err := json.Marshal(root)
-	if err != nil || len(encoded) > maxInlineConfig {
-		return "", errors.New("merged OpenCode inline configuration exceeds the safe limit")
-	}
-	return string(encoded), nil
-}
-
-func ensureMap(parent map[string]any, key string) map[string]any {
-	if value, ok := parent[key].(map[string]any); ok {
-		return value
-	}
-	value := map[string]any{}
-	parent[key] = value
-	return value
 }
 
 func cloneEnvironment(environment []string) []string {

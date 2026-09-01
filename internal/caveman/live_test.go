@@ -45,7 +45,7 @@ func TestPinnedCavemanProxyManualCanary(t *testing.T) {
 	if !status.Available || status.Health != core.HealthHealthy || status.Provenance.Version != "1.1.3" {
 		t.Fatalf("structured proxy probe=%+v", status)
 	}
-	for _, executor := range []core.ComponentID{core.ComponentCodex, core.ComponentClaude, core.ComponentOpenCode} {
+	for _, executor := range []core.ComponentID{core.ComponentCodex, core.ComponentClaude} {
 		t.Run(string(executor), func(t *testing.T) {
 			runtimeRoot := filepath.Join(t.TempDir(), "session")
 			if err := os.Mkdir(runtimeRoot, 0o700); err != nil {

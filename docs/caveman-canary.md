@@ -62,7 +62,7 @@ exit reason and exact ResultRef.
 The reviewed amd64 proxy digest
 `d883b9ab4b559e0c1935335c0e24400deb5c61d5e247f1ca239c4149f57885b0`
 passed its structured `version --json` probe (which truthfully reports `dev`),
-loopback readiness and cleanup for the Codex, Claude and OpenCode adapter shapes.
+loopback readiness and cleanup for the supported Codex and Claude adapter shapes.
 The reviewed MCP digest
 `c5c9a850f388570e2b822ac86ac35ad0e9f2c8ec0162b966f5536013042c058d`
 processed all 22 corpus scenarios with zero artifact, exact-required, semantic or
@@ -70,10 +70,12 @@ observability mismatch. Its measured bounded-context ratio was approximately
 `0.028615` (983,089 input bytes to 28,131 context bytes); token figures were
 heuristic estimates.
 
-Authenticated local Caveman smokes passed for Codex and Claude Code. OpenCode was
-not installed on the validation host, so the three-executor live gate remained
-blocked and Caveman was not eligible to become the default. This dated result is
-supporting evidence only; volatile full reports live outside the repository.
+Authenticated local Caveman smokes passed for Codex and Claude Code. The managed
+OpenCode executable later passed its live Direct smoke through an explicit Caveman
+unsupported-path fallback. The pinned Caveman OpenCode profile can only redirect
+OpenAI/Anthropic providers; IVOAI does not request their API keys or reuse Codex or
+Claude credentials. This dated result is supporting evidence only; volatile full
+reports live outside the repository.
 
 ## Non-goals
 

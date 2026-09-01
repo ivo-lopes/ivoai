@@ -61,9 +61,12 @@ de autenticação nem payloads em config, state, journal, observabilidade ou log
 Para Codex, a configuração process-local aponta um provider compatível com
 `requires_openai_auth=true` para a rota `/chatgpt`; o próprio Codex continua dono
 de `Authorization` e `ChatGPT-Account-ID`. Para Claude Code, somente a base URL é
-redirecionada e nenhum token sintético é definido. Para OpenCode, o JSON em
-`OPENCODE_CONFIG_CONTENT` é mesclado, preservando instructions, providers e auth
-existentes; nenhum arquivo global ou de projeto é alterado.
+redirecionada e nenhum token sintético é definido. O perfil OpenCode do runtime
+Caveman pinado exige credenciais próprias dos providers OpenAI/Anthropic e não
+consegue reutilizar os logins de assinatura pertencentes aos CLIs Codex/Claude.
+Como o IVOAI não aceita chaves PAYG nem compartilha credenciais entre executores,
+OpenCode falha no preflight Caveman antes do proxy e executa Direct exatamente uma
+vez. Nenhum arquivo global ou de projeto é alterado.
 
 No Caveman v2.3.1, a CLI e skills são MIT, enquanto o runtime/proxy usado para
 compressão é BSL-1.1. O Additional Use Grant observado permite avaliação interna,

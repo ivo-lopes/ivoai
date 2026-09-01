@@ -31,7 +31,6 @@ const (
 	healthSchema       = "caveman.proxy.health.v1"
 	versionSchema      = "caveman.proxy.run.v1"
 	defaultStartupWait = 10 * time.Second
-	maxInlineConfig    = 4 << 20
 )
 
 type Provider struct {
@@ -105,7 +104,10 @@ func (p Provider) Prepare(ctx context.Context, request core.CompressionRequest) 
 	if request.Fidelity != "" && request.Fidelity != core.CompressionCompressible {
 		return nil, fmt.Errorf("unsupported compression fidelity %q", request.Fidelity)
 	}
-	if request.Executor != core.ComponentCodex && request.Executor != core.ComponentClaude && request.Executor != core.ComponentOpenCode {
+	if request.Executor == core.ComponentOpenCode {
+		return nil, errors.New("Caveman OpenCode compression is unavailable under the subscription-only policy")
+	}
+	if request.Executor != core.ComponentCodex && request.Executor != core.ComponentClaude {
 		return nil, fmt.Errorf("Caveman does not support executor %q", request.Executor)
 	}
 	if request.RuntimeDir == "" || !filepath.IsAbs(request.RuntimeDir) {

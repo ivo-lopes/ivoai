@@ -85,6 +85,25 @@ func TestCavemanPreflightFailureFallsBackDirectExactlyOnce(t *testing.T) {
 	}
 }
 
+func TestUnsupportedCavemanOpenCodeFallsBackDirectExactlyOnce(t *testing.T) {
+	root := t.TempDir()
+	marker := filepath.Join(root, "launch-count")
+	agent := writeExecutable(t, root, "opencode", "#!/bin/sh\ncount=0\n[ -f \"$1\" ] && count=$(cat \"$1\")\nprintf '%s' $((count + 1)) > \"$1\"\n")
+	provider := canaryCompressionProvider{prepare: func(core.CompressionRequest) (core.CompressionLease, error) {
+		return nil, errors.New("Caveman OpenCode compression is unavailable under the subscription-only policy")
+	}}
+	var observed Observation
+	var stderr strings.Builder
+	runtime := Runtime{Runner: platform.ExecRunner{}, AgentPath: agent, Compression: provider, Out: io.Discard, Err: &stderr, RuntimeDir: root}
+	if err := runtime.LaunchObserved(context.Background(), "opencode", []string{marker}, true, func(value Observation) { observed = value }); err != nil {
+		t.Fatal(err)
+	}
+	body, _ := os.ReadFile(marker)
+	if string(body) != "1" || !observed.CompressionFallback || observed.CompressionUsed || !strings.Contains(stderr.String(), "launching opencode directly") {
+		t.Fatalf("launch=%q observation=%+v stderr=%q", body, observed, stderr.String())
+	}
+}
+
 func TestCavemanFailureAfterExecutorStartNeverDuplicatesSession(t *testing.T) {
 	root := t.TempDir()
 	marker := filepath.Join(root, "launch-count")

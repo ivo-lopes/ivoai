@@ -46,6 +46,7 @@ func TestAuthenticatedExecutorsThroughPinnedCaveman(t *testing.T) {
 	}{
 		{name: "codex", path: os.Getenv("IVOAI_LIVE_CODEX_PATH"), args: []string{"exec", "--skip-git-repo-check", "--sandbox", "read-only", "--color", "never", "-"}},
 		{name: "claude", path: os.Getenv("IVOAI_LIVE_CLAUDE_PATH"), args: []string{"--print", "--output-format", "text", "--permission-mode", "plan"}},
+		{name: "opencode", path: os.Getenv("IVOAI_LIVE_OPENCODE_PATH"), args: []string{"run", "--pure", "Reply with exactly IVOAI_CAVEMAN_CANARY_OK and nothing else."}},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			if test.path == "" {
