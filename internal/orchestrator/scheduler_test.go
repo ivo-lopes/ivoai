@@ -17,30 +17,58 @@ import (
 )
 
 type timedAdapter struct {
-	delay  time.Duration
-	mu     sync.Mutex
-	starts map[string]time.Time
-	ends   map[string]time.Time
+	delay        time.Duration
+	mu           sync.Mutex
+	starts       map[string]time.Time
+	ends         map[string]time.Time
+	running      map[string]bool
+	peerGate     chan struct{}
+	peerArrivals int
+	abOverlapped bool
 }
 
 func (a *timedAdapter) Run(ctx context.Context, request workers.Request, observe func(workers.Observation)) (workers.Result, error) {
 	a.mu.Lock()
 	if a.starts == nil {
 		a.starts, a.ends = map[string]time.Time{}, map[string]time.Time{}
+		a.running = map[string]bool{}
+		a.peerGate = make(chan struct{})
 	}
 	a.starts[request.Task] = time.Now()
+	a.running[request.Task] = true
+	if a.running["A"] && a.running["B"] {
+		a.abOverlapped = true
+	}
+	waitForPeer := request.Task == "A" || request.Task == "B"
+	if waitForPeer {
+		a.peerArrivals++
+		if a.peerArrivals == 2 {
+			close(a.peerGate)
+		}
+	}
+	peerGate := a.peerGate
 	a.mu.Unlock()
+	defer func() {
+		a.mu.Lock()
+		a.ends[request.Task] = time.Now()
+		delete(a.running, request.Task)
+		a.mu.Unlock()
+	}()
 	if observe != nil {
 		observe(workers.Observation{})
+	}
+	if waitForPeer {
+		select {
+		case <-ctx.Done():
+			return workers.Result{}, ctx.Err()
+		case <-peerGate:
+		}
 	}
 	select {
 	case <-ctx.Done():
 		return workers.Result{}, ctx.Err()
 	case <-time.After(a.delay):
 	}
-	a.mu.Lock()
-	a.ends[request.Task] = time.Now()
-	a.mu.Unlock()
 	return workers.Result{Text: "result " + request.Task}, nil
 }
 
@@ -117,19 +145,8 @@ func TestSpawnBatchRunsIndependentTasksConcurrentlyAndHonorsDAG(t *testing.T) {
 	}
 	adapter.mu.Lock()
 	defer adapter.mu.Unlock()
-	if delta := adapter.starts["A"].Sub(adapter.starts["B"]); delta > 75*time.Millisecond || delta < -75*time.Millisecond {
-		t.Fatalf("A and B did not start concurrently: delta=%s", delta)
-	}
-	overlapStart := adapter.starts["A"]
-	if adapter.starts["B"].After(overlapStart) {
-		overlapStart = adapter.starts["B"]
-	}
-	overlapEnd := adapter.ends["A"]
-	if adapter.ends["B"].Before(overlapEnd) {
-		overlapEnd = adapter.ends["B"]
-	}
-	if overlap := overlapEnd.Sub(overlapStart); overlap < adapter.delay/2 {
-		t.Fatalf("A and B did not overlap for long enough: overlap=%s delay=%s", overlap, adapter.delay)
+	if !adapter.abOverlapped {
+		t.Fatal("A and B were never running concurrently")
 	}
 	if adapter.starts["C"].Before(adapter.ends["A"]) {
 		t.Fatal("C started before A completed")
