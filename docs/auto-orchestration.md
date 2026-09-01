@@ -49,7 +49,7 @@ the same policy through the official process-scoped instruction mechanisms.
 5. Verify Ruflo safe mode and initialize a real provider-free swarm.
 6. Register the primary's opaque lifecycle task.
 7. Attach the session-local `ivoai-orchestrator` MCP and open the official TUI,
-   through Headroom when its compatibility preflight succeeds.
+   through the selected CompressionProvider when its compatibility preflight succeeds.
 
 No `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, or other PAYG credential is accepted as a
 fallback. Provider-key environment variables are removed from quota probes and

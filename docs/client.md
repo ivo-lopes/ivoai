@@ -80,7 +80,8 @@ Codex          installed / not connected
 Claude Code    installed / not connected
 OpenCode       ready / direct primary
 Headroom       ready
-Caveman        installed / cutover pending
+Compression    default caveman / effective caveman
+Caveman        installed / managed
 ai-memory      installed / not connected
 Ruflo          ready / provider execution disabled
 Server         not-connected
@@ -111,18 +112,23 @@ a single server and migrated legacy `default` remain implicit. The agent receive
 only private loopback MCP endpoints and a short-lived local capability. Upstream
 credentials stay inside ivoai. See [Multi-server knowledge sources](multi-server.md).
 
-Codex and Claude use Headroom when enabled and healthy.
-If Headroom is unavailable, unhealthy, or incompatible during preflight, ivoai
-starts the official agent directly. Once a selected wrapper process starts, its exit
+Codex and Claude request Caveman by default. An explicit `direct` or legacy
+`headroom` override is preserved. If the selected provider is unavailable, unhealthy,
+or incompatible during preflight, ivoai starts the official agent directly. Once a selected wrapper process starts, its exit
 status is propagated instead of being hidden. Memory and context hooks are best
 effort and cannot block launch.
 
-When `ivoai-memory` or `ivoai-context` is active, the launcher deliberately starts
-the official client directly even if Headroom is enabled. Headroom 0.36.0 may
-lossily shorten Codex Code Mode custom-tool results before the model sees them,
+When authoritative `ivoai-memory` or `ivoai-context` is active for the selected
+session sources, the launcher deliberately starts the official client directly
+regardless of whether Caveman or Headroom was requested. A lossy provider may
+shorten exact custom-tool results before the model sees them,
 including the end of an exact memory page. The launch prints this bypass and observed
-session metadata reports `headroom_used=false`; Headroom remains available for
-launches without active shared-knowledge MCPs.
+session metadata reports the provider-neutral bypass; Headroom remains available
+as a temporary explicit compatibility provider.
+
+OpenCode keeps its native subscription-only provider. When the pinned Caveman
+runtime cannot proxy that provider, preflight selects Direct before launch; IVOAI
+does not request an API key, switch providers, or launch OpenCode twice.
 
 Every ivoai-managed primary receives the same shared-knowledge contract. Any task
 that requires research, fact-finding, current information, or external verification

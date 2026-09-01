@@ -13,8 +13,9 @@
 
 **One host-first runtime for Codex and Claude Code, with persistent AI memory and private RAG.**
 
-ivoai installs and coordinates Codex CLI, Claude Code, Headroom, ai-memory, and
-Ruflo without requiring pay-as-you-go provider keys. The same Go binary can operate
+ivoai installs and coordinates Codex CLI, Claude Code, Caveman compression,
+ai-memory, and Ruflo without requiring pay-as-you-go provider keys. Headroom remains
+available temporarily as a compatibility and rollback provider. The same Go binary can operate
 an optional private server and expose its memory and context to desktop agents,
 ChatGPT Web, and Claude Web.
 
@@ -37,7 +38,7 @@ ivoai menu ── Session Control                   per-session knowledge router
 ```
 
 Optional services fail independently: an unavailable server, memory service,
-context index, Headroom, or Ruflo does not prevent the basic agents from opening.
+context index, compression provider, or Ruflo does not prevent the basic agents from opening.
 
 ## Client quick start
 

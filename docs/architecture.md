@@ -11,8 +11,8 @@ after setup, with no external connection and no pay-as-you-go API key. ChatGPT,
 Claude, and an ivoai server are deliberate post-setup connections, all managed
 through CLI commands.
 
-Optional memory, context, and orchestration setup failures are isolated from local
-agent launch. A failed Headroom preflight selects the direct agent. After a wrapper
+Optional memory, context, compression, and orchestration setup failures are isolated from local
+agent launch. A failed compression preflight selects the direct agent. After a wrapper
 process starts, its exit status is propagated rather than risking a duplicate
 interactive session.
 
@@ -85,12 +85,12 @@ The current adapters are:
   IVOAI fidelity policy still decides when exact Memory/Context results require a
   bypass, and the official client remains the direct fallback.
 - [CompressionProvider: Caveman, Headroom e bypass direto](compression-provider.md)
-  records the additive Caveman migration boundary. Providers are mutually
-  exclusive; the v0.5-compatible Headroom/default behavior remains unchanged in
-  this phase.
+  records the Caveman default and migration boundary. Providers are mutually
+  exclusive; Direct remains the safety fallback and explicit Headroom remains a
+  temporary compatibility path.
 - [Caveman canary and fidelity evaluation](caveman-canary.md) defines the
   deterministic corpus, byte-exact gates, opt-in pinned-asset smokes and the
-  evidence required before any future default cutover.
+  evidence used to approve the Caveman default while retaining Direct fallback.
 - `RufloOrchestratorAdapter` over the existing safe-profile control plane. It exposes
   only ephemeral swarm and opaque lifecycle coordination; scheduling, routing,
   inference, quota and durable memory remain owned by IVOAI.
@@ -248,12 +248,14 @@ context cancellation uses a bounded TERM-to-KILL sequence. The normal decision t
 requested agent
   -> ivoai-memory or ivoai-context MCP active?
        yes -> official agent [argv...]
-       no  -> Headroom enabled, healthy and compatibility probe passed?
-                yes -> headroom wrap <agent> [argv...]
-                no  -> official agent [argv...]
+       no  -> requested CompressionProvider healthy and compatible?
+                caveman  -> managed Caveman proxy -> official agent
+                headroom -> headroom wrap <agent> [argv...]
+                direct or failed preflight -> official agent [argv...]
 ```
 
-Headroom 0.36.0 officially supplies `wrap codex` and `wrap claude`. It is installed
+Headroom 0.36.0 is deprecated but retained during the Caveman observation window.
+It officially supplies `wrap codex` and `wrap claude` and is installed
 into an isolated tool environment using uv 0.12.5 and the exact managed CPython
 3.13.15 runtime below the ivoai data root. An unavailable, unhealthy, or incompatible
 preflight selects the direct agent. After a compatible wrapper process has started,
@@ -261,9 +263,10 @@ ivoai propagates its exit status; it does not silently retry a failed interactiv
 session. ivoai does not rewrite the user's aliases or replace third-party launchers.
 Headroom 0.36.0 can apply lossy compression to Codex Code Mode
 `custom_tool_call_output` items without reliably associating them with the originating
-MCP tool name. IvoAI therefore bypasses Headroom for primaries and workers whenever
-either shared-knowledge MCP is active. This preserves exact memory and Context
-results; session telemetry still records that Headroom was requested but not used.
+MCP tool name. IvoAI therefore bypasses any lossy compression provider whenever
+authoritative shared knowledge is active for the session. This provider-neutral
+policy preserves exact Memory and Context results; session telemetry records the
+requested provider, effective Direct path and bounded reason.
 Sources: <https://headroomlabs-ai.github.io/headroom/cli/>,
 <https://github.com/headroomlabs-ai/headroom/releases/tag/v0.36.0>,
 <https://github.com/headroomlabs-ai/headroom/issues/940>,

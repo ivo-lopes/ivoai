@@ -120,8 +120,13 @@ does not resurrect an old entry. Loading a future unsupported schema fails close
 
 Future large changes follow coexistence, disabled/shadow/canary validation,
 default promotion, an observation release, and only then legacy removal. This
-foundation does not add OpenCode, OpenViking, Caveman, NativeOrchestrator, or
-remove Headroom/Ruflo.
+foundation now keeps OpenCode direct-primary and Caveman-default changes additive;
+it does not add OpenViking or NativeOrchestrator and does not remove Headroom/Ruflo.
+The Caveman default uses config schema 1: missing legacy provider values migrate
+semantically, explicit Direct/Headroom/Caveman values remain unchanged, and the
+transaction snapshot supplies rollback for modern updates. The published v0.5.0
+bridge remains functional because its binary ignores the additive compression table
+and restores its own Headroom behavior.
 
 ## Client and server on one host
 

@@ -372,9 +372,19 @@ inside the vendor CLI; ivoai does not modify the user's shell environment.
 
 ## Headroom fails
 
-Doctor reports Headroom health separately for each agent. Disable it through
-`ivoai config set headroom.enabled false`, or use the direct-agent fallback selected by
-the launcher. Memory and server state remain independent.
+Headroom is a deprecated compatibility provider, not the default. Doctor still
+reports its health during the observation window. Select Direct explicitly with
+`ivoai config set compression.provider direct`, or restore the Caveman default with
+`ivoai config set compression.provider caveman`. Memory and server state remain
+independent.
+
+## Caveman falls back to Direct
+
+This is expected when Caveman is unavailable, authoritative Memory/Context requires
+a byte-exact path, or OpenCode uses a native subscription-only provider unsupported
+by the pinned proxy. `ivoai status` shows configured/default and effective providers;
+`ivoai doctor --json` adds the bounded fallback reason. IVOAI does not require a
+PAYG key and does not retry an already-started executor.
 
 ## Server is unreachable
 
@@ -518,10 +528,10 @@ Context cannot accept conversational writes; it contains only documents ingested
 through configured connectors.
 
 If the memory tool visibly finds the correct page but its body ends before the
-answer, inspect whether an older IvoAI launch used Headroom. Headroom 0.36.0 can
-compress Codex Code Mode `custom_tool_call_output` frames and omit exact trailing
-text. Current IvoAI launches bypass Headroom whenever `ivoai-memory` or
-`ivoai-context` is active and print the reason; start a new `ivoai codex`,
+answer, inspect whether an older IvoAI launch used lossy compression. Headroom
+0.36.0 can compress Codex Code Mode `custom_tool_call_output` frames and omit exact
+trailing text. Current IvoAI launches bypass any compression provider whenever
+authoritative `ivoai-memory` or `ivoai-context` is active and print the reason; start a new `ivoai codex`,
 `ivoai claude`, session, or automatic run after updating. Existing processes keep
 the launch policy they started with and are not killed or rewritten during update.
 

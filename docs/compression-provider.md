@@ -4,12 +4,14 @@
 
 O IVOAI trata compressão como uma escolha mutuamente exclusiva por sessão. A
 seleção possui três resultados possíveis: Caveman, Headroom legado ou execução
-direta. Caveman e Headroom nunca formam uma cadeia. Até o cutover futuro, o
-comportamento operacional continua usando Headroom ou bypass exatamente como na
-v0.5.0; esta fundação não muda o default.
+direta. Caveman e Headroom nunca formam uma cadeia. Caveman é o default para
+instalações novas e configurações legadas sem override; Direct continua sendo o
+fallback de segurança e Headroom permanece temporariamente disponível para
+compatibilidade e rollback durante a janela de observação.
 
-O Caveman é integrado como implementação selecionável de
-`CompressionProvider`, mas ainda não é o default universal. Ele não é
+O Caveman é uma implementação selecionável de `CompressionProvider` e o default
+solicitado. O provider efetivo ainda pode ser Direct quando fidelity, health ou
+compatibilidade exigirem. Ele não é
 MemoryBackend, ContextBackend, ArtifactStore, Skill Registry, executor,
 orquestrador, policy engine ou secret manager.
 
@@ -52,6 +54,16 @@ Versões gerenciadas usam staging, provenance, promoção atômica e rollback do
 supply-chain manager existente. Headroom permanece disponível durante a janela de
 compatibilidade; sua remoção requer uma release de observação posterior.
 
+## Configuração e migração
+
+`compression.provider` aceita `caveman`, `direct` ou `headroom`. Quando a chave
+está ausente, o IVOAI resolve Caveman e registra `compression.source=default` em
+uma instalação nova ou `migration` ao normalizar uma configuração legada.
+Overrides persistidos são registrados como `explicit` e nunca são substituídos.
+Como a v0.6.0 já materializava `provider=headroom` sem registrar se isso era
+intenção do operador ou default histórico, o upgrade preserva esse valor de forma
+conservadora. Campos TOML desconhecidos permanecem intactos.
+
 ## Ownership, autenticação e licença
 
 Credenciais pertencem aos CLIs oficiais. Um proxy pode transportar autenticação em
@@ -79,7 +91,7 @@ Isto é registro técnico do upstream, não parecer jurídico.
 
 Esta fase não habilita memória, MCP, browse, learn, pixel conversion, skills,
 hooks, statusline ou setup global do Caveman; não altera `~/.codex`, `~/.claude`,
-config do OpenCode ou shell rc; e não realiza o cutover. Compressão seletiva de
+config do OpenCode ou shell rc. Compressão seletiva de
 resultados Memory/Context permanece fora de escopo até que possa preservar bytes
 e associações de chamadas de forma comprovável.
 
@@ -115,4 +127,5 @@ execução nem substituem a evidência original.
 
 O corpus, os gates byte-exact e os smokes opt-in dos artefatos pinados estão em
 [Caveman canary and fidelity evaluation](caveman-canary.md). Um resultado de
-performance nunca substitui esses gates e não altera o provider default.
+performance nunca substitui esses gates. O default solicitado é Caveman; a policy
+continua escolhendo Direct quando necessário.
