@@ -110,6 +110,7 @@ func TestQuotaDiagnosticExposesCodexFiveHourDurationWithoutInventingMonthly(t *t
 
 func TestComponentMatrixExplainsCapabilitiesHealthAndFallback(t *testing.T) {
 	cfg := config.Default()
+	cfg.Compression.Provider = "headroom"
 	cfg.MCP.Servers["ivoai-context"] = config.MCPServer{Kind: "context", Enabled: true}
 	state := config.State{Components: map[string]config.ComponentState{
 		"codex":       {Installed: true, Managed: true, Version: "fixture", Path: "/managed/codex"},
@@ -160,6 +161,24 @@ func TestComponentMatrixExplainsCapabilitiesHealthAndFallback(t *testing.T) {
 	opencode, err := matrix.Resolve(core.ComponentOpenCode, core.CapabilitySessionStart)
 	if err != nil || opencode.Component.Capabilities.Supports(core.CapabilityAdvisoryExecute) {
 		t.Fatalf("OpenCode direct-only selection=%+v err=%v", opencode, err)
+	}
+}
+
+func TestEffectiveCompressionTreatsExpectedFallbackAsDiagnostic(t *testing.T) {
+	cfg := config.Default()
+	if provider, reason := effectiveCompression(cfg, headroom.Status{}, ManagedComponent{}); provider != "direct" || reason != "caveman_unavailable" {
+		t.Fatalf("missing Caveman provider=%q reason=%q", provider, reason)
+	}
+	if provider, reason := effectiveCompression(cfg, headroom.Status{}, ManagedComponent{Component: Component{Installed: true}, Healthy: true}); provider != "caveman" || reason != "" {
+		t.Fatalf("healthy Caveman provider=%q reason=%q", provider, reason)
+	}
+	cfg.Compression = config.CompressionConfig{Provider: "headroom", Source: config.CompressionSourceExplicit}
+	if provider, reason := effectiveCompression(cfg, headroom.Status{Installed: true, Healthy: true}, ManagedComponent{}); provider != "headroom" || reason != "" {
+		t.Fatalf("Headroom provider=%q reason=%q", provider, reason)
+	}
+	cfg.Compression = config.CompressionConfig{Provider: "direct", Source: config.CompressionSourceExplicit}
+	if provider, reason := effectiveCompression(cfg, headroom.Status{}, ManagedComponent{}); provider != "direct" || reason != "" {
+		t.Fatalf("Direct provider=%q reason=%q", provider, reason)
 	}
 }
 

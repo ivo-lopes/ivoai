@@ -152,6 +152,7 @@ type Event struct {
 	WorkerID               string           `json:"worker_id,omitempty"`
 	Provider               string           `json:"provider,omitempty"`
 	RequestedProvider      string           `json:"requested_provider,omitempty"`
+	ProviderSource         string           `json:"provider_source,omitempty"`
 	Executor               string           `json:"executor,omitempty"`
 	Component              core.ComponentID `json:"component,omitempty"`
 	Capability             core.Capability  `json:"capability,omitempty"`
@@ -265,7 +266,7 @@ func (e Event) Validate() error {
 	if e.SessionID != "" && (len(e.SessionID) != 37 || !strings.HasPrefix(e.SessionID, "sess_")) {
 		return errors.New("invalid observability session ID")
 	}
-	if !safeLabel(e.TaskID, 64) || !safeWorker(e.WorkerID) || !oneOf(e.Provider, "", "codex", "claude", "opencode", "caveman", "headroom", "direct") || !oneOf(e.RequestedProvider, "", "caveman", "headroom", "direct") || !oneOf(e.Executor, "", "codex", "claude", "opencode") {
+	if !safeLabel(e.TaskID, 64) || !safeWorker(e.WorkerID) || !oneOf(e.Provider, "", "codex", "claude", "opencode", "caveman", "headroom", "direct") || !oneOf(e.RequestedProvider, "", "caveman", "headroom", "direct") || !oneOf(e.ProviderSource, "", "default", "explicit", "migration") || !oneOf(e.Executor, "", "codex", "claude", "opencode") {
 		return errors.New("invalid observability correlation metadata")
 	}
 	if !safeLabel(e.SourceID, 128) || !safeLabel(e.SourceAlias, 64) || !safeLabel(e.Purpose, 64) || e.SelectedSourceCount < 0 || e.SelectedSourceCount > 8 {

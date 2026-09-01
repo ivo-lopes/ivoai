@@ -224,15 +224,7 @@ func (a *App) Status(ctx context.Context) error {
 	go func() { rufloResult <- a.orchestrationManager(state).Inspect(probeContext) }()
 	serverProfiles, serverHealth := a.probeServerProfiles(probeContext, cfg)
 	rufloHealth := <-rufloResult
-	compressionStatus := readyStatus(false)
-	switch cfg.Compression.Provider {
-	case "direct":
-		compressionStatus = statusValue{Text: "ready / direct", Kind: terminalui.StatusSuccess}
-	case "headroom":
-		compressionStatus = headroomStatus(state.Components["headroom"], cfg.Headroom.Enabled)
-	case "caveman":
-		compressionStatus = optionalManagedStatus(state.Components["caveman"], "selected / caveman")
-	}
+	compressionStatus := configuredCompressionStatus(cfg, state)
 	rows := []struct {
 		name   string
 		status statusValue
@@ -487,6 +479,25 @@ func headroomStatus(s config.ComponentState, enabled bool) statusValue {
 		return statusValue{"installed / disabled", terminalui.StatusNeutral}
 	}
 	return statusValue{"installed / enabled / interactive not validated", terminalui.StatusWarning}
+}
+func configuredCompressionStatus(cfg config.Config, state config.State) statusValue {
+	configured := cfg.Compression.Source + " " + cfg.Compression.Provider
+	switch cfg.Compression.Provider {
+	case "direct":
+		return statusValue{Text: configured + " / effective direct", Kind: terminalui.StatusSuccess}
+	case "headroom":
+		if cfg.Headroom.Enabled && componentPresent(state.Components["headroom"]) {
+			return statusValue{Text: configured + " / effective headroom", Kind: terminalui.StatusSuccess}
+		}
+		return statusValue{Text: configured + " / effective direct / fallback=headroom_unavailable", Kind: terminalui.StatusWarning}
+	case "caveman":
+		if componentPresent(state.Components["caveman"]) {
+			return statusValue{Text: configured + " / effective caveman", Kind: terminalui.StatusSuccess}
+		}
+		return statusValue{Text: configured + " / effective direct / fallback=caveman_unavailable", Kind: terminalui.StatusWarning}
+	default:
+		return statusValue{Text: "invalid compression configuration", Kind: terminalui.StatusFailure}
+	}
 }
 func optionalManagedStatus(s config.ComponentState, ready string) statusValue {
 	if !componentPresent(s) {
@@ -1034,6 +1045,9 @@ func (a *App) ConfigSet(key, value string) error {
 		return err
 	}
 	switch key {
+	case "compression.provider":
+		c.Compression.Provider = strings.ToLower(strings.TrimSpace(value))
+		c.Compression.Source = config.CompressionSourceExplicit
 	case "headroom.enabled":
 		b, err := parseBool(value)
 		if err != nil {

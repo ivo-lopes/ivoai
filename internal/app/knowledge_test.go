@@ -126,6 +126,7 @@ func TestResearchPriorityStatusRequiresBothInternalSources(t *testing.T) {
 
 func TestHeadroomIsBypassedOnlyForActiveSharedKnowledge(t *testing.T) {
 	cfg := config.Default()
+	cfg.Compression.Provider = "headroom"
 	if !primaryHeadroomEnabled(cfg) || headroomBypassedForSharedKnowledge(cfg) {
 		t.Fatal("Headroom was bypassed without an active shared-knowledge MCP")
 	}
@@ -190,7 +191,7 @@ func TestCompressionBypassObservationIsBoundedAndProviderNeutral(t *testing.T) {
 	cfg.MCP.Servers = map[string]config.MCPServer{"ivoai-context": {Enabled: true, Kind: "context"}}
 	policy := sharedKnowledgeCompressionPolicyFor(cfg, 2)
 	event := compressionObservation("codex", core.SessionObservation{}, policy)
-	if event.Provider != "direct" || event.RequestedProvider != "caveman" || !event.CompressionBypassed || !event.AuthoritativeKnowledge || event.SelectedSourceCount != 2 || event.RoutingReason != observability.ReasonAuthoritativeSharedKnowledge {
+	if event.Provider != "direct" || event.RequestedProvider != "caveman" || event.ProviderSource != config.CompressionSourceDefault || !event.CompressionBypassed || !event.AuthoritativeKnowledge || event.SelectedSourceCount != 2 || event.RoutingReason != observability.ReasonAuthoritativeSharedKnowledge {
 		t.Fatalf("event=%+v", event)
 	}
 	if _, err := observability.Normalize(event); err != nil {

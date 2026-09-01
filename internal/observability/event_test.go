@@ -110,7 +110,7 @@ func TestCompressionTelemetryIsBoundedMetadataOnly(t *testing.T) {
 func TestAuthoritativeKnowledgeBypassTelemetryIsAllowlisted(t *testing.T) {
 	event, err := Normalize(Event{
 		Category: CategoryCompression, Operation: OperationCompressionSelect, State: StateSelected,
-		Provider: "direct", RequestedProvider: "caveman", Executor: "codex", Component: "compression",
+		Provider: "direct", RequestedProvider: "caveman", ProviderSource: "migration", Executor: "codex", Component: "compression",
 		RoutingReason: ReasonAuthoritativeSharedKnowledge, CompressionBypassed: true,
 		AuthoritativeKnowledge: true, SelectedSourceCount: 2,
 	})
@@ -127,11 +127,14 @@ func TestAuthoritativeKnowledgeBypassTelemetryIsAllowlisted(t *testing.T) {
 			t.Fatalf("bypass telemetry leaked %q: %s", forbidden, encoded)
 		}
 	}
-	if !strings.Contains(encoded, `"requested_provider":"caveman"`) || !strings.Contains(encoded, `"provider":"direct"`) || !strings.Contains(encoded, `"compression_bypassed":true`) {
+	if !strings.Contains(encoded, `"requested_provider":"caveman"`) || !strings.Contains(encoded, `"provider":"direct"`) || !strings.Contains(encoded, `"provider_source":"migration"`) || !strings.Contains(encoded, `"compression_bypassed":true`) {
 		t.Fatalf("bypass metadata missing: %s", encoded)
 	}
 	if _, err := Normalize(Event{Category: CategoryCompression, Operation: OperationCompressionSelect, State: StateSelected, Provider: "direct", RequestedProvider: "../../caveman", RoutingReason: ReasonAuthoritativeSharedKnowledge}); err == nil {
 		t.Fatal("unsafe requested provider accepted")
+	}
+	if _, err := Normalize(Event{Category: CategoryCompression, Operation: OperationCompressionSelect, State: StateSelected, Provider: "direct", RequestedProvider: "caveman", ProviderSource: "../../migration", RoutingReason: ReasonAuthoritativeSharedKnowledge}); err == nil {
+		t.Fatal("unsafe provider source accepted")
 	}
 }
 

@@ -215,6 +215,7 @@ if [ "$1" = "wrap" ]; then agent=$2; shift 3; exec "$agent" "$@"; fi
 exit 2
 `)
 	cfg, _ := a.Store.Load()
+	cfg.Compression.Provider = "headroom"
 	cfg.Headroom.Enabled = true
 	if err := a.Store.Save(cfg); err != nil {
 		t.Fatal(err)
@@ -247,6 +248,7 @@ func TestAutoBypassesHeadroomForExactSharedKnowledge(t *testing.T) {
 	a := autoTestApp(t, root, "#!/bin/sh\nprintf direct > '"+agentMarker+"'\n", "#!/bin/sh\nexit 0\n")
 	headroom := appExecutable(t, root, "headroom", "#!/bin/sh\nprintf wrapped > '"+headroomMarker+"'\nexit 2\n")
 	cfg, _ := a.Store.Load()
+	cfg.Compression.Provider = "headroom"
 	cfg.Headroom.Enabled = true
 	cfg.MCP.Servers["ivoai-memory"] = config.MCPServer{Enabled: true, Kind: "memory"}
 	if err := a.Store.Save(cfg); err != nil {

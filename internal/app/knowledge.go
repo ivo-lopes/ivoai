@@ -28,6 +28,7 @@ func sharedKnowledgeCompressionBypass(provider string) string {
 
 type sharedKnowledgeCompressionPolicy struct {
 	RequestedProvider   string
+	ProviderSource      string
 	EffectiveProvider   string
 	AuthoritativeActive bool
 	SelectedSourceCount int
@@ -43,7 +44,15 @@ type sharedKnowledgeCompressionPolicy struct {
 func sharedKnowledgeCompressionPolicyFor(cfg config.Config, selectedSourceCount int) sharedKnowledgeCompressionPolicy {
 	requested := cfg.Compression.Provider
 	if requested == "" {
-		requested = "headroom"
+		requested = config.DefaultCompressionProvider
+	}
+	source := cfg.Compression.Source
+	if source == "" {
+		if requested == config.DefaultCompressionProvider {
+			source = config.CompressionSourceDefault
+		} else {
+			source = config.CompressionSourceExplicit
+		}
 	}
 	active := authoritativeSharedKnowledgeActive(cfg)
 	bypassed := requested != "direct" && active
@@ -52,7 +61,7 @@ func sharedKnowledgeCompressionPolicyFor(cfg config.Config, selectedSourceCount 
 		effective = "direct"
 	}
 	return sharedKnowledgeCompressionPolicy{
-		RequestedProvider: requested, EffectiveProvider: effective,
+		RequestedProvider: requested, ProviderSource: source, EffectiveProvider: effective,
 		AuthoritativeActive: active, SelectedSourceCount: selectedSourceCount,
 		Bypassed: bypassed,
 	}

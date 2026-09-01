@@ -128,31 +128,35 @@ type SkillControlPlane struct {
 	StagingRootHealth string `json:"staging_root_health"`
 }
 type Report struct {
-	Overall             string               `json:"overall"`
-	OS                  string               `json:"os"`
-	Architecture        string               `json:"architecture"`
-	Version             string               `json:"ivoai_version"`
-	TestMode            bool                 `json:"test_mode"`
-	ConfigPath          string               `json:"config_path"`
-	StatePath           string               `json:"state_path"`
-	SecretPath          string               `json:"secret_path"`
-	SecretPermissions   string               `json:"secret_permissions"`
-	Codex               Auth                 `json:"codex"`
-	CodexCodeModeHost   Component            `json:"codex_code_mode_host"`
-	Claude              Auth                 `json:"claude"`
-	OpenCode            ManagedComponent     `json:"opencode"`
-	Headroom            headroom.Status      `json:"headroom"`
-	Caveman             ManagedComponent     `json:"caveman"`
-	CompressionProvider string               `json:"compression_provider"`
-	Memory              Component            `json:"ai_memory"`
-	Ruflo               orchestration.Status `json:"ruflo"`
-	Server              Server               `json:"server"`
-	Servers             []ServerProfile      `json:"servers,omitempty"`
-	Orchestration       Orchestration        `json:"orchestration"`
-	Automatic           Automatic            `json:"automatic_orchestration"`
-	ComponentMatrix     core.Matrix          `json:"component_matrix"`
-	SkillControlPlane   SkillControlPlane    `json:"skill_control_plane"`
-	Issues              []string             `json:"issues"`
+	Overall              string               `json:"overall"`
+	OS                   string               `json:"os"`
+	Architecture         string               `json:"architecture"`
+	Version              string               `json:"ivoai_version"`
+	TestMode             bool                 `json:"test_mode"`
+	ConfigPath           string               `json:"config_path"`
+	StatePath            string               `json:"state_path"`
+	SecretPath           string               `json:"secret_path"`
+	SecretPermissions    string               `json:"secret_permissions"`
+	Codex                Auth                 `json:"codex"`
+	CodexCodeModeHost    Component            `json:"codex_code_mode_host"`
+	Claude               Auth                 `json:"claude"`
+	OpenCode             ManagedComponent     `json:"opencode"`
+	Headroom             headroom.Status      `json:"headroom"`
+	Caveman              ManagedComponent     `json:"caveman"`
+	CompressionProvider  string               `json:"compression_provider"`
+	CompressionDefault   string               `json:"compression_default"`
+	CompressionSource    string               `json:"compression_source"`
+	CompressionEffective string               `json:"compression_effective"`
+	CompressionReason    string               `json:"compression_reason,omitempty"`
+	Memory               Component            `json:"ai_memory"`
+	Ruflo                orchestration.Status `json:"ruflo"`
+	Server               Server               `json:"server"`
+	Servers              []ServerProfile      `json:"servers,omitempty"`
+	Orchestration        Orchestration        `json:"orchestration"`
+	Automatic            Automatic            `json:"automatic_orchestration"`
+	ComponentMatrix      core.Matrix          `json:"component_matrix"`
+	SkillControlPlane    SkillControlPlane    `json:"skill_control_plane"`
+	Issues               []string             `json:"issues"`
 }
 type Doctor struct {
 	Store        *config.Store
@@ -165,7 +169,7 @@ type Doctor struct {
 func (d Doctor) Run(ctx context.Context) Report {
 	cfg, cfgErr := d.Store.Load()
 	state, stateErr := d.Store.LoadState()
-	r := Report{Overall: "READY", OS: runtime.GOOS, Architecture: runtime.GOARCH, Version: d.Version, TestMode: os.Getenv("IVOAI_TEST_MODE") == "1", ConfigPath: d.Store.Paths.Config, StatePath: d.Store.Paths.State, SecretPath: d.Store.Paths.Secrets, CompressionProvider: cfg.Compression.Provider}
+	r := Report{Overall: "READY", OS: runtime.GOOS, Architecture: runtime.GOARCH, Version: d.Version, TestMode: os.Getenv("IVOAI_TEST_MODE") == "1", ConfigPath: d.Store.Paths.Config, StatePath: d.Store.Paths.State, SecretPath: d.Store.Paths.Secrets, CompressionProvider: cfg.Compression.Provider, CompressionDefault: config.DefaultCompressionProvider, CompressionSource: cfg.Compression.Source}
 	if cfgErr != nil {
 		r.Issues = append(r.Issues, cfgErr.Error())
 	}
@@ -183,6 +187,7 @@ func (d Doctor) Run(ctx context.Context) Report {
 		r.Headroom.Installed, r.Headroom.Healthy, r.Headroom.CodexCompatible, r.Headroom.ClaudeCompatible, r.Headroom.Version, r.Headroom.InteractiveLaunch = true, true, true, true, fixture.Version, "fixture"
 	}
 	r.Caveman = d.managedComponent("caveman", state.Components["caveman"])
+	r.CompressionEffective, r.CompressionReason = effectiveCompression(cfg, r.Headroom, r.Caveman)
 	r.Memory = componentFromState(state.Components["ai-memory"])
 	r.Memory.Hooks = hooksInstalled(d.Store.Paths.HooksDir)
 	if r.Memory.Fixture {
@@ -267,6 +272,25 @@ func (d Doctor) Run(ctx context.Context) Report {
 		r.Overall = "DEGRADED"
 	}
 	return r
+}
+
+func effectiveCompression(cfg config.Config, headroomStatus headroom.Status, cavemanStatus ManagedComponent) (string, string) {
+	switch cfg.Compression.Provider {
+	case "direct":
+		return "direct", ""
+	case "headroom":
+		if cfg.Headroom.Enabled && headroomStatus.Installed && headroomStatus.Healthy {
+			return "headroom", ""
+		}
+		return "direct", "headroom_unavailable"
+	case "caveman":
+		if cavemanStatus.Installed && cavemanStatus.Healthy {
+			return "caveman", ""
+		}
+		return "direct", "caveman_unavailable"
+	default:
+		return "direct", "invalid_configuration"
+	}
 }
 
 func (d Doctor) serverProfiles(ctx context.Context, cfg config.Config) []ServerProfile {

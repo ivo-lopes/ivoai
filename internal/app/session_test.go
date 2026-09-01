@@ -268,6 +268,7 @@ func TestObservedSessionBypassesHeadroomForExactSharedKnowledge(t *testing.T) {
 	a := sessionTestApp(t, root, codex, appExecutable(t, root, "claude", "#!/bin/sh\nexit 0\n"), ruflo)
 	headroom := appExecutable(t, root, "headroom", "#!/bin/sh\nprintf wrapped > '"+headroomMarker+"'\nexit 2\n")
 	cfg, _ := a.Store.Load()
+	cfg.Compression.Provider = "headroom"
 	cfg.Headroom.Enabled = true
 	cfg.MCP.Servers["ivoai-context"] = config.MCPServer{Enabled: true, Kind: "context"}
 	if err := a.Store.Save(cfg); err != nil {

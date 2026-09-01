@@ -18,6 +18,11 @@ const (
 	ConfigSchemaVersion    = 1
 	StateSchemaVersion     = 1
 	OwnershipSchemaVersion = 1
+
+	DefaultCompressionProvider = "caveman"
+	CompressionSourceDefault   = "default"
+	CompressionSourceExplicit  = "explicit"
+	CompressionSourceMigration = "migration"
 	// SchemaVersion remains as a source-compatible alias for integrations that
 	// used the original shared v0.5.0 constant.
 	SchemaVersion = ConfigSchemaVersion
@@ -87,9 +92,11 @@ type HeadroomConfig struct {
 	Enabled bool `toml:"enabled"`
 }
 type CompressionConfig struct {
-	// Provider is additive and backward compatible. Empty configurations from
-	// v0.5.0 normalize to headroom, preserving the published behavior.
 	Provider string `toml:"provider"`
+	// Source records whether Provider came from the current default, an explicit
+	// operator choice, or a legacy migration. It contains no credentials and is
+	// additive within config schema 1.
+	Source string `toml:"source,omitempty"`
 }
 type MemoryConfig struct {
 	Enabled bool `toml:"enabled"`
@@ -197,7 +204,7 @@ type MCPServer struct {
 func Default() Config {
 	return Config{
 		IVOAI: IVOAIConfig{Version: ConfigSchemaVersion}, Client: ClientConfig{Profile: "default"},
-		Headroom: HeadroomConfig{Enabled: true}, Compression: CompressionConfig{Provider: "headroom"}, Memory: MemoryConfig{Enabled: true},
+		Headroom: HeadroomConfig{Enabled: true}, Compression: CompressionConfig{Provider: DefaultCompressionProvider, Source: CompressionSourceDefault}, Memory: MemoryConfig{Enabled: true},
 		Orchestration: OrchestrationConfig{Enabled: true, ProviderExecution: false, DefaultMode: "direct", PrimaryExecutor: "codex", ReviewExecutor: "claude", MaxWorkers: 2, Auto: defaultAutoConfig()},
 		Connections: ConnectionsConfig{
 			ChatGPT: Connection{Status: "not-connected"}, Claude: Connection{Status: "not-connected"}, Server: Connection{Status: "not-connected"}, Servers: map[string]ServerProfile{},
@@ -259,6 +266,10 @@ func (s *Store) Load() (Config, error) {
 	if err != nil {
 		return Config{}, fmt.Errorf("read config: %w", err)
 	}
+	var document map[string]any
+	if err := toml.Unmarshal(b, &document); err != nil {
+		return Config{}, fmt.Errorf("parse config: %w", err)
+	}
 	if err := toml.Unmarshal(b, &c); err != nil {
 		return Config{}, fmt.Errorf("parse config: %w", err)
 	}
@@ -269,9 +280,7 @@ func (s *Store) Load() (Config, error) {
 		c.MCP.Servers = map[string]MCPServer{}
 	}
 	normalizeLegacyServers(&c)
-	if c.Compression.Provider == "" {
-		c.Compression.Provider = "headroom"
-	}
+	normalizeCompression(&c.Compression, compressionFieldPresent(document, "provider"), compressionFieldPresent(document, "source"))
 	if err := ValidateCompression(c.Compression); err != nil {
 		return Config{}, err
 	}
@@ -348,9 +357,39 @@ func ValidateOrchestration(value OrchestrationConfig) error {
 func ValidateCompression(value CompressionConfig) error {
 	switch value.Provider {
 	case "headroom", "caveman", "direct":
-		return nil
 	default:
 		return errors.New("compression provider must be headroom, caveman, or direct")
+	}
+	switch value.Source {
+	case CompressionSourceDefault, CompressionSourceExplicit, CompressionSourceMigration:
+		return nil
+	default:
+		return errors.New("compression source must be default, explicit, or migration")
+	}
+}
+
+func compressionFieldPresent(document map[string]any, field string) bool {
+	section, ok := document["compression"].(map[string]any)
+	if !ok {
+		return false
+	}
+	_, ok = section[field]
+	return ok
+}
+
+func normalizeCompression(value *CompressionConfig, providerPresent, sourcePresent bool) {
+	if !providerPresent {
+		value.Provider = DefaultCompressionProvider
+		value.Source = CompressionSourceMigration
+		return
+	}
+	if !sourcePresent || value.Source == "" {
+		value.Source = CompressionSourceExplicit
+	}
+	// A manual provider edit must not retain a stale marker saying the value is
+	// controlled by the Caveman default/migration.
+	if value.Provider != DefaultCompressionProvider && value.Source != CompressionSourceExplicit {
+		value.Source = CompressionSourceExplicit
 	}
 }
 
@@ -399,6 +438,7 @@ func defaultAutoConfig() AutoConfig {
 
 func (s *Store) Save(c Config) error {
 	normalizeLegacyServers(&c)
+	normalizeCompression(&c.Compression, c.Compression.Provider != "", c.Compression.Source != "")
 	if err := ValidateCompression(c.Compression); err != nil {
 		return err
 	}

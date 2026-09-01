@@ -111,7 +111,7 @@ func TestSetupIsIdempotentAndReadyWithoutConnections(t *testing.T) {
 		t.Fatal(err)
 	}
 	status := out.String()
-	for _, expected := range []string{"Overall: READY", "Codex", "installed / not connected", "Ruflo", "provider execution disabled", "Skill registry", "ready / empty"} {
+	for _, expected := range []string{"Overall: READY", "Codex", "installed / not connected", "Ruflo", "provider execution disabled", "Skill registry", "ready / empty", "default caveman / effective caveman"} {
 		if !strings.Contains(status, expected) {
 			t.Fatalf("missing %q in:\n%s", expected, status)
 		}
@@ -119,6 +119,9 @@ func TestSetupIsIdempotentAndReadyWithoutConnections(t *testing.T) {
 	report := a.Doctor(context.Background())
 	if report.Overall != "READY" || !report.TestMode {
 		t.Fatalf("unexpected doctor: %#v", report)
+	}
+	if report.CompressionDefault != "caveman" || report.CompressionProvider != "caveman" || report.CompressionSource != "default" || report.CompressionEffective != "caveman" || report.CompressionReason != "" {
+		t.Fatalf("unexpected compression diagnostic: %#v", report)
 	}
 	if report.SecretPermissions != "0600" {
 		t.Fatalf("secret mode %s", report.SecretPermissions)
@@ -140,8 +143,38 @@ func TestConfigSetOnlyAllowsSafeKeys(t *testing.T) {
 	if c.Headroom.Enabled {
 		t.Fatal("not disabled")
 	}
+	if err := a.ConfigSet("compression.provider", "direct"); err != nil {
+		t.Fatal(err)
+	}
+	c, _ = a.Store.Load()
+	if c.Compression.Provider != "direct" || c.Compression.Source != config.CompressionSourceExplicit {
+		t.Fatalf("explicit provider=%+v", c.Compression)
+	}
+	if err := a.ConfigSet("compression.provider", "invalid"); err == nil {
+		t.Fatal("invalid compression provider accepted")
+	}
 	if err := a.ConfigSet("connections.server.url", "http://evil"); err == nil {
 		t.Fatal("unsafe arbitrary config key accepted")
+	}
+}
+
+func TestConfiguredCompressionStatusDistinguishesDefaultOverrideAndFallback(t *testing.T) {
+	state := config.State{Components: map[string]config.ComponentState{
+		"caveman":  {Installed: true, Managed: true, Version: "test-fixture", Path: "/managed/caveman"},
+		"headroom": {Installed: true, Managed: true, Version: "test-fixture", Path: "/managed/headroom"},
+	}}
+	cfg := config.Default()
+	if got := configuredCompressionStatus(cfg, state); got.Text != "default caveman / effective caveman" || got.Kind != terminalui.StatusSuccess {
+		t.Fatalf("default status=%+v", got)
+	}
+	cfg.Compression = config.CompressionConfig{Provider: "direct", Source: config.CompressionSourceExplicit}
+	if got := configuredCompressionStatus(cfg, state); got.Text != "explicit direct / effective direct" {
+		t.Fatalf("direct status=%+v", got)
+	}
+	cfg.Compression = config.CompressionConfig{Provider: "caveman", Source: config.CompressionSourceMigration}
+	delete(state.Components, "caveman")
+	if got := configuredCompressionStatus(cfg, state); got.Text != "migration caveman / effective direct / fallback=caveman_unavailable" || got.Kind != terminalui.StatusWarning {
+		t.Fatalf("fallback status=%+v", got)
 	}
 }
 
@@ -570,6 +603,7 @@ func TestLaunchNeverInjectsUpstreamServerTokenIntoChildEnvironment(t *testing.T)
 		t.Fatal(err)
 	}
 	cfg := config.Default()
+	cfg.Compression.Provider = "direct"
 	cfg.Headroom.Enabled = false
 	cfg.Connections.Server.Status = "connected"
 	if err := a.Store.Save(cfg); err != nil {
@@ -615,6 +649,7 @@ func TestLaunchBypassesHeadroomForExactSharedKnowledge(t *testing.T) {
 		t.Fatal(err)
 	}
 	cfg := config.Default()
+	cfg.Compression.Provider = "headroom"
 	cfg.MCP.Servers["ivoai-memory"] = config.MCPServer{Enabled: true, Kind: "memory"}
 	if err := a.Store.Save(cfg); err != nil {
 		t.Fatal(err)

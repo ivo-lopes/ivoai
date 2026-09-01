@@ -221,6 +221,77 @@ func TestStoreRoundTripAndPermissions(t *testing.T) {
 	}
 }
 
+func TestCompressionDefaultAndLegacyMigrationPreserveExplicitChoices(t *testing.T) {
+	if got := Default().Compression; got.Provider != DefaultCompressionProvider || got.Source != CompressionSourceDefault {
+		t.Fatalf("fresh default=%+v", got)
+	}
+
+	for _, test := range []struct {
+		name        string
+		compression string
+		provider    string
+		source      string
+	}{
+		{name: "legacy absent", provider: "caveman", source: "migration"},
+		{name: "explicit direct", compression: "[compression]\nprovider='direct'\n", provider: "direct", source: "explicit"},
+		{name: "explicit headroom", compression: "[compression]\nprovider='headroom'\n", provider: "headroom", source: "explicit"},
+		{name: "explicit caveman", compression: "[compression]\nprovider='caveman'\n", provider: "caveman", source: "explicit"},
+		{name: "persisted default", compression: "[compression]\nprovider='caveman'\nsource='default'\n", provider: "caveman", source: "default"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			store := NewStore(testPaths(t.TempDir()))
+			if err := store.Ensure(); err != nil {
+				t.Fatal(err)
+			}
+			document := "[ivoai]\nversion=1\n[compatibility_fixture]\nfuture_field='preserve-me'\n" + test.compression
+			if err := os.WriteFile(store.Paths.Config, []byte(document), 0o600); err != nil {
+				t.Fatal(err)
+			}
+			cfg, err := store.Load()
+			if err != nil {
+				t.Fatal(err)
+			}
+			if cfg.Compression.Provider != test.provider || cfg.Compression.Source != test.source {
+				t.Fatalf("compression=%+v", cfg.Compression)
+			}
+			if err := store.Save(cfg); err != nil {
+				t.Fatal(err)
+			}
+			saved, err := os.ReadFile(store.Paths.Config)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !strings.Contains(string(saved), "future_field = 'preserve-me'") || !strings.Contains(string(saved), "provider = '"+test.provider+"'") || !strings.Contains(string(saved), "source = '"+test.source+"'") {
+				t.Fatalf("migration lost intent or unknown data:\n%s", saved)
+			}
+			reloaded, err := store.Load()
+			if err != nil || reloaded.Compression != cfg.Compression {
+				t.Fatalf("round trip=%+v err=%v", reloaded.Compression, err)
+			}
+		})
+	}
+}
+
+func TestCompressionSourceRejectsStaleOrUnknownValues(t *testing.T) {
+	store := NewStore(testPaths(t.TempDir()))
+	if err := store.Ensure(); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(store.Paths.Config, []byte("[ivoai]\nversion=1\n[compression]\nprovider='headroom'\nsource='default'\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := store.Load()
+	if err != nil || cfg.Compression.Source != CompressionSourceExplicit {
+		t.Fatalf("stale source was not reconciled: %+v err=%v", cfg.Compression, err)
+	}
+	if err := os.WriteFile(store.Paths.Config, []byte("[ivoai]\nversion=1\n[compression]\nprovider='caveman'\nsource='upstream'\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := store.Load(); err == nil || !strings.Contains(err.Error(), "compression source") {
+		t.Fatalf("unknown source accepted: %v", err)
+	}
+}
+
 func TestResolvePathsHonorsAbsoluteXDGOnly(t *testing.T) {
 	root := t.TempDir()
 	t.Setenv("HOME", root)

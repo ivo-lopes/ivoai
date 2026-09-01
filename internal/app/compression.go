@@ -73,7 +73,7 @@ func compressionObservation(executor string, observation core.SessionObservation
 	if observation.CompressionFallback {
 		state = observability.StateDegraded
 	}
-	return observability.Event{Category: observability.CategoryCompression, Operation: observability.OperationCompressionSelect, State: state, Executor: executor, Provider: provider, RequestedProvider: requested, Component: core.ComponentCompression, RoutingReason: reason, DurationMilliseconds: observation.CompressionPreflightMilliseconds, CompressionBypassed: policy.Bypassed, AuthoritativeKnowledge: policy.AuthoritativeActive, SelectedSourceCount: policy.SelectedSourceCount}
+	return observability.Event{Category: observability.CategoryCompression, Operation: observability.OperationCompressionSelect, State: state, Executor: executor, Provider: provider, RequestedProvider: requested, ProviderSource: policy.ProviderSource, Component: core.ComponentCompression, RoutingReason: reason, DurationMilliseconds: observation.CompressionPreflightMilliseconds, CompressionBypassed: policy.Bypassed, AuthoritativeKnowledge: policy.AuthoritativeActive, SelectedSourceCount: policy.SelectedSourceCount}
 }
 
 func componentSpec(name string) (components.Spec, bool) {
