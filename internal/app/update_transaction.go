@@ -520,63 +520,85 @@ func testServerRoot() string {
 }
 
 // updateMigrationRegistry is the single ordered registry shipped by a target
-// release. Schema 1 is intentionally a no-op for the v0.5.0 compatibility
-// foundation; future schema changes add explicit reversible steps here.
+// release. Unversioned schema 0 and schema 1 are the compatible legacy secret
+// envelopes emitted before multi-server credentials; future schema changes add
+// explicit reversible steps here.
 func updateMigrationRegistry() migration.Registry {
-	return migration.Registry{Steps: []migration.Step{{
-		ID: "secrets-1-to-2", Artifact: migration.ArtifactSecrets, From: 1, To: secrets.SchemaVersion,
-		Precondition: func(_ context.Context, workspace migration.Workspace) error {
-			path := workspace.Files[migration.ArtifactSecrets]
-			if path == "" {
-				return nil
-			}
-			_, err := (secrets.Store{Path: path}).Load()
-			return err
-		},
-		Apply: func(_ context.Context, workspace migration.Workspace) error {
-			path := workspace.Files[migration.ArtifactSecrets]
-			if path == "" {
-				return nil
-			}
-			store := secrets.Store{Path: path}
-			data, err := store.Load()
-			if err != nil {
+	return migration.Registry{Steps: []migration.Step{
+		{
+			ID: "secrets-0-to-1", Artifact: migration.ArtifactSecrets, From: 0, To: 1,
+			Precondition: func(_ context.Context, workspace migration.Workspace) error {
+				path := workspace.Files[migration.ArtifactSecrets]
+				if path == "" {
+					return nil
+				}
+				_, err := (secrets.Store{Path: path}).Load()
 				return err
-			}
-			return store.Save(data)
-		},
-		Validate: func(_ context.Context, workspace migration.Workspace) error {
-			path := workspace.Files[migration.ArtifactSecrets]
-			if path == "" {
+			},
+			Apply: func(context.Context, migration.Workspace) error { return nil },
+			Validate: func(_ context.Context, workspace migration.Workspace) error {
+				path := workspace.Files[migration.ArtifactSecrets]
+				if path == "" {
+					return nil
+				}
+				_, err := (secrets.Store{Path: path}).Load()
+				return err
+			},
+			Rollback: func(context.Context, migration.Workspace) error { return nil },
+		}, {
+			ID: "secrets-1-to-2", Artifact: migration.ArtifactSecrets, From: 1, To: secrets.SchemaVersion,
+			Precondition: func(_ context.Context, workspace migration.Workspace) error {
+				path := workspace.Files[migration.ArtifactSecrets]
+				if path == "" {
+					return nil
+				}
+				_, err := (secrets.Store{Path: path}).Load()
+				return err
+			},
+			Apply: func(_ context.Context, workspace migration.Workspace) error {
+				path := workspace.Files[migration.ArtifactSecrets]
+				if path == "" {
+					return nil
+				}
+				store := secrets.Store{Path: path}
+				data, err := store.Load()
+				if err != nil {
+					return err
+				}
+				return store.Save(data)
+			},
+			Validate: func(_ context.Context, workspace migration.Workspace) error {
+				path := workspace.Files[migration.ArtifactSecrets]
+				if path == "" {
+					return nil
+				}
+				data, err := (secrets.Store{Path: path}).Load()
+				if err != nil {
+					return err
+				}
+				if data.Schema != secrets.SchemaVersion {
+					return fmt.Errorf("secret store schema %d did not migrate", data.Schema)
+				}
 				return nil
-			}
-			data, err := (secrets.Store{Path: path}).Load()
-			if err != nil {
-				return err
-			}
-			if data.Schema != secrets.SchemaVersion {
-				return fmt.Errorf("secret store schema %d did not migrate", data.Schema)
-			}
-			return nil
-		},
-		Rollback: func(_ context.Context, workspace migration.Workspace) error {
-			path := workspace.Files[migration.ArtifactSecrets]
-			if path == "" {
-				return nil
-			}
-			data, err := (secrets.Store{Path: path}).Load()
-			if err != nil {
-				return err
-			}
-			legacy, err := json.MarshalIndent(struct {
-				Server *secrets.ClientCredential `json:"server,omitempty"`
-			}{Server: data.Server}, "", "  ")
-			if err != nil {
-				return err
-			}
-			return platform.AtomicWritePrivate(append(legacy, '\n'), path)
-		},
-	}}}
+			},
+			Rollback: func(_ context.Context, workspace migration.Workspace) error {
+				path := workspace.Files[migration.ArtifactSecrets]
+				if path == "" {
+					return nil
+				}
+				data, err := (secrets.Store{Path: path}).Load()
+				if err != nil {
+					return err
+				}
+				legacy, err := json.MarshalIndent(struct {
+					Server *secrets.ClientCredential `json:"server,omitempty"`
+				}{Server: data.Server}, "", "  ")
+				if err != nil {
+					return err
+				}
+				return platform.AtomicWritePrivate(append(legacy, '\n'), path)
+			},
+		}}}
 }
 
 func currentSchemas() migration.Schemas {
