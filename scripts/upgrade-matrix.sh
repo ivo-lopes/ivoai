@@ -149,7 +149,7 @@ install -m 0755 "$matrix_root/bin/ivoai-v060" "$IVOAI_INSTALL_DIR/ivoai"
 if grep -Eq '"schema"[[:space:]]*:' "$XDG_CONFIG_HOME/ivoai/secrets.json"; then
   fail "published v0.6 fixture unexpectedly has a versioned secret store"
 fi
-candidate_metadata="$("$matrix_root/bin/ivoai-v060-candidate" _update-metadata)"
+candidate_metadata="$("$matrix_root/bin/ivoai-v060-candidate" _update-metadata --schema-set=complete-v1)"
 grep -Fq '"secrets":[0,1,2]' <<<"$candidate_metadata" || fail "candidate does not advertise the unversioned v0.6 secret migration"
 printf '\n[compatibility_fixture]\nfuture_v060 = "preserve-me"\n' >>"$XDG_CONFIG_HOME/ivoai/config.toml"
 v060_rollback="$XDG_STATE_HOME/ivoai/updates/ivoai.previous"

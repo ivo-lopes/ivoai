@@ -18,6 +18,7 @@ import (
 
 	"github.com/ivo-lopes/ivoai/internal/config"
 	"github.com/ivo-lopes/ivoai/internal/migration"
+	"github.com/ivo-lopes/ivoai/internal/platform"
 	"github.com/ivo-lopes/ivoai/internal/supplychain"
 	"github.com/ivo-lopes/ivoai/internal/update"
 )
@@ -86,6 +87,30 @@ func TestTransactionalUpdateRejectsCandidateMetadataWithTrailingData(t *testing.
 	checker = checkerForCandidate(t, candidate)
 	if err := a.transactionalUpdate(context.Background(), checker); err == nil || !strings.Contains(err.Error(), "trailing data") {
 		t.Fatalf("candidate metadata with trailing data was accepted: %v", err)
+	}
+}
+
+func TestCompatibilityProbeRequestsCompleteSchemaSet(t *testing.T) {
+	root := t.TempDir()
+	logPath := filepath.Join(root, "args.log")
+	candidate := filepath.Join(root, "candidate")
+	script := []byte(fmt.Sprintf(`#!/bin/sh
+printf '%%s\n' "$*" > %q
+echo '{"protocol_version":1,"version":"0.7.3","target_schemas":{},"supported_source_schemas":{},"rollback_safe":true}'
+`, logPath))
+	if err := os.WriteFile(candidate, script, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	a := &App{Runner: platform.ExecRunner{}}
+	if _, err := a.probeUpdateCompatibility(context.Background(), candidate); err != nil {
+		t.Fatal(err)
+	}
+	args, err := os.ReadFile(logPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.TrimSpace(string(args)) != "_update-metadata --schema-set=complete-v1" {
+		t.Fatalf("metadata args=%q", strings.TrimSpace(string(args)))
 	}
 }
 

@@ -136,7 +136,10 @@ func runCommand(ctx context.Context, a *app.App, args []string) error {
 	case "_register-install":
 		return a.RegisterInstall()
 	case "_update-metadata":
-		if len(args) != 1 {
+		if len(args) == 1 {
+			return json.NewEncoder(a.Out).Encode(a.LegacyUpdateCompatibility())
+		}
+		if len(args) != 2 || args[1] != "--schema-set=complete-v1" {
 			return errors.New("invalid update metadata invocation")
 		}
 		return json.NewEncoder(a.Out).Encode(a.UpdateCompatibility())

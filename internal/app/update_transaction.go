@@ -24,7 +24,14 @@ import (
 	"github.com/pelletier/go-toml/v2"
 )
 
-const updateCompatibilityProtocol = 1
+const (
+	updateCompatibilityProtocol = 1
+	// updateCompleteSchemaSet is passed only by update clients that know how to
+	// snapshot every artifact in currentSchemas. Older published updaters call
+	// _update-metadata without it and must not receive target artifacts they do
+	// not know how to snapshot or migrate transactionally.
+	updateCompleteSchemaSet = "complete-v1"
+)
 
 type UpdateCompatibility struct {
 	Protocol               int                          `json:"protocol_version"`
@@ -50,6 +57,19 @@ func (a *App) UpdateCompatibility() UpdateCompatibility {
 		return UpdateCompatibility{Protocol: updateCompatibilityProtocol, Version: a.Version, TargetSchemas: schemas, SupportedSourceSchemas: map[migration.Artifact][]int{}, RollbackSafe: false}
 	}
 	return UpdateCompatibility{Protocol: updateCompatibilityProtocol, Version: a.Version, TargetSchemas: schemas, SupportedSourceSchemas: supported, RollbackSafe: true}
+}
+
+// LegacyUpdateCompatibility projects metadata for published updaters that
+// predate the independent secrets schema. The candidate setup remains
+// responsible for converting the legacy store after promotion; secrets.Save
+// retains the legacy server field so rolling the binary back remains
+// semantically compatible. Current updaters request UpdateCompatibility and
+// continue to snapshot and migrate secrets in the transaction itself.
+func (a *App) LegacyUpdateCompatibility() UpdateCompatibility {
+	metadata := a.UpdateCompatibility()
+	delete(metadata.TargetSchemas, migration.ArtifactSecrets)
+	delete(metadata.SupportedSourceSchemas, migration.ArtifactSecrets)
+	return metadata
 }
 
 func (a *App) ApplyPreparedUpdateMigration(ctx context.Context) error {
@@ -275,7 +295,7 @@ func (a *App) reconcileRollbackRuntime(executable, mode string) error {
 }
 
 func (a *App) probeUpdateCompatibility(ctx context.Context, candidate string) (UpdateCompatibility, error) {
-	result, err := a.Runner.Run(ctx, candidate, []string{"_update-metadata"}, platform.RunOptions{Timeout: 15 * time.Second})
+	result, err := a.Runner.Run(ctx, candidate, []string{"_update-metadata", "--schema-set=" + updateCompleteSchemaSet}, platform.RunOptions{Timeout: 15 * time.Second})
 	if err != nil {
 		return UpdateCompatibility{}, err
 	}

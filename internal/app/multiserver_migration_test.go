@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"testing"
@@ -10,6 +11,63 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/migration"
 	"github.com/ivo-lopes/ivoai/internal/secrets"
 )
+
+func TestLegacyUpdaterCompatibilityProjectionOmitsUnknownSecretSchema(t *testing.T) {
+	a := &App{Version: "0.7.3"}
+	legacy := a.LegacyUpdateCompatibility()
+	if _, ok := legacy.TargetSchemas[migration.ArtifactSecrets]; ok {
+		t.Fatal("legacy updater metadata exposes the unknown secrets target schema")
+	}
+	if _, ok := legacy.SupportedSourceSchemas[migration.ArtifactSecrets]; ok {
+		t.Fatal("legacy updater metadata exposes unsupported secrets migration sources")
+	}
+	v060Schemas := migration.Schemas{
+		migration.ArtifactConfig:     config.ConfigSchemaVersion,
+		migration.ArtifactState:      config.StateSchemaVersion,
+		migration.ArtifactOwnership:  config.OwnershipSchemaVersion,
+		migration.ArtifactComponents: 1,
+		migration.ArtifactServer:     1,
+	}
+	manager := migration.Manager{Root: t.TempDir(), Registry: migration.Registry{}}
+	tx, err := manager.Begin(context.Background(), "0.6.0", "0.7.3", v060Schemas, legacy.TargetSchemas)
+	if err != nil {
+		t.Fatalf("published v0.6 transaction rejected projected metadata: %v", err)
+	}
+	if err := tx.Rollback(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	complete := a.UpdateCompatibility()
+	if complete.TargetSchemas[migration.ArtifactSecrets] != secrets.SchemaVersion {
+		t.Fatalf("complete metadata secrets schema=%d", complete.TargetSchemas[migration.ArtifactSecrets])
+	}
+	if got := complete.SupportedSourceSchemas[migration.ArtifactSecrets]; len(got) != 3 || got[0] != 0 || got[1] != 1 || got[2] != 2 {
+		t.Fatalf("complete metadata secret schemas=%v", got)
+	}
+}
+
+func TestCurrentSecretStoreRemainsReadableByPublishedV060(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "secrets.json")
+	store := secrets.Store{Path: path}
+	want := secrets.ClientCredential{Token: "typed-placeholder", ClientID: "legacy", Scopes: []string{"context:read"}}
+	if err := store.Save(secrets.Data{Server: &want}); err != nil {
+		t.Fatal(err)
+	}
+	payload, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// This mirrors the published v0.6 decoder: unknown schema/servers fields
+	// are ignored, while the rollback bridge remains available as server.
+	var v060 struct {
+		Server *secrets.ClientCredential `json:"server,omitempty"`
+	}
+	if err := json.Unmarshal(payload, &v060); err != nil {
+		t.Fatal(err)
+	}
+	if v060.Server == nil || v060.Server.Token != want.Token || v060.Server.ClientID != want.ClientID {
+		t.Fatalf("v0.6 rollback bridge=%#v", v060.Server)
+	}
+}
 
 func TestLegacySecretMigrationIsReversibleAndPreservesToken(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "secrets.json")
