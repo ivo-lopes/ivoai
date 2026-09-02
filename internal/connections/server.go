@@ -293,7 +293,7 @@ func (s ServerConnector) probeMCP(ctx context.Context, endpoint, token string) e
 		return err
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Accept", "application/json, text/event-stream")
 	req.Header.Set("Authorization", "Bearer "+token)
 	resp, err := s.Client.Do(req)
 	if err != nil {

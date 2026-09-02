@@ -10,10 +10,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"mime"
 	"net"
 	"net/http"
 	"net/url"
 	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -24,9 +26,12 @@ import (
 )
 
 const (
-	maxRequestBytes  = 4 << 20
-	maxResponseBytes = 16 << 20
-	maxFailures      = 2
+	maxRequestBytes   = 4 << 20
+	maxResponseBytes  = 16 << 20
+	maxFailures       = 2
+	mcpAccept         = "application/json, text/event-stream"
+	mcpProtocolHeader = "MCP-Protocol-Version"
+	mcpSessionHeader  = "Mcp-Session-Id"
 )
 
 type Event struct {
@@ -167,6 +172,14 @@ func (r *Router) handleMCP(w http.ResponseWriter, request *http.Request, kind st
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
+	if !acceptsMediaType(request.Header.Get("Accept"), "application/json") || !acceptsMediaType(request.Header.Get("Accept"), "text/event-stream") {
+		http.Error(w, "MCP client must accept application/json and text/event-stream", http.StatusNotAcceptable)
+		return
+	}
+	if !hasMediaType(request.Header.Get("Content-Type"), "application/json") {
+		http.Error(w, "MCP requests require application/json", http.StatusUnsupportedMediaType)
+		return
+	}
 	body, err := readBounded(request.Body, maxRequestBytes)
 	if err != nil {
 		http.Error(w, "request too large", http.StatusRequestEntityTooLarge)
@@ -188,15 +201,13 @@ func (r *Router) handleMCP(w http.ResponseWriter, request *http.Request, kind st
 		return
 	}
 	if write || len(groups) == 1 || rpc.Method != "tools/call" {
-		response, profile, failover, err := r.callGroup(request.Context(), groups[0], kind, body, write)
+		response, profile, failover, err := r.callGroup(request.Context(), groups[0], kind, body, write, hasResponseID(rpc.ID), request.Header)
 		r.emit(Event{Operation: kind, SourceID: profile.ID, SourceAlias: profile.Alias, Purpose: profile.Purpose, SelectedCount: len(groups), Failover: failover, Duration: response.duration, State: state(err), Reason: boundedReason(err)})
 		if err != nil {
 			writeRPCError(w, rpc.ID, -32022, err.Error())
 			return
 		}
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(response.status)
-		_, _ = w.Write(response.body)
+		copyMCPResponse(w, response)
 		return
 	}
 	r.federate(w, request, rpc, kind, body, groups)
@@ -213,7 +224,7 @@ func (r *Router) federate(w http.ResponseWriter, request *http.Request, rpc rpcR
 	channel := make(chan outcome, len(groups))
 	for index, group := range groups {
 		go func(index int, group serverpool.SourceGroup) {
-			response, profile, failover, err := r.callGroup(request.Context(), group, kind, body, false)
+			response, profile, failover, err := r.callGroup(request.Context(), group, kind, body, false, true, request.Header)
 			channel <- outcome{index: index, response: response, profile: profile, failover: failover, err: err}
 		}(index, group)
 	}
@@ -234,11 +245,17 @@ func (r *Router) federate(w http.ResponseWriter, request *http.Request, rpc rpcR
 			results = append(results, sourceResult{Source: metadata, Error: boundedReason(value.err)})
 			continue
 		}
+		payload, err := rpcResponsePayload(value.response.body, value.response.header.Get("Content-Type"))
+		if err != nil {
+			results = append(results, sourceResult{Source: metadata, Error: "malformed upstream JSON-RPC response"})
+			partial = true
+			continue
+		}
 		var envelope struct {
 			Result any `json:"result"`
 			Error  any `json:"error"`
 		}
-		if err := json.Unmarshal(value.response.body, &envelope); err != nil {
+		if err := json.Unmarshal(payload, &envelope); err != nil {
 			results = append(results, sourceResult{Source: metadata, Error: "malformed upstream JSON-RPC response"})
 			partial = true
 			continue
@@ -265,7 +282,7 @@ func (r *Router) handleMemoryHook(w http.ResponseWriter, request *http.Request) 
 	}
 	profile := group[0].Profiles[0]
 	endpoint := strings.TrimRight(profile.MemoryHooksURL, "/") + strings.TrimPrefix(request.URL.Path, "/memory")
-	response, err := r.call(request.Context(), profile, endpoint, request.Method, body, request.Header.Get("Content-Type"))
+	response, err := r.call(request.Context(), profile, endpoint, request.Method, body, request.Header.Get("Content-Type"), nil)
 	r.emit(Event{Operation: "memory_hook", SourceID: profile.ID, SourceAlias: profile.Alias, Purpose: profile.Purpose, SelectedCount: 1, Duration: response.duration, State: state(err), Reason: boundedReason(err)})
 	if err != nil {
 		http.Error(w, "memory upstream unavailable", http.StatusBadGateway)
@@ -281,7 +298,7 @@ type upstreamResponse struct {
 	duration time.Duration
 }
 
-func (r *Router) callGroup(ctx context.Context, group serverpool.SourceGroup, kind string, body []byte, write bool) (upstreamResponse, config.ServerProfile, bool, error) {
+func (r *Router) callGroup(ctx context.Context, group serverpool.SourceGroup, kind string, body []byte, write, expectsResponse bool, headers http.Header) (upstreamResponse, config.ServerProfile, bool, error) {
 	var last error
 	for index, profile := range group.Profiles {
 		if r.circuitOpen(profile.ID) {
@@ -292,9 +309,9 @@ func (r *Router) callGroup(ctx context.Context, group serverpool.SourceGroup, ki
 		if kind == "memory" {
 			endpoint = profile.MemoryMCPURL
 		}
-		response, err := r.call(ctx, profile, endpoint, http.MethodPost, body, "application/json")
+		response, err := r.call(ctx, profile, endpoint, http.MethodPost, body, "application/json", headers)
 		if err == nil && response.status >= 200 && response.status < 300 {
-			if validationErr := validateRPCResponse(response.body); validationErr == nil {
+			if validationErr := validateRPCResponse(response.body, response.header.Get("Content-Type"), expectsResponse); validationErr == nil {
 				r.recordSuccess(profile.ID)
 				return response, profile, index > 0, nil
 			} else {
@@ -302,7 +319,11 @@ func (r *Router) callGroup(ctx context.Context, group serverpool.SourceGroup, ki
 			}
 		}
 		if err == nil {
-			err = fmt.Errorf("upstream HTTP %d", response.status)
+			if response.status == http.StatusNotAcceptable {
+				err = errors.New("upstream rejected MCP HTTP content negotiation (HTTP 406)")
+			} else {
+				err = fmt.Errorf("upstream HTTP %d", response.status)
+			}
 		}
 		r.recordFailure(profile.ID)
 		last = err
@@ -318,7 +339,49 @@ func (r *Router) callGroup(ctx context.Context, group serverpool.SourceGroup, ki
 	return upstreamResponse{}, profile, false, last
 }
 
-func validateRPCResponse(body []byte) error {
+func validateRPCResponse(body []byte, contentType string, expectsResponse bool) error {
+	if !expectsResponse && len(bytes.TrimSpace(body)) == 0 {
+		return nil
+	}
+	_, err := rpcResponsePayload(body, contentType)
+	return err
+}
+
+func rpcResponsePayload(body []byte, contentType string) ([]byte, error) {
+	mediaType, _, err := mime.ParseMediaType(contentType)
+	if err != nil {
+		return nil, errors.New("upstream MCP response has invalid Content-Type")
+	}
+	if mediaType == "application/json" {
+		if err := validateJSONRPCResponse(body); err != nil {
+			return nil, err
+		}
+		return body, nil
+	}
+	if mediaType != "text/event-stream" {
+		return nil, errors.New("upstream MCP response has unsupported Content-Type")
+	}
+	for _, event := range bytes.Split(body, []byte("\n\n")) {
+		var data []byte
+		for _, line := range bytes.Split(event, []byte("\n")) {
+			line = bytes.TrimSuffix(line, []byte("\r"))
+			if !bytes.HasPrefix(line, []byte("data:")) {
+				continue
+			}
+			value := bytes.TrimSpace(bytes.TrimPrefix(line, []byte("data:")))
+			if len(data) != 0 {
+				data = append(data, '\n')
+			}
+			data = append(data, value...)
+		}
+		if len(data) != 0 && validateJSONRPCResponse(data) == nil {
+			return data, nil
+		}
+	}
+	return nil, errors.New("malformed upstream MCP event stream")
+}
+
+func validateJSONRPCResponse(body []byte) error {
 	var envelope struct {
 		JSONRPC string          `json:"jsonrpc"`
 		Result  json.RawMessage `json:"result"`
@@ -330,7 +393,7 @@ func validateRPCResponse(body []byte) error {
 	return nil
 }
 
-func (r *Router) call(ctx context.Context, profile config.ServerProfile, endpoint, method string, body []byte, contentType string) (upstreamResponse, error) {
+func (r *Router) call(ctx context.Context, profile config.ServerProfile, endpoint, method string, body []byte, contentType string, mcpHeaders http.Header) (upstreamResponse, error) {
 	started := r.now()
 	if endpoint == "" {
 		return upstreamResponse{}, errors.New("source endpoint is not exposed")
@@ -352,7 +415,16 @@ func (r *Router) call(ctx context.Context, profile config.ServerProfile, endpoin
 	if contentType != "" {
 		req.Header.Set("Content-Type", contentType)
 	}
-	req.Header.Set("Accept", "application/json")
+	if mcpHeaders == nil {
+		req.Header.Set("Accept", "application/json")
+	} else {
+		req.Header.Set("Accept", mcpAccept)
+		for _, name := range []string{mcpProtocolHeader, mcpSessionHeader} {
+			if value := mcpHeaders.Get(name); value != "" && len(value) <= 1024 {
+				req.Header.Set(name, value)
+			}
+		}
+	}
 	req.Header.Set("Authorization", "Bearer "+credential.Token)
 	resp, err := r.client.Do(req)
 	if err != nil {
@@ -459,6 +531,44 @@ func writeRPCError(w http.ResponseWriter, id json.RawMessage, code int, message 
 	writeJSON(w, map[string]any{"jsonrpc": "2.0", "id": id, "error": map[string]any{"code": code, "message": message}})
 }
 
+func hasResponseID(id json.RawMessage) bool {
+	value := bytes.TrimSpace(id)
+	return len(value) != 0 && !bytes.Equal(value, []byte("null"))
+}
+
+func hasMediaType(header, target string) bool {
+	mediaType, _, err := mime.ParseMediaType(header)
+	return err == nil && strings.EqualFold(mediaType, target)
+}
+
+func acceptsMediaType(header, target string) bool {
+	if strings.TrimSpace(header) == "" {
+		return true
+	}
+	targetType, targetSubtype, ok := strings.Cut(strings.ToLower(target), "/")
+	if !ok {
+		return false
+	}
+	for _, item := range strings.Split(header, ",") {
+		mediaType, parameters, err := mime.ParseMediaType(strings.TrimSpace(item))
+		if err != nil {
+			continue
+		}
+		quality := 1.0
+		if raw, exists := parameters["q"]; exists {
+			quality, err = strconv.ParseFloat(raw, 64)
+			if err != nil || quality <= 0 || quality > 1 {
+				continue
+			}
+		}
+		candidateType, candidateSubtype, ok := strings.Cut(strings.ToLower(mediaType), "/")
+		if ok && (candidateType == "*" || candidateType == targetType) && (candidateSubtype == "*" || candidateSubtype == targetSubtype) {
+			return true
+		}
+	}
+	return false
+}
+
 func writeJSON(w http.ResponseWriter, value any) {
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(value)
@@ -466,6 +576,16 @@ func writeJSON(w http.ResponseWriter, value any) {
 
 func copyResponse(w http.ResponseWriter, response upstreamResponse) {
 	w.Header().Set("Content-Type", response.header.Get("Content-Type"))
+	w.WriteHeader(response.status)
+	_, _ = w.Write(response.body)
+}
+
+func copyMCPResponse(w http.ResponseWriter, response upstreamResponse) {
+	for _, name := range []string{"Content-Type", mcpSessionHeader} {
+		if value := response.header.Get(name); value != "" {
+			w.Header().Set(name, value)
+		}
+	}
 	w.WriteHeader(response.status)
 	_, _ = w.Write(response.body)
 }

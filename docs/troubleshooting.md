@@ -1,5 +1,44 @@
 # Troubleshooting
 
+## Codex reports `ivoai-memory` MCP HTTP 406 during startup
+
+An error such as `JSON-RPC -32022: upstream HTTP 406` means that the Memory MCP
+endpoint rejected HTTP content negotiation. For Streamable HTTP, a JSON-RPC POST
+uses `Content-Type: application/json` and must advertise both supported response
+types with `Accept: application/json, text/event-stream` (the order and normal
+media-range parameters are not significant). After initialization, the negotiated
+`MCP-Protocol-Version` is forwarded with subsequent requests.
+
+First check the non-secret endpoint metadata and client version:
+
+```sh
+codex --version
+codex mcp get ivoai-memory --json
+ivoai doctor
+```
+
+The MCP entry must use the Streamable HTTP URL generated for the active IVOAI
+session. Do not copy bearer values into commands or change the endpoint to suppress
+the warning. To exercise the negotiation without contacting an upstream, run:
+
+```sh
+scripts/test-mcp-codex-memory-handshake.sh
+```
+
+To perform the bounded live read-only check with the normal Codex login and an
+already connected IVOAI server, run:
+
+```sh
+scripts/test-mcp-codex-memory-handshake.sh --live
+```
+
+The live diagnostic reports only pass/fail counters. It does not print credentials,
+MCP payloads, or Memory contents. If the hermetic check passes but the live check
+still returns 406, compare the Codex version, the configured MCP endpoint, and any
+reverse proxy's handling of `Accept`, `Content-Type`, and
+`MCP-Protocol-Version`. A legitimate 406 is a deterministic protocol/configuration
+error and should not be retried indefinitely.
+
 ## Update was interrupted or failed
 
 Do not delete the update directory or reinstall over it. Re-run `ivoai update` (or

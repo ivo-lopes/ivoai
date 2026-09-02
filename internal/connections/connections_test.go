@@ -40,6 +40,27 @@ func (r *authRunner) Run(_ context.Context, command string, args []string, _ pla
 	return platform.Result{}, nil
 }
 
+func TestProbeMCPUsesStreamableHTTPNegotiation(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, request *http.Request) {
+		if request.Method != http.MethodPost || request.Header.Get("Content-Type") != "application/json" {
+			http.Error(w, "invalid request", http.StatusBadRequest)
+			return
+		}
+		accept := request.Header.Get("Accept")
+		if !strings.Contains(accept, "application/json") || !strings.Contains(accept, "text/event-stream") {
+			http.Error(w, "not acceptable", http.StatusNotAcceptable)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		_, _ = w.Write([]byte(`{"jsonrpc":"2.0","id":1,"result":{"tools":[]}}`))
+	}))
+	t.Cleanup(server.Close)
+	connector := ServerConnector{Client: server.Client()}
+	if err := connector.probeMCP(context.Background(), server.URL+"/mcp", "fixture-token"); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestAuthenticationStatusRejectsNegativeAndUnknownOutput(t *testing.T) {
 	tests := []struct {
 		name   string

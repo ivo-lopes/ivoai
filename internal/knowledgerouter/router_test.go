@@ -130,6 +130,11 @@ func startTestRouterWithOptions(t *testing.T, profiles map[string]config.ServerP
 }
 
 func callRouter(t *testing.T, router *Router, path, body string) ([]byte, int) {
+	payload, status, _ := callRouterWithHeaders(t, router, path, body, nil)
+	return payload, status
+}
+
+func callRouterWithHeaders(t *testing.T, router *Router, path, body string, headers http.Header) ([]byte, int, http.Header) {
 	t.Helper()
 	request, err := http.NewRequest(http.MethodPost, router.BaseURL()+path, bytes.NewBufferString(body))
 	if err != nil {
@@ -137,13 +142,165 @@ func callRouter(t *testing.T, router *Router, path, body string) ([]byte, int) {
 	}
 	request.Header.Set("Authorization", "Bearer "+router.Token())
 	request.Header.Set("Content-Type", "application/json")
+	for name, values := range headers {
+		for _, value := range values {
+			request.Header.Add(name, value)
+		}
+	}
 	response, err := http.DefaultClient.Do(request)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer response.Body.Close()
 	payload, _ := io.ReadAll(response.Body)
-	return payload, response.StatusCode
+	return payload, response.StatusCode, response.Header.Clone()
+}
+
+func TestRouterForwardsStreamableHTTPNegotiationHeaders(t *testing.T) {
+	var requests atomic.Int32
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, request *http.Request) {
+		requests.Add(1)
+		if request.Method != http.MethodPost {
+			http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		if request.Header.Get("Content-Type") != "application/json" {
+			http.Error(w, "unsupported content type", http.StatusUnsupportedMediaType)
+			return
+		}
+		accept := request.Header.Get("Accept")
+		if !strings.Contains(accept, "application/json") || !strings.Contains(accept, "text/event-stream") {
+			http.Error(w, "not acceptable", http.StatusNotAcceptable)
+			return
+		}
+		if request.Header.Get(mcpProtocolHeader) != "2025-06-18" || request.Header.Get(mcpSessionHeader) != "session-fixture" {
+			http.Error(w, "missing MCP session headers", http.StatusBadRequest)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.Header().Set(mcpSessionHeader, "upstream-session")
+		_, _ = w.Write([]byte(`{"jsonrpc":"2.0","id":1,"result":{"protocolVersion":"2025-06-18","capabilities":{},"serverInfo":{"name":"fixture","version":"1"}}}`))
+	}))
+	t.Cleanup(upstream.Close)
+
+	profile := config.ServerProfile{
+		ID: "srv_negotiation", Alias: "negotiation", URL: upstream.URL, Purpose: "test",
+		Enabled: true, Status: "connected", MemoryMCPURL: upstream.URL + "/memory",
+	}
+	pool, err := serverpool.New(map[string]config.ServerProfile{"negotiation": profile})
+	if err != nil {
+		t.Fatal(err)
+	}
+	selection, err := pool.Resolve([]string{"negotiation"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	router, err := Start(Options{
+		Selection: selection,
+		Credentials: map[string]secrets.ClientCredential{
+			profile.ID: {Token: "fixture-token"},
+		},
+		Timeout: time.Second,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = router.Close(context.Background()) })
+
+	payload, status, responseHeaders := callRouterWithHeaders(t, router, "/mcp/memory", `{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"fixture","version":"1"}}}`, http.Header{
+		mcpProtocolHeader: {"2025-06-18"},
+		mcpSessionHeader:  {"session-fixture"},
+	})
+	if status != http.StatusOK || !bytes.Contains(payload, []byte(`"protocolVersion":"2025-06-18"`)) {
+		t.Fatalf("streamable HTTP negotiation failed: status=%d payload=%s", status, payload)
+	}
+	if responseHeaders.Get(mcpSessionHeader) != "upstream-session" || responseHeaders.Get("Content-Type") != "application/json; charset=utf-8" {
+		t.Fatalf("MCP response headers were not preserved: %v", responseHeaders)
+	}
+	if requests.Load() != 1 {
+		t.Fatalf("unexpected upstream request count: %d", requests.Load())
+	}
+}
+
+func TestRouterValidatesClientAcceptMediaRanges(t *testing.T) {
+	source := newFakeSource(t, "negotiation", "fixture-token")
+	profiles := map[string]config.ServerProfile{"negotiation": profile("negotiation", "test", "", 0, source)}
+	router := startTestRouter(t, profiles, []string{"negotiation"}, map[string]*fakeSource{"negotiation": source})
+	body := `{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}`
+
+	for _, test := range []struct {
+		name   string
+		accept string
+		want   int
+	}{
+		{name: "canonical", accept: "application/json, text/event-stream", want: http.StatusOK},
+		{name: "reverse order", accept: "text/event-stream, application/json", want: http.StatusOK},
+		{name: "whitespace", accept: " application/json ,  text/event-stream ", want: http.StatusOK},
+		{name: "quality values", accept: "application/json; q=0.8, text/event-stream; q=0.9", want: http.StatusOK},
+		{name: "wildcard", accept: "*/*", want: http.StatusOK},
+		{name: "unsupported", accept: "text/plain", want: http.StatusNotAcceptable},
+		{name: "json only", accept: "application/json", want: http.StatusNotAcceptable},
+		{name: "event stream disabled", accept: "application/json, text/event-stream; q=0", want: http.StatusNotAcceptable},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			_, status, _ := callRouterWithHeaders(t, router, "/mcp/memory", body, http.Header{"Accept": {test.accept}})
+			if status != test.want {
+				t.Fatalf("status=%d want=%d", status, test.want)
+			}
+		})
+	}
+}
+
+func TestRPCResponseContentTypes(t *testing.T) {
+	jsonBody := []byte(`{"jsonrpc":"2.0","id":1,"result":{"ok":true}}`)
+	sseBody := append([]byte("event: message\ndata: "), append(jsonBody, []byte("\n\n")...)...)
+	for _, test := range []struct {
+		name        string
+		contentType string
+		body        []byte
+		wantError   bool
+	}{
+		{name: "json", contentType: "application/json", body: jsonBody},
+		{name: "json charset", contentType: "application/json; charset=utf-8", body: jsonBody},
+		{name: "event stream", contentType: "text/event-stream", body: sseBody},
+		{name: "event stream charset", contentType: "text/event-stream; charset=utf-8", body: sseBody},
+		{name: "unsupported", contentType: "text/plain", body: jsonBody, wantError: true},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			payload, err := rpcResponsePayload(test.body, test.contentType)
+			if (err != nil) != test.wantError {
+				t.Fatalf("error=%v wantError=%t", err, test.wantError)
+			}
+			if !test.wantError && !bytes.Equal(payload, jsonBody) {
+				t.Fatalf("payload=%q want=%q", payload, jsonBody)
+			}
+		})
+	}
+}
+
+func TestRouterAcceptsEmptyNotificationResponse(t *testing.T) {
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, request *http.Request) {
+		w.WriteHeader(http.StatusAccepted)
+	}))
+	t.Cleanup(upstream.Close)
+	profile := config.ServerProfile{ID: "srv_notification", Alias: "notification", URL: upstream.URL, Purpose: "test", Enabled: true, Status: "connected", MemoryMCPURL: upstream.URL + "/memory"}
+	pool, err := serverpool.New(map[string]config.ServerProfile{"notification": profile})
+	if err != nil {
+		t.Fatal(err)
+	}
+	selection, err := pool.Resolve([]string{"notification"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	router, err := Start(Options{Selection: selection, Credentials: map[string]secrets.ClientCredential{profile.ID: {Token: "fixture-token"}}, Timeout: time.Second})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = router.Close(context.Background()) })
+	_, status, _ := callRouterWithHeaders(t, router, "/mcp/memory", `{"jsonrpc":"2.0","method":"notifications/initialized"}`, http.Header{"Accept": {mcpAccept}})
+	if status != http.StatusAccepted {
+		t.Fatalf("notification status=%d want=%d", status, http.StatusAccepted)
+	}
 }
 
 func TestExplicitFederationPreservesSourceAndCredentialIsolation(t *testing.T) {
