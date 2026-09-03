@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"strings"
 	"sync"
 	"testing"
 
@@ -90,6 +91,9 @@ func TestOfficialSDKListsAllowlistAndDeleteConfirmation(t *testing.T) {
 	if !bytes.Contains([]byte(descriptions["memory_query"]), []byte("First mandatory research source")) || !bytes.Contains([]byte(descriptions["context_search"]), []byte("Second mandatory research source")) {
 		t.Fatalf("tool descriptions do not advertise memory -> context priority: %#v", descriptions)
 	}
+	if _, err := session.CallTool(context.Background(), &mcp.CallToolParams{Name: "context_health", Arguments: map[string]any{}}); err != nil {
+		t.Fatalf("safe remote context read failed: %v", err)
+	}
 	if _, err := session.CallTool(context.Background(), &mcp.CallToolParams{Name: "memory_delete_page", Arguments: map[string]any{"path": "notes/a.md", "confirm_path": "notes/b.md"}}); err == nil {
 		t.Fatal("mismatched confirmation accepted")
 	}
@@ -103,6 +107,49 @@ func TestOfficialSDKListsAllowlistAndDeleteConfirmation(t *testing.T) {
 	}
 	if _, ok := args["confirm_path"]; ok {
 		t.Fatal("confirm_path forwarded upstream")
+	}
+}
+
+func TestStreamableHTTPContentNegotiationMatrix(t *testing.T) {
+	handler, err := New(Config{Version: "test", Context: testService(t), Memory: func(context.Context, string, json.RawMessage) (any, error) {
+		return map[string]any{"ok": true}, nil
+	}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	principal := webauth.Principal{ClientID: "conformance", Scopes: append([]string(nil), webauth.SupportedScopes...)}
+	body := `{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"conformance","version":"1"}}}`
+	for _, test := range []struct {
+		name        string
+		accept      string
+		contentType string
+		want        int
+	}{
+		{name: "canonical", accept: "application/json, text/event-stream", contentType: "application/json", want: http.StatusOK},
+		{name: "reverse order", accept: "text/event-stream, application/json", contentType: "application/json", want: http.StatusOK},
+		{name: "whitespace", accept: " application/json , text/event-stream ", contentType: "application/json; charset=utf-8", want: http.StatusOK},
+		{name: "quality values", accept: "application/json; q=0.8, text/event-stream; q=0.9", contentType: "application/json", want: http.StatusOK},
+		{name: "wildcard", accept: "*/*", contentType: "application/json", want: http.StatusOK},
+		{name: "unsupported accept", accept: "text/plain", contentType: "application/json", want: http.StatusNotAcceptable},
+		{name: "unsupported content type", accept: "application/json, text/event-stream", contentType: "text/plain", want: http.StatusUnsupportedMediaType},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			request := httptest.NewRequest(http.MethodPost, "https://ai.example.com/mcp", strings.NewReader(body))
+			request.Header.Set("Accept", test.accept)
+			request.Header.Set("Content-Type", test.contentType)
+			request = request.WithContext(webauth.WithPrincipal(request.Context(), principal))
+			recorder := httptest.NewRecorder()
+			handler.ServeHTTP(recorder, request)
+			if recorder.Code != test.want {
+				t.Fatalf("status=%d want=%d body=%s", recorder.Code, test.want, recorder.Body.String())
+			}
+			if recorder.Code == http.StatusOK {
+				mediaType := strings.Split(recorder.Header().Get("Content-Type"), ";")[0]
+				if mediaType != "application/json" && mediaType != "text/event-stream" {
+					t.Fatalf("invalid MCP response Content-Type %q", recorder.Header().Get("Content-Type"))
+				}
+			}
+		})
 	}
 }
 

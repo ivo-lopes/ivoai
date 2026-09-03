@@ -15,7 +15,13 @@ import (
 	contextsvc "github.com/ivo-lopes/ivoai/internal/context"
 	"github.com/ivo-lopes/ivoai/internal/enrollment"
 	"github.com/ivo-lopes/ivoai/internal/webauth"
+	"github.com/ivo-lopes/ivoai/internal/webmcp"
+	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
+
+type roundTripFunc func(*http.Request) (*http.Response, error)
+
+func (f roundTripFunc) RoundTrip(request *http.Request) (*http.Response, error) { return f(request) }
 
 func TestGatewayDiscoveryEnrollmentAuthAndMCP(t *testing.T) {
 	contextService, err := contextsvc.NewService(contextsvc.DeterministicEmbedder{DimensionsN: 8}, contextsvc.NewMemoryStore(), contextsvc.NewMemoryCatalog())
@@ -148,6 +154,68 @@ func TestWebMCPDiscoveryAndBearerChallenge(t *testing.T) {
 	}
 }
 
+func TestWebMCPGatewayInitializeToolsAndSafeReadWithOAuth(t *testing.T) {
+	contextService, _ := contextsvc.NewService(contextsvc.DeterministicEmbedder{DimensionsN: 8}, contextsvc.NewMemoryStore(), contextsvc.NewMemoryCatalog())
+	if err := contextService.Initialize(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	store := webauth.NewStore(filepath.Join(t.TempDir(), "oauth.json"))
+	oauth := &webauth.Server{Store: store, Issuer: "https://ai.example.com"}
+	webHandler, err := webmcp.New(webmcp.Config{Version: "test", Context: contextService, Memory: func(context.Context, string, json.RawMessage) (any, error) {
+		return map[string]any{"healthy": true}, nil
+	}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	activation, err := store.CreateActivation(time.Minute, []string{webauth.ScopeContextRead, webauth.ScopeMemoryRead})
+	if err != nil {
+		t.Fatal(err)
+	}
+	clientRegistration, err := store.RegisterClient("conformance", []string{"https://client.example/callback"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	verifier := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~"
+	nonce, err := store.BeginAuthorization(clientRegistration.ID, clientRegistration.RedirectURIs[0], webauth.PKCEChallenge(verifier), "state", oauth.Resource(), []string{webauth.ScopeContextRead, webauth.ScopeMemoryRead})
+	if err != nil {
+		t.Fatal(err)
+	}
+	code, redirect, _, err := store.AuthorizeRequest(activation.Code, nonce)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tokens, err := store.ExchangeCode(code, clientRegistration.ID, redirect, verifier, oauth.Resource())
+	if err != nil {
+		t.Fatal(err)
+	}
+	g, err := New(Config{ServerVersion: "test", PublicBaseURL: oauth.Issuer, Context: contextService, Enrollments: enrollment.NewStore(filepath.Join(t.TempDir(), "enrollment.json")), WebOAuth: oauth, WebMCP: webHandler})
+	if err != nil {
+		t.Fatal(err)
+	}
+	server := httptest.NewServer(g.Handler())
+	defer server.Close()
+	baseClient := server.Client()
+	authClient := &http.Client{Transport: roundTripFunc(func(request *http.Request) (*http.Response, error) {
+		clone := request.Clone(request.Context())
+		clone.Header = request.Header.Clone()
+		clone.Header.Set("Authorization", "Bearer "+tokens.AccessToken)
+		return baseClient.Transport.RoundTrip(clone)
+	})}
+	mcpClient := mcp.NewClient(&mcp.Implementation{Name: "remote-conformance", Version: "1"}, nil)
+	session, err := mcpClient.Connect(context.Background(), &mcp.StreamableClientTransport{Endpoint: server.URL + "/mcp", HTTPClient: authClient, DisableStandaloneSSE: true}, nil)
+	if err != nil {
+		t.Fatalf("initialize through authenticated gateway: %v", err)
+	}
+	defer session.Close()
+	tools, err := session.ListTools(context.Background(), nil)
+	if err != nil || len(tools.Tools) == 0 {
+		t.Fatalf("tools/list through authenticated gateway: tools=%v err=%v", tools, err)
+	}
+	if _, err := session.CallTool(context.Background(), &mcp.CallToolParams{Name: "context_health", Arguments: map[string]any{}}); err != nil {
+		t.Fatalf("safe read through authenticated gateway: %v", err)
+	}
+}
+
 func TestMemoryFailureDoesNotTakeGatewayOffline(t *testing.T) {
 	contextService, _ := contextsvc.NewService(contextsvc.DeterministicEmbedder{DimensionsN: 8}, contextsvc.NewMemoryStore(), contextsvc.NewMemoryCatalog())
 	_ = contextService.Initialize(context.Background())
@@ -187,7 +255,7 @@ func TestMemoryHookRoutesEnforceReadWriteScopes(t *testing.T) {
 	request.Header.Set("Authorization", "Bearer "+credential.Token)
 	recorder = httptest.NewRecorder()
 	gateway.Handler().ServeHTTP(recorder, request)
-	if recorder.Code != http.StatusUnauthorized || memoryCalls != 1 {
+	if recorder.Code != http.StatusForbidden || memoryCalls != 1 {
 		t.Fatalf("read-only token wrote memory: %d calls=%d", recorder.Code, memoryCalls)
 	}
 }

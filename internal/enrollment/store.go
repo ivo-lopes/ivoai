@@ -39,6 +39,11 @@ var DefaultClientScopes = []Scope{ScopeContextRead, ScopeMemoryRead, ScopeMemory
 // revoked, and expired codes so callers cannot disclose credential state.
 var ErrInvalidEnrollmentCode = errors.New("invalid or expired enrollment code")
 
+var (
+	ErrInvalidClientCredential = errors.New("invalid client credential")
+	ErrInsufficientScope       = errors.New("client credential lacks required scope")
+)
+
 type Enrollment struct {
 	ID         string    `json:"id"`
 	ExpiresAt  time.Time `json:"expires_at"`
@@ -456,7 +461,7 @@ func tokenID(token string) (string, bool) {
 func (s *Store) Authenticate(token string, required ...Scope) (Principal, error) {
 	id, valid := tokenID(token)
 	if !valid {
-		return Principal{}, errors.New("invalid client credential")
+		return Principal{}, ErrInvalidClientCredential
 	}
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -471,7 +476,7 @@ func (s *Store) Authenticate(token string, required ...Scope) (Principal, error)
 	}
 	client, found := current.Clients[id]
 	if !found || !client.RevokedAt.IsZero() || subtle.ConstantTimeCompare([]byte(client.TokenHash), []byte(hash(token))) != 1 {
-		return Principal{}, errors.New("invalid client credential")
+		return Principal{}, ErrInvalidClientCredential
 	}
 	available := make(map[Scope]bool, len(client.Scopes))
 	for _, scope := range client.Scopes {
@@ -479,7 +484,7 @@ func (s *Store) Authenticate(token string, required ...Scope) (Principal, error)
 	}
 	for _, scope := range required {
 		if !available[scope] {
-			return Principal{}, errors.New("client credential lacks required scope")
+			return Principal{}, ErrInsufficientScope
 		}
 	}
 	return Principal{ClientID: client.ID, Name: client.Name, Scopes: append([]Scope(nil), client.Scopes...)}, nil

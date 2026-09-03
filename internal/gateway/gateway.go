@@ -292,6 +292,10 @@ func (g *Gateway) authorizeAll(scopes []enrollment.Scope, next http.Handler) htt
 		principal, err := g.config.Enrollments.Authenticate(strings.TrimPrefix(header, "Bearer "), scopes...)
 		release(g.authSlots)
 		if err != nil {
+			if errors.Is(err, enrollment.ErrInsufficientScope) {
+				writeJSON(w, http.StatusForbidden, map[string]string{"error": "insufficient_scope"})
+				return
+			}
 			writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "valid bearer credential required"})
 			return
 		}

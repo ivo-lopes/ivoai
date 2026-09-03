@@ -11,8 +11,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"mime"
 	"net/http"
 	"path"
+	"strconv"
 	"strings"
 	"time"
 
@@ -75,7 +77,61 @@ func New(config Config) (http.Handler, error) {
 	if err := addSkill(s); err != nil {
 		return nil, err
 	}
-	return mcp.NewStreamableHTTPHandler(func(*http.Request) *mcp.Server { return s }, &mcp.StreamableHTTPOptions{Stateless: true, JSONResponse: true, MaxRequestBodyBytes: 1 << 20, CrossOriginProtection: &http.CrossOriginProtection{}}), nil
+	streamable := mcp.NewStreamableHTTPHandler(func(*http.Request) *mcp.Server { return s }, &mcp.StreamableHTTPOptions{Stateless: true, JSONResponse: true, MaxRequestBodyBytes: 1 << 20, CrossOriginProtection: &http.CrossOriginProtection{}})
+	return streamableHTTPNegotiation(streamable), nil
+}
+
+// streamableHTTPNegotiation makes the public transport's HTTP contract
+// explicit before the SDK parses JSON-RPC. It accepts semantically equivalent
+// media ranges (including wildcards, parameters and q-values) and returns the
+// protocol-appropriate status for deterministic negotiation failures.
+func streamableHTTPNegotiation(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			if !acceptsMediaType(r.Header.Get("Accept"), "application/json") || !acceptsMediaType(r.Header.Get("Accept"), "text/event-stream") {
+				http.Error(w, "MCP client must accept application/json and text/event-stream", http.StatusNotAcceptable)
+				return
+			}
+			if !hasMediaType(r.Header.Get("Content-Type"), "application/json") {
+				http.Error(w, "MCP requests require application/json", http.StatusUnsupportedMediaType)
+				return
+			}
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+func hasMediaType(header, target string) bool {
+	mediaType, _, err := mime.ParseMediaType(header)
+	return err == nil && strings.EqualFold(mediaType, target)
+}
+
+func acceptsMediaType(header, target string) bool {
+	if strings.TrimSpace(header) == "" {
+		return false
+	}
+	targetType, targetSubtype, ok := strings.Cut(strings.ToLower(target), "/")
+	if !ok {
+		return false
+	}
+	for _, item := range strings.Split(header, ",") {
+		mediaType, parameters, err := mime.ParseMediaType(strings.TrimSpace(item))
+		if err != nil {
+			continue
+		}
+		quality := 1.0
+		if raw, exists := parameters["q"]; exists {
+			quality, err = strconv.ParseFloat(raw, 64)
+			if err != nil || quality <= 0 || quality > 1 {
+				continue
+			}
+		}
+		candidateType, candidateSubtype, ok := strings.Cut(strings.ToLower(mediaType), "/")
+		if ok && (candidateType == "*" || candidateType == targetType) && (candidateSubtype == "*" || candidateSubtype == targetSubtype) {
+			return true
+		}
+	}
+	return false
 }
 
 func embeddedSkill() ([]byte, error) { return skillFS.ReadFile("skills/ivoai-memory-context/SKILL.md") }
