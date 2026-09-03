@@ -81,11 +81,30 @@ func cachePolicy(name string) string {
 
 // Serve binds exactly the configured address and shuts down cleanly with ctx.
 func Serve(ctx context.Context, address string) error {
-	listener, err := net.Listen("tcp", address)
+	listener, err := net.Listen(networkForAddress(address), address)
 	if err != nil {
 		return fmt.Errorf("listen for documentation: %w", err)
 	}
 	return ServeListener(ctx, listener)
+}
+
+// networkForAddress preserves the operator's explicit address-family choice.
+// In particular, 0.0.0.0 must create an IPv4 wildcard socket rather than an
+// implementation-dependent IPv6 dual-stack socket that is absent from
+// `ss -lnt4` and may be restricted differently by a host firewall.
+func networkForAddress(address string) string {
+	host, _, err := net.SplitHostPort(address)
+	if err != nil {
+		return "tcp"
+	}
+	ip := net.ParseIP(strings.Trim(host, "[]"))
+	if ip == nil {
+		return "tcp"
+	}
+	if ip.To4() != nil {
+		return "tcp4"
+	}
+	return "tcp6"
 }
 
 func ServeListener(ctx context.Context, listener net.Listener) error {

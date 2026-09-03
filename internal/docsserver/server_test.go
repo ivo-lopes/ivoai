@@ -65,6 +65,22 @@ func TestEmbeddedProductionSiteAndHealth(t *testing.T) {
 	}
 }
 
+func TestNetworkForAddressPreservesConfiguredFamily(t *testing.T) {
+	tests := map[string]string{
+		"0.0.0.0:7780": "tcp4",
+		"127.0.0.1:0":  "tcp4",
+		"[::]:7780":    "tcp6",
+		"[::1]:0":      "tcp6",
+		"localhost:0":  "tcp",
+		"invalid":      "tcp",
+	}
+	for address, expected := range tests {
+		if actual := networkForAddress(address); actual != expected {
+			t.Errorf("networkForAddress(%q)=%q, want %q", address, actual, expected)
+		}
+	}
+}
+
 func firstNonLoopbackIPv4(t *testing.T) string {
 	t.Helper()
 	addresses, err := net.InterfaceAddrs()
