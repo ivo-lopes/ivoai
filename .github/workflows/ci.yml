@@ -154,17 +154,19 @@ jobs:
           cache: true
       - name: Install server binary
         run: sudo env "PATH=$PATH" ./install.sh
-      - name: Deploy and verify idempotent server
+      - name: Deploy server twice
         run: |
           sudo ivoai setup --mode server
           sudo ivoai setup --mode server
+      - name: Verify server diagnostics and access administration
+        run: |
           sudo ivoai server doctor | tee /tmp/ivoai-server-doctor.txt
           grep -q 'Docs: status=healthy listen=0.0.0.0:7780 local_url=http://127.0.0.1:7780/' /tmp/ivoai-server-doctor.txt
-          sudo ivoai server enrollment create --ttl 5m > /tmp/ivoai-enrollment-create.txt
-          grep -q 'shown once' /tmp/ivoai-enrollment-create.txt
+          sudo ivoai server enrollment create --ttl 5m | grep -F 'shown once' >/dev/null
           sudo ivoai server gateway configure --public-url https://ivoai-ci.example
-          sudo ivoai server web-access create --ttl 5m > /tmp/ivoai-web-access-create.txt
-          grep -q 'shown once' /tmp/ivoai-web-access-create.txt
+          sudo ivoai server web-access create --ttl 5m | grep -F 'shown once' >/dev/null
+      - name: Verify production docs service and network bind
+        run: |
           systemctl is-enabled --quiet ivoai-docs.service
           systemctl is-active --quiet ivoai-docs.service
           ss -lnt4 > /tmp/ivoai-listeners.txt
@@ -179,10 +181,14 @@ jobs:
           grep -q 'healthy' /tmp/ivoai-docs-health.txt
           systemctl show ivoai-docs.service --property=ExecStart --value > /tmp/ivoai-docs-exec-start.txt
           grep -q 'ivoai server docs serve' /tmp/ivoai-docs-exec-start.txt
+      - name: Verify remote MCP OAuth registration
+        run: |
           curl --retry 10 --retry-connrefused --retry-delay 1 -fsS -H 'Content-Type: application/json' \
             --data-binary '{"client_name":"CI","redirect_uris":["https://example.test/callback"],"token_endpoint_auth_method":"none"}' \
             --output /tmp/ivoai-oauth-registration.json http://127.0.0.1:7744/oauth/register
           grep -q '"client_id"' /tmp/ivoai-oauth-registration.json
+      - name: Verify backup and restore
+        run: |
           sudo ivoai server backup --output /var/lib/ivoai/backups/ci-backup.tar.gz
           sudo ivoai server restore --input /var/lib/ivoai/backups/ci-backup.tar.gz
           sudo ivoai server doctor
