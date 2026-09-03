@@ -167,20 +167,48 @@ jobs:
           sudo ivoai server web-access create --ttl 5m | grep -F 'shown once' >/dev/null
       - name: Verify production docs service and network bind
         run: |
-          systemctl is-enabled --quiet ivoai-docs.service
-          systemctl is-active --quiet ivoai-docs.service
+          systemctl is-enabled --quiet ivoai-docs.service || {
+            echo 'DOCS_BOOT_ENABLEMENT=FAIL'
+            systemctl is-enabled ivoai-docs.service || true
+            exit 1
+          }
+          echo 'DOCS_BOOT_ENABLEMENT=PASS'
+          systemctl is-active --quiet ivoai-docs.service || {
+            echo 'DOCS_SERVICE_ACTIVE=FAIL'
+            systemctl status --no-pager ivoai-docs.service || true
+            exit 1
+          }
+          echo 'DOCS_SERVICE_ACTIVE=PASS'
           ss -lnt4 > /tmp/ivoai-listeners.txt
-          grep -Eq '(0\.0\.0\.0|\*):7780([[:space:]]|$)' /tmp/ivoai-listeners.txt
-          curl --retry 10 --retry-connrefused --retry-delay 1 -fsS \
+          grep -Eq '(0\.0\.0\.0|\*):7780([[:space:]]|$)' /tmp/ivoai-listeners.txt || {
+            echo 'DOCS_BIND_0_0_0_0=FAIL'
+            cat /tmp/ivoai-listeners.txt
+            exit 1
+          }
+          echo 'DOCS_BIND_0_0_0_0=PASS'
+          curl --noproxy '*' --retry 10 --retry-connrefused --retry-delay 1 -fsS \
             --output /tmp/ivoai-docs-index.html http://127.0.0.1:7780/
-          grep -q 'IVOAI' /tmp/ivoai-docs-index.html
+          grep -q 'IVOAI' /tmp/ivoai-docs-index.html || {
+            echo 'DOCS_LOOPBACK_HTTP=FAIL'
+            exit 1
+          }
+          echo 'DOCS_LOOPBACK_HTTP=PASS'
           docs_lan_ip="$(hostname -I | awk '{print $1}')"
           test -n "$docs_lan_ip"
-          curl --retry 10 --retry-connrefused --retry-delay 1 -fsS \
+          curl --noproxy '*' --retry 10 --retry-connrefused --retry-delay 1 -fsS \
             --output /tmp/ivoai-docs-health.txt "http://${docs_lan_ip}:7780/healthz"
-          grep -q 'healthy' /tmp/ivoai-docs-health.txt
+          grep -q 'healthy' /tmp/ivoai-docs-health.txt || {
+            echo 'DOCS_LAN_HTTP=FAIL'
+            exit 1
+          }
+          echo 'DOCS_LAN_HTTP=PASS'
           systemctl show ivoai-docs.service --property=ExecStart --value > /tmp/ivoai-docs-exec-start.txt
-          grep -q 'ivoai server docs serve' /tmp/ivoai-docs-exec-start.txt
+          grep -q 'ivoai server docs serve' /tmp/ivoai-docs-exec-start.txt || {
+            echo 'DOCS_PRODUCTION_EXEC=FAIL'
+            cat /tmp/ivoai-docs-exec-start.txt
+            exit 1
+          }
+          echo 'DOCS_PRODUCTION_EXEC=PASS'
       - name: Verify remote MCP OAuth registration
         run: |
           curl --retry 10 --retry-connrefused --retry-delay 1 -fsS -H 'Content-Type: application/json' \
