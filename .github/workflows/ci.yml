@@ -160,20 +160,29 @@ jobs:
           sudo ivoai setup --mode server
           sudo ivoai server doctor | tee /tmp/ivoai-server-doctor.txt
           grep -q 'Docs: status=healthy listen=0.0.0.0:7780 local_url=http://127.0.0.1:7780/' /tmp/ivoai-server-doctor.txt
-          sudo ivoai server enrollment create --ttl 5m | grep -q 'shown once'
+          sudo ivoai server enrollment create --ttl 5m > /tmp/ivoai-enrollment-create.txt
+          grep -q 'shown once' /tmp/ivoai-enrollment-create.txt
           sudo ivoai server gateway configure --public-url https://ivoai-ci.example
-          sudo ivoai server web-access create --ttl 5m | grep -q 'shown once'
+          sudo ivoai server web-access create --ttl 5m > /tmp/ivoai-web-access-create.txt
+          grep -q 'shown once' /tmp/ivoai-web-access-create.txt
           systemctl is-enabled --quiet ivoai-docs.service
           systemctl is-active --quiet ivoai-docs.service
-          ss -lnt4 | grep -Eq '(0\.0\.0\.0|\*):7780([[:space:]]|$)'
-          curl --retry 10 --retry-connrefused --retry-delay 1 -fsS http://127.0.0.1:7780/ | grep -q 'IVOAI'
+          ss -lnt4 > /tmp/ivoai-listeners.txt
+          grep -Eq '(0\.0\.0\.0|\*):7780([[:space:]]|$)' /tmp/ivoai-listeners.txt
+          curl --retry 10 --retry-connrefused --retry-delay 1 -fsS \
+            --output /tmp/ivoai-docs-index.html http://127.0.0.1:7780/
+          grep -q 'IVOAI' /tmp/ivoai-docs-index.html
           docs_lan_ip="$(hostname -I | awk '{print $1}')"
           test -n "$docs_lan_ip"
-          curl --retry 10 --retry-connrefused --retry-delay 1 -fsS "http://${docs_lan_ip}:7780/healthz" | grep -q 'healthy'
-          systemctl show ivoai-docs.service --property=ExecStart --value | grep -q 'ivoai server docs serve'
+          curl --retry 10 --retry-connrefused --retry-delay 1 -fsS \
+            --output /tmp/ivoai-docs-health.txt "http://${docs_lan_ip}:7780/healthz"
+          grep -q 'healthy' /tmp/ivoai-docs-health.txt
+          systemctl show ivoai-docs.service --property=ExecStart --value > /tmp/ivoai-docs-exec-start.txt
+          grep -q 'ivoai server docs serve' /tmp/ivoai-docs-exec-start.txt
           curl --retry 10 --retry-connrefused --retry-delay 1 -fsS -H 'Content-Type: application/json' \
             --data-binary '{"client_name":"CI","redirect_uris":["https://example.test/callback"],"token_endpoint_auth_method":"none"}' \
-            http://127.0.0.1:7744/oauth/register | grep -q '"client_id"'
+            --output /tmp/ivoai-oauth-registration.json http://127.0.0.1:7744/oauth/register
+          grep -q '"client_id"' /tmp/ivoai-oauth-registration.json
           sudo ivoai server backup --output /var/lib/ivoai/backups/ci-backup.tar.gz
           sudo ivoai server restore --input /var/lib/ivoai/backups/ci-backup.tar.gz
           sudo ivoai server doctor
