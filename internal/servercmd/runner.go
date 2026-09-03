@@ -7,6 +7,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"net"
 	"os"
 	"os/exec"
 	"os/user"
@@ -18,6 +19,7 @@ import (
 	"time"
 
 	contextsvc "github.com/ivo-lopes/ivoai/internal/context"
+	"github.com/ivo-lopes/ivoai/internal/docsserver"
 	"github.com/ivo-lopes/ivoai/internal/enrollment"
 	"github.com/ivo-lopes/ivoai/internal/platform"
 	"github.com/ivo-lopes/ivoai/internal/server"
@@ -97,6 +99,8 @@ func (r *runner) run(ctx context.Context, args []string) error {
 		return r.context(ctx, layout, args[1:])
 	case "memory":
 		return r.memory(ctx, layout, args[1:])
+	case "docs":
+		return r.docs(ctx, layout, manager, args[1:])
 	case "backup":
 		return r.backup(ctx, layout, manager, args[1:])
 	case "restore":
@@ -142,6 +146,8 @@ func (r *runner) setup(ctx context.Context, layout server.Layout, manager server
 	if runtime.GOOS != "linux" {
 		return errors.New("server mode currently supports Linux only")
 	}
+	preflight := inspectServerPreflight(ctx, layout)
+	fmt.Fprintln(r.out, preflight.summary())
 	if os.Geteuid() != 0 {
 		return errors.New("server setup requires root; run sudo ivoai setup --mode server")
 	}
@@ -150,6 +156,9 @@ func (r *runner) setup(ctx context.Context, layout server.Layout, manager server
 	}
 	if !supportedServerArchitecture(runtime.GOARCH) {
 		return fmt.Errorf("unsupported server architecture %s; supported: amd64, arm64", runtime.GOARCH)
+	}
+	if !preflight.SystemdAvailable {
+		return errors.New("server setup requires systemd; in LXC use a systemd-enabled Debian 12 container")
 	}
 	if err := ensureDocker(ctx, r.out); err != nil {
 		return err
@@ -331,7 +340,7 @@ func ensureServiceUser(ctx context.Context) error {
 			return fmt.Errorf("create ivoai container service user: %w: %s", createErr, strings.TrimSpace(string(output)))
 		}
 	}
-	for _, name := range []string{"ivoai-gateway", "ivoai-context"} {
+	for _, name := range []string{"ivoai-gateway", "ivoai-context", "ivoai-docs"} {
 		if err := exec.CommandContext(ctx, "id", "-u", name).Run(); err == nil {
 			continue
 		}
@@ -444,7 +453,7 @@ func ensureServiceOwnership(layout server.Layout) error {
 	if err := os.Chmod(layout.ConfigDir, 0o750); err != nil {
 		return err
 	}
-	for _, name := range []string{"server.toml", "gateway.json", "connectors.json", "compose.yaml", "compose.arm64.yaml"} {
+	for _, name := range []string{"server.toml", "gateway.json", "docs.json", "connectors.json", "compose.yaml", "compose.arm64.yaml"} {
 		path := filepath.Join(layout.ConfigDir, name)
 		info, err := os.Lstat(path)
 		if errors.Is(err, os.ErrNotExist) {
@@ -612,6 +621,9 @@ func (r *runner) status(ctx context.Context, manager server.Manager, doctor bool
 		fmt.Fprintf(r.out, "ivoai server: configured\nlayout: %s\nservices: test-mode\n", manager.Layout.DataDir)
 		return nil
 	}
+	if err := requireServerSetup(ctx, manager.Layout); err != nil {
+		return err
+	}
 	states, err := manager.Status(ctx)
 	if err != nil {
 		return err
@@ -626,6 +638,22 @@ func (r *runner) status(ctx context.Context, manager server.Manager, doctor bool
 		fmt.Fprintf(r.out, "%s\t%s\t%s\n", state.Name, active, platform.Redact(state.Detail))
 		all = all && state.Active
 	}
+	docsConfig, configErr := server.LoadDocsConfig(manager.Layout)
+	if configErr != nil {
+		return fmt.Errorf("docs configuration: %w", configErr)
+	}
+	docsHost, docsPort, splitErr := net.SplitHostPort(docsConfig.ListenAddress)
+	if splitErr != nil {
+		return fmt.Errorf("docs configuration: %w", splitErr)
+	}
+	probeHost := docsHost
+	if docsHost == "0.0.0.0" || docsHost == "::" {
+		probeHost = "127.0.0.1"
+	}
+	docsURL := "http://" + net.JoinHostPort(probeHost, docsPort) + "/"
+	docsHealth := probeURL(ctx, docsURL+"healthz")
+	fmt.Fprintf(r.out, "Docs: status=%s listen=%s local_url=%s\n", semanticHealth(docsHealth, color), docsConfig.ListenAddress, docsURL)
+	all = all && docsHealth == "healthy"
 	if doctor {
 		memoryToken := ""
 		for _, secret := range []struct{ file, variable string }{{"qdrant.env", "QDRANT__SERVICE__API_KEY"}, {"embeddings.env", "API_KEY"}, {"memory.env", "AI_MEMORY_AUTH_TOKEN"}} {
@@ -956,6 +984,11 @@ func (r *runner) context(ctx context.Context, layout server.Layout, args []strin
 		return serveContext(ctx, layout, r.errOut)
 	}
 	if len(args) == 0 || args[0] == "status" {
+		if os.Getenv("IVOAI_TEST_MODE") != "1" {
+			if err := requireServerSetup(ctx, layout); err != nil {
+				return err
+			}
+		}
 		service, err := contextService(layout)
 		if err != nil {
 			return err
@@ -974,6 +1007,11 @@ func (r *runner) memory(ctx context.Context, layout server.Layout, args []string
 	if len(args) > 1 || (len(args) == 1 && args[0] != "status") {
 		return errors.New("usage: ivoai server memory status")
 	}
+	if os.Getenv("IVOAI_TEST_MODE") != "1" {
+		if err := requireServerSetup(ctx, layout); err != nil {
+			return err
+		}
+	}
 	token, err := server.LoadBackendSecret(layout, "memory.env", "AI_MEMORY_AUTH_TOKEN")
 	if err != nil {
 		return fmt.Errorf("private backend credential memory.env: %w", err)
@@ -984,6 +1022,72 @@ func (r *runner) memory(ctx context.Context, layout server.Layout, args []string
 		return errors.New("ai-memory is unavailable; context and agent clients remain usable")
 	}
 	return nil
+}
+
+func (r *runner) docs(ctx context.Context, layout server.Layout, manager server.Manager, args []string) error {
+	action := "status"
+	if len(args) > 0 {
+		action = args[0]
+	}
+	switch action {
+	case "configure":
+		fs := flag.NewFlagSet("server docs configure", flag.ContinueOnError)
+		fs.SetOutput(r.errOut)
+		listen := fs.String("listen", server.DefaultDocsConfig().ListenAddress, "documentation listener as an explicit IP:port")
+		if err := fs.Parse(args[1:]); err != nil || fs.NArg() != 0 {
+			return errors.New("usage: ivoai server docs configure --listen <IP:port>")
+		}
+		config := server.DocsConfig{ListenAddress: *listen}
+		if err := server.SaveDocsConfig(layout, config); err != nil {
+			return err
+		}
+		if os.Getenv("IVOAI_TEST_MODE") != "1" {
+			// SaveDocsConfig deliberately creates a private root-owned file.
+			// Reconcile group-read ownership before the unprivileged docs service
+			// is restarted, just as server setup does for every managed config.
+			if err := ensureServiceOwnership(layout); err != nil {
+				return err
+			}
+			if err := manager.Controller.Restart(ctx, []string{"ivoai-docs.service"}); err != nil {
+				return err
+			}
+		}
+		fmt.Fprintf(r.out, "Docs listen: %s\n", config.ListenAddress)
+		return nil
+	case "serve":
+		if len(args) != 1 {
+			return errors.New("usage: ivoai server docs serve")
+		}
+		config, err := server.LoadDocsConfig(layout)
+		if err != nil {
+			return fmt.Errorf("docs configuration: %w", err)
+		}
+		return docsserver.Serve(ctx, config.ListenAddress)
+	case "status":
+		if len(args) > 1 {
+			return errors.New("usage: ivoai server docs status")
+		}
+		config, err := server.LoadDocsConfig(layout)
+		if err != nil {
+			return fmt.Errorf("docs configuration: %w", err)
+		}
+		host, port, splitErr := net.SplitHostPort(config.ListenAddress)
+		if splitErr != nil {
+			return splitErr
+		}
+		probeHost := host
+		if host == "0.0.0.0" || host == "::" {
+			probeHost = "127.0.0.1"
+		}
+		status := probeURL(ctx, "http://"+net.JoinHostPort(probeHost, port)+"/healthz")
+		fmt.Fprintf(r.out, "Docs: %s\nListen: %s\nLocal URL: http://%s/\n", semanticHealth(status, terminalui.ColorEnabled(r.out)), config.ListenAddress, net.JoinHostPort(probeHost, port))
+		if status != "healthy" {
+			return errors.New("documentation service is unavailable")
+		}
+		return nil
+	default:
+		return errors.New("usage: ivoai server docs [status|serve|configure --listen <IP:port>]")
+	}
 }
 
 func (r *runner) backup(ctx context.Context, layout server.Layout, manager server.Manager, args []string) error {
@@ -1152,8 +1256,8 @@ func (r *runner) usage() {
   enrollment create [--ttl 10m] | list | revoke <id>
   web-access create [--ttl 10m] [--scopes SCOPE,...] | list | revoke <id>
   connector list | add --name NAME --type filesystem|git --path PATH | remove NAME
-  context status | memory status
-  gateway configure --public-url HTTPS_ORIGIN [--listen HOST:PORT] [--trusted-proxy CIDR] [--tls-cert PATH --tls-key PATH]
+  context status | memory status | docs status | docs configure --listen IP:PORT | docs serve
+  gateway serve | gateway configure --public-url HTTPS_ORIGIN [--listen HOST:PORT] [--trusted-proxy CIDR] [--tls-cert PATH --tls-key PATH]
   backup [--output PATH] | restore --input PATH
   remote status | doctor | connector list`)
 }

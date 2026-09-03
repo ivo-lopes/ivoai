@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestDockerRuntimeVersionsRequireGatewayPrioritySupport(t *testing.T) {
@@ -178,5 +179,40 @@ func TestInstallVerifiedComposePluginRejectsCorruptDownload(t *testing.T) {
 	}
 	if _, err := os.Lstat(destination); !os.IsNotExist(err) {
 		t.Fatalf("corrupt plugin became visible at destination: %v", err)
+	}
+}
+
+func TestDockerRepositoryFingerprintAndCandidateParsing(t *testing.T) {
+	fixture := "pub:-:4096:1:8D81803C0EBFCD88:0:0::::::\nfpr:::::::::" + dockerKeyFingerprint + ":\n"
+	if !containsFingerprint(fixture, dockerKeyFingerprint) || containsFingerprint(fixture, strings.Repeat("0", 40)) {
+		t.Fatal("Docker signing key fingerprint parsing is not exact")
+	}
+	if dockerDebianKeyURL != "https://download.docker.com/linux/debian/gpg" || !strings.HasPrefix(dockerDebianSourcesPath, "/etc/apt/sources.list.d/") {
+		t.Fatal("Docker repository is not the reviewed official Debian source")
+	}
+}
+
+func TestLXCDetectionUsesSystemdAndCgroupEvidence(t *testing.T) {
+	if !isLXC([]byte("lxc\n"), nil) || !isLXC(nil, []byte("0::/lxc/guest")) || isLXC([]byte("docker\n"), []byte("0::/system.slice")) {
+		t.Fatal("LXC detection did not distinguish container evidence")
+	}
+}
+
+func TestInstallCommandCancellationKillsChildProcessGroup(t *testing.T) {
+	directory := t.TempDir()
+	marker := filepath.Join(directory, "orphaned-child")
+	command := filepath.Join(directory, "installer-fixture")
+	script := "#!/bin/sh\n(sleep 0.20; printf leaked > '" + marker + "') &\nwait\n"
+	if err := os.WriteFile(command, []byte(script), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	time.AfterFunc(20*time.Millisecond, cancel)
+	if err := runInstallCommand(ctx, command); err == nil || !strings.Contains(err.Error(), "context canceled") {
+		t.Fatalf("cancelled installer result=%v", err)
+	}
+	time.Sleep(300 * time.Millisecond)
+	if _, err := os.Stat(marker); !os.IsNotExist(err) {
+		t.Fatalf("installer child escaped cancellation: %v", err)
 	}
 }

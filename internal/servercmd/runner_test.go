@@ -24,6 +24,13 @@ func TestServerSetupEnrollmentAndConnectorsAreIdempotent(t *testing.T) {
 			t.Fatalf("setup %d: %v (%s)", attempt+1, err, out.String())
 		}
 	}
+	if err := run(context.Background(), []string{"docs", "configure", "--listen", "0.0.0.0:7781"}, strings.NewReader(""), &bytes.Buffer{}, &bytes.Buffer{}); err != nil {
+		t.Fatal(err)
+	}
+	docsConfig, err := server.LoadDocsConfig(server.DefaultLayout(root))
+	if err != nil || docsConfig.ListenAddress != "0.0.0.0:7781" {
+		t.Fatalf("docs config=%#v err=%v", docsConfig, err)
+	}
 
 	var enrollmentOut bytes.Buffer
 	if err := run(context.Background(), []string{"enrollment", "create", "--ttl", "5m"}, strings.NewReader(""), &enrollmentOut, &enrollmentOut); err != nil {
@@ -132,6 +139,47 @@ func TestSupportedServerArchitectures(t *testing.T) {
 	}
 }
 
+func TestServerPreflightReportsPrimaryPrerequisite(t *testing.T) {
+	tests := []struct {
+		name string
+		in   serverPreflight
+		want string
+	}{
+		{"docker missing", serverPreflight{OSSupported: true, ArchitectureSupported: true, SystemdAvailable: true}, "Docker Engine is not installed"},
+		{"daemon down", serverPreflight{OSSupported: true, ArchitectureSupported: true, SystemdAvailable: true, DockerCLIPresent: true}, "Docker daemon is unreachable"},
+		{"lxc daemon down", serverPreflight{OSSupported: true, ArchitectureSupported: true, SystemdAvailable: true, DockerCLIPresent: true, LXCDetected: true}, "inside LXC"},
+		{"old engine", serverPreflight{OSSupported: true, ArchitectureSupported: true, SystemdAvailable: true, DockerCLIPresent: true, DockerDaemonReachable: true, DockerEngineVersion: "20.10.24"}, "older than required"},
+		{"compose missing", serverPreflight{OSSupported: true, ArchitectureSupported: true, SystemdAvailable: true, DockerCLIPresent: true, DockerDaemonReachable: true, DockerEngineVersion: "29.0.0"}, "Docker Compose v2"},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if got := test.in.rootCause(); !strings.Contains(got, test.want) {
+				t.Fatalf("rootCause=%q want %q", got, test.want)
+			}
+		})
+	}
+}
+
+func TestServerSetupStateTreatsMissingSecretsAsIncompleteSetup(t *testing.T) {
+	layout := server.DefaultLayout(t.TempDir())
+	if err := layout.Ensure(); err != nil {
+		t.Fatal(err)
+	}
+	if got := serverSetupState(layout); got != "incomplete" {
+		t.Fatalf("state=%s", got)
+	}
+	manager := server.Manager{Layout: layout, Architecture: "amd64"}
+	if err := manager.Setup(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if err := server.EnsureBackendSecrets(layout); err != nil {
+		t.Fatal(err)
+	}
+	if got := serverSetupState(layout); got != "configured" {
+		t.Fatalf("state=%s", got)
+	}
+}
+
 func TestSecureChownTreeRefusesSymlinkEntries(t *testing.T) {
 	root := t.TempDir()
 	outside := filepath.Join(t.TempDir(), "outside")
@@ -216,6 +264,7 @@ func TestWaitForServicesStableRejectsTransientAndInactiveServices(t *testing.T) 
 		{Name: "ivoai-dependencies.service", Active: true, Detail: "active"},
 		{Name: "ivoai-context.service", Active: true, Detail: "active"},
 		{Name: "ivoai-gateway.service", Active: true, Detail: "active"},
+		{Name: "ivoai-docs.service", Active: true, Detail: "active"},
 	}
 	if err := waitForServicesStable(context.Background(), 50*time.Millisecond, time.Millisecond, 3*time.Millisecond, func(context.Context) ([]server.ServiceState, error) {
 		return active, nil

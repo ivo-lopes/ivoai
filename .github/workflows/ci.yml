@@ -22,6 +22,14 @@ jobs:
           cache: true
       - name: Formatting
         run: test -z "$(gofmt -l .)"
+      - name: Docusaurus production build and embedded-site consistency
+        run: |
+          corepack enable
+          corepack prepare pnpm@10.17.1 --activate
+          scripts/build-docs.sh --check
+          scripts/audit-docs-dependencies.sh
+      - name: Generated CLI reference is current
+        run: scripts/generate-cli-reference.sh --check
       - name: Unit tests
         shell: bash
         run: |
@@ -150,16 +158,39 @@ jobs:
         run: |
           sudo ivoai setup --mode server
           sudo ivoai setup --mode server
-          sudo ivoai server doctor
+          sudo ivoai server doctor | tee /tmp/ivoai-server-doctor.txt
+          grep -q 'Docs: status=healthy listen=0.0.0.0:7780 local_url=http://127.0.0.1:7780/' /tmp/ivoai-server-doctor.txt
           sudo ivoai server enrollment create --ttl 5m | grep -q 'shown once'
           sudo ivoai server gateway configure --public-url https://ivoai-ci.example
           sudo ivoai server web-access create --ttl 5m | grep -q 'shown once'
+          systemctl is-enabled --quiet ivoai-docs.service
+          systemctl is-active --quiet ivoai-docs.service
+          ss -lnt4 | grep -Eq '(0\.0\.0\.0|\*):7780([[:space:]]|$)'
+          curl --retry 10 --retry-connrefused --retry-delay 1 -fsS http://127.0.0.1:7780/ | grep -q 'IVOAI'
+          docs_lan_ip="$(hostname -I | awk '{print $1}')"
+          test -n "$docs_lan_ip"
+          curl --retry 10 --retry-connrefused --retry-delay 1 -fsS "http://${docs_lan_ip}:7780/healthz" | grep -q 'healthy'
+          systemctl show ivoai-docs.service --property=ExecStart --value | grep -q 'ivoai server docs serve'
           curl --retry 10 --retry-connrefused --retry-delay 1 -fsS -H 'Content-Type: application/json' \
             --data-binary '{"client_name":"CI","redirect_uris":["https://example.test/callback"],"token_endpoint_auth_method":"none"}' \
             http://127.0.0.1:7744/oauth/register | grep -q '"client_id"'
           sudo ivoai server backup --output /var/lib/ivoai/backups/ci-backup.tar.gz
           sudo ivoai server restore --input /var/lib/ivoai/backups/ci-backup.tar.gz
           sudo ivoai server doctor
+
+  debian12-lxc-bootstrap:
+    name: Debian 12/LXC bootstrap contract
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    needs: quality
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Provision clean Debian 12 LXC contract twice
+        run: scripts/debian12-server-bootstrap-smoke.sh
 
   cross-build:
     runs-on: ubuntu-24.04

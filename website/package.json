@@ -1,0 +1,41 @@
+{
+  "name": "ivoai-documentation",
+  "version": "0.8.0",
+  "private": true,
+  "scripts": {
+    "build": "docusaurus build",
+    "serve": "docusaurus serve",
+    "start": "docusaurus start",
+    "clear": "docusaurus clear",
+    "version": "docusaurus docs:version"
+  },
+  "dependencies": {
+    "@docusaurus/core": "3.10.2",
+    "@docusaurus/preset-classic": "3.10.2",
+    "@docusaurus/theme-mermaid": "3.10.2",
+    "@easyops-cn/docusaurus-search-local": "0.55.3",
+    "@mdx-js/react": "3.1.1",
+    "@mermaid-js/layout-elk": "0.1.9",
+    "clsx": "2.1.1",
+    "prism-react-renderer": "2.4.1",
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
+  },
+  "devDependencies": {
+    "@docusaurus/module-type-aliases": "3.10.2",
+    "@docusaurus/tsconfig": "3.10.2",
+    "typescript": "5.9.3"
+  },
+  "pnpm": {
+    "overrides": {
+      "serialize-javascript": "7.0.3"
+    },
+    "auditConfig": {
+      "ignoreCves": [
+        "GHSA-w3rx-r6r6-pgpr",
+        "GHSA-5p2g-fcmc-qvqq"
+      ]
+    }
+  },
+  "packageManager": "pnpm@10.17.1"
+}

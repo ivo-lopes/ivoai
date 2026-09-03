@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-var ManagedServices = []string{"ivoai-dependencies.service", "ivoai-context.service", "ivoai-gateway.service"}
+var ManagedServices = []string{"ivoai-dependencies.service", "ivoai-context.service", "ivoai-gateway.service", "ivoai-docs.service"}
 
 type ServiceState struct {
 	Name   string `json:"name"`
@@ -146,7 +146,11 @@ func (m Manager) Setup(ctx context.Context) error {
 		filepath.Join(m.Layout.ConfigDir, "server.toml"):                 {DefaultServerConfig, 0o600},
 		filepath.Join(m.Layout.SystemdDir, "ivoai-gateway.service"):      {GatewayUnit, 0o644},
 		filepath.Join(m.Layout.SystemdDir, "ivoai-context.service"):      {ContextUnit, 0o644},
+		filepath.Join(m.Layout.SystemdDir, "ivoai-docs.service"):         {DocsUnit, 0o644},
 		filepath.Join(m.Layout.SystemdDir, "ivoai-dependencies.service"): {dependenciesUnit, 0o644},
+	}
+	if err := EnsureDocsConfig(m.Layout); err != nil {
+		return err
 	}
 	if arch == "arm64" {
 		assets[filepath.Join(m.Layout.ConfigDir, "compose.arm64.yaml")] = struct {
@@ -229,7 +233,7 @@ func (m Manager) Stop(ctx context.Context) error {
 	if m.Controller == nil {
 		return errors.New("service controller unavailable")
 	}
-	names := []string{"ivoai-gateway.service", "ivoai-context.service", "ivoai-dependencies.service"}
+	names := []string{"ivoai-docs.service", "ivoai-gateway.service", "ivoai-context.service", "ivoai-dependencies.service"}
 	return m.Controller.Stop(ctx, names)
 }
 func (m Manager) Restart(ctx context.Context) error {

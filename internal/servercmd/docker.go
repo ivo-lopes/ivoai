@@ -58,14 +58,36 @@ func dockerComposeAsset(architecture string) (composeAsset, error) {
 func ensureDocker(ctx context.Context, out io.Writer) error {
 	docker, err := exec.LookPath("docker")
 	if err != nil {
-		return fmt.Errorf("Docker Engine %s or newer is required; install it from https://docs.docker.com/engine/install/ and rerun setup", dockerEngineMinimumVersion)
+		if installErr := installDockerEngineDebian(ctx, out); installErr != nil {
+			return dockerLXCError(fmt.Errorf("Docker Engine %s or newer is required: %w", dockerEngineMinimumVersion, installErr))
+		}
+		docker, err = exec.LookPath("docker")
+		if err != nil {
+			return errors.New("Docker Engine installation completed but the docker CLI is unavailable")
+		}
 	}
 	engineVersion, err := dockerEngineVersion(ctx, docker)
 	if err != nil {
-		return err
+		if os.Geteuid() == 0 {
+			_ = runInstallCommand(ctx, "systemctl", "enable", "--now", "docker.service")
+			engineVersion, err = dockerEngineVersion(ctx, docker)
+		}
+		if err != nil {
+			return dockerLXCError(fmt.Errorf("Docker CLI is installed but the daemon is unreachable: %w", err))
+		}
 	}
 	if compatible, parsed := runtimeVersionAtLeast(engineVersion, dockerEngineMinimumVersion); !parsed || !compatible {
-		return validateDockerRuntimeVersions(engineVersion, dockerComposeMinimumVersion)
+		if os.Geteuid() == 0 && officialDockerInstalled(ctx) {
+			if err := installOfficialDockerPackages(ctx); err != nil {
+				return fmt.Errorf("upgrade official Docker Engine: %w", err)
+			}
+			engineVersion, err = dockerEngineVersion(ctx, docker)
+			if err != nil {
+				return dockerLXCError(err)
+			}
+		} else {
+			return validateDockerRuntimeVersions(engineVersion, dockerComposeMinimumVersion)
+		}
 	}
 	composeVersion, composeErr := dockerComposeVersion(ctx, docker)
 	if composeErr == nil {

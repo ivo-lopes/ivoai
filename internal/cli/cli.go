@@ -54,7 +54,7 @@ func commandHeaderEnabled(args []string) bool {
 	if (args[0] == "monitor" || args[0] == "session") && contains(args, "--json") {
 		return false
 	}
-	if len(args) >= 3 && args[0] == "server" && (args[1] == "gateway" || args[1] == "context") && args[2] == "serve" {
+	if len(args) >= 3 && args[0] == "server" && (args[1] == "gateway" || args[1] == "context" || args[1] == "docs") && args[2] == "serve" {
 		return false
 	}
 	return true
@@ -623,13 +623,19 @@ func usage(w io.Writer) {
 
 Usage:
   ivoai                         interactive menu
-  ivoai setup [--mode client]
-  ivoai status | doctor [--json] [--inventory] | version | update [--dry-run|--rollback [--force]] | uninstall
-  ivoai connect [list|chatgpt|claude|server [add|list|show|test]|mcp ...]
+  ivoai help | version | status | uninstall
+  ivoai setup [--mode client|server]
+  ivoai doctor [--json] [--inventory]
+  ivoai update [--dry-run] | update --rollback [--force]
+  ivoai connect [list|chatgpt|claude]
+  ivoai connect server [--url URL] [--purpose PURPOSE] [--redundancy-group GROUP] [--priority N] [--enrollment-code CODE|--code-stdin]
+  ivoai connect server add <alias> [--url URL] [--purpose PURPOSE] [--redundancy-group GROUP] [--priority N] [--enrollment-code CODE|--code-stdin]
+  ivoai connect server list [--json] | show <alias> [--json] | test <alias> [--json]
+  ivoai connect mcp [list] | add <name> <https-url> | remove <name>
   ivoai disconnect <chatgpt|claude|server [alias|--all]>
   ivoai codex [--knowledge-source <alias|purpose>] [-- agent arguments...]
   ivoai claude [--knowledge-source <alias|purpose>] [-- agent arguments...]
-  ivoai opencode [-- agent arguments...]
+  ivoai opencode [--knowledge-source <alias|purpose>] [-- agent arguments...]
   ivoai auto [--planner codex|claude] [--knowledge-source <alias|purpose>] [-- agent arguments...]
   ivoai session start --executor <codex|claude|opencode> --mode <direct|orchestrated> [--knowledge-source <alias|purpose>] [-- agent arguments...]
   ivoai session list [--json] | show [--json] <id> | stop <id>
@@ -637,7 +643,15 @@ Usage:
   ivoai memory [status|configure]
   ivoai config [show|set <key> <value>]
   ivoai project [init|status]
-  ivoai server ...`)
+  ivoai server setup | status | doctor | start | stop | restart
+  ivoai server logs [service]
+  ivoai server enrollment create [--ttl 10m] | list | revoke <id>
+  ivoai server web-access create [--ttl 10m] [--scopes SCOPE,...] | list | revoke <id>
+  ivoai server connector list | add --name NAME --type filesystem|git --path PATH | remove NAME
+  ivoai server context status | memory status | docs status | docs configure --listen IP:PORT | docs serve
+  ivoai server gateway serve | gateway configure --public-url HTTPS_ORIGIN [--listen HOST:PORT] [--trusted-proxy CIDR] [--tls-cert PATH --tls-key PATH]
+  ivoai server backup [--output PATH] | restore --input PATH
+  ivoai server remote status | doctor | connector list`)
 }
 
 func UserError(err error) string { return platform.Redact(err.Error()) }

@@ -7,3 +7,7 @@
 .env
 *.secret
 *.token
+website/node_modules/
+website/.docusaurus/
+website/.cache-loader/
+website/build/

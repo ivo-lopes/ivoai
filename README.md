@@ -86,8 +86,11 @@ ivoai codex --knowledge-source mindsite
 ivoai claude --knowledge-source voicecorp
 ```
 
-Named servers remain connected simultaneously. Purpose isolation is the default;
-repeat `--knowledge-source` only for intentional cross-purpose read federation.
+Named servers remain connected simultaneously. With no `--knowledge-source`, every
+enabled connected server participates in bounded read federation. Supplying one or
+more `--knowledge-source` flags restricts that session to exactly those aliases or
+purposes. Writes are never broadcast: an ambiguous new Memory write fails until a
+single destination is selected.
 Upstream tokens remain inside ivoai's per-session loopback router, so concurrent
 Voicecorp and Mindsite sessions do not rewrite global agent configuration or share
 credentials. See [Multi-server knowledge sources](docs/multi-server.md).
@@ -137,8 +140,9 @@ and `ivoai doctor --json` remain suitable for automation.
 
 Ubuntu 22.04+, Ubuntu 24.04+, and Debian 12 are supported on amd64 and arm64:
 
-Install Docker Engine 28.0.0 or newer first from Docker's official repository.
-Server setup validates the daemon and also requires Docker Compose 2.33.1 or newer;
+On Debian 12, server setup can provision Docker Engine from Docker's official signed
+APT repository when it is absent. Server setup validates Engine 28.0.0 or newer and
+Docker Compose 2.33.1 or newer;
 it installs the project's pinned Compose plugin when needed.
 
 ```sh
@@ -148,6 +152,10 @@ sudo ivoai server gateway configure --public-url https://ai.example.com
 sudo ivoai server doctor
 sudo ivoai server enrollment create
 ```
+
+The same setup installs an embedded production build of this Docusaurus portal as
+`ivoai-docs.service`, listening on `0.0.0.0:7780` by default. Put that LAN listener
+behind your external Nginx Proxy Manager and restrict the port at the firewall.
 
 The gateway listens on loopback by default. Put it behind an HTTPS reverse proxy;
 Qdrant, embeddings, and ai-memory are not exposed publicly. See the

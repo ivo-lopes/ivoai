@@ -126,6 +126,16 @@ func TestSetupIsIdempotentAndLifecycleUsesManagedServices(t *testing.T) {
 			t.Fatalf("context unit missing %s", hardening)
 		}
 	}
+	docsUnit, _ := os.ReadFile(filepath.Join(layout.SystemdDir, "ivoai-docs.service"))
+	for _, hardening := range []string{"User=ivoai-docs", "Group=ivoai", "ProtectSystem=strict", "InaccessiblePaths=/etc/ivoai/secrets /var/lib/ivoai", "ExecStart=/usr/local/bin/ivoai server docs serve"} {
+		if !bytes.Contains(docsUnit, []byte(hardening)) {
+			t.Fatalf("docs unit missing %s", hardening)
+		}
+	}
+	docsConfig, err := LoadDocsConfig(layout)
+	if err != nil || docsConfig.ListenAddress != "0.0.0.0:7780" {
+		t.Fatalf("docs config=%+v err=%v", docsConfig, err)
+	}
 	dependenciesUnit, _ := os.ReadFile(filepath.Join(layout.SystemdDir, "ivoai-dependencies.service"))
 	if !bytes.Contains(dependenciesUnit, []byte("up -d --force-recreate --wait")) {
 		t.Fatal("dependency unit does not recreate managed networks on boot")
@@ -189,6 +199,28 @@ func TestBackendSecretsRefuseSymlink(t *testing.T) {
 	}
 	if err := EnsureBackendSecrets(layout); err == nil {
 		t.Fatal("backend secret symlink was accepted")
+	}
+}
+
+func TestDocsConfigValidationAndSymlinkRejection(t *testing.T) {
+	layout := DefaultLayout(t.TempDir())
+	if err := layout.Ensure(); err != nil {
+		t.Fatal(err)
+	}
+	for _, address := range []string{"localhost:7780", "0.0.0.0:0", "0.0.0.0:70000", ":7780"} {
+		if err := (DocsConfig{ListenAddress: address}).Validate(); err == nil {
+			t.Fatalf("accepted unsafe docs listener %q", address)
+		}
+	}
+	target := filepath.Join(t.TempDir(), "docs.json")
+	if err := os.WriteFile(target, []byte(`{"listen_address":"0.0.0.0:7780"}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(target, DocsConfigPath(layout)); err != nil {
+		t.Fatal(err)
+	}
+	if err := EnsureDocsConfig(layout); err == nil {
+		t.Fatal("docs configuration symlink was accepted")
 	}
 }
 
@@ -327,6 +359,7 @@ func TestDeployAssetsMatchEmbeddedServerAssets(t *testing.T) {
 		{"../../deploy/server/compose.arm64.yaml", ARM64ComposeOverride},
 		{"../../deploy/server/systemd/ivoai-gateway.service", GatewayUnit},
 		{"../../deploy/server/systemd/ivoai-context.service", ContextUnit},
+		{"../../deploy/server/systemd/ivoai-docs.service", DocsUnit},
 		{"../../deploy/server/systemd/ivoai-dependencies.service", DependenciesUnit},
 	} {
 		deployed, err := os.ReadFile(item.path)
