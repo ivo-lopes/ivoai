@@ -77,6 +77,44 @@ func TestRuntimeWorkerKnowledgeUsesSessionRouter(t *testing.T) {
 	}
 }
 
+func TestImplicitKnowledgeSelectionUsesEveryEnabledServer(t *testing.T) {
+	root := t.TempDir()
+	t.Setenv("HOME", root)
+	t.Setenv("XDG_CONFIG_HOME", filepath.Join(root, "config"))
+	t.Setenv("XDG_DATA_HOME", filepath.Join(root, "data"))
+	t.Setenv("XDG_STATE_HOME", filepath.Join(root, "state"))
+	t.Setenv("XDG_CACHE_HOME", filepath.Join(root, "cache"))
+	a, err := New("test", strings.NewReader(""), io.Discard, io.Discard)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg := config.Default()
+	profiles := []config.ServerProfile{
+		{ID: "srv_all_voice", Alias: "voicecorp", URL: "https://voice.invalid", Status: "connected", Enabled: true, Purpose: "voicecorp", ContextMCPURL: "https://voice.invalid/context"},
+		{ID: "srv_all_mind", Alias: "mindsite", URL: "https://mind.invalid", Status: "connected", Enabled: true, Purpose: "mindsite", MemoryMCPURL: "https://mind.invalid/memory"},
+		{ID: "srv_all_disabled", Alias: "disabled", URL: "https://disabled.invalid", Status: "connected", Enabled: false, Purpose: "disabled", ContextMCPURL: "https://disabled.invalid/context"},
+	}
+	credentials := secrets.Store{Path: a.Store.Paths.Secrets}
+	for _, profile := range profiles {
+		cfg.Connections.Servers[profile.Alias] = profile
+		if err := credentials.Set(profile.ID, secrets.ClientCredential{Token: "isolated-" + profile.ID}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	knowledge, err := a.prepareSessionKnowledge(context.Background(), cfg, nil, "opencode", t.TempDir(), nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer knowledge.close()
+	aliases := strings.Join(knowledge.aliases(), ",")
+	if aliases != "mindsite,voicecorp" {
+		t.Fatalf("implicit sources=%q want mindsite,voicecorp", aliases)
+	}
+	if strings.Contains(strings.Join(knowledge.environment, "\n"), "isolated-srv_") {
+		t.Fatal("upstream credential leaked into executor environment")
+	}
+}
+
 func TestClaudeDirectUsesPrivateSessionMCPConfiguration(t *testing.T) {
 	root := t.TempDir()
 	t.Setenv("HOME", root)

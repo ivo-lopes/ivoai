@@ -31,8 +31,9 @@ func TestResolveSeparatesPurposeFromRedundancy(t *testing.T) {
 			t.Fatalf("redundancy priority not deterministic: %+v", group)
 		}
 	}
-	if _, err := pool.Resolve(nil); err == nil {
-		t.Fatal("ambiguous implicit selection was accepted")
+	implicit, err := pool.Resolve(nil)
+	if err != nil || len(implicit.Groups) != 2 || implicit.PurposeCount() != 2 {
+		t.Fatalf("all-enabled selection=%+v err=%v", implicit, err)
 	}
 }
 
@@ -84,8 +85,9 @@ func TestResolveServerCountMatrix(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := two.Resolve(nil); err == nil {
-		t.Fatal("two purposes were selected implicitly")
+	selection, err = two.Resolve(nil)
+	if err != nil || len(selection.Groups) != 2 {
+		t.Fatalf("two enabled servers selection=%+v err=%v", selection, err)
 	}
 	selection, err = two.Resolve([]string{"voicecorp", "mindsite"})
 	if err != nil || len(selection.Groups) != 2 {
@@ -97,12 +99,50 @@ func TestResolveServerCountMatrix(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	selection, err = three.Resolve([]string{"research", "mindsite", "voicecorp"})
+	selection, err = three.Resolve(nil)
 	if err != nil || len(selection.Groups) != 3 {
 		t.Fatalf("three explicit servers selection=%+v err=%v", selection, err)
 	}
 	if selection.Groups[0].Purpose != "mindsite" || selection.Groups[1].Purpose != "research" || selection.Groups[2].Purpose != "voicecorp" {
 		t.Fatalf("selection order is not deterministic: %+v", selection.Groups)
+	}
+}
+
+func TestResolveWithoutSelectorsUsesOnlyEnabledConnectedProfiles(t *testing.T) {
+	connected := profile("srv_connected", "connected", "connected", "", 10)
+	disabled := profile("srv_disabled", "disabled", "disabled", "", 10)
+	disabled.Enabled = false
+	disconnected := profile("srv_disconnected", "disconnected", "disconnected", "", 10)
+	disconnected.Status = "disconnected"
+	pool, err := New(map[string]config.ServerProfile{
+		"connected": connected, "disabled": disabled, "disconnected": disconnected,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	selection, err := pool.Resolve(nil)
+	if err != nil || len(selection.Groups) != 1 || selection.Groups[0].Purpose != "connected" {
+		t.Fatalf("selection=%+v err=%v", selection, err)
+	}
+}
+
+func TestExplicitSelectorRemainsRestrictiveWhenAllEnabledIsDefault(t *testing.T) {
+	pool, err := New(map[string]config.ServerProfile{
+		"company-a": profile("srv_company_a", "company-a", "company-a", "", 10),
+		"company-b": profile("srv_company_b", "company-b", "company-b", "", 10),
+		"company-c": profile("srv_company_c", "company-c", "company-c", "", 10),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	selection, err := pool.Resolve([]string{"company-a", "company-c"})
+	if err != nil || len(selection.Groups) != 2 {
+		t.Fatalf("selection=%+v err=%v", selection, err)
+	}
+	for _, group := range selection.Groups {
+		if group.Purpose == "company-b" {
+			t.Fatal("unselected source leaked into restrictive selection")
+		}
 	}
 }
 

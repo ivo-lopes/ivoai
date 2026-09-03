@@ -146,7 +146,9 @@ func (p Pool) Get(alias string) (config.ServerProfile, bool) {
 }
 
 // Resolve turns explicit aliases or purposes into logical source groups. With
-// no selector, only a single enabled profile (or the legacy default) is safe.
+// no selector, every enabled connected profile participates in the session.
+// Explicit selectors are restrictive: an unavailable requested source fails
+// instead of being silently replaced by another profile.
 func (p Pool) Resolve(selectors []string) (Selection, error) {
 	if len(selectors) > MaxSelectedSources {
 		return Selection{}, errors.New("too many knowledge sources selected")
@@ -159,15 +161,10 @@ func (p Pool) Resolve(selectors []string) (Selection, error) {
 				enabled = append(enabled, profile)
 			}
 		}
-		if len(enabled) == 1 {
-			profiles = enabled
-		} else if profile, ok := p.profiles["default"]; ok && profile.Enabled && profile.Status == "connected" {
-			profiles = []config.ServerProfile{profile}
-		} else if len(enabled) == 0 {
+		if len(enabled) == 0 {
 			return Selection{}, nil
-		} else {
-			return Selection{}, errors.New("multiple knowledge purposes are connected; select a source explicitly")
 		}
+		profiles = enabled
 	} else {
 		seen := map[string]bool{}
 		profiles = nil

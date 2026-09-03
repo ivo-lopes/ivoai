@@ -326,6 +326,45 @@ func TestExplicitFederationPreservesSourceAndCredentialIsolation(t *testing.T) {
 	}
 }
 
+func TestImplicitSelectionFederatesEveryEnabledSourceAndDegradesSafely(t *testing.T) {
+	voice := newFakeSource(t, "voicecorp", "token-a")
+	mind := newFakeSource(t, "mindsite", "token-b")
+	research := newFakeSource(t, "research", "token-c")
+	mind.down.Store(true)
+	profiles := map[string]config.ServerProfile{
+		"voicecorp": profile("voicecorp", "voicecorp", "", 0, voice),
+		"mindsite":  profile("mindsite", "mindsite", "", 0, mind),
+		"research":  profile("research", "research", "", 0, research),
+	}
+	router := startTestRouter(t, profiles, nil, map[string]*fakeSource{"voicecorp": voice, "mindsite": mind, "research": research})
+	payload, status := callRouter(t, router, "/mcp/context", `{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"context_search"}}`)
+	if status != http.StatusOK || !bytes.Contains(payload, []byte(`"partial":true`)) {
+		t.Fatalf("implicit federation did not preserve healthy sources: status=%d payload=%s", status, payload)
+	}
+	for _, alias := range []string{"mindsite", "research", "voicecorp"} {
+		if !bytes.Contains(payload, []byte(`"source_alias":"`+alias+`"`)) {
+			t.Fatalf("source provenance missing for %s: %s", alias, payload)
+		}
+	}
+	if !bytes.Contains(payload, []byte("voicecorp:projects/foo")) || !bytes.Contains(payload, []byte("research:projects/foo")) {
+		t.Fatalf("healthy implicit sources were lost: %s", payload)
+	}
+	if voice.wrongToken.Load() != 0 || mind.wrongToken.Load() != 0 || research.wrongToken.Load() != 0 {
+		t.Fatalf("credential crossover: voice=%d mind=%d research=%d", voice.wrongToken.Load(), mind.wrongToken.Load(), research.wrongToken.Load())
+	}
+}
+
+func TestImplicitFederationNeverBroadcastsMemoryWrites(t *testing.T) {
+	a := newFakeSource(t, "a", "token-a")
+	b := newFakeSource(t, "b", "token-b")
+	profiles := map[string]config.ServerProfile{"a": profile("a", "a", "", 0, a), "b": profile("b", "b", "", 0, b)}
+	router := startTestRouter(t, profiles, nil, map[string]*fakeSource{"a": a, "b": b})
+	payload, _ := callRouter(t, router, "/mcp/memory", `{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"memory_write_page"}}`)
+	if !bytes.Contains(payload, []byte("exactly one knowledge destination")) || a.requests.Load() != 0 || b.requests.Load() != 0 {
+		t.Fatalf("implicit federation broadcast a write: %s a=%d b=%d", payload, a.requests.Load(), b.requests.Load())
+	}
+}
+
 func TestAmbiguousCrossPurposeWriteFailsBeforeUpstream(t *testing.T) {
 	a := newFakeSource(t, "a", "token-a")
 	b := newFakeSource(t, "b", "token-b")
