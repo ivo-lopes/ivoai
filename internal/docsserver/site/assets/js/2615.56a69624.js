@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkivoai_documentation=self.webpackChunkivoai_documentation||[]).push([[2615],{82615(e,a,i){i.d(a,{createWardleyServices:()=>c.J});var c=i(61072);i(29697)}}]);

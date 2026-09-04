@@ -5,7 +5,7 @@ const config: Config = {
   title: 'IVOAI',
   tagline: 'Host-first AI client, server, memory, context and orchestration',
   favicon: 'img/favicon.svg',
-  url: 'https://docs.example.invalid',
+  url: process.env.IVOAI_DOCS_CANONICAL_URL || 'http://localhost:7780',
   baseUrl: '/',
   organizationName: 'ivo-lopes',
   projectName: 'ivoai',

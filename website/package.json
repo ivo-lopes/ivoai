@@ -1,13 +1,14 @@
 {
   "name": "ivoai-documentation",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "private": true,
   "scripts": {
     "build": "docusaurus build",
     "serve": "docusaurus serve",
     "start": "docusaurus start",
     "clear": "docusaurus clear",
-    "version": "docusaurus docs:version"
+    "version": "docusaurus docs:version",
+    "test:a11y": "playwright test"
   },
   "dependencies": {
     "@docusaurus/core": "3.10.2",
@@ -22,8 +23,10 @@
     "react-dom": "19.2.4"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
     "@docusaurus/module-type-aliases": "3.10.2",
     "@docusaurus/tsconfig": "3.10.2",
+    "@playwright/test": "1.62.1",
     "typescript": "5.9.3"
   },
   "pnpm": {

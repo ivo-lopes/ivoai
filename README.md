@@ -24,7 +24,7 @@ ChatGPT Web, and Claude Web.
 ```text
 Desktop / notebook                         Private Linux servers
 
-ivoai auto ── shared knowledge ── DAG scheduler ── Codex/Claude TUI
+ivoai auto ── OpenCode TUI ── IVOAI control plane ── Codex/Claude executor
     │          ├── quota + model/effort routing  │
     │          ├── async read-only workers       │
     │          └── safe Ruflo lifecycle          │
@@ -59,13 +59,15 @@ ivoai connect server add mindsite --url https://mindsite.example.invalid --code-
 ivoai connect server list
 ivoai codex
 ivoai claude
-ivoai opencode                 # official OpenCode TUI; direct primary
+ivoai opencode                 # managed OpenCode frontend; IVOAI-routed executors
 ```
 
 OpenCode is installed from a pinned official release through IVOAI's private,
-rollback-safe supply chain. Its authentication remains owned by OpenCode; IVOAI does
-not read or store provider credentials. OpenCode is direct-primary only in this
-release slice and is deliberately not part of AUTO/workers yet.
+rollback-safe supply chain. In managed mode it is the interactive frontend; IVOAI
+routes work to the official Codex or Claude Code CLI using each client's existing
+subscription login. No provider token is copied into OpenCode. Direct `opencode`
+outside IVOAI remains unchanged, and a standalone OpenCode-owned provider session is
+still available through `ivoai session start --executor opencode --mode direct`.
 
 Direct agent commands are unchanged. For observable or delegated work, use explicit
 session modes:
@@ -79,9 +81,9 @@ ivoai monitor --watch
 For the quota-aware conversational mode, run:
 
 ```sh
-ivoai auto                         # choose the primary; Codex is the default
-ivoai auto --planner codex         # official Codex TUI
-ivoai auto --planner claude        # official Claude Code TUI
+ivoai auto                         # OpenCode UI; choose the executor, Codex default
+ivoai auto --planner codex         # OpenCode UI + Codex executor
+ivoai auto --planner claude        # OpenCode UI + Claude Code executor
 ivoai codex --knowledge-source mindsite
 ivoai claude --knowledge-source voicecorp
 ```
@@ -95,8 +97,9 @@ Upstream tokens remain inside ivoai's per-session loopback router, so concurrent
 Voicecorp and Mindsite sessions do not rewrite global agent configuration or share
 credentials. See [Multi-server knowledge sources](docs/multi-server.md).
 
-The selected official client remains the conversation owner, planner, primary, and
-only authoritative writer. On the first substantive request, automatic mode attempts
+OpenCode remains the frontend, IVOAI owns the logical session and dispatch policy,
+and the selected official client is the primary executor and only authoritative
+writer. On the first substantive request, automatic mode attempts
 one bounded Memory lookup and one Context lookup, builds a shared brief, validates a
 task DAG, calculates objective scores, and dispatches only workers whose expected
 benefit exceeds startup/context overhead. Independent tasks run concurrently; trivial

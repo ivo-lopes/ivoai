@@ -5,7 +5,7 @@ const sidebars: SidebarsConfig = {
     {type: 'category', label: 'Introduction', items: ['index', 'concepts', 'quickstart']},
     {type: 'category', label: 'Install and setup', items: ['installation', 'setup', 'client', 'server']},
     {type: 'category', label: 'Usage', items: ['basic-usage', 'advanced-usage', 'cli-reference', 'cookbook']},
-    {type: 'category', label: 'Executors and AUTO', items: ['executors', 'auto-orchestration', 'auto-scheduler', 'quota-routing', 'orchestration']},
+    {type: 'category', label: 'Executors and AUTO', items: ['executors', 'auto-orchestration', 'auto-scheduler', 'quota-routing', 'orchestration', 'ux-audit']},
     {type: 'category', label: 'Knowledge', items: ['memory', 'context-guide', 'multi-server', 'connections', 'mcp-web']},
     {type: 'category', label: 'Control and fidelity', items: ['skill-control-plane', 'working-context', 'compression-provider', 'caveman-canary']},
     {type: 'category', label: 'Operations', items: ['operations', 'update-rollback', 'backup-restore', 'production-compatibility', 'production-inventory', 'canary-rollout']},
