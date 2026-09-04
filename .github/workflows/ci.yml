@@ -28,6 +28,10 @@ jobs:
           corepack prepare pnpm@10.17.1 --activate
           scripts/build-docs.sh --check
           scripts/audit-docs-dependencies.sh
+      - name: Docusaurus accessibility and responsive audit
+        run: |
+          corepack pnpm --dir website exec playwright install --with-deps chromium
+          corepack pnpm --dir website test:a11y
       - name: Generated CLI reference is current
         run: scripts/generate-cli-reference.sh --check
       - name: Unit tests
@@ -44,6 +48,8 @@ jobs:
             printf '::error title=Unit test failure::%s\n' "$annotation"
           fi
           exit "$status"
+      - name: Managed OpenCode HTTP and attach integration
+        run: scripts/test-managed-opencode.sh
       - name: Race tests
         run: go test -race ./...
       - name: Vet

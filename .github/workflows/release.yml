@@ -30,6 +30,10 @@ jobs:
           corepack prepare pnpm@10.17.1 --activate
           scripts/build-docs.sh --check
           scripts/audit-docs-dependencies.sh
+      - name: Docusaurus accessibility and responsive audit
+        run: |
+          corepack pnpm --dir website exec playwright install --with-deps chromium
+          corepack pnpm --dir website test:a11y
       - name: Generated CLI reference is current
         run: scripts/generate-cli-reference.sh --check
       - name: Tests, race, and vet
@@ -37,6 +41,8 @@ jobs:
           go test ./...
           go test -race ./...
           go vet ./...
+      - name: Managed OpenCode HTTP and attach integration
+        run: scripts/test-managed-opencode.sh
       - name: ShellCheck
         run: shellcheck install.sh scripts/*.sh
       - name: Vulnerability scan
@@ -119,11 +125,21 @@ jobs:
           notes_file="release-notes/${GITHUB_REF_NAME}.md"
           test -s "$notes_file"
           if gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1; then
-            gh release upload "${GITHUB_REF_NAME}" ivoai_*.tar.gz ivoai-memory-context.zip checksums.txt --clobber
-          else
-            release_flags=()
-            if [[ "${GITHUB_REF_NAME}" == *-* ]]; then
-              release_flags+=(--prerelease)
-            fi
-            gh release create "${GITHUB_REF_NAME}" ivoai_*.tar.gz ivoai-memory-context.zip checksums.txt --verify-tag --notes-file "$notes_file" "${release_flags[@]}"
+            echo "release ${GITHUB_REF_NAME} already exists; refusing to replace immutable assets" >&2
+            exit 1
           fi
+          release_flags=()
+          if [[ "${GITHUB_REF_NAME}" == *-* ]]; then
+            release_flags+=(--prerelease)
+          fi
+          # Upload into a draft first. A failed upload must never leave a
+          # partially populated public release under an immutable tag.
+          gh release create "${GITHUB_REF_NAME}" ivoai_*.tar.gz ivoai-memory-context.zip checksums.txt --verify-tag --draft --notes-file "$notes_file" "${release_flags[@]}"
+          mapfile -t actual_assets < <(gh release view "${GITHUB_REF_NAME}" --json assets --jq '.assets[].name' | sort)
+          mapfile -t expected_assets < <(printf '%s\n' checksums.txt ivoai-memory-context.zip ivoai_linux_amd64.tar.gz ivoai_linux_arm64.tar.gz | sort)
+          if [[ "${actual_assets[*]}" != "${expected_assets[*]}" ]]; then
+            echo "draft release asset set is incomplete; leaving draft unpublished" >&2
+            printf 'expected: %s\nactual: %s\n' "${expected_assets[*]}" "${actual_assets[*]}" >&2
+            exit 1
+          fi
+          gh release edit "${GITHUB_REF_NAME}" --draft=false --latest
