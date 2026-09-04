@@ -8,13 +8,14 @@ mode="${1:-write}"
 
 input_hash="$({
   cd "$repo_root"
-  find docs website \
-    -type f \
-    ! -path 'website/node_modules/*' \
-    ! -path 'website/build/*' \
-    ! -path 'website/.docusaurus/*' \
-    ! -path 'website/static/build-input.sha256' \
-    -print0 | sort -z | xargs -0 sha256sum
+  # Hash repository-owned inputs only. Local Playwright reports, screenshots,
+  # package-manager caches, and other ignored files must not make the embedded
+  # production site differ from a clean CI checkout.
+  git ls-files -z docs website \
+    | while IFS= read -r -d '' path; do
+        [[ "$path" == "website/static/build-input.sha256" ]] && continue
+        sha256sum "$path"
+      done
 } | sha256sum | awk '{print $1}')"
 
 if [[ "$mode" == "--check" ]]; then
