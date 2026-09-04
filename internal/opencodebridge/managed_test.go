@@ -7,6 +7,7 @@ import (
 	"io"
 	"net"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -86,6 +87,60 @@ func TestManagedBackendProcessGroupDiesWithIVOAI(t *testing.T) {
 	}
 }
 
+func TestManagedOpenCodeLeaseIsSingleWriterAcrossProcesses(t *testing.T) {
+	root := t.TempDir()
+	first, err := acquireManagedLease(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if second, err := acquireManagedLease(root); err == nil {
+		releaseManagedLease(second)
+		t.Fatal("a second managed OpenCode writer acquired the same state lease")
+	}
+	releaseManagedLease(first)
+	third, err := acquireManagedLease(root)
+	if err != nil {
+		t.Fatalf("released managed lease could not be reacquired: %v", err)
+	}
+	releaseManagedLease(third)
+}
+
+func TestProviderReadinessRequiresCompleteIVOAIModelCatalog(t *testing.T) {
+	for _, test := range []struct {
+		name, response string
+		wantReady      bool
+	}{
+		{name: "empty", response: `{"providers":[]}`},
+		{name: "partial", response: `{"providers":[{"id":"ivoai","models":{"auto":{}}}]}`},
+		{name: "complete", response: `{"providers":[{"id":"ivoai","models":{"auto":{},"codex-fixture":{}}}]}`, wantReady: true},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				_, _ = io.WriteString(w, test.response)
+			}))
+			defer server.Close()
+			managed := &Managed{URL: server.URL, password: "fixture", done: make(chan struct{}), expectedModels: []string{"auto", "codex-fixture"}}
+			ctx, cancel := context.WithTimeout(context.Background(), 350*time.Millisecond)
+			defer cancel()
+			err := managed.waitProviderReady(ctx, t.TempDir())
+			if (err == nil) != test.wantReady {
+				t.Fatalf("ready=%t err=%v", err == nil, err)
+			}
+		})
+	}
+}
+
+func TestListenAddressRejectsUserinfo(t *testing.T) {
+	writer := &listenAddressWriter{writer: io.Discard, found: make(chan string, 1)}
+	_, _ = writer.Write([]byte("opencode server listening on http://user:secret@127.0.0.1:1234\n"))
+	select {
+	case value := <-writer.found:
+		t.Fatalf("userinfo listener was accepted: %q", value)
+	default:
+	}
+}
+
 func TestManagedOpenCodeRejectsUnsafeResumeSessionID(t *testing.T) {
 	root := t.TempDir()
 	bridge, err := Start(Options{Runner: &fakeRunner{}, Select: func(context.Context, string) (string, error) { return "codex", nil }, Status: func() Status { return Status{} }})
@@ -128,9 +183,13 @@ func TestLiveManagedOpenCodeRoutesPromptThroughIVOAI(t *testing.T) {
 	}
 	root := t.TempDir()
 	runner := &fakeRunner{result: ExecutorResult{ExecutorSessionID: "thread_fixture"}}
+	catalog := newCatalog([]ModelSpec{{
+		ID: "codex-fixture", Name: "Codex fixture", Mode: "explicit", Executor: "codex",
+		UpstreamModel: "gpt-fixture", SupportedEfforts: []string{"low", "high"}, DefaultEffort: "low", ModelSource: "runtime_verified",
+	}})
 	var mappingsMu sync.Mutex
 	var mappings []Mapping
-	bridge, err := Start(Options{Runner: runner, Select: func(context.Context, string) (string, error) { return "codex", nil }, Status: func() Status { return Status{} }, Mapping: func(value Mapping) error {
+	bridge, err := Start(Options{Runner: runner, Catalog: catalog, Select: func(context.Context, string) (string, error) { return "codex", nil }, Status: func() Status { return Status{} }, Mapping: func(value Mapping) error {
 		mappingsMu.Lock()
 		defer mappingsMu.Unlock()
 		mappings = append(mappings, value)
@@ -171,7 +230,7 @@ func TestLiveManagedOpenCodeRoutesPromptThroughIVOAI(t *testing.T) {
 		t.Fatalf("session create status=%d id=%q", response.StatusCode, created.ID)
 	}
 	_ = response.Body.Close()
-	response = call(http.MethodPost, "/session/"+created.ID+"/message", `{"parts":[{"type":"text","text":"return fixture"}]}`)
+	response = call(http.MethodPost, "/session/"+created.ID+"/message", `{"model":{"providerID":"ivoai","modelID":"codex-fixture"},"variant":"high","parts":[{"type":"text","text":"return fixture"}]}`)
 	_, _ = io.Copy(io.Discard, response.Body)
 	_ = response.Body.Close()
 	if response.StatusCode != http.StatusOK {
@@ -180,7 +239,7 @@ func TestLiveManagedOpenCodeRoutesPromptThroughIVOAI(t *testing.T) {
 	runner.mu.Lock()
 	requests := append([]ExecutorRequest(nil), runner.requests...)
 	runner.mu.Unlock()
-	if len(requests) != 1 || requests[0].FrontendSessionID != created.ID || requests[0].Prompt != "return fixture" {
+	if len(requests) != 1 || requests[0].FrontendSessionID != created.ID || requests[0].Prompt != "return fixture" || requests[0].Executor != "codex" || requests[0].Model != "gpt-fixture" || requests[0].Effort != "high" || requests[0].SelectionMode != "explicit" {
 		t.Fatalf("OpenCode did not route through the IVOAI bridge: %+v", requests)
 	}
 	if err := managed.Close(context.Background()); err != nil {
@@ -314,7 +373,7 @@ func TestManagedOpenCodeHelper(t *testing.T) {
 				return
 			}
 			w.Header().Set("Content-Type", "application/json")
-			_, _ = fmt.Fprint(w, `{"providers":[],"default":{}}`)
+			_, _ = fmt.Fprint(w, `{"providers":[{"id":"ivoai","name":"IVOAI","models":{"auto":{"name":"IVOAI Automatic Orchestration"}}}],"default":{}}`)
 			return
 		}
 		if r.URL.Path != "/global/health" {

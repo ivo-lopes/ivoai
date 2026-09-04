@@ -7,10 +7,12 @@ import (
 	"fmt"
 	"io"
 	"os/exec"
+	"strconv"
 	"strings"
 	"sync"
 	"syscall"
 	"time"
+	"unicode/utf8"
 
 	"github.com/ivo-lopes/ivoai/internal/core"
 )
@@ -31,23 +33,53 @@ type CLIRunner struct {
 	Claude ExecutorSpec
 }
 
+// ExecutorFailure is deliberately metadata-only. It gives the bridge and
+// diagnostics a stable reason without exposing stderr, prompts, credentials,
+// or tool results.
+type ExecutorFailure struct {
+	Class    string
+	ExitCode int
+}
+
+func (e *ExecutorFailure) Error() string {
+	if e.ExitCode >= 0 {
+		return fmt.Sprintf("%s (exit %d)", e.Class, e.ExitCode)
+	}
+	return e.Class
+}
+
+func failure(class string) error { return &ExecutorFailure{Class: class, ExitCode: -1} }
+
+func FailureClass(err error) string {
+	var value *ExecutorFailure
+	if errors.As(err, &value) && value.Class != "" {
+		return value.Class
+	}
+	return "executor_failure"
+}
+
 func (r CLIRunner) Run(ctx context.Context, request ExecutorRequest, emit func(string) error) (ExecutorResult, error) {
 	spec := r.Codex
 	if request.Executor == "claude" {
 		spec = r.Claude
 	}
 	if spec.Disabled || spec.Path == "" {
-		return ExecutorResult{}, fmt.Errorf("%s is unavailable", request.Executor)
+		return ExecutorResult{}, failure("executor_unavailable")
 	}
 	args := append([]string(nil), spec.Args...)
 	if request.Executor == "codex" {
 		if request.ExecutorSessionID == "" {
-			args = append(args, "exec", "--json", "--color", "never", "-C", spec.Dir, "-")
+			args = append(args, "exec", "--json", "--color", "never")
+			args = appendSelectionArgs(args, request)
+			args = append(args, "-C", spec.Dir, "-")
 		} else {
-			args = append(args, "exec", "resume", "--json", request.ExecutorSessionID, "-")
+			args = append(args, "exec", "resume", "--json")
+			args = appendSelectionArgs(args, request)
+			args = append(args, request.ExecutorSessionID, "-")
 		}
 	} else {
 		args = append(args, "--print", "--verbose", "--output-format", "stream-json", "--include-partial-messages")
+		args = appendSelectionArgs(args, request)
 		if request.ExecutorSessionID != "" {
 			args = append(args, "--resume", request.ExecutorSessionID)
 		}
@@ -86,12 +118,12 @@ func (r CLIRunner) Run(ctx context.Context, request ExecutorRequest, emit func(s
 	cmd.Stdin = strings.NewReader(request.Prompt)
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
-		return ExecutorResult{}, err
+		return ExecutorResult{}, failure("bridge_protocol_failure")
 	}
 	var stderr strings.Builder
 	cmd.Stderr = &boundedWriter{writer: &stderr, remaining: 64 << 10}
 	if err := cmd.Start(); err != nil {
-		return ExecutorResult{}, err
+		return ExecutorResult{}, failure("executor_start_failure")
 	}
 	processDone := make(chan struct{})
 	var closeDone sync.Once
@@ -109,7 +141,12 @@ func (r CLIRunner) Run(ctx context.Context, request ExecutorRequest, emit func(s
 		case <-processDone:
 		}
 	}()
-	result := ExecutorResult{ExecutorSessionID: request.ExecutorSessionID, CompressionUsed: compressionUsed, CompressionProvider: compressionProvider}
+	result := ExecutorResult{
+		ExecutorSessionID: request.ExecutorSessionID, CompressionUsed: compressionUsed, CompressionProvider: compressionProvider,
+		SelectionMode: request.SelectionMode, RequestedModel: request.Model, Model: request.Model, Effort: request.Effort, CatalogRevision: request.CatalogRevision,
+	}
+	finalResponsePresent := false
+	structuredFailureClass := ""
 	parseErr := ScanJSONLines(stdout, func(value map[string]any) error {
 		if sessionID, ok := value["session_id"].(string); ok && safeID(sessionID) {
 			result.ExecutorSessionID = sessionID
@@ -124,6 +161,7 @@ func (r CLIRunner) Run(ctx context.Context, request ExecutorRequest, emit func(s
 			item, _ := value["item"].(map[string]any)
 			if item["type"] == "agent_message" {
 				if text, ok := item["text"].(string); ok {
+					finalResponsePresent = finalResponsePresent || strings.TrimSpace(text) != ""
 					return emit(safeExecutorText(text, 1<<20))
 				}
 			}
@@ -144,6 +182,7 @@ func (r CLIRunner) Run(ctx context.Context, request ExecutorRequest, emit func(s
 				delta, _ := event["delta"].(map[string]any)
 				if delta["type"] == "text_delta" {
 					if text, ok := delta["text"].(string); ok {
+						finalResponsePresent = finalResponsePresent || strings.TrimSpace(text) != ""
 						return emit(safeExecutorText(text, 1<<20))
 					}
 				}
@@ -162,27 +201,80 @@ func (r CLIRunner) Run(ctx context.Context, request ExecutorRequest, emit func(s
 				}
 			}
 		}
+		if value["type"] == "result" {
+			isError, _ := value["is_error"].(bool)
+			if isError {
+				structuredFailureClass = "executor_failure"
+				if message, ok := value["result"].(string); ok && indicatesAuthenticationFailure(message) {
+					structuredFailureClass = "executor_auth_failure"
+				}
+			}
+		}
 		return nil
 	})
 	waitErr := cmd.Wait()
 	closeDone.Do(func() { close(processDone) })
 	if parseErr != nil {
-		return result, parseErr
+		if errors.Is(ctx.Err(), context.Canceled) {
+			return result, failure("executor_cancelled")
+		}
+		if errors.Is(ctx.Err(), context.DeadlineExceeded) {
+			return result, failure("executor_timeout")
+		}
+		return result, failure("executor_stream_incomplete")
 	}
 	if waitErr != nil {
 		if errors.Is(ctx.Err(), context.Canceled) {
-			return result, ctx.Err()
+			return result, failure("executor_cancelled")
+		}
+		if errors.Is(ctx.Err(), context.DeadlineExceeded) {
+			return result, failure("executor_timeout")
 		}
 		var exitErr *exec.ExitError
 		if errors.As(waitErr, &exitErr) {
-			return result, fmt.Errorf("%s executor exited with status %d", request.Executor, exitErr.ExitCode())
+			class := "executor_exit_nonzero"
+			if structuredFailureClass != "" {
+				class = structuredFailureClass
+			} else if indicatesAuthenticationFailure(stderr.String()) {
+				class = "executor_auth_failure"
+			}
+			return result, &ExecutorFailure{Class: class, ExitCode: exitErr.ExitCode()}
 		}
-		return result, waitErr
+		return result, failure("executor_failure")
 	}
 	if result.ExecutorSessionID == "" {
-		return result, errors.New("executor did not return a resumable session identity")
+		return result, failure("executor_stream_incomplete")
+	}
+	if structuredFailureClass != "" {
+		return result, failure(structuredFailureClass)
+	}
+	if !finalResponsePresent {
+		return result, failure("executor_stream_incomplete")
 	}
 	return result, nil
+}
+
+func indicatesAuthenticationFailure(value string) bool {
+	value = strings.ToLower(value)
+	for _, marker := range []string{"authentication required", "not authenticated", "please log in", "please login", "unauthorized", "subscription access", "use an anthropic api key"} {
+		if strings.Contains(value, marker) {
+			return true
+		}
+	}
+	return false
+}
+
+func appendSelectionArgs(args []string, request ExecutorRequest) []string {
+	if request.Model != "" {
+		args = append(args, "--model", request.Model)
+	}
+	if request.Effort == "" {
+		return args
+	}
+	if request.Executor == "codex" {
+		return append(args, "-c", "model_reasoning_effort="+strconv.Quote(request.Effort))
+	}
+	return append(args, "--effort", request.Effort)
 }
 
 func executorProcessAttributes() *syscall.SysProcAttr {
@@ -224,13 +316,16 @@ func activityMarker(kind, name, status string) string {
 
 func safeExecutorText(value string, limit int) string {
 	value = strings.Map(func(r rune) rune {
-		if r == '\n' || r == '\t' || r >= 0x20 && r != 0x7f && !(r >= 0x80 && r <= 0x9f) {
+		if r == '\n' || r == '\t' || r >= 0x20 && r != 0x7f && !(r >= 0x80 && r <= 0x9f) && !(r >= 0x202a && r <= 0x202e) && !(r >= 0x2066 && r <= 0x2069) {
 			return r
 		}
 		return -1
 	}, value)
 	if len(value) > limit {
 		value = value[:limit]
+		for !utf8.ValidString(value) {
+			value = value[:len(value)-1]
+		}
 	}
 	return value
 }

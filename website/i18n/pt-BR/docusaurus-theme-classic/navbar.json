@@ -1,0 +1,26 @@
+{
+  "title": {
+    "message": "IVOAI",
+    "description": "The title in the navbar"
+  },
+  "item.label.Quickstart": {
+    "message": "Guia rápido",
+    "description": "Navbar item with label Quickstart"
+  },
+  "item.label.CLI": {
+    "message": "CLI",
+    "description": "Navbar item with label CLI"
+  },
+  "item.label.Server": {
+    "message": "Servidor",
+    "description": "Navbar item with label Server"
+  },
+  "item.label.MCP Web": {
+    "message": "MCP Web",
+    "description": "Navbar item with label MCP Web"
+  },
+  "item.label.GitHub": {
+    "message": "GitHub",
+    "description": "Navbar item with label GitHub"
+  }
+}

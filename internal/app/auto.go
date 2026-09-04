@@ -25,6 +25,7 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/orchestration"
 	"github.com/ivo-lopes/ivoai/internal/platform"
 	"github.com/ivo-lopes/ivoai/internal/quota"
+	"github.com/ivo-lopes/ivoai/internal/routing"
 	"github.com/ivo-lopes/ivoai/internal/session"
 )
 
@@ -87,7 +88,7 @@ func resumableOpenCodeSession(store session.Store, currentID, cwd, scopeID strin
 		return "", err
 	}
 	for _, candidate := range values {
-		if candidate.SessionID == currentID || candidate.Active() || candidate.Frontend != "opencode" || candidate.WorkingDirectory != cwd || candidate.KnowledgeScopeID != scopeID || candidate.FrontendSessionID == "" {
+		if candidate.SessionID == currentID || candidate.State != session.StateCompleted || candidate.Frontend != "opencode" || candidate.WorkingDirectory != cwd || candidate.KnowledgeScopeID != scopeID || candidate.FrontendSessionID == "" {
 			continue
 		}
 		return candidate.FrontendSessionID, nil
@@ -96,7 +97,7 @@ func resumableOpenCodeSession(store session.Store, currentID, cwd, scopeID strin
 }
 
 func (a *App) autoBridgeArgs(executor string, existing []string, id, runtimeDir, instructionsPath string, cfg config.Config) ([]string, error) {
-	args, err := a.autoAgentArgs(executor, existing, id, runtimeDir, instructionsPath, "", cfg)
+	args, err := a.autoAgentArgs(executor, stripManagedSelectionArgs(executor, existing), id, runtimeDir, instructionsPath, "", cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -105,6 +106,42 @@ func (a *App) autoBridgeArgs(executor string, existing []string, id, runtimeDir,
 		return nil, err
 	}
 	return append(knowledgeArgs, args...), nil
+}
+
+// stripManagedSelectionArgs keeps the OpenCode model picker authoritative for
+// managed AUTO sessions. Other official-client flags remain untouched.
+func stripManagedSelectionArgs(executor string, input []string) []string {
+	result := make([]string, 0, len(input))
+	for index := 0; index < len(input); index++ {
+		value := input[index]
+		if value == "--model" || value == "-m" || executor == "claude" && value == "--effort" {
+			if index+1 < len(input) {
+				index++
+			}
+			continue
+		}
+		if strings.HasPrefix(value, "--model=") || executor == "claude" && strings.HasPrefix(value, "--effort=") {
+			continue
+		}
+		if executor == "codex" && len(value) > 2 && strings.HasPrefix(value, "-m") {
+			continue
+		}
+		if executor == "codex" && (value == "-c" || value == "--config") && index+1 < len(input) {
+			setting := input[index+1]
+			if strings.HasPrefix(setting, "model_reasoning_effort=") || strings.HasPrefix(setting, "model=") {
+				index++
+				continue
+			}
+		}
+		if executor == "codex" && (strings.HasPrefix(value, "--config=model_reasoning_effort=") || strings.HasPrefix(value, "--config=model=")) {
+			continue
+		}
+		if executor == "codex" && (strings.HasPrefix(value, "-cmodel_reasoning_effort=") || strings.HasPrefix(value, "-cmodel=")) {
+			continue
+		}
+		result = append(result, value)
+	}
+	return result
 }
 
 func (a *App) openCodeAutoStatus(store session.Store, id string, cfg config.Config, knowledge sessionKnowledge, restricted bool, quotas map[quota.Provider]quota.ProviderQuota, compression sharedKnowledgeCompressionPolicy) opencodebridge.Status {
@@ -183,6 +220,7 @@ func (a *App) openCodeAutoStatus(store session.Store, id string, cfg config.Conf
 	}
 	return opencodebridge.Status{
 		Version: a.Version, SessionID: id, Frontend: "opencode", Primary: value.PrimaryExecutor, Mode: string(value.Mode), SessionState: state,
+		SelectionMode: value.SelectionMode, RequestedExecutor: value.RequestedExecutor, RequestedModel: value.RequestedModel, EffectiveModel: value.EffectiveModel, EffectiveEffort: value.EffectiveEffort,
 		KnowledgeMode: mode, ConfiguredCount: len(servers), EnabledCount: enabled, ConnectedCount: connected, SelectedCount: selectedCount, Servers: servers,
 		CodexAuth: auth(quota.ProviderCodex), ClaudeAuth: auth(quota.ProviderClaude), CodexQuota: quotaState(quota.ProviderCodex), ClaudeQuota: quotaState(quota.ProviderClaude),
 		Compression: compression.EffectiveProvider, Memory: value.MemoryStatus, Context: value.ContextStatus, Skills: "policy-gated",
@@ -411,6 +449,15 @@ func (a *App) AutoWithKnowledge(ctx context.Context, planner string, agentArgs, 
 	}
 	selected := current
 	var selectedMu sync.Mutex
+	modelCatalog := opencodebridge.DefaultCatalog()
+	if a.OpenCodeModelCatalog != nil {
+		modelCatalog = *a.OpenCodeModelCatalog
+	} else {
+		modelCatalog = opencodebridge.CatalogFromRegistry(routing.Discoverer{
+			CodexPath: state.Components["codex"].Path, ClaudePath: state.Components["claude-code"].Path,
+			CachePath: filepath.Join(a.Store.Paths.CacheDir, "capabilities.json"),
+		}.Discover(ctx))
+	}
 	bridge, err := opencodebridge.Start(opencodebridge.Options{
 		PreferredExecutor: current,
 		Runner:            bridgeRunner,
@@ -463,6 +510,36 @@ func (a *App) AutoWithKnowledge(ctx context.Context, planner string, agentArgs, 
 			return handoff
 		},
 		MaxFailovers: 2,
+		Catalog:      modelCatalog,
+		AuthorizeSelection: func(requestCtx context.Context, selection opencodebridge.Selection) error {
+			_, eligible, probeErr := manager.CanDispatch(requestCtx, quota.Provider(selection.Executor), selection.Model, true)
+			if !eligible {
+				if probeErr != nil {
+					return probeErr
+				}
+				return errors.New("selected executor or model is not eligible")
+			}
+			return nil
+		},
+		OnSelection: func(selection opencodebridge.Selection) {
+			_, _ = store.Update(id, func(currentSession *session.Session) error {
+				currentSession.SelectionMode = selection.Mode
+				currentSession.RequestedExecutor = ""
+				if selection.Mode == "explicit" {
+					currentSession.RequestedExecutor = selection.Executor
+				}
+				currentSession.RequestedModel = selection.RequestedID
+				currentSession.RequestedEffort = selection.Effort
+				currentSession.EffectiveExecutor = selection.Executor
+				currentSession.EffectiveModel = selection.Model
+				currentSession.EffectiveEffort = selection.Effort
+				currentSession.ModelCatalogRevision = selection.CatalogRevision
+				if selection.Model != "" {
+					currentSession.PrimaryModel = session.ModelInfo{Name: selection.Model, Source: session.ModelSource(selection.ModelSource)}
+				}
+				return nil
+			})
+		},
 		Status: func() opencodebridge.Status {
 			currentQuotas := map[quota.Provider]quota.ProviderQuota{}
 			for _, provider := range []quota.Provider{quota.ProviderCodex, quota.ProviderClaude} {
@@ -476,10 +553,24 @@ func (a *App) AutoWithKnowledge(ctx context.Context, planner string, agentArgs, 
 				currentSession.FrontendSessionID = mapping.FrontendSessionID
 				currentSession.ExecutorSessionID = mapping.ExecutorSessionID
 				currentSession.CurrentPrimary, currentSession.PrimaryExecutor = mapping.Executor, mapping.Executor
+				currentSession.SelectionMode = mapping.SelectionMode
+				currentSession.RequestedExecutor = ""
+				if mapping.SelectionMode == "explicit" {
+					currentSession.RequestedExecutor = mapping.Executor
+				}
+				currentSession.RequestedModel = mapping.RequestedModel
+				currentSession.EffectiveExecutor = mapping.Executor
+				currentSession.EffectiveModel = mapping.EffectiveModel
+				currentSession.EffectiveEffort = mapping.EffectiveEffort
+				currentSession.ModelCatalogRevision = mapping.CatalogRevision
 				if currentSession.ExecutorSessions == nil {
 					currentSession.ExecutorSessions = map[string]session.ExecutorSessionMapping{}
 				}
-				currentSession.ExecutorSessions[mapping.Executor+":"+mapping.FrontendSessionID] = session.ExecutorSessionMapping{Executor: mapping.Executor, ExecutorSessionID: mapping.ExecutorSessionID, UpdatedAt: time.Now().UTC()}
+				currentSession.ExecutorSessions[mapping.Executor+":"+mapping.FrontendSessionID] = session.ExecutorSessionMapping{
+					Executor: mapping.Executor, ExecutorSessionID: mapping.ExecutorSessionID, SelectionMode: mapping.SelectionMode,
+					RequestedModel: mapping.RequestedModel, EffectiveModel: mapping.EffectiveModel, EffectiveEffort: mapping.EffectiveEffort,
+					CatalogRevision: mapping.CatalogRevision, UpdatedAt: time.Now().UTC(),
+				}
 				currentSession.HeadroomUsed = mapping.CompressionUsed && mapping.CompressionProvider == "headroom"
 				currentSession.CompressionUsed = mapping.CompressionUsed
 				if mapping.CompressionProvider != "" {
@@ -511,7 +602,11 @@ func (a *App) AutoWithKnowledge(ctx context.Context, planner string, agentArgs, 
 				if len(mappings) > 0 {
 					result := make([]opencodebridge.Mapping, 0, len(mappings))
 					for _, mapping := range mappings {
-						result = append(result, opencodebridge.Mapping{FrontendSessionID: frontendID, Executor: mapping.Executor, ExecutorSessionID: mapping.ExecutorSessionID})
+						result = append(result, opencodebridge.Mapping{
+							FrontendSessionID: frontendID, Executor: mapping.Executor, ExecutorSessionID: mapping.ExecutorSessionID,
+							SelectionMode: mapping.SelectionMode, RequestedModel: mapping.RequestedModel, EffectiveModel: mapping.EffectiveModel,
+							EffectiveEffort: mapping.EffectiveEffort, CatalogRevision: mapping.CatalogRevision,
+						})
 					}
 					return result
 				}
@@ -714,7 +809,7 @@ func (a *App) autoAgentArgs(executor string, existing []string, id, runtimeDir, 
 		if err := platform.AtomicWritePrivate(body, settingsPath); err != nil {
 			return nil, err
 		}
-		args = append([]string{"--append-system-prompt-file", instructionsPath, "--settings", settingsPath}, args...)
+		args = claudeSharedKnowledgeReadApprovalArgs(append([]string{"--append-system-prompt-file", instructionsPath, "--settings", settingsPath}, args...), cfg)
 	}
 	if handoff != "" {
 		args = append(args, handoff)

@@ -5,6 +5,7 @@ package opencodebridge
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"crypto/rand"
 	"crypto/subtle"
@@ -28,6 +29,10 @@ const (
 
 type ExecutorRequest struct {
 	Executor          string
+	Model             string
+	Effort            string
+	SelectionMode     string
+	CatalogRevision   string
 	Prompt            string
 	FrontendSessionID string
 	ExecutorSessionID string
@@ -37,6 +42,11 @@ type ExecutorResult struct {
 	ExecutorSessionID   string
 	CompressionUsed     bool
 	CompressionProvider string
+	SelectionMode       string
+	RequestedModel      string
+	Model               string
+	Effort              string
+	CatalogRevision     string
 }
 
 type ExecutorRunner interface {
@@ -56,6 +66,11 @@ type Mapping struct {
 	ExecutorSessionID   string `json:"executor_session_id"`
 	CompressionUsed     bool   `json:"compression_used"`
 	CompressionProvider string `json:"compression_provider,omitempty"`
+	SelectionMode       string `json:"selection_mode,omitempty"`
+	RequestedModel      string `json:"requested_model,omitempty"`
+	EffectiveModel      string `json:"effective_model,omitempty"`
+	EffectiveEffort     string `json:"effective_effort,omitempty"`
+	CatalogRevision     string `json:"catalog_revision,omitempty"`
 }
 
 type ServerView struct {
@@ -68,66 +83,77 @@ type ServerView struct {
 }
 
 type Status struct {
-	Version         string       `json:"version"`
-	SessionID       string       `json:"session_id"`
-	Frontend        string       `json:"frontend"`
-	Primary         string       `json:"primary"`
-	Mode            string       `json:"mode"`
-	SessionState    string       `json:"session_state"`
-	KnowledgeMode   string       `json:"knowledge_mode"`
-	ConfiguredCount int          `json:"configured_count"`
-	EnabledCount    int          `json:"enabled_count"`
-	ConnectedCount  int          `json:"connected_count"`
-	SelectedCount   int          `json:"selected_count"`
-	Servers         []ServerView `json:"servers"`
-	CodexAuth       string       `json:"codex_auth"`
-	ClaudeAuth      string       `json:"claude_auth"`
-	CodexQuota      string       `json:"codex_quota"`
-	ClaudeQuota     string       `json:"claude_quota"`
-	Compression     string       `json:"compression"`
-	Memory          string       `json:"memory"`
-	Context         string       `json:"context"`
-	Skills          string       `json:"skills"`
-	UpdatedAt       time.Time    `json:"updated_at"`
+	Version           string       `json:"version"`
+	SessionID         string       `json:"session_id"`
+	Frontend          string       `json:"frontend"`
+	Primary           string       `json:"primary"`
+	SelectionMode     string       `json:"selection_mode,omitempty"`
+	RequestedExecutor string       `json:"requested_executor,omitempty"`
+	RequestedModel    string       `json:"requested_model,omitempty"`
+	EffectiveModel    string       `json:"effective_model,omitempty"`
+	EffectiveEffort   string       `json:"effective_effort,omitempty"`
+	Mode              string       `json:"mode"`
+	SessionState      string       `json:"session_state"`
+	KnowledgeMode     string       `json:"knowledge_mode"`
+	ConfiguredCount   int          `json:"configured_count"`
+	EnabledCount      int          `json:"enabled_count"`
+	ConnectedCount    int          `json:"connected_count"`
+	SelectedCount     int          `json:"selected_count"`
+	Servers           []ServerView `json:"servers"`
+	CodexAuth         string       `json:"codex_auth"`
+	ClaudeAuth        string       `json:"claude_auth"`
+	CodexQuota        string       `json:"codex_quota"`
+	ClaudeQuota       string       `json:"claude_quota"`
+	Compression       string       `json:"compression"`
+	Memory            string       `json:"memory"`
+	Context           string       `json:"context"`
+	Skills            string       `json:"skills"`
+	UpdatedAt         time.Time    `json:"updated_at"`
 }
 
 type Options struct {
-	Token             string
-	PreferredExecutor string
-	Runner            ExecutorRunner
-	Select            SelectExecutor
-	Monitor           MonitorExecutor
-	FailoverHandoff   BuildFailoverHandoff
-	MaxFailovers      int
-	Status            func() Status
-	Mapping           PersistMapping
-	LookupMapping     LookupMapping
-	ClaimRequest      ClaimRequest
+	Token              string
+	PreferredExecutor  string
+	Runner             ExecutorRunner
+	Select             SelectExecutor
+	Monitor            MonitorExecutor
+	FailoverHandoff    BuildFailoverHandoff
+	MaxFailovers       int
+	Status             func() Status
+	Mapping            PersistMapping
+	LookupMapping      LookupMapping
+	ClaimRequest       ClaimRequest
+	Catalog            ModelCatalog
+	AuthorizeSelection func(context.Context, Selection) error
+	OnSelection        func(Selection)
 }
 
 type Bridge struct {
-	server         *http.Server
-	listener       net.Listener
-	url            string
-	token          string
-	runner         ExecutorRunner
-	selectFn       SelectExecutor
-	monitor        MonitorExecutor
-	handoff        BuildFailoverHandoff
-	maxFailovers   int
-	statusFn       func() Status
-	mapping        PersistMapping
-	lookup         LookupMapping
-	claim          ClaimRequest
-	mu             sync.Mutex
-	writer         sync.Mutex
-	sessions       map[string]map[string]Mapping
-	lastExecutor   map[string]string
-	active         map[string]activeExecution
-	completed      map[string]cachedCompletion
-	completedOrder []string
-	nextRun        uint64
-	closed         chan struct{}
+	server             *http.Server
+	listener           net.Listener
+	url                string
+	token              string
+	runner             ExecutorRunner
+	selectFn           SelectExecutor
+	monitor            MonitorExecutor
+	handoff            BuildFailoverHandoff
+	maxFailovers       int
+	statusFn           func() Status
+	mapping            PersistMapping
+	lookup             LookupMapping
+	claim              ClaimRequest
+	catalog            ModelCatalog
+	authorizeSelection func(context.Context, Selection) error
+	onSelection        func(Selection)
+	mu                 sync.Mutex
+	writer             sync.Mutex
+	sessions           map[string]map[string]Mapping
+	lastExecutor       map[string]string
+	active             map[string]activeExecution
+	completed          map[string]cachedCompletion
+	completedOrder     []string
+	nextRun            uint64
+	closed             chan struct{}
 }
 
 type activeExecution struct {
@@ -139,6 +165,7 @@ type cachedCompletion struct {
 	content    string
 	failed     bool
 	replayable bool
+	selection  string
 }
 
 func Start(options Options) (*Bridge, error) {
@@ -153,6 +180,9 @@ func Start(options Options) (*Bridge, error) {
 		}
 		token = hex.EncodeToString(raw[:])
 	}
+	if len(options.Catalog.entries) == 0 {
+		options.Catalog = DefaultCatalog()
+	}
 	listener, err := net.Listen("tcp4", "127.0.0.1:0")
 	if err != nil {
 		return nil, fmt.Errorf("listen for OpenCode bridge: %w", err)
@@ -160,7 +190,8 @@ func Start(options Options) (*Bridge, error) {
 	bridge := &Bridge{
 		listener: listener, url: "http://" + listener.Addr().String(), token: token,
 		runner: options.Runner, selectFn: options.Select, monitor: options.Monitor, handoff: options.FailoverHandoff, maxFailovers: options.MaxFailovers, statusFn: options.Status,
-		mapping: options.Mapping, lookup: options.LookupMapping, claim: options.ClaimRequest, sessions: map[string]map[string]Mapping{}, lastExecutor: map[string]string{}, active: map[string]activeExecution{}, completed: map[string]cachedCompletion{}, closed: make(chan struct{}),
+		mapping: options.Mapping, lookup: options.LookupMapping, claim: options.ClaimRequest, catalog: options.Catalog, authorizeSelection: options.AuthorizeSelection, onSelection: options.OnSelection,
+		sessions: map[string]map[string]Mapping{}, lastExecutor: map[string]string{}, active: map[string]activeExecution{}, completed: map[string]cachedCompletion{}, closed: make(chan struct{}),
 	}
 	if bridge.maxFailovers <= 0 || bridge.maxFailovers > 2 {
 		bridge.maxFailovers = 2
@@ -232,13 +263,20 @@ func (b *Bridge) status(w http.ResponseWriter, _ *http.Request) {
 }
 
 func (b *Bridge) models(w http.ResponseWriter, _ *http.Request) {
-	writeJSON(w, http.StatusOK, map[string]any{"object": "list", "data": []map[string]any{{"id": "auto", "object": "model", "owned_by": "ivoai"}}})
+	data := make([]map[string]any, 0, len(b.catalog.entries))
+	for _, model := range b.catalog.entries {
+		data = append(data, map[string]any{"id": model.ID, "object": "model", "owned_by": "ivoai"})
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"object": "list", "data": data})
 }
 
+func (b *Bridge) Catalog() ModelCatalog { return b.catalog }
+
 type chatRequest struct {
-	Model    string        `json:"model"`
-	Stream   bool          `json:"stream"`
-	Messages []chatMessage `json:"messages"`
+	Model           string        `json:"model"`
+	ReasoningEffort string        `json:"reasoning_effort"`
+	Stream          bool          `json:"stream"`
+	Messages        []chatMessage `json:"messages"`
 }
 
 type chatMessage struct {
@@ -253,10 +291,16 @@ func (b *Bridge) chat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var request chatRequest
-	if json.Unmarshal(body, &request) != nil || request.Model != "auto" {
+	if json.Unmarshal(body, &request) != nil {
 		writeOpenAIError(w, http.StatusBadRequest, "invalid IVOAI bridge request")
 		return
 	}
+	selection, ok := b.catalog.Resolve(request.Model, request.ReasoningEffort)
+	if !ok {
+		writeOpenAIError(w, http.StatusBadRequest, "unknown model or unsupported reasoning effort")
+		return
+	}
+	selectionKey := selection.CatalogRevision + ":" + selection.RequestedID + ":" + selection.Effort
 	prompt, err := lastUserText(request.Messages)
 	if err != nil {
 		writeOpenAIError(w, http.StatusBadRequest, err.Error())
@@ -279,23 +323,12 @@ func (b *Bridge) chat(w http.ResponseWriter, r *http.Request) {
 	previousCompletion, alreadyCompleted := b.completed[requestKey]
 	b.mu.Unlock()
 	if alreadyCompleted {
-		if previousCompletion.failed || !previousCompletion.replayable {
+		if previousCompletion.failed || !previousCompletion.replayable || previousCompletion.selection != selectionKey {
 			writeOpenAIError(w, http.StatusConflict, "duplicate OpenCode request was not re-executed")
 			return
 		}
 		writeCompletion(w, request.Model, request.Stream, previousCompletion.content)
 		return
-	}
-	if b.claim != nil {
-		claimed, claimErr := b.claim(frontendID, messageID)
-		if claimErr != nil {
-			writeOpenAIError(w, http.StatusInternalServerError, "IVOAI could not persist the request claim")
-			return
-		}
-		if !claimed {
-			writeOpenAIError(w, http.StatusConflict, "duplicate OpenCode request was not re-executed")
-			return
-		}
 	}
 	b.mu.Lock()
 	mappings := b.sessions[frontendID]
@@ -317,18 +350,44 @@ func (b *Bridge) chat(w http.ResponseWriter, r *http.Request) {
 		b.lastExecutor[frontendID] = previousExecutor
 		b.mu.Unlock()
 	}
-	executor, err := b.selectFn(r.Context(), previousExecutor)
-	if err != nil {
-		writeOpenAIError(w, http.StatusServiceUnavailable, "no eligible subscription executor")
-		return
+	executor := selection.Executor
+	if selection.Mode == "auto" {
+		executor, err = b.selectFn(r.Context(), previousExecutor)
+		if err != nil {
+			writeOpenAIError(w, http.StatusServiceUnavailable, "no eligible subscription executor")
+			return
+		}
 	}
 	if executor != "codex" && executor != "claude" {
 		writeOpenAIError(w, http.StatusServiceUnavailable, "invalid executor selection")
 		return
 	}
+	selection.Executor = executor
+	if selection.Mode == "explicit" && b.authorizeSelection != nil {
+		if err := b.authorizeSelection(r.Context(), selection); err != nil {
+			writeOpenAIErrorCode(w, http.StatusServiceUnavailable, "selected executor or model is not currently eligible", "executor_selection_unavailable")
+			return
+		}
+	}
+	if b.claim != nil {
+		claimed, claimErr := b.claim(frontendID, messageID)
+		if claimErr != nil {
+			writeOpenAIError(w, http.StatusInternalServerError, "IVOAI could not persist the request claim")
+			return
+		}
+		if !claimed {
+			writeOpenAIError(w, http.StatusConflict, "duplicate OpenCode request was not re-executed")
+			return
+		}
+	}
+	if b.onSelection != nil {
+		b.onSelection(selection)
+	}
 	resumeID := ""
 	if previous, ok := mappings[executor]; ok {
-		resumeID = previous.ExecutorSessionID
+		if previous.RequestedModel == selection.RequestedID || previous.RequestedModel == "" && selection.Mode == "auto" {
+			resumeID = previous.ExecutorSessionID
+		}
 	}
 	executionCtx, cancel := context.WithCancel(r.Context())
 	b.mu.Lock()
@@ -355,9 +414,9 @@ func (b *Bridge) chat(w http.ResponseWriter, r *http.Request) {
 		if text == "" {
 			return nil
 		}
+		emitted.Store(true)
 		chunks = append(chunks, text)
 		if stream {
-			emitted.Store(true)
 			return writeChunk(w, request.Model, text)
 		}
 		return nil
@@ -377,11 +436,16 @@ func (b *Bridge) chat(w http.ResponseWriter, r *http.Request) {
 		}
 		finished := make(chan executionResult, 1)
 		go func(currentExecutor, currentPrompt, currentResume string, attemptCtx context.Context) {
-			value, runErr := b.runner.Run(attemptCtx, ExecutorRequest{Executor: currentExecutor, Prompt: currentPrompt, FrontendSessionID: frontendID, ExecutorSessionID: currentResume}, emit)
+			value, runErr := b.runner.Run(attemptCtx, ExecutorRequest{
+				Executor: currentExecutor, Model: selection.Model, Effort: selection.Effort,
+				SelectionMode: selection.Mode, CatalogRevision: selection.CatalogRevision,
+				Prompt: currentPrompt, FrontendSessionID: frontendID, ExecutorSessionID: currentResume,
+			}, emit)
+			value.SelectionMode, value.RequestedModel, value.Model, value.Effort, value.CatalogRevision = selection.Mode, selection.RequestedID, selection.Model, selection.Effort, selection.CatalogRevision
 			finished <- executionResult{value: value, err: runErr}
 		}(executor, prompt, resumeID, executionCtx)
 		limit := make(chan string, 1)
-		if b.monitor != nil {
+		if b.monitor != nil && selection.Mode == "auto" {
 			go func(currentExecutor string, attemptCtx context.Context) {
 				if reason := strings.TrimSpace(b.monitor(attemptCtx, currentExecutor)); reason != "" {
 					limit <- reason
@@ -392,13 +456,14 @@ func (b *Bridge) chat(w http.ResponseWriter, r *http.Request) {
 		select {
 		case outcome = <-finished:
 			if outcome.err != nil {
-				b.storeCompletion(requestKey, cachedCompletion{failed: true})
+				failureClass := FailureClass(outcome.err)
+				b.storeCompletion(requestKey, cachedCompletion{failed: true, selection: selectionKey})
 				_ = b.persistMapping(frontendID, executor, outcome.value)
 				if stream {
-					_ = writeStreamError(w, "IVOAI executor failed; partial output was not accepted")
+					_ = writeStreamError(w, "IVOAI executor failed ("+failureClass+"); partial output was not accepted", failureClass)
 					return
 				}
-				writeOpenAIError(w, http.StatusBadGateway, "IVOAI executor failed")
+				writeOpenAIErrorCode(w, http.StatusBadGateway, "IVOAI executor failed", failureClass)
 				return
 			}
 			result = outcome.value
@@ -422,18 +487,18 @@ func (b *Bridge) chat(w http.ResponseWriter, r *http.Request) {
 			}
 			_ = b.persistMapping(frontendID, executor, outcome.value)
 			if emitted.Load() {
-				b.storeCompletion(requestKey, cachedCompletion{failed: true})
+				b.storeCompletion(requestKey, cachedCompletion{failed: true, selection: selectionKey})
 				if stream {
-					_ = writeStreamError(w, "IVOAI stopped after a quota change; partial output was not accepted")
+					_ = writeStreamError(w, "IVOAI stopped after a quota change; partial output was not accepted", "executor_quota_changed")
 					return
 				}
 				writeOpenAIError(w, http.StatusServiceUnavailable, "IVOAI stopped after a quota change")
 				return
 			}
 			if attempt >= b.maxFailovers {
-				b.storeCompletion(requestKey, cachedCompletion{failed: true})
+				b.storeCompletion(requestKey, cachedCompletion{failed: true, selection: selectionKey})
 				if stream {
-					_ = writeStreamError(w, "IVOAI quota failover limit reached")
+					_ = writeStreamError(w, "IVOAI quota failover limit reached", "executor_failover_limit")
 					return
 				}
 				writeOpenAIError(w, http.StatusServiceUnavailable, "IVOAI quota failover limit reached")
@@ -441,9 +506,9 @@ func (b *Bridge) chat(w http.ResponseWriter, r *http.Request) {
 			}
 			next, selectErr := b.selectFn(r.Context(), executor)
 			if selectErr != nil || next == executor || next != "codex" && next != "claude" {
-				b.storeCompletion(requestKey, cachedCompletion{failed: true})
+				b.storeCompletion(requestKey, cachedCompletion{failed: true, selection: selectionKey})
 				if stream {
-					_ = writeStreamError(w, "IVOAI has no alternate subscription executor")
+					_ = writeStreamError(w, "IVOAI has no alternate subscription executor", "executor_unavailable")
 					return
 				}
 				writeOpenAIError(w, http.StatusServiceUnavailable, "no alternate subscription executor")
@@ -460,6 +525,10 @@ func (b *Bridge) chat(w http.ResponseWriter, r *http.Request) {
 				_ = writeChunk(w, request.Model, "\n\n[IVOAI switched to the alternate subscription executor.]\n\n")
 			}
 			executor, resumeID = next, ""
+			selection.Executor = next
+			if b.onSelection != nil {
+				b.onSelection(selection)
+			}
 			executionCtx, cancel = context.WithCancel(r.Context())
 			b.mu.Lock()
 			b.active[frontendID] = activeExecution{id: runID, cancel: cancel}
@@ -469,22 +538,22 @@ func (b *Bridge) chat(w http.ResponseWriter, r *http.Request) {
 			cancel()
 			outcome := <-finished
 			_ = b.persistMapping(frontendID, executor, outcome.value)
-			b.storeCompletion(requestKey, cachedCompletion{failed: true})
+			b.storeCompletion(requestKey, cachedCompletion{failed: true, selection: selectionKey})
 			return
 		}
 		break
 	}
 	if err := b.persistMapping(frontendID, executor, result); err != nil {
-		b.storeCompletion(requestKey, cachedCompletion{failed: true})
+		b.storeCompletion(requestKey, cachedCompletion{failed: true, selection: selectionKey})
 		if stream {
-			_ = writeStreamError(w, "IVOAI could not persist the executor session mapping")
+			_ = writeStreamError(w, "IVOAI could not persist the executor session mapping", "session_mapping_failure")
 			return
 		}
 		writeOpenAIError(w, http.StatusInternalServerError, "IVOAI could not persist the executor session mapping")
 		return
 	}
 	content := strings.Join(chunks, "")
-	b.storeCompletion(requestKey, cachedCompletion{content: content, replayable: len(content) <= 1<<20})
+	b.storeCompletion(requestKey, cachedCompletion{content: content, replayable: len(content) <= 1<<20, selection: selectionKey})
 	if stream {
 		_ = writeFinish(w, request.Model)
 		_, _ = io.WriteString(w, "data: [DONE]\n\n")
@@ -501,7 +570,12 @@ func (b *Bridge) persistMapping(frontendID, executor string, result ExecutorResu
 	if !safeID(result.ExecutorSessionID) {
 		return nil
 	}
-	mapping := Mapping{FrontendSessionID: frontendID, Executor: executor, ExecutorSessionID: result.ExecutorSessionID, CompressionUsed: result.CompressionUsed, CompressionProvider: result.CompressionProvider}
+	mapping := Mapping{
+		FrontendSessionID: frontendID, Executor: executor, ExecutorSessionID: result.ExecutorSessionID,
+		CompressionUsed: result.CompressionUsed, CompressionProvider: result.CompressionProvider,
+		SelectionMode: result.SelectionMode, RequestedModel: result.RequestedModel, EffectiveModel: result.Model,
+		EffectiveEffort: result.Effort, CatalogRevision: result.CatalogRevision,
+	}
 	b.mu.Lock()
 	if b.sessions[frontendID] == nil {
 		b.sessions[frontendID] = map[string]Mapping{}
@@ -619,8 +693,8 @@ func writeFinish(w http.ResponseWriter, model string) error {
 	return writeSSE(w, map[string]any{"id": "ivoai", "object": "chat.completion.chunk", "created": time.Now().Unix(), "model": model, "choices": []map[string]any{{"index": 0, "delta": map[string]any{}, "finish_reason": "stop"}}})
 }
 
-func writeStreamError(w http.ResponseWriter, message string) error {
-	return writeSSE(w, map[string]any{"error": map[string]string{"message": message, "type": "ivoai_bridge_error"}})
+func writeStreamError(w http.ResponseWriter, message, code string) error {
+	return writeSSE(w, map[string]any{"error": map[string]string{"message": message, "type": "ivoai_bridge_error", "code": code}})
 }
 
 func writeSSE(w http.ResponseWriter, value any) error {
@@ -652,20 +726,36 @@ func writeOpenAIError(w http.ResponseWriter, status int, message string) {
 	writeJSON(w, status, map[string]any{"error": map[string]string{"message": message, "type": "ivoai_bridge_error"}})
 }
 
+func writeOpenAIErrorCode(w http.ResponseWriter, status int, message, code string) {
+	writeJSON(w, status, map[string]any{"error": map[string]string{"message": message, "type": "ivoai_bridge_error", "code": code}})
+}
+
 // ScanJSONLines provides the bounded scanner used by official-client adapters.
 func ScanJSONLines(reader io.Reader, handle func(map[string]any) error) error {
 	counted := &countingReader{reader: reader}
 	scanner := bufio.NewScanner(counted)
 	scanner.Buffer(make([]byte, 64<<10), 1<<20)
+	seenProtocolEvent := false
 	for scanner.Scan() {
 		if counted.total > 8<<20 {
 			_, _ = io.Copy(io.Discard, reader)
 			return errors.New("executor output exceeds limit")
 		}
-		var value map[string]any
-		if json.Unmarshal(scanner.Bytes(), &value) != nil {
+		line := bytes.TrimSpace(scanner.Bytes())
+		if len(line) == 0 {
 			continue
 		}
+		var value map[string]any
+		if err := json.Unmarshal(line, &value); err != nil {
+			// Official clients may emit bounded human startup noise before the
+			// JSON event stream. Once the stream starts, or when a line claims
+			// to be a JSON object, corruption is never silently discarded.
+			if seenProtocolEvent || line[0] == '{' {
+				return errors.New("malformed executor JSON event")
+			}
+			continue
+		}
+		seenProtocolEvent = true
 		if err := handle(value); err != nil {
 			return err
 		}

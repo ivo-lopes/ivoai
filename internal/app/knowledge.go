@@ -81,6 +81,26 @@ var codexSharedKnowledgeReadApprovals = map[string][]string{
 	"ivoai-context": {"context_search", "context_get_document", "context_recent", "context_health"},
 }
 
+func claudeSharedKnowledgeReadApprovalArgs(existing []string, cfg config.Config) []string {
+	var tools []string
+	for _, serverName := range []string{"ivoai-memory", "ivoai-context"} {
+		server, registered := cfg.MCP.Servers[serverName]
+		if !registered || !server.Enabled {
+			continue
+		}
+		for _, tool := range codexSharedKnowledgeReadApprovals[serverName] {
+			tools = append(tools, "mcp__"+serverName+"__"+tool)
+		}
+	}
+	if len(tools) == 0 {
+		return append([]string(nil), existing...)
+	}
+	// Claude Code owns authentication and permission enforcement. The managed
+	// bridge grants only IVOAI's bounded read tools so a non-interactive AUTO
+	// turn cannot stall on an approval prompt. Write tools remain untouched.
+	return append([]string{"--allowedTools", strings.Join(tools, ",")}, existing...)
+}
+
 func sharedKnowledgeAgentArgs(executor string, existing []string, cfg config.Config) []string {
 	return managedAgentArgs(executor, existing, cfg, "")
 }
@@ -94,7 +114,7 @@ func managedAgentArgs(executor string, existing []string, cfg config.Config, ski
 	if executor == "opencode" {
 		return append([]string(nil), existing...)
 	}
-	return append([]string{"--append-system-prompt", instructions}, existing...)
+	return claudeSharedKnowledgeReadApprovalArgs(append([]string{"--append-system-prompt", instructions}, existing...), cfg)
 }
 
 func managedInstructions(skillInstructions string) string {

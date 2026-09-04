@@ -296,9 +296,12 @@ func validate(value Session) error {
 		if prefix := mapping.Executor + ":"; strings.HasPrefix(mappingID, prefix) {
 			mappingID = strings.TrimPrefix(mappingID, prefix)
 		}
-		if !safeText(mappingID, 128) || !safeText(mapping.ExecutorSessionID, 128) || mapping.Executor != "codex" && mapping.Executor != "claude" || mapping.UpdatedAt.IsZero() {
+		if !safeText(mappingID, 128) || !safeText(mapping.ExecutorSessionID, 128) || mapping.Executor != "codex" && mapping.Executor != "claude" || mapping.UpdatedAt.IsZero() || !validSelectionMetadata(mapping.SelectionMode, mapping.RequestedModel, mapping.EffectiveModel, mapping.EffectiveEffort, mapping.CatalogRevision) {
 			return errors.New("invalid executor session mapping")
 		}
+	}
+	if !validSelectionMetadata(value.SelectionMode, value.RequestedModel, value.EffectiveModel, value.EffectiveEffort, value.ModelCatalogRevision) || value.RequestedExecutor != "" && !oneOf(value.RequestedExecutor, "codex", "claude") || value.EffectiveExecutor != "" && !oneOf(value.EffectiveExecutor, "codex", "claude") || value.RequestedEffort != "" && !safeText(value.RequestedEffort, 16) {
+		return errors.New("invalid model selection metadata")
 	}
 	if value.WorkingDirectory == "" || !filepath.IsAbs(value.WorkingDirectory) || strings.ContainsAny(value.WorkingDirectory, "\x00\x1b\r\n") {
 		return errors.New("invalid session working directory")
@@ -414,6 +417,16 @@ func validate(value Session) error {
 		return errors.New("active worker limit exceeded")
 	}
 	return nil
+}
+
+func validSelectionMetadata(mode, requested, effective, effort, revision string) bool {
+	if mode == "" {
+		return requested == "" && effective == "" && effort == "" && revision == ""
+	}
+	if !oneOf(mode, "auto", "explicit") || !safeText(requested, 256) || effective != "" && !safeText(effective, 128) || effort != "" && !safeText(effort, 16) || revision != "" && !safeText(revision, 32) {
+		return false
+	}
+	return true
 }
 
 func validState(value State) bool {

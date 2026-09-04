@@ -55,8 +55,12 @@ func (d Discoverer) loadCache(versions map[string]string) (Registry, bool) {
 	if d.CachePath == "" {
 		return Registry{}, false
 	}
-	body, err := os.ReadFile(d.CachePath)
-	if err != nil || len(body) > discoveryLimit {
+	info, err := os.Lstat(d.CachePath)
+	if err != nil || !info.Mode().IsRegular() || info.Mode().Perm()&0o077 != 0 {
+		return Registry{}, false
+	}
+	body, err := platform.ReadRegularFile(d.CachePath, discoveryLimit)
+	if err != nil {
 		return Registry{}, false
 	}
 	var cached capabilityCache
@@ -160,7 +164,7 @@ func codexModels(parent context.Context, binary string) ([]ModelCapability, erro
 		}
 		models := make([]ModelCapability, 0, len(response.Result.Data))
 		for _, value := range response.Result.Data {
-			if value.Model == "" || len(value.Model) > 128 || strings.ContainsAny(value.Model, "\r\n\x00\x1b") {
+			if !safeModelName(value.Model) {
 				continue
 			}
 			efforts := make([]string, 0, len(value.SupportedReasoningEfforts))
@@ -177,6 +181,18 @@ func codexModels(parent context.Context, binary string) ([]ModelCapability, erro
 		return models, nil
 	}
 	return nil, errors.New("Codex model catalog unavailable")
+}
+
+func safeModelName(value string) bool {
+	if value == "" || len(value) > 128 {
+		return false
+	}
+	for _, char := range value {
+		if char < 0x20 || char == 0x7f || char >= 0x80 && char <= 0x9f || char >= 0x202a && char <= 0x202e || char >= 0x2066 && char <= 0x2069 {
+			return false
+		}
+	}
+	return true
 }
 
 func catalogTier(description string) Tier {

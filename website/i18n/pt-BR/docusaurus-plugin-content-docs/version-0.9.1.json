@@ -1,0 +1,42 @@
+{
+  "version.label": {
+    "message": "0.9.1",
+    "description": "The label for version current"
+  },
+  "sidebar.product.category.Introduction": {
+    "message": "Introdução",
+    "description": "The label for category 'Introduction' in sidebar 'product'"
+  },
+  "sidebar.product.category.Install and setup": {
+    "message": "Instalação e configuração",
+    "description": "The label for category 'Install and setup' in sidebar 'product'"
+  },
+  "sidebar.product.category.Usage": {
+    "message": "Uso",
+    "description": "The label for category 'Usage' in sidebar 'product'"
+  },
+  "sidebar.product.category.Executors and AUTO": {
+    "message": "Executores e AUTO",
+    "description": "The label for category 'Executors and AUTO' in sidebar 'product'"
+  },
+  "sidebar.product.category.Knowledge": {
+    "message": "Conhecimento",
+    "description": "The label for category 'Knowledge' in sidebar 'product'"
+  },
+  "sidebar.product.category.Control and fidelity": {
+    "message": "Controle e fidelidade",
+    "description": "The label for category 'Control and fidelity' in sidebar 'product'"
+  },
+  "sidebar.product.category.Operations": {
+    "message": "Operações",
+    "description": "The label for category 'Operations' in sidebar 'product'"
+  },
+  "sidebar.product.category.Security and support": {
+    "message": "Segurança e suporte",
+    "description": "The label for category 'Security and support' in sidebar 'product'"
+  },
+  "sidebar.product.category.Architecture and project": {
+    "message": "Arquitetura e projeto",
+    "description": "The label for category 'Architecture and project' in sidebar 'product'"
+  }
+}

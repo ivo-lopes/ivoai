@@ -30,6 +30,7 @@ consult the linked project for the complete text.
 | docusaurus-search-local | 0.55.3 | MIT | Build-time local/offline search index and browser search UI | <https://github.com/easyops-cn/docusaurus-search-local> |
 | Mermaid layout ELK | 0.1.9 | MIT | Build-time diagram layout support for Docusaurus | <https://github.com/mermaid-js/mermaid> |
 | React / React DOM | 19.2.4 | MIT | Documentation portal browser runtime bundled into the static site | <https://react.dev/> |
+| Bpmf Huninn (Fontsource package) | 5.3.0 | SIL OFL-1.1 | Self-hosted regular Latin webfont used only for the IVOAI visual wordmark | <https://fonts.google.com/specimen/Bpmf+Huninn> |
 
 Claude Code is not represented as open-source software. ivoai downloads the official external binary and does not redistribute or modify its credential material. Use is governed by [Anthropic's legal and compliance guidance](https://code.claude.com/docs/en/legal-and-compliance), including Consumer Terms for Free/Pro/Max users and Commercial Terms for Team/Enterprise/API users.
 

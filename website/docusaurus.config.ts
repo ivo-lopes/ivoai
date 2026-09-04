@@ -11,9 +11,17 @@ const config: Config = {
   projectName: 'ivoai',
   trailingSlash: false,
   onBrokenLinks: 'throw',
+  onBrokenAnchors: 'throw',
   markdown: {mermaid: true},
   themes: ['@docusaurus/theme-mermaid'],
-  i18n: {defaultLocale: 'en', locales: ['en']},
+  i18n: {
+    defaultLocale: 'en',
+    locales: ['en', 'pt-BR'],
+    localeConfigs: {
+      en: {label: 'English', htmlLang: 'en-US'},
+      'pt-BR': {label: 'Português (Brasil)', htmlLang: 'pt-BR'},
+    },
+  },
   presets: [
     [
       'classic',
@@ -24,6 +32,7 @@ const config: Config = {
           sidebarPath: './sidebars.ts',
           showLastUpdateTime: false,
           showLastUpdateAuthor: false,
+          editLocalizedFiles: true,
           editUrl: 'https://github.com/ivo-lopes/ivoai/edit/main/',
         },
         blog: false,
@@ -48,13 +57,13 @@ const config: Config = {
   ],
   themeConfig: {
     navbar: {
-      title: 'IVOAI',
       items: [
         {to: '/docs/quickstart', label: 'Quickstart', position: 'left'},
         {to: '/docs/cli-reference', label: 'CLI', position: 'left'},
         {to: '/docs/server', label: 'Server', position: 'left'},
         {to: '/docs/mcp-web', label: 'MCP Web', position: 'left'},
         {type: 'docsVersionDropdown', position: 'right'},
+        {type: 'localeDropdown', position: 'right', dropdownItemsAfter: []},
         {href: 'https://github.com/ivo-lopes/ivoai', label: 'GitHub', position: 'right'},
       ],
     },

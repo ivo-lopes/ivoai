@@ -27,7 +27,7 @@ func TestEmbeddedProductionSiteAndHealth(t *testing.T) {
 	t.Cleanup(func() { _ = server.Shutdown(context.Background()) })
 	base := "http://127.0.0.1:" + strconv.Itoa(listener.Addr().(*net.TCPAddr).Port)
 	client := &http.Client{Transport: &http.Transport{Proxy: nil}}
-	for _, route := range []string{"/", "/docs/quickstart", "/healthz"} {
+	for _, route := range []string{"/", "/docs/quickstart", "/pt-BR/", "/pt-BR/docs/quickstart", "/healthz"} {
 		response, err := client.Get(base + route)
 		if err != nil {
 			t.Fatal(err)

@@ -24,3 +24,12 @@ func TestClaudeEffortDiscovery(t *testing.T) {
 		t.Fatalf("unexpected efforts: %#v", got)
 	}
 }
+
+func TestModelNamesRejectTerminalAndBidirectionalControls(t *testing.T) {
+	for _, value := range []string{"safe-model", "unsafe\tmodel", "unsafe\u202emodel", "unsafe\u0085model"} {
+		want := value == "safe-model"
+		if got := safeModelName(value); got != want {
+			t.Fatalf("safeModelName(%q)=%t want=%t", value, got, want)
+		}
+	}
+}

@@ -28,9 +28,12 @@ elif [[ "$mode" == "write" ]]; then
 fi
 
 corepack pnpm --dir "$repo_root/website" install --frozen-lockfile
+corepack pnpm --dir "$repo_root/website" check:i18n
 corepack pnpm --dir "$repo_root/website" build
 test -s "$repo_root/website/build/index.html"
+test -s "$repo_root/website/build/pt-BR/index.html"
 test -s "$repo_root/website/build/search-index.json"
+test -s "$repo_root/website/build/pt-BR/search-index.json"
 [[ "$(cat "$repo_root/website/build/build-input.sha256")" == "$input_hash" ]]
 
 if [[ "$mode" == "--check" ]]; then

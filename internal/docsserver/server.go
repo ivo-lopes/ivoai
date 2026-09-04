@@ -41,7 +41,10 @@ func Handler() (http.Handler, error) {
 		}
 		clean := path.Clean("/" + r.URL.Path)
 		name := strings.TrimPrefix(clean, "/")
-		if name == "" || strings.HasSuffix(clean, "/") {
+		// path.Clean intentionally removes a trailing slash. Preserve the
+		// request-path signal so localized directory roots such as /pt-BR/
+		// resolve to their generated index document.
+		if name == "" || strings.HasSuffix(r.URL.Path, "/") {
 			name = path.Join(name, "index.html")
 		}
 		if info, statErr := fs.Stat(site, name); statErr == nil && !info.IsDir() {

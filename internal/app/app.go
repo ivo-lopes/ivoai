@@ -48,6 +48,7 @@ type App struct {
 	// OpenCodeBridgeRunner and StartOpenCodeManaged are injected only by
 	// hermetic tests. Production uses the official managed adapters.
 	OpenCodeBridgeRunner opencodebridge.ExecutorRunner
+	OpenCodeModelCatalog *opencodebridge.ModelCatalog
 	StartOpenCodeManaged func(context.Context, opencodebridge.ManagedOptions) (managedOpenCodeFrontend, error)
 	// ExecutablePath is accepted only in IVOAI_TEST_MODE so hermetic update
 	// matrix tests never replace the running go test binary.

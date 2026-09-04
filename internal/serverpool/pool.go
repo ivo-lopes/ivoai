@@ -88,7 +88,7 @@ func validateBaseURL(raw string) (*url.URL, error) {
 
 func sameOrigin(base *url.URL, raw string) bool {
 	value, err := url.Parse(raw)
-	return err == nil && value.IsAbs() && value.Scheme == base.Scheme && strings.EqualFold(value.Host, base.Host) && value.User == nil && value.Fragment == ""
+	return err == nil && value.IsAbs() && value.Scheme == base.Scheme && strings.EqualFold(value.Host, base.Host) && value.User == nil && value.RawQuery == "" && value.Fragment == ""
 }
 
 func NewID() (string, error) {
@@ -163,6 +163,9 @@ func (p Pool) Resolve(selectors []string) (Selection, error) {
 		}
 		if len(enabled) == 0 {
 			return Selection{}, nil
+		}
+		if len(enabled) > MaxSelectedSources {
+			return Selection{}, errors.New("too many enabled knowledge sources")
 		}
 		profiles = enabled
 	} else {

@@ -17,7 +17,12 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/config"
 	"github.com/ivo-lopes/ivoai/internal/secrets"
 	"github.com/ivo-lopes/ivoai/internal/serverpool"
+	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
+
+type roundTripFunc func(*http.Request) (*http.Response, error)
+
+func (f roundTripFunc) RoundTrip(request *http.Request) (*http.Response, error) { return f(request) }
 
 type fakeSource struct {
 	server     *httptest.Server
@@ -32,6 +37,7 @@ type fakeSource struct {
 	mu         sync.Mutex
 	bodies     [][]byte
 	response   []byte
+	sessionID  string
 }
 
 func newFakeSource(t *testing.T, purpose, token string) *fakeSource {
@@ -75,6 +81,26 @@ func newFakeSource(t *testing.T, purpose, token string) *fakeSource {
 		if value.response != nil {
 			w.Header().Set("Content-Type", "application/json")
 			_, _ = w.Write(value.response)
+			return
+		}
+		var rpc struct {
+			ID     json.RawMessage `json:"id"`
+			Method string          `json:"method"`
+		}
+		_ = json.Unmarshal(body, &rpc)
+		switch rpc.Method {
+		case "initialize":
+			if value.sessionID != "" {
+				w.Header().Set(mcpSessionHeader, value.sessionID)
+			}
+			writeJSON(w, map[string]any{"jsonrpc": "2.0", "id": rpc.ID, "result": map[string]any{"protocolVersion": "2025-06-18", "capabilities": map[string]any{"tools": map[string]any{}}, "serverInfo": map[string]any{"name": "fixture", "version": "1"}}})
+			return
+		case "tools/list":
+			name := "context_search"
+			if strings.Contains(request.URL.Path, "memory") {
+				name = "memory_read_page"
+			}
+			writeJSON(w, map[string]any{"jsonrpc": "2.0", "id": rpc.ID, "result": map[string]any{"tools": []any{map[string]any{"name": name, "inputSchema": map[string]any{"type": "object"}}}}})
 			return
 		}
 		writeJSON(w, map[string]any{"jsonrpc": "2.0", "id": 1, "result": map[string]any{"content": []any{map[string]any{"type": "text", "text": purpose + ":projects/foo"}}}})
@@ -154,6 +180,22 @@ func callRouterWithHeaders(t *testing.T, router *Router, path, body string, head
 	defer response.Body.Close()
 	payload, _ := io.ReadAll(response.Body)
 	return payload, response.StatusCode, response.Header.Clone()
+}
+
+func federatedText(t *testing.T, payload []byte) []byte {
+	t.Helper()
+	var envelope struct {
+		Result struct {
+			Content []struct {
+				Type string `json:"type"`
+				Text string `json:"text"`
+			} `json:"content"`
+		} `json:"result"`
+	}
+	if err := json.Unmarshal(payload, &envelope); err != nil || len(envelope.Result.Content) != 1 || envelope.Result.Content[0].Type != "text" {
+		t.Fatalf("invalid federated CallToolResult: err=%v payload=%s", err, payload)
+	}
+	return []byte(envelope.Result.Content[0].Text)
 }
 
 func TestRouterForwardsStreamableHTTPNegotiationHeaders(t *testing.T) {
@@ -312,17 +354,18 @@ func TestExplicitFederationPreservesSourceAndCredentialIsolation(t *testing.T) {
 	}
 	router := startTestRouter(t, profiles, []string{"voicecorp", "mindsite"}, map[string]*fakeSource{"voicecorp": voice, "mindsite": mind})
 	payload, status := callRouter(t, router, "/mcp/context", `{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"context_search"}}`)
-	if status != http.StatusOK || !bytes.Contains(payload, []byte(`"source_alias":"voicecorp"`)) || !bytes.Contains(payload, []byte(`"source_alias":"mindsite"`)) {
+	federated := federatedText(t, payload)
+	if status != http.StatusOK || !bytes.Contains(federated, []byte(`"source_alias":"voicecorp"`)) || !bytes.Contains(federated, []byte(`"source_alias":"mindsite"`)) {
 		t.Fatalf("status=%d payload=%s", status, payload)
 	}
 	if voice.wrongToken.Load() != 0 || mind.wrongToken.Load() != 0 {
 		t.Fatalf("credential crossover voice=%d mind=%d", voice.wrongToken.Load(), mind.wrongToken.Load())
 	}
-	if bytes.Count(payload, []byte("projects/foo")) != 2 {
-		t.Fatalf("same path from distinct sources was lost: %s", payload)
+	if bytes.Count(federated, []byte("projects/foo")) != 2 {
+		t.Fatalf("same path from distinct sources was lost: %s", federated)
 	}
-	if bytes.Index(payload, []byte(`"source_alias":"mindsite"`)) > bytes.Index(payload, []byte(`"source_alias":"voicecorp"`)) {
-		t.Fatalf("federated merge order is not deterministic: %s", payload)
+	if bytes.Index(federated, []byte(`"source_alias":"mindsite"`)) > bytes.Index(federated, []byte(`"source_alias":"voicecorp"`)) {
+		t.Fatalf("federated merge order is not deterministic: %s", federated)
 	}
 }
 
@@ -338,19 +381,32 @@ func TestImplicitSelectionFederatesEveryEnabledSourceAndDegradesSafely(t *testin
 	}
 	router := startTestRouter(t, profiles, nil, map[string]*fakeSource{"voicecorp": voice, "mindsite": mind, "research": research})
 	payload, status := callRouter(t, router, "/mcp/context", `{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"context_search"}}`)
-	if status != http.StatusOK || !bytes.Contains(payload, []byte(`"partial":true`)) {
+	federated := federatedText(t, payload)
+	if status != http.StatusOK || !bytes.Contains(federated, []byte(`"partial":true`)) {
 		t.Fatalf("implicit federation did not preserve healthy sources: status=%d payload=%s", status, payload)
 	}
 	for _, alias := range []string{"mindsite", "research", "voicecorp"} {
-		if !bytes.Contains(payload, []byte(`"source_alias":"`+alias+`"`)) {
+		if !bytes.Contains(federated, []byte(`"source_alias":"`+alias+`"`)) {
 			t.Fatalf("source provenance missing for %s: %s", alias, payload)
 		}
 	}
-	if !bytes.Contains(payload, []byte("voicecorp:projects/foo")) || !bytes.Contains(payload, []byte("research:projects/foo")) {
+	if !bytes.Contains(federated, []byte("voicecorp:projects/foo")) || !bytes.Contains(federated, []byte("research:projects/foo")) {
 		t.Fatalf("healthy implicit sources were lost: %s", payload)
 	}
 	if voice.wrongToken.Load() != 0 || mind.wrongToken.Load() != 0 || research.wrongToken.Load() != 0 {
 		t.Fatalf("credential crossover: voice=%d mind=%d research=%d", voice.wrongToken.Load(), mind.wrongToken.Load(), research.wrongToken.Load())
+	}
+}
+
+func TestFederatedToolDiscoveryDegradesToHealthySource(t *testing.T) {
+	a := newFakeSource(t, "a", "ta")
+	b := newFakeSource(t, "b", "tb")
+	a.down.Store(true)
+	profiles := map[string]config.ServerProfile{"a": profile("a", "a", "", 0, a), "b": profile("b", "b", "", 0, b)}
+	router := startTestRouter(t, profiles, nil, map[string]*fakeSource{"a": a, "b": b})
+	payload, status := callRouter(t, router, "/mcp/context", `{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}`)
+	if status != http.StatusOK || !bytes.Contains(payload, []byte("context_search")) || a.requests.Load() != 1 || b.requests.Load() != 1 {
+		t.Fatalf("tool discovery did not degrade safely: status=%d requests=%d/%d payload=%s", status, a.requests.Load(), b.requests.Load(), payload)
 	}
 }
 
@@ -533,6 +589,123 @@ func TestFederatedResponseIsMachineReadable(t *testing.T) {
 	}
 }
 
+func TestFederatedResponseIsAConformantMCPToolResult(t *testing.T) {
+	a := newFakeSource(t, "a", "ta")
+	b := newFakeSource(t, "b", "tb")
+	profiles := map[string]config.ServerProfile{"a": profile("a", "a", "", 0, a), "b": profile("b", "b", "", 0, b)}
+	router := startTestRouter(t, profiles, []string{"a", "b"}, map[string]*fakeSource{"a": a, "b": b})
+	authClient := &http.Client{Transport: roundTripFunc(func(request *http.Request) (*http.Response, error) {
+		clone := request.Clone(request.Context())
+		clone.Header = request.Header.Clone()
+		clone.Header.Set("Authorization", "Bearer "+router.Token())
+		return http.DefaultTransport.RoundTrip(clone)
+	})}
+	client := mcp.NewClient(&mcp.Implementation{Name: "federation-conformance", Version: "1"}, nil)
+	session, err := client.Connect(context.Background(), &mcp.StreamableClientTransport{Endpoint: router.BaseURL() + "/mcp/context", HTTPClient: authClient, DisableStandaloneSSE: true}, nil)
+	if err != nil {
+		t.Fatalf("initialize through federated router: %v", err)
+	}
+	defer session.Close()
+	result, err := session.CallTool(context.Background(), &mcp.CallToolParams{Name: "context_search", Arguments: map[string]any{"query": "fixture"}})
+	if err != nil {
+		t.Fatalf("federated tools/call is not a valid MCP CallToolResult: %v", err)
+	}
+	if len(result.Content) != 1 || result.StructuredContent != nil {
+		t.Fatalf("federated result must use schema-compatible text content: %#v", result)
+	}
+	text, ok := result.Content[0].(*mcp.TextContent)
+	if !ok || !strings.Contains(text.Text, `"source_alias":"a"`) || !strings.Contains(text.Text, `"source_alias":"b"`) {
+		t.Fatalf("federated result lost source provenance: %#v", result.Content)
+	}
+}
+
+func TestFederatedInitializeReachesEveryStatelessSource(t *testing.T) {
+	a := newFakeSource(t, "a", "ta")
+	b := newFakeSource(t, "b", "tb")
+	profiles := map[string]config.ServerProfile{"a": profile("a", "a", "", 0, a), "b": profile("b", "b", "", 0, b)}
+	router := startTestRouter(t, profiles, []string{"a", "b"}, map[string]*fakeSource{"a": a, "b": b})
+	payload, status, headers := callRouterWithHeaders(t, router, "/mcp/context", `{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"fixture","version":"1"}}}`, http.Header{"Accept": {mcpAccept}})
+	if status != http.StatusOK || !bytes.Contains(payload, []byte(`"protocolVersion":"2025-06-18"`)) || headers.Get(mcpSessionHeader) != "" || a.requests.Load() != 1 || b.requests.Load() != 1 {
+		t.Fatalf("federated initialize drifted: status=%d headers=%v requests=%d/%d payload=%s", status, headers, a.requests.Load(), b.requests.Load(), payload)
+	}
+}
+
+func TestFederationRejectsStatefulUpstreamSessionsWithoutCrossover(t *testing.T) {
+	a := newFakeSource(t, "a", "ta")
+	b := newFakeSource(t, "b", "tb")
+	a.sessionID = "session-a"
+	b.sessionID = "session-b"
+	profiles := map[string]config.ServerProfile{"a": profile("a", "a", "", 0, a), "b": profile("b", "b", "", 0, b)}
+	router := startTestRouter(t, profiles, []string{"a", "b"}, map[string]*fakeSource{"a": a, "b": b})
+	payload, status, _ := callRouterWithHeaders(t, router, "/mcp/memory", `{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"fixture","version":"1"}}}`, http.Header{"Accept": {mcpAccept}})
+	if status != http.StatusOK || !bytes.Contains(payload, []byte("stateful upstream MCP sessions are not supported for federation")) || a.requests.Load() != 1 || b.requests.Load() != 1 {
+		t.Fatalf("stateful federation was not fail-closed: status=%d requests=%d/%d payload=%s", status, a.requests.Load(), b.requests.Load(), payload)
+	}
+	beforeA, beforeB := a.requests.Load(), b.requests.Load()
+	payload, _, _ = callRouterWithHeaders(t, router, "/mcp/memory", `{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}`, http.Header{"Accept": {mcpAccept}, mcpSessionHeader: {"session-a"}})
+	if !bytes.Contains(payload, []byte("stateful MCP sessions are not supported across federated sources")) || a.requests.Load() != beforeA || b.requests.Load() != beforeB {
+		t.Fatalf("client session identifier crossed sources: requests=%d/%d payload=%s", a.requests.Load(), b.requests.Load(), payload)
+	}
+}
+
+func TestFederatedResponseBudgetIsGlobal(t *testing.T) {
+	a := newFakeSource(t, "a", "ta")
+	b := newFakeSource(t, "b", "tb")
+	a.response = append([]byte(`{"jsonrpc":"2.0","id":1,"result":{"content":[{"type":"text","text":"`), bytes.Repeat([]byte("x"), maxResponseBytes/2+1)...)
+	a.response = append(a.response, []byte(`"}]}}`)...)
+	profiles := map[string]config.ServerProfile{"a": profile("a", "a", "", 0, a), "b": profile("b", "b", "", 0, b)}
+	router := startTestRouter(t, profiles, []string{"a", "b"}, map[string]*fakeSource{"a": a, "b": b})
+	payload, status := callRouter(t, router, "/mcp/context", `{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"context_search"}}`)
+	text := federatedText(t, payload)
+	if status != http.StatusOK || len(payload) > maxResponseBytes || !bytes.Contains(text, []byte("upstream response exceeds limit")) {
+		t.Fatalf("federated result budget failed: status=%d bytes=%d text=%s", status, len(payload), text)
+	}
+}
+
+func TestVoicehubPromptMemoryAndContextRemainConformantAcrossFederation(t *testing.T) {
+	const prompt = "Consulte o contexto e memória e comente um pouco sobre o projeto Voicehub."
+	a := newFakeSource(t, "company-a", "token-a")
+	b := newFakeSource(t, "company-b", "token-b")
+	profiles := map[string]config.ServerProfile{"company-a": profile("company-a", "company-a", "", 0, a), "company-b": profile("company-b", "company-b", "", 0, b)}
+	router := startTestRouter(t, profiles, []string{"company-a", "company-b"}, map[string]*fakeSource{"company-a": a, "company-b": b})
+	authClient := &http.Client{Transport: roundTripFunc(func(request *http.Request) (*http.Response, error) {
+		clone := request.Clone(request.Context())
+		clone.Header = request.Header.Clone()
+		clone.Header.Set("Authorization", "Bearer "+router.Token())
+		return http.DefaultTransport.RoundTrip(clone)
+	})}
+
+	for _, test := range []struct {
+		path, tool, argument string
+	}{
+		{path: "/mcp/memory", tool: "memory_read_page", argument: "Voicehub"},
+		{path: "/mcp/context", tool: "context_search", argument: prompt},
+	} {
+		client := mcp.NewClient(&mcp.Implementation{Name: "voicehub-regression", Version: "1"}, nil)
+		session, err := client.Connect(context.Background(), &mcp.StreamableClientTransport{Endpoint: router.BaseURL() + test.path, HTTPClient: authClient, DisableStandaloneSSE: true}, nil)
+		if err != nil {
+			t.Fatalf("%s initialize failed: %v", test.tool, err)
+		}
+		listed, err := session.ListTools(context.Background(), nil)
+		if err != nil || len(listed.Tools) != 1 || listed.Tools[0].Name != test.tool {
+			_ = session.Close()
+			t.Fatalf("%s discovery failed: result=%#v err=%v", test.tool, listed, err)
+		}
+		result, err := session.CallTool(context.Background(), &mcp.CallToolParams{Name: test.tool, Arguments: map[string]any{"query": test.argument}})
+		_ = session.Close()
+		if err != nil || len(result.Content) != 1 {
+			t.Fatalf("%s returned an incompatible CallToolResult: result=%#v err=%v", test.tool, result, err)
+		}
+		text, ok := result.Content[0].(*mcp.TextContent)
+		if !ok || !strings.Contains(text.Text, `"source_alias":"company-a"`) || !strings.Contains(text.Text, `"source_alias":"company-b"`) {
+			t.Fatalf("%s lost federated provenance: %#v", test.tool, result.Content)
+		}
+	}
+	if a.wrongToken.Load() != 0 || b.wrongToken.Load() != 0 {
+		t.Fatal("credential crossover in the Voicehub Memory/Context regression")
+	}
+}
+
 func TestFederationMakesPartialFailuresVisible(t *testing.T) {
 	for _, test := range []struct {
 		name      string
@@ -553,7 +726,8 @@ func TestFederationMakesPartialFailuresVisible(t *testing.T) {
 			events := []Event{}
 			router := startTestRouterWithOptions(t, profiles, []string{"voicecorp", "mindsite"}, sources, test.timeout, func(event Event) { events = append(events, event) })
 			payload, status := callRouter(t, router, "/mcp/context", `{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"context_search"}}`)
-			if status != http.StatusOK || !bytes.Contains(payload, []byte(`"partial":true`)) || !bytes.Contains(payload, []byte(`"source_alias":"mindsite"`)) {
+			federated := federatedText(t, payload)
+			if status != http.StatusOK || !bytes.Contains(federated, []byte(`"partial":true`)) || !bytes.Contains(federated, []byte(`"source_alias":"mindsite"`)) {
 				t.Fatalf("partial failure was not attributed: status=%d payload=%s", status, payload)
 			}
 			if len(events) != 2 || events[1].SourceAlias != "voicecorp" && events[1].SourceAlias != "mindsite" {
@@ -642,7 +816,7 @@ func TestRouterRefusesCrossOriginRedirectBeforeCredentialCrossover(t *testing.T)
 	}
 	t.Cleanup(func() { _ = router.Close(context.Background()) })
 	payload, _ := callRouter(t, router, "/mcp/context", `{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"context_search"}}`)
-	if targetRequests.Load() != 0 || !bytes.Contains(payload, []byte("cross-origin redirect refused")) {
+	if targetRequests.Load() != 0 || !bytes.Contains(payload, []byte("source transport unavailable")) || bytes.Contains(payload, []byte(redirect.URL)) {
 		t.Fatalf("redirect was not fail-closed: target=%d payload=%s", targetRequests.Load(), payload)
 	}
 }

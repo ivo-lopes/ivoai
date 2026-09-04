@@ -1,0 +1,534 @@
+<!doctype html>
+<html lang="pt-BR" dir="ltr" class="docs-wrapper plugin-docs plugin-id-default docs-version-0.9.0 docs-doc-page docs-doc-id-architecture" data-has-hydrated="false">
+<head>
+<meta charset="UTF-8">
+<meta name="generator" content="Docusaurus v3.10.2">
+<title data-rh="true">ivoai architecture | IVOAI</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="http://localhost:7780/pt-BR/docs/0.9.0/architecture"><meta data-rh="true" property="og:locale" content="pt_BR"><meta data-rh="true" property="og:locale:alternate" content="en_US"><meta data-rh="true" name="docusaurus_locale" content="pt-BR"><meta data-rh="true" name="docsearch:language" content="pt-BR"><meta data-rh="true" name="docusaurus_version" content="0.9.0"><meta data-rh="true" name="docusaurus_tag" content="docs-default-0.9.0"><meta data-rh="true" name="docsearch:version" content="0.9.0"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-0.9.0"><meta data-rh="true" property="og:title" content="ivoai architecture | IVOAI"><meta data-rh="true" name="description" content="Status: implementation baseline for v0.5.0. Decisions and upstream data were"><meta data-rh="true" property="og:description" content="Status: implementation baseline for v0.5.0. Decisions and upstream data were"><link data-rh="true" rel="icon" href="/pt-BR/img/favicon.svg"><link data-rh="true" rel="canonical" href="http://localhost:7780/pt-BR/docs/0.9.0/architecture"><link data-rh="true" rel="alternate" href="http://localhost:7780/docs/0.9.0/architecture" hreflang="en-US"><link data-rh="true" rel="alternate" href="http://localhost:7780/pt-BR/docs/0.9.0/architecture" hreflang="pt-BR"><link data-rh="true" rel="alternate" href="http://localhost:7780/docs/0.9.0/architecture" hreflang="x-default"><script data-rh="true" type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"ivoai architecture","item":"http://localhost:7780/pt-BR/docs/0.9.0/architecture"}]}</script><link rel="stylesheet" href="/pt-BR/assets/css/styles.92d12545.css">
+<script src="/pt-BR/assets/js/runtime~main.9f9c9571.js" defer="defer"></script>
+<script src="/pt-BR/assets/js/main.054ad3df.js" defer="defer"></script>
+</head>
+<body>
+<svg style="display: none;"><defs>
+<symbol id="theme-svg-external-link" viewBox="0 0 24 24"><path fill="currentColor" d="M21 13v10h-21v-19h12v2h-10v15h17v-8h2zm3-12h-10.988l4.035 4-6.977 7.07 2.828 2.828 6.977-7.07 4.125 4.172v-11z"/></symbol>
+</defs></svg>
+<script>!function(){var t=function(){try{return new URLSearchParams(window.location.search).get("docusaurus-theme")}catch(t){}}()||function(){try{return window.localStorage.getItem("theme")}catch(t){}}();document.documentElement.setAttribute("data-theme",t||"light"),document.documentElement.setAttribute("data-theme-choice",t||"light")}(),function(){try{const c=new URLSearchParams(window.location.search).entries();for(var[t,e]of c)if(t.startsWith("docusaurus-data-")){var a=t.replace("docusaurus-data-","data-");document.documentElement.setAttribute(a,e)}}catch(t){}}()</script><div id="__docusaurus"><div role="region" aria-label="Pular para o conteúdo principal"><a class="skipToContent_YwAw" href="#__docusaurus_skipToContent_fallback">Pular para o conteúdo principal</a></div><nav aria-label="Navegação principal" class="theme-layout-navbar navbar navbar--fixed-top"><div class="navbar__inner"><div class="theme-layout-navbar-left navbar__items"><button aria-label="Alternar painel de navegação" aria-expanded="false" class="navbar__toggle clean-btn" type="button"><svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><path stroke="currentColor" stroke-linecap="round" stroke-miterlimit="10" stroke-width="2" d="M4 7h22M4 15h22M4 23h22"></path></svg></button><a class="navbar__brand" aria-label="IVOAI home" href="/pt-BR/"><span class="ivoai-wordmark navbar__title" aria-hidden="true"><span>I</span><span>V</span><span>O</span><svg class="ivoai-wordmark__lambda" viewBox="0 0 20 24" focusable="false" aria-hidden="true"><path d="M2 22 L10 2 L18 22"></path></svg><span>I</span></span></a><a class="navbar__item navbar__link" href="/pt-BR/docs/quickstart">Guia rápido</a><a class="navbar__item navbar__link" href="/pt-BR/docs/cli-reference">CLI</a><a class="navbar__item navbar__link" href="/pt-BR/docs/server">Servidor</a><a class="navbar__item navbar__link" href="/pt-BR/docs/mcp-web">MCP Web</a></div><div class="theme-layout-navbar-right navbar__items navbar__items--right"><div class="navbar__item dropdown dropdown--hoverable dropdown--right"><a aria-current="page" class="navbar__link active" aria-haspopup="true" aria-expanded="false" role="button" href="/pt-BR/docs/0.9.0/architecture">0.9.0</a><ul class="dropdown__menu"><li><a class="dropdown__link" href="/pt-BR/docs/next/architecture">Atual</a></li><li><a class="dropdown__link" href="/pt-BR/docs/architecture">0.9.1</a></li><li><a aria-current="page" class="dropdown__link dropdown__link--active" href="/pt-BR/docs/0.9.0/architecture">0.9.0</a></li><li><a class="dropdown__link" href="/pt-BR/docs/0.8.0/architecture">0.8.0</a></li></ul></div><div class="navbar__item dropdown dropdown--hoverable dropdown--right"><a href="#" aria-haspopup="true" aria-expanded="false" role="button" class="navbar__link"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" class="iconLanguage_VgQz"><path fill="currentColor" d="M12.87 15.07l-2.54-2.51.03-.03c1.74-1.94 2.98-4.17 3.71-6.53H17V4h-7V2H8v2H1v1.99h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"></path></svg>Português (Brasil)</a><ul class="dropdown__menu"><li><a href="/docs/0.9.0/architecture" target="_self" rel="noopener noreferrer" class="dropdown__link" lang="en-US">English</a></li><li><a href="/pt-BR/docs/0.9.0/architecture" target="_self" rel="noopener noreferrer" class="dropdown__link dropdown__link--active" lang="pt-BR">Português (Brasil)</a></li></ul></div><a href="https://github.com/ivo-lopes/ivoai" target="_blank" rel="noopener noreferrer" class="navbar__item navbar__link">GitHub<svg width="13.5" height="13.5" aria-label="(abre em nova aba)" class="iconExternalLink_LkiX"><use href="#theme-svg-external-link"></use></svg></a><div class="toggle_QWQj colorModeToggle_SwLL"><button class="clean-btn toggleButton_D4wv toggleButtonDisabled_xnHs" type="button" disabled="" title="modo do sistema" aria-label="Mudar entre modo claro e escuro (modo do sistema está ativo)"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_IFsC lightToggleIcon_FQ8i"><path fill="currentColor" d="M12,9c1.65,0,3,1.35,3,3s-1.35,3-3,3s-3-1.35-3-3S10.35,9,12,9 M12,7c-2.76,0-5,2.24-5,5s2.24,5,5,5s5-2.24,5-5 S14.76,7,12,7L12,7z M2,13l2,0c0.55,0,1-0.45,1-1s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S1.45,13,2,13z M20,13l2,0c0.55,0,1-0.45,1-1 s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S19.45,13,20,13z M11,2v2c0,0.55,0.45,1,1,1s1-0.45,1-1V2c0-0.55-0.45-1-1-1S11,1.45,11,2z M11,20v2c0,0.55,0.45,1,1,1s1-0.45,1-1v-2c0-0.55-0.45-1-1-1C11.45,19,11,19.45,11,20z M5.99,4.58c-0.39-0.39-1.03-0.39-1.41,0 c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0s0.39-1.03,0-1.41L5.99,4.58z M18.36,16.95 c-0.39-0.39-1.03-0.39-1.41,0c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0c0.39-0.39,0.39-1.03,0-1.41 L18.36,16.95z M19.42,5.99c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06c-0.39,0.39-0.39,1.03,0,1.41 s1.03,0.39,1.41,0L19.42,5.99z M7.05,18.36c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06 c-0.39,0.39-0.39,1.03,0,1.41s1.03,0.39,1.41,0L7.05,18.36z"></path></svg><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_IFsC darkToggleIcon_vLOl"><path fill="currentColor" d="M9.37,5.51C9.19,6.15,9.1,6.82,9.1,7.5c0,4.08,3.32,7.4,7.4,7.4c0.68,0,1.35-0.09,1.99-0.27C17.45,17.19,14.93,19,12,19 c-3.86,0-7-3.14-7-7C5,9.07,6.81,6.55,9.37,5.51z M12,3c-4.97,0-9,4.03-9,9s4.03,9,9,9s9-4.03,9-9c0-0.46-0.04-0.92-0.1-1.36 c-0.98,1.37-2.58,2.26-4.4,2.26c-2.98,0-5.4-2.42-5.4-5.4c0-1.81,0.89-3.42,2.26-4.4C12.92,3.04,12.46,3,12,3L12,3z"></path></svg><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_IFsC systemToggleIcon_vagp"><path fill="currentColor" d="m12 21c4.971 0 9-4.029 9-9s-4.029-9-9-9-9 4.029-9 9 4.029 9 9 9zm4.95-13.95c1.313 1.313 2.05 3.093 2.05 4.95s-0.738 3.637-2.05 4.95c-1.313 1.313-3.093 2.05-4.95 2.05v-14c1.857 0 3.637 0.737 4.95 2.05z"></path></svg></button></div><div class="navbarSearchContainer_WdYj"><div class="navbar__search searchBarContainer_dDqy" dir="ltr"><svg aria-hidden="true" class="searchIcon_WYMC" focusable="false" viewBox="0 0 16 16"><path fill="currentColor" d="M6.02945 10.20327a4.17382 4.17382 0 1 1 4.17382-4.17382 4.15609 4.15609 0 0 1-4.17382 4.17382Zm9.69195 4.2199-4.8225-4.82338A5.88021 5.88021 0 0 0 12.058 6.02856 6.00467 6.00467 0 1 0 9.59979 10.8989l4.82338 4.82338a.89729.89729 0 0 0 1.29912 0 .89749.89749 0 0 0-.00087-1.29909Z"></path></svg><input placeholder="Buscar" aria-label="Search" class="navbar__search-input searchInput_Vw3I" value=""><div class="loadingRing_kxyR searchBarLoadingRing_oNax"><div></div><div></div><div></div><div></div></div></div></div></div></div><div role="presentation" class="navbar-sidebar__backdrop"></div></nav><div id="__docusaurus_skipToContent_fallback" class="theme-layout-main main-wrapper mainWrapper_Ao2C"><div class="docsWrapper_funy"><button aria-label="Voltar para o topo" class="clean-btn theme-back-to-top-button backToTopButton_aICL" type="button"></button><div class="docRoot_J3hu"><aside class="theme-doc-sidebar-container docSidebarContainer_FYsx"><div class="sidebarViewport_SDva"><div class="sidebar_q_xj"><nav aria-label="Painel lateral de documentos" class="menu thin-scrollbar menu_ze0K"><ul class="theme-doc-sidebar-menu menu__list"><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_E_db menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/pt-BR/docs/0.9.0"><span class="categoryLinkLabel_sqF9">Introdução</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_E_db menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/pt-BR/docs/0.9.0/installation"><span class="categoryLinkLabel_sqF9">Instalação e configuração</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_E_db menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/pt-BR/docs/0.9.0/basic-usage"><span class="categoryLinkLabel_sqF9">Uso</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_E_db menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/pt-BR/docs/0.9.0/executors"><span class="categoryLinkLabel_sqF9">Executores e AUTO</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_E_db menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/pt-BR/docs/0.9.0/memory"><span class="categoryLinkLabel_sqF9">Conhecimento</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_E_db menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/pt-BR/docs/0.9.0/skill-control-plane"><span class="categoryLinkLabel_sqF9">Controle e fidelidade</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_E_db menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/pt-BR/docs/0.9.0/operations"><span class="categoryLinkLabel_sqF9">Operações</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_E_db menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/pt-BR/docs/0.9.0/security"><span class="categoryLinkLabel_sqF9">Segurança e suporte</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item"><div class="menu__list-item-collapsible"><a class="categoryLink_E_db menu__link menu__link--sublist menu__link--sublist-caret menu__link--active" role="button" aria-expanded="true" href="/pt-BR/docs/0.9.0/architecture"><span class="categoryLinkLabel_sqF9">Arquitetura e projeto</span></a></div><ul class="menu__list"><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link menu__link--active" aria-current="page" tabindex="0" href="/pt-BR/docs/0.9.0/architecture"><span class="linkLabel_E4_3">ivoai architecture</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/pt-BR/docs/0.9.0/adrs"><span class="linkLabel_E4_3">Architecture decisions</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/pt-BR/docs/0.9.0/development"><span class="linkLabel_E4_3">Development</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/pt-BR/docs/0.9.0/contributing"><span class="linkLabel_E4_3">Contributing</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/pt-BR/docs/0.9.0/releases"><span class="linkLabel_E4_3">Releases</span></a></li></ul></li></ul></nav></div></div></aside><main class="docMainContainer_cPN7"><div class="container padding-top--md padding-bottom--lg"><div class="row"><div class="col docItemCol_COpS"><div class="theme-doc-version-banner alert alert--warning margin-bottom--md" role="alert"><div>Esta é a documentação para <!-- -->IVOAI<!-- --> <b>0.9.0</b>, que não é mais mantida ativamente.</div><div class="margin-top--md">Para a documentação atualizada, consulte a <b><a href="/pt-BR/docs/architecture">versão mais recente</a></b> (<!-- -->0.9.1<!-- -->).</div></div><div class="docItemContainer_XNRF"><article><nav class="theme-doc-breadcrumbs breadcrumbsContainer_QCAV" aria-label="Trilha"><ul class="breadcrumbs"><li class="breadcrumbs__item"><a aria-label="Página Inicial" class="breadcrumbs__link" href="/pt-BR/"><svg viewBox="0 0 24 24" class="breadcrumbHomeIcon_hdTA"><path d="M10 19v-5h4v5c0 .55.45 1 1 1h3c.55 0 1-.45 1-1v-7h1.7c.46 0 .68-.57.33-.87L12.67 3.6c-.38-.34-.96-.34-1.34 0l-8.36 7.53c-.34.3-.13.87.33.87H5v7c0 .55.45 1 1 1h3c.55 0 1-.45 1-1z" fill="currentColor"></path></svg></a></li><li class="breadcrumbs__item"><span class="breadcrumbs__link">Arquitetura e projeto</span></li><li class="breadcrumbs__item breadcrumbs__item--active"><span class="breadcrumbs__link">ivoai architecture</span></li></ul></nav><span class="theme-doc-version-badge badge badge--secondary">Versão: 0.9.0</span><div class="tocCollapsible_Jhng theme-doc-toc-mobile tocMobile_Zwpp"><button type="button" class="clean-btn tocCollapsibleButton_YOF3">Nesta página</button></div><div class="theme-doc-markdown markdown"><header><h1>ivoai architecture</h1></header>
+<p>Status: implementation baseline for v0.5.0. Decisions and upstream data were
+validated through 2026-08-25. Exact pins live in <code>manifest/components.yaml</code>; this
+document explains why they exist and how the pieces fit together.</p>
+<h2 class="anchor anchorTargetStickyNavbar_UW1m" id="goals-and-boundaries">Goals and boundaries<a href="#goals-and-boundaries" class="hash-link" aria-label="Link direto para Goals and boundaries" title="Link direto para Goals and boundaries" translate="no">​</a></h2>
+<p>ivoai is one Go binary with client and server modes. A client is useful immediately
+after setup, with no external connection and no pay-as-you-go API key. ChatGPT,
+Claude, and an ivoai server are deliberate post-setup connections, all managed
+through CLI commands.</p>
+<p>Optional memory, context, compression, and orchestration setup failures are isolated from local
+agent launch. A failed compression preflight selects the direct agent. After a wrapper
+process starts, its exit status is propagated rather than risking a duplicate
+interactive session.</p>
+<p>The core is organization-neutral. It contains no company domains, private addresses,
+user paths, or preconfigured connectors. Git is optional; project mode is an explicit
+override, not a prerequisite.</p>
+<h2 class="anchor anchorTargetStickyNavbar_UW1m" id="multi-server-knowledge-plane">Multi-server knowledge plane<a href="#multi-server-knowledge-plane" class="hash-link" aria-label="Link direto para Multi-server knowledge plane" title="Link direto para Multi-server knowledge plane" translate="no">​</a></h2>
+<p>The client-side knowledge path is provider-neutral. Unfiltered sessions select every
+enabled server; repeated <code>--knowledge-source</code> flags form a restrictive session-local
+subset:</p>
+<div class="language-text codeBlockContainer_hJIO theme-code-block" style="--prism-color:#bfc7d5;--prism-background-color:#292d3e"><div class="codeBlockContent_tbZp"><pre tabindex="0" class="prism-code language-text codeBlock_e7Om thin-scrollbar" style="color:#bfc7d5;background-color:#292d3e"><code class="codeBlockLines_QMIf"><div class="token-line" style="color:#bfc7d5"><span class="token plain">managed session (Codex / Claude / OpenCode-first AUTO workers)</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">        │ local capability, selected sources</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">        ▼</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">per-session loopback KnowledgeRouter</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">        │</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">        ├── ServerPool purpose A ── primary/standby redundancy</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">        └── ServerPool purpose B ── independent Memory/Context</span><br></div></code></pre></div></div>
+<p><code>ServerProfile</code> records an opaque ID, alias, purpose, optional redundancy group,
+priority, protocol, endpoints and features. Credentials are stored separately by
+opaque ID. The pool deterministically groups equivalent replicas while preserving
+purpose boundaries. No company name appears in core routing logic.</p>
+<p>The router binds an ephemeral <code>127.0.0.1</code> listener for each session. It issues a
+random short-lived local capability, retains upstream credentials in process,
+rejects cross-origin redirects and forwards each credential only to its matching
+profile. Codex receives process-local MCP arguments and Claude a private runtime MCP
+file. AUTO uses the same router through failover; workers inherit local endpoints.
+No global mutable MCP rewrite is needed, so sessions for different purposes can run
+concurrently.</p>
+<p>Single-source authoritative responses are preserved. Unfiltered sessions federate
+all enabled sources; explicit selectors restrict that set. Federated <code>tools/call</code>
+reads fan out concurrently with per-source deadlines and deterministically
+merge source-attributed results. Requests are capped at 4 MiB and upstream responses
+at 16 MiB. Writes require exactly one logical destination; a redundancy write is
+primary-only and is not retried after an uncertain side effect. Read failover is
+limited to the same purpose/redundancy group and uses bounded circuit state.</p>
+<p>This router is not MemoryBackend, ContextBackend, WorkingContext or replication.
+ai-memory remains durable operational memory at the selected server; Context remains
+read-only private knowledge; ArtifactStore remains exact transient evidence. See
+<a class="" href="/pt-BR/docs/0.9.0/multi-server">Multi-server knowledge sources</a>.</p>
+<h2 class="anchor anchorTargetStickyNavbar_UW1m" id="replaceable-core-contracts">Replaceable core contracts<a href="#replaceable-core-contracts" class="hash-link" aria-label="Link direto para Replaceable core contracts" title="Link direto para Replaceable core contracts" translate="no">​</a></h2>
+<p>The runtime boundaries in <code>internal/core</code> are deliberately small and are not part of
+the persisted config, state, ownership, component, or server schemas. They provide
+provider-neutral identities, capability support (<code>supported</code>, <code>unsupported</code>,
+<code>unknown</code>, or <code>not_exposed</code>), health, compatibility, provenance, lifecycle and
+explicit fallback metadata. Installed, available and healthy are separate facts;
+missing probe evidence remains unknown rather than being inferred from a provider or
+model name.</p>
+<p>The current adapters are:</p>
+<ul>
+<li class=""><code>CodexExecutor</code> and <code>ClaudeExecutor</code> over their official CLI runtimes, plus a
+standalone <code>OpenCodeExecutor</code>. AUTO uses OpenCode as a managed frontend and routes
+execution through the Codex/Claude contracts; the standalone OpenCode executor is
+still direct-only. They expose session start and bounded cancellation.</li>
+<li class=""><code>AIMemoryBackend</code> over the existing ai-memory client configurator. Memory content
+calls remain behind the authenticated MCP boundary rather than expanding this
+lifecycle interface.</li>
+<li class=""><code>LegacyQdrantContextBackend</code> over the existing catalog, local embedding and Qdrant
+context service. The agent-facing contract stays read-only; ingestion remains an
+administrative composition.</li>
+<li class=""><code>HeadroomCompressionProvider</code> over the existing wrapper probe and invocation. The
+IVOAI fidelity policy still decides when exact Memory/Context results require a
+bypass, and the official client remains the direct fallback.</li>
+<li class=""><a class="" href="/pt-BR/docs/0.9.0/compression-provider">CompressionProvider: Caveman, Headroom e bypass direto</a>
+records the Caveman default and migration boundary. Providers are mutually
+exclusive; Direct remains the safety fallback and explicit Headroom remains a
+temporary compatibility path.</li>
+<li class=""><a class="" href="/pt-BR/docs/0.9.0/caveman-canary">Caveman canary and fidelity evaluation</a> defines the
+deterministic corpus, byte-exact gates, opt-in pinned-asset smokes and the
+evidence used to approve the Caveman default while retaining Direct fallback.</li>
+<li class=""><code>RufloOrchestratorAdapter</code> over the existing safe-profile control plane. It exposes
+only ephemeral swarm and opaque lifecycle coordination; scheduling, routing,
+inference, quota and durable memory remain owned by IVOAI.</li>
+</ul>
+<p><code>SkillSource</code>, <code>SkillRegistry</code> and <code>ToolProvider</code> currently define only base identity,
+probe and discovery contracts. No new skill pack or tool provider is loaded by this
+foundation. Doctor builds a runtime-only component matrix from existing state and
+official probes so future selection and fallback can explain which implementation is
+active and why. The matrix is never written to session/config persistence and does not
+require a migration.</p>
+<h2 class="anchor anchorTargetStickyNavbar_UW1m" id="system-view">System view<a href="#system-view" class="hash-link" aria-label="Link direto para System view" title="Link direto para System view" translate="no">​</a></h2>
+<div class="language-text codeBlockContainer_hJIO theme-code-block" style="--prism-color:#bfc7d5;--prism-background-color:#292d3e"><div class="codeBlockContent_tbZp"><pre tabindex="0" class="prism-code language-text codeBlock_e7Om thin-scrollbar" style="color:#bfc7d5;background-color:#292d3e"><code class="codeBlockLines_QMIf"><div class="token-line" style="color:#bfc7d5"><span class="token plain">CLIENT                                      SERVER</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain" style="display:inline-block"></span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">ivoai CLI/wizard                       one public HTTPS origin</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  |                                      |</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  +-- configuration + ownership          +-- /.well-known/ivoai</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  +-- connection registry                +-- /health and /ready</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  +-- official agent authentication      +-- enrollment/control API</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  +-- fail-safe memory hooks              +-- context MCP (read-only)</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  +-- session control plane               +-- ai-memory MCP</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  |     +-- direct observability</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  |     +-- AUTO bootstrap + DAG scheduler</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  |     `-- WorkingContext + private ArtifactStore</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  |                                      |</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  +-- Headroom -- Codex/Claude            +-- Web MCP + OAuth 2.1</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">        `------ direct fallback           +-- context service</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">                                         |     +-- connectors/ingestion</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">                                         |     +-- local embeddings</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">                                         |     `-- Qdrant (internal)</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">                                         `-- ai-memory (internal)</span><br></div></code></pre></div></div>
+<h2 class="anchor anchorTargetStickyNavbar_UW1m" id="automatic-quota-aware-control-plane">Automatic quota-aware control plane<a href="#automatic-quota-aware-control-plane" class="hash-link" aria-label="Link direto para Automatic quota-aware control plane" title="Link direto para Automatic quota-aware control plane" translate="no">​</a></h2>
+<p><code>ivoai auto</code> adds a supervisor and deterministic scheduler above the existing session
+control plane. A pinned OpenCode TUI is the interactive frontend; it is not a second
+scheduler and never becomes the authoritative writer. The TUI attaches to an
+authenticated OpenCode server on a random <code>127.0.0.1</code> port. A private IVOAI provider
+bridge on another random loopback port invokes the selected official Codex or Claude
+CLI, so each client retains its own subscription authentication. No vendor token,
+cookie, refresh token, or credential file is read or copied into OpenCode.</p>
+<p>The OpenCode server plugin attaches non-secret frontend session and message IDs to
+bridge requests. IVOAI persists a bounded, working-directory and knowledge-scope
+bound mapping from that ID to separate official CLI conversation IDs per executor.
+This supports subsequent turns, failover and restart recovery without storing
+conversation bodies or crossing knowledge scopes. IVOAI remains planner, logical session owner, executor selector,
+quota authority, policy authority and result consolidator. Its first substantive turn
+attempts Memory then Context exactly once, creates a private bounded
+SharedContextBrief, validates a maximum-12-task DAG, and submits numerical task
+signals to IVOAI. IVOAI—not OpenCode—calculates capability scores, chooses the lowest
+sufficient runtime-verified model/effort profile, rejects uneconomic delegation, and
+runs dependency-ready advisory workers asynchronously.
+A standalone quota manager gates the initial primary and every worker;
+Ruflo remains a provider-free ephemeral lifecycle coordinator. Codex quota comes
+from the official app-server JSON-RPC method, while Claude quota comes from a
+session-local structured statusline payload. Context-window pressure is modeled
+separately from subscription quota.</p>
+<p>The supervisor owns process identity and bounded failover. It persists only session
+metadata, normalized quota snapshots, and secret-free checkpoints. On a confirmed
+hard limit it reaps the current executor process group, re-probes the alternate, and
+continues inside the same OpenCode frontend with a bounded handoff. A two-failover
+ceiling prevents ping-pong loops. The managed overlay disables OpenCode sharing,
+auto-update and project configuration; running OpenCode outside IVOAI is unaffected. See
+<a class="" href="/pt-BR/docs/0.9.0/auto-orchestration">Automatic orchestration</a> and
+<a class="" href="/pt-BR/docs/0.9.0/quota-routing">Subscription quota routing</a>. Scoring, capability discovery, and
+the async API are specified in <a class="" href="/pt-BR/docs/0.9.0/auto-scheduler">Automatic scheduler</a>.</p>
+<p>Only the gateway is externally reachable. Qdrant, the embedding runtime, ai-memory
+administration, and service management stay on a private Compose network or loopback
+socket. The server does not expose a shell or an arbitrary-command endpoint.</p>
+<h2 class="anchor anchorTargetStickyNavbar_UW1m" id="client-architecture">Client architecture<a href="#client-architecture" class="hash-link" aria-label="Link direto para Client architecture" title="Link direto para Client architecture" translate="no">​</a></h2>
+<p>The public installer downloads a release archive and verifies its published checksum.
+When invoked from an authenticated source checkout, it first uses a compatible system
+Go toolchain. If Go is absent or older than the <code>go.mod</code> directive, it downloads the
+reviewed linux/amd64 or linux/arm64 Go archive, verifies the pinned official SHA-256,
+and builds with temporary module and build caches. The toolchain and caches are removed
+when installation finishes; no global Go installation or package-manager mutation is
+required.</p>
+<h3 class="anchor anchorTargetStickyNavbar_UW1m" id="files-and-ownership">Files and ownership<a href="#files-and-ownership" class="hash-link" aria-label="Link direto para Files and ownership" title="Link direto para Files and ownership" translate="no">​</a></h3>
+<p>The client follows the XDG Base Directory Specification:</p>
+<ul>
+<li class="">configuration: <code>$XDG_CONFIG_HOME/ivoai</code> or <code>~/.config/ivoai</code>, mode <code>0700</code>;</li>
+<li class="">persistent application data: <code>$XDG_DATA_HOME/ivoai</code> or <code>~/.local/share/ivoai</code>;</li>
+<li class="">operational state and ownership manifest: <code>$XDG_STATE_HOME/ivoai</code> or <code>~/.local/state/ivoai</code>;</li>
+<li class="">cache/downloads: <code>$XDG_CACHE_HOME/ivoai</code> or <code>~/.cache/ivoai</code>;</li>
+<li class="">secrets: <code>$XDG_CONFIG_HOME/ivoai/secrets.json</code> (or <code>~/.config/ivoai/secrets.json</code>), mode <code>0600</code>, inside the mode-<code>0700</code> config directory.</li>
+</ul>
+<p>The main TOML contains connection status and non-secret settings only. The ownership
+manifest records component executables as <code>managed</code> or <code>pre_existing</code>; all
+ivoai-managed binaries, hooks, and component runtimes live below the ivoai XDG data
+root. Uninstall removes the ivoai XDG roots and installer registration while
+preserving pre-existing third-party executables and vendor authentication.
+Integrations use each third-party client&#x27;s supported configuration mechanism and
+preserve unrelated settings.</p>
+<p>The install catalog compiled into the binary mirrors the reviewed central manifest
+and selects exact OS/architecture assets. Direct archives are verified against
+reviewed SHA-256 values before bounded extraction. Headroom ships
+architecture-specific hashed constraint locks and permits wheels only. Ruflo ships a
+complete npm v3 lock and installs with <code>npm ci</code> and lifecycle scripts disabled; every
+registry dependency has an integrity value. Both installers run with a minimal
+environment that excludes user and provider credentials.</p>
+<p>Managed launchers use atomic replacement. Downloads have size limits and timeouts.
+<code>latest</code> is never a component install target. Updates are explicit through
+<code>ivoai update</code> and use a versioned compatibility probe, private exact-file
+snapshots, an ordered reversible migration registry, atomic promotion, and
+post-update Doctor. Rollback restores both the previous executable and its
+compatible IVOAI-owned persistence. Unknown TOML fields are retained through a
+raw-document plus typed-projection merge. The complete invariant is documented in
+<a class="" href="/pt-BR/docs/0.9.0/production-compatibility">production-compatibility.md</a>.</p>
+<p>Managed Codex includes the same-version <code>codex-code-mode-host</code> published as a
+separate official release asset. Both architecture-specific archives are independently
+checksum pinned. The host has no version command, so its compatibility identity is
+the reviewed release version recorded in managed state; a missing or mismatched
+companion fails setup/launch instead of silently removing the entire tool surface.</p>
+<h3 class="anchor anchorTargetStickyNavbar_UW1m" id="connections-and-official-credentials">Connections and official credentials<a href="#connections-and-official-credentials" class="hash-link" aria-label="Link direto para Connections and official credentials" title="Link direto para Connections and official credentials" translate="no">​</a></h3>
+<p><code>ivoai connect chatgpt</code> delegates authentication to <code>codex login</code>;
+<code>codex login status</code> is the supported status probe. OpenAI&#x27;s official documentation
+states that ChatGPT subscription login is supported and opens a browser. ivoai never
+reads or stores the returned credential. Source: <a href="https://learn.chatgpt.com/docs/auth" target="_blank" rel="noopener noreferrer" class="">ChatGPT authentication</a>.</p>
+<p><code>ivoai connect claude</code> checks <code>claude auth status</code>, starts the official
+<code>claude auth login</code> browser flow when needed, and validates status again. Anthropic
+documents Pro, Max, Team, and Enterprise subscription access without an API key.
+Source: <a href="https://code.claude.com/docs/en/authentication" target="_blank" rel="noopener noreferrer" class="">Claude Code authentication</a>.</p>
+<p>The exact managed Claude pin is 2.1.228 because Anthropic&#x27;s <code>stable</code> registry channel
+pointed there on the validation date while <code>latest</code> was 2.1.237. Anthropic describes
+stable as delayed and regression-filtered. ivoai installs this reviewed asset and
+changes its managed pin only during an explicit setup or update. Behavior implemented
+inside the upstream Claude executable remains governed by Anthropic.</p>
+<p>ivoai does not inspect <code>~/.codex/auth.json</code>, Claude cookies, or OAuth tokens. It does
+not ask for, proxy, copy, or log credentials. A pre-existing official install and
+login remain owned by the user.</p>
+<h3 class="anchor anchorTargetStickyNavbar_UW1m" id="agent-launch-and-failure-isolation">Agent launch and failure isolation<a href="#agent-launch-and-failure-isolation" class="hash-link" aria-label="Link direto para Agent launch and failure isolation" title="Link direto para Agent launch and failure isolation" translate="no">​</a></h3>
+<p>Research-source selection is centralized in <code>internal/knowledgepolicy</code>. Interactive
+primaries, automatic sessions, and background workers receive the same process-local
+contract: memory first, Context second, and external web sources only afterward when
+internal knowledge is unavailable, insufficient, stale, or independent verification
+is requested. Local working-tree inspection and tasks completely specified by the
+user do not create artificial research calls. This is an instruction-layer invariant;
+the official clients continue to own their tools and authentication.</p>
+<p>The launcher uses structured argv and signal forwarding. Interactive clients inherit
+ivoai&#x27;s foreground process group; creating a new group without <code>tcsetpgrp</code> would
+suspend terminal reads with <code>SIGTTIN</code>. Terminal and shell job-control interrupt,
+suspend, continue, and resize signals therefore reach the complete interactive stack, while
+context cancellation uses a bounded TERM-to-KILL sequence. The normal decision tree is:</p>
+<div class="language-text codeBlockContainer_hJIO theme-code-block" style="--prism-color:#bfc7d5;--prism-background-color:#292d3e"><div class="codeBlockContent_tbZp"><pre tabindex="0" class="prism-code language-text codeBlock_e7Om thin-scrollbar" style="color:#bfc7d5;background-color:#292d3e"><code class="codeBlockLines_QMIf"><div class="token-line" style="color:#bfc7d5"><span class="token plain">requested agent</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  -&gt; ivoai-memory or ivoai-context MCP active?</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">       yes -&gt; official agent [argv...]</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">       no  -&gt; requested CompressionProvider healthy and compatible?</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">                caveman  -&gt; managed Caveman proxy -&gt; official agent</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">                headroom -&gt; headroom wrap &lt;agent&gt; [argv...]</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">                direct or failed preflight -&gt; official agent [argv...]</span><br></div></code></pre></div></div>
+<p>Headroom 0.36.0 is deprecated but retained during the Caveman observation window.
+It officially supplies <code>wrap codex</code> and <code>wrap claude</code> and is installed
+into an isolated tool environment using uv 0.12.5 and the exact managed CPython
+3.13.15 runtime below the ivoai data root. An unavailable, unhealthy, or incompatible
+preflight selects the direct agent. After a compatible wrapper process has started,
+ivoai propagates its exit status; it does not silently retry a failed interactive
+session. ivoai does not rewrite the user&#x27;s aliases or replace third-party launchers.
+Headroom 0.36.0 can apply lossy compression to Codex Code Mode
+<code>custom_tool_call_output</code> items without reliably associating them with the originating
+MCP tool name. IvoAI therefore bypasses any lossy compression provider whenever
+authoritative shared knowledge is active for the session. This provider-neutral
+policy preserves exact Memory and Context results; session telemetry records the
+requested provider, effective Direct path and bounded reason.
+Sources: <a href="https://headroomlabs-ai.github.io/headroom/cli/" target="_blank" rel="noopener noreferrer" class="">Headroom CLI</a>,
+<a href="https://github.com/headroomlabs-ai/headroom/releases/tag/v0.36.0" target="_blank" rel="noopener noreferrer" class="">Headroom v0.36.0</a>,
+<a href="https://github.com/headroomlabs-ai/headroom/issues/940" target="_blank" rel="noopener noreferrer" class="">Headroom issue 940</a>,
+<a href="https://github.com/astral-sh/uv/releases/tag/0.12.5" target="_blank" rel="noopener noreferrer" class="">uv 0.12.5</a>, and
+<a href="https://www.python.org/downloads/release/python-31315/" target="_blank" rel="noopener noreferrer" class="">Python 3.13.15</a>.</p>
+<h3 class="anchor anchorTargetStickyNavbar_UW1m" id="session-control-plane">Session control plane<a href="#session-control-plane" class="hash-link" aria-label="Link direto para Session control plane" title="Link direto para Session control plane" translate="no">​</a></h3>
+<p>Session metadata is an explicit domain below the XDG state directory. Random IDs,
+atomic private files and Linux PID start markers support lifecycle monitoring without
+creating another conversation store. Prompts, results, tokens and raw environments
+are excluded. Direct sessions call the same interactive runtime as <code>ivoai codex</code> and
+<code>ivoai claude</code>; Ruflo is not touched.</p>
+<p>Concurrent primaries do not share lifecycle state: each session has its own record,
+process identity and runtime subtree, and every Ruflo command runs with that subtree
+as both working directory and isolated <code>HOME</code>. Session and quota stores serialize
+cross-process mutations with advisory locks and publish complete files by atomic
+replacement. Shared <code>ai-memory</code> pages are the deliberate exception: they form the
+common durable knowledge plane used by all official clients.</p>
+<p>Orchestrated sessions have a strict gate: the safe profile must match its reviewed
+tool allowlist, provider execution and durable Ruflo memory must be false, Ruflo must
+pass a version/health command, a real hierarchical swarm must return a verifiable ID,
+and an opaque primary task must be registered before the official client starts.
+Ruflo gets a clean environment with <code>RUFLO_PROVIDER=ivoai-disabled</code> and
+<code>CLAUDE_FLOW_MEMORY_BACKEND=memory</code>.</p>
+<p>The local stdio <code>ivoai-orchestrator</code> MCP is injected only for the lifetime of that
+primary. It maps delegation to trusted official Codex/Claude executables and maps
+opaque lifecycle IDs to Ruflo task commands. Exact worker evidence is written first
+to the private transient WorkingContext ArtifactStore. The bridge gives the primary
+only a bounded provider-neutral <code>WorkerResult</code> (summary, findings, advisory
+<code>StateDelta</code>, and opaque <code>ResultRef</code>s). Session state stores only those bounded
+references, never worker bodies. Explicit local read-only tools recover an exact
+artifact or bounded range after ownership, TTL, size, and digest validation. Worker
+concurrency defaults to two and is hard-capped at three. The bridge is not registered
+in or routed by the public server gateway. See <a class="" href="/pt-BR/docs/0.9.0/orchestration">orchestration.md</a>
+and <a class="" href="/pt-BR/docs/0.9.0/working-context">WorkingContext</a>.</p>
+<p>Automatic plans add metadata-only task IDs, dependencies, scores, tiers, profile
+sources, execution state, duration, and escalation reasons to session state. Full
+task instructions, SharedContextBrief content, worker responses, credentials, and
+environments are never sent to Ruflo. Exact responses remain private in the transient
+ArtifactStore; session metadata and failover handoffs contain only ResultRefs. Codex
+workers are sandboxed read-only and disable inherited MCPs except managed Memory/Context
+read tools. Claude workers use strict process-scoped MCP configuration and plan
+permission mode with mutation tools disabled. The primary alone applies changes.</p>
+<p>ai-memory 1.29.0 is the durable operational memory layer. Its versioned native
+binaries and hook bundle support Codex and Claude Code and publish per-platform
+checksums. Hooks enqueue with bounded latency and treat network, authentication, and
+service failures as non-fatal; hook failure results in the allow/zero-exit path
+appropriate to the host. Connecting a server rewrites only ivoai-owned memory
+endpoint metadata. The authoritative upstream release is
+<a href="https://github.com/akitaonrails/ai-memory/releases/tag/v1.29.0" target="_blank" rel="noopener noreferrer" class="">ai-memory v1.29.0</a>; its changelog was
+reviewed because this is newer than the 1.28.1 floor in the product requirements.
+IvoAI installs lifecycle hooks with ai-memory&#x27;s <code>repo-root</code> project strategy. Project
+resolution therefore uses the main Git repository name across Linux/WSL path aliases,
+subdirectories and linked worktrees instead of splitting observations by the client
+process&#x27;s spelling of the current directory. Explicit MCP queries still include the
+global scope according to ai-memory&#x27;s normal query semantics.</p>
+<p>Ruflo 3.38.12 is installed for workflows, coordination, and skills. ivoai registers a
+least-privilege MCP profile containing only coordination tools, process-local
+temporary memory, and a wrapper that strips supported PAYG-provider credential
+variables before Ruflo starts. Provider execution and durable Ruflo memory remain
+disabled; Codex and Claude themselves continue to run through their official
+subscription-authenticated clients. Upstream issues
+<a href="https://github.com/ruvnet/ruflo/issues/2356" target="_blank" rel="noopener noreferrer" class="">#2356</a> and
+<a href="https://github.com/ruvnet/ruflo/issues/2962" target="_blank" rel="noopener noreferrer" class="">#2962</a> remained open and showed direct
+execution selecting separately configured providers, so those paths are deliberately
+excluded from the default profile.</p>
+<h3 class="anchor anchorTargetStickyNavbar_UW1m" id="identity-and-mcp-registry">Identity and MCP registry<a href="#identity-and-mcp-registry" class="hash-link" aria-label="Link direto para Identity and MCP registry" title="Link direto para Identity and MCP registry" translate="no">​</a></h3>
+<p>The connection registry models MCP entries uniformly by stable ID, transport,
+URL/argv, scopes, ownership, and enabled status. Context and memory use the same
+registry as user-added MCPs; agent-specific renderers are edge adapters, not separate
+sources of truth.</p>
+<p>The default ivoai client identity outside an explicitly initialized project is
+<code>host:&lt;normalized-hostname&gt;</code>. It is independent of the current directory, so <code>/etc</code>,
+<code>/opt</code>, and <code>/var/lib</code> do not become accidental projects. <code>ivoai project init</code>
+creates a deterministic ID from the absolute Git root and a local <code>.ivoai.toml</code>
+marker that overrides host identity. Merely entering a Git repository does not
+silently change ivoai identity. ai-memory lifecycle scoping is a separate concern and
+uses the stable main-repository strategy described above.</p>
+<h2 class="anchor anchorTargetStickyNavbar_UW1m" id="server-architecture">Server architecture<a href="#server-architecture" class="hash-link" aria-label="Link direto para Server architecture" title="Link direto para Server architecture" translate="no">​</a></h2>
+<h3 class="anchor anchorTargetStickyNavbar_UW1m" id="runtime-and-persistence">Runtime and persistence<a href="#runtime-and-persistence" class="hash-link" aria-label="Link direto para Runtime and persistence" title="Link direto para Runtime and persistence" translate="no">​</a></h3>
+<p>Supported initial hosts are Ubuntu 22.04+, Ubuntu 24.04+, and Debian 12 on amd64 or
+arm64. The ivoai gateway and context processes are systemd services running as
+distinct non-login <code>ivoai-gateway</code> and <code>ivoai-context</code> users in the shared <code>ivoai</code>
+group. Units use <code>Restart=on-failure</code>, <code>NoNewPrivileges=yes</code>, a restrictive
+<code>UMask</code>, capability removal, hidden process views, private temporary directories,
+and write allowlists limited to their own data paths. Backend containers use the
+separate non-login <code>ivoai</code> identity.</p>
+<p>Layout:</p>
+<div class="language-text codeBlockContainer_hJIO theme-code-block" style="--prism-color:#bfc7d5;--prism-background-color:#292d3e"><div class="codeBlockContent_tbZp"><pre tabindex="0" class="prism-code language-text codeBlock_e7Om thin-scrollbar" style="color:#bfc7d5;background-color:#292d3e"><code class="codeBlockLines_QMIf"><div class="token-line" style="color:#bfc7d5"><span class="token plain">/etc/ivoai/                 non-secret server configuration</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">/etc/ivoai/secrets/         0700 directory, 0600 secret files and managed TLS copies</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">/var/lib/ivoai/context/     metadata, normalized corpus and ingestion state</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">/var/lib/ivoai/memory/      ai-memory authoritative data</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">/var/lib/ivoai/qdrant/      rebuildable vector index</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">/var/lib/ivoai/qdrant-snapshots/ Qdrant snapshot workspace</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">/var/lib/ivoai/qdrant-init/ Qdrant non-secret initialization marker</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">/var/lib/ivoai/models/      pinned embedding model snapshot</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">/var/lib/ivoai/enrollment/  hashed enrollment/client credential records</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">/var/lib/ivoai/backups/     versioned backup archives</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">/run/ivoai/                 sockets/PIDs and other ephemeral state</span><br></div></code></pre></div></div>
+<p>Service stdout and stderr go to journald by default. CLI-rendered server logs and
+diagnostics pass through ivoai&#x27;s redactor for labeled authorization, enrollment-code,
+and common API-key forms. Authentication handlers do not log request bodies or
+credential values; operators must still review journald output before sharing it.</p>
+<p>Docker Compose is reserved for Qdrant, Text Embeddings Inference, and ai-memory. Every
+image is referenced by immutable digest, is attached to an internal network, and has
+no host port unless a loopback-only compatibility port is unavoidable. ivoai manages
+the Compose project and volumes idempotently. ivoai&#x27;s own Go services remain ordinary
+systemd executables and require no private ivoai image. Setup requires Docker Engine
+28.0.0 or newer because deterministic gateway priority is part of the backend egress
+boundary; it validates the daemon before writing server assets and does not replace
+the operator&#x27;s Engine installation. Where compatible Compose is not packaged, ivoai
+installs the reviewed Docker Compose 5.5.0 CLI plugin for amd64 or arm64 from its
+official release, verifies the manifest SHA-256, and never selects a floating <code>latest</code>
+artifact. Direct-TLS certificate and key
+copies are service-owned <code>0600</code> files under <code>/etc/ivoai/secrets/tls</code>. After systemd
+loads its Qdrant and embedding environment files, the context service&#x27;s sandbox makes
+the complete secrets tree, enrollment state, and memory state inaccessible. The
+gateway has a separate denial list for memory, Qdrant, model, and
+corpus filesystem data outside its control-plane responsibilities.</p>
+<h3 class="anchor anchorTargetStickyNavbar_UW1m" id="protocol-version-1">Protocol version 1<a href="#protocol-version-1" class="hash-link" aria-label="Link direto para Protocol version 1" title="Link direto para Protocol version 1" translate="no">​</a></h3>
+<p>The public discovery response is non-sensitive. The gateway applies
+<code>Cache-Control: no-store</code> consistently to discovery and API responses:</p>
+<div class="language-json codeBlockContainer_hJIO theme-code-block" style="--prism-color:#bfc7d5;--prism-background-color:#292d3e"><div class="codeBlockContent_tbZp"><pre tabindex="0" class="prism-code language-json codeBlock_e7Om thin-scrollbar" style="color:#bfc7d5;background-color:#292d3e"><code class="codeBlockLines_QMIf"><div class="token-line" style="color:#bfc7d5"><span class="token punctuation" style="color:rgb(199, 146, 234)">{</span><span class="token plain"></span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  </span><span class="token property">&quot;protocol_version&quot;</span><span class="token operator" style="color:rgb(137, 221, 255)">:</span><span class="token plain"> </span><span class="token number" style="color:rgb(247, 140, 108)">1</span><span class="token punctuation" style="color:rgb(199, 146, 234)">,</span><span class="token plain"></span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  </span><span class="token property">&quot;server_version&quot;</span><span class="token operator" style="color:rgb(137, 221, 255)">:</span><span class="token plain"> </span><span class="token string" style="color:rgb(195, 232, 141)">&quot;0.1.0&quot;</span><span class="token punctuation" style="color:rgb(199, 146, 234)">,</span><span class="token plain"></span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  </span><span class="token property">&quot;public_base_url&quot;</span><span class="token operator" style="color:rgb(137, 221, 255)">:</span><span class="token plain"> </span><span class="token string" style="color:rgb(195, 232, 141)">&quot;https://ai.example.com&quot;</span><span class="token punctuation" style="color:rgb(199, 146, 234)">,</span><span class="token plain"></span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  </span><span class="token property">&quot;health_endpoint&quot;</span><span class="token operator" style="color:rgb(137, 221, 255)">:</span><span class="token plain"> </span><span class="token string" style="color:rgb(195, 232, 141)">&quot;/health&quot;</span><span class="token punctuation" style="color:rgb(199, 146, 234)">,</span><span class="token plain"></span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  </span><span class="token property">&quot;ready_endpoint&quot;</span><span class="token operator" style="color:rgb(137, 221, 255)">:</span><span class="token plain"> </span><span class="token string" style="color:rgb(195, 232, 141)">&quot;/ready&quot;</span><span class="token punctuation" style="color:rgb(199, 146, 234)">,</span><span class="token plain"></span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  </span><span class="token property">&quot;enrollment_endpoint&quot;</span><span class="token operator" style="color:rgb(137, 221, 255)">:</span><span class="token plain"> </span><span class="token string" style="color:rgb(195, 232, 141)">&quot;/v1/enroll&quot;</span><span class="token punctuation" style="color:rgb(199, 146, 234)">,</span><span class="token plain"></span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  </span><span class="token property">&quot;context_mcp_endpoint&quot;</span><span class="token operator" style="color:rgb(137, 221, 255)">:</span><span class="token plain"> </span><span class="token string" style="color:rgb(195, 232, 141)">&quot;/v1/mcp/context&quot;</span><span class="token punctuation" style="color:rgb(199, 146, 234)">,</span><span class="token plain"></span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  </span><span class="token property">&quot;memory_mcp_endpoint&quot;</span><span class="token operator" style="color:rgb(137, 221, 255)">:</span><span class="token plain"> </span><span class="token string" style="color:rgb(195, 232, 141)">&quot;/v1/memory/mcp&quot;</span><span class="token punctuation" style="color:rgb(199, 146, 234)">,</span><span class="token plain"></span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  </span><span class="token property">&quot;memory_hooks_endpoint&quot;</span><span class="token operator" style="color:rgb(137, 221, 255)">:</span><span class="token plain"> </span><span class="token string" style="color:rgb(195, 232, 141)">&quot;/v1/memory&quot;</span><span class="token punctuation" style="color:rgb(199, 146, 234)">,</span><span class="token plain"></span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  </span><span class="token property">&quot;web_mcp_endpoint&quot;</span><span class="token operator" style="color:rgb(137, 221, 255)">:</span><span class="token plain"> </span><span class="token string" style="color:rgb(195, 232, 141)">&quot;/mcp&quot;</span><span class="token punctuation" style="color:rgb(199, 146, 234)">,</span><span class="token plain"></span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  </span><span class="token property">&quot;oauth_authorization_server_metadata&quot;</span><span class="token operator" style="color:rgb(137, 221, 255)">:</span><span class="token plain"> </span><span class="token string" style="color:rgb(195, 232, 141)">&quot;/.well-known/oauth-authorization-server&quot;</span><span class="token punctuation" style="color:rgb(199, 146, 234)">,</span><span class="token plain"></span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  </span><span class="token property">&quot;features&quot;</span><span class="token operator" style="color:rgb(137, 221, 255)">:</span><span class="token plain"> </span><span class="token punctuation" style="color:rgb(199, 146, 234)">{</span><span class="token property">&quot;context&quot;</span><span class="token operator" style="color:rgb(137, 221, 255)">:</span><span class="token plain"> </span><span class="token boolean" style="color:rgb(255, 88, 116)">true</span><span class="token punctuation" style="color:rgb(199, 146, 234)">,</span><span class="token plain"> </span><span class="token property">&quot;memory&quot;</span><span class="token operator" style="color:rgb(137, 221, 255)">:</span><span class="token plain"> </span><span class="token boolean" style="color:rgb(255, 88, 116)">true</span><span class="token punctuation" style="color:rgb(199, 146, 234)">,</span><span class="token plain"> </span><span class="token property">&quot;memory_hooks&quot;</span><span class="token operator" style="color:rgb(137, 221, 255)">:</span><span class="token plain"> </span><span class="token boolean" style="color:rgb(255, 88, 116)">true</span><span class="token punctuation" style="color:rgb(199, 146, 234)">,</span><span class="token plain"> </span><span class="token property">&quot;web_mcp&quot;</span><span class="token operator" style="color:rgb(137, 221, 255)">:</span><span class="token plain"> </span><span class="token boolean" style="color:rgb(255, 88, 116)">true</span><span class="token punctuation" style="color:rgb(199, 146, 234)">,</span><span class="token plain"> </span><span class="token property">&quot;oauth_pkce&quot;</span><span class="token operator" style="color:rgb(137, 221, 255)">:</span><span class="token plain"> </span><span class="token boolean" style="color:rgb(255, 88, 116)">true</span><span class="token punctuation" style="color:rgb(199, 146, 234)">,</span><span class="token plain"> </span><span class="token property">&quot;remote_admin_read_only&quot;</span><span class="token operator" style="color:rgb(137, 221, 255)">:</span><span class="token plain"> </span><span class="token boolean" style="color:rgb(255, 88, 116)">true</span><span class="token punctuation" style="color:rgb(199, 146, 234)">}</span><span class="token plain"></span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain"></span><span class="token punctuation" style="color:rgb(199, 146, 234)">}</span><br></div></code></pre></div></div>
+<p>The gateway exposes this response at <code>GET /.well-known/ivoai</code>. <code>/health</code> is process
+liveness and does not depend on optional connectors. <code>/ready</code> requires a healthy
+context service; an unavailable ai-memory dependency is reported as <code>ready_degraded</code>
+so context remains usable.</p>
+<p>Before consuming an enrollment code, the client requires valid Web PKI TLS, a
+healthy or degraded-ready server, and protocol major 1. After enrollment, the
+one-time credential and MCP registry are persisted before context and memory probes.
+Probe failures become explicit degradation warnings, so a consumed code never
+strands the issued credential. Redirects to another origin are rejected during
+discovery and enrollment. Plaintext is accepted only on loopback for development or
+behind a same-host TLS-terminating reverse proxy. A remote reverse proxy requires an
+explicit source CIDR and forwarded HTTPS enforcement; other non-loopback listeners
+require direct TLS configuration.</p>
+<p>Endpoints use bounded JSON bodies and server-level request, read, write, and idle
+timeouts. MCP endpoints accept JSON-RPC over HTTP and require bearer authentication.
+Protocol changes that preserve version 1 are additive; removing or changing a field
+or tool requires a new protocol major. Database and Qdrant collection migrations
+carry their own monotonically increasing schema versions.</p>
+<h3 class="anchor anchorTargetStickyNavbar_UW1m" id="enrollment-and-authorization">Enrollment and authorization<a href="#enrollment-and-authorization" class="hash-link" aria-label="Link direto para Enrollment and authorization" title="Link direto para Enrollment and authorization" translate="no">​</a></h3>
+<p><code>ivoai server enrollment create</code> generates 256 secret bits from the operating-system
+CSPRNG and displays the base64url one-time code once. Because these high-entropy
+random codes resist offline guessing, the server stores only a SHA-256 hash, together
+with the ID, creation time, expiry, scopes, and consumed/revoked timestamps. The
+default TTL is 10 minutes.</p>
+<p>Codes are compared in constant time. Mutations take an exclusive OS file lock, and a
+successful exchange atomically replaces the state file after marking the code as
+consumed. This prevents independent CLI and gateway processes from consuming or
+overwriting the same state concurrently. Codes and returned credentials are never
+placed in argv examples, URLs, or logs; standard input and an interactive no-echo
+prompt are supported.</p>
+<p>The exchange returns a random client-scoped bearer credential once. Only its hash and
+metadata are stored server-side in the owner-only local enrollment backend at
+<code>/var/lib/ivoai/enrollment/state.json</code>; the client stores the value in a <code>0600</code> secret
+file. Initial scopes are <code>context:read</code>, <code>memory:read</code>, <code>memory:write</code>, <code>status:read</code>,
+<code>doctor:read</code>, and <code>connector:read</code>. Administrative mutation is never implied by
+enrollment. Revocation is immediate. Invalid, expired, consumed, and revoked codes
+share one uniform external error, so code state is not disclosed.</p>
+<h3 class="anchor anchorTargetStickyNavbar_UW1m" id="web-mcp-and-oauth">Web MCP and OAuth<a href="#web-mcp-and-oauth" class="hash-link" aria-label="Link direto para Web MCP and OAuth" title="Link direto para Web MCP and OAuth" translate="no">​</a></h3>
+<p>ChatGPT Web and Claude Web use a separate public integration boundary. <code>/mcp</code> is a
+Streamable HTTP MCP endpoint built on the pinned official MCP Go SDK. It aggregates
+context and memory behind one connector URL while preserving the existing native
+client MCP routes. <code>initialize</code> advertises server instructions, tool capabilities,
+and the bounded skills extension; tools return typed <code>structuredContent</code> plus a text
+representation for compatibility.</p>
+<p>The Web tool surface is intentionally narrower than the backing services:</p>
+<ul>
+<li class=""><code>context_search</code>, <code>context_get_document</code>, <code>context_recent</code>, and <code>context_health</code>
+are read-only and label retrieved documents as untrusted data;</li>
+<li class=""><code>memory_query</code>, <code>memory_recent</code>, <code>memory_read_page</code>, and <code>memory_status</code> require
+<code>memory:read</code>;</li>
+<li class=""><code>memory_write_page</code> and <code>memory_feedback</code> require <code>memory:write</code>;</li>
+<li class=""><code>memory_delete_page</code> requires <code>memory:delete</code>, a normalized page path, and explicit
+confirmation in the call.</li>
+</ul>
+<p>Maintenance, self-improvement, handoff orchestration, arbitrary upstream tools, and
+host commands are not published by this facade. Loss of ai-memory degrades memory
+tools without making context tools or gateway liveness unavailable.</p>
+<p>OAuth follows Authorization Code with PKCE S256. Protected-resource and authorization
+server metadata support Web connector discovery; dynamic client registration accepts
+only validated HTTPS redirect URIs (plus the explicitly supported loopback development
+case). Authorization codes live for five minutes, access tokens for one hour, and
+rotating refresh tokens for 30 days. The browser consent flow additionally requires a
+short-lived one-time activation code created by the local administrator, avoiding a
+new password database.</p>
+<p>Server-side OAuth persistence stores only hashes of activation codes, authorization
+codes, access tokens, and refresh tokens. Mutations are locked and atomic. Scopes are
+checked again at the tool boundary. Origin validation, PKCE verification, <code>state</code>
+round-tripping, exact redirect matching, token rotation, and revocation limit token
+substitution and cross-site authorization attacks.</p>
+<p>The RFC 8707 <code>resource</code> value is the canonical public <code>/mcp</code> URL. It is preserved in
+authorization codes, access tokens, rotating refresh tokens, and every authenticated
+MCP request so credentials cannot be replayed against a different audience.</p>
+<h3 class="anchor anchorTargetStickyNavbar_UW1m" id="mcp-skill-delivery">MCP skill delivery<a href="#mcp-skill-delivery" class="hash-link" aria-label="Link direto para MCP skill delivery" title="Link direto para MCP skill delivery" translate="no">​</a></h3>
+<p>The repository&#x27;s <code>skills/ivoai-memory-context/SKILL.md</code> is also available through
+<code>skills/list</code>, <code>skills/get</code>, and <code>resources/read</code>. The advertised resource uses a
+<code>skill://</code> URI and digest so compatible clients can import a fixed snapshot. A release
+also publishes the same directory as <code>ivoai-memory-context.zip</code> for Claude custom
+Skill import. MCP initialization instructions, read-tool descriptions, and the skill
+all declare the same <code>memory → Context → web</code> order. Importing instructions cannot
+technically guarantee that a Web model invokes a tool on every turn; the platform
+retains final tool-selection control.</p>
+<p>Remote administration is an explicit allowlist of typed operations such as status,
+doctor summary, and connector list. There is no host-command parameter,
+executable-path parameter, shell, file-write primitive, or generic proxy endpoint.</p>
+<h2 class="anchor anchorTargetStickyNavbar_UW1m" id="context-and-rag">Context and RAG<a href="#context-and-rag" class="hash-link" aria-label="Link direto para Context and RAG" title="Link direto para Context and RAG" translate="no">​</a></h2>
+<p>The context core is healthy with zero connectors and zero documents. A connector
+implements discovery and streaming reads into a normalized document interface; it
+cannot write the server filesystem outside its configured source. v0.1 adapters are:</p>
+<ul>
+<li class=""><code>filesystem</code>: a configured local root; directory traversal skips unsafe names and symlink entries;</li>
+<li class=""><code>git</code>: an existing local checkout enumerated with bounded <code>git ls-files</code> and then filtered by the same document rules.</li>
+</ul>
+<p>Future Drive, S3, Notion, HTTP, GitHub, and generic MCP adapters implement the same
+interface without changing chunking, storage, or agent tools. Connector credentials
+are separate scoped secrets.</p>
+<p>Pipeline:</p>
+<div class="language-text codeBlockContainer_hJIO theme-code-block" style="--prism-color:#bfc7d5;--prism-background-color:#292d3e"><div class="codeBlockContent_tbZp"><pre tabindex="0" class="prism-code language-text codeBlock_e7Om thin-scrollbar" style="color:#bfc7d5;background-color:#292d3e"><code class="codeBlockLines_QMIf"><div class="token-line" style="color:#bfc7d5"><span class="token plain">connector -&gt; canonical document -&gt; sensitive/binary filter -&gt; deterministic chunks</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">          -&gt; local embedding -&gt; versioned Qdrant collection -&gt; read-only MCP tools</span><br></div></code></pre></div></div>
+<p>Normalization records a stable document ID, source, relative path, timestamps, and
+connector metadata. The filter excludes secret, credential, cloud-state, and key
+files; binary content; non-regular files; hidden VCS internals; and files above 8 MiB.
+Git enumeration disables repository-controlled hooks and fsmonitor programs.</p>
+<p>Ingestion opens the connector root and every path component with OS-level no-follow
+semantics, rejects traversal and special files, reads through the verified descriptor,
+and enforces aggregate document, byte, and chunk quotas. Catalog replacement is
+batched. Re-ingestion reconciles disappeared documents, while connector removal
+purges that source&#x27;s catalog entries and Qdrant vectors before deleting its registry
+entry.</p>
+<p>Chunk IDs derive from document ID, chunk index, and chunk text. The default policy
+uses up to 1,200 Unicode code points with approximately 150-code-point overlap and
+prefers newline or word boundaries. Re-ingestion is deterministic, but Qdrant
+currently deletes a document&#x27;s old points before uploading its replacement. A failed
+upload therefore requires another ingestion run.</p>
+<p>The Qdrant collection is <code>ivoai-context-v1-d384</code>; Qdrant 1.19.0 uses the pinned
+upstream unprivileged multi-architecture image digest. Its host mapping is
+loopback-only (<code>127.0.0.1:6333</code>) and requires a generated API key. Embeddings and
+ai-memory use separate generated credentials. Docker uses a transient publication
+network to establish the loopback bindings and a separate model-download network with
+explicit highest gateway priority. After the embedding model is healthy, systemd
+disconnects the download route. The loopback-publication network remains attached so
+the host mappings stay valid, but disables IP masquerading and therefore provides no
+backend egress. The index is a cache; source documents,
+normalized metadata, and connector definitions are authoritative. A collection can
+be deleted and rebuilt deterministically.</p>
+<p>Agent tools are <code>context_search</code>, <code>context_get_document</code>, <code>context_recent</code>, and
+<code>context_health</code>. They are read-only and return source metadata. Search and recent
+counts are bounded to 100; <code>context_recent</code> omits document bodies; and
+<code>context_get_document</code> returns at most one document, subject to the 8 MiB ingestion
+limit. Ingestion and connector administration use separate authenticated commands and
+API routes.</p>
+<p>Document text is untrusted data. Tool descriptions and results label it as such and
+never route document-provided commands into installers, shells, connector
+configuration, or authorization decisions.</p>
+<h3 class="anchor anchorTargetStickyNavbar_UW1m" id="local-embedding-decision">Local embedding decision<a href="#local-embedding-decision" class="hash-link" aria-label="Link direto para Local embedding decision" title="Link direto para Local embedding decision" translate="no">​</a></h3>
+<p>Text Embeddings Inference (TEI) 1.9.3 was chosen over a cloud API because it is
+Apache-2.0, maintained by Hugging Face, exposes a small HTTP API, supports CPU
+containers, and documents both x86_64 and aarch64. The amd64 image and the upstream
+<code>cpu-arm64-sha-30507cb</code> arm64 image are each pinned by immutable OCI index digest;
+neither architecture uses a mutable tag at runtime. Sources:
+<a href="https://github.com/huggingface/text-embeddings-inference/releases/tag/v1.9.3" target="_blank" rel="noopener noreferrer" class="">TEI v1.9.3</a> and
+<a href="https://github.com/huggingface/text-embeddings-inference" target="_blank" rel="noopener noreferrer" class="">TEI</a>.</p>
+<p>The default model is <code>intfloat/multilingual-e5-small</code> at immutable revision
+<code>614241f622f53c4eeff9890bdc4f31cfecc418b3</code>, with its safetensors hash recorded in the
+manifest. It is MIT-licensed, 384-dimensional, supports 94 languages, has a 512-token
+limit, and is suitable for Portuguese/English CPU-first retrieval at moderate
+footprint. E5&#x27;s required <code>query:</code> and <code>passage:</code> prefixes are applied centrally, and
+the Qdrant collection name includes the dimensional/schema version. Model source:
+<a href="https://huggingface.co/intfloat/multilingual-e5-small/tree/614241f622f53c4eeff9890bdc4f31cfecc418b3" target="_blank" rel="noopener noreferrer" class="">multilingual-e5-small pinned revision</a>.</p>
+<p>TEI was preferred to embedding directly inside the Go gateway because process
+isolation bounds native-model crashes and permits independent health, restart, and
+resource limits. FastEmbed 0.8.0 is a credible lower-footprint future alternative,
+but it would add a Python runtime inside the context process or another bespoke
+service without improving the current HTTP boundary.</p>
+<h2 class="anchor anchorTargetStickyNavbar_UW1m" id="backup-and-restore">Backup and restore<a href="#backup-and-restore" class="hash-link" aria-label="Link direto para Backup and restore" title="Link direto para Backup and restore" translate="no">​</a></h2>
+<p>A backup writes a versioned manifest and includes server configuration with secret
+values excluded, context metadata and the normalized authoritative corpus, connector
+definitions without credentials, ai-memory persistent data, and index rebuild
+metadata. Enrollment and client credential state are excluded. Qdrant data is
+rebuildable and is never the only recoverable source.</p>
+<p>Archives are created under a mode-<code>0700</code> backup directory using a temporary name.
+They reject symlinks and special files and are atomically finalized. The CLI stops
+the managed gateway, context, and dependency services before backup or restore and
+starts them again afterward.</p>
+<p>Restore stages and validates the format, bounded entry sizes, and safe paths; rejects
+links and traversal; and then atomically writes individual files without restoring
+secrets. It merges into managed roots and does not remove stale files. Restore accepts
+only an explicit local absolute archive path and is not exposed through the remote
+API.</p>
+<h2 class="anchor anchorTargetStickyNavbar_UW1m" id="security-invariants">Security invariants<a href="#security-invariants" class="hash-link" aria-label="Link direto para Security invariants" title="Link direto para Security invariants" translate="no">​</a></h2>
+<p>The provider-neutral skill boundaries are implemented by a separate, versioned
+Skill Control Plane foundation. Registry, metadata-only indexing, dependency and
+conflict resolution, deny-by-default policy, and generic non-executing supply-chain
+staging are documented in <a class="" href="/pt-BR/docs/0.9.0/skill-control-plane">skill-control-plane.md</a>. The
+foundation is additive: the current session path does not require a populated
+registry and no external skill can assume orchestrator authority.</p>
+<ul>
+<li class="">Secrets never enter the main TOML, URLs, diagnostics, or logs. ivoai does not inject
+stored secrets into subprocess argv; enrollment uses standard input or a no-echo
+prompt by default.</li>
+<li class="">Installer and probe subprocesses use structured argv, bounded contexts, and minimal
+environments. Interactive agent subprocesses use structured argv and signal
+forwarding while retaining the compatible user environment required by the vendor
+clients.</li>
+<li class="">HTTPS validation is on by default; no insecure-skip-verify production switch is persisted.</li>
+<li class="">All optional layers have bounded timeouts or circuit breakers. They fail open only
+for launching the official local agent, never for authorization.</li>
+<li class="">Connector and RAG data are untrusted and cannot invoke tools or mutate configuration.</li>
+<li class="">Qdrant and internal admin surfaces are not public.</li>
+<li class="">Enrollment is one-time, short-lived, cross-process locked, and atomically persisted.
+Client credentials are hashed server-side, scoped, and revocable.</li>
+<li class="">Atomic writes reject unsafe ownership, modes and symlink targets.</li>
+<li class="">Doctor redacts values and reports permissions, versions, reachability, TLS and protocol compatibility only.</li>
+</ul>
+<h2 class="anchor anchorTargetStickyNavbar_UW1m" id="upstream-decisions-and-known-uncertainty">Upstream decisions and known uncertainty<a href="#upstream-decisions-and-known-uncertainty" class="hash-link" aria-label="Link direto para Upstream decisions and known uncertainty" title="Link direto para Upstream decisions and known uncertainty" translate="no">​</a></h2>
+<div class="ivoai-table-region" role="region" aria-label="Tabela rolável" tabindex="0"><table><thead><tr><th>Component</th><th style="text-align:right">Pin</th><th>Decision and uncertainty on 2026-08-23</th></tr></thead><tbody><tr><td>Codex CLI + code-mode host</td><td style="text-align:right">0.148.0</td><td>Official same-release assets; <code>codex login</code> supports ChatGPT subscriptions and the separately checksummed host preserves the managed tool/MCP surface.</td></tr><tr><td>Claude Code</td><td style="text-align:right">2.1.228</td><td>Official stable channel; latest was 2.1.237. Proprietary external binary subject to Anthropic terms.</td></tr><tr><td>Headroom</td><td style="text-align:right">0.36.0</td><td>Current PyPI/GitHub release with amd64/arm64 wheels; fast-moving integration requires a setup smoke probe and direct fallback.</td></tr><tr><td>uv / CPython</td><td style="text-align:right">0.12.5 / 3.13.15</td><td>Exact private installer/runtime pair for Headroom with embedded architecture-specific hashed constraints.</td></tr><tr><td>ai-memory</td><td style="text-align:right">1.29.0</td><td>Newly released on the validation date, with changelog and per-arch hashes reviewed. Limited burn-in is mitigated by exact pin, hook timeout and failure isolation.</td></tr><tr><td>Ruflo</td><td style="text-align:right">3.38.12</td><td>Exact npm integrity pin. Direct inference/provider routing remains unsuitable for the no-PAYG default and is disabled. Package/repository naming has moved historically, so updates require provenance review.</td></tr><tr><td>Qdrant</td><td style="text-align:right">1.19.0</td><td>Current Apache-2.0 release and multi-arch OCI digest; internal only.</td></tr><tr><td>TEI</td><td style="text-align:right">1.9.3</td><td>Mature CPU HTTP service; amd64 and arm64 upstream images are pinned independently by OCI index digest.</td></tr><tr><td>multilingual-e5-small</td><td style="text-align:right"><code>614241f…</code></td><td>Immutable MIT model revision; 384 dimensions/94 languages. Retrieval quality must be measured on the user&#x27;s corpus before changing models.</td></tr></tbody></table></div>
+<p>No external account, private server, or real owner credential was used during this
+discovery. Compatibility with future upstream releases is not assumed. An ivoai
+release that changes a pin must revise this table and the manifest only after
+automated install, auth-status, wrapper, and failure-isolation tests pass.</p></div><footer class="theme-doc-footer docusaurus-mt-lg"><div class="row margin-top--sm theme-doc-footer-edit-meta-row"><div class="col noPrint_H9in"><a href="https://github.com/ivo-lopes/ivoai/edit/main/versioned_docs/version-0.9.0/architecture.md" target="_blank" rel="noopener noreferrer" class="theme-edit-this-page"><svg fill="currentColor" height="20" width="20" viewBox="0 0 40 40" class="iconEdit_kAoA" aria-hidden="true"><g><path d="m34.5 11.7l-3 3.1-6.3-6.3 3.1-3q0.5-0.5 1.2-0.5t1.1 0.5l3.9 3.9q0.5 0.4 0.5 1.1t-0.5 1.2z m-29.5 17.1l18.4-18.5 6.3 6.3-18.4 18.4h-6.3v-6.2z"></path></g></svg>Editar esta página</a></div><div class="col lastUpdated_HMyn"></div></div></footer></article><nav class="docusaurus-mt-lg pagination-nav" aria-label="Páginas de documento"><a class="pagination-nav__link pagination-nav__link--prev" href="/pt-BR/docs/0.9.0/known-limitations"><div class="pagination-nav__sublabel">Anterior</div><div class="pagination-nav__label">Known limitations</div></a><a class="pagination-nav__link pagination-nav__link--next" href="/pt-BR/docs/0.9.0/adrs"><div class="pagination-nav__sublabel">Próxima</div><div class="pagination-nav__label">Architecture decisions</div></a></nav></div></div><div class="col col--3"><div class="tableOfContents_dNY2 thin-scrollbar theme-doc-toc-desktop"><ul class="table-of-contents table-of-contents__left-border"><li><a href="#goals-and-boundaries" class="table-of-contents__link toc-highlight">Goals and boundaries</a></li><li><a href="#multi-server-knowledge-plane" class="table-of-contents__link toc-highlight">Multi-server knowledge plane</a></li><li><a href="#replaceable-core-contracts" class="table-of-contents__link toc-highlight">Replaceable core contracts</a></li><li><a href="#system-view" class="table-of-contents__link toc-highlight">System view</a></li><li><a href="#automatic-quota-aware-control-plane" class="table-of-contents__link toc-highlight">Automatic quota-aware control plane</a></li><li><a href="#client-architecture" class="table-of-contents__link toc-highlight">Client architecture</a><ul><li><a href="#files-and-ownership" class="table-of-contents__link toc-highlight">Files and ownership</a></li><li><a href="#connections-and-official-credentials" class="table-of-contents__link toc-highlight">Connections and official credentials</a></li><li><a href="#agent-launch-and-failure-isolation" class="table-of-contents__link toc-highlight">Agent launch and failure isolation</a></li><li><a href="#session-control-plane" class="table-of-contents__link toc-highlight">Session control plane</a></li><li><a href="#identity-and-mcp-registry" class="table-of-contents__link toc-highlight">Identity and MCP registry</a></li></ul></li><li><a href="#server-architecture" class="table-of-contents__link toc-highlight">Server architecture</a><ul><li><a href="#runtime-and-persistence" class="table-of-contents__link toc-highlight">Runtime and persistence</a></li><li><a href="#protocol-version-1" class="table-of-contents__link toc-highlight">Protocol version 1</a></li><li><a href="#enrollment-and-authorization" class="table-of-contents__link toc-highlight">Enrollment and authorization</a></li><li><a href="#web-mcp-and-oauth" class="table-of-contents__link toc-highlight">Web MCP and OAuth</a></li><li><a href="#mcp-skill-delivery" class="table-of-contents__link toc-highlight">MCP skill delivery</a></li></ul></li><li><a href="#context-and-rag" class="table-of-contents__link toc-highlight">Context and RAG</a><ul><li><a href="#local-embedding-decision" class="table-of-contents__link toc-highlight">Local embedding decision</a></li></ul></li><li><a href="#backup-and-restore" class="table-of-contents__link toc-highlight">Backup and restore</a></li><li><a href="#security-invariants" class="table-of-contents__link toc-highlight">Security invariants</a></li><li><a href="#upstream-decisions-and-known-uncertainty" class="table-of-contents__link toc-highlight">Upstream decisions and known uncertainty</a></li></ul></div></div></div></div></main></div></div></div><footer class="theme-layout-footer footer footer--dark"><div class="container container-fluid"><div class="row footer__links"><div class="theme-layout-footer-column col footer__col"><div class="footer__title">Operar</div><ul class="footer__items clean-list"><li class="footer__item"><a class="footer__link-item" href="/pt-BR/docs/installation">Instalação</a></li><li class="footer__item"><a class="footer__link-item" href="/pt-BR/docs/troubleshooting">Solução de problemas</a></li></ul></div><div class="theme-layout-footer-column col footer__col"><div class="footer__title">Desenvolver</div><ul class="footer__items clean-list"><li class="footer__item"><a class="footer__link-item" href="/pt-BR/docs/architecture">Arquitetura</a></li><li class="footer__item"><a class="footer__link-item" href="/pt-BR/docs/development">Desenvolvimento</a></li></ul></div></div><div class="footer__bottom text--center"><div class="footer__copyright">Copyright © 2026 IVOAI. Licenciado sob MIT.</div></div></div></footer></div>
+</body>
+</html>

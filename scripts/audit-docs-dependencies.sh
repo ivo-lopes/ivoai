@@ -8,7 +8,7 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # release. IVOAI does not process local images, and only the generated static
 # site is embedded in the production binary. Keep this exception narrow and
 # fail it if an affected image format enters the documentation sources.
-if find "$repo_root/docs" "$repo_root/website/src" "$repo_root/website/static" \
+if find "$repo_root/docs" "$repo_root/website/src" "$repo_root/website/static" "$repo_root/website/i18n" \
   -type f \( -iname '*.icns' -o -iname '*.jxl' -o -iname '*.heif' -o -iname '*.heic' \) \
   -print -quit | grep -q .; then
   echo "affected image formats are not permitted while the image-size advisories remain unpatched" >&2

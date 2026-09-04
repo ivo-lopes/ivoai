@@ -124,8 +124,8 @@ case "$*" in
   "task create"*) echo 'task-auto-123' ;;
 esac
 `)
-	codexBody += "\nprintf '%s\\n' '{\"type\":\"thread.started\",\"thread_id\":\"thread_fixture\"}'\n"
-	claudeBody += "\nprintf '%s\\n' '{\"type\":\"system\",\"session_id\":\"claude_fixture\"}'\n"
+	codexBody += "\nprintf '%s\\n' '{\"type\":\"thread.started\",\"thread_id\":\"thread_fixture\"}'\nprintf '%s\\n' '{\"type\":\"item.completed\",\"item\":{\"type\":\"agent_message\",\"text\":\"fixture complete\"}}'\n"
+	claudeBody += "\nprintf '%s\\n' '{\"type\":\"system\",\"session_id\":\"claude_fixture\"}'\nprintf '%s\\n' '{\"type\":\"stream_event\",\"event\":{\"type\":\"content_block_delta\",\"delta\":{\"type\":\"text_delta\",\"text\":\"fixture complete\"}}}'\n"
 	a := sessionTestApp(t, root, appExecutable(t, root, "codex", codexBody), appExecutable(t, root, "claude", claudeBody), ruflo)
 	opencode := appExecutable(t, root, "opencode", "#!/bin/sh\nexit 0\n")
 	t.Setenv("IVOAI_TEST_MODE", "1")
@@ -167,6 +167,8 @@ esac
 		}
 		return fakeManagedOpenCode{environment: options.Environment}, nil
 	}
+	catalog := opencodebridge.DefaultCatalog()
+	a.OpenCodeModelCatalog = &catalog
 	previous, _ := os.Getwd()
 	t.Cleanup(func() { _ = os.Chdir(previous) })
 	if err := os.Chdir(root); err != nil {
@@ -196,6 +198,44 @@ func TestAutoStartupFallbackNeverLaunchesExhaustedProvider(t *testing.T) {
 	values, _ := a.SessionList()
 	if len(values) != 1 || values[0].InitialPlanner != "codex" || values[0].CurrentPrimary != "claude" || values[0].FailoverCount != 1 || values[0].State != session.StateCompleted {
 		t.Fatalf("unexpected automatic session: %+v", values)
+	}
+}
+
+func TestManagedOpenCodeSelectionOwnsModelAndEffortArguments(t *testing.T) {
+	tests := []struct {
+		executor string
+		input    []string
+		want     string
+	}{
+		{"codex", []string{"--model", "old", "-c", `model_reasoning_effort="high"`, "--sandbox", "workspace-write"}, "--sandbox workspace-write"},
+		{"codex", []string{"-m", "old", "--model=older", "--json"}, "--json"},
+		{"codex", []string{"-c", `model="old"`, "--json"}, "--json"},
+		{"codex", []string{"--config", `model="old"`, "--config", `model_reasoning_effort="high"`, "--config", `sandbox_permissions="workspace-write"`}, `--config sandbox_permissions="workspace-write"`},
+		{"codex", []string{`--config=model="old"`, `--config=model_reasoning_effort="high"`, "--json"}, "--json"},
+		{"codex", []string{`-mold`, `-cmodel="older"`, `-cmodel_reasoning_effort="low"`, "--json"}, "--json"},
+		{"claude", []string{"--model", "old", "--effort", "high", "--permission-mode", "plan"}, "--permission-mode plan"},
+		{"claude", []string{"--model=old", "--effort=low", "--verbose"}, "--verbose"},
+	}
+	for _, test := range tests {
+		if got := strings.Join(stripManagedSelectionArgs(test.executor, test.input), " "); got != test.want {
+			t.Fatalf("%s: got %q want %q", test.executor, got, test.want)
+		}
+	}
+}
+
+func TestResumableOpenCodeSessionRejectsFailedAndBlockedSessions(t *testing.T) {
+	for _, state := range []session.State{session.StateFailed, session.StateBlocked, session.StateDegraded} {
+		root := t.TempDir()
+		store := session.Store{Root: filepath.Join(root, "sessions")}
+		now := time.Now().UTC()
+		value := session.Session{SessionID: "sess_33333333333333333333333333333333", SwarmID: "swarm_fixture", StartedAt: now, UpdatedAt: now, Mode: session.ModeAuto, Auto: true, InitialPlanner: "codex", CurrentPrimary: "codex", Frontend: "opencode", FrontendSessionID: "ses_unsafe_resume", WorkingDirectory: root, KnowledgeScopeID: "ks_fixture", PrimaryExecutor: "codex", PrimaryModel: session.UnknownModel(), Workers: []session.Worker{}, MaxWorkers: 1, ContextStatus: "disabled", MemoryStatus: "disabled", ServerStatus: "not-connected", State: state}
+		if err := store.Create(value); err != nil {
+			t.Fatal(err)
+		}
+		got, err := resumableOpenCodeSession(store, "sess_current", root, "ks_fixture")
+		if err != nil || got != "" {
+			t.Fatalf("state=%s resume=%q err=%v", state, got, err)
+		}
 	}
 }
 
@@ -541,6 +581,44 @@ func TestCodexAutomaticArgsApproveOnlySharedKnowledgeReads(t *testing.T) {
 	}
 	if strings.Contains(joined, "memory_write_page.approval_mode") {
 		t.Fatalf("automatic Codex arguments auto-approved a memory write: %q", joined)
+	}
+}
+
+func TestClaudeAutomaticArgsAllowOnlySharedKnowledgeReads(t *testing.T) {
+	root := t.TempDir()
+	a := autoTestApp(t, root, "#!/bin/sh\nexit 0\n", "#!/bin/sh\nexit 0\n")
+	runtimeDir := filepath.Join(root, "runtime")
+	if err := os.MkdirAll(runtimeDir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	instructions := filepath.Join(runtimeDir, "automatic-instructions.md")
+	if err := os.WriteFile(instructions, []byte("fixture"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := a.Store.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg.MCP.Servers["ivoai-memory"] = config.MCPServer{Enabled: true, Kind: "memory"}
+	cfg.MCP.Servers["ivoai-context"] = config.MCPServer{Enabled: true, Kind: "context"}
+	args, err := a.autoAgentArgs("claude", nil, "sess_0123456789abcdef0123456789abcdef", runtimeDir, instructions, "", cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	joined := strings.Join(args, "\n")
+	for _, expected := range []string{
+		"--allowedTools",
+		"mcp__ivoai-memory__memory_read_page",
+		"mcp__ivoai-context__context_search",
+	} {
+		if !strings.Contains(joined, expected) {
+			t.Fatalf("automatic Claude arguments missing %q: %q", expected, joined)
+		}
+	}
+	for _, forbidden := range []string{"memory_write_page", "memory_delete", "context_write"} {
+		if strings.Contains(joined, forbidden) {
+			t.Fatalf("automatic Claude arguments auto-approved %q: %q", forbidden, joined)
+		}
 	}
 }
 

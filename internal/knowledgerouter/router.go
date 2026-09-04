@@ -200,17 +200,85 @@ func (r *Router) handleMCP(w http.ResponseWriter, request *http.Request, kind st
 		writeRPCError(w, rpc.ID, -32020, "memory write requires exactly one knowledge destination")
 		return
 	}
-	if write || len(groups) == 1 || rpc.Method != "tools/call" {
-		response, profile, failover, err := r.callGroup(request.Context(), groups[0], kind, body, write, hasResponseID(rpc.ID), request.Header)
+	if len(groups) > 1 {
+		if request.Header.Get(mcpSessionHeader) != "" {
+			writeRPCError(w, rpc.ID, -32023, "stateful MCP sessions are not supported across federated sources")
+			return
+		}
+		if rpc.Method == "initialize" || rpc.Method == "notifications/initialized" {
+			r.initializeFederation(w, request, rpc, kind, body, groups)
+			return
+		}
+	}
+	if write || len(groups) == 1 {
+		response, profile, failover, err := r.callGroup(request.Context(), groups[0], kind, body, write, hasResponseID(rpc.ID), request.Header, maxResponseBytes)
 		r.emit(Event{Operation: kind, SourceID: profile.ID, SourceAlias: profile.Alias, Purpose: profile.Purpose, SelectedCount: len(groups), Failover: failover, Duration: response.duration, State: state(err), Reason: boundedReason(err)})
 		if err != nil {
-			writeRPCError(w, rpc.ID, -32022, err.Error())
+			writeRPCError(w, rpc.ID, -32022, boundedReason(err))
 			return
 		}
 		copyMCPResponse(w, response)
 		return
 	}
+	if rpc.Method != "tools/call" {
+		var lastErr error
+		for _, group := range groups {
+			response, profile, failover, err := r.callGroup(request.Context(), group, kind, body, false, hasResponseID(rpc.ID), request.Header, maxResponseBytes)
+			r.emit(Event{Operation: kind, SourceID: profile.ID, SourceAlias: profile.Alias, Purpose: profile.Purpose, SelectedCount: len(groups), Failover: failover, Partial: err != nil, Duration: response.duration, State: state(err), Reason: boundedReason(err)})
+			if err == nil {
+				copyMCPResponse(w, response)
+				return
+			}
+			lastErr = err
+		}
+		writeRPCError(w, rpc.ID, -32022, boundedReason(lastErr))
+		return
+	}
 	r.federate(w, request, rpc, kind, body, groups)
+}
+
+func (r *Router) initializeFederation(w http.ResponseWriter, request *http.Request, rpc rpcRequest, kind string, body []byte, groups []serverpool.SourceGroup) {
+	type outcome struct {
+		response upstreamResponse
+		profile  config.ServerProfile
+		err      error
+	}
+	channel := make(chan outcome, len(groups))
+	limit := maxResponseBytes / int64(len(groups))
+	for _, group := range groups {
+		go func(group serverpool.SourceGroup) {
+			response, profile, _, err := r.callGroup(request.Context(), group, kind, body, false, hasResponseID(rpc.ID), request.Header, limit)
+			channel <- outcome{response: response, profile: profile, err: err}
+		}(group)
+	}
+	var first *upstreamResponse
+	var lastErr error
+	for range groups {
+		value := <-channel
+		r.emit(Event{Operation: kind, SourceID: value.profile.ID, SourceAlias: value.profile.Alias, Purpose: value.profile.Purpose, SelectedCount: len(groups), Partial: value.err != nil, Duration: value.response.duration, State: state(value.err), Reason: boundedReason(value.err)})
+		if value.err != nil {
+			lastErr = value.err
+			continue
+		}
+		if value.response.header.Get(mcpSessionHeader) != "" {
+			writeRPCError(w, rpc.ID, -32023, "stateful upstream MCP sessions are not supported for federation")
+			return
+		}
+		if first == nil {
+			copy := value.response
+			first = &copy
+		}
+	}
+	if first == nil {
+		writeRPCError(w, rpc.ID, -32022, boundedReason(lastErr))
+		return
+	}
+	if !hasResponseID(rpc.ID) {
+		w.WriteHeader(http.StatusAccepted)
+		return
+	}
+	first.header.Del(mcpSessionHeader)
+	copyMCPResponse(w, *first)
 }
 
 func (r *Router) federate(w http.ResponseWriter, request *http.Request, rpc rpcRequest, kind string, body []byte, groups []serverpool.SourceGroup) {
@@ -224,7 +292,7 @@ func (r *Router) federate(w http.ResponseWriter, request *http.Request, rpc rpcR
 	channel := make(chan outcome, len(groups))
 	for index, group := range groups {
 		go func(index int, group serverpool.SourceGroup) {
-			response, profile, failover, err := r.callGroup(request.Context(), group, kind, body, false, true, request.Header)
+			response, profile, failover, err := r.callGroup(request.Context(), group, kind, body, false, true, request.Header, maxResponseBytes/int64(len(groups)))
 			channel <- outcome{index: index, response: response, profile: profile, failover: failover, err: err}
 		}(index, group)
 	}
@@ -262,7 +330,27 @@ func (r *Router) federate(w http.ResponseWriter, request *http.Request, rpc rpcR
 		}
 		results = append(results, sourceResult{Source: metadata, Result: envelope.Result, Error: envelope.Error})
 	}
-	writeJSON(w, map[string]any{"jsonrpc": "2.0", "id": json.RawMessage(rpc.ID), "result": map[string]any{"federated": true, "partial": partial, "sources": results}})
+	federated := map[string]any{"federated": true, "partial": partial, "sources": results}
+	text, err := json.Marshal(federated)
+	if err != nil {
+		writeRPCError(w, rpc.ID, -32603, "failed to encode federated result")
+		return
+	}
+	if len(text) > maxResponseBytes {
+		writeRPCError(w, rpc.ID, -32022, "federated MCP result exceeds limit")
+		return
+	}
+	// tools/call must always return a CallToolResult. The previous federation
+	// envelope put the source collection directly under result, which was valid
+	// JSON-RPC but not valid MCP and was rejected by Codex as an unexpected
+	// response type. Keep the machine-readable federation value as text: the
+	// upstream tool's output schema describes one source and therefore must not
+	// be paired with a different federated structuredContent shape.
+	writeJSON(w, map[string]any{
+		"jsonrpc": "2.0",
+		"id":      json.RawMessage(rpc.ID),
+		"result":  map[string]any{"content": []any{map[string]any{"type": "text", "text": string(text)}}},
+	})
 }
 
 func (r *Router) handleMemoryHook(w http.ResponseWriter, request *http.Request) {
@@ -282,7 +370,7 @@ func (r *Router) handleMemoryHook(w http.ResponseWriter, request *http.Request) 
 	}
 	profile := group[0].Profiles[0]
 	endpoint := strings.TrimRight(profile.MemoryHooksURL, "/") + strings.TrimPrefix(request.URL.Path, "/memory")
-	response, err := r.call(request.Context(), profile, endpoint, request.Method, body, request.Header.Get("Content-Type"), nil)
+	response, err := r.call(request.Context(), profile, endpoint, request.Method, body, request.Header.Get("Content-Type"), nil, maxResponseBytes)
 	r.emit(Event{Operation: "memory_hook", SourceID: profile.ID, SourceAlias: profile.Alias, Purpose: profile.Purpose, SelectedCount: 1, Duration: response.duration, State: state(err), Reason: boundedReason(err)})
 	if err != nil {
 		http.Error(w, "memory upstream unavailable", http.StatusBadGateway)
@@ -298,7 +386,7 @@ type upstreamResponse struct {
 	duration time.Duration
 }
 
-func (r *Router) callGroup(ctx context.Context, group serverpool.SourceGroup, kind string, body []byte, write, expectsResponse bool, headers http.Header) (upstreamResponse, config.ServerProfile, bool, error) {
+func (r *Router) callGroup(ctx context.Context, group serverpool.SourceGroup, kind string, body []byte, write, expectsResponse bool, headers http.Header, responseLimit int64) (upstreamResponse, config.ServerProfile, bool, error) {
 	var last error
 	for index, profile := range group.Profiles {
 		if r.circuitOpen(profile.ID) {
@@ -309,7 +397,7 @@ func (r *Router) callGroup(ctx context.Context, group serverpool.SourceGroup, ki
 		if kind == "memory" {
 			endpoint = profile.MemoryMCPURL
 		}
-		response, err := r.call(ctx, profile, endpoint, http.MethodPost, body, "application/json", headers)
+		response, err := r.call(ctx, profile, endpoint, http.MethodPost, body, "application/json", headers, responseLimit)
 		if err == nil && response.status >= 200 && response.status < 300 {
 			if validationErr := validateRPCResponse(response.body, response.header.Get("Content-Type"), expectsResponse); validationErr == nil {
 				r.recordSuccess(profile.ID)
@@ -393,7 +481,7 @@ func validateJSONRPCResponse(body []byte) error {
 	return nil
 }
 
-func (r *Router) call(ctx context.Context, profile config.ServerProfile, endpoint, method string, body []byte, contentType string, mcpHeaders http.Header) (upstreamResponse, error) {
+func (r *Router) call(ctx context.Context, profile config.ServerProfile, endpoint, method string, body []byte, contentType string, mcpHeaders http.Header, responseLimit int64) (upstreamResponse, error) {
 	started := r.now()
 	if endpoint == "" {
 		return upstreamResponse{}, errors.New("source endpoint is not exposed")
@@ -431,7 +519,10 @@ func (r *Router) call(ctx context.Context, profile config.ServerProfile, endpoin
 		return upstreamResponse{duration: r.now().Sub(started)}, err
 	}
 	defer resp.Body.Close()
-	payload, err := readBounded(resp.Body, maxResponseBytes)
+	if responseLimit <= 0 || responseLimit > maxResponseBytes {
+		responseLimit = maxResponseBytes
+	}
+	payload, err := readBounded(resp.Body, responseLimit)
 	if err != nil {
 		return upstreamResponse{status: resp.StatusCode, duration: r.now().Sub(started)}, errors.New("upstream response exceeds limit")
 	}
@@ -601,11 +692,29 @@ func boundedReason(err error) string {
 	if err == nil {
 		return ""
 	}
-	value := err.Error()
-	if len(value) > 160 {
-		value = value[:160]
+	if errors.Is(err, context.DeadlineExceeded) {
+		return "source request timed out"
 	}
-	return value
+	var networkError *url.Error
+	if errors.As(err, &networkError) {
+		return "source transport unavailable"
+	}
+	value := err.Error()
+	for _, allowed := range []string{
+		"source circuit is open", "source endpoint is not exposed", "source endpoint is invalid",
+		"source credential is unavailable", "upstream response exceeds limit",
+		"upstream rejected MCP HTTP content negotiation (HTTP 406)",
+		"upstream MCP response has invalid Content-Type", "upstream MCP response has unsupported Content-Type",
+		"malformed upstream MCP event stream", "malformed upstream JSON-RPC response",
+	} {
+		if value == allowed {
+			return allowed
+		}
+	}
+	if strings.HasPrefix(value, "upstream HTTP ") {
+		return value
+	}
+	return "source request failed"
 }
 
 func randomToken() (string, error) {

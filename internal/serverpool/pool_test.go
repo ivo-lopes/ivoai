@@ -1,6 +1,7 @@
 package serverpool
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/ivo-lopes/ivoai/internal/config"
@@ -174,5 +175,20 @@ func TestExplicitUnavailableSourceFails(t *testing.T) {
 		if _, err := pool.Resolve([]string{"mindsite"}); err == nil {
 			t.Fatalf("explicit unavailable source accepted: %+v", status)
 		}
+	}
+}
+
+func TestImplicitSelectionIsBounded(t *testing.T) {
+	profiles := map[string]config.ServerProfile{}
+	for index := 0; index <= MaxSelectedSources; index++ {
+		alias := fmt.Sprintf("source-%d", index)
+		profiles[alias] = profile("srv_"+alias, alias, alias, "", 10)
+	}
+	pool, err := New(profiles)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := pool.Resolve(nil); err == nil {
+		t.Fatal("unbounded automatic source fan-out was accepted")
 	}
 }

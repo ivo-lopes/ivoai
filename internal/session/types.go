@@ -110,6 +110,11 @@ type Worker struct {
 type ExecutorSessionMapping struct {
 	Executor          string    `json:"executor"`
 	ExecutorSessionID string    `json:"executor_session_id"`
+	SelectionMode     string    `json:"selection_mode,omitempty"`
+	RequestedModel    string    `json:"requested_model,omitempty"`
+	EffectiveModel    string    `json:"effective_model,omitempty"`
+	EffectiveEffort   string    `json:"effective_effort,omitempty"`
+	CatalogRevision   string    `json:"catalog_revision,omitempty"`
 	UpdatedAt         time.Time `json:"updated_at"`
 }
 
@@ -132,6 +137,14 @@ type Session struct {
 	PrimaryPID           int                                    `json:"primary_pid,omitempty"`
 	PrimaryProcessStart  string                                 `json:"primary_process_start,omitempty"`
 	PrimaryModel         ModelInfo                              `json:"primary_model"`
+	SelectionMode        string                                 `json:"selection_mode,omitempty"`
+	RequestedExecutor    string                                 `json:"requested_executor,omitempty"`
+	RequestedModel       string                                 `json:"requested_model,omitempty"`
+	RequestedEffort      string                                 `json:"requested_effort,omitempty"`
+	EffectiveExecutor    string                                 `json:"effective_executor,omitempty"`
+	EffectiveModel       string                                 `json:"effective_model,omitempty"`
+	EffectiveEffort      string                                 `json:"effective_effort,omitempty"`
+	ModelCatalogRevision string                                 `json:"model_catalog_revision,omitempty"`
 	HeadroomRequested    bool                                   `json:"headroom_requested"`
 	HeadroomUsed         bool                                   `json:"headroom_used"`
 	CompressionProvider  string                                 `json:"compression_provider,omitempty"`

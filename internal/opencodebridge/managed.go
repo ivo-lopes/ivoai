@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/ivo-lopes/ivoai/internal/platform"
+	"golang.org/x/sys/unix"
 )
 
 //go:embed assets/server-plugin.mjs
@@ -56,6 +57,8 @@ type Managed struct {
 	doneMu          sync.Mutex
 	doneErr         error
 	expectedVersion string
+	expectedModels  []string
+	lease           *os.File
 	closeOnce       sync.Once
 }
 
@@ -71,6 +74,16 @@ func StartManaged(ctx context.Context, options ManagedOptions) (*Managed, error)
 	if err := platform.EnsurePrivateDir(options.RuntimeDir); err != nil {
 		return nil, err
 	}
+	lease, err := acquireManagedLease(options.StateDir)
+	if err != nil {
+		return nil, err
+	}
+	releaseLease := true
+	defer func() {
+		if releaseLease {
+			releaseManagedLease(lease)
+		}
+	}()
 	paths, err := writeManagedAssets(options)
 	if err != nil {
 		return nil, err
@@ -94,7 +107,11 @@ func StartManaged(ctx context.Context, options ManagedOptions) (*Managed, error)
 	if err := command.Start(); err != nil {
 		return nil, fmt.Errorf("start managed OpenCode backend: %w", err)
 	}
-	managed := &Managed{Environment: environment, password: password, command: command, done: make(chan struct{}), expectedVersion: options.Version}
+	models := make([]string, 0, len(options.Bridge.Catalog().Entries()))
+	for _, entry := range options.Bridge.Catalog().Entries() {
+		models = append(models, entry.ID)
+	}
+	managed := &Managed{Environment: environment, password: password, command: command, done: make(chan struct{}), expectedVersion: options.Version, expectedModels: models, lease: lease}
 	go func() {
 		managed.doneMu.Lock()
 		managed.doneErr = command.Wait()
@@ -129,7 +146,37 @@ func StartManaged(ctx context.Context, options ManagedOptions) (*Managed, error)
 		_ = managed.Close(context.Background())
 		return nil, fmt.Errorf("managed OpenCode provider readiness: %w", err)
 	}
+	releaseLease = false
 	return managed, nil
+}
+
+func acquireManagedLease(stateDir string) (*os.File, error) {
+	if err := platform.EnsurePrivateDir(stateDir); err != nil {
+		return nil, err
+	}
+	path := filepath.Join(stateDir, "opencode-managed.lock")
+	fd, err := unix.Open(path, unix.O_RDWR|unix.O_CREAT|unix.O_CLOEXEC|unix.O_NOFOLLOW, 0o600)
+	if err != nil {
+		return nil, fmt.Errorf("open managed OpenCode lease: %w", err)
+	}
+	file := os.NewFile(uintptr(fd), path)
+	if err := file.Chmod(0o600); err != nil {
+		file.Close()
+		return nil, err
+	}
+	if err := unix.Flock(fd, unix.LOCK_EX|unix.LOCK_NB); err != nil {
+		file.Close()
+		return nil, errors.New("another managed OpenCode frontend is already active")
+	}
+	return file, nil
+}
+
+func releaseManagedLease(file *os.File) {
+	if file == nil {
+		return
+	}
+	_ = unix.Flock(int(file.Fd()), unix.LOCK_UN)
+	_ = file.Close()
 }
 
 func managedProcessAttributes() *syscall.SysProcAttr {
@@ -175,7 +222,7 @@ func writeManagedAssets(options ManagedOptions) (managedPaths, error) {
 		"provider": map[string]any{"ivoai": map[string]any{
 			"npm": "@ai-sdk/openai-compatible", "name": "IVOAI",
 			"options": map[string]any{"baseURL": options.Bridge.URL() + "/v1", "apiKey": options.Bridge.Token()},
-			"models":  map[string]any{"auto": map[string]any{"name": "IVOAI Automatic Orchestration", "limit": map[string]int{"context": 200000, "output": 32000}}},
+			"models":  options.Bridge.Catalog().OpenCodeModels(),
 		}},
 	}
 	tuiConfiguration := map[string]any{
@@ -268,7 +315,7 @@ func (w *listenAddressWriter) Write(body []byte) (int, error) {
 		if strings.HasPrefix(line, prefix) {
 			candidate := strings.TrimSpace(strings.TrimPrefix(line, prefix))
 			parsed, err := url.Parse(candidate)
-			if err == nil && parsed.Scheme == "http" && parsed.Hostname() == "127.0.0.1" && parsed.Port() != "" && parsed.Path == "" && parsed.RawQuery == "" && parsed.Fragment == "" {
+			if err == nil && parsed.Scheme == "http" && parsed.User == nil && parsed.Hostname() == "127.0.0.1" && parsed.Port() != "" && parsed.Path == "" && parsed.RawQuery == "" && parsed.Fragment == "" {
 				w.once.Do(func() { w.found <- candidate })
 			}
 		}
@@ -316,7 +363,7 @@ func (m *Managed) waitReady(ctx context.Context) error {
 }
 
 func (m *Managed) waitProviderReady(ctx context.Context, directory string) error {
-	client := &http.Client{Timeout: 20 * time.Second}
+	client := &http.Client{Timeout: 2 * time.Second}
 	target, err := url.Parse(m.URL + "/config/providers")
 	if err != nil {
 		return err
@@ -324,26 +371,68 @@ func (m *Managed) waitProviderReady(ctx context.Context, directory string) error
 	query := target.Query()
 	query.Set("directory", directory)
 	target.RawQuery = query.Encode()
-	request, err := http.NewRequestWithContext(ctx, http.MethodGet, target.String(), nil)
-	if err != nil {
-		return err
+	deadline := time.NewTimer(20 * time.Second)
+	defer deadline.Stop()
+	ticker := time.NewTicker(100 * time.Millisecond)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-m.done:
+			return errors.New("backend exited before provider readiness")
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-deadline.C:
+			return errors.New("IVOAI provider catalog readiness timeout")
+		case <-ticker.C:
+			request, err := http.NewRequestWithContext(ctx, http.MethodGet, target.String(), nil)
+			if err != nil {
+				return err
+			}
+			request.SetBasicAuth("ivoai", m.password)
+			response, err := client.Do(request)
+			if err != nil {
+				continue
+			}
+			body, readErr := io.ReadAll(io.LimitReader(response.Body, (64<<10)+1))
+			_ = response.Body.Close()
+			if response.StatusCode != http.StatusOK || readErr != nil || len(body) > 64<<10 {
+				continue
+			}
+			var registry struct {
+				Providers []struct {
+					ID     string         `json:"id"`
+					Models map[string]any `json:"models"`
+				} `json:"providers"`
+			}
+			if json.Unmarshal(body, &registry) != nil {
+				continue
+			}
+			for _, provider := range registry.Providers {
+				if provider.ID != "ivoai" {
+					continue
+				}
+				ready := true
+				for _, model := range m.expectedModels {
+					if _, ok := provider.Models[model]; !ok {
+						ready = false
+						break
+					}
+				}
+				if ready && len(m.expectedModels) > 0 {
+					return nil
+				}
+			}
+		}
 	}
-	request.SetBasicAuth("ivoai", m.password)
-	response, err := client.Do(request)
-	if err != nil {
-		return err
-	}
-	defer response.Body.Close()
-	_, _ = io.Copy(io.Discard, io.LimitReader(response.Body, 64<<10))
-	if response.StatusCode != http.StatusOK {
-		return fmt.Errorf("provider registry returned HTTP %d", response.StatusCode)
-	}
-	return nil
 }
 
 func (m *Managed) Close(ctx context.Context) error {
 	var result error
 	m.closeOnce.Do(func() {
+		defer func() {
+			releaseManagedLease(m.lease)
+			m.lease = nil
+		}()
 		if m.command == nil || m.command.Process == nil {
 			return
 		}

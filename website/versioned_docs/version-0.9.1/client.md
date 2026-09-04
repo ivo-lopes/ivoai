@@ -1,0 +1,247 @@
+# Client
+
+## Interactive menu
+
+Run `ivoai` without arguments for the full menu. In a TTY use Up/Down (or `j`/`k`),
+Enter, Esc, and `q`. The menu restores cooked terminal mode before prompts and before
+launching Codex or Claude. Destructive operations require an exact confirmation
+phrase.
+
+When stdin/stdout are not terminals, ivoai prints a numbered fallback. Set
+`NO_COLOR=1` to disable ANSI color or `IVOAI_ASCII=1` to avoid Unicode lettering.
+Subcommands remain the stable interface for automation. Progress is written to
+stderr so stdout and `doctor --json` stay machine-readable.
+
+The renderer reads both width and height on every frame and reacts to `SIGWINCH`.
+Wide terminals show the complete block/shadow lettering, readiness badges, and
+descriptions. Medium terminals use a reduced banner and compact descriptions. Small
+terminals use a one-line wordmark, a height-bounded viewport, and a position
+indicator. Badges wrap and labels are truncated by displayed Unicode cell width, so
+the interface never relies on a fixed 80-column terminal.
+
+Interactive human-facing screens use the same semantic palette: cyan for active
+work, violet for headings, green for success, yellow for degraded results, and red
+for failures. The main menu, every submenu, and every human-facing command use the
+same adaptive ivoai lettering and print the running binary version directly below
+it. Lettering, version decoration, cursor animation, and color are deliberately
+absent from machine-readable and redirected output.
+
+## Installer presentation
+
+`install.sh` uses the same responsive ivoai banner as the CLI, reports the exact
+installed version, detected platform, architecture, installation target, and phases.
+Known-size transfers use a byte/percentage
+bar; checksum, extraction, source build, and registration use a spinner with elapsed
+time. If a step fails, the installer stops the animation, prints the related log in
+a readable error block, and leaves no partial temporary download.
+
+On success it reports the installed path and the next command. A normal user is
+directed to `ivoai setup`; a root server installation is directed to
+`ivoai setup --mode server`. Animation automatically becomes periodic plain text
+when stderr is not a compatible terminal.
+
+## Files and ownership
+
+ivoai follows the XDG Base Directory Specification:
+
+| Purpose | Default |
+| --- | --- |
+| Configuration | `$XDG_CONFIG_HOME/ivoai` or `~/.config/ivoai` |
+| Data and managed assets | `$XDG_DATA_HOME/ivoai` or `~/.local/share/ivoai` |
+| State and ownership manifest | `$XDG_STATE_HOME/ivoai` or `~/.local/state/ivoai` |
+| Cache | `$XDG_CACHE_HOME/ivoai` or `~/.cache/ivoai` |
+
+Directories containing private state use mode `0700`; secret files use `0600`.
+The main TOML file contains status and preferences, not bearer tokens.
+
+`ivoai setup` is idempotent. It records whether each executable was already present
+or installed by ivoai. `ivoai uninstall` removes only managed files and binaries; it
+does not remove third-party logins or pre-existing tools.
+
+## Components
+
+Versions and installation sources are centralized in `manifest/components.yaml`.
+Setup checks the platform, downloads pinned artifacts, verifies the reviewed integrity
+data, installs managed wrappers, and reports independent failures. Headroom uses
+architecture-specific hash-locked constraints; Ruflo uses its complete npm lockfile.
+Updates are explicit through `ivoai update`. The updater verifies the candidate,
+creates a private snapshot of IVOAI-owned files, applies ordered target-owned
+migrations, promotes the binary, and runs Doctor. Failure restores both the binary
+and compatible config/state/ownership. Use `ivoai update --dry-run` for a non-committing
+compatibility plan; it still executes the checksum-verified candidate's bounded
+preflight probes. Use `ivoai update --rollback` for the last transaction. See the
+[production compatibility contract](production-compatibility.md).
+
+The healthy disconnected state is:
+
+```text
+ivoai          ready
+Codex          installed / not connected
+Claude Code    installed / not connected
+OpenCode       ready / managed frontend
+Headroom       ready
+Compression    default caveman / effective caveman
+Caveman        installed / managed
+ai-memory      installed / not connected
+Ruflo          ready / provider execution disabled
+Server         not-connected
+
+Overall: READY — external connections pending
+```
+
+## Agent launch
+
+`ivoai codex` and `ivoai claude` open their official direct interfaces. `ivoai
+opencode`, like `ivoai auto`, opens a pinned OpenCode TUI attached to IVOAI's private
+control plane. IVOAI routes turns to the official Codex or Claude Code CLI and reuses
+the login already owned by that client without reading or copying it. A private
+managed OpenCode overlay disables project configuration, sharing and auto-update;
+the user's global OpenCode configuration and provider store remain untouched.
+
+Codex and Claude sessions can select an enrolled knowledge purpose without changing
+global agent configuration:
+
+```sh
+ivoai codex --knowledge-source mindsite
+ivoai claude --knowledge-source voicecorp
+ivoai auto --knowledge-source mindsite
+```
+
+With no `--knowledge-source`, every enabled connected source participates in bounded
+read federation. Repeat `--knowledge-source`, or pass a comma-separated value, to
+restrict a session to exactly that subset. Automatic federation never broadcasts
+Memory writes; an ambiguous destination fails explicitly. The agent receives
+only private loopback MCP endpoints and a short-lived local capability. Upstream
+credentials stay inside ivoai. See [Multi-server knowledge sources](multi-server.md).
+
+Codex and Claude request Caveman by default. An explicit `direct` or legacy
+`headroom` override is preserved. If the selected provider is unavailable, unhealthy,
+or incompatible during preflight, ivoai starts the official agent directly. Once a selected wrapper process starts, its exit
+status is propagated instead of being hidden. Memory and context hooks are best
+effort and cannot block launch.
+
+When authoritative `ivoai-memory` or `ivoai-context` is active for the selected
+session sources, the launcher deliberately starts the official client directly
+regardless of whether Caveman or Headroom was requested. A lossy provider may
+shorten exact custom-tool results before the model sees them,
+including the end of an exact memory page. The launch prints this bypass and observed
+session metadata reports the provider-neutral bypass; Headroom remains available
+as a temporary explicit compatibility provider.
+
+For an explicit standalone OpenCode session, OpenCode keeps its native
+subscription-only provider. When the pinned Caveman runtime cannot proxy that
+provider, preflight selects Direct before launch; IVOAI does not request an API key,
+switch providers, or launch OpenCode twice. AUTO instead uses the IVOAI bridge and
+Codex/Claude executor contracts described above.
+
+Every ivoai-managed primary receives the same shared-knowledge contract. Any task
+that requires research, fact-finding, current information, or external verification
+uses the fixed source order `ivoai-memory` → read-only `ivoai-context` → web/external
+sources. Both ivoai stages are attempted before the first external lookup, including
+for apparently general or time-sensitive questions. Empty, unavailable, insufficient,
+or stale internal results permit web research; self-contained tasks do not trigger
+artificial lookups. An explicit request to remember information is written through
+`memory_write_page` and verified with `memory_read_page`. Context is a connector-fed
+RAG index, not a conversational write store, so an agent must not claim it wrote a
+chat fact to Context.
+
+The same process-scoped policy is injected into Codex and Claude workers. OpenCode is
+the AUTO frontend, not an advisory worker or a second scheduler. The standalone
+OpenCode executor remains available explicitly and does not modify user-owned agent
+configuration or treat retrieved text as instructions.
+
+Codex treats MCP tools without read-only annotations conservatively. For remote
+IvoAI servers that are actually registered and enabled, the launcher adds
+process-local `approve` overrides only for `memory_query`, `memory_read_page`, and
+the four read-only Context tools. This keeps headless reads functional while memory
+writes, deletion and unrelated MCP tools continue to follow the user's normal
+approval policy. No absent MCP server is synthesized by these overrides.
+
+OpenAI publishes `codex-code-mode-host` as a separate, versioned release asset.
+IvoAI installs its reviewed archive beside managed Codex and verifies its SHA-256.
+Codex's stable tool router fails closed when the companion is missing, including for
+MCP calls, so ivoai refuses a toolless managed launch and directs the user to
+`ivoai setup`. Externally managed Codex installations remain responsible for their
+own version-matched companion.
+
+## Session control plane
+
+The interactive menu contains **Session Control**, with direct and orchestrated
+choices for both official clients, session listing, monitoring and safe stop. The
+same operations are available to automation:
+
+```sh
+ivoai session start --executor codex --mode direct
+ivoai session start --executor claude --mode orchestrated
+ivoai session list --json
+ivoai session show --json <session-id>
+ivoai session stop <session-id>
+ivoai monitor --watch
+```
+
+Direct sessions add metadata and monitoring but do not initialize Ruflo.
+Orchestrated sessions require a verified safe Ruflo profile, initialize and verify a
+real swarm, register the primary, and inject the local `ivoai-orchestrator` MCP. The
+MCP delegates bounded tasks to official Codex/Claude non-interactive modes. The
+default is two concurrent workers and the hard maximum is three.
+
+Session JSON is private XDG state and contains no prompt, response or credential.
+Model output is labelled `runtime_verified`, `argument`, `configured`, or `unknown`;
+the last value is intentionally used rather than guessing. See
+[Session control and orchestration](orchestration.md).
+
+Multiple primaries may run at once, including two Codex sessions plus one Claude
+session. Each has an independent random session ID, PID/start marker and private
+runtime directory. Session metadata and quota updates are file-locked and atomic;
+stopping or cleaning one session targets only its recorded processes and runtime.
+Memory is shared only within the explicitly selected source/purpose. Concurrent
+Voicecorp and Mindsite sessions have separate loopback routers and capabilities,
+while transient Ruflo state and the session-local orchestrator bridge remain
+isolated per session. Session metadata stores selected aliases, never credentials.
+
+## Automatic conversation mode
+
+`ivoai auto` opens the managed OpenCode frontend and shows bounded IVOAI-owned
+executor, quota and knowledge state. The configured planner preference selects the
+initial official executor; `--planner codex` and `--planner claude` override it for
+the session. Codex/Claude never take over the screen. OpenCode supplies the UI while
+IVOAI retains session ownership, provider selection and single-writer authority.
+
+Automatic mode starts the same provider-free Ruflo control plane used by explicit
+orchestrated sessions, injects the session-local orchestration MCP, and adds
+one-time Memory/Context bootstrap, a private shared brief, objective task scoring,
+economic delegation, quota/capability-aware model and effort routing, true async DAG
+workers, and bounded continuity checkpoints. Trivial work remains in the primary;
+independent valuable work runs concurrently. Run
+`ivoai monitor --watch` in a second terminal to see the current primary, model
+provenance, failover count, worker state, quota source/freshness/reset, and service
+health. Before Claude's first response its quota rows say `awaiting first response`;
+unsupported fields say `N/A / not exposed`, and old observations are marked
+`stale`. Claude monthly is not fabricated.
+
+The knowledge selection remains fixed through Codex↔Claude failover and workers
+inherit the same session-local endpoints. Failover never expands the source set or
+copies an upstream credential into a handoff.
+
+Running `ivoai connect chatgpt` or `ivoai connect claude` invalidates the selected
+provider's reconstructible quota cache before the official authentication flow and
+reprobes afterward. This prevents a hard limit from a previous account from
+contaminating a new authentication context without reading provider credentials.
+
+See [Automatic orchestration](auto-orchestration.md) and
+[Automatic scheduler](auto-scheduler.md) and [Quota routing](quota-routing.md).
+
+`ivoai status` uses bounded live checks for every Server profile and the Ruflo safe
+profile. It reports alias, purpose, protocol, bounded features, credential
+configured/not configured, redundancy group and priority without printing a secret.
+Stored configuration is never labelled healthy by itself. One unreachable source
+does not remove another; local Codex and Claude remain available. Headroom
+installation/compatibility is reported separately from an interactive launch
+validation.
+
+## Project identity
+
+ivoai is host-first. Outside a project, memory uses a stable normalized host identity
+instead of deriving a project from every working directory. `ivoai project init`
+creates an explicit local marker inside a Git repository and overrides the host
+identity for that tree.

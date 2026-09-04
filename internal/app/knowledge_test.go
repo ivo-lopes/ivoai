@@ -70,8 +70,13 @@ func TestSharedKnowledgeContractUsesOfficialClientInstructionChannels(t *testing
 				}
 			}
 		}
-		if executor == "claude" && args[0] != "--append-system-prompt" {
-			t.Fatalf("Claude instructions=%q", joined)
+		if executor == "claude" {
+			if !strings.Contains(joined, "--append-system-prompt") || !strings.Contains(joined, "--allowedTools") {
+				t.Fatalf("Claude instructions=%q", joined)
+			}
+			if strings.Contains(joined, "mcp__ivoai-memory__memory_write_page") {
+				t.Fatalf("Claude write tool was auto-approved: %q", joined)
+			}
 		}
 	}
 }

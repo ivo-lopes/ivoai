@@ -34,6 +34,22 @@ type concurrencyRunner struct {
 	calls  atomic.Int32
 }
 
+type partialFailureRunner struct{}
+
+type nonStreamingQuotaRunner struct{ calls atomic.Int32 }
+
+func (r *nonStreamingQuotaRunner) Run(ctx context.Context, _ ExecutorRequest, emit func(string) error) (ExecutorResult, error) {
+	r.calls.Add(1)
+	_ = emit("already produced output")
+	<-ctx.Done()
+	return ExecutorResult{ExecutorSessionID: "thread_partial"}, ctx.Err()
+}
+
+func (partialFailureRunner) Run(_ context.Context, _ ExecutorRequest, emit func(string) error) (ExecutorResult, error) {
+	_ = emit("untrusted partial output")
+	return ExecutorResult{ExecutorSessionID: "thread_failed"}, &ExecutorFailure{Class: "executor_stream_incomplete", ExitCode: -1}
+}
+
 func (f *concurrencyRunner) Run(ctx context.Context, request ExecutorRequest, emit func(string) error) (ExecutorResult, error) {
 	f.calls.Add(1)
 	active := f.active.Add(1)
@@ -168,6 +184,76 @@ func TestBridgeStatusIsBoundedMetadata(t *testing.T) {
 	}
 }
 
+func TestBridgeNativeModelSelectionControlsOfficialExecutor(t *testing.T) {
+	runner := &fakeRunner{result: ExecutorResult{ExecutorSessionID: "thread_explicit"}}
+	selectCalls := 0
+	catalog := newCatalog([]ModelSpec{{ID: "codex-fixture", Name: "Codex fixture", Mode: "explicit", Executor: "codex", UpstreamModel: "gpt-fixture", SupportedEfforts: []string{"low", "high"}}})
+	bridge, err := Start(Options{
+		Runner: runner, Catalog: catalog,
+		Select: func(context.Context, string) (string, error) { selectCalls++; return "claude", nil },
+		Status: func() Status { return Status{} },
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer bridge.Close(context.Background())
+
+	request, _ := http.NewRequest(http.MethodPost, bridge.URL()+"/v1/chat/completions", strings.NewReader(`{"model":"codex-fixture","reasoning_effort":"high","messages":[{"role":"user","content":"fixture"}]}`))
+	request.Header.Set("Authorization", "Bearer "+bridge.Token())
+	request.Header.Set("X-IVOAI-OpenCode-Session", "oc_explicit")
+	request.Header.Set("X-IVOAI-OpenCode-Message", "msg_explicit")
+	response, err := http.DefaultClient.Do(request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, _ = io.Copy(io.Discard, response.Body)
+	_ = response.Body.Close()
+	if response.StatusCode != http.StatusOK || selectCalls != 0 || len(runner.requests) != 1 {
+		t.Fatalf("status=%d select=%d requests=%+v", response.StatusCode, selectCalls, runner.requests)
+	}
+	got := runner.requests[0]
+	if got.Executor != "codex" || got.Model != "gpt-fixture" || got.Effort != "high" || got.SelectionMode != "explicit" {
+		t.Fatalf("explicit selection did not reach runner: %+v", got)
+	}
+
+	request, _ = http.NewRequest(http.MethodPost, bridge.URL()+"/v1/chat/completions", strings.NewReader(`{"model":"codex-fixture","reasoning_effort":"max","messages":[{"role":"user","content":"fixture"}]}`))
+	request.Header.Set("Authorization", "Bearer "+bridge.Token())
+	request.Header.Set("X-IVOAI-OpenCode-Session", "oc_explicit")
+	request.Header.Set("X-IVOAI-OpenCode-Message", "msg_invalid_effort")
+	response, err = http.DefaultClient.Do(request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = response.Body.Close()
+	if response.StatusCode != http.StatusBadRequest || len(runner.requests) != 1 {
+		t.Fatalf("unsupported effort launched executor: status=%d requests=%+v", response.StatusCode, runner.requests)
+	}
+}
+
+func TestBridgeModelEndpointMatchesManagedCatalog(t *testing.T) {
+	catalog := newCatalog([]ModelSpec{{ID: "claude-default", Name: "Claude client default", Mode: "explicit", Executor: "claude", SupportedEfforts: []string{"high"}}})
+	bridge, err := Start(Options{Runner: &fakeRunner{}, Catalog: catalog, Select: func(context.Context, string) (string, error) { return "codex", nil }, Status: func() Status { return Status{} }})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer bridge.Close(context.Background())
+	request, _ := http.NewRequest(http.MethodGet, bridge.URL()+"/v1/models", nil)
+	request.Header.Set("Authorization", "Bearer "+bridge.Token())
+	response, err := http.DefaultClient.Do(request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer response.Body.Close()
+	var value struct {
+		Data []struct {
+			ID string `json:"id"`
+		} `json:"data"`
+	}
+	if json.NewDecoder(response.Body).Decode(&value) != nil || len(value.Data) != 2 || value.Data[0].ID != "auto" || value.Data[1].ID != "claude-default" {
+		t.Fatalf("models endpoint drifted from catalog: %+v", value.Data)
+	}
+}
+
 func TestScanJSONLinesIgnoresNonJSONAndBoundsTokens(t *testing.T) {
 	reader := bufio.NewReader(strings.NewReader("noise\n{\"type\":\"ok\"}\n"))
 	var values []map[string]any
@@ -176,6 +262,81 @@ func TestScanJSONLinesIgnoresNonJSONAndBoundsTokens(t *testing.T) {
 	}
 	if len(values) != 1 || values[0]["type"] != "ok" {
 		t.Fatalf("values=%v", values)
+	}
+}
+
+func TestScanJSONLinesRejectsCorruptionAfterProtocolStarts(t *testing.T) {
+	value := "startup noise\n{\"type\":\"thread.started\"}\nnot-json\n"
+	if err := ScanJSONLines(strings.NewReader(value), func(map[string]any) error { return nil }); err == nil {
+		t.Fatal("malformed executor event stream was silently accepted")
+	}
+}
+
+func TestExplicitSelectionFailsBeforeClaimOrLaunchWhenIneligible(t *testing.T) {
+	runner := &fakeRunner{}
+	claims := 0
+	catalog := newCatalog([]ModelSpec{{ID: "codex-fixture", Name: "Codex fixture", Mode: "explicit", Executor: "codex", UpstreamModel: "gpt-fixture"}})
+	bridge, err := Start(Options{Runner: runner, Catalog: catalog, Select: func(context.Context, string) (string, error) { return "claude", nil }, Status: func() Status { return Status{} }, AuthorizeSelection: func(context.Context, Selection) error { return errors.New("not authenticated") }, ClaimRequest: func(string, string) (bool, error) { claims++; return true, nil }})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer bridge.Close(context.Background())
+	request, _ := http.NewRequest(http.MethodPost, bridge.URL()+"/v1/chat/completions", strings.NewReader(`{"model":"codex-fixture","messages":[{"role":"user","content":"fixture"}]}`))
+	request.Header.Set("Authorization", "Bearer "+bridge.Token())
+	request.Header.Set("X-IVOAI-OpenCode-Session", "oc_explicit")
+	request.Header.Set("X-IVOAI-OpenCode-Message", "msg_explicit")
+	response, err := http.DefaultClient.Do(request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	payload, _ := io.ReadAll(response.Body)
+	_ = response.Body.Close()
+	if response.StatusCode != http.StatusServiceUnavailable || claims != 0 || len(runner.requests) != 0 || !bytes.Contains(payload, []byte("executor_selection_unavailable")) {
+		t.Fatalf("selection was not fail-closed: status=%d claims=%d requests=%d payload=%s", response.StatusCode, claims, len(runner.requests), payload)
+	}
+}
+
+func TestNonStreamingPartialOutputNeverTriggersDuplicateFailover(t *testing.T) {
+	runner := &nonStreamingQuotaRunner{}
+	bridge, err := Start(Options{Runner: runner, Select: func(_ context.Context, previous string) (string, error) {
+		if previous == "codex" {
+			return "claude", nil
+		}
+		return "codex", nil
+	}, Monitor: func(context.Context, string) string { return "quota changed" }, Status: func() Status { return Status{} }})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer bridge.Close(context.Background())
+	response := bridgeRequest(t, bridge, false)
+	_, _ = io.Copy(io.Discard, response.Body)
+	_ = response.Body.Close()
+	if response.StatusCode != http.StatusServiceUnavailable || runner.calls.Load() != 1 {
+		t.Fatalf("partial non-stream output was re-executed: status=%d calls=%d", response.StatusCode, runner.calls.Load())
+	}
+}
+
+func TestExplicitModelChangeDoesNotResumeDifferentModelThread(t *testing.T) {
+	runner := &fakeRunner{result: ExecutorResult{ExecutorSessionID: "thread_new"}}
+	catalog := newCatalog([]ModelSpec{{ID: "codex-a", Name: "Codex A", Mode: "explicit", Executor: "codex", UpstreamModel: "model-a"}, {ID: "codex-b", Name: "Codex B", Mode: "explicit", Executor: "codex", UpstreamModel: "model-b"}})
+	bridge, err := Start(Options{Runner: runner, Catalog: catalog, Select: func(context.Context, string) (string, error) { return "codex", nil }, Status: func() Status { return Status{} }, LookupMapping: func(frontend string) []Mapping {
+		return []Mapping{{FrontendSessionID: frontend, Executor: "codex", ExecutorSessionID: "thread_old", RequestedModel: "codex-a"}}
+	}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer bridge.Close(context.Background())
+	request, _ := http.NewRequest(http.MethodPost, bridge.URL()+"/v1/chat/completions", strings.NewReader(`{"model":"codex-b","messages":[{"role":"user","content":"fixture"}]}`))
+	request.Header.Set("Authorization", "Bearer "+bridge.Token())
+	request.Header.Set("X-IVOAI-OpenCode-Session", "oc_model_switch")
+	request.Header.Set("X-IVOAI-OpenCode-Message", "msg_model_switch")
+	response, err := http.DefaultClient.Do(request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = response.Body.Close()
+	if response.StatusCode != http.StatusOK || len(runner.requests) != 1 || runner.requests[0].ExecutorSessionID != "" {
+		t.Fatalf("model switch resumed stale thread: status=%d requests=%+v", response.StatusCode, runner.requests)
 	}
 }
 
@@ -233,7 +394,7 @@ func TestBridgeMessageIdempotencyAndSingleWriter(t *testing.T) {
 }
 
 func TestBridgeStreamingFailureIsNotSuccessfulCompletion(t *testing.T) {
-	runner := &fakeRunner{result: ExecutorResult{ExecutorSessionID: "thread_failed"}, err: errors.New("fixture failure")}
+	runner := partialFailureRunner{}
 	bridge, err := Start(Options{Runner: runner, Select: func(context.Context, string) (string, error) { return "codex", nil }, Status: func() Status { return Status{} }})
 	if err != nil {
 		t.Fatal(err)
@@ -242,7 +403,7 @@ func TestBridgeStreamingFailureIsNotSuccessfulCompletion(t *testing.T) {
 	response := bridgeRequest(t, bridge, true)
 	body, _ := io.ReadAll(response.Body)
 	_ = response.Body.Close()
-	if !bytes.Contains(body, []byte(`"error"`)) || bytes.Contains(body, []byte("[DONE]")) || bytes.Contains(body, []byte(`"finish_reason":"stop"`)) {
+	if !bytes.Contains(body, []byte(`"error"`)) || !bytes.Contains(body, []byte(`"code":"executor_stream_incomplete"`)) || !bytes.Contains(body, []byte("untrusted partial output")) || bytes.Contains(body, []byte("[DONE]")) || bytes.Contains(body, []byte(`"finish_reason":"stop"`)) {
 		t.Fatalf("stream failure was presented as success: %s", body)
 	}
 }

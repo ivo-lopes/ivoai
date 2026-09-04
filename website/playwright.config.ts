@@ -6,7 +6,8 @@ const systemChromium = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH || (exist
 export default defineConfig({
   testDir: './tests',
   outputDir: './test-results',
-  fullyParallel: true,
+  fullyParallel: false,
+  workers: process.env.CI ? 2 : 1,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? 'line' : 'list',
