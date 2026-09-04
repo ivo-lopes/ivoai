@@ -133,19 +133,19 @@ func (s *menuSession) connections() (bool, error) {
 
 func (s *menuSession) agents() (bool, error) {
 	return s.loop("Agents", []menuAction{
-		{id: "launch.codex", label: "Launch Codex", description: "Use Headroom when healthy, with direct fallback", run: func() (bool, error) { return true, s.app.Launch(s.ctx, "codex", nil) }},
-		{id: "launch.claude", label: "Launch Claude Code", description: "Use Headroom when healthy, with direct fallback", run: func() (bool, error) { return true, s.app.Launch(s.ctx, "claude", nil) }},
-		{id: "launch.opencode", label: "Launch OpenCode", description: "Official OpenCode TUI; direct compression under the subscription-only policy", run: func() (bool, error) { return true, s.app.Launch(s.ctx, "opencode", nil) }},
+		{id: "launch.codex", label: "Launch Codex", description: "Official Codex interface with IVOAI knowledge and safe compression", run: func() (bool, error) { return true, s.app.Launch(s.ctx, "codex", nil) }},
+		{id: "launch.claude", label: "Launch Claude Code", description: "Official Claude interface with IVOAI knowledge and safe compression", run: func() (bool, error) { return true, s.app.Launch(s.ctx, "claude", nil) }},
+		{id: "launch.opencode", label: "Launch IVOAI OpenCode frontend", description: "Managed OpenCode interface with IVOAI-routed Codex and Claude executors", run: func() (bool, error) { return true, s.app.Auto(s.ctx, "", nil) }},
 	})
 }
 
 func (s *menuSession) sessions() (bool, error) {
 	snapshot, _ := s.app.MenuSnapshot()
 	return s.loop("Session Control", []menuAction{
-		{id: "auto", label: "Automatic Orchestration", description: "Quota-aware Codex/Claude Code primary with safe Ruflo delegation", disabled: disabledUnless(snapshot.AutoEnabled, "automatic orchestration disabled"), run: func() (bool, error) { return true, s.app.Auto(s.ctx, "", nil) }},
+		{id: "auto", label: "IVOAI Automatic Session", description: "OpenCode frontend with quota-aware Codex/Claude execution and safe Ruflo delegation", disabled: disabledUnless(snapshot.AutoEnabled, "automatic orchestration disabled"), run: func() (bool, error) { return true, s.app.Auto(s.ctx, "", nil) }},
 		{id: "session.direct.codex", label: "Direct Session — Codex", description: "Official Codex runtime with session observability; Ruflo is not started", run: func() (bool, error) { return true, s.app.SessionStart(s.ctx, "codex", "direct", nil) }},
 		{id: "session.direct.claude", label: "Direct Session — Claude Code", description: "Official Claude Code runtime with session observability; Ruflo is not started", run: func() (bool, error) { return true, s.app.SessionStart(s.ctx, "claude", "direct", nil) }},
-		{id: "session.direct.opencode", label: "Direct Session — OpenCode", description: "Official OpenCode runtime with Skill Gate and session observability; Ruflo is not started", run: func() (bool, error) { return true, s.app.SessionStart(s.ctx, "opencode", "direct", nil) }},
+		{id: "session.direct.opencode", label: "Standalone Session — OpenCode", description: "Unmodified upstream OpenCode provider path; IVOAI AUTO bridge is not used", run: func() (bool, error) { return true, s.app.SessionStart(s.ctx, "opencode", "direct", nil) }},
 		{id: "session.orchestrated.codex", label: "Orchestrated Session — Codex", description: "Safe Ruflo swarm with official Codex primary and bounded workers", run: func() (bool, error) { return true, s.app.SessionStart(s.ctx, "codex", "orchestrated", nil) }},
 		{id: "session.orchestrated.claude", label: "Orchestrated Session — Claude Code", description: "Safe Ruflo swarm with official Claude Code primary and bounded workers", run: func() (bool, error) { return true, s.app.SessionStart(s.ctx, "claude", "orchestrated", nil) }},
 		{id: "session.list", label: "List Sessions", description: "Show non-sensitive lifecycle metadata", run: s.simple(func() error { return runSession(s.ctx, s.app, []string{"list"}) })},
@@ -702,11 +702,19 @@ func snapshotBadges(snapshot app.MenuSnapshot) []terminalui.Badge {
 	} else if !snapshot.ComponentsReady {
 		overall, kind = "DEGRADED", "error"
 	}
+	serverValue, serverKind := "not configured", "warning"
+	if snapshot.ServerConfiguredCount > 0 {
+		serverValue = fmt.Sprintf("%d/%d connected", snapshot.ServerConnectedCount, snapshot.ServerConfiguredCount)
+		serverKind = "warning"
+		if snapshot.ServerEnabledCount > 0 && snapshot.ServerConnectedCount == snapshot.ServerEnabledCount {
+			serverKind = "success"
+		}
+	}
 	return []terminalui.Badge{
 		{Label: "Overall", Value: overall, Kind: kind},
 		{Label: "ChatGPT", Value: connectedLabel(snapshot.ChatGPTConnected), Kind: connectionKind(snapshot.ChatGPTConnected)},
 		{Label: "Claude Code", Value: connectedLabel(snapshot.ClaudeConnected), Kind: connectionKind(snapshot.ClaudeConnected)},
-		{Label: "Server", Value: connectedLabel(snapshot.ServerConnected), Kind: connectionKind(snapshot.ServerConnected)},
+		{Label: "Server", Value: serverValue, Kind: serverKind},
 	}
 }
 

@@ -267,6 +267,39 @@ func validate(value Session) error {
 	if value.PrimaryExecutor != "codex" && value.PrimaryExecutor != "claude" && value.PrimaryExecutor != "opencode" {
 		return errors.New("invalid primary executor")
 	}
+	if value.Frontend != "" && value.Frontend != "opencode" {
+		return errors.New("invalid session frontend")
+	}
+	if value.FrontendSessionID != "" && !safeText(value.FrontendSessionID, 128) || value.ExecutorSessionID != "" && !safeText(value.ExecutorSessionID, 128) {
+		return errors.New("invalid frontend session mapping")
+	}
+	if value.FrontendPID < 0 {
+		return errors.New("invalid frontend pid")
+	}
+	if value.KnowledgeScopeID != "" && !safeText(value.KnowledgeScopeID, 96) {
+		return errors.New("invalid knowledge scope id")
+	}
+	if len(value.ExecutorSessions) > 128 {
+		return errors.New("too many executor session mappings")
+	}
+	if len(value.FrontendRequests) > 256 {
+		return errors.New("too many frontend request claims")
+	}
+	for key, claimedAt := range value.FrontendRequests {
+		frontendID, messageID, ok := strings.Cut(key, ":")
+		if !ok || !safeText(frontendID, 128) || !safeText(messageID, 128) || claimedAt.IsZero() {
+			return errors.New("invalid frontend request claim")
+		}
+	}
+	for frontendID, mapping := range value.ExecutorSessions {
+		mappingID := frontendID
+		if prefix := mapping.Executor + ":"; strings.HasPrefix(mappingID, prefix) {
+			mappingID = strings.TrimPrefix(mappingID, prefix)
+		}
+		if !safeText(mappingID, 128) || !safeText(mapping.ExecutorSessionID, 128) || mapping.Executor != "codex" && mapping.Executor != "claude" || mapping.UpdatedAt.IsZero() {
+			return errors.New("invalid executor session mapping")
+		}
+	}
 	if value.WorkingDirectory == "" || !filepath.IsAbs(value.WorkingDirectory) || strings.ContainsAny(value.WorkingDirectory, "\x00\x1b\r\n") {
 		return errors.New("invalid session working directory")
 	}

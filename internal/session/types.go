@@ -107,6 +107,12 @@ type Worker struct {
 	ResultRefs        []workingcontext.ResultRef `json:"result_refs,omitempty"`
 }
 
+type ExecutorSessionMapping struct {
+	Executor          string    `json:"executor"`
+	ExecutorSessionID string    `json:"executor_session_id"`
+	UpdatedAt         time.Time `json:"updated_at"`
+}
+
 type Session struct {
 	SessionID            string                                 `json:"session_id"`
 	StartedAt            time.Time                              `json:"started_at"`
@@ -114,6 +120,14 @@ type Session struct {
 	EndedAt              *time.Time                             `json:"ended_at,omitempty"`
 	Mode                 Mode                                   `json:"mode"`
 	PrimaryExecutor      string                                 `json:"primary_executor"`
+	Frontend             string                                 `json:"frontend,omitempty"`
+	FrontendSessionID    string                                 `json:"frontend_session_id,omitempty"`
+	FrontendPID          int                                    `json:"frontend_pid,omitempty"`
+	FrontendProcessStart string                                 `json:"frontend_process_start,omitempty"`
+	ExecutorSessionID    string                                 `json:"executor_session_id,omitempty"`
+	KnowledgeScopeID     string                                 `json:"knowledge_scope_id,omitempty"`
+	ExecutorSessions     map[string]ExecutorSessionMapping      `json:"executor_sessions,omitempty"`
+	FrontendRequests     map[string]time.Time                   `json:"frontend_requests,omitempty"`
 	WorkingDirectory     string                                 `json:"working_directory"`
 	PrimaryPID           int                                    `json:"primary_pid,omitempty"`
 	PrimaryProcessStart  string                                 `json:"primary_process_start,omitempty"`

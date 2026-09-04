@@ -22,6 +22,7 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/core"
 	"github.com/ivo-lopes/ivoai/internal/doctor"
 	"github.com/ivo-lopes/ivoai/internal/memory"
+	"github.com/ivo-lopes/ivoai/internal/opencodebridge"
 	"github.com/ivo-lopes/ivoai/internal/orchestration"
 	"github.com/ivo-lopes/ivoai/internal/platform"
 	"github.com/ivo-lopes/ivoai/internal/project"
@@ -44,9 +45,21 @@ type App struct {
 	QuotaManager     *quota.Manager
 	AutoPollInterval time.Duration
 	HTTPClient       *http.Client
+	// OpenCodeBridgeRunner and StartOpenCodeManaged are injected only by
+	// hermetic tests. Production uses the official managed adapters.
+	OpenCodeBridgeRunner opencodebridge.ExecutorRunner
+	StartOpenCodeManaged func(context.Context, opencodebridge.ManagedOptions) (managedOpenCodeFrontend, error)
 	// ExecutablePath is accepted only in IVOAI_TEST_MODE so hermetic update
 	// matrix tests never replace the running go test binary.
 	ExecutablePath string
+}
+
+type managedOpenCodeFrontend interface {
+	Args() []string
+	Env() []string
+	BackendURL() string
+	BackendLoopback() bool
+	Close(context.Context) error
 }
 
 const liveServiceProbeTimeout = 8 * time.Second
@@ -59,6 +72,9 @@ type MenuSnapshot struct {
 	ChatGPTConnected      bool
 	ClaudeConnected       bool
 	ServerConnected       bool
+	ServerConfiguredCount int
+	ServerEnabledCount    int
+	ServerConnectedCount  int
 	MemoryEnabled         bool
 	HeadroomEnabled       bool
 	RufloEnabled          bool
@@ -94,12 +110,27 @@ func (a *App) MenuSnapshot() (MenuSnapshot, error) {
 	if err != nil {
 		return MenuSnapshot{}, err
 	}
+	configured, enabled, connected := len(cfg.Connections.Servers), 0, 0
+	for _, profile := range cfg.Connections.Servers {
+		if profile.Enabled {
+			enabled++
+			if profile.Status == "connected" {
+				connected++
+			}
+		}
+	}
+	if configured == 0 && cfg.Connections.Server.Status == "connected" {
+		configured, enabled, connected = 1, 1, 1
+	}
 	return MenuSnapshot{
 		SetupComplete:         !state.SetupCompletedAt.IsZero(),
 		ComponentsReady:       requiredComponentsReady(state),
 		ChatGPTConnected:      cfg.Connections.ChatGPT.Status == "connected",
 		ClaudeConnected:       cfg.Connections.Claude.Status == "connected",
-		ServerConnected:       len(cfg.Connections.Servers) > 0 || cfg.Connections.Server.Status == "connected",
+		ServerConnected:       connected > 0,
+		ServerConfiguredCount: configured,
+		ServerEnabledCount:    enabled,
+		ServerConnectedCount:  connected,
 		MemoryEnabled:         cfg.Memory.Enabled,
 		HeadroomEnabled:       cfg.Headroom.Enabled,
 		RufloEnabled:          cfg.Orchestration.Enabled,
@@ -233,7 +264,7 @@ func (a *App) Status(ctx context.Context) error {
 		{"Codex", componentStatus(state.Components["codex"], cfg.Connections.ChatGPT.Status)},
 		{"Codex tools", codexToolHostStatus(state)},
 		{"Claude Code", componentStatus(state.Components["claude-code"], cfg.Connections.Claude.Status)},
-		{"OpenCode", optionalManagedStatus(state.Components["opencode"], "ready / direct primary")},
+		{"OpenCode", optionalManagedStatus(state.Components["opencode"], "ready / managed frontend")},
 		{"Headroom", headroomStatus(state.Components["headroom"], cfg.Headroom.Enabled)},
 		{"Compression", compressionStatus},
 		{"Context", contextHealthStatus(cfg, serverHealth)},

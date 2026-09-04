@@ -2,30 +2,191 @@ package app
 
 import (
 	"context"
+	"crypto/sha256"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/ivo-lopes/ivoai/internal/agents"
 	"github.com/ivo-lopes/ivoai/internal/config"
+	"github.com/ivo-lopes/ivoai/internal/connections"
 	"github.com/ivo-lopes/ivoai/internal/core"
+	"github.com/ivo-lopes/ivoai/internal/headroom"
 	"github.com/ivo-lopes/ivoai/internal/observability"
+	"github.com/ivo-lopes/ivoai/internal/opencodebridge"
 	"github.com/ivo-lopes/ivoai/internal/orchestration"
 	"github.com/ivo-lopes/ivoai/internal/platform"
 	"github.com/ivo-lopes/ivoai/internal/quota"
 	"github.com/ivo-lopes/ivoai/internal/session"
 )
 
-const maxAutomaticFailovers = 2
-
 func (a *App) Auto(ctx context.Context, planner string, agentArgs []string) error {
 	return a.AutoWithKnowledge(ctx, planner, agentArgs, nil)
+}
+
+var executorProviderEnvironment = map[string]bool{
+	"ANTHROPIC_API_KEY": true, "OPENAI_API_KEY": true, "OPENROUTER_API_KEY": true,
+	"ANTHROPIC_BASE_URL": true, "OPENAI_BASE_URL": true,
+	"GOOGLE_API_KEY": true, "GOOGLE_GEMINI_API_KEY": true, "GEMINI_API_KEY": true,
+	"AZURE_OPENAI_API_KEY": true, "GROQ_API_KEY": true, "OLLAMA_API_KEY": true,
+	"AWS_ACCESS_KEY_ID": true, "AWS_SECRET_ACCESS_KEY": true, "AWS_SESSION_TOKEN": true,
+	"GOOGLE_APPLICATION_CREDENTIALS": true, "CLAUDE_CODE_USE_BEDROCK": true,
+	"CLAUDE_CODE_USE_VERTEX": true, "CLAUDE_CODE_USE_FOUNDRY": true,
+}
+
+func executorBridgeEnvironment(environment []string) []string {
+	result := make([]string, 0, len(environment))
+	for _, entry := range environment {
+		key, _, found := strings.Cut(entry, "=")
+		if found && !executorProviderEnvironment[key] {
+			result = append(result, entry)
+		}
+	}
+	return result
+}
+
+func managedFrontendEnvironment(environment []string) []string {
+	blocked := map[string]bool{
+		connections.ServerTokenEnvironment: true, knowledgeSessionTokenEnvironment: true,
+		"AI_MEMORY_SERVER_URL": true, "AI_MEMORY_AUTH_TOKEN": true,
+		"IVOAI_CONTEXT_MCP_URL": true, "IVOAI_MEMORY_MCP_URL": true,
+	}
+	result := make([]string, 0, len(environment))
+	for _, entry := range environment {
+		key, _, found := strings.Cut(entry, "=")
+		if found && !blocked[key] && !executorProviderEnvironment[key] {
+			result = append(result, entry)
+		}
+	}
+	return result
+}
+
+func knowledgeScopeID(cwd string, knowledge sessionKnowledge) string {
+	ids := make([]string, 0)
+	for _, group := range knowledge.selection.Groups {
+		for _, profile := range group.Profiles {
+			ids = append(ids, profile.ID)
+		}
+	}
+	sort.Strings(ids)
+	digest := sha256.Sum256([]byte(cwd + "\x00" + strings.Join(ids, "\x00")))
+	return fmt.Sprintf("ks_%x", digest[:16])
+}
+
+func resumableOpenCodeSession(store session.Store, currentID, cwd, scopeID string) (string, error) {
+	values, err := store.List()
+	if err != nil {
+		return "", err
+	}
+	for _, candidate := range values {
+		if candidate.SessionID == currentID || candidate.Active() || candidate.Frontend != "opencode" || candidate.WorkingDirectory != cwd || candidate.KnowledgeScopeID != scopeID || candidate.FrontendSessionID == "" {
+			continue
+		}
+		return candidate.FrontendSessionID, nil
+	}
+	return "", nil
+}
+
+func (a *App) autoBridgeArgs(executor string, existing []string, id, runtimeDir, instructionsPath string, cfg config.Config) ([]string, error) {
+	args, err := a.autoAgentArgs(executor, existing, id, runtimeDir, instructionsPath, "", cfg)
+	if err != nil {
+		return nil, err
+	}
+	knowledgeArgs, err := processLocalKnowledgeArgs(executor, runtimeDir, cfg)
+	if err != nil {
+		return nil, err
+	}
+	return append(knowledgeArgs, args...), nil
+}
+
+func (a *App) openCodeAutoStatus(store session.Store, id string, cfg config.Config, knowledge sessionKnowledge, restricted bool, quotas map[quota.Provider]quota.ProviderQuota, compression sharedKnowledgeCompressionPolicy) opencodebridge.Status {
+	selectedAliases := map[string]bool{}
+	for _, alias := range knowledge.aliases() {
+		selectedAliases[alias] = true
+	}
+	aliases := make([]string, 0, len(cfg.Connections.Servers))
+	for alias := range cfg.Connections.Servers {
+		aliases = append(aliases, alias)
+	}
+	sort.Strings(aliases)
+	servers := make([]opencodebridge.ServerView, 0, len(aliases))
+	connected, enabled := 0, 0
+	for _, alias := range aliases {
+		profile := cfg.Connections.Servers[alias]
+		if profile.Enabled {
+			enabled++
+		}
+		health := "disabled"
+		if profile.Enabled {
+			health = "down"
+			if profile.Status == "connected" {
+				health = "healthy"
+			}
+			health = knowledge.healthFor(alias, health)
+			if health == "healthy" {
+				connected++
+			}
+		}
+		selected := selectedAliases[alias]
+		if !restricted && profile.Enabled {
+			selected = true
+		}
+		servers = append(servers, opencodebridge.ServerView{ID: profile.ID, Alias: alias, Purpose: profile.Purpose, Selected: selected, Enabled: profile.Enabled, Health: health})
+	}
+	mode := "none"
+	if len(selectedAliases) == 1 {
+		mode = "single"
+	} else if len(selectedAliases) > 1 {
+		mode = "federated"
+	}
+	if restricted {
+		mode = "restricted"
+	}
+	value, _ := store.Get(id)
+	auth := func(provider quota.Provider) string {
+		if quotas[provider].Authenticated {
+			return "authenticated"
+		}
+		return "authentication required"
+	}
+	quotaState := func(provider quota.Provider) string {
+		value := quotas[provider]
+		if value.HardLimitReached {
+			return "exhausted"
+		}
+		if value.Eligible {
+			return "available"
+		}
+		return "N/A"
+	}
+	state := string(value.State)
+	selectedConnected := 0
+	for _, server := range servers {
+		if server.Selected && server.Health == "healthy" {
+			selectedConnected++
+		}
+	}
+	selectedCount := enabled
+	if restricted {
+		selectedCount = len(selectedAliases)
+	}
+	if selectedConnected < selectedCount && selectedCount > 0 {
+		state = string(session.StateDegraded)
+	}
+	return opencodebridge.Status{
+		Version: a.Version, SessionID: id, Frontend: "opencode", Primary: value.PrimaryExecutor, Mode: string(value.Mode), SessionState: state,
+		KnowledgeMode: mode, ConfiguredCount: len(servers), EnabledCount: enabled, ConnectedCount: connected, SelectedCount: selectedCount, Servers: servers,
+		CodexAuth: auth(quota.ProviderCodex), ClaudeAuth: auth(quota.ProviderClaude), CodexQuota: quotaState(quota.ProviderCodex), ClaudeQuota: quotaState(quota.ProviderClaude),
+		Compression: compression.EffectiveProvider, Memory: value.MemoryStatus, Context: value.ContextStatus, Skills: "policy-gated",
+	}
 }
 
 func (a *App) AutoWithKnowledge(ctx context.Context, planner string, agentArgs, selectors []string) error {
@@ -40,9 +201,9 @@ func (a *App) AutoWithKnowledge(ctx context.Context, planner string, agentArgs, 
 		return errors.New("automatic quota routing is disabled")
 	}
 	if planner == "" {
-		planner, err = a.selectPlanner(cfg.Orchestration.Auto.DefaultPlanner)
-		if err != nil {
-			return err
+		planner = cfg.Orchestration.Auto.DefaultPlanner
+		if planner == "" {
+			planner = "codex"
 		}
 	}
 	planner = strings.ToLower(strings.TrimSpace(planner))
@@ -53,7 +214,7 @@ func (a *App) AutoWithKnowledge(ctx context.Context, planner string, agentArgs, 
 	if err != nil {
 		return err
 	}
-	if err := validateManagedAgentRuntime("codex", state); err != nil {
+	if err := validateManagedAgentRuntime("opencode", state); err != nil {
 		return err
 	}
 	cwd, err := os.Getwd()
@@ -68,7 +229,7 @@ func (a *App) AutoWithKnowledge(ctx context.Context, planner string, agentArgs, 
 	contextState, memoryState, serverState := a.autoServiceStatuses(ctx, cfg, state)
 	value := session.Session{
 		SessionID: id, StartedAt: now, UpdatedAt: now, Mode: session.ModeAuto, Auto: true,
-		InitialPlanner: planner, CurrentPrimary: planner, PrimaryExecutor: planner,
+		InitialPlanner: planner, CurrentPrimary: planner, PrimaryExecutor: planner, Frontend: "opencode",
 		WorkingDirectory: cwd, PrimaryModel: session.ResolveModel("", session.ParseModelArgument(agentArgs), planner, agentModelConfig(planner)),
 		HeadroomRequested: cfg.Compression.Provider == "headroom" && cfg.Headroom.Enabled, CompressionProvider: cfg.Compression.Provider, CompressionRequested: cfg.Compression.Provider != "direct", RufloEnabled: true, ProviderExecution: false,
 		Workers: []session.Worker{}, MaxWorkers: cfg.Orchestration.Auto.MaxWorkers,
@@ -111,6 +272,13 @@ func (a *App) AutoWithKnowledge(ctx context.Context, planner string, agentArgs, 
 		return err
 	}
 	current := string(decision.Resolved)
+	selectedComponent := current
+	if current == "claude" {
+		selectedComponent = "claude-code"
+	}
+	if err := validateManagedAgentRuntime(selectedComponent, state); err != nil {
+		return fmt.Errorf("selected automatic executor is unavailable: %w", err)
+	}
 	value.CurrentPrimary, value.PrimaryExecutor = current, current
 	if decision.Fallback {
 		a.printStartupFallback(planner, current, decision.Reason)
@@ -145,6 +313,15 @@ func (a *App) AutoWithKnowledge(ctx context.Context, planner string, agentArgs, 
 		return err
 	}
 	defer knowledge.close()
+	scopeID := knowledgeScopeID(cwd, knowledge)
+	resumeFrontendID, err := resumableOpenCodeSession(store, id, cwd, scopeID)
+	if err != nil {
+		return err
+	}
+	_, _ = store.Update(id, func(currentSession *session.Session) error {
+		currentSession.KnowledgeScopeID = scopeID
+		return nil
+	})
 	cfg = knowledge.config
 	a.printAutoPreflight(value.Quota, current, value, cfg)
 	value, _ = store.Update(id, func(current *session.Session) error {
@@ -203,100 +380,219 @@ func (a *App) AutoWithKnowledge(ctx context.Context, planner string, agentArgs, 
 	if err := platform.AtomicWritePrivate([]byte(instructions), instructionsPath); err != nil {
 		return err
 	}
-	environment := knowledge.environment
-
-	var handoff string
-	for {
-		launchArgs, argsErr := a.autoAgentArgs(current, agentArgs, id, runtimeDir, instructionsPath, handoff, cfg)
+	environment := executorBridgeEnvironment(knowledge.environment)
+	frontendEnvironment := managedFrontendEnvironment(knowledge.environment)
+	compressionPolicy := sharedKnowledgeCompressionPolicyFor(cfg, len(knowledge.aliases()))
+	bridgeRunner := a.OpenCodeBridgeRunner
+	if bridgeRunner == nil {
+		codexArgs, argsErr := a.autoBridgeArgs("codex", agentArgs, id, runtimeDir, instructionsPath, cfg)
 		if argsErr != nil {
-			a.finishSession(store, id, session.StateFailed, 1)
 			return argsErr
 		}
-		knowledgeArgs, knowledgeArgsErr := processLocalKnowledgeArgs(current, runtimeDir, cfg)
-		if knowledgeArgsErr != nil {
-			return knowledgeArgsErr
+		claudeArgs, argsErr := a.autoBridgeArgs("claude", agentArgs, id, runtimeDir, instructionsPath, cfg)
+		if argsErr != nil {
+			return argsErr
 		}
-		launchArgs = append(knowledgeArgs, launchArgs...)
-		fmt.Fprintf(a.Out, "Starting %s...\n", displayProvider(current))
-		launchCtx, cancelLaunch := context.WithCancel(ctx)
-		limitReason := make(chan string, 1)
-		monitorDone := make(chan struct{})
-		go a.monitorPrimaryQuota(launchCtx, manager, quota.Provider(current), limitReason, cancelLaunch, cfg.Orchestration.Auto.QuotaRefreshSeconds, monitorDone)
-		launchErr := a.launchAutomaticPrimary(launchCtx, store, id, current, launchArgs, state, cfg, environment, runtimeDir, sharedKnowledgeCompressionPolicyFor(cfg, len(knowledge.aliases())))
-		cancelLaunch()
-		<-monitorDone
-		reason := ""
-		select {
-		case reason = <-limitReason:
-		default:
+		codexCompression, codexEnabled, _ := a.sessionCompression(cfg, state, "codex", runtimeDir)
+		claudeCompression, claudeEnabled, _ := a.sessionCompression(cfg, state, "claude", runtimeDir)
+		if codexEnabled && codexCompression == nil {
+			codexCompression = headroom.HeadroomCompressionProvider{Manager: headroom.Manager{Runner: a.Runner, Binary: state.Components["headroom"].Path}, Enabled: true, Managed: state.Components["headroom"].Managed}
 		}
-		if reason == "" && launchErr != nil && ctx.Err() == nil {
-			latest, _ := manager.Probe(context.Background(), quota.Provider(current), true)
-			if latest.HardLimitReached {
-				reason = latest.Reason
-			}
+		if claudeEnabled && claudeCompression == nil {
+			claudeCompression = headroom.HeadroomCompressionProvider{Manager: headroom.Manager{Runner: a.Runner, Binary: state.Components["headroom"].Path}, Enabled: true, Managed: state.Components["headroom"].Managed}
 		}
-		if reason == "" {
-			if launchErr != nil {
-				a.finishSession(store, id, session.StateFailed, exitCode(launchErr))
-				return launchErr
-			}
-			a.finishSession(store, id, session.StateCompleted, 0)
-			return nil
+		if compressionPolicy.Bypassed {
+			codexEnabled, claudeEnabled = false, false
 		}
-		if !cfg.Orchestration.Auto.AutomaticFailover {
-			a.finishSession(store, id, session.StateBlocked, 1)
-			return fmt.Errorf("%s quota exhausted and automatic failover is disabled", current)
+		bridgeRunner = opencodebridge.CLIRunner{
+			Codex:  opencodebridge.ExecutorSpec{Path: state.Components["codex"].Path, Args: codexArgs, Env: environment, Dir: cwd, Compression: codexCompression, CompressionEnabled: codexEnabled, RuntimeDir: runtimeDir},
+			Claude: opencodebridge.ExecutorSpec{Path: state.Components["claude-code"].Path, Args: claudeArgs, Env: setAppEnvironment(environment, "DISABLE_AUTOUPDATER", "1"), Dir: cwd, Compression: claudeCompression, CompressionEnabled: claudeEnabled, RuntimeDir: runtimeDir},
 		}
-		updated, _ := store.Get(id)
-		if updated.ConsecutiveFailovers >= maxAutomaticFailovers {
-			a.finishSession(store, id, session.StateBlocked, 1)
-			return errors.New("automatic failover limit reached; refusing a provider loop")
-		}
-		_ = manager.MarkExhausted(quota.Provider(current), reason)
-		alternateDecision, routeErr := manager.Resolve(ctx, quota.Other(quota.Provider(current)), "", true)
-		if routeErr != nil || alternateDecision.Resolved == quota.Provider(current) {
-			a.finishSession(store, id, session.StateBlocked, 1)
-			a.printNoProvider(value.Quota)
-			return errors.New("no subscription-backed LLM is currently available")
-		}
-		previous := current
-		current = string(alternateDecision.Resolved)
-		handoff = a.failoverBootstrap(store, id, previous, current, reason, cwd)
-		failoverAt := time.Now().UTC()
-		_, err = store.Update(id, func(currentSession *session.Session) error {
-			currentSession.FailoverCount++
-			currentSession.ConsecutiveFailovers++
-			currentSession.LastFailoverAt = &failoverAt
-			currentSession.LastFailoverReason = reason
-			currentSession.CurrentPrimary, currentSession.PrimaryExecutor = current, current
-			currentSession.PrimaryModel = session.UnknownModel()
-			currentSession.CurrentPhase = "automatic_failover"
-			currentSession.State = session.StateStarting
-			return nil
-		})
-		if err != nil {
-			return err
-		}
-		nextSkills, gateErr := a.evaluateSessionSkills(ctx, current, cwd, nil)
-		if gateErr != nil {
-			return gateErr
-		}
-		nextInstructions := automaticInstructions(cfg.Orchestration.Auto.CheckpointEnabled)
-		if nextSkills.Instructions != "" {
-			nextInstructions += "\n\n" + nextSkills.Instructions
-		}
-		if err := platform.AtomicWritePrivate([]byte(nextInstructions), instructionsPath); err != nil {
-			return err
-		}
-		_, _ = store.Update(id, func(currentSession *session.Session) error {
-			return appendSkillObservations(nextSkills.Events, id, func(event observability.Event) error {
-				return session.AppendObservation(currentSession, event)
-			})
-		})
-		fmt.Fprintf(a.Out, "\nAutomatic Failover\nFrom       %s\nTo         %s\nReason     %s\nCheckpoint %s\nWorking tree preserved\n\n", displayProvider(previous), displayProvider(current), reason, checkpointLabel(store, id))
-		agentArgs = nil
 	}
+	selected := current
+	var selectedMu sync.Mutex
+	bridge, err := opencodebridge.Start(opencodebridge.Options{
+		PreferredExecutor: current,
+		Runner:            bridgeRunner,
+		Select: func(requestCtx context.Context, previous string) (string, error) {
+			selectedMu.Lock()
+			defer selectedMu.Unlock()
+			preferred := quota.Provider(selected)
+			if previous == "codex" || previous == "claude" {
+				preferred = quota.Provider(previous)
+			}
+			resolved, resolveErr := manager.Resolve(requestCtx, preferred, "", previous != "")
+			if resolveErr != nil {
+				return "", resolveErr
+			}
+			selected = string(resolved.Resolved)
+			_, _ = store.Update(id, func(currentSession *session.Session) error {
+				currentSession.CurrentPrimary, currentSession.PrimaryExecutor = selected, selected
+				currentSession.CurrentPhase, currentSession.State = "conversation", session.StateRunning
+				return session.AppendObservation(currentSession, observability.Event{Category: observability.CategoryExecutor, Operation: observability.OperationExecutorSelect, State: observability.StateSelected, Provider: selected, Executor: selected, Component: providerComponent(selected), RoutingReason: observability.ReasonPrimaryAvailable})
+			})
+			return selected, nil
+		},
+		Monitor: func(monitorCtx context.Context, executor string) string {
+			reason := make(chan string, 1)
+			done := make(chan struct{})
+			a.monitorPrimaryQuota(monitorCtx, manager, quota.Provider(executor), reason, func() {}, cfg.Orchestration.Auto.QuotaRefreshSeconds, done)
+			<-done
+			select {
+			case value := <-reason:
+				return value
+			default:
+				return ""
+			}
+		},
+		FailoverHandoff: func(from, to, reason string) string {
+			_ = manager.MarkExhausted(quota.Provider(from), reason)
+			handoff := a.failoverBootstrap(store, id, from, to, reason, cwd)
+			failedAt := time.Now().UTC()
+			_, _ = store.Update(id, func(currentSession *session.Session) error {
+				currentSession.FailoverCount++
+				currentSession.ConsecutiveFailovers++
+				currentSession.LastFailoverAt = &failedAt
+				currentSession.LastFailoverReason = reason
+				currentSession.CurrentPrimary, currentSession.PrimaryExecutor = to, to
+				currentSession.PrimaryModel = session.UnknownModel()
+				currentSession.CurrentPhase, currentSession.State = "automatic_failover", session.StateStarting
+				return session.AppendObservation(currentSession, observability.Event{Category: observability.CategoryFallback, Operation: observability.OperationFallbackRoute, State: observability.StateSelected, Provider: from, Executor: to, Component: providerComponent(to), RoutingReason: observability.ReasonAlternateSelected, FallbackReason: observability.ReasonProviderQuotaExhausted})
+			})
+			fmt.Fprintf(a.Out, "\nAutomatic Failover\nFrom       %s\nTo         %s\nReason     %s\nCheckpoint %s\nWorking tree preserved\n\n", displayProvider(from), displayProvider(to), reason, checkpointLabel(store, id))
+			return handoff
+		},
+		MaxFailovers: 2,
+		Status: func() opencodebridge.Status {
+			currentQuotas := map[quota.Provider]quota.ProviderQuota{}
+			for _, provider := range []quota.Provider{quota.ProviderCodex, quota.ProviderClaude} {
+				current, _ := manager.Probe(context.Background(), provider, false)
+				currentQuotas[provider] = current
+			}
+			return a.openCodeAutoStatus(store, id, cfg, knowledge, len(selectors) > 0, currentQuotas, compressionPolicy)
+		},
+		Mapping: func(mapping opencodebridge.Mapping) error {
+			_, updateErr := store.Update(id, func(currentSession *session.Session) error {
+				currentSession.FrontendSessionID = mapping.FrontendSessionID
+				currentSession.ExecutorSessionID = mapping.ExecutorSessionID
+				currentSession.CurrentPrimary, currentSession.PrimaryExecutor = mapping.Executor, mapping.Executor
+				if currentSession.ExecutorSessions == nil {
+					currentSession.ExecutorSessions = map[string]session.ExecutorSessionMapping{}
+				}
+				currentSession.ExecutorSessions[mapping.Executor+":"+mapping.FrontendSessionID] = session.ExecutorSessionMapping{Executor: mapping.Executor, ExecutorSessionID: mapping.ExecutorSessionID, UpdatedAt: time.Now().UTC()}
+				currentSession.HeadroomUsed = mapping.CompressionUsed && mapping.CompressionProvider == "headroom"
+				currentSession.CompressionUsed = mapping.CompressionUsed
+				if mapping.CompressionProvider != "" {
+					currentSession.CompressionProvider = mapping.CompressionProvider
+				}
+				return session.AppendObservation(currentSession, compressionObservation(mapping.Executor, core.SessionObservation{CompressionUsed: mapping.CompressionUsed, CompressionProvider: mapping.CompressionProvider}, compressionPolicy))
+			})
+			return updateErr
+		},
+		LookupMapping: func(frontendID string) []opencodebridge.Mapping {
+			values, listErr := store.List()
+			if listErr != nil {
+				return nil
+			}
+			for _, candidate := range values {
+				if candidate.Frontend != "opencode" || candidate.WorkingDirectory != cwd || candidate.KnowledgeScopeID != scopeID {
+					continue
+				}
+				mappings := make([]session.ExecutorSessionMapping, 0, 2)
+				for key, mapping := range candidate.ExecutorSessions {
+					if key == frontendID || strings.TrimPrefix(key, mapping.Executor+":") == frontendID {
+						mappings = append(mappings, mapping)
+					}
+				}
+				sort.Slice(mappings, func(i, j int) bool { return mappings[i].UpdatedAt.After(mappings[j].UpdatedAt) })
+				if len(mappings) == 0 && candidate.FrontendSessionID == frontendID && candidate.ExecutorSessionID != "" {
+					mappings = append(mappings, session.ExecutorSessionMapping{Executor: candidate.PrimaryExecutor, ExecutorSessionID: candidate.ExecutorSessionID, UpdatedAt: candidate.UpdatedAt})
+				}
+				if len(mappings) > 0 {
+					result := make([]opencodebridge.Mapping, 0, len(mappings))
+					for _, mapping := range mappings {
+						result = append(result, opencodebridge.Mapping{FrontendSessionID: frontendID, Executor: mapping.Executor, ExecutorSessionID: mapping.ExecutorSessionID})
+					}
+					return result
+				}
+			}
+			return nil
+		},
+		ClaimRequest: func(frontendID, messageID string) (bool, error) {
+			key := frontendID + ":" + messageID
+			values, listErr := store.List()
+			if listErr != nil {
+				return false, listErr
+			}
+			for _, candidate := range values {
+				if candidate.SessionID == id || candidate.Frontend != "opencode" || candidate.WorkingDirectory != cwd || candidate.KnowledgeScopeID != scopeID {
+					continue
+				}
+				if _, exists := candidate.FrontendRequests[key]; exists {
+					return false, nil
+				}
+			}
+			claimed := false
+			_, updateErr := store.Update(id, func(currentSession *session.Session) error {
+				if currentSession.FrontendRequests == nil {
+					currentSession.FrontendRequests = map[string]time.Time{}
+				}
+				if _, exists := currentSession.FrontendRequests[key]; exists {
+					return nil
+				}
+				if len(currentSession.FrontendRequests) >= 256 {
+					oldestKey := ""
+					var oldest time.Time
+					for candidate, claimedAt := range currentSession.FrontendRequests {
+						if oldestKey == "" || claimedAt.Before(oldest) {
+							oldestKey, oldest = candidate, claimedAt
+						}
+					}
+					delete(currentSession.FrontendRequests, oldestKey)
+				}
+				currentSession.FrontendRequests[key] = time.Now().UTC()
+				claimed = true
+				return nil
+			})
+			return claimed, updateErr
+		},
+	})
+	if err != nil {
+		return err
+	}
+	defer bridge.Close(context.Background())
+	starter := a.StartOpenCodeManaged
+	if starter == nil {
+		starter = func(ctx context.Context, options opencodebridge.ManagedOptions) (managedOpenCodeFrontend, error) {
+			return opencodebridge.StartManaged(ctx, options)
+		}
+	}
+	frontend, err := starter(ctx, opencodebridge.ManagedOptions{OpenCodePath: state.Components["opencode"].Path, Version: state.Components["opencode"].Version, RuntimeDir: runtimeDir, StateDir: a.Store.Paths.StateDir, Directory: cwd, Environment: frontendEnvironment, Bridge: bridge, Instructions: instructions, ResumeSessionID: resumeFrontendID})
+	if err != nil {
+		a.finishSession(store, id, session.StateFailed, 1)
+		return err
+	}
+	defer frontend.Close(context.Background())
+	fmt.Fprintf(a.Out, "Starting IVOAI on the managed OpenCode frontend...\n")
+	openCode := agents.Runtime{Runner: a.Runner, In: a.In, Out: a.Out, Err: a.Err, AgentPath: state.Components["opencode"].Path, Environment: frontend.Env(), RuntimeDir: runtimeDir}
+	implementation := agents.OpenCodeExecutor{Runtime: openCode, Version: state.Components["opencode"].Version, Managed: state.Components["opencode"].Managed}
+	launchErr := implementation.StartSession(ctx, core.SessionRequest{Args: frontend.Args(), CompressionEnabled: false}, func(observation core.SessionObservation) {
+		_, _ = store.Update(id, func(currentSession *session.Session) error {
+			currentSession.FrontendPID = observation.PID
+			currentSession.FrontendProcessStart = session.ProcessStart(observation.PID)
+			// PrimaryPID remains populated for backward-compatible stop/recovery.
+			currentSession.PrimaryPID = observation.PID
+			currentSession.PrimaryProcessStart = session.ProcessStart(observation.PID)
+			currentSession.State, currentSession.CurrentPhase = session.StateRunning, "conversation"
+			return nil
+		})
+	})
+	if launchErr != nil {
+		a.finishSession(store, id, session.StateFailed, exitCode(launchErr))
+		return launchErr
+	}
+	a.finishSession(store, id, session.StateCompleted, 0)
+	return nil
 }
 
 func (a *App) automaticQuotaManager(cfg config.Config, state config.State) *quota.Manager {
@@ -309,42 +605,6 @@ func (a *App) automaticQuotaManager(cfg config.Config, state config.State) *quot
 		quota.ProviderClaude: quota.ClaudeAdapter{Binary: state.Components["claude-code"].Path, Runner: a.Runner, Store: quota.Store{Root: a.Store.Paths.QuotaDir}, TTL: ttl},
 	}}
 	return manager
-}
-
-func (a *App) selectPlanner(defaultPlanner string) (string, error) {
-	if defaultPlanner == "" {
-		defaultPlanner = "codex"
-	}
-	fmt.Fprintln(a.Out, "Automatic Orchestration\n\nSubscription quota (cached)")
-	snapshot := quota.Snapshot{Providers: map[quota.Provider]quota.ProviderQuota{}}
-	if a.Store != nil {
-		snapshot, _ = (quota.Store{Root: a.Store.Paths.QuotaDir}).Load()
-	}
-	printQuotaSummary(a.Out, snapshot.Providers)
-	codexDefault, claudeDefault := "", ""
-	if defaultPlanner == "claude" {
-		claudeDefault = " [default]"
-	} else {
-		codexDefault = " [default]"
-	}
-	fmt.Fprintf(a.Out, "\nPlanner / Primary\n  1. Codex%s\n  2. Claude Code%s\n", codexDefault, claudeDefault)
-	answer, err := a.Prompt("\nSelect ["+defaultPlanner+"] > ", false)
-	if err != nil {
-		if errors.Is(err, io.EOF) {
-			return defaultPlanner, nil
-		}
-		return "", err
-	}
-	switch strings.ToLower(strings.TrimSpace(answer)) {
-	case "":
-		return defaultPlanner, nil
-	case "1", "codex":
-		return "codex", nil
-	case "2", "claude", "claude code":
-		return "claude", nil
-	default:
-		return "", errors.New("select codex or claude")
-	}
 }
 
 func (a *App) launchAutomaticPrimary(ctx context.Context, store session.Store, id, executor string, args []string, state config.State, cfg config.Config, environment []string, runtimeDir string, compressionPolicy sharedKnowledgeCompressionPolicy) error {

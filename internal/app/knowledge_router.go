@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/ivo-lopes/ivoai/internal/config"
 	"github.com/ivo-lopes/ivoai/internal/connections"
@@ -28,6 +29,20 @@ type sessionKnowledge struct {
 	environment []string
 	config      config.Config
 	args        []string
+	healthMu    *sync.RWMutex
+	health      map[string]string
+}
+
+func (k sessionKnowledge) healthFor(alias, fallback string) string {
+	if k.healthMu == nil {
+		return fallback
+	}
+	k.healthMu.RLock()
+	defer k.healthMu.RUnlock()
+	if value := k.health[alias]; value != "" {
+		return value
+	}
+	return fallback
 }
 
 func (a *App) prepareSessionKnowledge(ctx context.Context, cfg config.Config, selectors []string, executor, runtimeDir string, existingEnvironment []string, observe func(observability.Event)) (sessionKnowledge, error) {
@@ -39,7 +54,16 @@ func (a *App) prepareSessionKnowledge(ctx context.Context, cfg config.Config, se
 	if err != nil {
 		return sessionKnowledge{}, err
 	}
-	result := sessionKnowledge{selection: selection, environment: cleanKnowledgeEnvironment(existingEnvironment), config: cfg}
+	result := sessionKnowledge{selection: selection, environment: cleanKnowledgeEnvironment(existingEnvironment), config: cfg, healthMu: &sync.RWMutex{}, health: map[string]string{}}
+	for alias, profile := range cfg.Connections.Servers {
+		if profile.Enabled && profile.Status == "connected" {
+			result.health[alias] = "healthy"
+		} else if profile.Enabled {
+			result.health[alias] = "down"
+		} else {
+			result.health[alias] = "disabled"
+		}
+	}
 	if len(selection.Groups) == 0 {
 		return result, nil
 	}
@@ -58,6 +82,13 @@ func (a *App) prepareSessionKnowledge(ctx context.Context, cfg config.Config, se
 		}
 	}
 	router, err := knowledgerouter.Start(knowledgerouter.Options{Selection: selection, Credentials: credentials, Client: a.statusHTTPClient(), Observe: func(event knowledgerouter.Event) {
+		result.healthMu.Lock()
+		if event.State == "failed" {
+			result.health[event.SourceAlias] = "down"
+		} else {
+			result.health[event.SourceAlias] = "healthy"
+		}
+		result.healthMu.Unlock()
 		if observe == nil {
 			return
 		}

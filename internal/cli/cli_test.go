@@ -148,6 +148,18 @@ func TestPublicMenuActionCoverageIsUnique(t *testing.T) {
 	}
 }
 
+func TestUXAuditCoversEveryPublicMenuAction(t *testing.T) {
+	body, err := os.ReadFile(filepath.Join("..", "..", "docs", "ux-audit.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, id := range PublicMenuActionIDs() {
+		if !strings.Contains(string(body), id) {
+			t.Errorf("public menu action %q is missing from docs/ux-audit.md", id)
+		}
+	}
+}
+
 func TestDestructiveConfirmationRequiresExactPhrase(t *testing.T) {
 	var output bytes.Buffer
 	a := &app.App{In: strings.NewReader("remove\nREMOVE\n"), Out: &output, Err: &output}

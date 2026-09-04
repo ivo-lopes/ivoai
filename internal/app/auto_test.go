@@ -3,7 +3,10 @@ package app
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
+	"io"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -12,11 +15,71 @@ import (
 	"time"
 
 	"github.com/ivo-lopes/ivoai/internal/config"
+	"github.com/ivo-lopes/ivoai/internal/opencodebridge"
 	"github.com/ivo-lopes/ivoai/internal/quota"
 	"github.com/ivo-lopes/ivoai/internal/secrets"
+	"github.com/ivo-lopes/ivoai/internal/serverpool"
 	"github.com/ivo-lopes/ivoai/internal/session"
 	"github.com/ivo-lopes/ivoai/internal/workingcontext"
 )
+
+type fakeManagedOpenCode struct {
+	environment []string
+}
+
+func TestKnowledgeScopeUsesStableServerIdentityNotAlias(t *testing.T) {
+	first := sessionKnowledge{selection: serverpool.Selection{Groups: []serverpool.SourceGroup{{Profiles: []config.ServerProfile{{ID: "srv_stable_voice", Alias: "voicecorp"}}}}}}
+	renamed := sessionKnowledge{selection: serverpool.Selection{Groups: []serverpool.SourceGroup{{Profiles: []config.ServerProfile{{ID: "srv_stable_voice", Alias: "company-a"}}}}}}
+	other := sessionKnowledge{selection: serverpool.Selection{Groups: []serverpool.SourceGroup{{Profiles: []config.ServerProfile{{ID: "srv_other", Alias: "voicecorp"}}}}}}
+	if knowledgeScopeID("/workspace", first) != knowledgeScopeID("/workspace", renamed) {
+		t.Fatal("alias rename changed stable knowledge scope")
+	}
+	if knowledgeScopeID("/workspace", first) == knowledgeScopeID("/workspace", other) {
+		t.Fatal("different server identities shared a knowledge scope")
+	}
+	if knowledgeScopeID("/workspace", first) == knowledgeScopeID("/other", first) {
+		t.Fatal("different working directories shared a knowledge scope")
+	}
+}
+
+func TestResumableOpenCodeSessionMatchesDirectoryAndKnowledgeScope(t *testing.T) {
+	root := t.TempDir()
+	store := session.Store{Root: filepath.Join(root, "sessions")}
+	now := time.Now().UTC()
+	for _, value := range []session.Session{
+		{SessionID: "sess_11111111111111111111111111111111", StartedAt: now.Add(-time.Minute), UpdatedAt: now.Add(-time.Minute), EndedAt: &now, Mode: session.ModeDirect, Frontend: "opencode", FrontendSessionID: "ses_wrong_scope", WorkingDirectory: root, KnowledgeScopeID: "ks_other", PrimaryExecutor: "opencode", PrimaryModel: session.UnknownModel(), Workers: []session.Worker{}, MaxWorkers: 1, ContextStatus: "disabled", MemoryStatus: "disabled", ServerStatus: "not-connected", State: session.StateCompleted},
+		{SessionID: "sess_22222222222222222222222222222222", StartedAt: now, UpdatedAt: now, EndedAt: &now, Mode: session.ModeDirect, Frontend: "opencode", FrontendSessionID: "ses_expected", WorkingDirectory: root, KnowledgeScopeID: "ks_fixture", PrimaryExecutor: "opencode", PrimaryModel: session.UnknownModel(), Workers: []session.Worker{}, MaxWorkers: 1, ContextStatus: "disabled", MemoryStatus: "disabled", ServerStatus: "not-connected", State: session.StateCompleted},
+	} {
+		if err := store.Create(value); err != nil {
+			t.Fatal(err)
+		}
+	}
+	got, err := resumableOpenCodeSession(store, "sess_current", root, "ks_fixture")
+	if err != nil || got != "ses_expected" {
+		t.Fatalf("resume=%q err=%v", got, err)
+	}
+	got, err = resumableOpenCodeSession(store, "sess_current", root, "ks_missing")
+	if err != nil || got != "" {
+		t.Fatalf("mismatched scope resumed: %q err=%v", got, err)
+	}
+}
+
+func TestSessionKnowledgeRuntimeHealthIsSharedAcrossStatusCopies(t *testing.T) {
+	knowledge := sessionKnowledge{healthMu: &sync.RWMutex{}, health: map[string]string{"voicecorp": "healthy"}}
+	copy := knowledge
+	copy.healthMu.Lock()
+	copy.health["voicecorp"] = "down"
+	copy.healthMu.Unlock()
+	if got := knowledge.healthFor("voicecorp", "healthy"); got != "down" {
+		t.Fatalf("health=%q", got)
+	}
+}
+
+func (f fakeManagedOpenCode) Args() []string              { return nil }
+func (f fakeManagedOpenCode) Env() []string               { return append([]string(nil), f.environment...) }
+func (f fakeManagedOpenCode) BackendURL() string          { return "http://127.0.0.1:1" }
+func (f fakeManagedOpenCode) BackendLoopback() bool       { return true }
+func (f fakeManagedOpenCode) Close(context.Context) error { return nil }
 
 type probeFunc func(context.Context) (quota.ProviderQuota, error)
 
@@ -61,7 +124,10 @@ case "$*" in
   "task create"*) echo 'task-auto-123' ;;
 esac
 `)
+	codexBody += "\nprintf '%s\\n' '{\"type\":\"thread.started\",\"thread_id\":\"thread_fixture\"}'\n"
+	claudeBody += "\nprintf '%s\\n' '{\"type\":\"system\",\"session_id\":\"claude_fixture\"}'\n"
 	a := sessionTestApp(t, root, appExecutable(t, root, "codex", codexBody), appExecutable(t, root, "claude", claudeBody), ruflo)
+	opencode := appExecutable(t, root, "opencode", "#!/bin/sh\nexit 0\n")
 	t.Setenv("IVOAI_TEST_MODE", "1")
 	state, err := a.Store.LoadState()
 	if err != nil {
@@ -70,20 +136,43 @@ esac
 	if err := a.orchestrationManager(state).Configure(context.Background(), true); err != nil {
 		t.Fatal(err)
 	}
+	state.Components["opencode"] = config.ComponentState{Installed: true, Managed: true, Path: opencode, Version: "fixture"}
+	if err := a.Store.SaveState(state); err != nil {
+		t.Fatal(err)
+	}
+	a.StartOpenCodeManaged = func(ctx context.Context, options opencodebridge.ManagedOptions) (managedOpenCodeFrontend, error) {
+		payload, err := json.Marshal(map[string]any{
+			"model": "auto", "stream": false,
+			"messages": []map[string]string{{"role": "user", "content": "fixture request"}},
+		})
+		if err != nil {
+			return nil, err
+		}
+		request, err := http.NewRequestWithContext(ctx, http.MethodPost, options.Bridge.URL()+"/v1/chat/completions", bytes.NewReader(payload))
+		if err != nil {
+			return nil, err
+		}
+		request.Header.Set("Authorization", "Bearer "+options.Bridge.Token())
+		request.Header.Set("Content-Type", "application/json")
+		request.Header.Set("X-IVOAI-OpenCode-Session", "oc_fixture")
+		request.Header.Set("X-IVOAI-OpenCode-Message", "msg_fixture")
+		response, err := http.DefaultClient.Do(request)
+		if err != nil {
+			return nil, err
+		}
+		_, _ = io.Copy(io.Discard, response.Body)
+		_ = response.Body.Close()
+		if response.StatusCode != http.StatusOK {
+			return nil, errors.New("fixture OpenCode bridge request failed")
+		}
+		return fakeManagedOpenCode{environment: options.Environment}, nil
+	}
 	previous, _ := os.Getwd()
 	t.Cleanup(func() { _ = os.Chdir(previous) })
 	if err := os.Chdir(root); err != nil {
 		t.Fatal(err)
 	}
 	return a
-}
-
-func TestSelectPlannerUsesPersistentDefault(t *testing.T) {
-	a := &App{In: strings.NewReader("\n"), Out: &bytes.Buffer{}}
-	selected, err := a.selectPlanner("claude")
-	if err != nil || selected != "claude" {
-		t.Fatalf("selected=%q err=%v", selected, err)
-	}
 }
 
 func TestAutoStartupFallbackNeverLaunchesExhaustedProvider(t *testing.T) {
@@ -107,6 +196,30 @@ func TestAutoStartupFallbackNeverLaunchesExhaustedProvider(t *testing.T) {
 	values, _ := a.SessionList()
 	if len(values) != 1 || values[0].InitialPlanner != "codex" || values[0].CurrentPrimary != "claude" || values[0].FailoverCount != 1 || values[0].State != session.StateCompleted {
 		t.Fatalf("unexpected automatic session: %+v", values)
+	}
+}
+
+func TestAutoStartsClaudeWhenCodexRuntimeIsUnavailable(t *testing.T) {
+	root := t.TempDir()
+	claudeMarker := filepath.Join(root, "claude-launched")
+	a := autoTestApp(t, root, "#!/bin/sh\nexit 99\n", "#!/bin/sh\n: > '"+claudeMarker+"'\n")
+	state, err := a.Store.LoadState()
+	if err != nil {
+		t.Fatal(err)
+	}
+	state.Components["codex"] = config.ComponentState{}
+	if err := a.Store.SaveState(state); err != nil {
+		t.Fatal(err)
+	}
+	a.QuotaManager = &quota.Manager{Store: quota.Store{Root: a.Store.Paths.QuotaDir}, Probes: map[quota.Provider]quota.Probe{
+		quota.ProviderCodex:  probeFunc(func(context.Context) (quota.ProviderQuota, error) { return exhausted(quota.ProviderCodex), nil }),
+		quota.ProviderClaude: probeFunc(func(context.Context) (quota.ProviderQuota, error) { return available(quota.ProviderClaude), nil }),
+	}}
+	if err := a.Auto(context.Background(), "codex", nil); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(claudeMarker); err != nil {
+		t.Fatalf("eligible Claude executor was not launched: %v", err)
 	}
 }
 
@@ -153,7 +266,7 @@ func TestAutoMidSessionFailoverPreservesWorkingTreeAndHandoff(t *testing.T) {
 		t.Fatal(err)
 	}
 	claudeArgs := filepath.Join(root, "claude-args")
-	a := autoTestApp(t, root, "#!/bin/sh\ntrap 'exit 0' TERM INT\nwhile :; do sleep 1; done\n", "#!/bin/sh\nprintf '%s\\n' \"$@\" > '"+claudeArgs+"'\n")
+	a := autoTestApp(t, root, "#!/bin/sh\ntrap 'exit 0' TERM INT\nwhile :; do sleep 1; done\n", "#!/bin/sh\n{ printf '%s\\n' \"$@\"; cat; } > '"+claudeArgs+"'\n")
 	var mu sync.Mutex
 	codexCalls := 0
 	a.QuotaManager = &quota.Manager{Store: quota.Store{Root: a.Store.Paths.QuotaDir}, TTL: time.Minute, Probes: map[quota.Provider]quota.Probe{

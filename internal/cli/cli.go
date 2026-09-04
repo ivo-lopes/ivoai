@@ -152,12 +152,21 @@ func runCommand(ctx context.Context, a *app.App, args []string) error {
 		return runConnect(ctx, a, args[1:])
 	case "disconnect":
 		return runDisconnect(ctx, a, args[1:])
-	case "codex", "claude", "opencode":
+	case "codex", "claude":
 		rest, sources, err := extractKnowledgeSources(args[1:])
 		if err != nil {
 			return err
 		}
 		return a.LaunchWithKnowledge(ctx, args[0], trimDoubleDash(rest), sources)
+	case "opencode":
+		rest, sources, err := extractKnowledgeSources(args[1:])
+		if err != nil {
+			return err
+		}
+		if len(trimDoubleDash(rest)) != 0 {
+			return errors.New("ivoai opencode uses the managed IVOAI frontend and accepts only --knowledge-source; use 'ivoai session start --executor opencode --mode direct --' for the standalone upstream CLI")
+		}
+		return a.AutoWithKnowledge(ctx, "", nil, sources)
 	case "auto":
 		rest, sources, err := extractKnowledgeSources(args[1:])
 		if err != nil {
@@ -635,7 +644,7 @@ Usage:
   ivoai disconnect <chatgpt|claude|server [alias|--all]>
   ivoai codex [--knowledge-source <alias|purpose>] [-- agent arguments...]
   ivoai claude [--knowledge-source <alias|purpose>] [-- agent arguments...]
-  ivoai opencode [--knowledge-source <alias|purpose>] [-- agent arguments...]
+  ivoai opencode [--knowledge-source <alias|purpose>]
   ivoai auto [--planner codex|claude] [--knowledge-source <alias|purpose>] [-- agent arguments...]
   ivoai session start --executor <codex|claude|opencode> --mode <direct|orchestrated> [--knowledge-source <alias|purpose>] [-- agent arguments...]
   ivoai session list [--json] | show [--json] <id> | stop <id>
