@@ -201,7 +201,7 @@ test('locale and version routes remain composable', async ({page}) => {
   await page.goto('/pt-BR/docs/quickstart', {waitUntil: 'networkidle'});
   await expect(page.locator('html')).toHaveAttribute('lang', 'pt-BR');
 	await expect(page.getByRole('heading', {level: 1, name: 'Início rápido'})).toBeVisible();
-	await expect(page.getByRole('button', {name: '0.9.1'}).first()).toBeVisible();
+	await expect(page.getByRole('button', {name: '0.9.2'}).first()).toBeVisible();
   const language = page.getByRole('button', {name: 'Português (Brasil)'}).first();
   await language.click();
   await page.getByRole('link', {name: 'English'}).first().click();

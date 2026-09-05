@@ -253,6 +253,7 @@ func (r *Router) initializeFederation(w http.ResponseWriter, request *http.Reque
 	}
 	var first *upstreamResponse
 	var lastErr error
+	stateful := false
 	for range groups {
 		value := <-channel
 		r.emit(Event{Operation: kind, SourceID: value.profile.ID, SourceAlias: value.profile.Alias, Purpose: value.profile.Purpose, SelectedCount: len(groups), Partial: value.err != nil, Duration: value.response.duration, State: state(value.err), Reason: boundedReason(value.err)})
@@ -261,13 +262,21 @@ func (r *Router) initializeFederation(w http.ResponseWriter, request *http.Reque
 			continue
 		}
 		if value.response.header.Get(mcpSessionHeader) != "" {
-			writeRPCError(w, rpc.ID, -32023, "stateful upstream MCP sessions are not supported for federation")
-			return
+			// Drain every in-flight initialize before replying. Returning here
+			// would leave another upstream call running after the client had
+			// already received the fail-closed response, making request lifetime
+			// and the no-crossover invariant timing-dependent.
+			stateful = true
+			continue
 		}
 		if first == nil {
 			copy := value.response
 			first = &copy
 		}
+	}
+	if stateful {
+		writeRPCError(w, rpc.ID, -32023, "stateful upstream MCP sessions are not supported for federation")
+		return
 	}
 	if first == nil {
 		writeRPCError(w, rpc.ID, -32022, boundedReason(lastErr))

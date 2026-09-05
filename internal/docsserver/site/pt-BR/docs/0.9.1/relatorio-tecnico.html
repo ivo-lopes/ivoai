@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="pt-BR" dir="ltr" class="docs-wrapper plugin-docs plugin-id-default docs-version-0.9.1 docs-doc-page docs-doc-id-relatorio-tecnico" data-has-hydrated="false">
+<head>
+<meta charset="UTF-8">
+<meta name="generator" content="Docusaurus v3.10.2">
+<title data-rh="true">Relatório técnico do ivoai | IVOAI</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="http://localhost:7780/pt-BR/docs/0.9.1/relatorio-tecnico"><meta data-rh="true" property="og:locale" content="pt_BR"><meta data-rh="true" property="og:locale:alternate" content="en_US"><meta data-rh="true" name="docusaurus_locale" content="pt-BR"><meta data-rh="true" name="docsearch:language" content="pt-BR"><meta data-rh="true" name="docusaurus_version" content="0.9.1"><meta data-rh="true" name="docusaurus_tag" content="docs-default-0.9.1"><meta data-rh="true" name="docsearch:version" content="0.9.1"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-0.9.1"><meta data-rh="true" property="og:title" content="Relatório técnico do ivoai | IVOAI"><meta data-rh="true" name="description" content="Orquestração automática eficiente (v0.5.0)"><meta data-rh="true" property="og:description" content="Orquestração automática eficiente (v0.5.0)"><link data-rh="true" rel="icon" href="/pt-BR/img/favicon.svg"><link data-rh="true" rel="canonical" href="http://localhost:7780/pt-BR/docs/0.9.1/relatorio-tecnico"><link data-rh="true" rel="alternate" href="http://localhost:7780/docs/0.9.1/relatorio-tecnico" hreflang="en-US"><link data-rh="true" rel="alternate" href="http://localhost:7780/pt-BR/docs/0.9.1/relatorio-tecnico" hreflang="pt-BR"><link data-rh="true" rel="alternate" href="http://localhost:7780/docs/0.9.1/relatorio-tecnico" hreflang="x-default"><link rel="stylesheet" href="/pt-BR/assets/css/styles.92d12545.css">
+<script src="/pt-BR/assets/js/runtime~main.526f4dd8.js" defer="defer"></script>
+<script src="/pt-BR/assets/js/main.6dc2312d.js" defer="defer"></script>
+</head>
+<body>
+<svg style="display: none;"><defs>
+<symbol id="theme-svg-external-link" viewBox="0 0 24 24"><path fill="currentColor" d="M21 13v10h-21v-19h12v2h-10v15h17v-8h2zm3-12h-10.988l4.035 4-6.977 7.07 2.828 2.828 6.977-7.07 4.125 4.172v-11z"/></symbol>
+</defs></svg>
+<script>!function(){var t=function(){try{return new URLSearchParams(window.location.search).get("docusaurus-theme")}catch(t){}}()||function(){try{return window.localStorage.getItem("theme")}catch(t){}}();document.documentElement.setAttribute("data-theme",t||"light"),document.documentElement.setAttribute("data-theme-choice",t||"light")}(),function(){try{const c=new URLSearchParams(window.location.search).entries();for(var[t,e]of c)if(t.startsWith("docusaurus-data-")){var a=t.replace("docusaurus-data-","data-");document.documentElement.setAttribute(a,e)}}catch(t){}}()</script><div id="__docusaurus"><div role="region" aria-label="Pular para o conteúdo principal"><a class="skipToContent_YwAw" href="#__docusaurus_skipToContent_fallback">Pular para o conteúdo principal</a></div><nav aria-label="Navegação principal" class="theme-layout-navbar navbar navbar--fixed-top"><div class="navbar__inner"><div class="theme-layout-navbar-left navbar__items"><button aria-label="Alternar painel de navegação" aria-expanded="false" class="navbar__toggle clean-btn" type="button"><svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><path stroke="currentColor" stroke-linecap="round" stroke-miterlimit="10" stroke-width="2" d="M4 7h22M4 15h22M4 23h22"></path></svg></button><a class="navbar__brand" aria-label="IVOAI home" href="/pt-BR/"><span class="ivoai-wordmark navbar__title" aria-hidden="true"><span>I</span><span>V</span><span>O</span><svg class="ivoai-wordmark__lambda" viewBox="0 0 20 24" focusable="false" aria-hidden="true"><path d="M2 22 L10 2 L18 22"></path></svg><span>I</span></span></a><a class="navbar__item navbar__link" href="/pt-BR/docs/quickstart">Guia rápido</a><a class="navbar__item navbar__link" href="/pt-BR/docs/cli-reference">CLI</a><a class="navbar__item navbar__link" href="/pt-BR/docs/server">Servidor</a><a class="navbar__item navbar__link" href="/pt-BR/docs/mcp-web">MCP Web</a></div><div class="theme-layout-navbar-right navbar__items navbar__items--right"><div class="navbar__item dropdown dropdown--hoverable dropdown--right"><a aria-current="page" class="navbar__link active" aria-haspopup="true" aria-expanded="false" role="button" href="/pt-BR/docs/0.9.1/relatorio-tecnico">0.9.1</a><ul class="dropdown__menu"><li><a class="dropdown__link" href="/pt-BR/docs/next/relatorio-tecnico">Atual</a></li><li><a class="dropdown__link" href="/pt-BR/docs/relatorio-tecnico">0.9.2</a></li><li><a aria-current="page" class="dropdown__link dropdown__link--active" href="/pt-BR/docs/0.9.1/relatorio-tecnico">0.9.1</a></li><li><a class="dropdown__link" href="/pt-BR/docs/0.9.0/relatorio-tecnico">0.9.0</a></li><li><a class="dropdown__link" href="/pt-BR/docs/0.8.0/relatorio-tecnico">0.8.0</a></li></ul></div><div class="navbar__item dropdown dropdown--hoverable dropdown--right"><a href="#" aria-haspopup="true" aria-expanded="false" role="button" class="navbar__link"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" class="iconLanguage_VgQz"><path fill="currentColor" d="M12.87 15.07l-2.54-2.51.03-.03c1.74-1.94 2.98-4.17 3.71-6.53H17V4h-7V2H8v2H1v1.99h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"></path></svg>Português (Brasil)</a><ul class="dropdown__menu"><li><a href="/docs/0.9.1/relatorio-tecnico" target="_self" rel="noopener noreferrer" class="dropdown__link" lang="en-US">English</a></li><li><a href="/pt-BR/docs/0.9.1/relatorio-tecnico" target="_self" rel="noopener noreferrer" class="dropdown__link dropdown__link--active" lang="pt-BR">Português (Brasil)</a></li></ul></div><a href="https://github.com/ivo-lopes/ivoai" target="_blank" rel="noopener noreferrer" class="navbar__item navbar__link">GitHub<svg width="13.5" height="13.5" aria-label="(abre em nova aba)" class="iconExternalLink_LkiX"><use href="#theme-svg-external-link"></use></svg></a><div class="toggle_QWQj colorModeToggle_SwLL"><button class="clean-btn toggleButton_D4wv toggleButtonDisabled_xnHs" type="button" disabled="" title="modo do sistema" aria-label="Mudar entre modo claro e escuro (modo do sistema está ativo)"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_IFsC lightToggleIcon_FQ8i"><path fill="currentColor" d="M12,9c1.65,0,3,1.35,3,3s-1.35,3-3,3s-3-1.35-3-3S10.35,9,12,9 M12,7c-2.76,0-5,2.24-5,5s2.24,5,5,5s5-2.24,5-5 S14.76,7,12,7L12,7z M2,13l2,0c0.55,0,1-0.45,1-1s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S1.45,13,2,13z M20,13l2,0c0.55,0,1-0.45,1-1 s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S19.45,13,20,13z M11,2v2c0,0.55,0.45,1,1,1s1-0.45,1-1V2c0-0.55-0.45-1-1-1S11,1.45,11,2z M11,20v2c0,0.55,0.45,1,1,1s1-0.45,1-1v-2c0-0.55-0.45-1-1-1C11.45,19,11,19.45,11,20z M5.99,4.58c-0.39-0.39-1.03-0.39-1.41,0 c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0s0.39-1.03,0-1.41L5.99,4.58z M18.36,16.95 c-0.39-0.39-1.03-0.39-1.41,0c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0c0.39-0.39,0.39-1.03,0-1.41 L18.36,16.95z M19.42,5.99c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06c-0.39,0.39-0.39,1.03,0,1.41 s1.03,0.39,1.41,0L19.42,5.99z M7.05,18.36c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06 c-0.39,0.39-0.39,1.03,0,1.41s1.03,0.39,1.41,0L7.05,18.36z"></path></svg><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_IFsC darkToggleIcon_vLOl"><path fill="currentColor" d="M9.37,5.51C9.19,6.15,9.1,6.82,9.1,7.5c0,4.08,3.32,7.4,7.4,7.4c0.68,0,1.35-0.09,1.99-0.27C17.45,17.19,14.93,19,12,19 c-3.86,0-7-3.14-7-7C5,9.07,6.81,6.55,9.37,5.51z M12,3c-4.97,0-9,4.03-9,9s4.03,9,9,9s9-4.03,9-9c0-0.46-0.04-0.92-0.1-1.36 c-0.98,1.37-2.58,2.26-4.4,2.26c-2.98,0-5.4-2.42-5.4-5.4c0-1.81,0.89-3.42,2.26-4.4C12.92,3.04,12.46,3,12,3L12,3z"></path></svg><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_IFsC systemToggleIcon_vagp"><path fill="currentColor" d="m12 21c4.971 0 9-4.029 9-9s-4.029-9-9-9-9 4.029-9 9 4.029 9 9 9zm4.95-13.95c1.313 1.313 2.05 3.093 2.05 4.95s-0.738 3.637-2.05 4.95c-1.313 1.313-3.093 2.05-4.95 2.05v-14c1.857 0 3.637 0.737 4.95 2.05z"></path></svg></button></div><div class="navbarSearchContainer_WdYj"><div class="navbar__search searchBarContainer_dDqy" dir="ltr"><svg aria-hidden="true" class="searchIcon_WYMC" focusable="false" viewBox="0 0 16 16"><path fill="currentColor" d="M6.02945 10.20327a4.17382 4.17382 0 1 1 4.17382-4.17382 4.15609 4.15609 0 0 1-4.17382 4.17382Zm9.69195 4.2199-4.8225-4.82338A5.88021 5.88021 0 0 0 12.058 6.02856 6.00467 6.00467 0 1 0 9.59979 10.8989l4.82338 4.82338a.89729.89729 0 0 0 1.29912 0 .89749.89749 0 0 0-.00087-1.29909Z"></path></svg><input placeholder="Buscar" aria-label="Search" class="navbar__search-input searchInput_Vw3I" value=""><div class="loadingRing_kxyR searchBarLoadingRing_oNax"><div></div><div></div><div></div><div></div></div></div></div></div></div><div role="presentation" class="navbar-sidebar__backdrop"></div></nav><div id="__docusaurus_skipToContent_fallback" class="theme-layout-main main-wrapper mainWrapper_Ao2C"><div class="docsWrapper_funy"><button aria-label="Voltar para o topo" class="clean-btn theme-back-to-top-button backToTopButton_aICL" type="button"></button><div class="docRoot_J3hu"><main class="docMainContainer_cPN7 docMainContainerEnhanced_FHms"><div class="container padding-top--md padding-bottom--lg"><div class="row"><div class="col docItemCol_COpS"><div class="theme-doc-version-banner alert alert--warning margin-bottom--md" role="alert"><div>Esta é a documentação para <!-- -->IVOAI<!-- --> <b>0.9.1</b>, que não é mais mantida ativamente.</div><div class="margin-top--md">Para a documentação atualizada, consulte a <b><a href="/pt-BR/docs/relatorio-tecnico">versão mais recente</a></b> (<!-- -->0.9.2<!-- -->).</div></div><div class="docItemContainer_XNRF"><article><span class="theme-doc-version-badge badge badge--secondary">Versão: 0.9.1</span><div class="tocCollapsible_Jhng theme-doc-toc-mobile tocMobile_Zwpp"><button type="button" class="clean-btn tocCollapsibleButton_YOF3">Nesta página</button></div><div class="theme-doc-markdown markdown"><header><h1>Relatório técnico do ivoai</h1></header>
+<h2 class="anchor anchorTargetStickyNavbar_UW1m" id="orquestração-automática-eficiente-v050">Orquestração automática eficiente (v0.5.0)<a href="#orquestração-automática-eficiente-v050" class="hash-link" aria-label="Link direto para Orquestração automática eficiente (v0.5.0)" title="Link direto para Orquestração automática eficiente (v0.5.0)" translate="no">​</a></h2>
+<p><code>ivoai auto</code> adiciona um supervisor ao Session Control Plane. O primary selecionado
+continua sendo a TUI oficial do Codex ou Claude Code, simultaneamente planner,
+conversation owner e consolidador. O Quota Manager usa
+<code>account/rateLimits/read</code> no Codex app-server e o payload estruturado de <code>statusLine</code>
+do Claude, normaliza context/session/weekly/monthly/model-scoped sem confundi-los e
+persiste somente telemetria não sensível em cache privado, atômico e bloqueado por
+arquivo.</p>
+<p>O gate é aplicado no startup, periodicamente no primary, antes e depois de cada
+worker e antes de failover. Ruflo mantém <code>provider_execution=false</code> e registra apenas
+IDs opacos. Checkpoints locais limitados e livres de segredos dão a fronteira
+imediata do handoff; hooks do ai-memory mantêm continuidade operacional durável. O
+supervisor preserva o worktree, sinaliza e aguarda o grupo de processo correto e
+limita a dois failovers consecutivos. Métricas ausentes continuam desconhecidas e
+erros de rede não são promovidos a exaustão. Detalhes e contratos estão em
+<code>docs/auto-orchestration.md</code> e <code>docs/quota-routing.md</code>.</p>
+<p>O primeiro pedido substantivo acrescenta um protocolo determinístico: lookup bounded
+em ai-memory, lookup bounded em Context, SharedContextBrief privado, análise,
+decomposição, DAG, scoring, resolução de capability/quota, dispatch paralelo,
+validação, síntese e checkpoint. O conteúdo do brief fica no runtime <code>0700/0600</code>; o
+JSON de sessão mantém somente timestamp, estados das fontes, número de referências e
+hash.</p>
+<p>Cada task fornece <code>complexity</code>, <code>risk</code>, <code>reasoning_depth</code>, <code>context_breadth</code>,
+<code>verification_need</code>, <code>parallel_value</code> e <code>latency_sensitivity</code> em <code>0..100</code>. O IvoAI
+calcula o capability score com pesos 30/25/20/10/15 e resolve LIGHT (0–24), BALANCED
+(25–49), STRONG (50–74) ou MAX (75–100). Uma função separada compara benefício de
+paralelismo/qualidade com overhead de startup/contexto e pode manter a task no
+primary mesmo quando o planner solicitou delegação.</p>
+<p>O Capability Registry consulta <code>codex app-server</code>/<code>model/list</code> para modelos e efforts
+estruturados. Para Claude, apenas os efforts expostos pelo <code>--help</code> oficial são
+usados; sem catálogo estruturado, o model fica <code>client-default</code>. O router seleciona
+o menor perfil suficiente, aplica quota provider/model-specific e pressão de quota,
+e nunca inventa nome ou suporte. Effort não suportado vira
+<code>effort_source=unsupported</code> e não é enviado.</p>
+<p><code>orchestration_spawn</code> e <code>orchestration_spawn_batch</code> são assíncronos. O scheduler usa
+notificações, limita o DAG a 12 tasks, respeita dependências e ocupa no máximo dois
+workers por padrão (hard cap três). Prompts/resultados permanecem na memória do
+bridge; Ruflo recebe IDs opacos. Codex worker usa sandbox read-only e Claude worker
+usa permission mode <code>plan</code> com ferramentas de escrita desabilitadas. Escalada avança
+um tier por vez e exige motivo. A especificação completa está em
+<code>docs/auto-scheduler.md</code>.</p>
+<h2 class="anchor anchorTargetStickyNavbar_UW1m" id="1-objetivo-e-princípios">1. Objetivo e princípios<a href="#1-objetivo-e-princípios" class="hash-link" aria-label="Link direto para 1. Objetivo e princípios" title="Link direto para 1. Objetivo e princípios" translate="no">​</a></h2>
+<p>ivoai é um único binário Go com modos client e server. O cliente é host-first: Git e
+projeto local são opcionais. O setup inicial não depende de conexão externa, login de
+provedor ou chave PAYG.</p>
+<p>Princípios arquiteturais:</p>
+<ul>
+<li class="">componentes opcionais não derrubam Codex ou Claude;</li>
+<li class="">configuração estruturada e secrets separados;</li>
+<li class="">subprocessos recebem argv, contexto, timeout e sinais;</li>
+<li class="">versões e integridade são centralizadas no manifesto;</li>
+<li class="">o servidor publica um único origin HTTPS;</li>
+<li class="">bancos e serviços internos não são APIs públicas;</li>
+<li class="">contexto recuperado é dado não confiável;</li>
+<li class="">administração remota possui escopo mínimo e nunca equivale a shell.</li>
+</ul>
+<h2 class="anchor anchorTargetStickyNavbar_UW1m" id="2-visão-de-sistema">2. Visão de sistema<a href="#2-visão-de-sistema" class="hash-link" aria-label="Link direto para 2. Visão de sistema" title="Link direto para 2. Visão de sistema" translate="no">​</a></h2>
+<div class="language-text codeBlockContainer_hJIO theme-code-block" style="--prism-color:#bfc7d5;--prism-background-color:#292d3e"><div class="codeBlockContent_tbZp"><pre tabindex="0" class="prism-code language-text codeBlock_e7Om thin-scrollbar" style="color:#bfc7d5;background-color:#292d3e"><code class="codeBlockLines_QMIf"><div class="token-line" style="color:#bfc7d5"><span class="token plain">CLIENTE</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  ivoai CLI/menu</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">    ├── config, state, ownership e secrets XDG</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">    ├── registry MCP e hooks ai-memory</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">    ├── Ruflo safe profile</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">    └── Headroom ── Codex / Claude</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">             └───── fallback direto</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">          │ HTTPS + bearer client-scoped</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">          ▼</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">SERVIDOR</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  ivoai gateway</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">    ├── discovery, health, readiness e enrollment</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">    ├── OAuth 2.1 + Web MCP unificado</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">    ├── context MCP ── context ── embeddings ── Qdrant</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">    ├── memory MCP/hook proxy ── ai-memory</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">    └── remote admin read-only</span><br></div></code></pre></div></div>
+<h2 class="anchor anchorTargetStickyNavbar_UW1m" id="3-cli-e-interface-interativa">3. CLI e interface interativa<a href="#3-cli-e-interface-interativa" class="hash-link" aria-label="Link direto para 3. CLI e interface interativa" title="Link direto para 3. CLI e interface interativa" translate="no">​</a></h2>
+<p>O dispatcher de subcommands permanece a interface estável para automação. Sem
+argumentos, o pacote terminal constrói um catálogo hierárquico sobre as mesmas funções
+de aplicação e server runner.</p>
+<p>A interface usa ANSI e <code>golang.org/x/term</code>, sem framework TUI adicional. Em TTY ela
+ativa raw mode somente durante seleção, renderiza lettering block/shadow e badges não
+sensíveis, interpreta setas, <code>j</code>/<code>k</code>, Enter, Esc e <code>q</code>, e restaura o terminal antes de
+prompts, operações e agentes externos.</p>
+<p>Sem TTY, <code>TERM=dumb</code> ou por pipe, utiliza seleção numerada. <code>NO_COLOR</code> remove códigos
+ANSI e <code>IVOAI_ASCII=1</code> força caracteres ASCII.</p>
+<p>O menu cobre comandos públicos. Entry points internos de systemd, como <code>gateway serve</code> e <code>context serve</code>, não são apresentados. Operações destrutivas exigem frase de
+confirmação exata. Itens incompatíveis permanecem visíveis com a razão.</p>
+<p>O snapshot do menu é tipado e contém somente readiness e estados booleanos; nenhum
+token, enrollment code ou conteúdo bruto de secret chega à camada visual.</p>
+<p>O renderer não fixa as dimensões na abertura. Ele consulta largura e altura a cada
+frame e recebe <code>SIGWINCH</code>, recalculando banner, badges, descrições e viewport. O modo
+amplo é usado a partir de <code>90x24</code>, o intermediário entre <code>60x18</code> e <code>89x23</code>, e o
+compacto abaixo disso. Cálculos usam células visuais Unicode e removem ANSI antes de
+medir; badges quebram linha e listas altas são paginadas, evitando overflow.</p>
+<p>A apresentação semântica é compartilhada pelos comandos humanos: cyan/violeta para
+estrutura e progresso, verde para sucesso, amarelo para warning e vermelho para erro.
+O lettering completo aparece no instalador e na entrada principal; telas internas
+usam wordmark compacto. JSON, pipes, <code>NO_COLOR</code>, <code>TERM=dumb</code> e CI não recebem códigos
+ANSI ou animação.</p>
+<h2 class="anchor anchorTargetStickyNavbar_UW1m" id="4-progresso-e-io">4. Progresso e I/O<a href="#4-progresso-e-io" class="hash-link" aria-label="Link direto para 4. Progresso e I/O" title="Link direto para 4. Progresso e I/O" translate="no">​</a></h2>
+<p>O indicador central apresenta spinner e tempo decorrido em TTY, frames ASCII quando
+Unicode não está disponível, mensagens de início/fim fora de TTY e formatação de
+barra/bytes para transferências com tamanho conhecido.</p>
+<p>Progresso usa stderr. stdout permanece reservado para resultados, inclusive JSON.
+<code>doctor --json</code> não habilita animação. Antes de login oficial ou agente interativo, a
+linha animada é encerrada para entregar o terminal ao subprocesso.</p>
+<p>Downloads específicos, como o plugin Docker Compose, reportam bytes e percentual a
+partir de <code>Content-Length</code>. Health demorado de containers emite heartbeats com elapsed
+time e comando seguro de diagnóstico.</p>
+<p>O shell installer implementa a mesma máquina visual antes que o binário exista. Cada
+fase possui início, conclusão e erro; downloads conhecidos exibem barra, enquanto
+checksum, extração e build exibem spinner. Saída detalhada temporariamente capturada é
+reapresentada se a operação falhar. A conclusão informa caminho instalado e diferencia
+o próximo passo client (<code>ivoai setup</code>) do server (<code>ivoai setup --mode server</code>).</p>
+<h2 class="anchor anchorTargetStickyNavbar_UW1m" id="5-configuração-e-persistência-client-side">5. Configuração e persistência client-side<a href="#5-configuração-e-persistência-client-side" class="hash-link" aria-label="Link direto para 5. Configuração e persistência client-side" title="Link direto para 5. Configuração e persistência client-side" translate="no">​</a></h2>
+<div class="language-text codeBlockContainer_hJIO theme-code-block" style="--prism-color:#bfc7d5;--prism-background-color:#292d3e"><div class="codeBlockContent_tbZp"><pre tabindex="0" class="prism-code language-text codeBlock_e7Om thin-scrollbar" style="color:#bfc7d5;background-color:#292d3e"><code class="codeBlockLines_QMIf"><div class="token-line" style="color:#bfc7d5"><span class="token plain">~/.config/ivoai/       configuração e secrets</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">~/.local/share/ivoai/  binários gerenciados, hooks e assets</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">~/.local/state/ivoai/  estado operacional e ownership</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">~/.cache/ivoai/        downloads e cache</span><br></div></code></pre></div></div>
+<p>Diretórios privados usam <code>0700</code>; secrets usam <code>0600</code>. O TOML principal registra
+settings, conexões e MCPs, mas não credenciais. O ownership manifest separa componentes
+preexistentes daqueles instalados pelo ivoai para permitir uninstall não destrutivo.</p>
+<h2 class="anchor anchorTargetStickyNavbar_UW1m" id="6-instalação-e-componentes">6. Instalação e componentes<a href="#6-instalação-e-componentes" class="hash-link" aria-label="Link direto para 6. Instalação e componentes" title="Link direto para 6. Instalação e componentes" translate="no">​</a></h2>
+<p><code>install.sh</code> detecta Linux e arquitetura, baixa releases e valida checksums. Em source
+checkout autenticado, utiliza Go compatível ou baixa temporariamente o toolchain
+pinado e validado, compila e remove os temporários.</p>
+<p><code>ivoai setup</code> garante layout/config/secrets, instala componentes pinados, configura
+Ruflo seguro, reconcilia hooks/MCPs e atualiza state/ownership. O manifesto central
+registra versão, fonte, arquitetura, estratégia e integridade.</p>
+<h2 class="anchor anchorTargetStickyNavbar_UW1m" id="7-provedores-e-execução-de-agentes">7. Provedores e execução de agentes<a href="#7-provedores-e-execução-de-agentes" class="hash-link" aria-label="Link direto para 7. Provedores e execução de agentes" title="Link direto para 7. Provedores e execução de agentes" translate="no">​</a></h2>
+<p>ChatGPT/Codex delega para <code>codex login</code>; Claude delega para <code>claude auth login</code>.
+Detecção e validação usam comandos oficiais. ivoai não lê cookies nem armazena tokens
+dos provedores.</p>
+<div class="language-text codeBlockContainer_hJIO theme-code-block" style="--prism-color:#bfc7d5;--prism-background-color:#292d3e"><div class="codeBlockContent_tbZp"><pre tabindex="0" class="prism-code language-text codeBlock_e7Om thin-scrollbar" style="color:#bfc7d5;background-color:#292d3e"><code class="codeBlockLines_QMIf"><div class="token-line" style="color:#bfc7d5"><span class="token plain">ivoai codex|claude</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  ├── carrega ambiente permitido e credencial server-scoped</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  ├── verifica Headroom habilitado, saudável e compatível</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  ├── executa Headroom -&gt; agente</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  └── fallback direto se o preflight falhar</span><br></div></code></pre></div></div>
+<p>Depois de iniciado o wrapper, seu exit code é preservado; não existe retry silencioso
+que poderia abrir uma segunda sessão.</p>
+<h2 class="anchor anchorTargetStickyNavbar_UW1m" id="8-memória-e-orquestração">8. Memória e orquestração<a href="#8-memória-e-orquestração" class="hash-link" aria-label="Link direto para 8. Memória e orquestração" title="Link direto para 8. Memória e orquestração" translate="no">​</a></h2>
+<p>ai-memory é a memória operacional persistente e cross-session. Hooks de Codex e
+Claude são idempotentes e falham no caminho allow/zero-exit quando o servidor está
+offline. Ao conectar um servidor, endpoints e credencial são reconciliados.</p>
+<p>O gateway substitui a credencial client-scoped por token privado antes de encaminhar
+rotas permitidas ao ai-memory. O Host público não é propagado. Health usa <code>tools/list</code>
+MCP autenticado, pois ai-memory não publica <code>/health</code> HTTP.</p>
+<p>Ruflo cuida de workflows, agentes, coordenação e estado temporário. Provider execution
+PAYG e memória durável Ruflo permanecem desabilitados por padrão.</p>
+<h2 class="anchor anchorTargetStickyNavbar_UW1m" id="9-contextorag">9. Contexto/RAG<a href="#9-contextorag" class="hash-link" aria-label="Link direto para 9. Contexto/RAG" title="Link direto para 9. Contexto/RAG" translate="no">​</a></h2>
+<div class="language-text codeBlockContainer_hJIO theme-code-block" style="--prism-color:#bfc7d5;--prism-background-color:#292d3e"><div class="codeBlockContent_tbZp"><pre tabindex="0" class="prism-code language-text codeBlock_e7Om thin-scrollbar" style="color:#bfc7d5;background-color:#292d3e"><code class="codeBlockLines_QMIf"><div class="token-line" style="color:#bfc7d5"><span class="token plain">filesystem/git connector</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  -&gt; normalização</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  -&gt; filtro sensível</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  -&gt; chunking</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  -&gt; embeddings locais</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  -&gt; collection Qdrant versionada</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  -&gt; search/read/recent/health MCP read-only</span><br></div></code></pre></div></div>
+<p>O serviço é saudável com zero documentos e conectores. Administração e ingestão usam
+comandos separados; documentos não ganham capacidade de executar ações. Qdrant é um
+índice reconstruível a partir do corpus autoritativo.</p>
+<h2 class="anchor anchorTargetStickyNavbar_UW1m" id="10-servidor-e-infraestrutura">10. Servidor e infraestrutura<a href="#10-servidor-e-infraestrutura" class="hash-link" aria-label="Link direto para 10. Servidor e infraestrutura" title="Link direto para 10. Servidor e infraestrutura" translate="no">​</a></h2>
+<div class="language-text codeBlockContainer_hJIO theme-code-block" style="--prism-color:#bfc7d5;--prism-background-color:#292d3e"><div class="codeBlockContent_tbZp"><pre tabindex="0" class="prism-code language-text codeBlock_e7Om thin-scrollbar" style="color:#bfc7d5;background-color:#292d3e"><code class="codeBlockLines_QMIf"><div class="token-line" style="color:#bfc7d5"><span class="token plain">/etc/ivoai/              configuração</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">/etc/ivoai/secrets/      secrets 0600</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">/var/lib/ivoai/          dados persistentes separados</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">/var/lib/ivoai/backups/  backups</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">/run/ivoai/              estado efêmero</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">/opt/ivoai/              assets</span><br></div></code></pre></div></div>
+<p><code>ivoai-gateway.service</code> e <code>ivoai-context.service</code> usam usuários não-login distintos e
+hardening systemd. <code>ivoai-dependencies.service</code> controla Compose. Qdrant, embeddings e
+ai-memory usam imagens por digest e portas limitadas a loopback ou rede interna.</p>
+<h2 class="anchor anchorTargetStickyNavbar_UW1m" id="11-protocolo-discovery-e-enrollment">11. Protocolo, discovery e enrollment<a href="#11-protocolo-discovery-e-enrollment" class="hash-link" aria-label="Link direto para 11. Protocolo, discovery e enrollment" title="Link direto para 11. Protocolo, discovery e enrollment" translate="no">​</a></h2>
+<p><code>GET /.well-known/ivoai</code> anuncia protocol version, versão server, health/readiness,
+MCPs e features não sensíveis. O client recusa redirects cross-origin, TLS inválido,
+servidor unhealthy ou protocol major incompatível.</p>
+<p>Enrollment:</p>
+<ol>
+<li class="">admin cria código CSPRNG com TTL e escopos;</li>
+<li class="">servidor guarda somente hash;</li>
+<li class="">cliente envia authorization e metadados proxy-resilientes;</li>
+<li class="">consumo atômico invalida o código;</li>
+<li class="">servidor emite bearer client-scoped;</li>
+<li class="">cliente persiste o secret e registra MCPs/hooks.</li>
+</ol>
+<p>State e lock de enrollment são <code>0600</code> e pertencem ao gateway. Falhas internas de
+estado retornam indisponibilidade sem se mascararem como credencial inválida.</p>
+<h2 class="anchor anchorTargetStickyNavbar_UW1m" id="12-oauth-e-mcp-para-aplicações-web">12. OAuth e MCP para aplicações Web<a href="#12-oauth-e-mcp-para-aplicações-web" class="hash-link" aria-label="Link direto para 12. OAuth e MCP para aplicações Web" title="Link direto para 12. OAuth e MCP para aplicações Web" translate="no">​</a></h2>
+<p>O endpoint público <code>/mcp</code> usa Streamable HTTP através do SDK Go oficial do MCP,
+pinado. Ele preserva os endpoints nativos usados pelo desktop, mas oferece a ChatGPT
+Web e Claude Web um único catálogo agregado. A sessão negocia a versão do protocolo,
+publica schemas de entrada/saída, annotations de segurança e respostas em
+<code>structuredContent</code> com fallback textual.</p>
+<p>Ferramentas de contexto são read-only. A memória é separada por scopes:</p>
+<div class="ivoai-table-region" role="region" aria-label="Tabela rolável" tabindex="0"><table><thead><tr><th>Ferramentas</th><th>Scope</th></tr></thead><tbody><tr><td><code>context_search</code>, <code>context_get_document</code>, <code>context_recent</code>, <code>context_health</code></td><td><code>context:read</code></td></tr><tr><td><code>memory_query</code>, <code>memory_recent</code>, <code>memory_read_page</code>, <code>memory_status</code></td><td><code>memory:read</code></td></tr><tr><td><code>memory_write_page</code>, <code>memory_feedback</code></td><td><code>memory:write</code></td></tr><tr><td><code>memory_delete_page</code></td><td><code>memory:delete</code> + confirmação do path normalizado</td></tr></tbody></table></div>
+<p>O facade não repassa ferramentas upstream desconhecidas. Self-routing, sweeps,
+auto-improvement, manutenção, provider execution e shell remoto ficam fora do
+catálogo. A indisponibilidade de ai-memory retorna erro apenas nas ferramentas de
+memória.</p>
+<p>OAuth 2.1 utiliza Authorization Code com PKCE S256, metadata de authorization server
+e protected resource, dynamic client registration, redirect exato, consentimento e
+revogação. Authorization codes duram cinco minutos, access tokens uma hora, e refresh
+tokens rotativos 30 dias. Um código de ativação one-time criado por
+<code>ivoai server web-access create</code> autoriza o navegador sem uma base de senhas.</p>
+<p>O estado OAuth é owner-only, bloqueado entre processos e escrito atomicamente.
+Códigos e tokens são armazenados apenas como hashes; o valor é entregue somente ao
+participante do fluxo. Rotação invalida o refresh anterior, e revogação encerra toda
+a família. Origin, redirect, PKCE, scopes e confirmação destrutiva são validados no
+gateway.</p>
+<p>Para proxy reverso, somente a origem HTTPS é pública. Nginx Proxy Manager preserva
+<code>Authorization</code>, <code>Host</code> e <code>X-Forwarded-Proto</code>, desabilita buffering do Streamable HTTP
+e não adiciona Basic Auth ou Access List sobre OAuth. Qdrant, TEI e ai-memory
+continuam inacessíveis externamente.</p>
+<h2 class="anchor anchorTargetStickyNavbar_UW1m" id="13-distribuição-da-skill">13. Distribuição da skill<a href="#13-distribuição-da-skill" class="hash-link" aria-label="Link direto para 13. Distribuição da skill" title="Link direto para 13. Distribuição da skill" translate="no">​</a></h2>
+<p><code>skills/ivoai-memory-context/SKILL.md</code> instrui o modelo a usar sempre a ordem de
+pesquisa <code>memória → Context → web</code>: ambos os serviços internos são tentados antes da
+primeira pesquisa externa, inclusive para fatos gerais ou atuais. Resultado vazio,
+indisponível, insuficiente ou desatualizado permite consultar a web. RAG e memória
+são tratados como dados não confiáveis. Escrita exige pedido explícito; delete exige
+uma confirmação separada que nomeie o path normalizado.</p>
+<p>O MCP publica uma fotografia dessa skill por <code>skills/list</code>, <code>skills/get</code> e
+<code>resources/read</code>, com URI <code>skill://</code> e digest. O workflow de release também produz
+<code>ivoai-memory-context.zip</code>, contendo a pasta da skill na raiz, para importação no
+Claude Web. A importação não garante invocação em cada turno: tool selection permanece
+uma decisão do produto Web.</p>
+<h2 class="anchor anchorTargetStickyNavbar_UW1m" id="14-segurança-e-ameaças">14. Segurança e ameaças<a href="#14-segurança-e-ameaças" class="hash-link" aria-label="Link direto para 14. Segurança e ameaças" title="Link direto para 14. Segurança e ameaças" translate="no">​</a></h2>
+<ul>
+<li class="">TLS Web PKI ou direto; proxy remoto exige CIDR confiável e HTTPS encaminhado.</li>
+<li class="">Redirects cross-origin são recusados.</li>
+<li class="">Bodies, concorrência e tempos HTTP são limitados.</li>
+<li class="">Authorization, cookies, API keys e tokens são redigidos.</li>
+<li class="">Arquivos sensíveis têm proteção contra symlink e permissões estritas.</li>
+<li class="">Downloads e extrações são limitados e validados.</li>
+<li class="">Subprocessos usam argv estruturado.</li>
+<li class="">Context MCP e remote admin não executam comandos arbitrários.</li>
+<li class="">Backends possuem credenciais internas distintas.</li>
+</ul>
+<p>Falhas de Headroom, Ruflo, memória, contexto ou server remoto degradam somente a
+função relacionada. Codex e Claude continuam disponíveis diretamente.</p>
+<h2 class="anchor anchorTargetStickyNavbar_UW1m" id="15-backup-restore-e-atualização">15. Backup, restore e atualização<a href="#15-backup-restore-e-atualização" class="hash-link" aria-label="Link direto para 15. Backup, restore e atualização" title="Link direto para 15. Backup, restore e atualização" translate="no">​</a></h2>
+<p>Backup inclui configuração necessária, catálogo/contexto, corpus, memória e metadados
+de reconstrução. Restore valida o archive, interrompe serviços necessários e reinicia
+de forma controlada; o menu exige confirmação <code>RESTORE</code>.</p>
+<p>Update é explícito e transacional. Antes da promoção, valida release, SHA-256,
+archive, versão do candidato e contrato de schemas; então cria snapshot privado
+somente de arquivos pertencentes ao IVOAI. O binário capaz de recuperar o journal
+é promovido atomicamente, aplica migrations ordenadas e reversíveis, reconcilia o
+runtime e então o Doctor valida o resultado.
+Falha em migration, setup ou Doctor restaura executável, config, state, ownership e
+metadados de componentes compatíveis. Campos TOML desconhecidos são preservados por
+merge entre documento bruto e projeção tipada. <code>--dry-run</code> baixa, valida e executa
+o candidato verificado apenas para preflight, sem commit de estado gerenciado; preconditions de cada migration são aplicadas
+dentro da transação real. O
+<code>--rollback</code> é idempotente. A matriz CI constrói a tag real v0.5.0 e prova
+o core real do updater v0.5.0 → candidate → rollback → v0.5.0 → candidate sem
+tocar autenticação de providers. Stores dinâmicos do server exigirão participante
+quiesced explícito antes de qualquer futura alteração de schema.</p>
+<h2 class="anchor anchorTargetStickyNavbar_UW1m" id="16-qualidade-e-entrega">16. Qualidade e entrega<a href="#16-qualidade-e-entrega" class="hash-link" aria-label="Link direto para 16. Qualidade e entrega" title="Link direto para 16. Qualidade e entrega" translate="no">​</a></h2>
+<p>CI executa gofmt, testes, race detector, vet, builds Linux amd64/arm64, ShellCheck,
+govulncheck e smoke tests em Ubuntu 22.04, Ubuntu 24.04 e Debian 12. O menu acrescenta
+testes de largura, cor, teclas, fallback, indisponibilidade, confirmação, progresso e
+inventário de ações públicas.</p>
+<p>O MCP acrescenta testes de negociação, schemas, skills, isolamento de falhas e
+autorização por tool. OAuth cobre PKCE, DCR, redirect malicioso, expiração, consumo
+one-time, rotação, revogação, CSRF, scopes e ausência de secrets nos logs. O release
+valida o ZIP da skill e inclui seu checksum junto aos binários.</p>
+<h2 class="anchor anchorTargetStickyNavbar_UW1m" id="17-session-control-plane">17. Session Control Plane<a href="#17-session-control-plane" class="hash-link" aria-label="Link direto para 17. Session Control Plane" title="Link direto para 17. Session Control Plane" translate="no">​</a></h2>
+<p>O domínio <code>internal/session</code> persiste metadados operacionais de forma atômica sob XDG
+state, com IDs aleatórios, locks no-follow e identidade de processo composta por PID
+e start time do kernel. Os estados são <code>starting</code>, <code>running</code>, <code>degraded</code>, <code>stopping</code>,
+<code>completed</code> e <code>failed</code>. Prompt, resultado, environment e secrets não pertencem ao
+schema.</p>
+<p>No modo direct, <code>internal/app</code> chama o mesmo <code>agents.Runtime</code> usado pelos entrypoints
+históricos, apenas observando PID e uso real de Headroom. No modo orchestrated,
+<code>orchestration.ControlPlane</code> valida o perfil seguro, executa e confirma um swarm real
+e registra o primary como task opaca antes do launch. O MCP local
+<code>ivoai-orchestrator</code> oferece status, agentes, delegate, result e cancel somente por
+stdio e somente enquanto a sessão está ativa.</p>
+<p><code>internal/workers</code> encapsula <code>codex exec --json --output-last-message</code> e
+<code>claude --print --output-format json</code>. Executáveis vêm exclusivamente do component
+state, o ambiente exclui keys PAYG, o task é limitado a 32 KiB e o resultado a 1 MiB.
+Headroom é usado após probe e seu uso efetivo fica no worker metadata. Ruflo recebe
+apenas IDs e lifecycle; respostas ficam em memória no bridge. A concorrência padrão é
+dois e o hard limit é três.</p>
+<p>O monitor possui saída humana responsiva e JSON sem ANSI. Proveniência de modelo
+segue <code>runtime_verified &gt; argument &gt; configured &gt; unknown</code>; a implementação atual
+não promove saída textual comum a runtime verified. Detalhes operacionais estão em
+<a class="" href="/pt-BR/docs/0.9.1/orchestration">orchestration.md</a>.</p>
+<h2 class="anchor anchorTargetStickyNavbar_UW1m" id="18-referências-internas">18. Referências internas<a href="#18-referências-internas" class="hash-link" aria-label="Link direto para 18. Referências internas" title="Link direto para 18. Referências internas" translate="no">​</a></h2>
+<ul>
+<li class=""><a class="" href="/pt-BR/docs/0.9.1/architecture">Arquitetura</a></li>
+<li class=""><a class="" href="/pt-BR/docs/0.9.1/client">Cliente</a></li>
+<li class=""><a class="" href="/pt-BR/docs/0.9.1/server">Servidor</a></li>
+<li class=""><a class="" href="/pt-BR/docs/0.9.1/connections">Conexões</a></li>
+<li class=""><a class="" href="/pt-BR/docs/0.9.1/security">Segurança</a></li>
+<li class=""><a class="" href="/pt-BR/docs/0.9.1/development">Desenvolvimento</a></li>
+<li class=""><a class="" href="/pt-BR/docs/0.9.1/troubleshooting">Troubleshooting</a></li>
+</ul></div><footer class="theme-doc-footer docusaurus-mt-lg"><div class="row margin-top--sm theme-doc-footer-edit-meta-row"><div class="col noPrint_H9in"><a href="https://github.com/ivo-lopes/ivoai/edit/main/i18n/pt-BR/docusaurus-plugin-content-docs/version-0.9.1/relatorio-tecnico.md" target="_blank" rel="noopener noreferrer" class="theme-edit-this-page"><svg fill="currentColor" height="20" width="20" viewBox="0 0 40 40" class="iconEdit_kAoA" aria-hidden="true"><g><path d="m34.5 11.7l-3 3.1-6.3-6.3 3.1-3q0.5-0.5 1.2-0.5t1.1 0.5l3.9 3.9q0.5 0.4 0.5 1.1t-0.5 1.2z m-29.5 17.1l18.4-18.5 6.3 6.3-18.4 18.4h-6.3v-6.2z"></path></g></svg>Editar esta página</a></div><div class="col lastUpdated_HMyn"></div></div></footer></article><nav class="docusaurus-mt-lg pagination-nav" aria-label="Páginas de documento"></nav></div></div><div class="col col--3"><div class="tableOfContents_dNY2 thin-scrollbar theme-doc-toc-desktop"><ul class="table-of-contents table-of-contents__left-border"><li><a href="#orquestração-automática-eficiente-v050" class="table-of-contents__link toc-highlight">Orquestração automática eficiente (v0.5.0)</a></li><li><a href="#1-objetivo-e-princípios" class="table-of-contents__link toc-highlight">1. Objetivo e princípios</a></li><li><a href="#2-visão-de-sistema" class="table-of-contents__link toc-highlight">2. Visão de sistema</a></li><li><a href="#3-cli-e-interface-interativa" class="table-of-contents__link toc-highlight">3. CLI e interface interativa</a></li><li><a href="#4-progresso-e-io" class="table-of-contents__link toc-highlight">4. Progresso e I/O</a></li><li><a href="#5-configuração-e-persistência-client-side" class="table-of-contents__link toc-highlight">5. Configuração e persistência client-side</a></li><li><a href="#6-instalação-e-componentes" class="table-of-contents__link toc-highlight">6. Instalação e componentes</a></li><li><a href="#7-provedores-e-execução-de-agentes" class="table-of-contents__link toc-highlight">7. Provedores e execução de agentes</a></li><li><a href="#8-memória-e-orquestração" class="table-of-contents__link toc-highlight">8. Memória e orquestração</a></li><li><a href="#9-contextorag" class="table-of-contents__link toc-highlight">9. Contexto/RAG</a></li><li><a href="#10-servidor-e-infraestrutura" class="table-of-contents__link toc-highlight">10. Servidor e infraestrutura</a></li><li><a href="#11-protocolo-discovery-e-enrollment" class="table-of-contents__link toc-highlight">11. Protocolo, discovery e enrollment</a></li><li><a href="#12-oauth-e-mcp-para-aplicações-web" class="table-of-contents__link toc-highlight">12. OAuth e MCP para aplicações Web</a></li><li><a href="#13-distribuição-da-skill" class="table-of-contents__link toc-highlight">13. Distribuição da skill</a></li><li><a href="#14-segurança-e-ameaças" class="table-of-contents__link toc-highlight">14. Segurança e ameaças</a></li><li><a href="#15-backup-restore-e-atualização" class="table-of-contents__link toc-highlight">15. Backup, restore e atualização</a></li><li><a href="#16-qualidade-e-entrega" class="table-of-contents__link toc-highlight">16. Qualidade e entrega</a></li><li><a href="#17-session-control-plane" class="table-of-contents__link toc-highlight">17. Session Control Plane</a></li><li><a href="#18-referências-internas" class="table-of-contents__link toc-highlight">18. Referências internas</a></li></ul></div></div></div></div></main></div></div></div><footer class="theme-layout-footer footer footer--dark"><div class="container container-fluid"><div class="row footer__links"><div class="theme-layout-footer-column col footer__col"><div class="footer__title">Operar</div><ul class="footer__items clean-list"><li class="footer__item"><a class="footer__link-item" href="/pt-BR/docs/installation">Instalação</a></li><li class="footer__item"><a class="footer__link-item" href="/pt-BR/docs/troubleshooting">Solução de problemas</a></li></ul></div><div class="theme-layout-footer-column col footer__col"><div class="footer__title">Desenvolver</div><ul class="footer__items clean-list"><li class="footer__item"><a class="footer__link-item" href="/pt-BR/docs/architecture">Arquitetura</a></li><li class="footer__item"><a class="footer__link-item" href="/pt-BR/docs/development">Desenvolvimento</a></li></ul></div></div><div class="footer__bottom text--center"><div class="footer__copyright">Copyright © 2026 IVOAI. Licenciado sob MIT.</div></div></div></footer></div>
+</body>
+</html>
