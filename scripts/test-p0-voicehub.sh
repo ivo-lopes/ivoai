@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 if [[ "${IVOAI_LIVE_P0:-}" != 1 ]]; then
-  echo 'Set IVOAI_LIVE_P0=1 to run real operator acceptance with authenticated official clients.' >&2
+  echo 'Set IVOAI_LIVE_P0=1 for real Codex/Memory/Context acceptance; Claude live runs when authenticated.' >&2
   exit 2
 fi
 repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"

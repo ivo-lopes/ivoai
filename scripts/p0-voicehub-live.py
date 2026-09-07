@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Operator acceptance through the real ivoai auto process and native TUI.
 
-Requires existing official client logins and real configured Memory/Context.
+Requires an official Codex login and real configured Memory/Context.
+Claude live acceptance is optional when its official client is not authenticated.
 No provider credentials are inspected. Raw terminal evidence is private.
 """
 import argparse
@@ -88,6 +89,14 @@ try:
     registry = json.loads(cache.read_text()).get("providers", {})
     provider = registry.get(args.executor, {})
     models = provider.get("models", [])
+    if args.executor == "claude" and not provider.get("authenticated"):
+        # Only missing external live authentication is optional. An
+        # authenticated client with broken discovery or execution must fail.
+        result = {"executor": "claude", "live_e2e": "SKIPPED_NOT_CONFIGURED",
+                  "operator_auth": "NOT_AUTHENTICATED" if provider else "NOT_CONFIGURED"}
+        (evidence / "claude-live-status.json").write_text(json.dumps(result, indent=2)+"\n")
+        print("CLAUDE_LIVE_E2E=SKIPPED_NOT_CONFIGURED CLAUDE_SUPPORT=OPTIONAL_CAPABILITY")
+        raise SystemExit(0)
     if not provider.get("authenticated") or not models:
         raise RuntimeError("EXPLICIT_MODEL_UNAVAILABLE: no authenticated runtime catalog for " + args.executor)
     model = next((v for v in models if v.get("is_default")), models[0])

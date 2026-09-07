@@ -56,6 +56,9 @@ const config: Config = {
     ],
   ],
   themeConfig: {
+    // Plugin initialization is concurrent. Reserve this key before either
+    // theme adds defaults so serialized config (and bundle hashes) is stable.
+    mermaid: {},
     navbar: {
       items: [
         {to: '/docs/quickstart', label: 'Quickstart', position: 'left'},
