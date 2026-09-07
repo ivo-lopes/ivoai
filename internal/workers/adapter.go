@@ -17,6 +17,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/ivo-lopes/ivoai/internal/codexresolver"
 	"github.com/ivo-lopes/ivoai/internal/config"
 	"github.com/ivo-lopes/ivoai/internal/core"
 	"github.com/ivo-lopes/ivoai/internal/headroom"
@@ -73,6 +74,7 @@ type Result struct {
 type Adapter struct {
 	Runner           platform.Runner
 	CodexPath        string
+	CodexSHA256      string
 	ClaudePath       string
 	HeadroomPath     string
 	HeadroomEnabled  bool
@@ -134,6 +136,9 @@ func (a Adapter) Run(ctx context.Context, request Request, observe func(Observat
 	args, err = a.isolateMCPs(ctx, direct, request.Executor, args)
 	if err != nil {
 		return Result{}, err
+	}
+	if request.Executor == "codex" {
+		args = codexresolver.ConfigurationArgs(args)
 	}
 	command, commandArgs := direct, args
 	useHeadroom := false
@@ -349,12 +354,18 @@ func (a Adapter) binary(executor string) (string, error) {
 	} else if executor != "codex" {
 		return "", errors.New("worker executor must be codex or claude")
 	}
-	if path == "" || !filepath.IsAbs(path) || filepath.Base(path) != base {
+	if path == "" || !filepath.IsAbs(path) || (filepath.Base(path) != base && (executor != "codex" || a.CodexSHA256 == "")) {
 		return "", fmt.Errorf("%s worker executable is not a trusted component path", executor)
 	}
 	info, err := os.Stat(path)
 	if err != nil || !info.Mode().IsRegular() || info.Mode()&0o111 == 0 {
 		return "", fmt.Errorf("%s worker executable is unavailable", executor)
+	}
+	if executor == "codex" && a.CodexSHA256 != "" {
+		hash, err := codexresolver.Fingerprint(path)
+		if err != nil || hash != a.CodexSHA256 {
+			return "", errors.New("CODEX_SESSION_EXECUTABLE_CHANGED")
+		}
 	}
 	return path, nil
 }

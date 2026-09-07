@@ -26,6 +26,7 @@ printf '%s\n' "$*" >> "$ARGS_PATH"
 cat > "$STDIN_PATH"
 printf '%s\n' '{"type":"thread.started","thread_id":"thread_fixture"}'
 printf '%s\n' '{"type":"item.completed","item":{"type":"agent_message","text":"hello"}}'
+printf '%s\n' '{"type":"turn.completed"}'
 `)
 	runner := CLIRunner{Codex: ExecutorSpec{Path: script, Env: []string{"PATH=/usr/bin:/bin", "ARGS_PATH=" + argsPath, "STDIN_PATH=" + stdinPath}, Dir: root}}
 	var output strings.Builder
@@ -38,7 +39,7 @@ printf '%s\n' '{"type":"item.completed","item":{"type":"agent_message","text":"h
 		t.Fatal(err)
 	}
 	args, _ := os.ReadFile(argsPath)
-	if !strings.Contains(string(args), `exec --json --color never --model gpt-fixture -c model_reasoning_effort="high"`) || !strings.Contains(string(args), `exec resume --json --model gpt-fixture -c model_reasoning_effort="low" thread_fixture`) {
+	if !strings.Contains(string(args), `-c model_reasoning_effort="high" exec --json --color never --model gpt-fixture`) || !strings.Contains(string(args), `-c model_reasoning_effort="low" exec resume --json --model gpt-fixture thread_fixture`) {
 		t.Fatalf("args=%q", args)
 	}
 	stdin, _ := os.ReadFile(stdinPath)
@@ -55,6 +56,7 @@ printf '%s\n' "$*" > "$ARGS_PATH"
 printf '%s\n' '{"type":"system","subtype":"init","session_id":"claude_fixture"}'
 printf '%s\n' '{"type":"stream_event","event":{"type":"content_block_delta","delta":{"type":"text_delta","text":"stream "}},"session_id":"claude_fixture"}'
 printf '%s\n' '{"type":"stream_event","event":{"type":"content_block_delta","delta":{"type":"text_delta","text":"ok"}},"session_id":"claude_fixture"}'
+printf '%s\n' '{"type":"result","subtype":"success","is_error":false}'
 `)
 	runner := CLIRunner{Claude: ExecutorSpec{Path: script, Env: []string{"PATH=/usr/bin:/bin", "ARGS_PATH=" + argsPath}, Dir: root}}
 	var output strings.Builder
@@ -75,6 +77,7 @@ printf '%s\n' '{"type":"thread.started","thread_id":"thread_fixture"}'
 printf '%s\n' '{"type":"item.completed","item":{"type":"command_execution","command":"printf secret","aggregated_output":"secret-output","status":"completed"}}'
 printf '%s\n' '{"type":"item.completed","item":{"type":"mcp_tool_call","tool":"memory_read_page\u001b[2J","arguments":{"token":"secret"},"status":"completed"}}'
 printf '%s\n' '{"type":"item.completed","item":{"type":"agent_message","text":"done\u001b[2J"}}'
+printf '%s\n' '{"type":"turn.completed"}'
 `)
 	runner := CLIRunner{Codex: ExecutorSpec{Path: script, Env: []string{"PATH=/usr/bin:/bin"}, Dir: root}}
 	var output strings.Builder
@@ -140,6 +143,7 @@ printf '%s\n' '{"type":"system","subtype":"init","session_id":"claude_fixture"}'
 printf '%s\n' '{"type":"stream_event","event":{"type":"content_block_start","content_block":{"type":"tool_use","name":"Read","input":{"file_path":"private"}}}}'
 printf '%s\n' '{"type":"user","message":{"content":[{"type":"tool_result","content":"private result"}]}}'
 printf '%s\n' '{"type":"stream_event","event":{"type":"content_block_delta","delta":{"type":"text_delta","text":"done"}}}'
+printf '%s\n' '{"type":"result","subtype":"success","is_error":false}'
 `)
 	runner := CLIRunner{Claude: ExecutorSpec{Path: script, Env: []string{"PATH=/usr/bin:/bin"}, Dir: root}}
 	var output strings.Builder

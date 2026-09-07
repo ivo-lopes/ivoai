@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ivo-lopes/ivoai/internal/codexresolver"
 	"github.com/ivo-lopes/ivoai/internal/core"
 	"github.com/ivo-lopes/ivoai/internal/platform"
 )
@@ -45,6 +46,7 @@ func (e OpenCodeExecutor) Probe(ctx context.Context) core.ComponentStatus {
 }
 
 func (e CodexExecutor) StartSession(ctx context.Context, request core.SessionRequest, observe func(core.SessionObservation)) error {
+	request.Args = codexresolver.ConfigurationArgs(request.Args)
 	return startSession(ctx, e.Runtime, "codex", request, observe)
 }
 

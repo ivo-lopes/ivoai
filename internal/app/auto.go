@@ -220,7 +220,7 @@ func (a *App) openCodeAutoStatus(store session.Store, id string, cfg config.Conf
 	}
 	return opencodebridge.Status{
 		Version: a.Version, SessionID: id, Frontend: "opencode", Primary: value.PrimaryExecutor, Mode: string(value.Mode), SessionState: state,
-		SelectionMode: value.SelectionMode, RequestedExecutor: value.RequestedExecutor, RequestedModel: value.RequestedModel, EffectiveModel: value.EffectiveModel, EffectiveEffort: value.EffectiveEffort,
+		SelectionMode: value.SelectionMode, RequestedExecutor: value.RequestedExecutor, RequestedModel: value.RequestedModel, RequestedEffort: value.RequestedEffort, EffectiveModel: value.EffectiveModel, EffectiveEffort: value.EffectiveEffort, ConfigurationSource: value.ConfigurationSource,
 		KnowledgeMode: mode, ConfiguredCount: len(servers), EnabledCount: enabled, ConnectedCount: connected, SelectedCount: selectedCount, Servers: servers,
 		CodexAuth: auth(quota.ProviderCodex), ClaudeAuth: auth(quota.ProviderClaude), CodexQuota: quotaState(quota.ProviderCodex), ClaudeQuota: quotaState(quota.ProviderClaude),
 		Compression: compression.EffectiveProvider, Memory: value.MemoryStatus, Context: value.ContextStatus, Skills: "policy-gated",
@@ -252,6 +252,7 @@ func (a *App) AutoWithKnowledge(ctx context.Context, planner string, agentArgs, 
 	if err != nil {
 		return err
 	}
+	state, codexResolution, _ := a.resolveCodex(ctx, state)
 	if err := validateManagedAgentRuntime("opencode", state); err != nil {
 		return err
 	}
@@ -275,6 +276,7 @@ func (a *App) AutoWithKnowledge(ctx context.Context, planner string, agentArgs, 
 		State: session.StateStarting, CurrentPhase: "quota_preflight", Quota: map[quota.Provider]quota.ProviderQuota{},
 		OptimizationStrategy: cfg.Orchestration.Auto.Optimization.Strategy,
 	}
+	pinCodex(&value, codexResolution)
 	for _, event := range initialAutoObservations(value) {
 		if err := session.AppendObservation(&value, event); err != nil {
 			return err
@@ -443,8 +445,8 @@ func (a *App) AutoWithKnowledge(ctx context.Context, planner string, agentArgs, 
 			codexEnabled, claudeEnabled = false, false
 		}
 		bridgeRunner = opencodebridge.CLIRunner{
-			Codex:  opencodebridge.ExecutorSpec{Path: state.Components["codex"].Path, Args: codexArgs, Env: environment, Dir: cwd, Compression: codexCompression, CompressionEnabled: codexEnabled, RuntimeDir: runtimeDir},
-			Claude: opencodebridge.ExecutorSpec{Path: state.Components["claude-code"].Path, Args: claudeArgs, Env: setAppEnvironment(environment, "DISABLE_AUTOUPDATER", "1"), Dir: cwd, Compression: claudeCompression, CompressionEnabled: claudeEnabled, RuntimeDir: runtimeDir},
+			Codex:  opencodebridge.ExecutorSpec{ObserveConfiguration: a.CodexResolution == nil, Version: state.Components["codex"].Version, Path: state.Components["codex"].Path, SHA256: codexResolution.Effective.SHA256, Args: codexArgs, Env: environment, Dir: cwd, Compression: codexCompression, CompressionEnabled: codexEnabled, RuntimeDir: runtimeDir},
+			Claude: opencodebridge.ExecutorSpec{ObserveConfiguration: a.CodexResolution == nil, Version: state.Components["claude-code"].Version, Path: state.Components["claude-code"].Path, Args: claudeArgs, Env: setAppEnvironment(environment, "DISABLE_AUTOUPDATER", "1"), Dir: cwd, Compression: claudeCompression, CompressionEnabled: claudeEnabled, RuntimeDir: runtimeDir},
 		}
 	}
 	selected := current
@@ -528,11 +530,13 @@ func (a *App) AutoWithKnowledge(ctx context.Context, planner string, agentArgs, 
 				if selection.Mode == "explicit" {
 					currentSession.RequestedExecutor = selection.Executor
 				}
-				currentSession.RequestedModel = selection.RequestedID
+				currentSession.RequestedModel = selection.RequestedModel()
 				currentSession.RequestedEffort = selection.Effort
-				currentSession.EffectiveExecutor = selection.Executor
-				currentSession.EffectiveModel = selection.Model
-				currentSession.EffectiveEffort = selection.Effort
+				currentSession.EffectiveExecutor = ""
+				currentSession.EffectiveModel = ""
+				currentSession.EffectiveEffort = ""
+				currentSession.ConfigurationSource = ""
+				currentSession.ExecutorTrace = nil
 				currentSession.ModelCatalogRevision = selection.CatalogRevision
 				if selection.Model != "" {
 					currentSession.PrimaryModel = session.ModelInfo{Name: selection.Model, Source: session.ModelSource(selection.ModelSource)}
@@ -562,6 +566,10 @@ func (a *App) AutoWithKnowledge(ctx context.Context, planner string, agentArgs, 
 				currentSession.EffectiveExecutor = mapping.Executor
 				currentSession.EffectiveModel = mapping.EffectiveModel
 				currentSession.EffectiveEffort = mapping.EffectiveEffort
+				currentSession.ConfigurationSource = mapping.ConfigurationSource
+				if mapping.Trace != nil {
+					currentSession.ExecutorTrace, _ = json.Marshal(mapping.Trace)
+				}
 				currentSession.ModelCatalogRevision = mapping.CatalogRevision
 				if currentSession.ExecutorSessions == nil {
 					currentSession.ExecutorSessions = map[string]session.ExecutorSessionMapping{}

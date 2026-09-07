@@ -31,6 +31,7 @@ func TestDirectSessionReceivesOnlyLoopbackCapability(t *testing.T) {
 		ID: "srv_voicecorp_test", Alias: "voicecorp", URL: "https://voicecorp.invalid", Status: "connected", Enabled: true, Purpose: "voicecorp", Protocol: connections.ProtocolVersion,
 		ContextMCPURL: "https://voicecorp.invalid/mcp/context", MemoryMCPURL: "https://voicecorp.invalid/mcp/memory", MemoryHooksURL: "https://voicecorp.invalid/memory", Features: map[string]bool{"context": true, "memory": true},
 	}
+	a.CodexResolution = fixtureCodexResolution
 	cfg := config.Default()
 	cfg.Headroom.Enabled = false
 	cfg.Connections.Servers["voicecorp"] = profile

@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/ivo-lopes/ivoai/internal/agents"
+	"github.com/ivo-lopes/ivoai/internal/codexresolver"
 	"github.com/ivo-lopes/ivoai/internal/components"
 	"github.com/ivo-lopes/ivoai/internal/config"
 	"github.com/ivo-lopes/ivoai/internal/connections"
@@ -30,6 +31,7 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/secrets"
 	"github.com/ivo-lopes/ivoai/internal/server"
 	"github.com/ivo-lopes/ivoai/internal/serverpool"
+	"github.com/ivo-lopes/ivoai/internal/session"
 	"github.com/ivo-lopes/ivoai/internal/skills"
 	"github.com/ivo-lopes/ivoai/internal/terminalui"
 	"github.com/ivo-lopes/ivoai/internal/update"
@@ -37,6 +39,7 @@ import (
 )
 
 type App struct {
+	CodexResolution  func(context.Context, config.State) (config.State, codexresolver.Resolution, error)
 	Version          string
 	Store            *config.Store
 	Runner           platform.Runner
@@ -250,6 +253,20 @@ func (a *App) Status(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	if os.Getenv("IVOAI_TEST_MODE") != "1" {
+		resolved, _, resolutionErr := a.resolveCodex(ctx, state)
+		if resolutionErr == nil {
+			state = resolved
+		} else if cfg.Connections.ChatGPT.Status == "connected" {
+			cfg.Connections.ChatGPT.Status = "authentication-required"
+		}
+		if cfg.Connections.Claude.Status == "connected" {
+			result, authErr := a.Runner.Run(ctx, state.Components["claude-code"].Path, []string{"auth", "status"}, platform.RunOptions{Timeout: 8 * time.Second, Env: []string{"DISABLE_AUTOUPDATER=1"}})
+			if !connections.AuthenticationStatus(result, authErr) {
+				cfg.Connections.Claude.Status = "authentication-required"
+			}
+		}
+	}
 	probeContext, cancelProbes := context.WithTimeout(ctx, liveServiceProbeTimeout)
 	defer cancelProbes()
 	rufloResult := make(chan orchestration.Status, 1)
@@ -306,7 +323,11 @@ func (a *App) Status(ctx context.Context) error {
 	}
 	routingStatus := "N/A / telemetry not captured"
 	if quotaErr == nil && len(quotaSnapshot.Providers) > 0 {
-		routingStatus = "ready / cached"
+		routingStatus = "cached / rechecked before dispatch"
+	}
+	failoverStatus := optionalStatus(cfg.Orchestration.Auto.AutomaticFailover)
+	if cfg.Orchestration.Auto.AutomaticFailover && (cfg.Connections.ChatGPT.Status != "connected" || cfg.Connections.Claude.Status != "connected") {
+		failoverStatus = statusValue{"configured / alternate authentication unavailable", terminalui.StatusWarning}
 	}
 	rows = append(rows,
 		struct {
@@ -324,7 +345,7 @@ func (a *App) Status(ctx context.Context) error {
 		struct {
 			name   string
 			status statusValue
-		}{"Failover", optionalStatus(cfg.Orchestration.Auto.AutomaticFailover)},
+		}{"Failover", failoverStatus},
 		struct {
 			name   string
 			status statusValue
@@ -345,7 +366,7 @@ func (a *App) Status(ctx context.Context) error {
 	if sessions, sessionErr := a.SessionList(); sessionErr == nil {
 		active, orchestrated := 0, 0
 		for _, value := range sessions {
-			if value.Active() {
+			if value.Active() && (session.ProcessMatches(value.PrimaryPID, value.PrimaryProcessStart) || session.ProcessMatches(value.FrontendPID, value.FrontendProcessStart)) {
 				active++
 				if value.Mode == "orchestrated" {
 					orchestrated++
@@ -370,6 +391,8 @@ func (a *App) Status(ctx context.Context) error {
 		fmt.Fprintf(a.Out, "\nOverall: %s\n", terminalui.Warning("DEGRADED — run ivoai setup to repair the Ruflo safe profile", terminalui.ColorEnabled(a.Out)))
 	} else if serverHealth.Configured && (!serverHealth.Reachable || !serverHealth.ProtocolCompatible || (!serverHealth.TLS && !loopbackURL(serverHealth.URL))) {
 		fmt.Fprintf(a.Out, "\nOverall: %s\n", terminalui.Warning("DEGRADED", terminalui.ColorEnabled(a.Out))+" — local agents available; run ivoai doctor")
+	} else if cfg.Connections.ChatGPT.Status == "authentication-required" || cfg.Connections.Claude.Status == "authentication-required" {
+		fmt.Fprintln(a.Out, "\nOverall: DEGRADED — official client authentication required; run ivoai doctor")
 	} else if cfg.Connections.ChatGPT.Status != "connected" || cfg.Connections.Claude.Status != "connected" || !serverHealth.Configured {
 		fmt.Fprintf(a.Out, "\nOverall: %s\n", terminalui.Success("READY", terminalui.ColorEnabled(a.Out))+" — external connections pending")
 	} else {
@@ -488,6 +511,9 @@ func readyStatus(notSetup bool) statusValue {
 func componentStatus(s config.ComponentState, connection string) statusValue {
 	if !componentPresent(s) {
 		return statusValue{"not installed", terminalui.StatusFailure}
+	}
+	if connection == "authentication-required" {
+		return statusValue{"installed / authentication required", terminalui.StatusWarning}
 	}
 	if connection != "connected" {
 		return statusValue{"installed / not connected", terminalui.StatusNeutral}
@@ -874,6 +900,12 @@ func (a *App) LaunchWithKnowledge(ctx context.Context, target string, args, sele
 		return err
 	}
 	state, _ := a.Store.LoadState()
+	if target == "codex" {
+		state, _, err = a.resolveCodex(ctx, state)
+		if err != nil {
+			return err
+		}
+	}
 	key := target
 	if target == "claude" {
 		key = "claude-code"

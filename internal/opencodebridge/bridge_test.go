@@ -291,7 +291,7 @@ func TestExplicitSelectionFailsBeforeClaimOrLaunchWhenIneligible(t *testing.T) {
 	}
 	payload, _ := io.ReadAll(response.Body)
 	_ = response.Body.Close()
-	if response.StatusCode != http.StatusServiceUnavailable || claims != 0 || len(runner.requests) != 0 || !bytes.Contains(payload, []byte("executor_selection_unavailable")) {
+	if response.StatusCode != http.StatusServiceUnavailable || claims != 0 || len(runner.requests) != 0 || !bytes.Contains(payload, []byte("EXPLICIT_MODEL_UNAVAILABLE")) {
 		t.Fatalf("selection was not fail-closed: status=%d claims=%d requests=%d payload=%s", response.StatusCode, claims, len(runner.requests), payload)
 	}
 }
@@ -408,7 +408,7 @@ func TestBridgeStreamingFailureIsNotSuccessfulCompletion(t *testing.T) {
 	}
 }
 
-func TestScanJSONLinesRejectsOversizedOutputAndDrains(t *testing.T) {
+func TestScanJSONLinesRejectsOversizedOutput(t *testing.T) {
 	for _, value := range []string{strings.Repeat("x", (1<<20)+1) + "\n", strings.Repeat("{\"type\":\"ok\"}\n", 600000)} {
 		if err := ScanJSONLines(strings.NewReader(value), func(map[string]any) error { return nil }); err == nil {
 			t.Fatal("oversized executor output accepted")

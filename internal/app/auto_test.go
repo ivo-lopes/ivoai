@@ -126,6 +126,8 @@ esac
 `)
 	codexBody += "\nprintf '%s\\n' '{\"type\":\"thread.started\",\"thread_id\":\"thread_fixture\"}'\nprintf '%s\\n' '{\"type\":\"item.completed\",\"item\":{\"type\":\"agent_message\",\"text\":\"fixture complete\"}}'\n"
 	claudeBody += "\nprintf '%s\\n' '{\"type\":\"system\",\"session_id\":\"claude_fixture\"}'\nprintf '%s\\n' '{\"type\":\"stream_event\",\"event\":{\"type\":\"content_block_delta\",\"delta\":{\"type\":\"text_delta\",\"text\":\"fixture complete\"}}}'\n"
+	codexBody += "\nprintf '%s\\n' '{\"type\":\"turn.completed\"}'\n"
+	claudeBody += "\nprintf '%s\\n' '{\"type\":\"result\",\"subtype\":\"success\",\"is_error\":false}'\n"
 	a := sessionTestApp(t, root, appExecutable(t, root, "codex", codexBody), appExecutable(t, root, "claude", claudeBody), ruflo)
 	opencode := appExecutable(t, root, "opencode", "#!/bin/sh\nexit 0\n")
 	t.Setenv("IVOAI_TEST_MODE", "1")

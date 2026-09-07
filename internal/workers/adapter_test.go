@@ -8,10 +8,30 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ivo-lopes/ivoai/internal/codexresolver"
 	"github.com/ivo-lopes/ivoai/internal/config"
 	"github.com/ivo-lopes/ivoai/internal/platform"
 	"github.com/ivo-lopes/ivoai/internal/session"
 )
+
+func TestWorkerRejectsReplacementOfSessionCodex(t *testing.T) {
+	root := t.TempDir()
+	path := executable(t, root, "codex", "#!/bin/sh\nexit 0\n")
+	hash, err := codexresolver.Fingerprint(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	adapter := Adapter{CodexPath: path, CodexSHA256: hash}
+	if _, err := adapter.binary("codex"); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, []byte("#!/bin/sh\nexit 1\n"), 0700); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := adapter.binary("codex"); err == nil || !strings.Contains(err.Error(), "CODEX_SESSION_EXECUTABLE_CHANGED") {
+		t.Fatalf("worker silently changed client: %v", err)
+	}
+}
 
 func TestResultEvidencePreservesProviderStreamsDeterministically(t *testing.T) {
 	result := Result{Text: "result\x00bytes", Stdout: "stdout\n", Stderr: "stderr\xff", ExitCode: 7}

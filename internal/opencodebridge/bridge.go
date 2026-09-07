@@ -39,6 +39,7 @@ type ExecutorRequest struct {
 }
 
 type ExecutorResult struct {
+	Trace               *ExecutionTrace
 	ExecutorSessionID   string
 	CompressionUsed     bool
 	CompressionProvider string
@@ -47,6 +48,7 @@ type ExecutorResult struct {
 	Model               string
 	Effort              string
 	CatalogRevision     string
+	ConfigurationSource string
 }
 
 type ExecutorRunner interface {
@@ -61,16 +63,18 @@ type PersistMapping func(Mapping) error
 type ClaimRequest func(frontendID, messageID string) (bool, error)
 
 type Mapping struct {
-	FrontendSessionID   string `json:"frontend_session_id"`
-	Executor            string `json:"executor"`
-	ExecutorSessionID   string `json:"executor_session_id"`
-	CompressionUsed     bool   `json:"compression_used"`
-	CompressionProvider string `json:"compression_provider,omitempty"`
-	SelectionMode       string `json:"selection_mode,omitempty"`
-	RequestedModel      string `json:"requested_model,omitempty"`
-	EffectiveModel      string `json:"effective_model,omitempty"`
-	EffectiveEffort     string `json:"effective_effort,omitempty"`
-	CatalogRevision     string `json:"catalog_revision,omitempty"`
+	Trace               *ExecutionTrace `json:"trace,omitempty"`
+	FrontendSessionID   string          `json:"frontend_session_id"`
+	Executor            string          `json:"executor"`
+	ExecutorSessionID   string          `json:"executor_session_id"`
+	CompressionUsed     bool            `json:"compression_used"`
+	CompressionProvider string          `json:"compression_provider,omitempty"`
+	SelectionMode       string          `json:"selection_mode,omitempty"`
+	RequestedModel      string          `json:"requested_model,omitempty"`
+	EffectiveModel      string          `json:"effective_model,omitempty"`
+	EffectiveEffort     string          `json:"effective_effort,omitempty"`
+	CatalogRevision     string          `json:"catalog_revision,omitempty"`
+	ConfigurationSource string          `json:"configuration_source,omitempty"`
 }
 
 type ServerView struct {
@@ -83,32 +87,34 @@ type ServerView struct {
 }
 
 type Status struct {
-	Version           string       `json:"version"`
-	SessionID         string       `json:"session_id"`
-	Frontend          string       `json:"frontend"`
-	Primary           string       `json:"primary"`
-	SelectionMode     string       `json:"selection_mode,omitempty"`
-	RequestedExecutor string       `json:"requested_executor,omitempty"`
-	RequestedModel    string       `json:"requested_model,omitempty"`
-	EffectiveModel    string       `json:"effective_model,omitempty"`
-	EffectiveEffort   string       `json:"effective_effort,omitempty"`
-	Mode              string       `json:"mode"`
-	SessionState      string       `json:"session_state"`
-	KnowledgeMode     string       `json:"knowledge_mode"`
-	ConfiguredCount   int          `json:"configured_count"`
-	EnabledCount      int          `json:"enabled_count"`
-	ConnectedCount    int          `json:"connected_count"`
-	SelectedCount     int          `json:"selected_count"`
-	Servers           []ServerView `json:"servers"`
-	CodexAuth         string       `json:"codex_auth"`
-	ClaudeAuth        string       `json:"claude_auth"`
-	CodexQuota        string       `json:"codex_quota"`
-	ClaudeQuota       string       `json:"claude_quota"`
-	Compression       string       `json:"compression"`
-	Memory            string       `json:"memory"`
-	Context           string       `json:"context"`
-	Skills            string       `json:"skills"`
-	UpdatedAt         time.Time    `json:"updated_at"`
+	Version             string       `json:"version"`
+	SessionID           string       `json:"session_id"`
+	Frontend            string       `json:"frontend"`
+	Primary             string       `json:"primary"`
+	SelectionMode       string       `json:"selection_mode,omitempty"`
+	RequestedExecutor   string       `json:"requested_executor,omitempty"`
+	RequestedEffort     string       `json:"requested_effort,omitempty"`
+	RequestedModel      string       `json:"requested_model,omitempty"`
+	EffectiveModel      string       `json:"effective_model,omitempty"`
+	EffectiveEffort     string       `json:"effective_effort,omitempty"`
+	ConfigurationSource string       `json:"configuration_source,omitempty"`
+	Mode                string       `json:"mode"`
+	SessionState        string       `json:"session_state"`
+	KnowledgeMode       string       `json:"knowledge_mode"`
+	ConfiguredCount     int          `json:"configured_count"`
+	EnabledCount        int          `json:"enabled_count"`
+	ConnectedCount      int          `json:"connected_count"`
+	SelectedCount       int          `json:"selected_count"`
+	Servers             []ServerView `json:"servers"`
+	CodexAuth           string       `json:"codex_auth"`
+	ClaudeAuth          string       `json:"claude_auth"`
+	CodexQuota          string       `json:"codex_quota"`
+	ClaudeQuota         string       `json:"claude_quota"`
+	Compression         string       `json:"compression"`
+	Memory              string       `json:"memory"`
+	Context             string       `json:"context"`
+	Skills              string       `json:"skills"`
+	UpdatedAt           time.Time    `json:"updated_at"`
 }
 
 type Options struct {
@@ -297,7 +303,7 @@ func (b *Bridge) chat(w http.ResponseWriter, r *http.Request) {
 	}
 	selection, ok := b.catalog.Resolve(request.Model, request.ReasoningEffort)
 	if !ok {
-		writeOpenAIError(w, http.StatusBadRequest, "unknown model or unsupported reasoning effort")
+		writeOpenAIErrorCode(w, http.StatusBadRequest, "unknown model or unsupported reasoning effort", "EXPLICIT_MODEL_UNAVAILABLE")
 		return
 	}
 	selectionKey := selection.CatalogRevision + ":" + selection.RequestedID + ":" + selection.Effort
@@ -365,7 +371,7 @@ func (b *Bridge) chat(w http.ResponseWriter, r *http.Request) {
 	selection.Executor = executor
 	if selection.Mode == "explicit" && b.authorizeSelection != nil {
 		if err := b.authorizeSelection(r.Context(), selection); err != nil {
-			writeOpenAIErrorCode(w, http.StatusServiceUnavailable, "selected executor or model is not currently eligible", "executor_selection_unavailable")
+			writeOpenAIErrorCode(w, http.StatusServiceUnavailable, "selected executor or model is not currently eligible", "EXPLICIT_MODEL_UNAVAILABLE")
 			return
 		}
 	}
@@ -385,7 +391,7 @@ func (b *Bridge) chat(w http.ResponseWriter, r *http.Request) {
 	}
 	resumeID := ""
 	if previous, ok := mappings[executor]; ok {
-		if previous.RequestedModel == selection.RequestedID || previous.RequestedModel == "" && selection.Mode == "auto" {
+		if previous.RequestedModel == selection.RequestedModel() || previous.RequestedModel == selection.RequestedID || previous.RequestedModel == "" && selection.Mode == "auto" {
 			resumeID = previous.ExecutorSessionID
 		}
 	}
@@ -441,7 +447,7 @@ func (b *Bridge) chat(w http.ResponseWriter, r *http.Request) {
 				SelectionMode: selection.Mode, CatalogRevision: selection.CatalogRevision,
 				Prompt: currentPrompt, FrontendSessionID: frontendID, ExecutorSessionID: currentResume,
 			}, emit)
-			value.SelectionMode, value.RequestedModel, value.Model, value.Effort, value.CatalogRevision = selection.Mode, selection.RequestedID, selection.Model, selection.Effort, selection.CatalogRevision
+			value.SelectionMode, value.RequestedModel, value.CatalogRevision = selection.Mode, selection.RequestedModel(), selection.CatalogRevision
 			finished <- executionResult{value: value, err: runErr}
 		}(executor, prompt, resumeID, executionCtx)
 		limit := make(chan string, 1)
@@ -571,10 +577,10 @@ func (b *Bridge) persistMapping(frontendID, executor string, result ExecutorResu
 		return nil
 	}
 	mapping := Mapping{
-		FrontendSessionID: frontendID, Executor: executor, ExecutorSessionID: result.ExecutorSessionID,
+		FrontendSessionID: frontendID, Executor: executor, ExecutorSessionID: result.ExecutorSessionID, Trace: result.Trace,
 		CompressionUsed: result.CompressionUsed, CompressionProvider: result.CompressionProvider,
 		SelectionMode: result.SelectionMode, RequestedModel: result.RequestedModel, EffectiveModel: result.Model,
-		EffectiveEffort: result.Effort, CatalogRevision: result.CatalogRevision,
+		EffectiveEffort: result.Effort, CatalogRevision: result.CatalogRevision, ConfigurationSource: result.ConfigurationSource,
 	}
 	b.mu.Lock()
 	if b.sessions[frontendID] == nil {
@@ -738,7 +744,6 @@ func ScanJSONLines(reader io.Reader, handle func(map[string]any) error) error {
 	seenProtocolEvent := false
 	for scanner.Scan() {
 		if counted.total > 8<<20 {
-			_, _ = io.Copy(io.Discard, reader)
 			return errors.New("executor output exceeds limit")
 		}
 		line := bytes.TrimSpace(scanner.Bytes())
@@ -761,7 +766,6 @@ func ScanJSONLines(reader io.Reader, handle func(map[string]any) error) error {
 		}
 	}
 	if err := scanner.Err(); err != nil {
-		_, _ = io.Copy(io.Discard, reader)
 		return fmt.Errorf("invalid or oversized executor output: %w", err)
 	}
 	return nil

@@ -60,7 +60,10 @@ func CatalogFromRegistry(registry routing.Registry) ModelCatalog {
 				continue
 			}
 			idValue := upstream
-			name := upstream
+			name := model.DisplayName
+			if name == "" {
+				name = upstream
+			}
 			if idValue == "" {
 				idValue, name = "client-default", "client default"
 			}
@@ -206,4 +209,11 @@ func displayExecutor(value string) string {
 		return "Codex"
 	}
 	return "Claude"
+}
+
+func (s Selection) RequestedModel() string {
+	if s.Model != "" {
+		return s.Model
+	}
+	return s.RequestedID
 }

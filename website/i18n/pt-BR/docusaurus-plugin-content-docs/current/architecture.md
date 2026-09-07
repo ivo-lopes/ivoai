@@ -677,7 +677,7 @@ preenchido, e nenhuma skill externa pode assumir autoridade de orquestrador.
 
 | Componente | Versão fixada | Decisão e incerteza em 2026-08-23 |
 |---|---:|---|
-| Codex CLI + code-mode host | 0.148.0 | Artefatos oficiais da mesma release; `codex login` suporta assinaturas do ChatGPT, e o host com checksum separado preserva a superfície gerenciada de ferramentas/MCP. |
+| Codex CLI + code-mode host | 0.153.4 | Artefatos oficiais da mesma release; `codex login` suporta assinaturas do ChatGPT, e o host com checksum separado preserva a superfície gerenciada de ferramentas/MCP. |
 | Claude Code | 2.1.228 | Canal oficial stable; latest era 2.1.237. Binário externo proprietário sujeito aos termos da Anthropic. |
 | Headroom | 0.36.0 | Release atual do PyPI/GitHub com wheels amd64/arm64; a integração de evolução rápida exige uma sondagem smoke na configuração e fallback direto. |
 | uv / CPython | 0.12.5 / 3.13.15 | Par exato de instalador/runtime privado para Headroom, com restrições incorporadas com hashes específicos por arquitetura. |
@@ -691,3 +691,13 @@ Nenhuma conta externa, servidor privado ou credencial real de proprietário foi 
 descoberta. Não se presume compatibilidade com releases upstream futuras. Uma release do ivoai
 que altere uma versão fixada deve revisar esta tabela e o manifesto somente depois que
 os testes automatizados de instalação, auth-status, wrapper e isolamento de falhas passarem.
+
+### Resolução do Codex por sessão e constraints de modelo explícito
+
+Antes do launch, o IVOAI seleciona o Codex stable compatível, saudável e autenticado mais novo já disponível no PATH do usuário ou no armazenamento gerenciado. Em versões iguais, prefere a instalação do usuário. `ivoai doctor` mostra caminhos, provenance, compatibilidade, autenticação, drift e o resultado explícito da consulta upstream; upstream inacessível aparece como `UNKNOWN_OFFLINE`. O launch nunca instala nem troca o executável de uma sessão. Os comandos nativos de login continuam sendo a autoridade de autenticação.
+
+`ivoai update --codex` descobre explicitamente os artefatos stable oficiais, verifica os digests dos dois arquivos, prepara e testa o CLI e o Code Mode host correspondente, e promove o par preservando a instalação anterior. `ivoai update --codex --rollback` funciona offline. Uma sessão IVOAI ativa bloqueia essas operações. O pin com checksum do manifesto serve à instalação inicial; clientes gerenciados compatíveis existentes mudam pelo atualizador transacional.
+
+O model picker nativo do OpenCode usa descoberta atual das capabilities dos clientes oficiais. Seleções explícitas de executor/modelo/effort são constraints; seleções indisponíveis retornam `EXPLICIT_MODEL_UNAVAILABLE`. Valores solicitados e configuração observada ficam separados. A evidência do Codex vem da configuração oficial da thread, que não é telemetria de inferência por turno. A evidência de modelo do Claude vem do evento init; quando falta telemetria nativa de effort, a origem identifica a configuração validada do CLI.
+
+Todos os overrides de configuração do Codex ficam agrupados antes do subcomando. No Codex 0.153.4, combinar overrides MCP na raiz com um override de reasoning em `exec -c` perde a configuração da raiz. O agrupamento preserva Memory/Context e as instruções de desenvolvimento nas seleções explícitas. O bridge exige resposta final e evento de conclusão, mantém traces operacionais limitados e exclui prompts, payloads de ferramentas e stderr arbitrário dos diagnósticos de sessão.

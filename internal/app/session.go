@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/ivo-lopes/ivoai/internal/agents"
+	"github.com/ivo-lopes/ivoai/internal/codexresolver"
 	"github.com/ivo-lopes/ivoai/internal/config"
 	"github.com/ivo-lopes/ivoai/internal/core"
 	"github.com/ivo-lopes/ivoai/internal/observability"
@@ -48,6 +49,13 @@ func (a *App) SessionStartWithKnowledge(ctx context.Context, executor string, mo
 	if err != nil {
 		return err
 	}
+	var resolution codexresolver.Resolution
+	if executor == "codex" || mode == session.ModeOrchestrated {
+		state, resolution, err = a.resolveCodex(ctx, state)
+		if err != nil && executor == "codex" {
+			return err
+		}
+	}
 	if err := validateManagedAgentRuntime(executor, state); err != nil {
 		return err
 	}
@@ -67,6 +75,7 @@ func (a *App) SessionStartWithKnowledge(ctx context.Context, executor string, mo
 		ProviderExecution: false, Workers: []session.Worker{}, MaxWorkers: cfg.Orchestration.MaxWorkers,
 		ContextStatus: contextStatus(cfg), MemoryStatus: memoryStatus(cfg, state), ServerStatus: serverStatus(cfg), State: session.StateStarting,
 	}
+	pinCodex(&value, resolution)
 	store := session.Store{Root: a.Store.Paths.SessionsDir}
 	if err := store.Create(value); err != nil {
 		return err
@@ -251,6 +260,14 @@ func (a *App) OrchestratorServe(ctx context.Context, id string) error {
 	if err != nil {
 		return err
 	}
+	if value.CodexPath != "" {
+		state, err = pinnedCodexState(state, value)
+		if err != nil {
+			return err
+		}
+	} else if a.CodexResolution == nil {
+		state.Components["codex"] = config.ComponentState{}
+	}
 	runtimeDir, err := store.RuntimeDir(id)
 	if err != nil {
 		return err
@@ -263,7 +280,7 @@ func (a *App) OrchestratorServe(ctx context.Context, id string) error {
 	server := orchestrator.Server{
 		Store: store, SessionID: id, Directory: value.WorkingDirectory, RuntimeDir: runtimeDir,
 		ReviewExecutor:        cfg.Orchestration.ReviewExecutor,
-		Adapter:               workers.Adapter{Runner: a.Runner, CodexPath: state.Components["codex"].Path, ClaudePath: state.Components["claude-code"].Path, HeadroomPath: state.Components["headroom"].Path, HeadroomEnabled: cfg.Compression.Provider == "headroom" && cfg.Headroom.Enabled, KnowledgeServers: knowledgeServers},
+		Adapter:               workers.Adapter{Runner: a.Runner, CodexSHA256: value.CodexSHA256, CodexPath: state.Components["codex"].Path, ClaudePath: state.Components["claude-code"].Path, HeadroomPath: state.Components["headroom"].Path, HeadroomEnabled: cfg.Compression.Provider == "headroom" && cfg.Headroom.Enabled, KnowledgeServers: knowledgeServers},
 		Control:               orchestration.RufloOrchestratorAdapter{Control: orchestration.ControlPlane{Manager: a.orchestrationManager(state), RuntimeDir: runtimeDir}, Managed: state.Components["ruflo"].Managed},
 		Quota:                 a.automaticQuotaManager(cfg, state),
 		CheckpointEnabled:     cfg.Orchestration.Auto.CheckpointEnabled,

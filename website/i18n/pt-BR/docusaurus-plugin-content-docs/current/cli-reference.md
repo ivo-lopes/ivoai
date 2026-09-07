@@ -10,6 +10,7 @@ Usage:
   ivoai setup [--mode client|server]
   ivoai doctor [--json] [--inventory]
   ivoai update [--dry-run] | update --rollback [--force]
+  ivoai update --codex [--rollback]
   ivoai connect [list|chatgpt|claude]
   ivoai connect server [--url URL] [--purpose PURPOSE] [--redundancy-group GROUP] [--priority N] [--enrollment-code CODE|--code-stdin]
   ivoai connect server add <alias> [--url URL] [--purpose PURPOSE] [--redundancy-group GROUP] [--priority N] [--enrollment-code CODE|--code-stdin]

@@ -15,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ivo-lopes/ivoai/internal/codexresolver"
 	"github.com/ivo-lopes/ivoai/internal/config"
 	"github.com/ivo-lopes/ivoai/internal/connections"
 	"github.com/ivo-lopes/ivoai/internal/core"
@@ -128,35 +129,36 @@ type SkillControlPlane struct {
 	StagingRootHealth string `json:"staging_root_health"`
 }
 type Report struct {
-	Overall              string               `json:"overall"`
-	OS                   string               `json:"os"`
-	Architecture         string               `json:"architecture"`
-	Version              string               `json:"ivoai_version"`
-	TestMode             bool                 `json:"test_mode"`
-	ConfigPath           string               `json:"config_path"`
-	StatePath            string               `json:"state_path"`
-	SecretPath           string               `json:"secret_path"`
-	SecretPermissions    string               `json:"secret_permissions"`
-	Codex                Auth                 `json:"codex"`
-	CodexCodeModeHost    Component            `json:"codex_code_mode_host"`
-	Claude               Auth                 `json:"claude"`
-	OpenCode             ManagedComponent     `json:"opencode"`
-	Headroom             headroom.Status      `json:"headroom"`
-	Caveman              ManagedComponent     `json:"caveman"`
-	CompressionProvider  string               `json:"compression_provider"`
-	CompressionDefault   string               `json:"compression_default"`
-	CompressionSource    string               `json:"compression_source"`
-	CompressionEffective string               `json:"compression_effective"`
-	CompressionReason    string               `json:"compression_reason,omitempty"`
-	Memory               Component            `json:"ai_memory"`
-	Ruflo                orchestration.Status `json:"ruflo"`
-	Server               Server               `json:"server"`
-	Servers              []ServerProfile      `json:"servers,omitempty"`
-	Orchestration        Orchestration        `json:"orchestration"`
-	Automatic            Automatic            `json:"automatic_orchestration"`
-	ComponentMatrix      core.Matrix          `json:"component_matrix"`
-	SkillControlPlane    SkillControlPlane    `json:"skill_control_plane"`
-	Issues               []string             `json:"issues"`
+	CodexResolution      *codexresolver.Resolution `json:"codex_resolution,omitempty"`
+	Overall              string                    `json:"overall"`
+	OS                   string                    `json:"os"`
+	Architecture         string                    `json:"architecture"`
+	Version              string                    `json:"ivoai_version"`
+	TestMode             bool                      `json:"test_mode"`
+	ConfigPath           string                    `json:"config_path"`
+	StatePath            string                    `json:"state_path"`
+	SecretPath           string                    `json:"secret_path"`
+	SecretPermissions    string                    `json:"secret_permissions"`
+	Codex                Auth                      `json:"codex"`
+	CodexCodeModeHost    Component                 `json:"codex_code_mode_host"`
+	Claude               Auth                      `json:"claude"`
+	OpenCode             ManagedComponent          `json:"opencode"`
+	Headroom             headroom.Status           `json:"headroom"`
+	Caveman              ManagedComponent          `json:"caveman"`
+	CompressionProvider  string                    `json:"compression_provider"`
+	CompressionDefault   string                    `json:"compression_default"`
+	CompressionSource    string                    `json:"compression_source"`
+	CompressionEffective string                    `json:"compression_effective"`
+	CompressionReason    string                    `json:"compression_reason,omitempty"`
+	Memory               Component                 `json:"ai_memory"`
+	Ruflo                orchestration.Status      `json:"ruflo"`
+	Server               Server                    `json:"server"`
+	Servers              []ServerProfile           `json:"servers,omitempty"`
+	Orchestration        Orchestration             `json:"orchestration"`
+	Automatic            Automatic                 `json:"automatic_orchestration"`
+	ComponentMatrix      core.Matrix               `json:"component_matrix"`
+	SkillControlPlane    SkillControlPlane         `json:"skill_control_plane"`
+	Issues               []string                  `json:"issues"`
 }
 type Doctor struct {
 	Store        *config.Store
@@ -175,6 +177,28 @@ func (d Doctor) Run(ctx context.Context) Report {
 	}
 	if stateErr != nil {
 		r.Issues = append(r.Issues, stateErr.Error())
+	}
+	if !r.TestMode {
+		resolution, err := (codexresolver.Resolver{Runner: d.Runner, PATH: os.Getenv("PATH"), Managed: state.Components["codex"], Host: state.Components["codex-code-mode-host"]}).Resolve(ctx)
+		resolution.CheckLatest(ctx, d.HTTPClient)
+		r.CodexResolution = &resolution
+		if err == nil {
+			state = resolution.Apply(state)
+		} else {
+			// Setup readiness precedes optional account connection. Preserve
+			// installed-client diagnostics when no account has been connected;
+			// the resolution still explicitly reports no authenticated launch.
+			healthyInstallation := false
+			for _, candidate := range resolution.Candidates {
+				healthyInstallation = healthyInstallation || candidate.Healthy && candidate.Compatible
+			}
+			if cfg.Connections.ChatGPT.Status == "connected" || !healthyInstallation {
+				r.Issues = append(r.Issues, err.Error())
+			}
+		}
+		if resolution.VersionDrift {
+			r.Issues = append(r.Issues, resolution.Reason)
+		}
 	}
 	r.SecretPermissions = permissions(d.Store.Paths.Secrets)
 	r.Codex = d.agent(ctx, "codex", []string{"login", "status"}, state.Components["codex"])
