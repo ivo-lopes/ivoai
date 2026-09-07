@@ -57,3 +57,24 @@ func TestCatalogRejectsTerminalControlModelNames(t *testing.T) {
 		t.Fatalf("unsafe model display reached the catalog: %+v", catalog.Entries())
 	}
 }
+
+func TestClaudeIsOptionalWithoutRemovingAuthenticatedCapability(t *testing.T) {
+	for _, state := range []string{"absent", "unauthenticated", "authenticated"} {
+		t.Run(state, func(t *testing.T) {
+			providers := map[string]routing.ProviderCapability{
+				"codex": {Provider: "codex", Authenticated: true, Models: []routing.ModelCapability{{Name: "codex-fixture", Source: routing.SourceRuntimeVerified}}},
+			}
+			if state != "absent" {
+				providers["claude"] = routing.ProviderCapability{Provider: "claude", Authenticated: state == "authenticated", Models: []routing.ModelCapability{{Name: "claude-fixture", SupportedEfforts: []string{"high"}, Source: routing.SourceRuntimeVerified}}}
+			}
+			catalog := CatalogFromRegistry(routing.Registry{Providers: providers})
+			found := map[string]bool{}
+			for _, entry := range catalog.Entries() {
+				found[entry.Executor] = true
+			}
+			if _, ok := catalog.Resolve("auto", ""); !ok || !found["codex"] || found["claude"] != (state == "authenticated") {
+				t.Fatalf("optional Claude affected availability: %+v", catalog.Entries())
+			}
+		})
+	}
+}

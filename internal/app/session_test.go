@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ivo-lopes/ivoai/internal/codexresolver"
 	"github.com/ivo-lopes/ivoai/internal/config"
 	"github.com/ivo-lopes/ivoai/internal/observability"
 	"github.com/ivo-lopes/ivoai/internal/platform"
@@ -356,7 +357,9 @@ func sessionTestApp(t *testing.T, root, codex, claude, ruflo string) *App {
 	if err := store.SaveState(config.State{Schema: config.SchemaVersion, Components: components}); err != nil {
 		t.Fatal(err)
 	}
-	return &App{Version: "test", Store: store, Runner: platform.ExecRunner{}, In: bytes.NewBuffer(nil), Out: &bytes.Buffer{}, Err: &bytes.Buffer{}}
+	return &App{CodexResolution: func(_ context.Context, s config.State) (config.State, codexresolver.Resolution, error) {
+		return s, codexresolver.Resolution{}, nil
+	}, Version: "test", Store: store, Runner: platform.ExecRunner{}, In: bytes.NewBuffer(nil), Out: &bytes.Buffer{}, Err: &bytes.Buffer{}}
 }
 
 func appExecutable(t *testing.T, directory, name, body string) string {
@@ -366,4 +369,8 @@ func appExecutable(t *testing.T, directory, name, body string) string {
 		t.Fatal(err)
 	}
 	return path
+}
+
+func fixtureCodexResolution(_ context.Context, s config.State) (config.State, codexresolver.Resolution, error) {
+	return s, codexresolver.Resolution{}, nil
 }

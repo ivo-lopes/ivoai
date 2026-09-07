@@ -602,6 +602,7 @@ func TestLaunchNeverInjectsUpstreamServerTokenIntoChildEnvironment(t *testing.T)
 	if err != nil {
 		t.Fatal(err)
 	}
+	a.CodexResolution = fixtureCodexResolution
 	cfg := config.Default()
 	cfg.Compression.Provider = "direct"
 	cfg.Headroom.Enabled = false
@@ -648,6 +649,7 @@ func TestLaunchBypassesHeadroomForExactSharedKnowledge(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	a.CodexResolution = fixtureCodexResolution
 	cfg := config.Default()
 	cfg.Compression.Provider = "headroom"
 	cfg.MCP.Servers["ivoai-memory"] = config.MCPServer{Enabled: true, Kind: "memory"}
@@ -690,6 +692,7 @@ func TestManagedCodexWithoutCodeModeHostRefusesToollessLaunch(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	a.CodexResolution = fixtureCodexResolution
 	cfg := config.Default()
 	cfg.Headroom.Enabled = false
 	if err := a.Store.Save(cfg); err != nil {

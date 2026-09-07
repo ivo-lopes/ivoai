@@ -2,6 +2,7 @@
 package session
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/ivo-lopes/ivoai/internal/observability"
@@ -119,6 +120,12 @@ type ExecutorSessionMapping struct {
 }
 
 type Session struct {
+	ExecutorTrace        json.RawMessage                        `json:"executor_trace,omitempty"`
+	ConfigurationSource  string                                 `json:"configuration_source,omitempty"`
+	CodexPath            string                                 `json:"codex_path,omitempty"`
+	CodexVersion         string                                 `json:"codex_version,omitempty"`
+	CodexSHA256          string                                 `json:"codex_sha256,omitempty"`
+	CodexManaged         bool                                   `json:"codex_managed,omitempty"`
 	SessionID            string                                 `json:"session_id"`
 	StartedAt            time.Time                              `json:"started_at"`
 	UpdatedAt            time.Time                              `json:"updated_at"`

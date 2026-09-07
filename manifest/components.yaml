@@ -56,21 +56,21 @@ components:
   - name: codex
     role: [client]
     package: "@openai/codex"
-    validated_version: "0.148.0"
+    validated_version: "0.153.4"
     minimum_version: "0.148.0"
     license: Apache-2.0
-    source: "https://github.com/openai/codex/releases/tag/rust-v0.148.0"
+    source: "https://github.com/openai/codex/releases/tag/rust-v0.153.4"
     documentation: "https://learn.chatgpt.com/docs/codex/cli"
     architectures: [linux/amd64, linux/arm64]
     install_strategy: github_release_asset
     checksum_strategy: reviewed_release_asset_sha256
     assets:
       linux/amd64:
-        url: "https://github.com/openai/codex/releases/download/rust-v0.148.0/codex-x86_64-unknown-linux-musl.tar.gz"
-        sha256: "1a36f762f6b3bef533bb86345ad9517661c2d84d53996a250cf2ca89d2cfee5a"
+        url: "https://github.com/openai/codex/releases/download/rust-v0.153.4/codex-x86_64-unknown-linux-musl.tar.gz"
+        sha256: "f479424eca092484dc40d87ae28c44f4cc40234a60045d6131e493800d814a30"
       linux/arm64:
-        url: "https://github.com/openai/codex/releases/download/rust-v0.148.0/codex-aarch64-unknown-linux-musl.tar.gz"
-        sha256: "410c6ae0c763eb39c6da17665e63f9aa4a98e6ee663d81f8e8b779c97cb175ac"
+        url: "https://github.com/openai/codex/releases/download/rust-v0.153.4/codex-aarch64-unknown-linux-musl.tar.gz"
+        sha256: "5cda6182bd94c3a30f2eb63a495489ebf7f691fddb14d70f48c6c1a5071b6cde"
     auth:
       default: "codex login"
       status: "codex login status"
@@ -108,20 +108,20 @@ components:
   - name: codex-code-mode-host
     role: [client]
     package: "@openai/codex companion"
-    validated_version: "0.148.0"
+    validated_version: "0.153.4"
     minimum_version: "0.148.0"
     license: Apache-2.0
-    source: "https://github.com/openai/codex/releases/tag/rust-v0.148.0"
+    source: "https://github.com/openai/codex/releases/tag/rust-v0.153.4"
     architectures: [linux/amd64, linux/arm64]
     install_strategy: github_release_asset_when_codex_is_managed
     checksum_strategy: github_release_asset_digest_sha256
     assets:
       linux/amd64:
-        url: "https://github.com/openai/codex/releases/download/rust-v0.148.0/codex-code-mode-host-x86_64-unknown-linux-musl.tar.gz"
-        sha256: "8e6e559b228fa61b18fb2c28c31ec02068751025bcce3f00cf63c79499d59829"
+        url: "https://github.com/openai/codex/releases/download/rust-v0.153.4/codex-code-mode-host-x86_64-unknown-linux-musl.tar.gz"
+        sha256: "f95830a869590957664bbfc67bccb08773806b693670baf15908176f89b4cd31"
       linux/arm64:
-        url: "https://github.com/openai/codex/releases/download/rust-v0.148.0/codex-code-mode-host-aarch64-unknown-linux-musl.tar.gz"
-        sha256: "1c410fe4bb174949649efe05c150b1512fb4775d5874eb54b2edb624cf7513a4"
+        url: "https://github.com/openai/codex/releases/download/rust-v0.153.4/codex-code-mode-host-aarch64-unknown-linux-musl.tar.gz"
+        sha256: "d8047b8d33370d6090e729d27eb76de60a2686baa1c143c138c9b05dc70d813b"
     notes:
       - "Installed beside managed Codex because the stable Code Mode tool router fails closed when the companion is absent."
       - "The companion has no --version endpoint; compatibility is pinned to the exact Codex release and verified by the reviewed archive digest."

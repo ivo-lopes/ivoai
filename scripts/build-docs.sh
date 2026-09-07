@@ -63,6 +63,8 @@ def files(root):
 
 left, right = files(generated), files(embedded)
 if left.keys() != right.keys():
+    print("generated only:", ", ".join(sorted(left.keys() - right.keys())), file=sys.stderr)
+    print("embedded only:", ", ".join(sorted(right.keys() - left.keys())), file=sys.stderr)
     raise SystemExit("embedded documentation file set is stale")
 
 asset_hash = re.compile(rb"(?<=\.)([0-9a-f]{8})(?=\.js)")

@@ -273,26 +273,34 @@ func TestScanJSONLinesRejectsCorruptionAfterProtocolStarts(t *testing.T) {
 }
 
 func TestExplicitSelectionFailsBeforeClaimOrLaunchWhenIneligible(t *testing.T) {
-	runner := &fakeRunner{}
-	claims := 0
-	catalog := newCatalog([]ModelSpec{{ID: "codex-fixture", Name: "Codex fixture", Mode: "explicit", Executor: "codex", UpstreamModel: "gpt-fixture"}})
-	bridge, err := Start(Options{Runner: runner, Catalog: catalog, Select: func(context.Context, string) (string, error) { return "claude", nil }, Status: func() Status { return Status{} }, AuthorizeSelection: func(context.Context, Selection) error { return errors.New("not authenticated") }, ClaimRequest: func(string, string) (bool, error) { claims++; return true, nil }})
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer bridge.Close(context.Background())
-	request, _ := http.NewRequest(http.MethodPost, bridge.URL()+"/v1/chat/completions", strings.NewReader(`{"model":"codex-fixture","messages":[{"role":"user","content":"fixture"}]}`))
-	request.Header.Set("Authorization", "Bearer "+bridge.Token())
-	request.Header.Set("X-IVOAI-OpenCode-Session", "oc_explicit")
-	request.Header.Set("X-IVOAI-OpenCode-Message", "msg_explicit")
-	response, err := http.DefaultClient.Do(request)
-	if err != nil {
-		t.Fatal(err)
-	}
-	payload, _ := io.ReadAll(response.Body)
-	_ = response.Body.Close()
-	if response.StatusCode != http.StatusServiceUnavailable || claims != 0 || len(runner.requests) != 0 || !bytes.Contains(payload, []byte("executor_selection_unavailable")) {
-		t.Fatalf("selection was not fail-closed: status=%d claims=%d requests=%d payload=%s", response.StatusCode, claims, len(runner.requests), payload)
+	for _, executor := range []string{"codex", "claude"} {
+		t.Run(executor, func(t *testing.T) {
+			alternate := "codex"
+			if executor == "codex" {
+				alternate = "claude"
+			}
+			runner := &fakeRunner{}
+			claims := 0
+			catalog := newCatalog([]ModelSpec{{ID: executor + "-fixture", Name: executor + " fixture", Mode: "explicit", Executor: executor, UpstreamModel: "model-fixture"}})
+			bridge, err := Start(Options{Runner: runner, Catalog: catalog, Select: func(context.Context, string) (string, error) { return alternate, nil }, Status: func() Status { return Status{} }, AuthorizeSelection: func(context.Context, Selection) error { return errors.New("not authenticated") }, ClaimRequest: func(string, string) (bool, error) { claims++; return true, nil }})
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer bridge.Close(context.Background())
+			request, _ := http.NewRequest(http.MethodPost, bridge.URL()+"/v1/chat/completions", strings.NewReader(`{"model":"`+executor+`-fixture","messages":[{"role":"user","content":"fixture"}]}`))
+			request.Header.Set("Authorization", "Bearer "+bridge.Token())
+			request.Header.Set("X-IVOAI-OpenCode-Session", "oc_explicit")
+			request.Header.Set("X-IVOAI-OpenCode-Message", "msg_explicit")
+			response, err := http.DefaultClient.Do(request)
+			if err != nil {
+				t.Fatal(err)
+			}
+			payload, _ := io.ReadAll(response.Body)
+			_ = response.Body.Close()
+			if response.StatusCode != http.StatusServiceUnavailable || claims != 0 || len(runner.requests) != 0 || !bytes.Contains(payload, []byte("EXPLICIT_MODEL_UNAVAILABLE")) {
+				t.Fatalf("selection was not fail-closed: status=%d claims=%d requests=%d payload=%s", response.StatusCode, claims, len(runner.requests), payload)
+			}
+		})
 	}
 }
 
@@ -408,7 +416,7 @@ func TestBridgeStreamingFailureIsNotSuccessfulCompletion(t *testing.T) {
 	}
 }
 
-func TestScanJSONLinesRejectsOversizedOutputAndDrains(t *testing.T) {
+func TestScanJSONLinesRejectsOversizedOutput(t *testing.T) {
 	for _, value := range []string{strings.Repeat("x", (1<<20)+1) + "\n", strings.Repeat("{\"type\":\"ok\"}\n", 600000)} {
 		if err := ScanJSONLines(strings.NewReader(value), func(map[string]any) error { return nil }); err == nil {
 			t.Fatal("oversized executor output accepted")

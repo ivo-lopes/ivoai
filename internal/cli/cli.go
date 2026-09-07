@@ -107,6 +107,7 @@ func runCommand(ctx context.Context, a *app.App, args []string) error {
 		fs := flag.NewFlagSet("update", flag.ContinueOnError)
 		fs.SetOutput(a.Err)
 		rollback := fs.Bool("rollback", false, "restore the binary retained by the last update")
+		codexOnly := fs.Bool("codex", false, "update only the managed official Codex pair to latest stable compatible")
 		dryRun := fs.Bool("dry-run", false, "stage and probe the verified candidate, then print the plan without committing managed changes")
 		force := fs.Bool("force", false, "allow rollback to overwrite managed files changed since the update")
 		if err := fs.Parse(args[1:]); err != nil {
@@ -114,6 +115,12 @@ func runCommand(ctx context.Context, a *app.App, args []string) error {
 		}
 		if fs.NArg() != 0 {
 			return errors.New("update accepts no positional arguments")
+		}
+		if *codexOnly {
+			if *dryRun || *force {
+				return errors.New("update --codex does not accept --dry-run or --force")
+			}
+			return a.UpdateCodex(ctx, *rollback)
 		}
 		if *rollback && *dryRun {
 			return errors.New("update --rollback and --dry-run cannot be combined")
@@ -303,6 +310,9 @@ func runDoctor(ctx context.Context, a *app.App, args []string) error {
 	}
 	color := terminalui.ColorEnabled(a.Out)
 	fmt.Fprintf(a.Out, "ivoai doctor\nOS: %s\nArchitecture: %s\nivoai: %s\nConfig: %s\nState: %s\nSecret permissions: %s\n", report.OS, report.Architecture, report.Version, report.ConfigPath, report.StatePath, report.SecretPermissions)
+	if report.CodexResolution != nil {
+		fmt.Fprintln(a.Out, report.CodexResolution.Summary())
+	}
 	fmt.Fprintf(a.Out, "\nCodex: installed=%s version=%s authenticated=%s\n", semanticBool(report.Codex.Installed, color), report.Codex.Version, semanticOptionalBool(report.Codex.Authenticated, color))
 	fmt.Fprintf(a.Out, "Claude Code: installed=%s version=%s authenticated=%s\n", semanticBool(report.Claude.Installed, color), report.Claude.Version, semanticOptionalBool(report.Claude.Authenticated, color))
 	fmt.Fprintf(a.Out, "OpenCode: installed=%s managed=%s healthy=%s version=%s revision=%s license=%s auth-owned-by=opencode auto-worker=false\n", semanticOptionalBool(report.OpenCode.Installed, color), semanticOptionalBool(report.OpenCode.Managed, color), semanticOptionalBool(report.OpenCode.Healthy, color), report.OpenCode.Version, report.OpenCode.Revision, report.OpenCode.License)
@@ -636,6 +646,7 @@ Usage:
   ivoai setup [--mode client|server]
   ivoai doctor [--json] [--inventory]
   ivoai update [--dry-run] | update --rollback [--force]
+  ivoai update --codex [--rollback]
   ivoai connect [list|chatgpt|claude]
   ivoai connect server [--url URL] [--purpose PURPOSE] [--redundancy-group GROUP] [--priority N] [--enrollment-code CODE|--code-stdin]
   ivoai connect server add <alias> [--url URL] [--purpose PURPOSE] [--redundancy-group GROUP] [--priority N] [--enrollment-code CODE|--code-stdin]

@@ -26,16 +26,8 @@ type Discoverer struct {
 }
 
 func (d Discoverer) Discover(ctx context.Context) Registry {
-	versions := map[string]string{}
-	if trustedBinary(d.CodexPath, "codex") == nil {
-		versions["codex"], _ = commandOutput(ctx, d.CodexPath, "--version")
-	}
-	if trustedBinary(d.ClaudePath, "claude") == nil {
-		versions["claude"], _ = commandOutput(ctx, d.ClaudePath, "--version")
-	}
-	if cached, ok := d.loadCache(versions); ok {
-		return cached
-	}
+	// Persisted catalogs are diagnostic snapshots, never authority for a new
+	// session: availability can change without a CLI version change.
 	result := Registry{Providers: map[string]ProviderCapability{}}
 	if capability, err := d.codex(ctx); err == nil {
 		result.Providers["codex"] = capability
@@ -49,30 +41,6 @@ func (d Discoverer) Discover(ctx context.Context) Registry {
 
 type capabilityCache struct {
 	Providers map[string]ProviderCapability `json:"providers"`
-}
-
-func (d Discoverer) loadCache(versions map[string]string) (Registry, bool) {
-	if d.CachePath == "" {
-		return Registry{}, false
-	}
-	info, err := os.Lstat(d.CachePath)
-	if err != nil || !info.Mode().IsRegular() || info.Mode().Perm()&0o077 != 0 {
-		return Registry{}, false
-	}
-	body, err := platform.ReadRegularFile(d.CachePath, discoveryLimit)
-	if err != nil {
-		return Registry{}, false
-	}
-	var cached capabilityCache
-	if json.Unmarshal(body, &cached) != nil || len(cached.Providers) == 0 {
-		return Registry{}, false
-	}
-	for provider, version := range versions {
-		if version == "" || cached.Providers[provider].Version != version {
-			return Registry{}, false
-		}
-	}
-	return Registry{Providers: cached.Providers}, true
 }
 
 func (d Discoverer) saveCache(value Registry) {
@@ -96,9 +64,9 @@ func (d Discoverer) codex(ctx context.Context) (ProviderCapability, error) {
 	version, _ := commandOutput(ctx, d.CodexPath, "--version")
 	models, err := codexModels(ctx, d.CodexPath)
 	if err != nil {
-		return ProviderCapability{Provider: "codex", Version: version, Authenticated: true, WorkerCapable: true, Source: SourceUnknown}, nil
+		return ProviderCapability{Provider: "codex", Version: version, Authenticated: nativeAuth(ctx, d.CodexPath, "codex"), WorkerCapable: true, Source: SourceUnknown}, nil
 	}
-	return ProviderCapability{Provider: "codex", Version: version, Authenticated: true, WorkerCapable: true, Models: models, SupportsEffort: hasEfforts(models), Source: SourceRuntimeVerified}, nil
+	return ProviderCapability{Provider: "codex", Version: version, Authenticated: nativeAuth(ctx, d.CodexPath, "codex"), WorkerCapable: true, Models: models, SupportsEffort: hasEfforts(models), Source: SourceRuntimeVerified}, nil
 }
 
 func (d Discoverer) claude(ctx context.Context) (ProviderCapability, error) {
@@ -106,13 +74,11 @@ func (d Discoverer) claude(ctx context.Context) (ProviderCapability, error) {
 		return ProviderCapability{}, err
 	}
 	version, _ := commandOutput(ctx, d.ClaudePath, "--version")
-	help, err := commandOutput(ctx, d.ClaudePath, "--help")
+	models, err := claudeModels(ctx, d.ClaudePath)
 	if err != nil {
-		return ProviderCapability{}, err
+		return ProviderCapability{Provider: "claude", Version: version, Authenticated: nativeAuth(ctx, d.ClaudePath, "claude"), WorkerCapable: true, Source: SourceUnknown}, nil
 	}
-	efforts := parseClaudeEfforts(help)
-	models := []ModelCapability{{Provider: "claude", IsDefault: true, SupportedEfforts: efforts, Source: SourceDefault}}
-	return ProviderCapability{Provider: "claude", Version: version, Authenticated: true, WorkerCapable: true, Models: models, SupportsEffort: len(efforts) > 0, Source: SourceRuntimeVerified}, nil
+	return ProviderCapability{Provider: "claude", Version: version, Authenticated: nativeAuth(ctx, d.ClaudePath, "claude"), WorkerCapable: true, Models: models, SupportsEffort: hasEfforts(models), Source: SourceRuntimeVerified}, nil
 }
 
 func codexModels(parent context.Context, binary string) ([]ModelCapability, error) {
@@ -151,6 +117,7 @@ func codexModels(parent context.Context, binary string) ([]ModelCapability, erro
 				Data []struct {
 					Model                     string `json:"model"`
 					Description               string `json:"description"`
+					DisplayName               string `json:"displayName"`
 					IsDefault                 bool   `json:"isDefault"`
 					DefaultReasoningEffort    string `json:"defaultReasoningEffort"`
 					SupportedReasoningEfforts []struct {
@@ -173,7 +140,7 @@ func codexModels(parent context.Context, binary string) ([]ModelCapability, erro
 					efforts = append(efforts, option.Effort)
 				}
 			}
-			models = append(models, ModelCapability{Name: value.Model, Provider: "codex", CapabilityTier: catalogTier(value.Description), SupportedEfforts: efforts, DefaultEffort: value.DefaultReasoningEffort, IsDefault: value.IsDefault, Source: SourceRuntimeVerified})
+			models = append(models, ModelCapability{Name: value.Model, DisplayName: value.DisplayName, Availability: "catalog_exposed", QuotaEligibility: "UNKNOWN", Provider: "codex", CapabilityTier: catalogTier(value.Description), SupportedEfforts: efforts, DefaultEffort: value.DefaultReasoningEffort, IsDefault: value.IsDefault, Source: SourceRuntimeVerified})
 		}
 		if len(models) == 0 {
 			return nil, errors.New("Codex model catalog returned no models")

@@ -84,7 +84,7 @@ const tui = async (api: any, options: any) => {
       </text>
       <text fg={theme().textMuted}>{clean(status().knowledge_mode)}</text>
       <text fg={theme().accent}>
-        {clean(status().selection_mode, "auto")} · {clean(status().primary)} · {clean(status().effective_model || status().requested_model, "client default")} · {clean(status().effective_effort, "default")}
+        {clean(status().selection_mode, "auto")} · {clean(status().primary)} · {clean(status().effective_model, "UNKNOWN")} · {clean(status().effective_effort, "UNKNOWN")}
       </text>
       <text fg={theme().textMuted}>/ivoai</text>
     </box>
@@ -113,7 +113,7 @@ const tui = async (api: any, options: any) => {
       <text fg={theme().primary}><b>IVOAI</b></text>
       <text fg={theme().text}>Session</text>
       <text fg={theme().textMuted}>frontend=OpenCode · primary={clean(status().primary)} · state={clean(status().session_state)}</text>
-      <text fg={theme().textMuted}>mode={clean(status().selection_mode, "auto")} · requested={clean(status().requested_model, "automatic")} · model={clean(status().effective_model, "client default")} · reasoning={clean(status().effective_effort, "default")}</text>
+      <text fg={theme().textMuted}>mode={clean(status().selection_mode, "auto")} · requested={clean(status().requested_model, "automatic")} · model={clean(status().effective_model, "UNKNOWN")} · reasoning={clean(status().effective_effort, "UNKNOWN")}</text>
       <text fg={theme().text}>Executors</text>
       <text fg={theme().textMuted}>{authMark(status().codex_auth)} Codex {clean(status().codex_auth)} · quota={clean(status().codex_quota)}</text>
       <text fg={theme().textMuted}>{authMark(status().claude_auth)} Claude {clean(status().claude_auth)} · quota={clean(status().claude_quota)}</text>

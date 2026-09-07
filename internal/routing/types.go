@@ -95,6 +95,9 @@ type Plan struct {
 }
 
 type ModelCapability struct {
+	DisplayName      string   `json:"display_name,omitempty"`
+	Availability     string   `json:"availability,omitempty"`
+	QuotaEligibility string   `json:"quota_eligibility,omitempty"`
 	Name             string   `json:"name"`
 	Provider         string   `json:"provider"`
 	CapabilityTier   Tier     `json:"capability_tier"`
