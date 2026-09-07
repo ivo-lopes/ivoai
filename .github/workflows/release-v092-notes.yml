@@ -1,0 +1,48 @@
+name: Finalize v0.9.2 release notes
+
+on:
+  push:
+    branches: [release/v0.9.2-publication-notes]
+
+permissions:
+  contents: read
+
+jobs:
+  notes:
+    if: github.repository == 'ivo-lopes/ivoai'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - name: Apply reviewed notes to the validated stable release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EXPECTED_SHA: e173e590dae1db65e736ad38bf4e059acc8ac2c7
+        shell: bash
+        run: |
+          set -euo pipefail
+          ready=false
+          for attempt in $(seq 1 70); do
+            echo "Waiting for completed v0.9.2 publication ($attempt/70)"
+            if gh release view v0.9.2 --json isDraft,isPrerelease,tagName > /tmp/release.json 2>/dev/null; then
+              if jq -e '.tagName == "v0.9.2" and .isDraft == false and .isPrerelease == false' /tmp/release.json >/dev/null; then
+                ready=true
+                break
+              fi
+            fi
+            sleep 30
+          done
+          test "$ready" = true
+          git fetch origin refs/tags/v0.9.2:refs/tags/v0.9.2
+          test "$(git rev-parse 'refs/tags/v0.9.2^{commit}')" = "$EXPECTED_SHA"
+          gh release view v0.9.2 --json assets --jq '.assets[].name' | sort > /tmp/actual-assets
+          printf '%s\n' checksums.txt ivoai-memory-context.zip ivoai_linux_amd64.tar.gz ivoai_linux_arm64.tar.gz | sort > /tmp/expected-assets
+          diff -u /tmp/expected-assets /tmp/actual-assets
+          gh release edit v0.9.2 --notes-file release-notes/v0.9.2.md
+          gh release view v0.9.2 --json body | python3 -c 'import json,sys; sys.stdout.write(json.load(sys.stdin)["body"])' > /tmp/published-notes.md
+          diff -u release-notes/v0.9.2.md /tmp/published-notes.md
+          echo RELEASE_NOTES_VALIDATED=PASS
