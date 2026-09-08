@@ -225,6 +225,18 @@ func TestNativeControlPlaneEnvironmentDoesNotCopySecrets(t *testing.T) {
 	}
 }
 
+func TestOfficialNativeAuthMetadataPinnedOpenCodeColorDespiteNoColor(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "opencode")
+	// Captured shape from pinned 1.18.25 with NO_COLOR=1 and TERM=dumb.
+	if err := os.WriteFile(path, []byte("#!/bin/sh\nprintf '\\033[0m\\n┌  Credentials \\033[90m/private/fixture/auth.json\\n│\\n●  native-fixture \\033[90mapi\\n●  OAuth Fixture \\033[90moauth\\n└  2 credentials\\n'\n"), 0700); err != nil {
+		t.Fatal(err)
+	}
+	value, err := officialOpenCodeAuthMetadata(context.Background(), path, []string{"PATH=" + os.Getenv("PATH")})
+	if err != nil || len(value) != 2 || !value["native-fixture"] || !value["OAuth Fixture"] {
+		t.Fatalf("official colored metadata not recognized: %+v err=%v", value, err)
+	}
+}
+
 func TestOfficialNativeAuthMetadataDoesNotReturnCredentialPaths(t *testing.T) {
 	root := t.TempDir()
 	path := filepath.Join(root, "official-fixture")
@@ -234,6 +246,17 @@ func TestOfficialNativeAuthMetadataDoesNotReturnCredentialPaths(t *testing.T) {
 	value, err := officialOpenCodeAuthMetadata(context.Background(), path, []string{"PATH=" + os.Getenv("PATH")})
 	if err != nil || len(value) != 2 || !value["Native Fixture"] || !value["Other"] {
 		t.Fatalf("metadata projection=%v err=%v", value, err)
+	}
+}
+
+func TestOfficialNativeAuthMetadataRejectsNonPresentationControls(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "opencode")
+	if err := os.WriteFile(path, []byte("#!/bin/sh\nprintf '●  unsafe\\033[2Jname api\\n●  valid api\\n'\n"), 0700); err != nil {
+		t.Fatal(err)
+	}
+	value, err := officialOpenCodeAuthMetadata(context.Background(), path, []string{"PATH=" + os.Getenv("PATH")})
+	if err != nil || len(value) != 1 || !value["valid"] {
+		t.Fatalf("non-presentation control sequence accepted: %+v err=%v", value, err)
 	}
 }
 
