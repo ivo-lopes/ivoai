@@ -1,5 +1,38 @@
 # Executores
 
+## Sessões HTTP controladas
+
+O contrato interno `OpenCodeExecutor.OpenSession` reutiliza o cliente HTTP/SSE
+gerenciado, autenticado e restrito ao loopback. Ele oferece criação, consulta e
+listagem de sessões, prompts síncronos e assíncronos, eventos, cancelamento, status,
+diff, permissões, arquivos, agents e status MCP. O fechamento libera backend e
+lease. Requisições estruturadas de `StartSession` usam esse lifecycle; a sessão
+direta por CLI continua abrindo a TUI nativa. A autenticação nativa pertence ao
+OpenCode e não é copiada para o frontend. Esse adapter, sozinho, não torna o
+OpenCode um worker elegível no AUTO: os critérios do scheduler continuam válidos.
+
+## Continuidade da autenticação e resume
+
+O IVOAI consulta novamente o cliente oficial antes de cada turno gerenciado. Como
+os probes atuais não fornecem identidade estável da conta, o bridge inicia uma
+conversa nativa nova em vez de reutilizar um ID de resume sem continuidade
+comprovada. O histórico do frontend permanece no OpenCode. `/ivoai` informa essa
+política. Nenhum arquivo de credencial ou hash de segredo identifica a conta.
+Quando um adapter confiável fornecer identidade/geração não sensível, o resume
+nativo também exigirá correspondência exata. Logout ou probe indisponível impede
+o despacho; mudança de identidade não reutiliza o ID nativo anterior.
+
+## Frontend gerenciado indisponível
+
+Antes de qualquer despacho, falhas de startup/readiness do backend ou de attach
+podem levar à TUI nativa do executor selecionado. O IVOAI informa
+`AUTO_STATE=DEGRADED`, o executor e a indisponibilidade do painel/model picker do
+OpenCode. Memory/Context, Skill Gate e políticas do executor permanecem ativos.
+Não há troca silenciosa nem segunda execução. O fallback é recusado após o
+registro de uma requisição ou quando outro frontend detém o lease exclusivo.
+Resolva a sessão ativa antes de tentar novamente; não apague o lock para forçar
+um segundo writer.
+
 ## Política de aprovação gerenciada
 
 Configurações novas ou sem escolha explícita usam `interactive`: leituras e buscas

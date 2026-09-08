@@ -58,3 +58,35 @@ ivoai session start --executor opencode --mode direct -- <upstream-options>
 
 That standalone path retains OpenCode-owned authentication and is distinct from the
 OpenCode-first AUTO frontend.
+
+### Controlled HTTP sessions
+
+The internal `OpenCodeExecutor.OpenSession` contract reuses the authenticated,
+loopback-only managed HTTP/SSE client. It supports create/get/list, synchronous and
+asynchronous prompts, events, abort, status, diff, permissions, files, agents and
+MCP status. Closing releases its backend and lease. Structured controlled
+`StartSession` requests use this lifecycle; ordinary direct CLI requests still
+launch the native TUI. Native execution uses OpenCode-owned authentication without
+copying its store into the managed frontend. This adapter alone does not make
+OpenCode an eligible AUTO worker; the scheduler eligibility contract still applies.
+
+### Authentication continuity and resume
+
+IVOAI reprobes the official executor before each managed turn. The current probes
+do not expose a stable account identity, so the bridge conservatively starts a
+fresh native executor conversation instead of reusing an unproven native resume ID.
+The OpenCode conversation remains the frontend history. `/ivoai` reports this
+resume policy. No credential file or secret hash is used to identify an account.
+Where a trusted adapter supplies non-sensitive identity/epoch metadata, native
+resume additionally requires an exact identity match. Logout or an unavailable
+probe prevents dispatch; an identity change cannot reuse the previous native ID.
+
+### Managed frontend unavailable
+
+Before any request is dispatched, a failed backend startup/readiness or attach can
+fall back to the selected executor's native TUI. IVOAI prints `AUTO_STATE=DEGRADED`
+and identifies the native executor and loss of the OpenCode panel/model picker.
+Memory/Context, Skill Gate and executor policy remain in effect. This is not a
+silent switch or a second execution. Fallback is refused after a request claim or
+when another managed frontend holds the exclusive lease. Resolve the active
+session first, then retry; do not delete its lock to force a second writer.
