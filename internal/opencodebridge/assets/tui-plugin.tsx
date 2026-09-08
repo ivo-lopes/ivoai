@@ -111,10 +111,11 @@ const tui = async (api: any, options: any) => {
     </box>
   )
   const Panel = () => (
-    <box flexDirection="column" gap={1} padding={2}>
+    <box flexDirection="column" gap={0} padding={1}>
       <text fg={theme().primary}><b>IVOAI</b></text>
       <text fg={theme().text}>Session</text>
       <text fg={theme().textMuted}>Permissions: {clean(status().permission_mode)}</text>
+      <text fg={theme().textMuted}>Resume: {clean(status().resume_policy, "not exposed")}</text>
       <text fg={theme().textMuted}>frontend=OpenCode · primary={clean(status().primary)} · state={clean(status().session_state)}</text>
       <text fg={theme().textMuted}>mode={clean(status().selection_mode, "auto")} · requested={clean(status().requested_model, "automatic")} · model={clean(status().effective_model, "UNKNOWN")} · reasoning={clean(status().effective_effort, "UNKNOWN")}</text>
       <text fg={theme().text}>Executors</text>
@@ -142,7 +143,12 @@ const tui = async (api: any, options: any) => {
     description: "Executors, quotas, knowledge scope, and runtime health",
     category: "IVOAI",
     slash: { name: "ivoai" },
-    onSelect: () => api.route.navigate("ivoai"),
+    // Native dialog ownership restores the composer focus on Escape. A route
+    // without a back binding stranded keyboard-only users outside the session.
+    onSelect: () => {
+      api.ui.dialog.setSize("large")
+      api.ui.dialog.replace(() => <Panel />)
+    },
   }])
 }
 

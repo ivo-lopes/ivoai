@@ -132,14 +132,23 @@ try:
         raise RuntimeError("NATIVE_MODEL_DIALOG_UNCONFIRMED")
     model_render = send(model.get("display_name") or model_id) + send("\r") + pump(1)
     if efforts:
-        # Pinned DialogModel may open DialogVariant automatically after selecting
-        # a model. Otherwise Ctrl+T opens it (not a cycle). Never toggle an
-        # already open dialog or type an effort into the conversation composer.
-        if not wait_rendered("variant", model_render, seconds=2) and not wait_rendered("variant", send("\x14")):
-            raise RuntimeError("NATIVE_REASONING_DIALOG_UNCONFIRMED")
-        send(effort)
-        send("\r")
-        pump(1)
+        # Selecting a new model can open DialogVariant; a remembered model
+        # can return directly to the composer with its current variant. Ctrl+T
+        # cycles in that state. Never type an effort into the composer.
+        if wait_rendered("variant", model_render, seconds=2):
+            send(effort)
+            send("\r")
+            pump(1)
+        else:
+            def effort_visible(rendered):
+                plain = re.sub(r"\x1b\[[0-?]*[ -/]*[@-~]", "", rendered)
+                return bool(re.search(r"(?<![\w-])" + re.escape(effort) + r"(?![\w-])", plain))
+            for _ in range(len(efforts) + 1):
+                if effort_visible(model_render):
+                    break
+                model_render = send("\x14") + pump(.5)
+            else:
+                raise RuntimeError("NATIVE_REASONING_SELECTION_UNCONFIRMED")
     baseline = json.loads(current_path.read_text()).get("executor_trace")
     command(PROMPT)
     deadline = time.monotonic()+300
