@@ -322,7 +322,13 @@ func (n *NativeOpenCode) Run(ctx context.Context, request opencodebridge.Executo
 			} `json:"data"`
 		}
 		if json.Unmarshal(response.Info.Error, &failure) == nil && failure.Data.StatusCode == 429 {
-			return result, NativeProviderLimitError{}
+			// A native turn can run tools before its next model request hits a
+			// limit. Never replay those effects through an alternate executor.
+			history, historyErr := session.Request(ctx, "messages", nil, nil)
+			if historyErr == nil && nativeHistoryAllowsFailover(history) {
+				return result, NativeProviderLimitError{}
+			}
+			return result, errors.New("native provider limit after tool activity or unverified history; automatic replay refused")
 		}
 		return result, errors.New("native OpenCode executor failed; partial output not accepted")
 	}
@@ -340,6 +346,35 @@ func (n *NativeOpenCode) Run(ctx context.Context, request opencodebridge.Executo
 	}
 	result.ExecutorSessionID, result.Model, result.Effort = session.ID(), model, request.Effort
 	return result, emit(output.String())
+}
+
+func nativeHistoryAllowsFailover(body json.RawMessage) bool {
+	var messages []struct {
+		Info struct {
+			Role string `json:"role"`
+		} `json:"info"`
+		Parts []struct {
+			Type string `json:"type"`
+		} `json:"parts"`
+	}
+	if json.Unmarshal(body, &messages) != nil || len(messages) == 0 {
+		return false
+	}
+	assistant := false
+	for _, message := range messages {
+		if message.Info.Role != "user" && message.Info.Role != "assistant" {
+			return false
+		}
+		assistant = assistant || message.Info.Role == "assistant"
+		for _, part := range message.Parts {
+			switch part.Type {
+			case "text", "reasoning", "step-start", "step-finish":
+			default:
+				return false
+			}
+		}
+	}
+	return assistant
 }
 
 type NativeProviderLimitError struct{}

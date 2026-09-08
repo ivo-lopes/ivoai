@@ -188,3 +188,20 @@ func TestOfficialNativeAuthMetadataDoesNotReturnCredentialPaths(t *testing.T) {
 		t.Fatalf("metadata projection=%v err=%v", value, err)
 	}
 }
+
+func TestNativeFailoverNeverReplaysToolEffects(t *testing.T) {
+	for _, tc := range []struct {
+		body string
+		safe bool
+	}{
+		{`[{"info":{"role":"user"},"parts":[{"type":"text"}]},{"info":{"role":"assistant"},"parts":[]}]`, true},
+		{`[{"info":{"role":"assistant"},"parts":[{"type":"tool"}]}]`, false},
+		{`[{"info":{"role":"assistant"},"parts":[{"type":"unknown-future-effect"}]}]`, false},
+		{`[{"info":{"role":"user"},"parts":[]}]`, false},
+		{`[]`, false}, {`null`, false}, {`invalid`, false},
+	} {
+		if nativeHistoryAllowsFailover(json.RawMessage(tc.body)) != tc.safe {
+			t.Fatal("unsafe native replay classification")
+		}
+	}
+}

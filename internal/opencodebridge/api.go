@@ -46,12 +46,14 @@ func (m *Managed) APIRequest(ctx context.Context, operation, sessionID string, q
 			return nil, errors.New("invalid OpenCode permission identifier")
 		}
 		method, path = "POST", "/permission/"+sessionID+"/reply"
-	case "get", "prompt", "prompt-async", "abort", "diff":
+	case "get", "messages", "prompt", "prompt-async", "abort", "diff":
 		if !safeID(sessionID) || sessionID == "." || sessionID == ".." {
 			return nil, errors.New("invalid OpenCode session identifier")
 		}
 		path = "/session/" + sessionID
 		switch operation {
+		case "messages":
+			path += "/message"
 		case "prompt":
 			method, path = "POST", path+"/message"
 		case "prompt-async":
