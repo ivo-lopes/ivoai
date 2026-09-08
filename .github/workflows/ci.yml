@@ -34,6 +34,8 @@ jobs:
           corepack pnpm --dir website test:a11y
       - name: Generated CLI reference is current
         run: scripts/generate-cli-reference.sh --check
+      - name: Managed TUI semantic goldens (read-only comparison)
+        run: node --test internal/opencodebridge/presentation.test.mjs
       - name: Unit tests
         shell: bash
         run: |

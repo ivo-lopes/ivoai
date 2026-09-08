@@ -1,0 +1,142 @@
+{
+  "logo": [
+    "IVOAI",
+    "OpenCode frontend · IVOAI control plane"
+  ],
+  "panel": [
+    {
+      "text": "IVOAI",
+      "role": "identity"
+    },
+    {
+      "text": "Session",
+      "role": "heading"
+    },
+    {
+      "text": "Permissions: interactive",
+      "role": "muted"
+    },
+    {
+      "text": "Resume: fresh native turn; identity unverified",
+      "role": "muted"
+    },
+    {
+      "text": "frontend=opencode · primary=opencode · state=degraded",
+      "role": "muted"
+    },
+    {
+      "text": "mode=auto · requested=automatic · model=native-fixture/model · reasoning=UNKNOWN",
+      "role": "muted"
+    },
+    {
+      "text": "Executors",
+      "role": "heading"
+    },
+    {
+      "text": "✓ Codex authenticated · quota=available",
+      "role": "muted"
+    },
+    {
+      "text": "! Claude not configured · quota=N/A",
+      "role": "muted"
+    },
+    {
+      "text": "✓ OpenCode authenticated · quota=unknown",
+      "role": "muted"
+    },
+    {
+      "text": "IVOAI knowledge",
+      "role": "heading"
+    },
+    {
+      "text": "2 connected / 2 configured · federated",
+      "role": "muted"
+    },
+    {
+      "text": "✓ source-A",
+      "role": "text"
+    },
+    {
+      "text": "  purpose=source-A · enabled",
+      "role": "muted"
+    },
+    {
+      "text": "  healthy · session=selected",
+      "role": "muted"
+    },
+    {
+      "text": "  auth=authenticated",
+      "role": "muted"
+    },
+    {
+      "text": "✓ source-B",
+      "role": "text"
+    },
+    {
+      "text": "  purpose=source-B · enabled",
+      "role": "muted"
+    },
+    {
+      "text": "  healthy · session=selected",
+      "role": "muted"
+    },
+    {
+      "text": "  auth=authenticated",
+      "role": "muted"
+    },
+    {
+      "text": "Runtime",
+      "role": "heading"
+    },
+    {
+      "text": "compression=direct · memory=ready · context=ready",
+      "role": "muted"
+    },
+    {
+      "text": "skills=policy-gated · IVOAI fixture",
+      "role": "muted"
+    }
+  ],
+  "sidebar": [
+    {
+      "text": "IVOAI knowledge",
+      "role": "heading"
+    },
+    {
+      "text": "2 connected / 2 configured · federated",
+      "role": "muted"
+    },
+    {
+      "text": "✓ source-A",
+      "role": "text"
+    },
+    {
+      "text": "  purpose=source-A · enabled",
+      "role": "muted"
+    },
+    {
+      "text": "  healthy · session=selected",
+      "role": "muted"
+    },
+    {
+      "text": "  auth=authenticated",
+      "role": "muted"
+    },
+    {
+      "text": "✓ source-B",
+      "role": "text"
+    },
+    {
+      "text": "  purpose=source-B · enabled",
+      "role": "muted"
+    },
+    {
+      "text": "  healthy · session=selected",
+      "role": "muted"
+    },
+    {
+      "text": "  auth=authenticated",
+      "role": "muted"
+    }
+  ]
+}

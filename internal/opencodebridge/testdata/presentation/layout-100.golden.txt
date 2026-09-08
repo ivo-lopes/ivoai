@@ -1,0 +1,23 @@
+IVOAI
+Session
+Permissions: interactive
+Resume: fresh native turn; identity unverified
+frontend=opencode · primary=codex · state=degraded
+mode=auto · requested=automatic · model=fixture-model · reasoning=high
+Executors
+✓ Codex authenticated · quota=available
+! Claude not configured · quota=N/A
+✓ OpenCode authenticated · quota=unknown
+IVOAI knowledge
+1 connected / 2 configured · federated
+✓ source-A
+  purpose=source-A · enabled
+  healthy · session=selected
+  auth=authenticated
+! source-B
+  purpose=source-B · enabled
+  down · session=selected
+  auth=not verified
+Runtime
+compression=direct · memory=ready · context=ready
+skills=policy-gated · IVOAI fixture
