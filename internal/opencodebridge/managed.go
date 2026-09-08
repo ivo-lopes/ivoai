@@ -34,6 +34,9 @@ var tuiPlugin []byte
 var ivoaiTheme []byte
 
 type ManagedOptions struct {
+	// NativeExecutor runs OpenCode's own provider, never the IVOAI provider
+	// bridge (which would recursively dispatch another executor).
+	NativeExecutor bool
 	PermissionMode string
 	OpenCodePath   string
 	Version        string
@@ -73,7 +76,7 @@ func StartManaged(ctx context.Context, options ManagedOptions) (*Managed, error)
 	if err := config.ValidateOpenCode(config.OpenCodeConfig{PermissionMode: options.PermissionMode}); err != nil {
 		return nil, err
 	}
-	if options.OpenCodePath == "" || options.RuntimeDir == "" || options.StateDir == "" || options.Directory == "" || options.Bridge == nil {
+	if options.OpenCodePath == "" || options.RuntimeDir == "" || options.StateDir == "" || options.Directory == "" || options.Bridge == nil && !options.NativeExecutor {
 		return nil, errors.New("incomplete managed OpenCode options")
 	}
 	if err := platform.EnsurePrivateDir(options.RuntimeDir); err != nil {
@@ -101,6 +104,29 @@ func StartManaged(ctx context.Context, options ManagedOptions) (*Managed, error)
 	if err != nil {
 		return nil, err
 	}
+	if options.NativeExecutor {
+		existing := options.Environment
+		if existing == nil {
+			existing = os.Environ()
+		}
+		nativeHome, nativeData := "", ""
+		for _, entry := range existing {
+			key, value, _ := strings.Cut(entry, "=")
+			if key == "HOME" {
+				nativeHome = value
+			}
+			if key == "XDG_DATA_HOME" {
+				nativeData = value
+			}
+		}
+		if nativeData == "" && nativeHome != "" {
+			nativeData = filepath.Join(nativeHome, ".local", "share")
+		}
+		if !filepath.IsAbs(nativeData) {
+			return nil, errors.New("native OpenCode data location unavailable")
+		}
+		environment = setEnv(environment, "XDG_DATA_HOME", nativeData)
+	}
 	command := exec.Command(options.OpenCodePath, "serve", "--hostname", "127.0.0.1", "--port", "0")
 	command.Dir = options.Directory
 	command.Env = environment
@@ -112,9 +138,11 @@ func StartManaged(ctx context.Context, options ManagedOptions) (*Managed, error)
 	if err := command.Start(); err != nil {
 		return nil, fmt.Errorf("start managed OpenCode backend: %w", err)
 	}
-	models := make([]string, 0, len(options.Bridge.Catalog().Entries()))
-	for _, entry := range options.Bridge.Catalog().Entries() {
-		models = append(models, entry.ID)
+	var models []string
+	if options.Bridge != nil {
+		for _, entry := range options.Bridge.Catalog().Entries() {
+			models = append(models, entry.ID)
+		}
 	}
 	managed := &Managed{Environment: environment, password: password, command: command, done: make(chan struct{}), expectedVersion: options.Version, expectedModels: models, lease: lease}
 	go func() {
@@ -147,9 +175,11 @@ func StartManaged(ctx context.Context, options ManagedOptions) (*Managed, error)
 		_ = managed.Close(context.Background())
 		return nil, fmt.Errorf("managed OpenCode backend readiness: %w", err)
 	}
-	if err := managed.waitProviderReady(ctx, options.Directory); err != nil {
-		_ = managed.Close(context.Background())
-		return nil, fmt.Errorf("managed OpenCode provider readiness: %w", err)
+	if !options.NativeExecutor {
+		if err := managed.waitProviderReady(ctx, options.Directory); err != nil {
+			_ = managed.Close(context.Background())
+			return nil, fmt.Errorf("managed OpenCode provider readiness: %w", err)
+		}
 	}
 	releaseLease = false
 	return managed, nil
@@ -203,6 +233,21 @@ func writeManagedAssets(options ManagedOptions) (managedPaths, error) {
 		config: filepath.Join(assets, "opencode.json"),
 		tui:    filepath.Join(assets, "tui.json"),
 		theme:  filepath.Join(assets, "ivoai-theme.json"),
+	}
+	if options.NativeExecutor {
+		// The official process owns its native authentication. IVOAI never
+		// opens its credential store or imports auth into the frontend.
+		body, err := json.Marshal(map[string]any{"permission": managedPermissions(options.PermissionMode), "autoupdate": false, "share": "disabled", "plugin": []string{}, "compaction": map[string]bool{"auto": false, "prune": false}})
+		if err != nil {
+			return managedPaths{}, err
+		}
+		if err := platform.AtomicWritePrivate(body, paths.config); err != nil {
+			return managedPaths{}, err
+		}
+		if err := platform.AtomicWritePrivate([]byte(`{}`), paths.tui); err != nil {
+			return managedPaths{}, err
+		}
+		return paths, nil
 	}
 	serverPath := filepath.Join(assets, "server-plugin.mjs")
 	tuiPath := filepath.Join(assets, "tui-plugin.tsx")

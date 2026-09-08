@@ -8,6 +8,7 @@ import (
 
 	"github.com/ivo-lopes/ivoai/internal/codexresolver"
 	"github.com/ivo-lopes/ivoai/internal/core"
+	"github.com/ivo-lopes/ivoai/internal/opencodebridge"
 	"github.com/ivo-lopes/ivoai/internal/platform"
 )
 
@@ -24,6 +25,7 @@ type ClaudeExecutor struct {
 }
 
 type OpenCodeExecutor struct {
+	Options opencodebridge.ManagedOptions
 	Runtime Runtime
 	Version string
 	Managed bool
@@ -55,6 +57,9 @@ func (e ClaudeExecutor) StartSession(ctx context.Context, request core.SessionRe
 }
 
 func (e OpenCodeExecutor) StartSession(ctx context.Context, request core.SessionRequest, observe func(core.SessionObservation)) error {
+	if request.Controlled {
+		return e.startControlled(ctx, request, observe)
+	}
 	return startSession(ctx, e.Runtime, "opencode", request, observe)
 }
 

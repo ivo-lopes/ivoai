@@ -152,6 +152,12 @@ type Component interface {
 }
 
 type SessionRequest struct {
+	// Controlled selects the programmatic lifecycle where the executor supports
+	// it. Direct interactive sessions leave this false.
+	Controlled         bool
+	Prompt             string
+	Model              string
+	ResumeID           string
 	Args               []string
 	CompressionEnabled bool
 }
