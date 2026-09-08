@@ -336,6 +336,29 @@ func managedPermissions(mode string) map[string]any {
 // NativePermissionPolicy keeps the existing managed read/secret safeguards,
 // while preventing a second scheduler, unreviewed skills, or an invisible
 // native question dialog. The primary can ask the user in its final response.
+// NativeControlPlaneEnvironment restores only directory references for the
+// owned IVOAI MCP subprocess. The surrounding OpenCode HOME/XDG stay isolated.
+// Provider secrets/config content must never enter this projection.
+func NativeControlPlaneEnvironment(environment []string) (map[string]string, error) {
+	allowed := map[string]bool{"HOME": true, "PATH": true, "XDG_CONFIG_HOME": true, "XDG_DATA_HOME": true, "XDG_STATE_HOME": true, "XDG_CACHE_HOME": true, "CODEX_HOME": true, "CLAUDE_CONFIG_DIR": true}
+	result := map[string]string{}
+	for _, entry := range environment {
+		key, value, found := strings.Cut(entry, "=")
+		if found && allowed[key] && value != "" {
+			result[key] = value
+		}
+	}
+	if !filepath.IsAbs(result["HOME"]) {
+		return nil, errors.New("native control plane home unavailable")
+	}
+	for key, suffix := range map[string]string{"XDG_CONFIG_HOME": ".config", "XDG_DATA_HOME": ".local/share", "XDG_STATE_HOME": ".local/state", "XDG_CACHE_HOME": ".cache"} {
+		if !filepath.IsAbs(result[key]) {
+			result[key] = filepath.Join(result["HOME"], suffix)
+		}
+	}
+	return result, nil
+}
+
 func NativePermissionPolicy(mode string, readOnly bool) map[string]any {
 	policy := managedPermissions(mode)
 	policy["task"], policy["skill"], policy["question"] = "deny", "deny", "deny"

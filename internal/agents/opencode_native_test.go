@@ -26,6 +26,7 @@ func TestLiveNativeOpenCodeAUTOExecutor(t *testing.T) {
 	}
 	var memoryCalls, contextCalls atomic.Int32
 	var approvalMode atomic.Bool
+	var controlPlaneRequired atomic.Bool
 	knowledge := func(name, text string, count *atomic.Int32) *httptest.Server {
 		server := mcp.NewServer(&mcp.Implementation{Name: name, Version: "fixture"}, nil)
 		server.AddTool(&mcp.Tool{Name: name, InputSchema: map[string]any{"type": "object", "properties": map[string]any{}}, Annotations: &mcp.ToolAnnotations{ReadOnlyHint: true}}, func(context.Context, *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -68,6 +69,8 @@ func TestLiveNativeOpenCodeAUTOExecutor(t *testing.T) {
 			target = "memory_status"
 		} else if !strings.Contains(string(body), "fixture-context-ok") {
 			target = "context_health"
+		} else if controlPlaneRequired.Load() && !strings.Contains(string(body), "fixture-control-plane-ok") {
+			target = "control_plane_status"
 		}
 		if target != "" {
 			name := ""
@@ -115,6 +118,18 @@ func TestLiveNativeOpenCodeAUTOExecutor(t *testing.T) {
 		t.Fatal("native Memory/Context tools not called")
 	}
 	native.Options.NativePermissions = opencodebridge.NativePermissionPolicy("full", false)
+	controlEnvironment, err := opencodebridge.NativeControlPlaneEnvironment(native.Options.Environment)
+	if err != nil {
+		t.Fatal(err)
+	}
+	controlEnvironment["IVOAI_NATIVE_MCP_HELPER"] = "1"
+	controlEnvironment["IVOAI_NATIVE_MCP_EXPECT_HOME"] = root
+	helper, err := os.Executable()
+	if err != nil {
+		t.Fatal(err)
+	}
+	native.Options.NativeMCP["ivoai-orchestrator"] = map[string]any{"type": "local", "command": []string{helper, "-test.run=^TestNativeMCPEnvironmentHelper$"}, "environment": controlEnvironment}
+	controlPlaneRequired.Store(true)
 	bridge, err := opencodebridge.Start(opencodebridge.Options{Runner: native, Select: func(context.Context, string) (string, error) { return "opencode", nil }, Catalog: opencodebridge.CatalogFromRegistry(routing.Registry{Providers: map[string]routing.ProviderCapability{"opencode": native.Capability()}}), Status: func() opencodebridge.Status { return opencodebridge.Status{Primary: "opencode"} }})
 	if err != nil {
 		t.Fatal(err)
@@ -175,6 +190,39 @@ func TestLiveNativeOpenCodeAUTOExecutor(t *testing.T) {
 		stop()
 	}
 	t.Log("NATIVE_INTERACTIVE_APPROVAL=PASS; NATIVE_CANCELLATION=PASS")
+}
+
+func TestNativeMCPEnvironmentHelper(t *testing.T) {
+	if os.Getenv("IVOAI_NATIVE_MCP_HELPER") != "1" {
+		t.Skip("MCP subprocess fixture only")
+	}
+	server := mcp.NewServer(&mcp.Implementation{Name: "control-plane-fixture", Version: "fixture"}, nil)
+	server.AddTool(&mcp.Tool{Name: "control_plane_status", InputSchema: map[string]any{"type": "object", "properties": map[string]any{}}}, func(context.Context, *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		root := os.Getenv("IVOAI_NATIVE_MCP_EXPECT_HOME")
+		valid := os.Getenv("HOME") == root && os.Getenv("XDG_CONFIG_HOME") == filepath.Join(root, ".config") && os.Getenv("XDG_STATE_HOME") == filepath.Join(root, ".local/state")
+		text := "fixture-control-plane-wrong-environment"
+		if valid {
+			text = "fixture-control-plane-ok"
+		}
+		return &mcp.CallToolResult{Content: []mcp.Content{&mcp.TextContent{Text: text}}, IsError: !valid}, nil
+	})
+	if server.Run(context.Background(), &mcp.StdioTransport{}) != nil {
+		os.Exit(1)
+	}
+	os.Exit(0)
+}
+
+func TestNativeControlPlaneEnvironmentDoesNotCopySecrets(t *testing.T) {
+	root := t.TempDir()
+	env, err := opencodebridge.NativeControlPlaneEnvironment([]string{"HOME=" + root, "PATH=/usr/bin", "CODEX_HOME=" + filepath.Join(root, "official-codex"), "OPENAI_API_KEY=must-not-copy", "OPENCODE_CONFIG=untrusted", "IVOAI_KNOWLEDGE_SESSION_TOKEN=must-not-persist"})
+	if err != nil || env["XDG_CONFIG_HOME"] != filepath.Join(root, ".config") || env["CODEX_HOME"] == "" {
+		t.Fatal("control plane references not restored", err)
+	}
+	for _, key := range []string{"OPENAI_API_KEY", "OPENCODE_CONFIG", "IVOAI_KNOWLEDGE_SESSION_TOKEN"} {
+		if env[key] != "" {
+			t.Fatal("unapproved environment projected", key)
+		}
+	}
 }
 
 func TestOfficialNativeAuthMetadataDoesNotReturnCredentialPaths(t *testing.T) {

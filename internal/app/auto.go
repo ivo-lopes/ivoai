@@ -482,7 +482,11 @@ func (a *App) AutoWithKnowledge(ctx context.Context, planner string, agentArgs, 
 			if execErr != nil {
 				return execErr
 			}
-			native.Options.NativeMCP["ivoai-orchestrator"] = map[string]any{"type": "local", "command": []string{executable, "_orchestrator-serve", "--session", id}}
+			controlEnvironment, envErr := opencodebridge.NativeControlPlaneEnvironment(environment)
+			if envErr != nil {
+				return envErr
+			}
+			native.Options.NativeMCP["ivoai-orchestrator"] = map[string]any{"type": "local", "command": []string{executable, "_orchestrator-serve", "--session", id}, "environment": controlEnvironment}
 			manager.Probes[quota.ProviderOpenCode] = native
 			bridgeRunner = agents.RoutedRunner{Official: bridgeRunner, Native: native}
 		}
