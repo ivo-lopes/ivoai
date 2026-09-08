@@ -50,6 +50,13 @@ Rate limits nativos provocam um cooldown local curto, não um horário inventado
 reset do provider. A continuidade de autenticação permanece conservadora: IDs
 nativos de resume não são reutilizados sem identidade/geração comprovada.
 
+O rollback mantém os leitores de runtime da v0.9.2 utilizáveis: a telemetria de
+quota nativa é uma extensão compatível, e sessões com metadata de AUTO/worker
+nativo ficam em um namespace privado de sessões ignorado por binários anteriores.
+O reapply volta a ler esse histórico sem alterar executor ou identidade da conversa.
+Escritores antigos de quota podem descartar telemetria desconhecida; o discovery
+a reconstrói.
+
 ## Continuidade da autenticação e resume
 
 O IVOAI consulta novamente o cliente oficial antes de cada turno gerenciado. Como

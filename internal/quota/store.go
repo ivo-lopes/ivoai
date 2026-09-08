@@ -17,6 +17,13 @@ const maxSnapshotBytes = 256 << 10
 
 type Store struct{ Root string }
 
+// Keep the legacy provider map readable by v0.9.2. Native telemetry is a
+// reconstructible extension which older writers may safely discard.
+type diskSnapshot struct {
+	Snapshot
+	Native *ProviderQuota `json:"native_opencode,omitempty"`
+}
+
 func (s Store) path() string { return filepath.Join(s.Root, "snapshot.json") }
 
 func (s Store) lockPath() string { return filepath.Join(s.Root, "snapshot.lock") }
@@ -44,11 +51,22 @@ func (s Store) Load() (Snapshot, error) {
 	if err != nil || len(body) > maxSnapshotBytes {
 		return result, errors.New("invalid quota snapshot")
 	}
-	if err := json.Unmarshal(body, &result); err != nil {
+	var disk diskSnapshot
+	if err := json.Unmarshal(body, &disk); err != nil {
 		return result, err
 	}
+	result = disk.Snapshot
 	if result.Providers == nil {
 		result.Providers = map[Provider]ProviderQuota{}
+	}
+	if disk.Native != nil {
+		if disk.Native.Provider != ProviderOpenCode {
+			return result, errors.New("invalid native quota extension")
+		}
+		if _, duplicate := result.Providers[ProviderOpenCode]; duplicate {
+			return result, errors.New("duplicate native quota metadata")
+		}
+		result.Providers[ProviderOpenCode] = *disk.Native
 	}
 	return result, validateSnapshot(result)
 }
@@ -60,7 +78,17 @@ func (s Store) Save(value Snapshot) error {
 	if err := platform.EnsurePrivateDir(s.Root); err != nil {
 		return err
 	}
-	body, err := json.MarshalIndent(value, "", "  ")
+	disk := diskSnapshot{Snapshot: value}
+	disk.Providers = map[Provider]ProviderQuota{}
+	for provider, current := range value.Providers {
+		if provider == ProviderOpenCode {
+			copy := current
+			disk.Native = &copy
+		} else {
+			disk.Providers[provider] = current
+		}
+	}
+	body, err := json.MarshalIndent(disk, "", "  ")
 	if err != nil || len(body) > maxSnapshotBytes {
 		return errors.New("encode quota snapshot")
 	}

@@ -110,6 +110,12 @@ Native rate limits trigger a short local cooldown, not an invented provider rese
 time. Authentication continuity remains conservative: native resume IDs are not
 reused without a proven identity/epoch.
 
+Rollback keeps the v0.9.2 runtime readers usable: native quota telemetry is a
+backward-compatible extension, and sessions containing native AUTO/worker
+metadata live in a private session namespace ignored by older binaries. Reapply
+reads that history again without changing its executor or conversation identity.
+Older quota writers may discard unknown telemetry; discovery reconstructs it.
+
 ### Authentication continuity and resume
 
 IVOAI reprobes the official executor before each managed turn. The current probes

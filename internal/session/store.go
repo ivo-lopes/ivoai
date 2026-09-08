@@ -61,7 +61,11 @@ func (s Store) Get(id string) (Session, error) {
 	if err := ValidateID(id); err != nil {
 		return Session{}, err
 	}
-	return s.read(s.path(id))
+	value, err := s.read(s.path(id))
+	if errors.Is(err, fs.ErrNotExist) {
+		return s.read(s.path(id))
+	} // concurrent atomic namespace move
+	return value, err
 }
 
 func (s Store) Delete(id string) error {
@@ -69,6 +73,11 @@ func (s Store) Delete(id string) error {
 		return err
 	}
 	return s.withLock(func() error {
+		if filepath.Dir(s.path(id)) == s.nativeDir() {
+			if err := s.validateNativeDir(); err != nil {
+				return err
+			}
+		}
 		err := os.Remove(s.path(id))
 		if errors.Is(err, fs.ErrNotExist) {
 			return nil
@@ -108,7 +117,17 @@ func (s Store) List() ([]Session, error) {
 	if err != nil {
 		return nil, err
 	}
+	if err := s.validateNativeDir(); err == nil {
+		native, readErr := os.ReadDir(s.nativeDir())
+		if readErr != nil {
+			return nil, readErr
+		}
+		entries = append(entries, native...)
+	} else if !errors.Is(err, fs.ErrNotExist) {
+		return nil, err
+	}
 	values := make([]Session, 0, len(entries))
+	seen := map[string]bool{}
 	for _, entry := range entries {
 		if entry.IsDir() || filepath.Ext(entry.Name()) != ".json" {
 			continue
@@ -117,7 +136,11 @@ func (s Store) List() ([]Session, error) {
 		if ValidateID(id) != nil {
 			continue
 		}
-		value, readErr := s.read(filepath.Join(s.Root, entry.Name()))
+		if seen[id] {
+			continue
+		}
+		seen[id] = true
+		value, readErr := s.Get(id)
 		if readErr != nil {
 			return nil, readErr
 		}
@@ -177,23 +200,52 @@ func (s Store) CleanupRuntime(id string) error {
 	return os.RemoveAll(path)
 }
 
-func (s Store) path(id string) string { return filepath.Join(s.Root, id+".json") }
-
 func (s Store) write(value Session) error {
 	if err := validate(value); err != nil {
 		return err
 	}
-	body, err := json.MarshalIndent(value, "", "  ")
+	disk := diskSession{Session: value}
+	if native, exists := value.Quota[quota.ProviderOpenCode]; exists {
+		disk.NativeQuota = &native
+		disk.Quota = map[quota.Provider]quota.ProviderQuota{}
+		for provider, snapshot := range value.Quota {
+			if provider != quota.ProviderOpenCode {
+				disk.Quota[provider] = snapshot
+			}
+		}
+	}
+	body, err := json.MarshalIndent(disk, "", "  ")
 	if err != nil {
 		return err
 	}
 	if len(body) > maxStateBytes {
 		return errors.New("session metadata exceeds size limit")
 	}
-	return platform.AtomicWritePrivate(append(body, '\n'), s.path(value.SessionID))
+	path := s.path(value.SessionID)
+	if nativeSession(value) && filepath.Dir(path) != s.nativeDir() {
+		if err := platform.EnsurePrivateDir(s.nativeDir()); err != nil {
+			return err
+		}
+		target := s.nativePath(value.SessionID)
+		if err := os.Rename(path, target); err != nil && !errors.Is(err, fs.ErrNotExist) {
+			return err
+		}
+		path = target
+	}
+	if filepath.Dir(path) == s.nativeDir() {
+		if err := s.validateNativeDir(); err != nil {
+			return err
+		}
+	}
+	return platform.AtomicWritePrivate(append(body, '\n'), path)
 }
 
 func (s Store) read(path string) (Session, error) {
+	if filepath.Dir(path) == s.nativeDir() {
+		if err := s.validateNativeDir(); err != nil {
+			return Session{}, err
+		}
+	}
 	fd, err := unix.Open(path, unix.O_RDONLY|unix.O_CLOEXEC|unix.O_NOFOLLOW, 0)
 	if err != nil {
 		return Session{}, err
@@ -218,9 +270,22 @@ func (s Store) read(path string) (Session, error) {
 	if len(body) > maxStateBytes {
 		return Session{}, errors.New("session metadata exceeds size limit")
 	}
-	var value Session
-	if err := json.Unmarshal(body, &value); err != nil {
+	var disk diskSession
+	if err := json.Unmarshal(body, &disk); err != nil {
 		return Session{}, err
+	}
+	value := disk.Session
+	if disk.NativeQuota != nil {
+		if disk.NativeQuota.Provider != quota.ProviderOpenCode {
+			return Session{}, errors.New("invalid native session quota")
+		}
+		if value.Quota == nil {
+			value.Quota = map[quota.Provider]quota.ProviderQuota{}
+		}
+		if _, duplicate := value.Quota[quota.ProviderOpenCode]; duplicate {
+			return Session{}, errors.New("duplicate native session quota")
+		}
+		value.Quota[quota.ProviderOpenCode] = *disk.NativeQuota
 	}
 	if err := validate(value); err != nil {
 		return Session{}, err

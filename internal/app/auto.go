@@ -300,6 +300,9 @@ func (a *App) AutoWithKnowledge(ctx context.Context, planner string, agentArgs, 
 		}
 	}
 	store := session.Store{Root: a.Store.Paths.SessionsDir}
+	if err := store.ReconcileNativeMetadata(); err != nil {
+		return err
+	}
 	if err := store.Create(value); err != nil {
 		return err
 	}
