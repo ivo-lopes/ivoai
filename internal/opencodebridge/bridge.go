@@ -78,15 +78,17 @@ type Mapping struct {
 }
 
 type ServerView struct {
-	ID       string `json:"id"`
-	Alias    string `json:"alias"`
-	Purpose  string `json:"purpose,omitempty"`
-	Selected bool   `json:"selected"`
-	Enabled  bool   `json:"enabled"`
-	Health   string `json:"health"`
+	AuthState string `json:"auth_state"`
+	ID        string `json:"id"`
+	Alias     string `json:"alias"`
+	Purpose   string `json:"purpose,omitempty"`
+	Selected  bool   `json:"selected"`
+	Enabled   bool   `json:"enabled"`
+	Health    string `json:"health"`
 }
 
 type Status struct {
+	PermissionMode      string       `json:"permission_mode"`
 	Version             string       `json:"version"`
 	SessionID           string       `json:"session_id"`
 	Frontend            string       `json:"frontend"`

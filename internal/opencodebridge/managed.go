@@ -19,6 +19,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/ivo-lopes/ivoai/internal/config"
 	"github.com/ivo-lopes/ivoai/internal/platform"
 	"golang.org/x/sys/unix"
 )
@@ -33,14 +34,15 @@ var tuiPlugin []byte
 var ivoaiTheme []byte
 
 type ManagedOptions struct {
-	OpenCodePath string
-	Version      string
-	RuntimeDir   string
-	StateDir     string
-	Directory    string
-	Environment  []string
-	Bridge       *Bridge
-	Instructions string
+	PermissionMode string
+	OpenCodePath   string
+	Version        string
+	RuntimeDir     string
+	StateDir       string
+	Directory      string
+	Environment    []string
+	Bridge         *Bridge
+	Instructions   string
 	// ResumeSessionID is a non-sensitive OpenCode conversation identifier. It
 	// is only supplied after IVOAI has matched the working directory and
 	// knowledge scope of a completed managed session.
@@ -68,6 +70,9 @@ func (m *Managed) BackendURL() string    { return m.URL }
 func (m *Managed) BackendLoopback() bool { return strings.HasPrefix(m.URL, "http://127.0.0.1:") }
 
 func StartManaged(ctx context.Context, options ManagedOptions) (*Managed, error) {
+	if err := config.ValidateOpenCode(config.OpenCodeConfig{PermissionMode: options.PermissionMode}); err != nil {
+		return nil, err
+	}
 	if options.OpenCodePath == "" || options.RuntimeDir == "" || options.StateDir == "" || options.Directory == "" || options.Bridge == nil {
 		return nil, errors.New("incomplete managed OpenCode options")
 	}
@@ -210,6 +215,7 @@ func writeManagedAssets(options ManagedOptions) (managedPaths, error) {
 	serverURI := (&url.URL{Scheme: "file", Path: serverPath}).String()
 	tuiURI := (&url.URL{Scheme: "file", Path: tuiPath}).String()
 	configuration := map[string]any{
+		"permission":        managedPermissions(options.PermissionMode),
 		"$schema":           "https://opencode.ai/config.json",
 		"autoupdate":        false,
 		"share":             "disabled",
@@ -239,6 +245,20 @@ func writeManagedAssets(options ManagedOptions) (managedPaths, error) {
 		}
 	}
 	return paths, nil
+}
+
+// Permissions only govern the managed frontend approval layer. Executor sandboxes,
+// Skill Gate and knowledge authorization remain owned by the IVOAI control plane.
+func managedPermissions(mode string) map[string]any {
+	action := "ask"
+	if mode == "full" {
+		action = "allow"
+	}
+	return map[string]any{
+		"*":    action,
+		"read": map[string]string{"*": "allow", "*.env": "deny", "*.env.*": "deny", "*.env.example": "allow"},
+		"glob": "allow", "grep": "allow", "list": "allow",
+	}
 }
 
 func managedEnvironment(existing []string, stateDir string, paths managedPaths, password string) ([]string, error) {

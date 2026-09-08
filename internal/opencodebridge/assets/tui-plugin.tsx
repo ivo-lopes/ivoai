@@ -99,7 +99,9 @@ const tui = async (api: any, options: any) => {
         {(server: any) => (
           <box flexDirection="column">
             <text fg={stateColor(server)}>{stateMark(server)} {clean(server.alias)}</text>
-            <text fg={theme().textMuted}>  purpose={clean(server.purpose, "unspecified")} · {server.selected ? clean(server.health) : "session=excluded"}</text>
+            <text fg={theme().textMuted}>  purpose={clean(server.purpose, "unspecified")} · {server.enabled ? "enabled" : "disabled"}</text>
+            <text fg={theme().textMuted}>  {clean(server.health)} · session={server.selected ? "selected" : "excluded"}</text>
+            <text fg={theme().textMuted}>  auth={clean(server.auth_state, "not verified")}</text>
           </box>
         )}
       </For>
@@ -112,6 +114,7 @@ const tui = async (api: any, options: any) => {
     <box flexDirection="column" gap={1} padding={2}>
       <text fg={theme().primary}><b>IVOAI</b></text>
       <text fg={theme().text}>Session</text>
+      <text fg={theme().textMuted}>Permissions: {clean(status().permission_mode)}</text>
       <text fg={theme().textMuted}>frontend=OpenCode · primary={clean(status().primary)} · state={clean(status().session_state)}</text>
       <text fg={theme().textMuted}>mode={clean(status().selection_mode, "auto")} · requested={clean(status().requested_model, "automatic")} · model={clean(status().effective_model, "UNKNOWN")} · reasoning={clean(status().effective_effort, "UNKNOWN")}</text>
       <text fg={theme().text}>Executors</text>

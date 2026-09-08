@@ -72,6 +72,7 @@ func envOr(key, fallback string) string {
 }
 
 type Config struct {
+	OpenCode      OpenCodeConfig      `toml:"opencode"`
 	IVOAI         IVOAIConfig         `toml:"ivoai"`
 	Client        ClientConfig        `toml:"client"`
 	Headroom      HeadroomConfig      `toml:"headroom"`
@@ -80,6 +81,26 @@ type Config struct {
 	Orchestration OrchestrationConfig `toml:"orchestration"`
 	Connections   ConnectionsConfig   `toml:"connections"`
 	MCP           MCPConfig           `toml:"mcp"`
+}
+
+type OpenCodeConfig struct {
+	PermissionMode string `toml:"permission_mode"`
+}
+
+func (c OpenCodeConfig) ResolvedPermissionMode() string {
+	if c.PermissionMode == "" {
+		return "interactive"
+	}
+	return c.PermissionMode
+}
+
+func ValidateOpenCode(c OpenCodeConfig) error {
+	switch c.ResolvedPermissionMode() {
+	case "interactive", "full":
+		return nil
+	default:
+		return errors.New("opencode.permission_mode must be interactive or full")
+	}
 }
 
 type IVOAIConfig struct {
@@ -203,7 +224,8 @@ type MCPServer struct {
 
 func Default() Config {
 	return Config{
-		IVOAI: IVOAIConfig{Version: ConfigSchemaVersion}, Client: ClientConfig{Profile: "default"},
+		OpenCode: OpenCodeConfig{PermissionMode: "interactive"},
+		IVOAI:    IVOAIConfig{Version: ConfigSchemaVersion}, Client: ClientConfig{Profile: "default"},
 		Headroom: HeadroomConfig{Enabled: true}, Compression: CompressionConfig{Provider: DefaultCompressionProvider, Source: CompressionSourceDefault}, Memory: MemoryConfig{Enabled: true},
 		Orchestration: OrchestrationConfig{Enabled: true, ProviderExecution: false, DefaultMode: "direct", PrimaryExecutor: "codex", ReviewExecutor: "claude", MaxWorkers: 2, Auto: defaultAutoConfig()},
 		Connections: ConnectionsConfig{
@@ -280,6 +302,9 @@ func (s *Store) Load() (Config, error) {
 		c.MCP.Servers = map[string]MCPServer{}
 	}
 	normalizeLegacyServers(&c)
+	if err := ValidateOpenCode(c.OpenCode); err != nil {
+		return Config{}, err
+	}
 	normalizeCompression(&c.Compression, compressionFieldPresent(document, "provider"), compressionFieldPresent(document, "source"))
 	if err := ValidateCompression(c.Compression); err != nil {
 		return Config{}, err
@@ -437,6 +462,9 @@ func defaultAutoConfig() AutoConfig {
 }
 
 func (s *Store) Save(c Config) error {
+	if err := ValidateOpenCode(c.OpenCode); err != nil {
+		return err
+	}
 	normalizeLegacyServers(&c)
 	normalizeCompression(&c.Compression, c.Compression.Provider != "", c.Compression.Source != "")
 	if err := ValidateCompression(c.Compression); err != nil {

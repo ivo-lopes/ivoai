@@ -283,6 +283,7 @@ func (a *App) Status(ctx context.Context) error {
 		{"Codex tools", codexToolHostStatus(state)},
 		{"Claude Code", componentStatus(state.Components["claude-code"], cfg.Connections.Claude.Status)},
 		{"OpenCode", optionalManagedStatus(state.Components["opencode"], "ready / managed frontend")},
+		{"Permissions", statusValue{cfg.OpenCode.ResolvedPermissionMode() + " / managed OpenCode", terminalui.StatusNeutral}},
 		{"Headroom", headroomStatus(state.Components["headroom"], cfg.Headroom.Enabled)},
 		{"Compression", compressionStatus},
 		{"Context", contextHealthStatus(cfg, serverHealth)},
@@ -1109,6 +1110,16 @@ func (a *App) ConfigSet(key, value string) error {
 		return err
 	}
 	switch key {
+	case "opencode.permission_mode":
+		c.OpenCode.PermissionMode = strings.ToLower(strings.TrimSpace(value))
+		if err := config.ValidateOpenCode(c.OpenCode); err != nil {
+			return err
+		}
+		if err := a.Store.Save(c); err != nil {
+			return err
+		}
+		fmt.Fprintln(a.Out, "OpenCode permission mode changed; effective on next managed OpenCode session.")
+		return nil
 	case "compression.provider":
 		c.Compression.Provider = strings.ToLower(strings.TrimSpace(value))
 		c.Compression.Source = config.CompressionSourceExplicit

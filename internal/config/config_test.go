@@ -24,6 +24,9 @@ future = "preserve"
 profile = "default"
 [headroom]
 enabled = true
+[opencode]
+permission_mode = "interactive"
+future_option = "keep"
 [memory]
 enabled = true
 [orchestration]
@@ -58,6 +61,7 @@ nested = 42
 	keep.HooksURL = ""
 	value.MCP.Servers["keep"] = keep
 	value.Connections.Server = Connection{Status: "not-connected"}
+	value.OpenCode.PermissionMode = "full"
 	if err := store.Save(value); err != nil {
 		t.Fatal(err)
 	}
@@ -66,7 +70,7 @@ nested = 42
 		t.Fatal(err)
 	}
 	text := string(saved)
-	for _, expected := range []string{`future = 'preserve'`, "[future]", "nested = 42", "[mcp.servers.keep]"} {
+	for _, expected := range []string{`future = 'preserve'`, "[future]", "nested = 42", "[mcp.servers.keep]", "permission_mode = 'full'", "future_option = 'keep'"} {
 		if !strings.Contains(text, expected) {
 			t.Fatalf("unknown field was lost; missing %q in:\n%s", expected, text)
 		}

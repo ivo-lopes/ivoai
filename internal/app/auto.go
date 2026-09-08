@@ -144,7 +144,7 @@ func stripManagedSelectionArgs(executor string, input []string) []string {
 	return result
 }
 
-func (a *App) openCodeAutoStatus(store session.Store, id string, cfg config.Config, knowledge sessionKnowledge, restricted bool, quotas map[quota.Provider]quota.ProviderQuota, compression sharedKnowledgeCompressionPolicy) opencodebridge.Status {
+func (a *App) openCodeAutoStatus(store session.Store, id string, cfg config.Config, knowledge sessionKnowledge, restricted bool, quotas map[quota.Provider]quota.ProviderQuota, compression sharedKnowledgeCompressionPolicy, probeErrors map[quota.Provider]error) opencodebridge.Status {
 	selectedAliases := map[string]bool{}
 	for _, alias := range knowledge.aliases() {
 		selectedAliases[alias] = true
@@ -165,7 +165,7 @@ func (a *App) openCodeAutoStatus(store session.Store, id string, cfg config.Conf
 		if profile.Enabled {
 			health = "down"
 			if profile.Status == "connected" {
-				health = "healthy"
+				health = "not-probed"
 			}
 			health = knowledge.healthFor(alias, health)
 			if health == "healthy" {
@@ -176,7 +176,14 @@ func (a *App) openCodeAutoStatus(store session.Store, id string, cfg config.Conf
 		if !restricted && profile.Enabled {
 			selected = true
 		}
-		servers = append(servers, opencodebridge.ServerView{ID: profile.ID, Alias: alias, Purpose: profile.Purpose, Selected: selected, Enabled: profile.Enabled, Health: health})
+		authState := "not-configured"
+		if profile.Status == "connected" {
+			authState = "configured / not verified"
+			if health == "healthy" {
+				authState = "authenticated"
+			}
+		}
+		servers = append(servers, opencodebridge.ServerView{AuthState: authState, ID: profile.ID, Alias: alias, Purpose: profile.Purpose, Selected: selected, Enabled: profile.Enabled, Health: health})
 	}
 	mode := "none"
 	if len(selectedAliases) == 1 {
@@ -189,12 +196,18 @@ func (a *App) openCodeAutoStatus(store session.Store, id string, cfg config.Conf
 	}
 	value, _ := store.Get(id)
 	auth := func(provider quota.Provider) string {
+		if probeErrors[provider] != nil {
+			return "stale / not verified"
+		}
 		if quotas[provider].Authenticated {
 			return "authenticated"
 		}
 		return "authentication required"
 	}
 	quotaState := func(provider quota.Provider) string {
+		if probeErrors[provider] != nil {
+			return "N/A"
+		}
 		value := quotas[provider]
 		if value.HardLimitReached {
 			return "exhausted"
@@ -219,7 +232,8 @@ func (a *App) openCodeAutoStatus(store session.Store, id string, cfg config.Conf
 		state = string(session.StateDegraded)
 	}
 	return opencodebridge.Status{
-		Version: a.Version, SessionID: id, Frontend: "opencode", Primary: value.PrimaryExecutor, Mode: string(value.Mode), SessionState: state,
+		PermissionMode: cfg.OpenCode.ResolvedPermissionMode(),
+		Version:        a.Version, SessionID: id, Frontend: "opencode", Primary: value.PrimaryExecutor, Mode: string(value.Mode), SessionState: state,
 		SelectionMode: value.SelectionMode, RequestedExecutor: value.RequestedExecutor, RequestedModel: value.RequestedModel, RequestedEffort: value.RequestedEffort, EffectiveModel: value.EffectiveModel, EffectiveEffort: value.EffectiveEffort, ConfigurationSource: value.ConfigurationSource,
 		KnowledgeMode: mode, ConfiguredCount: len(servers), EnabledCount: enabled, ConnectedCount: connected, SelectedCount: selectedCount, Servers: servers,
 		CodexAuth: auth(quota.ProviderCodex), ClaudeAuth: auth(quota.ProviderClaude), CodexQuota: quotaState(quota.ProviderCodex), ClaudeQuota: quotaState(quota.ProviderClaude),
@@ -546,11 +560,13 @@ func (a *App) AutoWithKnowledge(ctx context.Context, planner string, agentArgs, 
 		},
 		Status: func() opencodebridge.Status {
 			currentQuotas := map[quota.Provider]quota.ProviderQuota{}
+			probeErrors := map[quota.Provider]error{}
 			for _, provider := range []quota.Provider{quota.ProviderCodex, quota.ProviderClaude} {
-				current, _ := manager.Probe(context.Background(), provider, false)
+				current, probeErr := manager.Probe(context.Background(), provider, false)
 				currentQuotas[provider] = current
+				probeErrors[provider] = probeErr
 			}
-			return a.openCodeAutoStatus(store, id, cfg, knowledge, len(selectors) > 0, currentQuotas, compressionPolicy)
+			return a.openCodeAutoStatus(store, id, cfg, knowledge, len(selectors) > 0, currentQuotas, compressionPolicy, probeErrors)
 		},
 		Mapping: func(mapping opencodebridge.Mapping) error {
 			_, updateErr := store.Update(id, func(currentSession *session.Session) error {
@@ -670,7 +686,7 @@ func (a *App) AutoWithKnowledge(ctx context.Context, planner string, agentArgs, 
 			return opencodebridge.StartManaged(ctx, options)
 		}
 	}
-	frontend, err := starter(ctx, opencodebridge.ManagedOptions{OpenCodePath: state.Components["opencode"].Path, Version: state.Components["opencode"].Version, RuntimeDir: runtimeDir, StateDir: a.Store.Paths.StateDir, Directory: cwd, Environment: frontendEnvironment, Bridge: bridge, Instructions: instructions, ResumeSessionID: resumeFrontendID})
+	frontend, err := starter(ctx, opencodebridge.ManagedOptions{PermissionMode: cfg.OpenCode.ResolvedPermissionMode(), OpenCodePath: state.Components["opencode"].Path, Version: state.Components["opencode"].Version, RuntimeDir: runtimeDir, StateDir: a.Store.Paths.StateDir, Directory: cwd, Environment: frontendEnvironment, Bridge: bridge, Instructions: instructions, ResumeSessionID: resumeFrontendID})
 	if err != nil {
 		a.finishSession(store, id, session.StateFailed, 1)
 		return err
