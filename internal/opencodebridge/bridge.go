@@ -39,6 +39,7 @@ type ExecutorRequest struct {
 }
 
 type ExecutorResult struct {
+	AuthReference       string
 	Trace               *ExecutionTrace
 	ExecutorSessionID   string
 	CompressionUsed     bool
@@ -63,6 +64,7 @@ type PersistMapping func(Mapping) error
 type ClaimRequest func(frontendID, messageID string) (bool, error)
 
 type Mapping struct {
+	AuthReference       string          `json:"auth_reference,omitempty"`
 	Trace               *ExecutionTrace `json:"trace,omitempty"`
 	FrontendSessionID   string          `json:"frontend_session_id"`
 	Executor            string          `json:"executor"`
@@ -88,6 +90,7 @@ type ServerView struct {
 }
 
 type Status struct {
+	ResumePolicy        string       `json:"resume_policy,omitempty"`
 	PermissionMode      string       `json:"permission_mode"`
 	Version             string       `json:"version"`
 	SessionID           string       `json:"session_id"`
@@ -120,6 +123,9 @@ type Status struct {
 }
 
 type Options struct {
+	// AuthReference returns only an official non-sensitive identity/epoch.
+	// Empty means continuity cannot be proved: never reuse a native resume ID.
+	AuthReference      func(context.Context, string) (string, error)
 	Token              string
 	PreferredExecutor  string
 	Runner             ExecutorRunner
@@ -137,6 +143,7 @@ type Options struct {
 }
 
 type Bridge struct {
+	authReference      func(context.Context, string) (string, error)
 	server             *http.Server
 	listener           net.Listener
 	url                string
@@ -196,7 +203,8 @@ func Start(options Options) (*Bridge, error) {
 		return nil, fmt.Errorf("listen for OpenCode bridge: %w", err)
 	}
 	bridge := &Bridge{
-		listener: listener, url: "http://" + listener.Addr().String(), token: token,
+		authReference: options.AuthReference,
+		listener:      listener, url: "http://" + listener.Addr().String(), token: token,
 		runner: options.Runner, selectFn: options.Select, monitor: options.Monitor, handoff: options.FailoverHandoff, maxFailovers: options.MaxFailovers, statusFn: options.Status,
 		mapping: options.Mapping, lookup: options.LookupMapping, claim: options.ClaimRequest, catalog: options.Catalog, authorizeSelection: options.AuthorizeSelection, onSelection: options.OnSelection,
 		sessions: map[string]map[string]Mapping{}, lastExecutor: map[string]string{}, active: map[string]activeExecution{}, completed: map[string]cachedCompletion{}, closed: make(chan struct{}),
@@ -331,6 +339,10 @@ func (b *Bridge) chat(w http.ResponseWriter, r *http.Request) {
 	previousCompletion, alreadyCompleted := b.completed[requestKey]
 	b.mu.Unlock()
 	if alreadyCompleted {
+		if b.authReference != nil {
+			writeOpenAIError(w, http.StatusConflict, "duplicate request not replayed across an authentication reprobe")
+			return
+		}
 		if previousCompletion.failed || !previousCompletion.replayable || previousCompletion.selection != selectionKey {
 			writeOpenAIError(w, http.StatusConflict, "duplicate OpenCode request was not re-executed")
 			return
@@ -392,8 +404,17 @@ func (b *Bridge) chat(w http.ResponseWriter, r *http.Request) {
 		b.onSelection(selection)
 	}
 	resumeID := ""
+	authReference := ""
+	if b.authReference != nil {
+		authReference, err = b.authReference(r.Context(), executor)
+		if err != nil || authReference != "" && !safeID(authReference) {
+			writeOpenAIErrorCode(w, http.StatusServiceUnavailable, "executor authentication could not be verified", "EXECUTOR_AUTH_UNAVAILABLE")
+			return
+		}
+	}
 	if previous, ok := mappings[executor]; ok {
-		if previous.RequestedModel == selection.RequestedModel() || previous.RequestedModel == selection.RequestedID || previous.RequestedModel == "" && selection.Mode == "auto" {
+		identityMatches := b.authReference == nil || authReference != "" && previous.AuthReference == authReference
+		if identityMatches && (previous.RequestedModel == selection.RequestedModel() || previous.RequestedModel == selection.RequestedID || previous.RequestedModel == "" && selection.Mode == "auto") {
 			resumeID = previous.ExecutorSessionID
 		}
 	}
@@ -438,6 +459,18 @@ func (b *Bridge) chat(w http.ResponseWriter, r *http.Request) {
 	}
 	var result ExecutorResult
 	for attempt := 0; ; attempt++ {
+		if attempt > 0 && b.authReference != nil {
+			authReference, err = b.authReference(executionCtx, executor)
+			if err != nil || authReference != "" && !safeID(authReference) {
+				if stream {
+					_ = writeStreamError(w, "executor authentication could not be verified", "EXECUTOR_AUTH_UNAVAILABLE")
+				} else {
+					writeOpenAIError(w, http.StatusServiceUnavailable, "executor authentication could not be verified")
+				}
+				return
+			}
+			resumeID = ""
+		}
 		type executionResult struct {
 			value ExecutorResult
 			err   error
@@ -450,6 +483,7 @@ func (b *Bridge) chat(w http.ResponseWriter, r *http.Request) {
 				Prompt: currentPrompt, FrontendSessionID: frontendID, ExecutorSessionID: currentResume,
 			}, emit)
 			value.SelectionMode, value.RequestedModel, value.CatalogRevision = selection.Mode, selection.RequestedModel(), selection.CatalogRevision
+			value.AuthReference = authReference
 			finished <- executionResult{value: value, err: runErr}
 		}(executor, prompt, resumeID, executionCtx)
 		limit := make(chan string, 1)
@@ -579,6 +613,7 @@ func (b *Bridge) persistMapping(frontendID, executor string, result ExecutorResu
 		return nil
 	}
 	mapping := Mapping{
+		AuthReference:     result.AuthReference,
 		FrontendSessionID: frontendID, Executor: executor, ExecutorSessionID: result.ExecutorSessionID, Trace: result.Trace,
 		CompressionUsed: result.CompressionUsed, CompressionProvider: result.CompressionProvider,
 		SelectionMode: result.SelectionMode, RequestedModel: result.RequestedModel, EffectiveModel: result.Model,

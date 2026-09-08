@@ -292,6 +292,9 @@ func validate(value Session) error {
 		}
 	}
 	for frontendID, mapping := range value.ExecutorSessions {
+		if mapping.AuthReference != "" && !safeText(mapping.AuthReference, 128) {
+			return errors.New("invalid auth reference")
+		}
 		mappingID := frontendID
 		if prefix := mapping.Executor + ":"; strings.HasPrefix(mappingID, prefix) {
 			mappingID = strings.TrimPrefix(mappingID, prefix)

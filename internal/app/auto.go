@@ -233,6 +233,7 @@ func (a *App) openCodeAutoStatus(store session.Store, id string, cfg config.Conf
 	}
 	return opencodebridge.Status{
 		PermissionMode: cfg.OpenCode.ResolvedPermissionMode(),
+		ResumePolicy:   "fresh native turn; identity unverified",
 		Version:        a.Version, SessionID: id, Frontend: "opencode", Primary: value.PrimaryExecutor, Mode: string(value.Mode), SessionState: state,
 		SelectionMode: value.SelectionMode, RequestedExecutor: value.RequestedExecutor, RequestedModel: value.RequestedModel, RequestedEffort: value.RequestedEffort, EffectiveModel: value.EffectiveModel, EffectiveEffort: value.EffectiveEffort, ConfigurationSource: value.ConfigurationSource,
 		KnowledgeMode: mode, ConfiguredCount: len(servers), EnabledCount: enabled, ConnectedCount: connected, SelectedCount: selectedCount, Servers: servers,
@@ -267,9 +268,7 @@ func (a *App) AutoWithKnowledge(ctx context.Context, planner string, agentArgs, 
 		return err
 	}
 	state, codexResolution, _ := a.resolveCodex(ctx, state)
-	if err := validateManagedAgentRuntime("opencode", state); err != nil {
-		return err
-	}
+	frontendPreflightErr := validateManagedAgentRuntime("opencode", state)
 	cwd, err := os.Getwd()
 	if err != nil {
 		return err
@@ -475,6 +474,16 @@ func (a *App) AutoWithKnowledge(ctx context.Context, planner string, agentArgs, 
 		}.Discover(ctx))
 	}
 	bridge, err := opencodebridge.Start(opencodebridge.Options{
+		AuthReference: func(probeCtx context.Context, executor string) (string, error) {
+			// The current official probes expose authentication/eligibility, not
+			// a stable account identity. Reprobe on every turn and conservatively
+			// start a fresh native conversation rather than reuse across accounts.
+			observed, probeErr := manager.Probe(probeCtx, quota.Provider(executor), true)
+			if probeErr != nil || !observed.Authenticated {
+				return "", errors.New("executor authentication unavailable")
+			}
+			return "", nil
+		},
 		PreferredExecutor: current,
 		Runner:            bridgeRunner,
 		Select: func(requestCtx context.Context, previous string) (string, error) {
@@ -591,7 +600,8 @@ func (a *App) AutoWithKnowledge(ctx context.Context, planner string, agentArgs, 
 					currentSession.ExecutorSessions = map[string]session.ExecutorSessionMapping{}
 				}
 				currentSession.ExecutorSessions[mapping.Executor+":"+mapping.FrontendSessionID] = session.ExecutorSessionMapping{
-					Executor: mapping.Executor, ExecutorSessionID: mapping.ExecutorSessionID, SelectionMode: mapping.SelectionMode,
+					AuthReference: mapping.AuthReference,
+					Executor:      mapping.Executor, ExecutorSessionID: mapping.ExecutorSessionID, SelectionMode: mapping.SelectionMode,
 					RequestedModel: mapping.RequestedModel, EffectiveModel: mapping.EffectiveModel, EffectiveEffort: mapping.EffectiveEffort,
 					CatalogRevision: mapping.CatalogRevision, UpdatedAt: time.Now().UTC(),
 				}
@@ -627,6 +637,7 @@ func (a *App) AutoWithKnowledge(ctx context.Context, planner string, agentArgs, 
 					result := make([]opencodebridge.Mapping, 0, len(mappings))
 					for _, mapping := range mappings {
 						result = append(result, opencodebridge.Mapping{
+							AuthReference:     mapping.AuthReference,
 							FrontendSessionID: frontendID, Executor: mapping.Executor, ExecutorSessionID: mapping.ExecutorSessionID,
 							SelectionMode: mapping.SelectionMode, RequestedModel: mapping.RequestedModel, EffectiveModel: mapping.EffectiveModel,
 							EffectiveEffort: mapping.EffectiveEffort, CatalogRevision: mapping.CatalogRevision,
@@ -686,10 +697,44 @@ func (a *App) AutoWithKnowledge(ctx context.Context, planner string, agentArgs, 
 			return opencodebridge.StartManaged(ctx, options)
 		}
 	}
+	fallback := func(cause error) error {
+		latest, loadErr := store.Get(id)
+		if loadErr != nil {
+			return loadErr
+		}
+		// Never launch a second writer after a request reached the bridge, or
+		// bypass an existing frontend's exclusive lease.
+		if ctx.Err() != nil || len(latest.FrontendRequests) > 0 || strings.Contains(cause.Error(), "already active") {
+			a.finishSession(store, id, session.StateFailed, 1)
+			return fmt.Errorf("managed frontend unavailable; direct fallback refused to protect session ownership: %w", cause)
+		}
+		fmt.Fprintf(a.Err, "AUTO_STATE=DEGRADED\nOpenCode frontend unavailable (%s). Starting the selected %s native TUI; OpenCode panel and model picker are unavailable in this session. No request has been dispatched.\n", platform.Redact(cause.Error()), current)
+		_, updateErr := store.Update(id, func(s *session.Session) error {
+			s.Frontend = ""
+			s.CurrentPhase = "degraded_direct_frontend"
+			return nil
+		})
+		if updateErr != nil {
+			return updateErr
+		}
+		args, argsErr := a.autoBridgeArgs(current, agentArgs, id, runtimeDir, instructionsPath, cfg)
+		if argsErr != nil {
+			return argsErr
+		}
+		launchErr := a.launchAutomaticPrimary(ctx, store, id, current, args, state, cfg, environment, runtimeDir, compressionPolicy)
+		if launchErr != nil {
+			a.finishSession(store, id, session.StateFailed, exitCode(launchErr))
+			return launchErr
+		}
+		a.finishSession(store, id, session.StateCompleted, 0)
+		return nil
+	}
+	if frontendPreflightErr != nil {
+		return fallback(frontendPreflightErr)
+	}
 	frontend, err := starter(ctx, opencodebridge.ManagedOptions{PermissionMode: cfg.OpenCode.ResolvedPermissionMode(), OpenCodePath: state.Components["opencode"].Path, Version: state.Components["opencode"].Version, RuntimeDir: runtimeDir, StateDir: a.Store.Paths.StateDir, Directory: cwd, Environment: frontendEnvironment, Bridge: bridge, Instructions: instructions, ResumeSessionID: resumeFrontendID})
 	if err != nil {
-		a.finishSession(store, id, session.StateFailed, 1)
-		return err
+		return fallback(err)
 	}
 	defer frontend.Close(context.Background())
 	fmt.Fprintf(a.Out, "Starting IVOAI on the managed OpenCode frontend...\n")
@@ -707,8 +752,8 @@ func (a *App) AutoWithKnowledge(ctx context.Context, planner string, agentArgs, 
 		})
 	})
 	if launchErr != nil {
-		a.finishSession(store, id, session.StateFailed, exitCode(launchErr))
-		return launchErr
+		_ = frontend.Close(context.Background())
+		return fallback(launchErr)
 	}
 	a.finishSession(store, id, session.StateCompleted, 0)
 	return nil
