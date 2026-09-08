@@ -573,6 +573,7 @@ func TestBridgeRejectsUnsupportedInputPartsInsteadOfDroppingThem(t *testing.T) {
 func TestBridgeQuotaFailoverCancelsOneExecutorAndContinues(t *testing.T) {
 	runner := &blockingRunner{}
 	var monitorCalls atomic.Int32
+	monitorStopped := make(chan string, 2)
 	bridge, err := Start(Options{
 		Runner: runner,
 		Select: func(_ context.Context, previous string) (string, error) {
@@ -583,6 +584,7 @@ func TestBridgeQuotaFailoverCancelsOneExecutorAndContinues(t *testing.T) {
 		},
 		Monitor: func(ctx context.Context, executor string) string {
 			monitorCalls.Add(1)
+			defer func() { monitorStopped <- executor }()
 			if executor == "codex" {
 				return "fixture quota exhausted"
 			}
@@ -601,6 +603,23 @@ func TestBridgeQuotaFailoverCancelsOneExecutorAndContinues(t *testing.T) {
 	_ = response.Body.Close()
 	if response.StatusCode != http.StatusOK || !bytes.Contains(body, []byte("continued")) {
 		t.Fatalf("status=%d body=%s", response.StatusCode, body)
+	}
+	// The HTTP response can finish before the scheduler starts the second
+	// monitor goroutine. Synchronize on lifecycle completion, not scheduling
+	// order, and prove that both monitors also observe cancellation/exit.
+	monitorContext, stopWaiting := context.WithTimeout(context.Background(), 5*time.Second)
+	defer stopWaiting()
+	stopped := map[string]bool{}
+	for len(stopped) < 2 {
+		select {
+		case executor := <-monitorStopped:
+			if stopped[executor] || executor != "codex" && executor != "claude" {
+				t.Fatalf("unexpected monitor completion: %q", executor)
+			}
+			stopped[executor] = true
+		case <-monitorContext.Done():
+			t.Fatalf("monitors did not finish after response: %+v", stopped)
+		}
 	}
 	runner.mu.Lock()
 	defer runner.mu.Unlock()
