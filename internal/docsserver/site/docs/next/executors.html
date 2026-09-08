@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="generator" content="Docusaurus v3.10.2">
 <title data-rh="true">Executors | IVOAI</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="http://localhost:7780/docs/next/executors"><meta data-rh="true" property="og:locale" content="en_US"><meta data-rh="true" property="og:locale:alternate" content="pt_BR"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="Executors | IVOAI"><meta data-rh="true" name="description" content="Codex"><meta data-rh="true" property="og:description" content="Codex"><link data-rh="true" rel="icon" href="/img/favicon.svg"><link data-rh="true" rel="canonical" href="http://localhost:7780/docs/next/executors"><link data-rh="true" rel="alternate" href="http://localhost:7780/docs/next/executors" hreflang="en-US"><link data-rh="true" rel="alternate" href="http://localhost:7780/pt-BR/docs/next/executors" hreflang="pt-BR"><link data-rh="true" rel="alternate" href="http://localhost:7780/docs/next/executors" hreflang="x-default"><script data-rh="true" type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Executors","item":"http://localhost:7780/docs/next/executors"}]}</script><link rel="stylesheet" href="/assets/css/styles.d8784d9c.css">
-<script src="/assets/js/runtime~main.6f346c81.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.eaf34fe7.js" defer="defer"></script>
 <script src="/assets/js/main.8d6a6370.js" defer="defer"></script>
 </head>
 <body>
@@ -34,10 +34,13 @@ denied (<code>.env.example</code> is allowed). This is an approval policy, not a
 It does not change executor sandboxes, Unix permissions, Skill Gate, MCP policy,
 write routing, or credential isolation. Executor-owned approvals remain independent.
 Only the private managed overlay changes; personal and project OpenCode configuration
-and authentication stores are not edited. No additional provider login is needed.</p>
-<p>The managed provider is a local IVOAI bridge. It selects <code>CodexExecutor</code> or
-<code>ClaudeExecutor</code> and runs the corresponding official CLI with its existing native
-login. No Codex or Claude token is read, copied, converted, or placed in OpenCode.
+and authentication stores are not edited. Codex/Claude bridge execution needs no
+additional provider login; optional native OpenCode execution requires its own
+official provider authentication.</p>
+<p>The managed provider is a local IVOAI bridge. It selects <code>CodexExecutor</code>,
+<code>ClaudeExecutor</code>, or an eligible native <code>OpenCodeExecutor</code>. Codex and Claude run
+through their official CLIs with existing native login. No Codex or Claude token
+is read, copied, converted, or placed in OpenCode.
 The bridge preserves streaming, cancellation, bounded quota failover, and an opaque
 mapping between OpenCode and executor conversation IDs.</p>
 <p>The native OpenCode model picker contains one scheduler entry plus the runtime
@@ -57,8 +60,38 @@ asynchronous prompts, events, abort, status, diff, permissions, files, agents an
 MCP status. Closing releases its backend and lease. Structured controlled
 <code>StartSession</code> requests use this lifecycle; ordinary direct CLI requests still
 launch the native TUI. Native execution uses OpenCode-owned authentication without
-copying its store into the managed frontend. This adapter alone does not make
-OpenCode an eligible AUTO worker; the scheduler eligibility contract still applies.</p>
+copying its store into the managed frontend. AUTO and advisory workers reuse this
+same controlled lifecycle after the scheduler&#x27;s eligibility checks.</p>
+<h3 class="anchor anchorTargetStickyNavbar_UW1m" id="native-opencode-eligibility-in-auto">Native OpenCode eligibility in AUTO<a href="#native-opencode-eligibility-in-auto" class="hash-link" aria-label="Direct link to Native OpenCode eligibility in AUTO" title="Direct link to Native OpenCode eligibility in AUTO" translate="no">​</a></h3>
+<p>Without a new preference, IVOAI preserves its existing Codex/Claude priority and
+considers native OpenCode as a third candidate. To select it explicitly:</p>
+<p><code>ivoai auto --planner opencode</code></p>
+<p>Explicit native selection fails closed if no authenticated, tool-capable native
+model is available. The managed model picker also contains namespaced entries for
+eligible native <code>provider/model</code> IDs and their discovered variants. No model,
+reasoning level, subscription window, or unlimited quota is invented. Native quota
+telemetry is <strong>unknown</strong>, separate from authentication and execution eligibility.</p>
+<p>The native executor runs in a separate authenticated loopback backend, never
+through the IVOAI provider recursively. Only the official OpenCode process accesses
+its own authentication store. IVOAI consumes the official <code>auth list</code> metadata and
+a bounded provider/model projection; credential-bearing upstream fields are
+discarded before they reach the catalog, cache, diagnostics, or UI. Personal and
+project configuration, plugins, and MCPs are not imported. Providers requiring
+unprojected custom configuration are not advertised as available.</p>
+<p>Native primary instructions include the approved Skill Gate instructions and the
+IVOAI knowledge policy. Only session-local Memory/Context and the IVOAI orchestrator
+are projected. Advisory workers receive the SharedContextBrief and can use only
+read-only knowledge tools and read/search operations; <code>full</code> on the frontend does
+not grant worker writes. Native subagents, unreviewed skill loading, and separate
+native question dialogs are disabled: clarification belongs in the same frontend
+conversation. Interactive native approvals are relayed to that frontend and grant
+only the pending operation once; cancelling the dialog rejects the operation.</p>
+<p>Cancellation aborts the native session and closes its backend. Verified rate-limit
+signals permit bounded AUTO failover before final output, never against an explicit
+model/executor selection or back to an executor already attempted in that turn.
+Native rate limits trigger a short local cooldown, not an invented provider reset
+time. Authentication continuity remains conservative: native resume IDs are not
+reused without a proven identity/epoch.</p>
 <h3 class="anchor anchorTargetStickyNavbar_UW1m" id="authentication-continuity-and-resume">Authentication continuity and resume<a href="#authentication-continuity-and-resume" class="hash-link" aria-label="Direct link to Authentication continuity and resume" title="Direct link to Authentication continuity and resume" translate="no">​</a></h3>
 <p>IVOAI reprobes the official executor before each managed turn. The current probes
 do not expose a stable account identity, so the bridge conservatively starts a
@@ -72,9 +105,12 @@ probe prevents dispatch; an identity change cannot reuse the previous native ID.
 <p>Before any request is dispatched, a failed backend startup/readiness or attach can
 fall back to the selected executor&#x27;s native TUI. IVOAI prints <code>AUTO_STATE=DEGRADED</code>
 and identifies the native executor and loss of the OpenCode panel/model picker.
+This recovery is available for Codex/Claude. A selected native OpenCode executor
+fails closed if its managed frontend cannot start; IVOAI does not substitute an
+unmanaged personal OpenCode TUI or another executor.
 Memory/Context, Skill Gate and executor policy remain in effect. This is not a
 silent switch or a second execution. Fallback is refused after a request claim or
 when another managed frontend holds the exclusive lease. Resolve the active
-session first, then retry; do not delete its lock to force a second writer.</p></div><footer class="theme-doc-footer docusaurus-mt-lg"><div class="row margin-top--sm theme-doc-footer-edit-meta-row"><div class="col noPrint_H9in"><a href="https://github.com/ivo-lopes/ivoai/edit/main/../docs/executors.md" target="_blank" rel="noopener noreferrer" class="theme-edit-this-page"><svg fill="currentColor" height="20" width="20" viewBox="0 0 40 40" class="iconEdit_kAoA" aria-hidden="true"><g><path d="m34.5 11.7l-3 3.1-6.3-6.3 3.1-3q0.5-0.5 1.2-0.5t1.1 0.5l3.9 3.9q0.5 0.4 0.5 1.1t-0.5 1.2z m-29.5 17.1l18.4-18.5 6.3 6.3-18.4 18.4h-6.3v-6.2z"></path></g></svg>Edit this page</a></div><div class="col lastUpdated_HMyn"></div></div></footer></article><nav class="docusaurus-mt-lg pagination-nav" aria-label="Docs pages"><a class="pagination-nav__link pagination-nav__link--prev" href="/docs/next/cookbook"><div class="pagination-nav__sublabel">Previous</div><div class="pagination-nav__label">Cookbook</div></a><a class="pagination-nav__link pagination-nav__link--next" href="/docs/next/auto-orchestration"><div class="pagination-nav__sublabel">Next</div><div class="pagination-nav__label">Automatic orchestration</div></a></nav></div></div><div class="col col--3"><div class="tableOfContents_dNY2 thin-scrollbar theme-doc-toc-desktop"><ul class="table-of-contents table-of-contents__left-border"><li><a href="#codex" class="table-of-contents__link toc-highlight">Codex</a></li><li><a href="#claude-code" class="table-of-contents__link toc-highlight">Claude Code</a></li><li><a href="#opencode" class="table-of-contents__link toc-highlight">OpenCode</a><ul><li><a href="#managed-approval-policy" class="table-of-contents__link toc-highlight">Managed approval policy</a></li><li><a href="#controlled-http-sessions" class="table-of-contents__link toc-highlight">Controlled HTTP sessions</a></li><li><a href="#authentication-continuity-and-resume" class="table-of-contents__link toc-highlight">Authentication continuity and resume</a></li><li><a href="#managed-frontend-unavailable" class="table-of-contents__link toc-highlight">Managed frontend unavailable</a></li></ul></li></ul></div></div></div></div></main></div></div></div><footer class="theme-layout-footer footer footer--dark"><div class="container container-fluid"><div class="row footer__links"><div class="theme-layout-footer-column col footer__col"><div class="footer__title">Operate</div><ul class="footer__items clean-list"><li class="footer__item"><a class="footer__link-item" href="/docs/installation">Install</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/troubleshooting">Troubleshooting</a></li></ul></div><div class="theme-layout-footer-column col footer__col"><div class="footer__title">Build</div><ul class="footer__items clean-list"><li class="footer__item"><a class="footer__link-item" href="/docs/architecture">Architecture</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/development">Development</a></li></ul></div></div><div class="footer__bottom text--center"><div class="footer__copyright">Copyright © 2026 IVOAI. MIT licensed.</div></div></div></footer></div>
+session first, then retry; do not delete its lock to force a second writer.</p></div><footer class="theme-doc-footer docusaurus-mt-lg"><div class="row margin-top--sm theme-doc-footer-edit-meta-row"><div class="col noPrint_H9in"><a href="https://github.com/ivo-lopes/ivoai/edit/main/../docs/executors.md" target="_blank" rel="noopener noreferrer" class="theme-edit-this-page"><svg fill="currentColor" height="20" width="20" viewBox="0 0 40 40" class="iconEdit_kAoA" aria-hidden="true"><g><path d="m34.5 11.7l-3 3.1-6.3-6.3 3.1-3q0.5-0.5 1.2-0.5t1.1 0.5l3.9 3.9q0.5 0.4 0.5 1.1t-0.5 1.2z m-29.5 17.1l18.4-18.5 6.3 6.3-18.4 18.4h-6.3v-6.2z"></path></g></svg>Edit this page</a></div><div class="col lastUpdated_HMyn"></div></div></footer></article><nav class="docusaurus-mt-lg pagination-nav" aria-label="Docs pages"><a class="pagination-nav__link pagination-nav__link--prev" href="/docs/next/cookbook"><div class="pagination-nav__sublabel">Previous</div><div class="pagination-nav__label">Cookbook</div></a><a class="pagination-nav__link pagination-nav__link--next" href="/docs/next/auto-orchestration"><div class="pagination-nav__sublabel">Next</div><div class="pagination-nav__label">Automatic orchestration</div></a></nav></div></div><div class="col col--3"><div class="tableOfContents_dNY2 thin-scrollbar theme-doc-toc-desktop"><ul class="table-of-contents table-of-contents__left-border"><li><a href="#codex" class="table-of-contents__link toc-highlight">Codex</a></li><li><a href="#claude-code" class="table-of-contents__link toc-highlight">Claude Code</a></li><li><a href="#opencode" class="table-of-contents__link toc-highlight">OpenCode</a><ul><li><a href="#managed-approval-policy" class="table-of-contents__link toc-highlight">Managed approval policy</a></li><li><a href="#controlled-http-sessions" class="table-of-contents__link toc-highlight">Controlled HTTP sessions</a></li><li><a href="#native-opencode-eligibility-in-auto" class="table-of-contents__link toc-highlight">Native OpenCode eligibility in AUTO</a></li><li><a href="#authentication-continuity-and-resume" class="table-of-contents__link toc-highlight">Authentication continuity and resume</a></li><li><a href="#managed-frontend-unavailable" class="table-of-contents__link toc-highlight">Managed frontend unavailable</a></li></ul></li></ul></div></div></div></div></main></div></div></div><footer class="theme-layout-footer footer footer--dark"><div class="container container-fluid"><div class="row footer__links"><div class="theme-layout-footer-column col footer__col"><div class="footer__title">Operate</div><ul class="footer__items clean-list"><li class="footer__item"><a class="footer__link-item" href="/docs/installation">Install</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/troubleshooting">Troubleshooting</a></li></ul></div><div class="theme-layout-footer-column col footer__col"><div class="footer__title">Build</div><ul class="footer__items clean-list"><li class="footer__item"><a class="footer__link-item" href="/docs/architecture">Architecture</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/development">Development</a></li></ul></div></div><div class="footer__bottom text--center"><div class="footer__copyright">Copyright © 2026 IVOAI. MIT licensed.</div></div></div></footer></div>
 </body>
 </html>

@@ -35,11 +35,14 @@ denied (`.env.example` is allowed). This is an approval policy, not a secret san
 It does not change executor sandboxes, Unix permissions, Skill Gate, MCP policy,
 write routing, or credential isolation. Executor-owned approvals remain independent.
 Only the private managed overlay changes; personal and project OpenCode configuration
-and authentication stores are not edited. No additional provider login is needed.
+and authentication stores are not edited. Codex/Claude bridge execution needs no
+additional provider login; optional native OpenCode execution requires its own
+official provider authentication.
 
-The managed provider is a local IVOAI bridge. It selects `CodexExecutor` or
-`ClaudeExecutor` and runs the corresponding official CLI with its existing native
-login. No Codex or Claude token is read, copied, converted, or placed in OpenCode.
+The managed provider is a local IVOAI bridge. It selects `CodexExecutor`,
+`ClaudeExecutor`, or an eligible native `OpenCodeExecutor`. Codex and Claude run
+through their official CLIs with existing native login. No Codex or Claude token
+is read, copied, converted, or placed in OpenCode.
 The bridge preserves streaming, cancellation, bounded quota failover, and an opaque
 mapping between OpenCode and executor conversation IDs.
 
@@ -67,8 +70,45 @@ asynchronous prompts, events, abort, status, diff, permissions, files, agents an
 MCP status. Closing releases its backend and lease. Structured controlled
 `StartSession` requests use this lifecycle; ordinary direct CLI requests still
 launch the native TUI. Native execution uses OpenCode-owned authentication without
-copying its store into the managed frontend. This adapter alone does not make
-OpenCode an eligible AUTO worker; the scheduler eligibility contract still applies.
+copying its store into the managed frontend. AUTO and advisory workers reuse this
+same controlled lifecycle after the scheduler's eligibility checks.
+
+### Native OpenCode eligibility in AUTO
+
+Without a new preference, IVOAI preserves its existing Codex/Claude priority and
+considers native OpenCode as a third candidate. To select it explicitly:
+
+`ivoai auto --planner opencode`
+
+Explicit native selection fails closed if no authenticated, tool-capable native
+model is available. The managed model picker also contains namespaced entries for
+eligible native `provider/model` IDs and their discovered variants. No model,
+reasoning level, subscription window, or unlimited quota is invented. Native quota
+telemetry is **unknown**, separate from authentication and execution eligibility.
+
+The native executor runs in a separate authenticated loopback backend, never
+through the IVOAI provider recursively. Only the official OpenCode process accesses
+its own authentication store. IVOAI consumes the official `auth list` metadata and
+a bounded provider/model projection; credential-bearing upstream fields are
+discarded before they reach the catalog, cache, diagnostics, or UI. Personal and
+project configuration, plugins, and MCPs are not imported. Providers requiring
+unprojected custom configuration are not advertised as available.
+
+Native primary instructions include the approved Skill Gate instructions and the
+IVOAI knowledge policy. Only session-local Memory/Context and the IVOAI orchestrator
+are projected. Advisory workers receive the SharedContextBrief and can use only
+read-only knowledge tools and read/search operations; `full` on the frontend does
+not grant worker writes. Native subagents, unreviewed skill loading, and separate
+native question dialogs are disabled: clarification belongs in the same frontend
+conversation. Interactive native approvals are relayed to that frontend and grant
+only the pending operation once; cancelling the dialog rejects the operation.
+
+Cancellation aborts the native session and closes its backend. Verified rate-limit
+signals permit bounded AUTO failover before final output, never against an explicit
+model/executor selection or back to an executor already attempted in that turn.
+Native rate limits trigger a short local cooldown, not an invented provider reset
+time. Authentication continuity remains conservative: native resume IDs are not
+reused without a proven identity/epoch.
 
 ### Authentication continuity and resume
 
@@ -86,6 +126,9 @@ probe prevents dispatch; an identity change cannot reuse the previous native ID.
 Before any request is dispatched, a failed backend startup/readiness or attach can
 fall back to the selected executor's native TUI. IVOAI prints `AUTO_STATE=DEGRADED`
 and identifies the native executor and loss of the OpenCode panel/model picker.
+This recovery is available for Codex/Claude. A selected native OpenCode executor
+fails closed if its managed frontend cannot start; IVOAI does not substitute an
+unmanaged personal OpenCode TUI or another executor.
 Memory/Context, Skill Gate and executor policy remain in effect. This is not a
 silent switch or a second execution. Fallback is refused after a request claim or
 when another managed frontend holds the exclusive lease. Resolve the active

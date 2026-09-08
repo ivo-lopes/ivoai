@@ -1,8 +1,10 @@
 # Limitações conhecidas
 
-- O OpenCode é o frontend gerenciado do AUTO. O próprio OpenCode não é um worker do
-  AUTO; Codex e Claude Code permanecem os contratos de executor/worker baseados em
-  assinatura.
+- O OpenCode é o frontend gerenciado do AUTO e um executor/worker nativo opcional
+  quando sua autenticação oficial e capabilities de ferramentas estão disponíveis.
+  Codex/Claude preservam a prioridade; a telemetria de quota nativa pode continuar unknown.
+  Configurações pessoais customizadas de provider/plugin/MCP não são importadas em
+  sessões controladas. Subagentes nativos e diálogos separados de perguntas são desabilitados.
 - A bridge gerenciada exibe o streaming de texto do executor e o estado da sessão. A
   animação nativa de ferramentas, específica do provider na CLI oculta do executor,
   não é reproduzida como uma segunda TUI aninhada.

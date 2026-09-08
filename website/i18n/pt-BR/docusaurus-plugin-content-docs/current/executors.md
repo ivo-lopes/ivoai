@@ -8,8 +8,47 @@ listagem de sessões, prompts síncronos e assíncronos, eventos, cancelamento, 
 diff, permissões, arquivos, agents e status MCP. O fechamento libera backend e
 lease. Requisições estruturadas de `StartSession` usam esse lifecycle; a sessão
 direta por CLI continua abrindo a TUI nativa. A autenticação nativa pertence ao
-OpenCode e não é copiada para o frontend. Esse adapter, sozinho, não torna o
-OpenCode um worker elegível no AUTO: os critérios do scheduler continuam válidos.
+OpenCode e não é copiada para o frontend. O AUTO e os workers consultivos reutilizam
+esse mesmo lifecycle controlado após os critérios de elegibilidade do scheduler.
+
+## OpenCode nativo elegível no AUTO
+
+Sem nova preferência, o IVOAI preserva a prioridade existente de Codex/Claude e
+considera o OpenCode nativo como terceiro candidato. Para selecioná-lo explicitamente:
+
+`ivoai auto --planner opencode`
+
+A seleção explícita falha de forma fechada se não houver modelo nativo autenticado
+e capaz de usar ferramentas. O model picker também apresenta entradas sem ambiguidade
+para os IDs nativos `provider/model` e suas variantes descobertas. Nenhum modelo,
+reasoning, janela de assinatura ou quota ilimitada é inventado. A telemetria de quota
+nativa é **unknown**, separada da autenticação e da elegibilidade de execução.
+
+O executor nativo usa outro backend autenticado no loopback, sem retornar
+recursivamente ao provider IVOAI. Somente o processo oficial OpenCode acessa seu
+próprio armazenamento de autenticação. O IVOAI usa os metadados oficiais de
+`auth list` e uma projeção limitada de providers/modelos; campos upstream com
+credenciais são descartados antes de chegar ao catálogo, cache, diagnóstico ou UI.
+Configurações, plugins e MCPs pessoais ou do projeto não são importados. Providers
+que dependam de configuração customizada não projetada não são anunciados como
+disponíveis.
+
+As instruções do executor primário incluem as instruções aprovadas pelo Skill Gate
+e a política de conhecimento do IVOAI. Somente Memory/Context da sessão e o
+orchestrator IVOAI são projetados. Workers consultivos recebem o SharedContextBrief
+e podem usar apenas ferramentas de conhecimento read-only e operações de leitura/busca;
+`full` no frontend não autoriza escritas de workers. Subagentes nativos, carregamento
+de skills não revisadas e diálogos nativos separados de perguntas são desabilitados:
+pedidos de esclarecimento pertencem à mesma conversa no frontend. Aprovações nativas
+interativas são encaminhadas ao frontend e autorizam somente uma operação pendente,
+uma vez; cancelar o diálogo rejeita a operação.
+
+O cancelamento aborta a sessão nativa e fecha seu backend. Sinais comprovados de
+rate limit permitem failover limitado no AUTO antes da resposta final, nunca contra
+seleção explícita de modelo/executor nem para executor já tentado no mesmo turno.
+Rate limits nativos provocam um cooldown local curto, não um horário inventado de
+reset do provider. A continuidade de autenticação permanece conservadora: IDs
+nativos de resume não são reutilizados sem identidade/geração comprovada.
 
 ## Continuidade da autenticação e resume
 
@@ -28,6 +67,9 @@ Antes de qualquer despacho, falhas de startup/readiness do backend ou de attach
 podem levar à TUI nativa do executor selecionado. O IVOAI informa
 `AUTO_STATE=DEGRADED`, o executor e a indisponibilidade do painel/model picker do
 OpenCode. Memory/Context, Skill Gate e políticas do executor permanecem ativos.
+Essa recuperação está disponível para Codex/Claude. Um executor OpenCode nativo
+selecionado falha de forma fechada se o frontend gerenciado não iniciar; o IVOAI
+não substitui a execução por uma TUI pessoal não gerenciada ou por outro executor.
 Não há troca silenciosa nem segunda execução. O fallback é recusado após o
 registro de uma requisição ou quando outro frontend detém o lease exclusivo.
 Resolva a sessão ativa antes de tentar novamente; não apague o lock para forçar
@@ -53,8 +95,9 @@ configuráveis do OpenCode; leituras diretas de `.env` e `.env.*` continuam nega
 segredos. Ela não altera sandbox do executor, permissões Unix, Skill Gate, política
 MCP, destino de escritas ou isolamento de credenciais. Aprovações próprias do executor
 continuam independentes. Somente o overlay privado gerenciado muda; configurações e
-autenticação pessoais ou de projeto do OpenCode não são editadas. Nenhum login
-adicional de provider é necessário.
+autenticação pessoais ou de projeto do OpenCode não são editadas. A execução via
+bridge de Codex/Claude não exige login adicional; a execução nativa opcional do
+OpenCode exige a autenticação oficial própria do provider escolhido.
 
 ## Codex
 
@@ -72,9 +115,9 @@ aleatória autenticada no loopback. Sua configuração gerenciada e isolada desa
 a configuração do projeto, o compartilhamento e a atualização automática do
 OpenCode; o uso direto de `opencode` fora do IVOAI permanece inalterado.
 
-O provider gerenciado é uma bridge local do IVOAI. Ela seleciona `CodexExecutor` ou
-`ClaudeExecutor` e executa a CLI oficial correspondente com seu login nativo já
-existente. Nenhum token do Codex ou do Claude é lido, copiado, convertido ou
+O provider gerenciado é uma bridge local do IVOAI. Ela seleciona `CodexExecutor`,
+`ClaudeExecutor` ou um `OpenCodeExecutor` nativo elegível. Codex e Claude usam as
+CLIs oficiais correspondentes com seus logins existentes. Nenhum token deles é lido, copiado, convertido ou
 colocado no OpenCode. A bridge preserva streaming, cancelamento, failover de cota
 limitado e um mapeamento opaco entre os IDs de conversa do OpenCode e do executor.
 

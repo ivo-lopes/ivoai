@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="generator" content="Docusaurus v3.10.2">
 <title data-rh="true">Executores | IVOAI</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="http://localhost:7780/pt-BR/docs/next/executors"><meta data-rh="true" property="og:locale" content="pt_BR"><meta data-rh="true" property="og:locale:alternate" content="en_US"><meta data-rh="true" name="docusaurus_locale" content="pt-BR"><meta data-rh="true" name="docsearch:language" content="pt-BR"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="Executores | IVOAI"><meta data-rh="true" name="description" content="Sessões HTTP controladas"><meta data-rh="true" property="og:description" content="Sessões HTTP controladas"><link data-rh="true" rel="icon" href="/pt-BR/img/favicon.svg"><link data-rh="true" rel="canonical" href="http://localhost:7780/pt-BR/docs/next/executors"><link data-rh="true" rel="alternate" href="http://localhost:7780/docs/next/executors" hreflang="en-US"><link data-rh="true" rel="alternate" href="http://localhost:7780/pt-BR/docs/next/executors" hreflang="pt-BR"><link data-rh="true" rel="alternate" href="http://localhost:7780/docs/next/executors" hreflang="x-default"><script data-rh="true" type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Executores","item":"http://localhost:7780/pt-BR/docs/next/executors"}]}</script><link rel="stylesheet" href="/pt-BR/assets/css/styles.92d12545.css">
-<script src="/pt-BR/assets/js/runtime~main.fbbe76f2.js" defer="defer"></script>
+<script src="/pt-BR/assets/js/runtime~main.68deac42.js" defer="defer"></script>
 <script src="/pt-BR/assets/js/main.5560c250.js" defer="defer"></script>
 </head>
 <body>
@@ -19,8 +19,40 @@ listagem de sessões, prompts síncronos e assíncronos, eventos, cancelamento, 
 diff, permissões, arquivos, agents e status MCP. O fechamento libera backend e
 lease. Requisições estruturadas de <code>StartSession</code> usam esse lifecycle; a sessão
 direta por CLI continua abrindo a TUI nativa. A autenticação nativa pertence ao
-OpenCode e não é copiada para o frontend. Esse adapter, sozinho, não torna o
-OpenCode um worker elegível no AUTO: os critérios do scheduler continuam válidos.</p>
+OpenCode e não é copiada para o frontend. O AUTO e os workers consultivos reutilizam
+esse mesmo lifecycle controlado após os critérios de elegibilidade do scheduler.</p>
+<h2 class="anchor anchorTargetStickyNavbar_UW1m" id="opencode-nativo-elegível-no-auto">OpenCode nativo elegível no AUTO<a href="#opencode-nativo-elegível-no-auto" class="hash-link" aria-label="Link direto para OpenCode nativo elegível no AUTO" title="Link direto para OpenCode nativo elegível no AUTO" translate="no">​</a></h2>
+<p>Sem nova preferência, o IVOAI preserva a prioridade existente de Codex/Claude e
+considera o OpenCode nativo como terceiro candidato. Para selecioná-lo explicitamente:</p>
+<p><code>ivoai auto --planner opencode</code></p>
+<p>A seleção explícita falha de forma fechada se não houver modelo nativo autenticado
+e capaz de usar ferramentas. O model picker também apresenta entradas sem ambiguidade
+para os IDs nativos <code>provider/model</code> e suas variantes descobertas. Nenhum modelo,
+reasoning, janela de assinatura ou quota ilimitada é inventado. A telemetria de quota
+nativa é <strong>unknown</strong>, separada da autenticação e da elegibilidade de execução.</p>
+<p>O executor nativo usa outro backend autenticado no loopback, sem retornar
+recursivamente ao provider IVOAI. Somente o processo oficial OpenCode acessa seu
+próprio armazenamento de autenticação. O IVOAI usa os metadados oficiais de
+<code>auth list</code> e uma projeção limitada de providers/modelos; campos upstream com
+credenciais são descartados antes de chegar ao catálogo, cache, diagnóstico ou UI.
+Configurações, plugins e MCPs pessoais ou do projeto não são importados. Providers
+que dependam de configuração customizada não projetada não são anunciados como
+disponíveis.</p>
+<p>As instruções do executor primário incluem as instruções aprovadas pelo Skill Gate
+e a política de conhecimento do IVOAI. Somente Memory/Context da sessão e o
+orchestrator IVOAI são projetados. Workers consultivos recebem o SharedContextBrief
+e podem usar apenas ferramentas de conhecimento read-only e operações de leitura/busca;
+<code>full</code> no frontend não autoriza escritas de workers. Subagentes nativos, carregamento
+de skills não revisadas e diálogos nativos separados de perguntas são desabilitados:
+pedidos de esclarecimento pertencem à mesma conversa no frontend. Aprovações nativas
+interativas são encaminhadas ao frontend e autorizam somente uma operação pendente,
+uma vez; cancelar o diálogo rejeita a operação.</p>
+<p>O cancelamento aborta a sessão nativa e fecha seu backend. Sinais comprovados de
+rate limit permitem failover limitado no AUTO antes da resposta final, nunca contra
+seleção explícita de modelo/executor nem para executor já tentado no mesmo turno.
+Rate limits nativos provocam um cooldown local curto, não um horário inventado de
+reset do provider. A continuidade de autenticação permanece conservadora: IDs
+nativos de resume não são reutilizados sem identidade/geração comprovada.</p>
 <h2 class="anchor anchorTargetStickyNavbar_UW1m" id="continuidade-da-autenticação-e-resume">Continuidade da autenticação e resume<a href="#continuidade-da-autenticação-e-resume" class="hash-link" aria-label="Link direto para Continuidade da autenticação e resume" title="Link direto para Continuidade da autenticação e resume" translate="no">​</a></h2>
 <p>O IVOAI consulta novamente o cliente oficial antes de cada turno gerenciado. Como
 os probes atuais não fornecem identidade estável da conta, o bridge inicia uma
@@ -35,6 +67,9 @@ o despacho; mudança de identidade não reutiliza o ID nativo anterior.</p>
 podem levar à TUI nativa do executor selecionado. O IVOAI informa
 <code>AUTO_STATE=DEGRADED</code>, o executor e a indisponibilidade do painel/model picker do
 OpenCode. Memory/Context, Skill Gate e políticas do executor permanecem ativos.
+Essa recuperação está disponível para Codex/Claude. Um executor OpenCode nativo
+selecionado falha de forma fechada se o frontend gerenciado não iniciar; o IVOAI
+não substitui a execução por uma TUI pessoal não gerenciada ou por outro executor.
 Não há troca silenciosa nem segunda execução. O fallback é recusado após o
 registro de uma requisição ou quando outro frontend detém o lease exclusivo.
 Resolva a sessão ativa antes de tentar novamente; não apague o lock para forçar
@@ -52,8 +87,9 @@ configuráveis do OpenCode; leituras diretas de <code>.env</code> e <code>.env.*
 segredos. Ela não altera sandbox do executor, permissões Unix, Skill Gate, política
 MCP, destino de escritas ou isolamento de credenciais. Aprovações próprias do executor
 continuam independentes. Somente o overlay privado gerenciado muda; configurações e
-autenticação pessoais ou de projeto do OpenCode não são editadas. Nenhum login
-adicional de provider é necessário.</p>
+autenticação pessoais ou de projeto do OpenCode não são editadas. A execução via
+bridge de Codex/Claude não exige login adicional; a execução nativa opcional do
+OpenCode exige a autenticação oficial própria do provider escolhido.</p>
 <h2 class="anchor anchorTargetStickyNavbar_UW1m" id="codex">Codex<a href="#codex" class="hash-link" aria-label="Link direto para Codex" title="Link direto para Codex" translate="no">​</a></h2>
 <p><code>ivoai codex</code> inicia o cliente oficial e preserva seu login da assinatura do ChatGPT.</p>
 <h2 class="anchor anchorTargetStickyNavbar_UW1m" id="claude-code">Claude Code<a href="#claude-code" class="hash-link" aria-label="Link direto para Claude Code" title="Link direto para Claude Code" translate="no">​</a></h2>
@@ -64,9 +100,9 @@ frontend gerenciado do IVOAI. O backend do OpenCode escuta apenas em uma porta
 aleatória autenticada no loopback. Sua configuração gerenciada e isolada desabilita
 a configuração do projeto, o compartilhamento e a atualização automática do
 OpenCode; o uso direto de <code>opencode</code> fora do IVOAI permanece inalterado.</p>
-<p>O provider gerenciado é uma bridge local do IVOAI. Ela seleciona <code>CodexExecutor</code> ou
-<code>ClaudeExecutor</code> e executa a CLI oficial correspondente com seu login nativo já
-existente. Nenhum token do Codex ou do Claude é lido, copiado, convertido ou
+<p>O provider gerenciado é uma bridge local do IVOAI. Ela seleciona <code>CodexExecutor</code>,
+<code>ClaudeExecutor</code> ou um <code>OpenCodeExecutor</code> nativo elegível. Codex e Claude usam as
+CLIs oficiais correspondentes com seus logins existentes. Nenhum token deles é lido, copiado, convertido ou
 colocado no OpenCode. A bridge preserva streaming, cancelamento, failover de cota
 limitado e um mapeamento opaco entre os IDs de conversa do OpenCode e do executor.</p>
 <p>O seletor de modelos nativo do OpenCode contém uma entrada do scheduler e o catálogo
@@ -79,6 +115,6 @@ a seleção do IVOAI baseada em cotas.</p>
 execute <code>opencode</code> diretamente ou use:</p>
 <div class="language-bash codeBlockContainer_hJIO theme-code-block" style="--prism-color:#bfc7d5;--prism-background-color:#292d3e"><div class="codeBlockContent_tbZp"><pre tabindex="0" class="prism-code language-bash codeBlock_e7Om thin-scrollbar" style="color:#bfc7d5;background-color:#292d3e"><code class="codeBlockLines_QMIf"><div class="token-line" style="color:#bfc7d5"><span class="token plain">ivoai session start </span><span class="token parameter variable" style="color:rgb(191, 199, 213)">--executor</span><span class="token plain"> opencode </span><span class="token parameter variable" style="color:rgb(191, 199, 213)">--mode</span><span class="token plain"> direct -- </span><span class="token operator" style="color:rgb(137, 221, 255)">&lt;</span><span class="token plain">upstream-options</span><span class="token operator" style="color:rgb(137, 221, 255)">&gt;</span><br></div></code></pre></div></div>
 <p>Esse caminho independente preserva a autenticação sob responsabilidade do OpenCode
-e é distinto do frontend AUTO baseado no OpenCode.</p></div><footer class="theme-doc-footer docusaurus-mt-lg"><div class="row margin-top--sm theme-doc-footer-edit-meta-row"><div class="col noPrint_H9in"><a href="https://github.com/ivo-lopes/ivoai/edit/main/i18n/pt-BR/docusaurus-plugin-content-docs/current/executors.md" target="_blank" rel="noopener noreferrer" class="theme-edit-this-page"><svg fill="currentColor" height="20" width="20" viewBox="0 0 40 40" class="iconEdit_kAoA" aria-hidden="true"><g><path d="m34.5 11.7l-3 3.1-6.3-6.3 3.1-3q0.5-0.5 1.2-0.5t1.1 0.5l3.9 3.9q0.5 0.4 0.5 1.1t-0.5 1.2z m-29.5 17.1l18.4-18.5 6.3 6.3-18.4 18.4h-6.3v-6.2z"></path></g></svg>Editar esta página</a></div><div class="col lastUpdated_HMyn"></div></div></footer></article><nav class="docusaurus-mt-lg pagination-nav" aria-label="Páginas de documento"><a class="pagination-nav__link pagination-nav__link--prev" href="/pt-BR/docs/next/cookbook"><div class="pagination-nav__sublabel">Anterior</div><div class="pagination-nav__label">Receitas</div></a><a class="pagination-nav__link pagination-nav__link--next" href="/pt-BR/docs/next/auto-orchestration"><div class="pagination-nav__sublabel">Próxima</div><div class="pagination-nav__label">Orquestração automática</div></a></nav></div></div><div class="col col--3"><div class="tableOfContents_dNY2 thin-scrollbar theme-doc-toc-desktop"><ul class="table-of-contents table-of-contents__left-border"><li><a href="#sessões-http-controladas" class="table-of-contents__link toc-highlight">Sessões HTTP controladas</a></li><li><a href="#continuidade-da-autenticação-e-resume" class="table-of-contents__link toc-highlight">Continuidade da autenticação e resume</a></li><li><a href="#frontend-gerenciado-indisponível" class="table-of-contents__link toc-highlight">Frontend gerenciado indisponível</a></li><li><a href="#política-de-aprovação-gerenciada" class="table-of-contents__link toc-highlight">Política de aprovação gerenciada</a></li><li><a href="#codex" class="table-of-contents__link toc-highlight">Codex</a></li><li><a href="#claude-code" class="table-of-contents__link toc-highlight">Claude Code</a></li><li><a href="#opencode" class="table-of-contents__link toc-highlight">OpenCode</a></li></ul></div></div></div></div></main></div></div></div><footer class="theme-layout-footer footer footer--dark"><div class="container container-fluid"><div class="row footer__links"><div class="theme-layout-footer-column col footer__col"><div class="footer__title">Operar</div><ul class="footer__items clean-list"><li class="footer__item"><a class="footer__link-item" href="/pt-BR/docs/installation">Instalação</a></li><li class="footer__item"><a class="footer__link-item" href="/pt-BR/docs/troubleshooting">Solução de problemas</a></li></ul></div><div class="theme-layout-footer-column col footer__col"><div class="footer__title">Desenvolver</div><ul class="footer__items clean-list"><li class="footer__item"><a class="footer__link-item" href="/pt-BR/docs/architecture">Arquitetura</a></li><li class="footer__item"><a class="footer__link-item" href="/pt-BR/docs/development">Desenvolvimento</a></li></ul></div></div><div class="footer__bottom text--center"><div class="footer__copyright">Copyright © 2026 IVOAI. Licenciado sob MIT.</div></div></div></footer></div>
+e é distinto do frontend AUTO baseado no OpenCode.</p></div><footer class="theme-doc-footer docusaurus-mt-lg"><div class="row margin-top--sm theme-doc-footer-edit-meta-row"><div class="col noPrint_H9in"><a href="https://github.com/ivo-lopes/ivoai/edit/main/i18n/pt-BR/docusaurus-plugin-content-docs/current/executors.md" target="_blank" rel="noopener noreferrer" class="theme-edit-this-page"><svg fill="currentColor" height="20" width="20" viewBox="0 0 40 40" class="iconEdit_kAoA" aria-hidden="true"><g><path d="m34.5 11.7l-3 3.1-6.3-6.3 3.1-3q0.5-0.5 1.2-0.5t1.1 0.5l3.9 3.9q0.5 0.4 0.5 1.1t-0.5 1.2z m-29.5 17.1l18.4-18.5 6.3 6.3-18.4 18.4h-6.3v-6.2z"></path></g></svg>Editar esta página</a></div><div class="col lastUpdated_HMyn"></div></div></footer></article><nav class="docusaurus-mt-lg pagination-nav" aria-label="Páginas de documento"><a class="pagination-nav__link pagination-nav__link--prev" href="/pt-BR/docs/next/cookbook"><div class="pagination-nav__sublabel">Anterior</div><div class="pagination-nav__label">Receitas</div></a><a class="pagination-nav__link pagination-nav__link--next" href="/pt-BR/docs/next/auto-orchestration"><div class="pagination-nav__sublabel">Próxima</div><div class="pagination-nav__label">Orquestração automática</div></a></nav></div></div><div class="col col--3"><div class="tableOfContents_dNY2 thin-scrollbar theme-doc-toc-desktop"><ul class="table-of-contents table-of-contents__left-border"><li><a href="#sessões-http-controladas" class="table-of-contents__link toc-highlight">Sessões HTTP controladas</a></li><li><a href="#opencode-nativo-elegível-no-auto" class="table-of-contents__link toc-highlight">OpenCode nativo elegível no AUTO</a></li><li><a href="#continuidade-da-autenticação-e-resume" class="table-of-contents__link toc-highlight">Continuidade da autenticação e resume</a></li><li><a href="#frontend-gerenciado-indisponível" class="table-of-contents__link toc-highlight">Frontend gerenciado indisponível</a></li><li><a href="#política-de-aprovação-gerenciada" class="table-of-contents__link toc-highlight">Política de aprovação gerenciada</a></li><li><a href="#codex" class="table-of-contents__link toc-highlight">Codex</a></li><li><a href="#claude-code" class="table-of-contents__link toc-highlight">Claude Code</a></li><li><a href="#opencode" class="table-of-contents__link toc-highlight">OpenCode</a></li></ul></div></div></div></div></main></div></div></div><footer class="theme-layout-footer footer footer--dark"><div class="container container-fluid"><div class="row footer__links"><div class="theme-layout-footer-column col footer__col"><div class="footer__title">Operar</div><ul class="footer__items clean-list"><li class="footer__item"><a class="footer__link-item" href="/pt-BR/docs/installation">Instalação</a></li><li class="footer__item"><a class="footer__link-item" href="/pt-BR/docs/troubleshooting">Solução de problemas</a></li></ul></div><div class="theme-layout-footer-column col footer__col"><div class="footer__title">Desenvolver</div><ul class="footer__items clean-list"><li class="footer__item"><a class="footer__link-item" href="/pt-BR/docs/architecture">Arquitetura</a></li><li class="footer__item"><a class="footer__link-item" href="/pt-BR/docs/development">Desenvolvimento</a></li></ul></div></div><div class="footer__bottom text--center"><div class="footer__copyright">Copyright © 2026 IVOAI. Licenciado sob MIT.</div></div></div></footer></div>
 </body>
 </html>
