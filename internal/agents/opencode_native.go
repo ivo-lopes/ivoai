@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 	"sync"
@@ -384,6 +385,10 @@ func (NativeProviderLimitError) RateLimited() bool { return true }
 
 // The command intentionally prints only names and authentication types. Its
 // credential-path heading and environment section are discarded, never logged.
+// OpenCode 1.18.25 still emits SGR colors in auth list with NO_COLOR=1.
+// Strip presentation only; other control sequences remain invalid metadata.
+var nativeAuthSGR = regexp.MustCompile(`\x1b\[[0-9;]*m`)
+
 func officialOpenCodeAuthMetadata(ctx context.Context, path string, environment []string) (map[string]bool, error) {
 	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
 	defer cancel()
@@ -407,6 +412,7 @@ func officialOpenCodeAuthMetadata(ctx context.Context, path string, environment 
 	}
 	result := map[string]bool{}
 	for _, line := range strings.Split(string(body), "\n") {
+		line = nativeAuthSGR.ReplaceAllString(line, "")
 		fields := strings.Fields(line)
 		if len(fields) < 2 {
 			continue
