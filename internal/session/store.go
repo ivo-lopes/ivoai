@@ -299,11 +299,11 @@ func validate(value Session) error {
 		if prefix := mapping.Executor + ":"; strings.HasPrefix(mappingID, prefix) {
 			mappingID = strings.TrimPrefix(mappingID, prefix)
 		}
-		if !safeText(mappingID, 128) || !safeText(mapping.ExecutorSessionID, 128) || mapping.Executor != "codex" && mapping.Executor != "claude" || mapping.UpdatedAt.IsZero() || !validSelectionMetadata(mapping.SelectionMode, mapping.RequestedModel, mapping.EffectiveModel, mapping.EffectiveEffort, mapping.CatalogRevision) {
+		if !safeText(mappingID, 128) || !safeText(mapping.ExecutorSessionID, 128) || !quota.Supported(quota.Provider(mapping.Executor)) || mapping.UpdatedAt.IsZero() || !validSelectionMetadata(mapping.SelectionMode, mapping.RequestedModel, mapping.EffectiveModel, mapping.EffectiveEffort, mapping.CatalogRevision) {
 			return errors.New("invalid executor session mapping")
 		}
 	}
-	if !validSelectionMetadata(value.SelectionMode, value.RequestedModel, value.EffectiveModel, value.EffectiveEffort, value.ModelCatalogRevision) || value.RequestedExecutor != "" && !oneOf(value.RequestedExecutor, "codex", "claude") || value.EffectiveExecutor != "" && !oneOf(value.EffectiveExecutor, "codex", "claude") || value.RequestedEffort != "" && !safeText(value.RequestedEffort, 16) {
+	if !validSelectionMetadata(value.SelectionMode, value.RequestedModel, value.EffectiveModel, value.EffectiveEffort, value.ModelCatalogRevision) || value.RequestedExecutor != "" && !quota.Supported(quota.Provider(value.RequestedExecutor)) || value.EffectiveExecutor != "" && !quota.Supported(quota.Provider(value.EffectiveExecutor)) || value.RequestedEffort != "" && !safeText(value.RequestedEffort, 16) {
 		return errors.New("invalid model selection metadata")
 	}
 	if value.WorkingDirectory == "" || !filepath.IsAbs(value.WorkingDirectory) || strings.ContainsAny(value.WorkingDirectory, "\x00\x1b\r\n") {
@@ -333,7 +333,7 @@ func validate(value Session) error {
 		return errors.New("orchestrated session requires a swarm ID")
 	}
 	if value.Mode == ModeAuto {
-		if !value.Auto || !oneOf(value.InitialPlanner, "codex", "claude") || !oneOf(value.CurrentPrimary, "codex", "claude") || value.FailoverCount < 0 || value.ConsecutiveFailovers < 0 || value.FailoverCount > 100 || value.ConsecutiveFailovers > 2 {
+		if !value.Auto || !quota.Supported(quota.Provider(value.InitialPlanner)) || !quota.Supported(quota.Provider(value.CurrentPrimary)) || value.FailoverCount < 0 || value.ConsecutiveFailovers < 0 || value.FailoverCount > 100 || value.ConsecutiveFailovers > 2 {
 			return errors.New("invalid automatic session metadata")
 		}
 		if value.LastFailoverReason != "" && !safeText(value.LastFailoverReason, 256) {
@@ -343,7 +343,7 @@ func validate(value Session) error {
 			return errors.New("invalid automatic session phase")
 		}
 		for provider, snapshot := range value.Quota {
-			if provider != quota.ProviderCodex && provider != quota.ProviderClaude || snapshot.Provider != provider || len(snapshot.Windows) > 32 {
+			if !quota.Supported(provider) || snapshot.Provider != provider || len(snapshot.Windows) > 32 {
 				return errors.New("invalid quota snapshot metadata")
 			}
 		}
@@ -388,10 +388,10 @@ func validate(value Session) error {
 	activeWorkers := 0
 	workerIDs := make(map[string]struct{}, len(value.Workers))
 	for _, worker := range value.Workers {
-		if worker.Executor != "codex" && worker.Executor != "claude" {
+		if !quota.Supported(quota.Provider(worker.Executor)) {
 			return fmt.Errorf("invalid worker executor %q", worker.Executor)
 		}
-		if worker.RequestedExecutor != "" && worker.RequestedExecutor != "codex" && worker.RequestedExecutor != "claude" || worker.FallbackReason != "" && !safeText(worker.FallbackReason, 256) {
+		if worker.RequestedExecutor != "" && !quota.Supported(quota.Provider(worker.RequestedExecutor)) || worker.FallbackReason != "" && !safeText(worker.FallbackReason, 256) {
 			return errors.New("invalid worker routing metadata")
 		}
 		if len(worker.ID) != 39 || !strings.HasPrefix(worker.ID, "worker_") || !safeText(worker.Role, 64) || !validState(worker.State) || !validModel(worker.Model) {

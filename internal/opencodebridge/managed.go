@@ -30,6 +30,9 @@ var serverPlugin []byte
 //go:embed assets/tui-plugin.tsx
 var tuiPlugin []byte
 
+//go:embed assets/presentation.mjs
+var tuiPresentation []byte
+
 //go:embed assets/ivoai-theme.json
 var ivoaiTheme []byte
 
@@ -37,15 +40,19 @@ type ManagedOptions struct {
 	// NativeExecutor runs OpenCode's own provider, never the IVOAI provider
 	// bridge (which would recursively dispatch another executor).
 	NativeExecutor bool
-	PermissionMode string
-	OpenCodePath   string
-	Version        string
-	RuntimeDir     string
-	StateDir       string
-	Directory      string
-	Environment    []string
-	Bridge         *Bridge
-	Instructions   string
+	// NativeMCP and NativePermissions are projections supplied by the IVOAI
+	// control plane, never imported from a user's OpenCode configuration.
+	NativeMCP         map[string]any
+	NativePermissions map[string]any
+	PermissionMode    string
+	OpenCodePath      string
+	Version           string
+	RuntimeDir        string
+	StateDir          string
+	Directory         string
+	Environment       []string
+	Bridge            *Bridge
+	Instructions      string
 	// ResumeSessionID is a non-sensitive OpenCode conversation identifier. It
 	// is only supplied after IVOAI has matched the working directory and
 	// knowledge scope of a completed managed session.
@@ -126,6 +133,15 @@ func StartManaged(ctx context.Context, options ManagedOptions) (*Managed, error)
 			return nil, errors.New("native OpenCode data location unavailable")
 		}
 		environment = setEnv(environment, "XDG_DATA_HOME", nativeData)
+		// Only statically bundled, pinned authentication adapters. Project and
+		// external plugins remain disabled in the isolated managed config.
+		environment = setEnv(environment, "OPENCODE_DISABLE_DEFAULT_PLUGINS", "0")
+		for _, entry := range existing {
+			key, value, _ := strings.Cut(entry, "=")
+			if key == "IVOAI_KNOWLEDGE_SESSION_TOKEN" || key == "IVOAI_CONTEXT_MCP_URL" || key == "IVOAI_MEMORY_MCP_URL" {
+				environment = setEnv(environment, key, value)
+			}
+		}
 	}
 	command := exec.Command(options.OpenCodePath, "serve", "--hostname", "127.0.0.1", "--port", "0")
 	command.Dir = options.Directory
@@ -237,7 +253,18 @@ func writeManagedAssets(options ManagedOptions) (managedPaths, error) {
 	if options.NativeExecutor {
 		// The official process owns its native authentication. IVOAI never
 		// opens its credential store or imports auth into the frontend.
-		body, err := json.Marshal(map[string]any{"permission": managedPermissions(options.PermissionMode), "autoupdate": false, "share": "disabled", "plugin": []string{}, "compaction": map[string]bool{"auto": false, "prune": false}})
+		if options.NativeMCP == nil {
+			options.NativeMCP = map[string]any{}
+		}
+		permissions := any(managedPermissions(options.PermissionMode))
+		if options.NativePermissions != nil {
+			permissions = options.NativePermissions
+		}
+		instructions := filepath.Join(assets, "native-instructions.md")
+		if err := platform.AtomicWritePrivate([]byte(options.Instructions), instructions); err != nil {
+			return managedPaths{}, err
+		}
+		body, err := json.Marshal(map[string]any{"permission": permissions, "mcp": options.NativeMCP, "instructions": []string{instructions}, "autoupdate": false, "share": "disabled", "plugin": []string{}, "compaction": map[string]bool{"auto": false, "prune": false}})
 		if err != nil {
 			return managedPaths{}, err
 		}
@@ -252,7 +279,7 @@ func writeManagedAssets(options ManagedOptions) (managedPaths, error) {
 	serverPath := filepath.Join(assets, "server-plugin.mjs")
 	tuiPath := filepath.Join(assets, "tui-plugin.tsx")
 	instructionsPath := filepath.Join(assets, "instructions.md")
-	for path, body := range map[string][]byte{serverPath: serverPlugin, tuiPath: tuiPlugin, paths.theme: ivoaiTheme, instructionsPath: []byte(options.Instructions)} {
+	for path, body := range map[string][]byte{serverPath: serverPlugin, tuiPath: tuiPlugin, filepath.Join(assets, "presentation.mjs"): tuiPresentation, paths.theme: ivoaiTheme, instructionsPath: []byte(options.Instructions)} {
 		if err := platform.AtomicWritePrivate(body, path); err != nil {
 			return managedPaths{}, err
 		}
@@ -304,6 +331,24 @@ func managedPermissions(mode string) map[string]any {
 		"read": map[string]string{"*": "allow", "*.env": "deny", "*.env.*": "deny", "*.env.example": "allow"},
 		"glob": "allow", "grep": "allow", "list": "allow",
 	}
+}
+
+// NativePermissionPolicy keeps the existing managed read/secret safeguards,
+// while preventing a second scheduler, unreviewed skills, or an invisible
+// native question dialog. The primary can ask the user in its final response.
+func NativePermissionPolicy(mode string, readOnly bool) map[string]any {
+	policy := managedPermissions(mode)
+	policy["task"], policy["skill"], policy["question"] = "deny", "deny", "deny"
+	if readOnly {
+		policy["*"] = "deny"
+		for _, name := range []string{"memory_query", "memory_recent", "memory_read_page", "memory_status"} {
+			policy["ivoai-memory_"+name] = "allow"
+		}
+		for _, name := range []string{"context_search", "context_get_document", "context_recent", "context_health"} {
+			policy["ivoai-context_"+name] = "allow"
+		}
+	}
+	return policy
 }
 
 func managedEnvironment(existing []string, stateDir string, paths managedPaths, password string) ([]string, error) {

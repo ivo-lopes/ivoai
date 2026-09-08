@@ -15,9 +15,12 @@ type Router struct {
 }
 
 func (r Router) Resolve(input TaskInput, tier Tier) (ExecutionProfile, error) {
-	providers := []string{"codex", "claude"}
-	if input.PreferredExecutor == "codex" || input.PreferredExecutor == "claude" {
+	providers := quota.ProviderNames()
+	if input.PreferredExecutor == "opencode" {
+		providers = []string{"opencode"} // Explicit native selection is restrictive.
+	} else if input.PreferredExecutor == "codex" || input.PreferredExecutor == "claude" {
 		providers = []string{input.PreferredExecutor, string(quota.Other(quota.Provider(input.PreferredExecutor)))}
+		providers = append(providers, "opencode")
 	}
 	type candidate struct {
 		profile  ExecutionProfile
@@ -48,7 +51,12 @@ func (r Router) Resolve(input TaskInput, tier Tier) (ExecutionProfile, error) {
 	if len(candidates) == 0 {
 		return ExecutionProfile{}, errors.New("no subscription-backed execution profile satisfies the task")
 	}
-	sort.SliceStable(candidates, func(i, j int) bool { return candidates[i].pressure < candidates[j].pressure })
+	sort.SliceStable(candidates, func(i, j int) bool {
+		if (candidates[i].profile.Provider == "opencode") != (candidates[j].profile.Provider == "opencode") {
+			return candidates[j].profile.Provider == "opencode"
+		}
+		return candidates[i].pressure < candidates[j].pressure
+	})
 	return candidates[0].profile, nil
 }
 

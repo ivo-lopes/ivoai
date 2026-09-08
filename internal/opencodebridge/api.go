@@ -23,6 +23,8 @@ const maxAPIResponse = 8 << 20
 func (m *Managed) APIRequest(ctx context.Context, operation, sessionID string, query url.Values, payload any) (json.RawMessage, error) {
 	method, path := "GET", ""
 	switch operation {
+	case "providers":
+		path = "/provider"
 	case "sessions":
 		path = "/session"
 	case "create":
@@ -98,6 +100,16 @@ func (m *Managed) APIRequest(ctx context.Context, operation, sessionID string, q
 	contentType, _, err := mime.ParseMediaType(response.Header.Get("Content-Type"))
 	if err != nil || contentType != "application/json" {
 		return nil, errors.New("invalid OpenCode API response media type")
+	}
+	if operation == "providers" {
+		// Never return the upstream key/options/headers or arbitrary metadata.
+		var value NativeCatalog
+		reader := &io.LimitedReader{R: response.Body, N: maxAPIResponse + 1}
+		decoder := json.NewDecoder(reader)
+		if decoder.Decode(&value) != nil || decoder.Decode(new(any)) != io.EOF || reader.N == 0 {
+			return nil, errors.New("invalid native provider metadata")
+		}
+		return json.Marshal(value)
 	}
 	result, err := io.ReadAll(io.LimitReader(response.Body, maxAPIResponse+1))
 	if err != nil || len(result) > maxAPIResponse || !json.Valid(result) {

@@ -92,7 +92,7 @@ func planSchema() map[string]any {
 		"dependencies":          map[string]any{"type": "array", "maxItems": routing.MaxTasks, "uniqueItems": true, "items": safeString(64)},
 		"parallel_group":        map[string]any{"type": "string", "maxLength": 64},
 		"required_capabilities": map[string]any{"type": "array", "maxItems": 16, "uniqueItems": true, "items": safeString(64)},
-		"scores":                scores, "preferred_executor": map[string]any{"type": "string", "enum": []string{"codex", "claude"}},
+		"scores":                scores, "preferred_executor": map[string]any{"type": "string", "enum": quota.ProviderNames()},
 		"delegate": map[string]any{"type": "boolean"}, "intentional_redundancy": map[string]any{"type": "boolean"},
 	}, "id", "role", "task", "scores", "delegate")
 	return object(map[string]any{"tasks": map[string]any{"type": "array", "minItems": 1, "maxItems": routing.MaxTasks, "items": task}}, "tasks")
@@ -232,7 +232,7 @@ func (s *Server) resolveProfile(ctx context.Context, input routing.TaskInput, ti
 		if s.Quota == nil {
 			return routing.ExecutionProfile{}, errors.New("automatic quota manager is unavailable")
 		}
-		for _, provider := range []quota.Provider{quota.ProviderCodex, quota.ProviderClaude} {
+		for _, provider := range quota.Providers() {
 			current, _ := s.Quota.Probe(ctx, provider, false)
 			quotas[provider] = current
 			capability := registry.Providers[string(provider)]

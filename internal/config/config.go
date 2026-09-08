@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/ivo-lopes/ivoai/internal/platform"
+	"github.com/ivo-lopes/ivoai/internal/quota"
 	"github.com/pelletier/go-toml/v2"
 )
 
@@ -353,8 +354,8 @@ func ValidateOrchestration(value OrchestrationConfig) error {
 	if value.MaxWorkers < 1 || value.MaxWorkers > 3 {
 		return errors.New("orchestration max_workers must be between 1 and 3")
 	}
-	if value.Auto.DefaultPlanner != "codex" && value.Auto.DefaultPlanner != "claude" {
-		return errors.New("orchestration auto default_planner must be codex or claude")
+	if !quota.Supported(quota.Provider(value.Auto.DefaultPlanner)) {
+		return errors.New("orchestration auto default_planner must be codex, claude or opencode")
 	}
 	if value.Auto.QuotaRefreshSeconds < 30 || value.Auto.QuotaRefreshSeconds > 300 {
 		return errors.New("orchestration auto quota_refresh_seconds must be between 30 and 300")

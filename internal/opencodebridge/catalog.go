@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/ivo-lopes/ivoai/internal/quota"
 	"github.com/ivo-lopes/ivoai/internal/routing"
 )
 
@@ -51,7 +52,7 @@ func CatalogFromRegistry(registry routing.Registry) ModelCatalog {
 	sort.Strings(providers)
 	for _, provider := range providers {
 		capability := registry.Providers[provider]
-		if provider != "codex" && provider != "claude" || !capability.Authenticated {
+		if !quota.Supported(quota.Provider(provider)) || !capability.Authenticated {
 			continue
 		}
 		for _, model := range capability.Models {
@@ -165,6 +166,9 @@ func (c ModelCatalog) OpenCodeModels() map[string]any {
 				}
 			}
 			value["variants"] = variants
+			for _, effort := range entry.SupportedEfforts {
+				variants[effort] = map[string]any{"reasoningEffort": effort}
+			}
 		}
 		models[entry.ID] = value
 	}
@@ -178,6 +182,11 @@ func normalizedEfforts(values []string) []string {
 	for _, allowed := range allEfforts {
 		if contains(values, allowed) {
 			result = append(result, allowed)
+		}
+	}
+	for _, value := range values {
+		if safeCatalogID(value) && len(value) <= 16 && !contains(result, value) {
+			result = append(result, value)
 		}
 	}
 	return result
@@ -205,6 +214,9 @@ func safeCatalogID(value string) bool {
 }
 
 func displayExecutor(value string) string {
+	if value == "opencode" {
+		return "OpenCode"
+	}
 	if value == "codex" {
 		return "Codex"
 	}

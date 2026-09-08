@@ -77,7 +77,7 @@ func (s Store) Put(value ProviderQuota) error {
 // Explicit authentication transitions use it so stale hard limits from a
 // previous account can never gate the newly authenticated account.
 func (s Store) Invalidate(provider Provider) error {
-	if provider != ProviderCodex && provider != ProviderClaude {
+	if !Supported(provider) {
 		return errors.New("invalid quota provider")
 	}
 	return s.mutate(func(snapshot *Snapshot) { delete(snapshot.Providers, provider) })
@@ -120,7 +120,7 @@ func (s Store) mutate(change func(*Snapshot)) error {
 
 func validateSnapshot(value Snapshot) error {
 	for provider, current := range value.Providers {
-		if provider != ProviderCodex && provider != ProviderClaude || current.Provider != provider {
+		if !Supported(provider) || current.Provider != provider {
 			return errors.New("invalid quota provider")
 		}
 		if len(current.Windows) > 32 {

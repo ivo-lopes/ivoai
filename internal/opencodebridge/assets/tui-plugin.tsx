@@ -1,11 +1,6 @@
 /** @jsxImportSource @opentui/solid */
 import { For, Show, createSignal, onCleanup } from "solid-js"
-
-const clean = (value: unknown, fallback = "N/A") => {
-  if (typeof value !== "string") return fallback
-  const text = value.replace(/[\u0000-\u001f\u007f-\u009f\u001b\u202a-\u202e\u2066-\u2069]/gi, "").slice(0, 40)
-  return text || fallback
-}
+import { clean, logo, panel, servers, fitRows } from "./presentation.mjs"
 
 const tui = async (api: any, options: any) => {
   const [status, setStatus] = createSignal<any>({
@@ -18,6 +13,30 @@ const tui = async (api: any, options: any) => {
   })
   let stopped = false
   let timer: ReturnType<typeof setTimeout> | undefined
+  let permissionDialog = false
+  const refreshPermissions = async () => {
+    if (permissionDialog || api.ui.dialog.open || stopped) return
+    const response = await fetch(options.bridge + "/native-permissions", {
+      headers: { Authorization: "Bearer " + options.token }, signal: AbortSignal.timeout(2000),
+    })
+    if (!response.ok) return
+    const pending = await response.json()
+    if (!Array.isArray(pending) || !pending[0] || stopped || api.ui.dialog.open) return
+    const permission = pending[0]
+    permissionDialog = true
+    let answered = false
+    const reply = (allow: boolean) => {
+      if (answered) return
+      answered = true
+      void fetch(options.bridge + "/native-permissions/reply", {
+        method: "POST", headers: { Authorization: "Bearer " + options.token, "Content-Type": "application/json" },
+        body: JSON.stringify({id: permission.id, allow}), signal: AbortSignal.timeout(2000),
+      }).catch(() => {})
+      permissionDialog = false
+      api.ui.dialog.clear()
+    }
+    api.ui.dialog.replace(() => <api.ui.DialogConfirm title="IVOAI native executor permission" message={clean(permission.description, "Permission details unavailable", 1024)} onConfirm={() => reply(true)} onCancel={() => reply(false)} />, () => reply(false))
+  }
 
   const refresh = async () => {
     if (stopped) return
@@ -27,6 +46,7 @@ const tui = async (api: any, options: any) => {
         signal: AbortSignal.timeout(2000),
       })
       if (response.ok) setStatus(await response.json())
+      await refreshPermissions()
     } catch {
       setStatus((value: any) => ({ ...value, session_state: "stale" }))
     } finally {
@@ -70,8 +90,8 @@ const tui = async (api: any, options: any) => {
 
   const Logo = () => (
     <box flexDirection="column" alignItems="center" paddingBottom={1}>
-      <text fg={theme().primary}><b>IVOAI</b></text>
-      <text fg={theme().textMuted}>OpenCode frontend · IVOAI control plane</text>
+      <text fg={theme().primary}><b>{logo[0]}</b></text>
+      <text fg={theme().textMuted}>{logo[1]}</text>
     </box>
   )
   const Summary = () => (
@@ -89,42 +109,17 @@ const tui = async (api: any, options: any) => {
       <text fg={theme().textMuted}>/ivoai</text>
     </box>
   )
-  const Servers = () => (
-    <box flexDirection="column" gap={1}>
-      <text fg={theme().text}><b>IVOAI knowledge</b></text>
-      <text fg={theme().textMuted}>
-        {status().connected_count} connected / {status().configured_count} configured · {clean(status().knowledge_mode)}
-      </text>
-      <For each={visibleServers()}>
-        {(server: any) => (
-          <box flexDirection="column">
-            <text fg={stateColor(server)}>{stateMark(server)} {clean(server.alias)}</text>
-            <text fg={theme().textMuted}>  purpose={clean(server.purpose, "unspecified")} · {server.enabled ? "enabled" : "disabled"}</text>
-            <text fg={theme().textMuted}>  {clean(server.health)} · session={server.selected ? "selected" : "excluded"}</text>
-            <text fg={theme().textMuted}>  auth={clean(server.auth_state, "not verified")}</text>
-          </box>
-        )}
+  const Rows = (props: any) => (
+    <box flexDirection="column" gap={0}>
+      <For each={fitRows(props.rows, Math.max(12, api.renderer.width - 8))}>
+        {(row: any) => <text wrapMode="word" fg={row.role === "identity" ? theme().primary : row.role === "warning" ? theme().warning : row.role === "muted" ? theme().textMuted : theme().text}>{row.text}</text>}
       </For>
-      <Show when={(status().servers || []).length > visibleServers().length}>
-        <text fg={theme().textMuted}>+{(status().servers || []).length - visibleServers().length} more sources</text>
-      </Show>
     </box>
   )
+  const Servers = () => <Rows rows={servers(status())} />
   const Panel = () => (
     <box flexDirection="column" gap={0} padding={1}>
-      <text fg={theme().primary}><b>IVOAI</b></text>
-      <text fg={theme().text}>Session</text>
-      <text fg={theme().textMuted}>Permissions: {clean(status().permission_mode)}</text>
-      <text fg={theme().textMuted}>Resume: {clean(status().resume_policy, "not exposed")}</text>
-      <text fg={theme().textMuted}>frontend=OpenCode · primary={clean(status().primary)} · state={clean(status().session_state)}</text>
-      <text fg={theme().textMuted}>mode={clean(status().selection_mode, "auto")} · requested={clean(status().requested_model, "automatic")} · model={clean(status().effective_model, "UNKNOWN")} · reasoning={clean(status().effective_effort, "UNKNOWN")}</text>
-      <text fg={theme().text}>Executors</text>
-      <text fg={theme().textMuted}>{authMark(status().codex_auth)} Codex {clean(status().codex_auth)} · quota={clean(status().codex_quota)}</text>
-      <text fg={theme().textMuted}>{authMark(status().claude_auth)} Claude {clean(status().claude_auth)} · quota={clean(status().claude_quota)}</text>
-      <Servers />
-      <text fg={theme().text}>Runtime</text>
-      <text fg={theme().textMuted}>compression={clean(status().compression)} · memory={clean(status().memory)} · context={clean(status().context)}</text>
-      <text fg={theme().textMuted}>skills={clean(status().skills)} · IVOAI {clean(status().version)}</text>
+      <Rows rows={panel(status())} />
     </box>
   )
 
