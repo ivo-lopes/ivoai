@@ -27,5 +27,5 @@ IVOAI_LIVE_OPENCODE_PATH="$binary" \
 IVOAI_LIVE_OPENCODE_VERSION="$version" \
 IVOAI_LIVE_OPENCODE_TUI=1 \
   go test ./internal/opencodebridge ./internal/agents \
-    -run 'TestLive(ManagedOpenCode(RoutesPromptThroughIVOAI|AttachRendersIVOAIPlugin|Permissions|API|ResizeKeyboard)|OpenCodeExecutor(HTTPContract|NativeLifecycle))$' \
+    -run 'TestLive(ManagedOpenCode(RoutesPromptThroughIVOAI|AttachRendersIVOAIPlugin|Permissions|API|ResizeKeyboard)|OpenCodeExecutor(HTTPContract|NativeLifecycle)|NativeOpenCodeAUTOExecutor)$' \
     -count=1 -v
