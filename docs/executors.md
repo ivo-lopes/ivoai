@@ -15,6 +15,28 @@ frontend. The OpenCode backend listens only on an authenticated random loopback 
 Its isolated managed configuration disables project configuration, sharing, and
 OpenCode auto-update; direct `opencode` use outside IVOAI remains untouched.
 
+### Managed approval policy
+
+New and existing configurations without an override use `interactive`: ordinary
+file reads/searches are allowed; shell, edits, external-directory access and other
+operations require OpenCode approval. Configure the policy once in IVOAI:
+
+```bash
+ivoai config set opencode.permission_mode full
+ivoai status
+ivoai config set opencode.permission_mode interactive
+```
+
+The last command restores interactive approvals. Changes apply to the next managed
+`ivoai auto` or `ivoai opencode` session, not to an already running backend.
+`/ivoai` displays the effective session permission mode. `full` pre-approves
+OpenCode's configurable operations; direct reads of `.env` and `.env.*` remain
+denied (`.env.example` is allowed). This is an approval policy, not a secret sandbox.
+It does not change executor sandboxes, Unix permissions, Skill Gate, MCP policy,
+write routing, or credential isolation. Executor-owned approvals remain independent.
+Only the private managed overlay changes; personal and project OpenCode configuration
+and authentication stores are not edited. No additional provider login is needed.
+
 The managed provider is a local IVOAI bridge. It selects `CodexExecutor` or
 `ClaudeExecutor` and runs the corresponding official CLI with its existing native
 login. No Codex or Claude token is read, copied, converted, or placed in OpenCode.

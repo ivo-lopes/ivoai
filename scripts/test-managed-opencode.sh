@@ -27,5 +27,5 @@ IVOAI_LIVE_OPENCODE_PATH="$binary" \
 IVOAI_LIVE_OPENCODE_VERSION="$version" \
 IVOAI_LIVE_OPENCODE_TUI=1 \
   go test ./internal/opencodebridge \
-    -run 'TestLiveManagedOpenCode(RoutesPromptThroughIVOAI|AttachRendersIVOAIPlugin)$' \
+    -run 'TestLiveManagedOpenCode(RoutesPromptThroughIVOAI|AttachRendersIVOAIPlugin|Permissions|API)$' \
     -count=1 -v

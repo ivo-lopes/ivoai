@@ -42,8 +42,10 @@ process = subprocess.Popen([str(Path(args.binary).resolve()), "auto"], stdin=sla
                            stdout=slave, stderr=slave, preexec_fn=terminal_owner)
 os.close(slave)
 transcript = (evidence / (args.executor + "-tui.raw")).open("wb")
+terminal_history = ""
 
 def pump(seconds):
+    global terminal_history
     deadline = time.monotonic() + seconds
     chunks = []
     while time.monotonic() < deadline:
@@ -60,16 +62,26 @@ def pump(seconds):
         if process.poll() is not None:
             break
 
-    return b"".join(chunks).decode(errors="replace")
+    rendered = b"".join(chunks).decode(errors="replace")
+    terminal_history = (terminal_history + rendered)[-(1 << 20):]
+    return rendered
 
 def send(text):
     os.write(master, text.encode())
     return pump(.4)
 
 def command(text):
-    send(text)
-    send("\r")
-    pump(1)
+    return send(text) + send("\r") + pump(1)
+
+def wait_rendered(expected, initial="", seconds=8):
+    rendered = initial
+    deadline = time.monotonic() + seconds
+    while time.monotonic() < deadline and process.poll() is None:
+        plain = re.sub(r"\x1b\[[0-?]*[ -/]*[@-~]", "", rendered)
+        if expected.lower() in plain.lower():
+            return True
+        rendered += pump(.2)
+    return False
 
 try:
     current_path = None
@@ -85,7 +97,19 @@ try:
         pump(.3)
     if current_path is None:
         raise RuntimeError("IVOAI_AUTO_START_FAILED (inspect private terminal evidence)")
-    pump(3)
+    # Session metadata becomes running before the frontend is fully attached.
+    # Wait for a rendered managed surface instead of racing fixed startup sleeps.
+    deadline = time.monotonic() + 30
+    while time.monotonic() < deadline and process.poll() is None:
+        pump(.3)
+        rendered = re.sub(r"\x1b\[[0-?]*[ -/]*[@-~]", "", terminal_history)
+        # "managed OpenCode frontend" also occurs in IVOAI's preflight stdout;
+        # require plugin-only wording, otherwise keys can reach startup stdin.
+        if ("IVOAI control plane" in rendered or "IVOAI knowledge" in rendered or
+                "IVOAI Automatic Orchestration" in rendered):
+            break
+    else:
+        raise RuntimeError("MANAGED_TUI_READINESS_UNCONFIRMED")
     registry = json.loads(cache.read_text()).get("providers", {})
     provider = registry.get(args.executor, {})
     models = provider.get("models", [])
@@ -104,21 +128,18 @@ try:
     efforts = model.get("supported_efforts", [])
     effort = model.get("default_effort") or (efforts[0] if efforts else "")
     command("/new")
-    command("/models")
-    send(model.get("display_name") or model_id)
-    send("\r")
-    pump(1)
+    if not wait_rendered("Select model", command("/models")):
+        raise RuntimeError("NATIVE_MODEL_DIALOG_UNCONFIRMED")
+    model_render = send(model.get("display_name") or model_id) + send("\r") + pump(1)
     if efforts:
-        # OpenCode's native Ctrl+T cycles variants. Typing an effort name into
-        # the composer would submit an unrelated prompt, so verify the actual
-        # variant label rendered after the native action before proceeding.
-        for _ in range(len(efforts)+2):
-            rendered = send("\x14") + pump(.6)
-            rendered = re.sub(r"\x1b\[[0-?]*[ -/]*[@-~]", "", rendered)
-            if re.search(r"(?<![a-z])"+re.escape(effort)+r"(?![a-z])", rendered):
-                break
-        else:
-            raise RuntimeError("NATIVE_REASONING_SELECTION_UNCONFIRMED")
+        # Pinned DialogModel may open DialogVariant automatically after selecting
+        # a model. Otherwise Ctrl+T opens it (not a cycle). Never toggle an
+        # already open dialog or type an effort into the conversation composer.
+        if not wait_rendered("variant", model_render, seconds=2) and not wait_rendered("variant", send("\x14")):
+            raise RuntimeError("NATIVE_REASONING_DIALOG_UNCONFIRMED")
+        send(effort)
+        send("\r")
+        pump(1)
     baseline = json.loads(current_path.read_text()).get("executor_trace")
     command(PROMPT)
     deadline = time.monotonic()+300

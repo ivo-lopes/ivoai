@@ -21,7 +21,8 @@ panel. Symbols are always paired with words, so status never depends on color al
 | authentication | official executor auth probe | `authentication required` |
 | quota | quota manager | `N/A` |
 | Memory / Context | session knowledge bootstrap | `degraded` |
-| servers | ServerPool snapshot | `0 configured` |
+| servers | ServerPool + session router observations | `not-probed`; never infer live health from enrollment |
+| OpenCode permissions | session startup configuration | `interactive` default |
 | knowledge scope | Knowledge Router selection | `automatic` or `restricted` |
 | compression | CompressionProvider policy | `Unknown` |
 | skills | Skill Registry | `Not available` |
@@ -41,7 +42,8 @@ panel. Symbols are always paired with words, so status never depends on color al
 | OpenCode `/ivoai` | ADD | Full session, executor, quota and source status. |
 | OpenCode home footer/sidebar | ADD | Persistent, compact scope and health. |
 | OpenCode `/connect` | HIDE BY CONFIG | Only the IVOAI provider is enabled; executor auth stays official. |
-| OpenCode model/provider picker | GROUP BY CONFIG | Exposes only `ivoai/auto` in managed mode. |
+| OpenCode model/provider picker | KEEP / GROUP BY CONFIG | AUTO plus capability-discovered explicit models and native reasoning variants; no duplicate login. |
+| OpenCode approval policy | ADD | Persistent IVOAI `opencode.permission_mode`; `/ivoai` displays the session mode. Changes take effect next session. |
 | OpenCode share | DISABLE IN MANAGED MODE | Prevents accidental conversation publication. |
 | OpenCode auto-update | DISABLE IN MANAGED MODE | Supply-chain pin and rollback stay authoritative. |
 | OpenCode update | HIDE IN MANAGED MODE | IVOAI updates the pinned component. |
