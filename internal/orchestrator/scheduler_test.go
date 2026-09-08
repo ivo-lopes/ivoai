@@ -17,6 +17,7 @@ import (
 )
 
 type timedAdapter struct {
+	release      <-chan struct{}
 	delay        time.Duration
 	mu           sync.Mutex
 	starts       map[string]time.Time
@@ -64,6 +65,13 @@ func (a *timedAdapter) Run(ctx context.Context, request workers.Request, observe
 		case <-peerGate:
 		}
 	}
+	if a.release != nil {
+		select {
+		case <-a.release:
+		case <-ctx.Done():
+			return workers.Result{}, ctx.Err()
+		}
+	}
 	select {
 	case <-ctx.Done():
 		return workers.Result{}, ctx.Err()
@@ -95,7 +103,8 @@ func TestSpawnBatchRunsIndependentTasksConcurrentlyAndHonorsDAG(t *testing.T) {
 	if err := store.Create(value); err != nil {
 		t.Fatal(err)
 	}
-	adapter := &timedAdapter{delay: 180 * time.Millisecond}
+	release := make(chan struct{})
+	adapter := &timedAdapter{delay: 180 * time.Millisecond, release: release}
 	registry := routing.Registry{Providers: map[string]routing.ProviderCapability{
 		"codex":  {Provider: "codex", Authenticated: true, WorkerCapable: true, SupportsEffort: true, Models: []routing.ModelCapability{{Name: "runtime-codex", Provider: "codex", CapabilityTier: routing.TierMax, SupportedEfforts: []string{"low", "medium", "high", "max"}, IsDefault: true, Source: routing.SourceRuntimeVerified}}},
 		"claude": {Provider: "claude", Authenticated: true, WorkerCapable: true, Models: []routing.ModelCapability{{Provider: "claude", IsDefault: true, Source: routing.SourceDefault}}},
@@ -112,12 +121,22 @@ func TestSpawnBatchRunsIndependentTasksConcurrentlyAndHonorsDAG(t *testing.T) {
 	}
 	metadata := planned.StructuredContent.(map[string]any)
 	planID := metadata["plan_id"].(string)
-	start := time.Now()
-	if _, err := server.spawnBatch(context.Background(), toolRequest(map[string]any{"plan_id": planID, "task_ids": []string{"a", "b", "c", "d", "e"}})); err != nil {
-		t.Fatal(err)
-	}
-	if elapsed := time.Since(start); elapsed > 100*time.Millisecond {
-		t.Fatalf("spawn_batch blocked for %s", elapsed)
+	// Prove nonblocking dispatch causally: workers cannot finish until spawn
+	// returns. A wall-clock 100ms threshold falsely fails on loaded race CI.
+	dispatched := make(chan error, 1)
+	go func() {
+		_, err := server.spawnBatch(context.Background(), toolRequest(map[string]any{"plan_id": planID, "task_ids": []string{"a", "b", "c", "d", "e"}}))
+		dispatched <- err
+	}()
+	select {
+	case err := <-dispatched:
+		close(release)
+		if err != nil {
+			t.Fatal(err)
+		}
+	case <-time.After(5 * time.Second):
+		close(release)
+		t.Fatal("spawn_batch waited for workers to complete")
 	}
 	if _, err := server.wait(context.Background(), toolRequest(map[string]any{"plan_id": planID, "task_ids": []string{"a", "b", "c", "d", "e"}, "mode": "all", "timeout_seconds": 5})); err != nil {
 		t.Fatal(err)

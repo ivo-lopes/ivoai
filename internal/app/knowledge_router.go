@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/ivo-lopes/ivoai/internal/config"
 	"github.com/ivo-lopes/ivoai/internal/connections"
@@ -24,13 +25,14 @@ import (
 const knowledgeSessionTokenEnvironment = "IVOAI_KNOWLEDGE_SESSION_TOKEN"
 
 type sessionKnowledge struct {
-	router      *knowledgerouter.Router
-	selection   serverpool.Selection
-	environment []string
-	config      config.Config
-	args        []string
-	healthMu    *sync.RWMutex
-	health      map[string]string
+	router         *knowledgerouter.Router
+	selection      serverpool.Selection
+	environment    []string
+	config         config.Config
+	args           []string
+	healthMu       *sync.RWMutex
+	health         map[string]string
+	healthObserved map[string]time.Time
 }
 
 func (k sessionKnowledge) healthFor(alias, fallback string) string {
@@ -40,6 +42,9 @@ func (k sessionKnowledge) healthFor(alias, fallback string) string {
 	k.healthMu.RLock()
 	defer k.healthMu.RUnlock()
 	if value := k.health[alias]; value != "" {
+		if observed := k.healthObserved[alias]; value == "healthy" && !observed.IsZero() && time.Since(observed) > time.Minute {
+			return "stale"
+		}
 		return value
 	}
 	return fallback
@@ -54,10 +59,10 @@ func (a *App) prepareSessionKnowledge(ctx context.Context, cfg config.Config, se
 	if err != nil {
 		return sessionKnowledge{}, err
 	}
-	result := sessionKnowledge{selection: selection, environment: cleanKnowledgeEnvironment(existingEnvironment), config: cfg, healthMu: &sync.RWMutex{}, health: map[string]string{}}
+	result := sessionKnowledge{selection: selection, environment: cleanKnowledgeEnvironment(existingEnvironment), config: cfg, healthMu: &sync.RWMutex{}, health: map[string]string{}, healthObserved: map[string]time.Time{}}
 	for alias, profile := range cfg.Connections.Servers {
 		if profile.Enabled && profile.Status == "connected" {
-			result.health[alias] = "healthy"
+			result.health[alias] = "not-probed"
 		} else if profile.Enabled {
 			result.health[alias] = "down"
 		} else {
@@ -83,6 +88,7 @@ func (a *App) prepareSessionKnowledge(ctx context.Context, cfg config.Config, se
 	}
 	router, err := knowledgerouter.Start(knowledgerouter.Options{Selection: selection, Credentials: credentials, Client: a.statusHTTPClient(), Observe: func(event knowledgerouter.Event) {
 		result.healthMu.Lock()
+		result.healthObserved[event.SourceAlias] = time.Now()
 		if event.State == "failed" {
 			result.health[event.SourceAlias] = "down"
 		} else {

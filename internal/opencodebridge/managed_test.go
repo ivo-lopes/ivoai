@@ -21,6 +21,17 @@ import (
 
 func TestManagedOpenCodeUsesPrivateIsolatedConfiguration(t *testing.T) {
 	root := t.TempDir()
+	personal := filepath.Join(root, "personal", "opencode.json")
+	project := filepath.Join(root, "opencode.json")
+	if err := os.MkdirAll(filepath.Dir(personal), 0700); err != nil {
+		t.Fatal(err)
+	}
+	for _, path := range []string{personal, project} {
+		if err := os.WriteFile(path, []byte(`{"permission":"deny","share":"auto"}`), 0600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	t.Setenv("OPENCODE_CONFIG", personal)
 	bridge, err := Start(Options{Runner: &fakeRunner{result: ExecutorResult{ExecutorSessionID: "thread_fixture"}}, Select: func(context.Context, string) (string, error) { return "codex", nil }, Status: func() Status { return Status{} }})
 	if err != nil {
 		t.Fatal(err)
@@ -44,6 +55,12 @@ func TestManagedOpenCodeUsesPrivateIsolatedConfiguration(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer managed.Close(context.Background())
+	for _, path := range []string{personal, project} {
+		body, err := os.ReadFile(path)
+		if err != nil || string(body) != `{"permission":"deny","share":"auto"}` {
+			t.Fatal("personal/project config changed")
+		}
+	}
 	if !managed.BackendLoopback() || !strings.HasPrefix(managed.BackendURL(), "http://127.0.0.1:") {
 		t.Fatalf("backend=%q", managed.BackendURL())
 	}
@@ -77,6 +94,16 @@ func TestManagedOpenCodeUsesPrivateIsolatedConfiguration(t *testing.T) {
 				t.Fatal("unsafe managed OpenCode config")
 			}
 		}
+	}
+}
+
+func TestManagedOpenCodeInvalidPermissionFailsBeforeMutation(t *testing.T) {
+	runtimeDir := filepath.Join(t.TempDir(), "absent")
+	if _, err := StartManaged(context.Background(), ManagedOptions{PermissionMode: "invalid", RuntimeDir: runtimeDir}); err == nil {
+		t.Fatal("invalid policy accepted")
+	}
+	if _, err := os.Stat(runtimeDir); !os.IsNotExist(err) {
+		t.Fatal("invalid policy mutated runtime state")
 	}
 }
 
@@ -276,57 +303,81 @@ func TestLiveManagedOpenCodeAttachRendersIVOAIPlugin(t *testing.T) {
 	if _, err := exec.LookPath("script"); err != nil {
 		t.Skip("util-linux script is not available")
 	}
-	root := t.TempDir()
-	bridge, err := Start(Options{Runner: &fakeRunner{}, Select: func(context.Context, string) (string, error) { return "codex", nil }, Status: func() Status {
-		return Status{Version: "fixture", Frontend: "opencode", KnowledgeMode: "automatic"}
-	}})
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer bridge.Close(context.Background())
-	ctx, cancel := context.WithTimeout(context.Background(), 35*time.Second)
-	defer cancel()
-	managed, err := StartManaged(ctx, ManagedOptions{OpenCodePath: path, Version: version, RuntimeDir: filepath.Join(root, "runtime"), StateDir: filepath.Join(root, "state"), Directory: root, Bridge: bridge, Instructions: "Use only IVOAI-managed execution."})
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer managed.Close(context.Background())
-	transcript := filepath.Join(root, "transcript")
-	argv := append([]string{path}, managed.Args()...)
-	commandLine := make([]string, 0, len(argv))
-	for _, value := range argv {
-		commandLine = append(commandLine, shellQuote(value))
-	}
-	command := exec.Command("script", "-qfec", strings.Join(commandLine, " "), transcript)
-	command.Env = managed.Env()
-	command.SysProcAttr = &syscall.SysProcAttr{Setpgid: true, Pdeathsig: syscall.SIGTERM}
-	stdin, err := command.StdinPipe()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if err := command.Start(); err != nil {
-		t.Fatal(err)
-	}
-	time.Sleep(4 * time.Second)
-	_, _ = io.WriteString(stdin, "/ivoai\r")
-	time.Sleep(2 * time.Second)
-	_, _ = stdin.Write([]byte{3})
-	_ = stdin.Close()
-	done := make(chan error, 1)
-	go func() { done <- command.Wait() }()
-	select {
-	case <-done:
-	case <-time.After(8 * time.Second):
-		_ = syscall.Kill(-command.Process.Pid, syscall.SIGKILL)
-		<-done
-	}
-	body, err := os.ReadFile(transcript)
-	if err != nil {
-		t.Fatal(err)
-	}
-	plain := stripTerminalControls(string(body))
-	if !strings.Contains(plain, "IVOAI") || !strings.Contains(plain, "OpenCode frontend") {
-		t.Fatalf("managed TUI did not render the IVOAI plugin (transcript bytes=%d)", len(body))
+	for _, width := range []int{60, 100, 160} {
+		t.Run(fmt.Sprintf("width%d", width), func(t *testing.T) {
+			root := t.TempDir()
+			bridge, err := Start(Options{Runner: &fakeRunner{}, Select: func(context.Context, string) (string, error) { return "codex", nil }, Status: func() Status {
+				return Status{Version: "fixture", Frontend: "opencode", KnowledgeMode: "restricted", PermissionMode: "full", ConfiguredCount: 2, ConnectedCount: 1, Servers: []ServerView{{Alias: "source-A", Purpose: "fixture", Enabled: true, Selected: true, Health: "healthy", AuthState: "authenticated"}, {Alias: "source-B", Purpose: "other", Enabled: true, Health: "down", AuthState: "configured / not verified"}}}
+			}})
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer bridge.Close(context.Background())
+			ctx, cancel := context.WithTimeout(context.Background(), 35*time.Second)
+			defer cancel()
+			managed, err := StartManaged(ctx, ManagedOptions{OpenCodePath: path, Version: version, RuntimeDir: filepath.Join(root, "runtime"), StateDir: filepath.Join(root, "state"), Directory: root, Bridge: bridge, Instructions: "Use only IVOAI-managed execution."})
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer managed.Close(context.Background())
+			transcript := filepath.Join(root, "transcript")
+			argv := append([]string{path}, managed.Args()...)
+			commandLine := make([]string, 0, len(argv))
+			for _, value := range argv {
+				commandLine = append(commandLine, shellQuote(value))
+			}
+			command := exec.Command("script", "-qfec", fmt.Sprintf("stty rows 40 cols %d; exec ", width)+strings.Join(commandLine, " "), transcript)
+			command.Env = managed.Env()
+			command.SysProcAttr = &syscall.SysProcAttr{Setpgid: true, Pdeathsig: syscall.SIGTERM}
+			stdin, err := command.StdinPipe()
+			if err != nil {
+				t.Fatal(err)
+			}
+			if err := command.Start(); err != nil {
+				t.Fatal(err)
+			}
+			waitText := func(expected string, timeout time.Duration) bool {
+				deadline := time.Now().Add(timeout)
+				for time.Now().Before(deadline) {
+					body, _ := os.ReadFile(transcript)
+					if strings.Contains(stripTerminalControls(string(body)), expected) {
+						return true
+					}
+					time.Sleep(100 * time.Millisecond)
+				}
+				return false
+			}
+			ready := waitText("OpenCode frontend", 12*time.Second)
+			if ready {
+				_, _ = io.WriteString(stdin, "/ivoai")
+				time.Sleep(300 * time.Millisecond)
+				_, _ = io.WriteString(stdin, "\r")
+				waitText("Permissions:", 8*time.Second)
+			}
+			_, _ = stdin.Write([]byte{3})
+			_ = stdin.Close()
+			done := make(chan error, 1)
+			go func() { done <- command.Wait() }()
+			select {
+			case <-done:
+			case <-time.After(8 * time.Second):
+				_ = syscall.Kill(-command.Process.Pid, syscall.SIGKILL)
+				<-done
+			}
+			body, err := os.ReadFile(transcript)
+			if err != nil {
+				t.Fatal(err)
+			}
+			plain := stripTerminalControls(string(body))
+			if !strings.Contains(plain, "IVOAI") || !strings.Contains(plain, "OpenCode frontend") {
+				t.Fatalf("managed TUI did not render the IVOAI plugin (transcript bytes=%d)", len(body))
+			}
+			for _, expected := range []string{"Permissions:", "full", "source-A", "source-B", "restricted"} {
+				if !strings.Contains(plain, expected) {
+					t.Fatalf("managed panel omitted %q at width %d", expected, width)
+				}
+			}
+		})
 	}
 }
 

@@ -22,7 +22,8 @@ palavras, de modo que o estado nunca dependa apenas de cor.
 | autenticação | probe de auth do executor oficial | `authentication required` |
 | quota | quota manager | `N/A` |
 | Memory / Context | bootstrap de conhecimento da sessão | `degraded` |
-| servidores | snapshot do ServerPool | `0 configured` |
+| servidores | ServerPool + observações do router da sessão | `not-probed`; enrollment não prova saúde atual |
+| permissões do OpenCode | configuração de inicialização da sessão | `interactive` por padrão |
 | escopo de conhecimento | seleção do Knowledge Router | `automatic` ou `restricted` |
 | compressão | policy do CompressionProvider | `Unknown` |
 | skills | Skill Registry | `Not available` |
@@ -42,7 +43,8 @@ palavras, de modo que o estado nunca dependa apenas de cor.
 | OpenCode `/ivoai` | ADD | Estado completo de sessão, executor, quota e fontes. |
 | rodapé/barra lateral da home do OpenCode | ADD | Escopo e saúde persistentes e compactos. |
 | OpenCode `/connect` | HIDE BY CONFIG | Somente o provider IVOAI fica habilitado; a autenticação dos executores permanece oficial. |
-| seletor de modelo/provider do OpenCode | GROUP BY CONFIG | Expõe somente `ivoai/auto` no modo gerenciado. |
+| seletor de modelo/provider do OpenCode | KEEP / GROUP BY CONFIG | AUTO mais modelos explícitos descobertos por capabilities e variantes nativas de reasoning; sem login duplicado. |
+| política de aprovação do OpenCode | ADD | `opencode.permission_mode` persistente no IVOAI; `/ivoai` mostra o modo da sessão. Alterações valem na próxima sessão. |
 | share do OpenCode | DISABLE IN MANAGED MODE | Impede publicação acidental da conversa. |
 | auto-update do OpenCode | DISABLE IN MANAGED MODE | O pin e o rollback da supply chain permanecem autoritativos. |
 | update do OpenCode | HIDE IN MANAGED MODE | O IVOAI atualiza o componente pinado. |

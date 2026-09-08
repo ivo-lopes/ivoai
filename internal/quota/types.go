@@ -10,9 +10,41 @@ import (
 type Provider string
 
 const (
-	ProviderCodex  Provider = "codex"
-	ProviderClaude Provider = "claude"
+	ProviderCodex    Provider = "codex"
+	ProviderClaude   Provider = "claude"
+	ProviderOpenCode Provider = "opencode"
 )
+
+// Providers is the stable compatibility order, not a claim of availability.
+func Providers() []Provider { return []Provider{ProviderCodex, ProviderClaude, ProviderOpenCode} }
+func Supported(provider Provider) bool {
+	for _, candidate := range Providers() {
+		if provider == candidate {
+			return true
+		}
+	}
+	return false
+}
+func ProviderNames() []string {
+	result := []string{}
+	for _, provider := range Providers() {
+		result = append(result, string(provider))
+	}
+	return result
+}
+
+func Priority(preferred Provider) []Provider {
+	result := []Provider{}
+	if Supported(preferred) {
+		result = append(result, preferred)
+	}
+	for _, provider := range Providers() {
+		if provider != preferred {
+			result = append(result, provider)
+		}
+	}
+	return result
+}
 
 type Kind string
 
@@ -52,6 +84,7 @@ type Window struct {
 }
 
 type ProviderQuota struct {
+	TelemetryUnknown bool      `json:"telemetry_unknown,omitempty"`
 	Provider         Provider  `json:"provider"`
 	Model            string    `json:"model,omitempty"`
 	Windows          []Window  `json:"windows"`

@@ -144,7 +144,7 @@ func stripManagedSelectionArgs(executor string, input []string) []string {
 	return result
 }
 
-func (a *App) openCodeAutoStatus(store session.Store, id string, cfg config.Config, knowledge sessionKnowledge, restricted bool, quotas map[quota.Provider]quota.ProviderQuota, compression sharedKnowledgeCompressionPolicy) opencodebridge.Status {
+func (a *App) openCodeAutoStatus(store session.Store, id string, cfg config.Config, knowledge sessionKnowledge, restricted bool, quotas map[quota.Provider]quota.ProviderQuota, compression sharedKnowledgeCompressionPolicy, probeErrors map[quota.Provider]error) opencodebridge.Status {
 	selectedAliases := map[string]bool{}
 	for _, alias := range knowledge.aliases() {
 		selectedAliases[alias] = true
@@ -165,7 +165,7 @@ func (a *App) openCodeAutoStatus(store session.Store, id string, cfg config.Conf
 		if profile.Enabled {
 			health = "down"
 			if profile.Status == "connected" {
-				health = "healthy"
+				health = "not-probed"
 			}
 			health = knowledge.healthFor(alias, health)
 			if health == "healthy" {
@@ -176,7 +176,14 @@ func (a *App) openCodeAutoStatus(store session.Store, id string, cfg config.Conf
 		if !restricted && profile.Enabled {
 			selected = true
 		}
-		servers = append(servers, opencodebridge.ServerView{ID: profile.ID, Alias: alias, Purpose: profile.Purpose, Selected: selected, Enabled: profile.Enabled, Health: health})
+		authState := "not-configured"
+		if profile.Status == "connected" {
+			authState = "configured / not verified"
+			if health == "healthy" {
+				authState = "authenticated"
+			}
+		}
+		servers = append(servers, opencodebridge.ServerView{AuthState: authState, ID: profile.ID, Alias: alias, Purpose: profile.Purpose, Selected: selected, Enabled: profile.Enabled, Health: health})
 	}
 	mode := "none"
 	if len(selectedAliases) == 1 {
@@ -189,15 +196,24 @@ func (a *App) openCodeAutoStatus(store session.Store, id string, cfg config.Conf
 	}
 	value, _ := store.Get(id)
 	auth := func(provider quota.Provider) string {
+		if probeErrors[provider] != nil {
+			return "stale / not verified"
+		}
 		if quotas[provider].Authenticated {
 			return "authenticated"
 		}
 		return "authentication required"
 	}
 	quotaState := func(provider quota.Provider) string {
+		if probeErrors[provider] != nil {
+			return "N/A"
+		}
 		value := quotas[provider]
 		if value.HardLimitReached {
 			return "exhausted"
+		}
+		if value.TelemetryUnknown {
+			return "unknown"
 		}
 		if value.Eligible {
 			return "available"
@@ -219,10 +235,13 @@ func (a *App) openCodeAutoStatus(store session.Store, id string, cfg config.Conf
 		state = string(session.StateDegraded)
 	}
 	return opencodebridge.Status{
-		Version: a.Version, SessionID: id, Frontend: "opencode", Primary: value.PrimaryExecutor, Mode: string(value.Mode), SessionState: state,
+		PermissionMode: cfg.OpenCode.ResolvedPermissionMode(),
+		ResumePolicy:   "fresh native turn; identity unverified",
+		Version:        a.Version, SessionID: id, Frontend: "opencode", Primary: value.PrimaryExecutor, Mode: string(value.Mode), SessionState: state,
 		SelectionMode: value.SelectionMode, RequestedExecutor: value.RequestedExecutor, RequestedModel: value.RequestedModel, RequestedEffort: value.RequestedEffort, EffectiveModel: value.EffectiveModel, EffectiveEffort: value.EffectiveEffort, ConfigurationSource: value.ConfigurationSource,
 		KnowledgeMode: mode, ConfiguredCount: len(servers), EnabledCount: enabled, ConnectedCount: connected, SelectedCount: selectedCount, Servers: servers,
 		CodexAuth: auth(quota.ProviderCodex), ClaudeAuth: auth(quota.ProviderClaude), CodexQuota: quotaState(quota.ProviderCodex), ClaudeQuota: quotaState(quota.ProviderClaude),
+		OpenCodeAuth: auth(quota.ProviderOpenCode), OpenCodeQuota: quotaState(quota.ProviderOpenCode),
 		Compression: compression.EffectiveProvider, Memory: value.MemoryStatus, Context: value.ContextStatus, Skills: "policy-gated",
 	}
 }
@@ -245,17 +264,15 @@ func (a *App) AutoWithKnowledge(ctx context.Context, planner string, agentArgs, 
 		}
 	}
 	planner = strings.ToLower(strings.TrimSpace(planner))
-	if planner != "codex" && planner != "claude" {
-		return errors.New("planner must be codex or claude")
+	if !quota.Supported(quota.Provider(planner)) {
+		return errors.New("planner must be codex, claude or opencode")
 	}
 	state, err := a.Store.LoadState()
 	if err != nil {
 		return err
 	}
 	state, codexResolution, _ := a.resolveCodex(ctx, state)
-	if err := validateManagedAgentRuntime("opencode", state); err != nil {
-		return err
-	}
+	frontendPreflightErr := validateManagedAgentRuntime("opencode", state)
 	cwd, err := os.Getwd()
 	if err != nil {
 		return err
@@ -283,17 +300,24 @@ func (a *App) AutoWithKnowledge(ctx context.Context, planner string, agentArgs, 
 		}
 	}
 	store := session.Store{Root: a.Store.Paths.SessionsDir}
+	if err := store.ReconcileNativeMetadata(); err != nil {
+		return err
+	}
 	if err := store.Create(value); err != nil {
 		return err
 	}
 	manager := a.automaticQuotaManager(cfg, state)
-	for _, provider := range []quota.Provider{quota.ProviderCodex, quota.ProviderClaude} {
+	native := a.nativeOpenCode(cfg, state, cwd, filepath.Join(a.Store.Paths.CacheDir, "native-discovery", id), nil, false)
+	if native != nil && manager.Probes[quota.ProviderOpenCode] == nil {
+		manager.Probes[quota.ProviderOpenCode] = native
+	}
+	for _, provider := range quota.Providers() {
 		current, _ := manager.Probe(ctx, provider, true)
 		value.Quota[provider] = current
 	}
 	_, _ = store.Update(id, func(current *session.Session) error {
 		current.Quota = value.Quota
-		for _, provider := range []quota.Provider{quota.ProviderCodex, quota.ProviderClaude} {
+		for _, provider := range quota.Providers() {
 			for _, event := range quotaObservations(provider, value.Quota[provider]) {
 				if err := session.AppendObservation(current, event); err != nil {
 					return err
@@ -303,6 +327,9 @@ func (a *App) AutoWithKnowledge(ctx context.Context, planner string, agentArgs, 
 		return nil
 	})
 	decision, err := manager.Resolve(ctx, quota.Provider(planner), "", false)
+	if planner == "opencode" && (err != nil || decision.Resolved != quota.ProviderOpenCode) {
+		err = errors.New("explicit OpenCode executor unavailable; no fallback allowed")
+	}
 	if err != nil {
 		_, _ = store.Update(id, func(current *session.Session) error {
 			current.State, current.CurrentPhase = session.StateBlocked, "waiting_for_quota"
@@ -448,6 +475,24 @@ func (a *App) AutoWithKnowledge(ctx context.Context, planner string, agentArgs, 
 			Codex:  opencodebridge.ExecutorSpec{ObserveConfiguration: a.CodexResolution == nil, Version: state.Components["codex"].Version, Path: state.Components["codex"].Path, SHA256: codexResolution.Effective.SHA256, Args: codexArgs, Env: environment, Dir: cwd, Compression: codexCompression, CompressionEnabled: codexEnabled, RuntimeDir: runtimeDir},
 			Claude: opencodebridge.ExecutorSpec{ObserveConfiguration: a.CodexResolution == nil, Version: state.Components["claude-code"].Version, Path: state.Components["claude-code"].Path, Args: claudeArgs, Env: setAppEnvironment(environment, "DISABLE_AUTOUPDATER", "1"), Dir: cwd, Compression: claudeCompression, CompressionEnabled: claudeEnabled, RuntimeDir: runtimeDir},
 		}
+		if native != nil {
+			native = a.nativeOpenCode(cfg, state, cwd, filepath.Join(runtimeDir, "native-primary"), knowledge.environment, false)
+			if native == nil {
+				return errors.New("native OpenCode knowledge projection refused")
+			}
+			native.Options.Instructions = instructions + "\n\n" + native.Options.Instructions
+			executable, execErr := os.Executable()
+			if execErr != nil {
+				return execErr
+			}
+			controlEnvironment, envErr := opencodebridge.NativeControlPlaneEnvironment(environment)
+			if envErr != nil {
+				return envErr
+			}
+			native.Options.NativeMCP["ivoai-orchestrator"] = map[string]any{"type": "local", "command": []string{executable, "_orchestrator-serve", "--session", id}, "environment": controlEnvironment}
+			manager.Probes[quota.ProviderOpenCode] = native
+			bridgeRunner = agents.RoutedRunner{Official: bridgeRunner, Native: native}
+		}
 	}
 	selected := current
 	var selectedMu sync.Mutex
@@ -455,22 +500,62 @@ func (a *App) AutoWithKnowledge(ctx context.Context, planner string, agentArgs, 
 	if a.OpenCodeModelCatalog != nil {
 		modelCatalog = *a.OpenCodeModelCatalog
 	} else {
-		modelCatalog = opencodebridge.CatalogFromRegistry(routing.Discoverer{
+		registry := routing.Discoverer{
 			CodexPath: state.Components["codex"].Path, ClaudePath: state.Components["claude-code"].Path,
 			CachePath: filepath.Join(a.Store.Paths.CacheDir, "capabilities.json"),
-		}.Discover(ctx))
+		}.Discover(ctx)
+		if nativeCapabilityAvailable(ctx, native) {
+			registry.Providers["opencode"] = native.Capability()
+		}
+		modelCatalog = opencodebridge.CatalogFromRegistry(registry)
 	}
 	bridge, err := opencodebridge.Start(opencodebridge.Options{
+		NativePermissions: func() []opencodebridge.PermissionView {
+			if native == nil {
+				return nil
+			}
+			return native.PendingPermissions()
+		},
+		ReplyNativePermission: func(ctx context.Context, id string, allow bool) error {
+			if native == nil {
+				return errors.New("native executor unavailable")
+			}
+			return native.ReplyPermission(ctx, id, allow)
+		},
+		AuthReference: func(probeCtx context.Context, executor string) (string, error) {
+			// The current official probes expose authentication/eligibility, not
+			// a stable account identity. Reprobe on every turn and conservatively
+			// start a fresh native conversation rather than reuse across accounts.
+			observed, probeErr := manager.Probe(probeCtx, quota.Provider(executor), true)
+			if probeErr != nil || !observed.Authenticated {
+				return "", errors.New("executor authentication unavailable")
+			}
+			return "", nil
+		},
 		PreferredExecutor: current,
 		Runner:            bridgeRunner,
+		SelectAlternate: func(routeCtx context.Context, from string, attempted []string) (string, error) {
+			if planner == "opencode" {
+				return "", errors.New("explicit native executor cannot fail over")
+			}
+			excluded := map[quota.Provider]bool{}
+			for _, used := range attempted {
+				excluded[quota.Provider(used)] = true
+			}
+			resolved, err := manager.ResolveCandidates(routeCtx, quota.ProviderCodex, "", true, excluded)
+			return string(resolved.Resolved), err
+		},
 		Select: func(requestCtx context.Context, previous string) (string, error) {
 			selectedMu.Lock()
 			defer selectedMu.Unlock()
 			preferred := quota.Provider(selected)
-			if previous == "codex" || previous == "claude" {
+			if quota.Supported(quota.Provider(previous)) {
 				preferred = quota.Provider(previous)
 			}
 			resolved, resolveErr := manager.Resolve(requestCtx, preferred, "", previous != "")
+			if planner == "opencode" && (resolveErr != nil || resolved.Resolved != quota.ProviderOpenCode) {
+				return "", errors.New("explicit native OpenCode unavailable")
+			}
 			if resolveErr != nil {
 				return "", resolveErr
 			}
@@ -546,11 +631,13 @@ func (a *App) AutoWithKnowledge(ctx context.Context, planner string, agentArgs, 
 		},
 		Status: func() opencodebridge.Status {
 			currentQuotas := map[quota.Provider]quota.ProviderQuota{}
-			for _, provider := range []quota.Provider{quota.ProviderCodex, quota.ProviderClaude} {
-				current, _ := manager.Probe(context.Background(), provider, false)
+			probeErrors := map[quota.Provider]error{}
+			for _, provider := range quota.Providers() {
+				current, probeErr := manager.Probe(context.Background(), provider, false)
 				currentQuotas[provider] = current
+				probeErrors[provider] = probeErr
 			}
-			return a.openCodeAutoStatus(store, id, cfg, knowledge, len(selectors) > 0, currentQuotas, compressionPolicy)
+			return a.openCodeAutoStatus(store, id, cfg, knowledge, len(selectors) > 0, currentQuotas, compressionPolicy, probeErrors)
 		},
 		Mapping: func(mapping opencodebridge.Mapping) error {
 			_, updateErr := store.Update(id, func(currentSession *session.Session) error {
@@ -575,7 +662,8 @@ func (a *App) AutoWithKnowledge(ctx context.Context, planner string, agentArgs, 
 					currentSession.ExecutorSessions = map[string]session.ExecutorSessionMapping{}
 				}
 				currentSession.ExecutorSessions[mapping.Executor+":"+mapping.FrontendSessionID] = session.ExecutorSessionMapping{
-					Executor: mapping.Executor, ExecutorSessionID: mapping.ExecutorSessionID, SelectionMode: mapping.SelectionMode,
+					AuthReference: mapping.AuthReference,
+					Executor:      mapping.Executor, ExecutorSessionID: mapping.ExecutorSessionID, SelectionMode: mapping.SelectionMode,
 					RequestedModel: mapping.RequestedModel, EffectiveModel: mapping.EffectiveModel, EffectiveEffort: mapping.EffectiveEffort,
 					CatalogRevision: mapping.CatalogRevision, UpdatedAt: time.Now().UTC(),
 				}
@@ -611,6 +699,7 @@ func (a *App) AutoWithKnowledge(ctx context.Context, planner string, agentArgs, 
 					result := make([]opencodebridge.Mapping, 0, len(mappings))
 					for _, mapping := range mappings {
 						result = append(result, opencodebridge.Mapping{
+							AuthReference:     mapping.AuthReference,
 							FrontendSessionID: frontendID, Executor: mapping.Executor, ExecutorSessionID: mapping.ExecutorSessionID,
 							SelectionMode: mapping.SelectionMode, RequestedModel: mapping.RequestedModel, EffectiveModel: mapping.EffectiveModel,
 							EffectiveEffort: mapping.EffectiveEffort, CatalogRevision: mapping.CatalogRevision,
@@ -670,10 +759,49 @@ func (a *App) AutoWithKnowledge(ctx context.Context, planner string, agentArgs, 
 			return opencodebridge.StartManaged(ctx, options)
 		}
 	}
-	frontend, err := starter(ctx, opencodebridge.ManagedOptions{OpenCodePath: state.Components["opencode"].Path, Version: state.Components["opencode"].Version, RuntimeDir: runtimeDir, StateDir: a.Store.Paths.StateDir, Directory: cwd, Environment: frontendEnvironment, Bridge: bridge, Instructions: instructions, ResumeSessionID: resumeFrontendID})
+	fallback := func(cause error) error {
+		latest, loadErr := store.Get(id)
+		if loadErr != nil {
+			return loadErr
+		}
+		// Never launch a second writer after a request reached the bridge, or
+		// bypass an existing frontend's exclusive lease.
+		if ctx.Err() != nil || len(latest.FrontendRequests) > 0 || strings.Contains(cause.Error(), "already active") {
+			a.finishSession(store, id, session.StateFailed, 1)
+			return fmt.Errorf("managed frontend unavailable; direct fallback refused to protect session ownership: %w", cause)
+		}
+		if current == "opencode" {
+			a.finishSession(store, id, session.StateFailed, 1)
+			fmt.Fprintln(a.Err, "AUTO_STATE=DEGRADED\nOpenCode frontend unavailable. Native OpenCode requires the controlled HTTP frontend; no personal configuration or alternate executor was substituted.")
+			return errors.New("managed OpenCode frontend unavailable; controlled native executor cannot use an unmanaged TUI fallback")
+		}
+		fmt.Fprintf(a.Err, "AUTO_STATE=DEGRADED\nOpenCode frontend unavailable (%s). Starting the selected %s native TUI; OpenCode panel and model picker are unavailable in this session. No request has been dispatched.\n", platform.Redact(cause.Error()), current)
+		_, updateErr := store.Update(id, func(s *session.Session) error {
+			s.Frontend = ""
+			s.CurrentPhase = "degraded_direct_frontend"
+			return nil
+		})
+		if updateErr != nil {
+			return updateErr
+		}
+		args, argsErr := a.autoBridgeArgs(current, agentArgs, id, runtimeDir, instructionsPath, cfg)
+		if argsErr != nil {
+			return argsErr
+		}
+		launchErr := a.launchAutomaticPrimary(ctx, store, id, current, args, state, cfg, environment, runtimeDir, compressionPolicy)
+		if launchErr != nil {
+			a.finishSession(store, id, session.StateFailed, exitCode(launchErr))
+			return launchErr
+		}
+		a.finishSession(store, id, session.StateCompleted, 0)
+		return nil
+	}
+	if frontendPreflightErr != nil {
+		return fallback(frontendPreflightErr)
+	}
+	frontend, err := starter(ctx, opencodebridge.ManagedOptions{PermissionMode: cfg.OpenCode.ResolvedPermissionMode(), OpenCodePath: state.Components["opencode"].Path, Version: state.Components["opencode"].Version, RuntimeDir: runtimeDir, StateDir: a.Store.Paths.StateDir, Directory: cwd, Environment: frontendEnvironment, Bridge: bridge, Instructions: instructions, ResumeSessionID: resumeFrontendID})
 	if err != nil {
-		a.finishSession(store, id, session.StateFailed, 1)
-		return err
+		return fallback(err)
 	}
 	defer frontend.Close(context.Background())
 	fmt.Fprintf(a.Out, "Starting IVOAI on the managed OpenCode frontend...\n")
@@ -691,8 +819,8 @@ func (a *App) AutoWithKnowledge(ctx context.Context, planner string, agentArgs, 
 		})
 	})
 	if launchErr != nil {
-		a.finishSession(store, id, session.StateFailed, exitCode(launchErr))
-		return launchErr
+		_ = frontend.Close(context.Background())
+		return fallback(launchErr)
 	}
 	a.finishSession(store, id, session.StateCompleted, 0)
 	return nil
@@ -777,6 +905,9 @@ func quotaObservations(provider quota.Provider, value quota.ProviderQuota) []obs
 }
 
 func providerComponent(provider string) core.ComponentID {
+	if provider == "opencode" {
+		return core.ComponentOpenCode
+	}
 	if provider == "claude" {
 		return core.ComponentClaude
 	}
@@ -1141,6 +1272,9 @@ func formatPercent(value float64) string {
 }
 
 func displayProvider(value string) string {
+	if value == "opencode" {
+		return "OpenCode"
+	}
 	if value == "claude" {
 		return "Claude Code"
 	}

@@ -109,6 +109,7 @@ type Worker struct {
 }
 
 type ExecutorSessionMapping struct {
+	AuthReference     string    `json:"auth_reference,omitempty"`
 	Executor          string    `json:"executor"`
 	ExecutorSessionID string    `json:"executor_session_id"`
 	SelectionMode     string    `json:"selection_mode,omitempty"`

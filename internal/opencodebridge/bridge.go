@@ -13,6 +13,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/ivo-lopes/ivoai/internal/quota"
 	"io"
 	"net"
 	"net/http"
@@ -39,6 +40,7 @@ type ExecutorRequest struct {
 }
 
 type ExecutorResult struct {
+	AuthReference       string
 	Trace               *ExecutionTrace
 	ExecutorSessionID   string
 	CompressionUsed     bool
@@ -63,6 +65,7 @@ type PersistMapping func(Mapping) error
 type ClaimRequest func(frontendID, messageID string) (bool, error)
 
 type Mapping struct {
+	AuthReference       string          `json:"auth_reference,omitempty"`
 	Trace               *ExecutionTrace `json:"trace,omitempty"`
 	FrontendSessionID   string          `json:"frontend_session_id"`
 	Executor            string          `json:"executor"`
@@ -78,15 +81,18 @@ type Mapping struct {
 }
 
 type ServerView struct {
-	ID       string `json:"id"`
-	Alias    string `json:"alias"`
-	Purpose  string `json:"purpose,omitempty"`
-	Selected bool   `json:"selected"`
-	Enabled  bool   `json:"enabled"`
-	Health   string `json:"health"`
+	AuthState string `json:"auth_state"`
+	ID        string `json:"id"`
+	Alias     string `json:"alias"`
+	Purpose   string `json:"purpose,omitempty"`
+	Selected  bool   `json:"selected"`
+	Enabled   bool   `json:"enabled"`
+	Health    string `json:"health"`
 }
 
 type Status struct {
+	ResumePolicy        string       `json:"resume_policy,omitempty"`
+	PermissionMode      string       `json:"permission_mode"`
 	Version             string       `json:"version"`
 	SessionID           string       `json:"session_id"`
 	Frontend            string       `json:"frontend"`
@@ -110,6 +116,8 @@ type Status struct {
 	ClaudeAuth          string       `json:"claude_auth"`
 	CodexQuota          string       `json:"codex_quota"`
 	ClaudeQuota         string       `json:"claude_quota"`
+	OpenCodeAuth        string       `json:"opencode_auth"`
+	OpenCodeQuota       string       `json:"opencode_quota"`
 	Compression         string       `json:"compression"`
 	Memory              string       `json:"memory"`
 	Context             string       `json:"context"`
@@ -118,10 +126,16 @@ type Status struct {
 }
 
 type Options struct {
+	NativePermissions     func() []PermissionView
+	ReplyNativePermission func(context.Context, string, bool) error
+	// AuthReference returns only an official non-sensitive identity/epoch.
+	// Empty means continuity cannot be proved: never reuse a native resume ID.
+	AuthReference      func(context.Context, string) (string, error)
 	Token              string
 	PreferredExecutor  string
 	Runner             ExecutorRunner
 	Select             SelectExecutor
+	SelectAlternate    func(context.Context, string, []string) (string, error)
 	Monitor            MonitorExecutor
 	FailoverHandoff    BuildFailoverHandoff
 	MaxFailovers       int
@@ -135,31 +149,35 @@ type Options struct {
 }
 
 type Bridge struct {
-	server             *http.Server
-	listener           net.Listener
-	url                string
-	token              string
-	runner             ExecutorRunner
-	selectFn           SelectExecutor
-	monitor            MonitorExecutor
-	handoff            BuildFailoverHandoff
-	maxFailovers       int
-	statusFn           func() Status
-	mapping            PersistMapping
-	lookup             LookupMapping
-	claim              ClaimRequest
-	catalog            ModelCatalog
-	authorizeSelection func(context.Context, Selection) error
-	onSelection        func(Selection)
-	mu                 sync.Mutex
-	writer             sync.Mutex
-	sessions           map[string]map[string]Mapping
-	lastExecutor       map[string]string
-	active             map[string]activeExecution
-	completed          map[string]cachedCompletion
-	completedOrder     []string
-	nextRun            uint64
-	closed             chan struct{}
+	nativePermissions     func() []PermissionView
+	replyNativePermission func(context.Context, string, bool) error
+	authReference         func(context.Context, string) (string, error)
+	server                *http.Server
+	listener              net.Listener
+	url                   string
+	token                 string
+	runner                ExecutorRunner
+	selectFn              SelectExecutor
+	selectAlternate       func(context.Context, string, []string) (string, error)
+	monitor               MonitorExecutor
+	handoff               BuildFailoverHandoff
+	maxFailovers          int
+	statusFn              func() Status
+	mapping               PersistMapping
+	lookup                LookupMapping
+	claim                 ClaimRequest
+	catalog               ModelCatalog
+	authorizeSelection    func(context.Context, Selection) error
+	onSelection           func(Selection)
+	mu                    sync.Mutex
+	writer                sync.Mutex
+	sessions              map[string]map[string]Mapping
+	lastExecutor          map[string]string
+	active                map[string]activeExecution
+	completed             map[string]cachedCompletion
+	completedOrder        []string
+	nextRun               uint64
+	closed                chan struct{}
 }
 
 type activeExecution struct {
@@ -194,7 +212,10 @@ func Start(options Options) (*Bridge, error) {
 		return nil, fmt.Errorf("listen for OpenCode bridge: %w", err)
 	}
 	bridge := &Bridge{
-		listener: listener, url: "http://" + listener.Addr().String(), token: token,
+		nativePermissions: options.NativePermissions, replyNativePermission: options.ReplyNativePermission,
+		selectAlternate: options.SelectAlternate,
+		authReference:   options.AuthReference,
+		listener:        listener, url: "http://" + listener.Addr().String(), token: token,
 		runner: options.Runner, selectFn: options.Select, monitor: options.Monitor, handoff: options.FailoverHandoff, maxFailovers: options.MaxFailovers, statusFn: options.Status,
 		mapping: options.Mapping, lookup: options.LookupMapping, claim: options.ClaimRequest, catalog: options.Catalog, authorizeSelection: options.AuthorizeSelection, onSelection: options.OnSelection,
 		sessions: map[string]map[string]Mapping{}, lastExecutor: map[string]string{}, active: map[string]activeExecution{}, completed: map[string]cachedCompletion{}, closed: make(chan struct{}),
@@ -205,6 +226,8 @@ func Start(options Options) (*Bridge, error) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", bridge.authorize(bridge.health))
 	mux.HandleFunc("GET /status", bridge.authorize(bridge.status))
+	mux.HandleFunc("GET /native-permissions", bridge.authorize(bridge.nativePermissionList))
+	mux.HandleFunc("POST /native-permissions/reply", bridge.authorize(bridge.nativePermissionReply))
 	mux.HandleFunc("GET /v1/models", bridge.authorize(bridge.models))
 	mux.HandleFunc("POST /v1/chat/completions", bridge.authorize(bridge.chat))
 	bridge.server = &http.Server{
@@ -329,6 +352,10 @@ func (b *Bridge) chat(w http.ResponseWriter, r *http.Request) {
 	previousCompletion, alreadyCompleted := b.completed[requestKey]
 	b.mu.Unlock()
 	if alreadyCompleted {
+		if b.authReference != nil {
+			writeOpenAIError(w, http.StatusConflict, "duplicate request not replayed across an authentication reprobe")
+			return
+		}
 		if previousCompletion.failed || !previousCompletion.replayable || previousCompletion.selection != selectionKey {
 			writeOpenAIError(w, http.StatusConflict, "duplicate OpenCode request was not re-executed")
 			return
@@ -343,7 +370,7 @@ func (b *Bridge) chat(w http.ResponseWriter, r *http.Request) {
 	if len(mappings) == 0 && b.lookup != nil {
 		mappings = map[string]Mapping{}
 		for _, stored := range b.lookup(frontendID) {
-			if stored.FrontendSessionID != frontendID || !safeID(stored.ExecutorSessionID) || stored.Executor != "codex" && stored.Executor != "claude" {
+			if stored.FrontendSessionID != frontendID || !safeID(stored.ExecutorSessionID) || !quota.Supported(quota.Provider(stored.Executor)) {
 				continue
 			}
 			if previousExecutor == "" {
@@ -364,7 +391,7 @@ func (b *Bridge) chat(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	if executor != "codex" && executor != "claude" {
+	if !quota.Supported(quota.Provider(executor)) {
 		writeOpenAIError(w, http.StatusServiceUnavailable, "invalid executor selection")
 		return
 	}
@@ -390,8 +417,17 @@ func (b *Bridge) chat(w http.ResponseWriter, r *http.Request) {
 		b.onSelection(selection)
 	}
 	resumeID := ""
+	authReference := ""
+	if b.authReference != nil {
+		authReference, err = b.authReference(r.Context(), executor)
+		if err != nil || authReference != "" && !safeID(authReference) {
+			writeOpenAIErrorCode(w, http.StatusServiceUnavailable, "executor authentication could not be verified", "EXECUTOR_AUTH_UNAVAILABLE")
+			return
+		}
+	}
 	if previous, ok := mappings[executor]; ok {
-		if previous.RequestedModel == selection.RequestedModel() || previous.RequestedModel == selection.RequestedID || previous.RequestedModel == "" && selection.Mode == "auto" {
+		identityMatches := b.authReference == nil || authReference != "" && previous.AuthReference == authReference
+		if identityMatches && (previous.RequestedModel == selection.RequestedModel() || previous.RequestedModel == selection.RequestedID || previous.RequestedModel == "" && selection.Mode == "auto") {
 			resumeID = previous.ExecutorSessionID
 		}
 	}
@@ -435,7 +471,59 @@ func (b *Bridge) chat(w http.ResponseWriter, r *http.Request) {
 		_ = writeChunk(w, request.Model, "")
 	}
 	var result ExecutorResult
+	attempted := []string{executor}
+	chooseAlternate := func() (string, error) {
+		var next string
+		var selectErr error
+		if b.selectAlternate != nil {
+			next, selectErr = b.selectAlternate(r.Context(), executor, append([]string(nil), attempted...))
+		} else {
+			next, selectErr = b.selectFn(r.Context(), executor)
+		}
+		for _, used := range attempted {
+			if used == next {
+				return "", errors.New("executor already attempted")
+			}
+		}
+		if !quota.Supported(quota.Provider(next)) {
+			return "", errors.New("executor unavailable")
+		}
+		return next, selectErr
+	}
+	advance := func(next, reason string) {
+		cancel()
+		if b.handoff != nil {
+			if handoff := strings.TrimSpace(b.handoff(executor, next, reason)); handoff != "" {
+				prompt += "\n\n" + handoff
+			}
+		}
+		if stream {
+			_ = writeChunk(w, request.Model, "\n\n[IVOAI switched executor: "+executor+" → "+next+".]\n\n")
+		}
+		executor, resumeID = next, ""
+		attempted = append(attempted, next)
+		selection.Executor = next
+		if b.onSelection != nil {
+			b.onSelection(selection)
+		}
+		executionCtx, cancel = context.WithCancel(r.Context())
+		b.mu.Lock()
+		b.active[frontendID] = activeExecution{id: runID, cancel: cancel}
+		b.mu.Unlock()
+	}
 	for attempt := 0; ; attempt++ {
+		if attempt > 0 && b.authReference != nil {
+			authReference, err = b.authReference(executionCtx, executor)
+			if err != nil || authReference != "" && !safeID(authReference) {
+				if stream {
+					_ = writeStreamError(w, "executor authentication could not be verified", "EXECUTOR_AUTH_UNAVAILABLE")
+				} else {
+					writeOpenAIError(w, http.StatusServiceUnavailable, "executor authentication could not be verified")
+				}
+				return
+			}
+			resumeID = ""
+		}
 		type executionResult struct {
 			value ExecutorResult
 			err   error
@@ -448,6 +536,7 @@ func (b *Bridge) chat(w http.ResponseWriter, r *http.Request) {
 				Prompt: currentPrompt, FrontendSessionID: frontendID, ExecutorSessionID: currentResume,
 			}, emit)
 			value.SelectionMode, value.RequestedModel, value.CatalogRevision = selection.Mode, selection.RequestedModel(), selection.CatalogRevision
+			value.AuthReference = authReference
 			finished <- executionResult{value: value, err: runErr}
 		}(executor, prompt, resumeID, executionCtx)
 		limit := make(chan string, 1)
@@ -462,6 +551,16 @@ func (b *Bridge) chat(w http.ResponseWriter, r *http.Request) {
 		select {
 		case outcome = <-finished:
 			if outcome.err != nil {
+				var limitError interface {
+					error
+					RateLimited() bool
+				}
+				if selection.Mode == "auto" && !emitted.Load() && attempt < b.maxFailovers && errors.As(outcome.err, &limitError) && limitError.RateLimited() {
+					if next, selectErr := chooseAlternate(); selectErr == nil {
+						advance(next, "native provider reported a rate limit")
+						continue
+					}
+				}
 				failureClass := FailureClass(outcome.err)
 				b.storeCompletion(requestKey, cachedCompletion{failed: true, selection: selectionKey})
 				_ = b.persistMapping(frontendID, executor, outcome.value)
@@ -510,8 +609,8 @@ func (b *Bridge) chat(w http.ResponseWriter, r *http.Request) {
 				writeOpenAIError(w, http.StatusServiceUnavailable, "IVOAI quota failover limit reached")
 				return
 			}
-			next, selectErr := b.selectFn(r.Context(), executor)
-			if selectErr != nil || next == executor || next != "codex" && next != "claude" {
+			next, selectErr := chooseAlternate()
+			if selectErr != nil || next == executor || !quota.Supported(quota.Provider(next)) {
 				b.storeCompletion(requestKey, cachedCompletion{failed: true, selection: selectionKey})
 				if stream {
 					_ = writeStreamError(w, "IVOAI has no alternate subscription executor", "executor_unavailable")
@@ -520,25 +619,7 @@ func (b *Bridge) chat(w http.ResponseWriter, r *http.Request) {
 				writeOpenAIError(w, http.StatusServiceUnavailable, "no alternate subscription executor")
 				return
 			}
-			handoff := ""
-			if b.handoff != nil {
-				handoff = strings.TrimSpace(b.handoff(executor, next, reason))
-			}
-			if handoff != "" {
-				prompt += "\n\n" + handoff
-			}
-			if stream {
-				_ = writeChunk(w, request.Model, "\n\n[IVOAI switched to the alternate subscription executor.]\n\n")
-			}
-			executor, resumeID = next, ""
-			selection.Executor = next
-			if b.onSelection != nil {
-				b.onSelection(selection)
-			}
-			executionCtx, cancel = context.WithCancel(r.Context())
-			b.mu.Lock()
-			b.active[frontendID] = activeExecution{id: runID, cancel: cancel}
-			b.mu.Unlock()
+			advance(next, reason)
 			continue
 		case <-r.Context().Done():
 			cancel()
@@ -577,6 +658,7 @@ func (b *Bridge) persistMapping(frontendID, executor string, result ExecutorResu
 		return nil
 	}
 	mapping := Mapping{
+		AuthReference:     result.AuthReference,
 		FrontendSessionID: frontendID, Executor: executor, ExecutorSessionID: result.ExecutorSessionID, Trace: result.Trace,
 		CompressionUsed: result.CompressionUsed, CompressionProvider: result.CompressionProvider,
 		SelectionMode: result.SelectionMode, RequestedModel: result.RequestedModel, EffectiveModel: result.Model,

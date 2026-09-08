@@ -20,7 +20,7 @@ Usage:
   ivoai codex [--knowledge-source <alias|purpose>] [-- agent arguments...]
   ivoai claude [--knowledge-source <alias|purpose>] [-- agent arguments...]
   ivoai opencode [--knowledge-source <alias|purpose>]
-  ivoai auto [--planner codex|claude] [--knowledge-source <alias|purpose>] [-- agent arguments...]
+  ivoai auto [--planner codex|claude|opencode] [--knowledge-source <alias|purpose>] [-- agent arguments...]
   ivoai session start --executor <codex|claude|opencode> --mode <direct|orchestrated> [--knowledge-source <alias|purpose>] [-- agent arguments...]
   ivoai session list [--json] | show [--json] <id> | stop <id>
   ivoai monitor [--watch] [--session <id>] [--json]

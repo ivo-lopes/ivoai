@@ -63,6 +63,22 @@ checks out full history so the historical tag is available.
 
 ## Installation coverage in CI
 
+### Managed OpenCode regression matrix
+
+`scripts/test-managed-opencode.sh` uses the pinned OpenCode artifact with local
+provider/MCP fixtures. It tests native executor discovery and execution through
+the same frontend/bridge, controlled HTTP/SSE, permissions, attach, keyboard, and
+live resize. It does not require personal provider credentials.
+
+`node --test internal/opencodebridge/presentation.test.mjs` compares deterministic
+goldens of the presentation functions imported by the managed TUI: identity,
+permissions, auth/quota, runtime, servers, restricted/degraded states, and
+60/100/160-column rows. Go goldens cover model/variant metadata and sanitized errors.
+Normal tests never rewrite baselines. After reviewing an intentional change, use
+`UPDATE_GOLDENS=1` with the corresponding tests; CI refuses that update mode.
+Timestamps, ports, and session IDs are not presentation inputs. State, model,
+reasoning, permission mode, health, and selection semantics are never normalized.
+
 The `install-smoke` job runs in Ubuntu 22.04, Ubuntu 24.04, and Debian 12
 containers. `scripts/install-smoke.sh` isolates `HOME` and every XDG directory,
 enables `IVOAI_TEST_MODE`, and checks two installer runs, two client setup runs,

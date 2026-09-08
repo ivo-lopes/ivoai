@@ -36,7 +36,7 @@ is not rewritten.
 
 The managed OpenCode model picker is the single interactive selector for an AUTO
 conversation. It exposes `IVOAI Automatic Orchestration` plus the models and
-reasoning variants reported by the installed official clients. `Ctrl+P` opens the
+reasoning variants reported by the installed official clients. `/models` opens the
 native model picker and `Ctrl+T` cycles only the reasoning variants supported by
 the selected model.
 

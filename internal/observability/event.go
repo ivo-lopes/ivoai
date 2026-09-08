@@ -272,7 +272,7 @@ func (e Event) Validate() error {
 	if !safeLabel(e.SourceID, 128) || !safeLabel(e.SourceAlias, 64) || !safeLabel(e.Purpose, 64) || e.SelectedSourceCount < 0 || e.SelectedSourceCount > 8 {
 		return errors.New("invalid knowledge source observability metadata")
 	}
-	if e.Component != "" && !oneOf(string(e.Component), "codex", "claude", "memory", "context", "compression", "orchestration", "working_context", "skills", "tools") {
+	if e.Component != "" && !oneOf(string(e.Component), "codex", "claude", "opencode", "memory", "context", "compression", "orchestration", "working_context", "skills", "tools") {
 		return errors.New("invalid observability component")
 	}
 	if e.Capability != "" && !safeLabel(string(e.Capability), 96) {

@@ -1,0 +1,7 @@
+{
+  "error": {
+    "code": "executor_stream_incomplete",
+    "message": "IVOAI executor failed",
+    "type": "ivoai_bridge_error"
+  }
+}

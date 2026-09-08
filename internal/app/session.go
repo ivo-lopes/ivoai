@@ -20,6 +20,7 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/orchestration"
 	"github.com/ivo-lopes/ivoai/internal/orchestrator"
 	"github.com/ivo-lopes/ivoai/internal/platform"
+	"github.com/ivo-lopes/ivoai/internal/quota"
 	"github.com/ivo-lopes/ivoai/internal/routing"
 	"github.com/ivo-lopes/ivoai/internal/session"
 	"github.com/ivo-lopes/ivoai/internal/terminalui"
@@ -277,18 +278,27 @@ func (a *App) OrchestratorServe(ctx context.Context, id string) error {
 		a.warn("WorkingContext artifact store is degraded; raw worker output will not be injected into primary context", workingErr)
 	}
 	knowledgeServers := runtimeKnowledgeServers(cfg.MCP.Servers)
+	native := a.nativeOpenCode(cfg, state, value.WorkingDirectory, filepath.Join(runtimeDir, "native-worker"), nil, true)
+	quotaManager := a.automaticQuotaManager(cfg, state)
+	if native != nil {
+		quotaManager.Probes[quota.ProviderOpenCode] = native
+	}
+	registry := routing.Discoverer{CodexPath: state.Components["codex"].Path, ClaudePath: state.Components["claude-code"].Path, CachePath: filepath.Join(a.Store.Paths.CacheDir, "capabilities.json")}.Discover(ctx)
+	if nativeCapabilityAvailable(ctx, native) {
+		registry.Providers["opencode"] = native.Capability()
+	}
 	server := orchestrator.Server{
 		Store: store, SessionID: id, Directory: value.WorkingDirectory, RuntimeDir: runtimeDir,
 		ReviewExecutor:        cfg.Orchestration.ReviewExecutor,
-		Adapter:               workers.Adapter{Runner: a.Runner, CodexSHA256: value.CodexSHA256, CodexPath: state.Components["codex"].Path, ClaudePath: state.Components["claude-code"].Path, HeadroomPath: state.Components["headroom"].Path, HeadroomEnabled: cfg.Compression.Provider == "headroom" && cfg.Headroom.Enabled, KnowledgeServers: knowledgeServers},
+		Adapter:               workers.Adapter{NativeOpenCode: native, Runner: a.Runner, CodexSHA256: value.CodexSHA256, CodexPath: state.Components["codex"].Path, ClaudePath: state.Components["claude-code"].Path, HeadroomPath: state.Components["headroom"].Path, HeadroomEnabled: cfg.Compression.Provider == "headroom" && cfg.Headroom.Enabled, KnowledgeServers: knowledgeServers},
 		Control:               orchestration.RufloOrchestratorAdapter{Control: orchestration.ControlPlane{Manager: a.orchestrationManager(state), RuntimeDir: runtimeDir}, Managed: state.Components["ruflo"].Managed},
-		Quota:                 a.automaticQuotaManager(cfg, state),
+		Quota:                 quotaManager,
 		CheckpointEnabled:     cfg.Orchestration.Auto.CheckpointEnabled,
 		BootstrapRequired:     value.Mode == session.ModeAuto && cfg.Orchestration.Auto.Optimization.SharedContextBootstrap,
 		ProgressiveEscalation: cfg.Orchestration.Auto.Optimization.ProgressiveEscalation,
 		Parallelism:           cfg.Orchestration.Auto.Optimization.Parallelism,
 		Weights:               routing.Weights{Complexity: cfg.Orchestration.Auto.Optimization.Weights.Complexity, Risk: cfg.Orchestration.Auto.Optimization.Weights.Risk, ReasoningDepth: cfg.Orchestration.Auto.Optimization.Weights.ReasoningDepth, VerificationNeed: cfg.Orchestration.Auto.Optimization.Weights.VerificationNeed, ContextBreadth: cfg.Orchestration.Auto.Optimization.Weights.ContextBreadth},
-		Registry:              routing.Discoverer{CodexPath: state.Components["codex"].Path, ClaudePath: state.Components["claude-code"].Path, CachePath: filepath.Join(a.Store.Paths.CacheDir, "capabilities.json")}.Discover(ctx),
+		Registry:              registry,
 		Overrides:             routingOverrides(cfg.Orchestration.Auto.Profiles),
 		WorkingContext:        workingStore,
 		Compressor:            a.workingContextCompressor(cfg, state, runtimeDir),

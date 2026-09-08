@@ -38,6 +38,12 @@ func (m Manager) AuthenticationChanged(ctx context.Context, provider Provider, r
 // authoritative model window can block dispatch.
 func (m Manager) CanDispatch(ctx context.Context, provider Provider, model string, force bool) (ProviderQuota, bool, error) {
 	value, err := m.Probe(ctx, provider, force)
+	if checker, ok := m.Probes[provider].(interface{ CanModel(string) bool }); ok && !checker.CanModel(model) {
+		return value, false, err
+	}
+	if provider == ProviderOpenCode && err != nil {
+		return value, false, err
+	}
 	return value, eligibleForModel(value, model), err
 }
 
@@ -77,6 +83,16 @@ func (m Manager) Probe(ctx context.Context, provider Provider, force bool) (Prov
 		return value, err
 	}
 	value.Eligible = value.Authenticated && !value.HardLimitReached
+	// Native providers expose no authoritative quota reset. Use a bounded
+	// cooldown after an observed runtime limit, not permanent exhaustion or an
+	// invented reset window. Attempted-executor exclusion still prevents loops.
+	if provider == ProviderOpenCode {
+		if snapshot, loadErr := m.Store.Load(); loadErr == nil && snapshot.Providers[provider].HardLimitReached && now.Sub(snapshot.Providers[provider].ObservedAt) < m.ttl() {
+			value.HardLimitReached, value.Eligible = true, false
+			value.ObservedAt = snapshot.Providers[provider].ObservedAt
+			value.Reason = "native provider cooldown; quota telemetry unknown"
+		}
+	}
 	if !value.Authenticated && value.Reason == "" {
 		value.Reason = "authentication unavailable"
 	}
@@ -90,23 +106,36 @@ func (m Manager) Probe(ctx context.Context, provider Provider, force bool) (Prov
 }
 
 func (m Manager) Resolve(ctx context.Context, requested Provider, model string, force bool) (Decision, error) {
-	if requested != ProviderCodex && requested != ProviderClaude {
-		return Decision{}, errors.New("planner must be codex or claude")
+	return m.ResolveCandidates(ctx, requested, model, force, nil)
+}
+
+// ResolveCandidates lets the control plane exclude attempted providers without
+// creating a second scheduler. Explicit selections use CanDispatch, never this.
+func (m Manager) ResolveCandidates(ctx context.Context, requested Provider, model string, force bool, excluded map[Provider]bool) (Decision, error) {
+	if !Supported(requested) {
+		return Decision{}, errors.New("unknown executor")
 	}
-	first, firstEligible, firstErr := m.CanDispatch(ctx, requested, model, force)
-	if firstEligible {
-		return Decision{Requested: requested, Resolved: requested, Quota: first}, nil
-	}
-	alternate := Other(requested)
-	second, secondEligible, secondErr := m.CanDispatch(ctx, alternate, model, force)
-	if secondEligible {
-		reason := first.Reason
-		if reason == "" {
-			reason = "requested provider is unavailable"
+	var failures []error
+	var unavailable []ProviderQuota
+	for _, provider := range Priority(requested) {
+		if excluded[provider] || m.Probes[provider] == nil {
+			continue
 		}
-		return Decision{Requested: requested, Resolved: alternate, Fallback: true, Reason: reason, Quota: second}, nil
+		value, eligible, err := m.CanDispatch(ctx, provider, model, force)
+		if eligible {
+			why := ""
+			if len(unavailable) > 0 {
+				why = unavailable[0].Reason
+				if why == "" {
+					why = "requested provider is unavailable"
+				}
+			}
+			return Decision{Requested: requested, Resolved: provider, Fallback: provider != requested, Reason: why, Quota: value}, nil
+		}
+		unavailable = append(unavailable, value)
+		failures = append(failures, err)
 	}
-	return Decision{Requested: requested, Reason: combinedReason(first, second)}, errors.Join(firstErr, secondErr, fmt.Errorf("no subscription-backed LLM is currently available"))
+	return Decision{Requested: requested}, errors.Join(append(failures, fmt.Errorf("no subscription-backed or authenticated native LLM is currently available"))...)
 }
 
 func eligibleForModel(value ProviderQuota, model string) bool {

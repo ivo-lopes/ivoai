@@ -21,6 +21,21 @@ ivoai setup
 
 ## Verificações locais
 
+`scripts/test-managed-opencode.sh` usa o artefato OpenCode pinado com fixtures
+locais de provider e MCP. A matriz cobre descoberta e execução nativa pelo mesmo
+frontend/bridge, HTTP/SSE, permissões, attach, teclado e resize real, sem exigir
+credenciais pessoais de providers.
+
+`node --test internal/opencodebridge/presentation.test.mjs` compara goldens
+determinísticos das funções de apresentação importadas pela TUI: identidade,
+permissões, autenticação/quota, runtime, servidores, seleção restrita, degradação
+e linhas em 60/100/160 colunas. Goldens em Go cobrem metadados dos seletores de
+modelo/variant e erros sanitizados. Testes normais nunca regravam os baselines.
+Após revisar uma mudança intencional, use `UPDATE_GOLDENS=1` nos testes
+correspondentes; a CI recusa esse modo. Timestamps, portas e IDs de sessão não
+entram na apresentação. Estado, modelo, reasoning, permissões, health e seleção
+nunca são normalizados.
+
 ```sh
 gofmt -w .
 go test ./...

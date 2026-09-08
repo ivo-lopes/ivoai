@@ -1,0 +1,95 @@
+{
+  "auto": {
+    "name": "IVOAI Automatic Orchestration"
+  },
+  "claude-Zml4dHVyZS1tb2RlbA": {
+    "name": "Claude · fixture-model",
+    "reasoning": true,
+    "variants": {
+      "high": {
+        "reasoningEffort": "high"
+      },
+      "low": {
+        "reasoningEffort": "low"
+      },
+      "max": {
+        "disabled": true
+      },
+      "medium": {
+        "disabled": true
+      },
+      "minimal": {
+        "disabled": true
+      },
+      "none": {
+        "disabled": true
+      },
+      "ultra": {
+        "disabled": true
+      },
+      "xhigh": {
+        "disabled": true
+      }
+    }
+  },
+  "codex-Zml4dHVyZS1tb2RlbA": {
+    "name": "Codex · fixture-model",
+    "reasoning": true,
+    "variants": {
+      "high": {
+        "reasoningEffort": "high"
+      },
+      "low": {
+        "reasoningEffort": "low"
+      },
+      "max": {
+        "disabled": true
+      },
+      "medium": {
+        "disabled": true
+      },
+      "minimal": {
+        "disabled": true
+      },
+      "none": {
+        "disabled": true
+      },
+      "ultra": {
+        "disabled": true
+      },
+      "xhigh": {
+        "disabled": true
+      }
+    }
+  },
+  "opencode-bmF0aXZlLWZpeHR1cmUvZml4dHVyZS1tb2RlbA": {
+    "name": "OpenCode · native-fixture/fixture-model",
+    "reasoning": true,
+    "variants": {
+      "high": {
+        "reasoningEffort": "high"
+      },
+      "low": {
+        "reasoningEffort": "low"
+      },
+      "max": {
+        "disabled": true
+      },
+      "medium": {
+        "disabled": true
+      },
+      "minimal": {
+        "disabled": true
+      },
+      "none": {
+        "disabled": true
+      },
+      "ultra": {
+        "disabled": true
+      },
+      "xhigh": {
+        "disabled": true
+      }
+    }
+  }
+}

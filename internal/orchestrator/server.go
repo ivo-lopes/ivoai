@@ -148,7 +148,7 @@ func (s *Server) addTools(server *mcp.Server) {
 	server.AddTool(&mcp.Tool{Name: "orchestration_delegate", Description: "Run a bounded task through an official Codex or Claude Code worker. Ruflo only records lifecycle.", InputSchema: object(map[string]any{
 		"role":               map[string]any{"type": "string", "pattern": `^[A-Za-z][A-Za-z0-9_-]{0,63}$`},
 		"task":               map[string]any{"type": "string", "minLength": 1, "maxLength": workers.MaxTaskBytes},
-		"preferred_executor": map[string]any{"type": "string", "enum": []string{"codex", "claude"}},
+		"preferred_executor": map[string]any{"type": "string", "enum": quota.ProviderNames()},
 		"model":              map[string]any{"type": "string", "minLength": 1, "maxLength": 128},
 	}, "role", "task"), Annotations: write}, s.delegate)
 	server.AddTool(&mcp.Tool{Name: "orchestration_result", Description: "Read a bounded structured WorkerResult; only opaque evidence references survive primary failover.", InputSchema: object(map[string]any{"worker_id": map[string]any{"type": "string"}}, "worker_id"), Annotations: read}, s.result)
@@ -194,8 +194,8 @@ func (s *Server) delegate(ctx context.Context, request *mcp.CallToolRequest) (*m
 	if args.Executor == "" {
 		args.Executor = s.ReviewExecutor
 	}
-	if args.Executor != "codex" && args.Executor != "claude" {
-		return nil, errors.New("preferred_executor must be codex or claude")
+	if !quota.Supported(quota.Provider(args.Executor)) {
+		return nil, errors.New("preferred_executor must be codex, claude or opencode")
 	}
 	requestedExecutor := args.Executor
 	fallbackReason := ""
@@ -208,6 +208,9 @@ func (s *Server) delegate(ctx context.Context, request *mcp.CallToolRequest) (*m
 			return nil, errors.New("automatic session quota manager is unavailable")
 		}
 		decision, routeErr := s.Quota.Resolve(ctx, quota.Provider(args.Executor), args.Model, true)
+		if args.Executor == "opencode" && (routeErr != nil || decision.Resolved != quota.ProviderOpenCode) {
+			return nil, errors.New("explicit native OpenCode worker unavailable")
+		}
 		if routeErr != nil {
 			return nil, routeErr
 		}
@@ -271,7 +274,10 @@ func (s *Server) delegate(ctx context.Context, request *mcp.CallToolRequest) (*m
 	})
 	if runErr != nil && value.Mode == session.ModeAuto && s.Quota != nil && quotaLimitError(args.Executor, runErr.Error()) {
 		_ = s.Quota.MarkExhausted(quota.Provider(args.Executor), "official worker reported a subscription limit")
-		decision, routeErr := s.Quota.Resolve(ctx, quota.Other(quota.Provider(args.Executor)), "", true)
+		decision, routeErr := s.Quota.ResolveCandidates(ctx, quota.ProviderCodex, "", true, map[quota.Provider]bool{quota.Provider(args.Executor): true})
+		if requestedExecutor == "opencode" {
+			routeErr = errors.New("explicit OpenCode worker cannot fail over")
+		}
 		if routeErr == nil && decision.Resolved != quota.Provider(args.Executor) {
 			previous := args.Executor
 			args.Executor, args.Model = string(decision.Resolved), ""
@@ -324,6 +330,9 @@ func (s *Server) delegate(ctx context.Context, request *mcp.CallToolRequest) (*m
 }
 
 func quotaLimitError(executor, message string) bool {
+	if executor == "opencode" {
+		return message == "native OpenCode provider rate limit"
+	}
 	if executor == "claude" {
 		return quota.IsClaudeLimitError(message)
 	}
@@ -339,7 +348,7 @@ func (s *Server) quotaStatus(ctx context.Context, _ *mcp.CallToolRequest) (*mcp.
 		return nil, errors.New("quota routing is available only in automatic sessions")
 	}
 	result := map[string]quota.ProviderQuota{}
-	for _, provider := range []quota.Provider{quota.ProviderCodex, quota.ProviderClaude} {
+	for _, provider := range quota.Providers() {
 		current, _ := s.Quota.Probe(ctx, provider, false)
 		result[string(provider)] = current
 	}

@@ -1,0 +1,44 @@
+[
+  {
+    "id": "auto",
+    "name": "IVOAI Automatic Orchestration",
+    "mode": "auto",
+    "model_source": "scheduler"
+  },
+  {
+    "id": "claude-Zml4dHVyZS1tb2RlbA",
+    "name": "Claude · fixture-model",
+    "mode": "explicit",
+    "executor": "claude",
+    "upstream_model": "fixture-model",
+    "supported_efforts": [
+      "low",
+      "high"
+    ],
+    "model_source": "runtime_verified"
+  },
+  {
+    "id": "codex-Zml4dHVyZS1tb2RlbA",
+    "name": "Codex · fixture-model",
+    "mode": "explicit",
+    "executor": "codex",
+    "upstream_model": "fixture-model",
+    "supported_efforts": [
+      "low",
+      "high"
+    ],
+    "model_source": "runtime_verified"
+  },
+  {
+    "id": "opencode-bmF0aXZlLWZpeHR1cmUvZml4dHVyZS1tb2RlbA",
+    "name": "OpenCode · native-fixture/fixture-model",
+    "mode": "explicit",
+    "executor": "opencode",
+    "upstream_model": "native-fixture/fixture-model",
+    "supported_efforts": [
+      "low",
+      "high"
+    ],
+    "model_source": "runtime_verified"
+  }
+]
