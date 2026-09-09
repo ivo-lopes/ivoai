@@ -653,6 +653,42 @@ func (a *App) AutoWithKnowledge(ctx context.Context, planner string, agentArgs, 
 			}
 			return a.openCodeAutoStatus(store, id, cfg, knowledge, len(selectors) > 0, currentQuotas, compressionPolicy, probeErrors)
 		},
+		Attempt: func(attempt opencodebridge.TurnAttempt) error {
+			attempt.SessionID = id
+			_, updateErr := store.Update(id, func(current *session.Session) error {
+				body, err := json.Marshal(attempt)
+				if err != nil {
+					return err
+				}
+				replaced := false
+				for i, raw := range current.TurnAttempts {
+					var previous opencodebridge.TurnAttempt
+					if json.Unmarshal(raw, &previous) != nil {
+						continue
+					}
+					if previous.ID == attempt.ID {
+						current.TurnAttempts[i], replaced = body, true
+					} else if previous.Trace != nil {
+						// Keep bounded attempt metadata; only the latest attempt
+						// carries the detailed trace (the session file is bounded).
+						previous.Trace = nil
+						current.TurnAttempts[i], _ = json.Marshal(previous)
+					}
+				}
+				if !replaced {
+					current.TurnAttempts = append(current.TurnAttempts, body)
+				}
+				if len(current.TurnAttempts) > 32 {
+					current.TurnAttempts = current.TurnAttempts[len(current.TurnAttempts)-32:]
+				}
+				current.TurnState, current.ExecutorExitCode = attempt.State, attempt.ExitCode
+				if attempt.Trace != nil {
+					current.ExecutorTrace, _ = json.Marshal(attempt.Trace)
+				}
+				return nil
+			})
+			return updateErr
+		},
 		Mapping: func(mapping opencodebridge.Mapping) error {
 			_, updateErr := store.Update(id, func(currentSession *session.Session) error {
 				currentSession.FrontendSessionID = mapping.FrontendSessionID

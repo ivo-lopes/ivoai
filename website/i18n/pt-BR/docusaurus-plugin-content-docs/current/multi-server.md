@@ -1,5 +1,23 @@
 # Fontes de conhecimento em múltiplos servidores
 
+## Estados de diagnóstico
+
+`ivoai status`, `ivoai doctor` e `ivoai memory status` priorizam os mesmos profiles
+do runtime. Probes MCP autenticados de leitura são separados da seleção de destino
+de hooks/escrita. Dois purposes distintos podem ter leituras saudáveis enquanto os
+hooks informam `ambiguous_no_write`; HTTP 409 por destino ambíguo não significa
+Memory offline. Selecione exatamente um purpose para escrita. Hooks nunca fazem
+fan-out; a migração não reenvia nem exclui eventos no spool.
+
+List/show não executam probes: o objeto de saúde informa `probed=false` e `state`,
+`memory_state`, `context_state` como `not_probed`. Os booleanos existentes permanecem
+por compatibilidade; false sem probe não significa indisponibilidade. Use `connect
+server test` para um probe atual. Os estados de leitura distinguem `healthy`,
+`not_configured`, `not_probed`, `auth_error`, `transport_error`, `protocol_error` e
+`upstream_error`; agregados podem ser `degraded`. Context vazio válido não é falha.
+`status --json` usa o envelope do relatório Doctor, incluindo estados por profile e
+`hook_destination` agregado, sem credenciais.
+
 Um cliente ivoai pode manter múltiplos servidores ivoai independentes inscritos ao
 mesmo tempo. Cada `ServerProfile` possui um ID estável e opaco, um alias legível,
 purpose, grupo de redundância opcional, prioridade, endpoints de descoberta e

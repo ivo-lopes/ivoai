@@ -6,7 +6,8 @@ ivoai - personal AI client and server platform
 
 Usage:
   ivoai                         interactive menu
-  ivoai help | version | status | uninstall
+  ivoai help | version | uninstall
+  ivoai status [--json]
   ivoai setup [--mode client|server]
   ivoai doctor [--json] [--inventory]
   ivoai update [--dry-run] | update --rollback [--force]

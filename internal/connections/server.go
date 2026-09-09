@@ -70,11 +70,15 @@ type ConnectOptions struct {
 }
 
 type ProfileHealth struct {
-	Reachable          bool `json:"reachable"`
-	Ready              bool `json:"ready"`
-	ProtocolCompatible bool `json:"protocol_compatible"`
-	ContextAvailable   bool `json:"context_available"`
-	MemoryAvailable    bool `json:"memory_available"`
+	State              string `json:"state"`
+	ContextState       string `json:"context_state"`
+	MemoryState        string `json:"memory_state"`
+	Probed             bool   `json:"probed"`
+	Reachable          bool   `json:"reachable"`
+	Ready              bool   `json:"ready"`
+	ProtocolCompatible bool   `json:"protocol_compatible"`
+	ContextAvailable   bool   `json:"context_available"`
+	MemoryAvailable    bool   `json:"memory_available"`
 }
 
 type ServerConnector struct {
@@ -395,11 +399,24 @@ func (s ServerConnector) DisconnectAll() error {
 	return nil
 }
 
-func (s ServerConnector) TestProfile(ctx context.Context, profile config.ServerProfile, credential secrets.ClientCredential) (ProfileHealth, error) {
-	result := ProfileHealth{}
+func (s ServerConnector) TestProfile(ctx context.Context, profile config.ServerProfile, credential secrets.ClientCredential) (result ProfileHealth, probeErr error) {
+	result = ProfileHealth{State: "not_probed", ContextState: "not_probed", MemoryState: "not_probed"}
 	if !profile.Enabled || profile.Status != "connected" {
+		result.State = "disabled_or_disconnected"
 		return result, errors.New("server profile is disabled or disconnected")
 	}
+	result.Probed = true
+	defer func() {
+		if probeErr != nil {
+			result.State = healthFailure(probeErr)
+			if profile.ContextMCPURL != "" || profile.Features["context"] {
+				result.ContextState = result.State
+			}
+			if profile.MemoryMCPURL != "" || profile.Features["memory"] {
+				result.MemoryState = result.State
+			}
+		}
+	}()
 	base, err := ValidateBaseURL(profile.URL)
 	if err != nil {
 		return result, err
@@ -414,7 +431,7 @@ func (s ServerConnector) TestProfile(ctx context.Context, profile config.ServerP
 	result.Reachable = true
 	result.ProtocolCompatible = discovery.ProtocolVersion == ProtocolVersion
 	if !result.ProtocolCompatible {
-		return result, fmt.Errorf("incompatible server protocol %d", discovery.ProtocolVersion)
+		return result, fmt.Errorf("protocol incompatible: server protocol %d", discovery.ProtocolVersion)
 	}
 	if err := s.health(ctx, base, discovery.HealthEndpoint); err != nil {
 		return result, err
@@ -423,10 +440,15 @@ func (s ServerConnector) TestProfile(ctx context.Context, profile config.ServerP
 		return result, err
 	}
 	result.Ready = true
+	result.State = "healthy"
+	result.ContextState, result.MemoryState = "not_configured", "not_configured"
 	contextEndpoint := resolveEndpoint(base, discovery.ContextMCPEndpoint)
 	if contextEndpoint != "" {
 		if err := s.probeMCP(ctx, contextEndpoint, credential.Token); err == nil {
 			result.ContextAvailable = true
+			result.ContextState = "healthy"
+		} else {
+			result.ContextState, result.State = healthFailure(err), "degraded"
 		}
 	}
 	if discovery.Features["memory"] {
@@ -434,6 +456,9 @@ func (s ServerConnector) TestProfile(ctx context.Context, profile config.ServerP
 		if memoryEndpoint != "" {
 			if err := s.probeMCP(ctx, memoryEndpoint, credential.Token); err == nil {
 				result.MemoryAvailable = true
+				result.MemoryState = "healthy"
+			} else {
+				result.MemoryState, result.State = healthFailure(err), "degraded"
 			}
 		}
 	}

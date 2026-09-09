@@ -99,15 +99,8 @@ func (r CLIRunner) Run(ctx context.Context, request ExecutorRequest, emit func(s
 	emit = func(value string) error { trace.OutputBytes += len(value); return originalEmit(value) }
 	args := append([]string(nil), spec.Args...)
 	if request.Executor == "codex" {
-		if request.ExecutorSessionID == "" {
-			args = append(args, "exec", "--json", "--color", "never")
-			args = appendSelectionArgs(args, request)
-			args = append(args, "-C", spec.Dir, "-")
-		} else {
-			args = append(args, "exec", "resume", "--json")
-			args = appendSelectionArgs(args, request)
-			args = append(args, request.ExecutorSessionID, "-")
-		}
+		invocation := codexresolver.SplitExecArguments(spec.Args)
+		args = invocation.Arguments(request.ExecutorSessionID, spec.Dir, appendSelectionArgs(nil, request))
 	} else {
 		args = append(args, "--print", "--verbose", "--output-format", "stream-json", "--include-partial-messages")
 		args = appendSelectionArgs(args, request)
@@ -343,8 +336,8 @@ func (r CLIRunner) Run(ctx context.Context, request ExecutorRequest, emit func(s
 			class := "executor_exit_nonzero"
 			if structuredFailureClass != "" {
 				class = structuredFailureClass
-			} else if indicatesAuthenticationFailure(stderr.String()) {
-				class = "executor_auth_failure"
+			} else if known := classifyFailure(stderr.String()); known != "executor_failure" {
+				class = known
 			}
 			return result, &ExecutorFailure{Class: class, ExitCode: exitErr.ExitCode()}
 		}

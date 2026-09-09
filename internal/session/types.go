@@ -121,6 +121,11 @@ type ExecutorSessionMapping struct {
 }
 
 type Session struct {
+	TurnAttempts         []json.RawMessage                      `json:"turn_attempts,omitempty"`
+	TurnState            string                                 `json:"turn_state,omitempty"`
+	FrontendState        State                                  `json:"frontend_state,omitempty"`
+	FrontendExitCode     *int                                   `json:"frontend_exit_code,omitempty"`
+	ExecutorExitCode     *int                                   `json:"executor_exit_code,omitempty"`
 	ExecutorTrace        json.RawMessage                        `json:"executor_trace,omitempty"`
 	ConfigurationSource  string                                 `json:"configuration_source,omitempty"`
 	CodexPath            string                                 `json:"codex_path,omitempty"`

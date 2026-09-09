@@ -26,6 +26,7 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/quota"
 	"github.com/ivo-lopes/ivoai/internal/routing"
 	"github.com/ivo-lopes/ivoai/internal/secrets"
+	"github.com/ivo-lopes/ivoai/internal/serverpool"
 	"github.com/ivo-lopes/ivoai/internal/skills"
 	"github.com/ivo-lopes/ivoai/internal/supplychain"
 	"golang.org/x/sys/unix"
@@ -53,6 +54,10 @@ type Auth struct {
 	Authenticated bool   `json:"authenticated"`
 }
 type Server struct {
+	HealthState        string `json:"health_state,omitempty"`
+	ContextState       string `json:"context_state,omitempty"`
+	MemoryState        string `json:"memory_state,omitempty"`
+	HookDestination    string `json:"hook_destination,omitempty"`
 	Configured         bool   `json:"configured"`
 	Reachable          bool   `json:"reachable"`
 	TLS                bool   `json:"tls"`
@@ -221,8 +226,7 @@ func (d Doctor) Run(ctx context.Context) Report {
 	if fixture := state.Components["ruflo"]; !r.Ruflo.Installed && strings.HasSuffix(fixture.Version, "-fixture") {
 		r.Ruflo.Installed, r.Ruflo.Version = true, fixture.Version
 	}
-	r.Servers = d.serverProfiles(ctx, cfg)
-	r.Server = aggregateServers(cfg.Connections.Server, r.Servers)
+	r.Servers, r.Server = d.ProbeProfiles(ctx, cfg)
 	r.Orchestration = d.orchestration(ctx, cfg, state)
 	r.Automatic = d.automatic(ctx, cfg, state, r)
 	r.ComponentMatrix = componentMatrix(cfg, state, r)
@@ -285,6 +289,9 @@ func (d Doctor) Run(ctx context.Context) Report {
 		r.Issues = append(r.Issues, "Claude connection authentication is not valid")
 	}
 	for _, profile := range r.Servers {
+		if profile.Enabled && profile.HealthState == "degraded" {
+			r.Issues = append(r.Issues, fmt.Sprintf("server %s MCP read health is degraded (Memory=%s Context=%s)", profile.Alias, profile.MemoryState, profile.ContextState))
+		}
 		if profile.Configured && (!profile.Reachable || !profile.ProtocolCompatible || (!profile.TLS && !loopbackServer(profile.URL))) {
 			r.Issues = append(r.Issues, fmt.Sprintf("server %s is unreachable, incompatible, or not protected by TLS", profile.Alias))
 		}
@@ -332,7 +339,10 @@ func (d Doctor) serverProfiles(ctx context.Context, cfg config.Config) []ServerP
 	for _, alias := range aliases {
 		profile := cfg.Connections.Servers[alias]
 		go func(alias string, profile config.ServerProfile) {
-			channel <- outcome{alias: alias, probe: d.server(ctx, config.Connection{Status: profile.Status, URL: profile.URL, Protocol: profile.Protocol})}
+			credential := secretData.Servers[profile.ID]
+			health, _ := (connections.ServerConnector{Client: d.HTTPClient}).TestProfile(ctx, profile, credential)
+			probe := Server{Configured: profile.Status == "connected" && profile.Enabled, URL: profile.URL, TLS: strings.HasPrefix(profile.URL, "https://") || loopbackServer(profile.URL), Reachable: health.Reachable && health.Ready, ProtocolCompatible: health.ProtocolCompatible, HealthState: health.State, ContextState: health.ContextState, MemoryState: health.MemoryState}
+			channel <- outcome{alias: alias, probe: probe}
 		}(alias, profile)
 	}
 	probes := map[string]Server{}
@@ -354,16 +364,60 @@ func aggregateServers(legacy config.Connection, profiles []ServerProfile) Server
 	if len(profiles) == 0 {
 		return Server{Configured: legacy.Status == "connected", URL: legacy.URL}
 	}
-	result := Server{Configured: true, Reachable: false, TLS: true, ProtocolCompatible: true}
+	result := Server{TLS: true, ProtocolCompatible: true, HealthState: "not_probed", ContextState: "not_configured", MemoryState: "not_configured"}
 	if len(profiles) == 1 {
 		result.URL = profiles[0].URL
 	}
 	for _, profile := range profiles {
+		if !profile.Enabled {
+			continue
+		}
+		result.Configured = result.Configured || profile.Configured
 		result.Reachable = result.Reachable || profile.Reachable
-		result.TLS = result.TLS && profile.TLS
-		result.ProtocolCompatible = result.ProtocolCompatible && profile.ProtocolCompatible
+		if profile.Reachable {
+			result.TLS = result.TLS && profile.TLS
+			result.ProtocolCompatible = result.ProtocolCompatible && profile.ProtocolCompatible
+		}
+		result.ContextState = mergeReadState(result.ContextState, profile.ContextState)
+		result.MemoryState = mergeReadState(result.MemoryState, profile.MemoryState)
+		result.HealthState = mergeReadState(result.HealthState, profile.HealthState)
 	}
 	return result
+}
+
+func mergeReadState(current, next string) string {
+	if next == "" || next == "not_configured" {
+		return current
+	}
+	if current == "not_configured" || current == "not_probed" || current == "" {
+		return next
+	}
+	if next == current {
+		return current
+	}
+	return "degraded"
+}
+
+// ProbeProfiles is shared by status, Memory status and Doctor. Source selection
+// is the same ServerPool used by the runtime; hooks are destination metadata,
+// never a substitute for authenticated MCP read probes.
+func (d Doctor) ProbeProfiles(ctx context.Context, cfg config.Config) ([]ServerProfile, Server) {
+	profiles := d.serverProfiles(ctx, cfg)
+	aggregate := aggregateServers(cfg.Connections.Server, profiles)
+	if len(profiles) == 0 {
+		aggregate = d.server(ctx, cfg.Connections.Server)
+	}
+	aggregate.HookDestination = "not_configured"
+	if pool, err := serverpool.New(cfg.Connections.Servers); err == nil {
+		if selected, err := pool.Resolve(nil); err != nil {
+			aggregate.HookDestination = "selection_error"
+		} else if selected.PurposeCount() == 1 && len(selected.Groups) == 1 {
+			aggregate.HookDestination = "single_destination"
+		} else if selected.PurposeCount() > 0 {
+			aggregate.HookDestination = "ambiguous_no_write"
+		}
+	}
+	return profiles, aggregate
 }
 
 func (d Doctor) skillControlPlane() SkillControlPlane {
@@ -486,6 +540,12 @@ func componentMatrix(cfg config.Config, state config.State, report Report) core.
 	}
 	memory := state.Components["ai-memory"]
 	memoryAvailable := report.Memory.Installed && (!cfg.Memory.Enabled || report.Memory.Hooks)
+	if len(report.Servers) > 0 && cfg.Memory.Enabled {
+		memoryAvailable = false
+		for _, profile := range report.Servers {
+			memoryAvailable = memoryAvailable || profile.Enabled && profile.MemoryState == "healthy"
+		}
+	}
 	values = append(values, core.ComponentStatus{
 		ID: core.ComponentMemory, Implementation: "ai-memory", Active: cfg.Memory.Enabled,
 		Installed: report.Memory.Installed, Managed: memory.Managed, Available: memoryAvailable,
@@ -542,7 +602,7 @@ func componentMatrix(cfg config.Config, state config.State, report Report) core.
 	for _, profile := range report.Servers {
 		if profile.Features["context"] || cfg.Connections.Servers[profile.Alias].ContextMCPURL != "" {
 			contextConfigured = true
-			contextAvailable = contextAvailable || profile.Reachable && profile.ProtocolCompatible
+			contextAvailable = contextAvailable || profile.Enabled && profile.ContextState == "healthy"
 		}
 	}
 	for _, server := range cfg.MCP.Servers {
@@ -551,7 +611,9 @@ func componentMatrix(cfg config.Config, state config.State, report Report) core.
 			break
 		}
 	}
-	contextAvailable = contextAvailable || contextConfigured && report.Server.Reachable && report.Server.ProtocolCompatible
+	if len(report.Servers) == 0 {
+		contextAvailable = contextAvailable || contextConfigured && report.Server.Reachable && report.Server.ProtocolCompatible
+	}
 	values = append(values, core.ComponentStatus{
 		ID: core.ComponentContext, Implementation: "remote-context-mcp", Active: contextConfigured,
 		Installed: contextConfigured, Available: contextAvailable, Health: health(contextAvailable), Lifecycle: core.LifecycleStopped,

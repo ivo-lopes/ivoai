@@ -1,5 +1,36 @@
 # Solução de problemas
 
+## Diretórios administrativos fora de Git
+
+O AUTO gerenciado aceita diretórios sem Git. A invocação Codex posiciona
+`--skip-git-repo-check` depois de `exec`, inclusive na retomada de conversas. Isso
+ignora somente a verificação de repositório: autenticação, sandbox, approval policy,
+Skill Gate e isolamento MCP permanecem. Não execute `git init` apenas para usar
+AUTO nem configure confiança global irrestrita.
+
+Uma invocação antiga que falha antes de criar a thread recebe a classificação
+`non_git_repository_gate`. Atualize e tente novamente. `ivoai session show --json
+<session-id>` preserva `turn_attempts` limitados mesmo sem ID de sessão nativa.
+`turn_state` / `executor_exit_code` descrevem a execução; `frontend_state` /
+`frontend_exit_code` descrevem o OpenCode. Um encerramento normal do frontend não
+transforma um turno falho em sucesso. Prompts e stderr arbitrário não são armazenados
+nesses metadados.
+
+## Conexão local legada `ai-memory` recusada
+
+Uma entrada global antiga `ai-memory` em `http://127.0.0.1:49374/mcp` é independente
+do router de sessão `ivoai-memory` / `ivoai-context`. Não inicie um servidor local
+nem remova um MCP apenas porque seu nome é `ai-memory`.
+
+A migração de setup/update exige a combinação da entrada histórica exata sem
+autenticação, instalação ai-memory já gerenciada pelo IVOAI e referência ao hook do
+IVOAI. Entradas personalizadas ou sem proveniência comprovada são preservadas. Um
+recibo privado registra apenas a entrada pública removida; outras configurações e
+eventos no spool permanecem intactos. Launches normais não executam essa migração
+permanente. Um setup novo não registra o alias local obsoleto. Após atualizar,
+confira `codex mcp list` e `ivoai connect server test <alias>`. Uma entrada pessoal
+preservada exige revisão do proprietário, não exclusão automática.
+
 ## AUTO informa `ivoai_bridge_error`
 
 **Sintoma:** a conversa OpenCode gerenciada continua aberta, mas um turno informa

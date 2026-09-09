@@ -39,7 +39,7 @@ printf '%s\n' '{"type":"turn.completed"}'
 		t.Fatal(err)
 	}
 	args, _ := os.ReadFile(argsPath)
-	if !strings.Contains(string(args), `-c model_reasoning_effort="high" exec --json --color never --model gpt-fixture`) || !strings.Contains(string(args), `-c model_reasoning_effort="low" exec resume --json --model gpt-fixture thread_fixture`) {
+	if !strings.Contains(string(args), `-c model_reasoning_effort="high" exec --skip-git-repo-check --color never -C `+root+` --json --model gpt-fixture`) || !strings.Contains(string(args), `-c model_reasoning_effort="low" exec --skip-git-repo-check --color never -C `+root+` resume --json --model gpt-fixture thread_fixture`) {
 		t.Fatalf("args=%q", args)
 	}
 	stdin, _ := os.ReadFile(stdinPath)
