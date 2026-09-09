@@ -749,9 +749,8 @@ func (a *App) ConnectServerProfile(ctx context.Context, options connections.Conn
 	quietMem := mem
 	quietMem.Manager.Out = nil
 	quietMem.Manager.Err = nil
-	if err := a.agentMCP(state).RemoveRemote(ctx); err != nil {
-		a.warn("legacy global server MCP entries could not be fully removed", err)
-	}
+	// Sessions project these profiles through their private router. Adding a
+	// profile must not remove same-named personal/global MCP registrations.
 	if cfg.Memory.Enabled {
 		if err := mem.Configure(ctx, core.MemoryConfiguration{InstallHooks: true}); err != nil {
 			a.warn("server connected, but generic ai-memory hooks are degraded", err)
@@ -852,9 +851,7 @@ func (a *App) DisconnectServerProfile(ctx context.Context, alias string, all boo
 		return err
 	}
 	state, _ := a.Store.LoadState()
-	if err := a.agentMCP(state).RemoveRemote(ctx); err != nil {
-		a.warn("server MCP entries could not be fully removed from the agent clients", err)
-	}
+	// Selective profile removal never rewrites personal executor MCP stores.
 	mem := a.memoryManager(state)
 	connector := connections.ServerConnector{Store: a.Store, Secrets: secrets.Store{Path: a.Store.Paths.Secrets}}
 	if all {

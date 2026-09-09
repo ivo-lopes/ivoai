@@ -60,6 +60,7 @@ type ConnectResult struct {
 }
 
 type ConnectOptions struct {
+	Mode            EnrollmentMode
 	Alias           string
 	Purpose         string
 	RedundancyGroup string
@@ -114,8 +115,23 @@ func (s ServerConnector) Connect(ctx context.Context, baseURL, code, clientName 
 }
 
 func (s ServerConnector) ConnectProfile(ctx context.Context, options ConnectOptions) (ConnectResult, error) {
+	unlock, err := s.lockProfiles()
+	if err != nil {
+		return ConnectResult{}, err
+	}
+	defer unlock()
+	return s.connectProfile(ctx, options)
+}
+
+func (s ServerConnector) connectProfile(ctx context.Context, options ConnectOptions) (ConnectResult, error) {
 	var result ConnectResult
+	if options.Mode > EnrollmentReplace {
+		return result, errors.New("invalid enrollment mode")
+	}
 	if options.Alias == "" {
+		if options.Mode != EnrollmentUpsert {
+			return result, errors.New("server alias is required")
+		}
 		options.Alias = "default"
 	}
 	if err := serverpool.ValidateAlias(options.Alias); err != nil {
@@ -145,6 +161,16 @@ func (s ServerConnector) ConnectProfile(ctx context.Context, options ConnectOpti
 	}
 	if _, err := serverpool.New(c.Connections.Servers); err != nil {
 		return result, fmt.Errorf("validate existing server profiles: %w", err)
+	}
+	previous, exists := c.Connections.Servers[options.Alias]
+	if options.Mode == EnrollmentCreate && exists {
+		return result, fmt.Errorf("server alias %q already exists; use re-enroll to replace its connection", options.Alias)
+	}
+	if options.Mode == EnrollmentReplace {
+		if !exists {
+			return result, fmt.Errorf("server profile %q was not found", options.Alias)
+		}
+		options.Purpose, options.RedundancyGroup, options.Priority = previous.Purpose, previous.RedundancyGroup, previous.Priority
 	}
 	originalConfig := cloneConnectionConfig(c)
 	originalSecrets, err := s.Secrets.Load()
@@ -217,8 +243,7 @@ func (s ServerConnector) ConnectProfile(ctx context.Context, options ConnectOpti
 	c.Connections.Servers[options.Alias] = profile
 	if options.Alias == "default" {
 		c.Connections.Server = config.Connection{Status: "not-connected"}
-		delete(c.MCP.Servers, "ivoai-context")
-		delete(c.MCP.Servers, "ivoai-memory")
+		removeProfileBindings(&c, previous)
 	}
 	// Persist a fail-closed enrollment marker before consuming the one-time code.
 	// A crash can leave this profile unavailable, but can never pair a new token
@@ -242,16 +267,19 @@ func (s ServerConnector) ConnectProfile(ctx context.Context, options ConnectOpti
 	}
 	profile.Status = "connected"
 	profile.Enabled = true
+	if options.Mode == EnrollmentReplace {
+		profile.Enabled = previous.Enabled
+	}
 	c.Connections.Servers[options.Alias] = profile
 	// Preserve the v0.5 singleton and MCP entries only as the default profile's
 	// rollback bridge. They are never used to route a second upstream token.
 	if options.Alias == "default" {
 		c.Connections.Server = config.Connection{Status: "connected", URL: profile.URL, Protocol: profile.Protocol}
-		c.MCP.Servers["ivoai-context"] = config.MCPServer{URL: contextEndpoint, Enabled: true, Kind: "context"}
-		if memoryEndpoint != "" {
+		if _, personal := c.MCP.Servers["ivoai-context"]; !personal {
+			c.MCP.Servers["ivoai-context"] = config.MCPServer{URL: contextEndpoint, Enabled: true, Kind: "context"}
+		}
+		if _, personal := c.MCP.Servers["ivoai-memory"]; memoryEndpoint != "" && !personal {
 			c.MCP.Servers["ivoai-memory"] = config.MCPServer{URL: memoryEndpoint, HooksURL: memoryHooksEndpoint, Enabled: true, Kind: "memory"}
-		} else {
-			delete(c.MCP.Servers, "ivoai-memory")
 		}
 	}
 	if err := s.saveConfig(c); err != nil {
@@ -327,6 +355,15 @@ func (s ServerConnector) Disconnect() error {
 }
 
 func (s ServerConnector) DisconnectProfile(alias string) error {
+	unlock, err := s.lockProfiles()
+	if err != nil {
+		return err
+	}
+	defer unlock()
+	return s.disconnectProfile(alias)
+}
+
+func (s ServerConnector) disconnectProfile(alias string) error {
 	if err := serverpool.ValidateAlias(alias); err != nil {
 		return err
 	}
@@ -344,8 +381,7 @@ func (s ServerConnector) DisconnectProfile(alias string) error {
 	delete(c.Connections.Servers, alias)
 	if alias == "default" {
 		c.Connections.Server = config.Connection{Status: "not-connected"}
-		delete(c.MCP.Servers, "ivoai-context")
-		delete(c.MCP.Servers, "ivoai-memory")
+		removeProfileBindings(&c, profile)
 	}
 	secretData, err := s.Secrets.Load()
 	if err != nil {
@@ -366,6 +402,15 @@ func (s ServerConnector) DisconnectProfile(alias string) error {
 }
 
 func (s ServerConnector) DisconnectAll() error {
+	unlock, err := s.lockProfiles()
+	if err != nil {
+		return err
+	}
+	defer unlock()
+	return s.disconnectAll()
+}
+
+func (s ServerConnector) disconnectAll() error {
 	c, err := s.Store.Load()
 	if err != nil {
 		return err
@@ -376,11 +421,10 @@ func (s ServerConnector) DisconnectAll() error {
 	ids := make([]string, 0, len(c.Connections.Servers))
 	for _, profile := range c.Connections.Servers {
 		ids = append(ids, profile.ID)
+		removeProfileBindings(&c, profile)
 	}
 	c.Connections.Servers = map[string]config.ServerProfile{}
 	c.Connections.Server = config.Connection{Status: "not-connected"}
-	delete(c.MCP.Servers, "ivoai-context")
-	delete(c.MCP.Servers, "ivoai-memory")
 	secretData, err := s.Secrets.Load()
 	if err != nil {
 		return err
