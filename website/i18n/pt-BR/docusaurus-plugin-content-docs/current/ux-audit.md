@@ -1,5 +1,20 @@
 # Auditoria da UX de terminal gerenciada
 
+## Connections multi-server (v0.9.7)
+
+O par legado Connect/Disconnect de default único foi substituído por **IVOAI Servers**.
+Add somente cria; cada profile oferece Test, Enable/Disable, Edit metadata,
+Re-enroll e Remove confirmado. CLI e TUI usam ServerConnector/ServerPool e a
+secret store existente por ID estável. Não existe configuração paralela da TUI.
+Enrollment não é apresentado como health live. Testes explícitos ficam em cache
+por um minuto; após restart, o estado volta a not_probed.
+
+Tokens de cor existentes, fonte do terminal, alinhamento à esquerda, teclado,
+largura adaptativa e NO_COLOR foram preservados, sem nova paleta ou decoração.
+A confirmação destrutiva identifica o alias. Labels distinguem enabled, conexão,
+health e metadados da credencial sem depender apenas de cor. O smoke com fixtures
+cobre launcher real, teclado, entrada oculta, persistência, falhas e remoção seletiva.
+
 Validada para a experiência AUTO OpenCode-first em 2026-09-04. A regra orientadora é
 um único modelo de estado autoritativo: dados de sessão, executor, quota e conhecimento
 têm origem no IVOAI e são renderizados pelo frontend gerenciado. Saídas JSON e non-TTY
@@ -72,7 +87,8 @@ duplicadas no nível superior.
 auto
 status doctor doctor.inventory version
 setup update.dry-run update rollback uninstall
-connect.list connect.chatgpt disconnect.chatgpt connect.claude disconnect.claude connect.server disconnect.server
+connect.list connect.chatgpt disconnect.chatgpt connect.claude disconnect.claude connect.server
+servers.list servers.add servers.manage servers.test servers.toggle servers.edit servers.re-enroll servers.remove
 mcp.list mcp.add mcp.remove mcp.auth mcp.auth.remove mcp.header mcp.test
 launch.codex launch.claude launch.opencode
 memory.status memory.configure

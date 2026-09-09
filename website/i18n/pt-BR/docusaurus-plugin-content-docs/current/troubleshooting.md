@@ -1,5 +1,20 @@
 # Solução de problemas
 
+## Gestão de conexões multi-server
+
+- **Alias already exists:** Add nunca substitui. Selecione o alias e use Re-enroll
+  com código novo para rotacionar somente essa conexão, ou escolha outro alias.
+- **Connections are being changed:** outra transação de profile mantém o lock.
+  Aguarde seu término e tente novamente; a tentativa rejeitada não consumiu o código.
+- **Not probed:** enrollment não é health live. Selecione Test connection; resultados
+  expiram após um minuto e não são preservados entre restarts.
+- **Disabled:** habilite o profile existente; isso não exige novo enrollment.
+- **Enrollment failed:** profiles/credenciais existentes são preservados. Verifique
+  o erro sanitizado de transporte/auth/protocolo e solicite código novo se necessário.
+
+Use **Connections → IVOAI Servers** ou os [comandos CLI equivalentes](connections.md).
+
+
 ## Diretórios administrativos fora de Git
 
 O AUTO gerenciado aceita diretórios sem Git. A invocação Codex posiciona

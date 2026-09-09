@@ -50,6 +50,10 @@ ivoai setup
 Then run `ivoai` to open the responsive interactive menu, or connect and launch from
 subcommands:
 
+**Connections → IVOAI Servers** manages independent profiles: add, list, test,
+enable/disable, edit, re-enroll and selectively remove. Adding another alias never
+replaces an existing profile. The legacy `default` profile remains optional.
+
 ```sh
 ivoai connect chatgpt
 ivoai connect claude

@@ -2,6 +2,11 @@
 
 ## Interactive menu
 
+**Connections → IVOAI Servers** manages independent profiles. Add a server,
+then select its alias to test, enable/disable, edit, re-enroll or remove it.
+See [Connections](connections.md) for the complete flow.
+
+
 Run `ivoai` without arguments for the full menu. In a TTY use Up/Down (or `j`/`k`),
 Enter, Esc, and `q`. The menu restores cooked terminal mode before prompts and before
 launching Codex or Claude. Destructive operations require an exact confirmation

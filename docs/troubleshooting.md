@@ -1,5 +1,20 @@
 # Troubleshooting
 
+## Multi-server connection management
+
+- **Alias already exists:** Add never replaces. Select that alias and use Re-enroll
+  with a fresh code to rotate only its connection, or choose another alias.
+- **Connections are being changed:** another profile transaction holds the lock.
+  Wait for it to finish and retry; the rejected attempt did not consume the code.
+- **Not probed:** enrollment is not live health. Select Test connection; old results
+  expire after one minute and are not carried across restarts.
+- **Disabled:** enable the existing profile; do not re-enroll merely to enable it.
+- **Enrollment failed:** existing profiles/credentials are preserved. Check the
+  sanitized transport/auth/protocol error and request a new code if needed.
+
+Use **Connections → IVOAI Servers** or [equivalent CLI commands](connections.md).
+
+
 ## Administrative workspaces outside Git
 
 Managed AUTO supports non-Git directories. Its Codex invocation puts

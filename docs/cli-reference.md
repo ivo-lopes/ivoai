@@ -16,6 +16,9 @@ Usage:
   ivoai connect server [--url URL] [--purpose PURPOSE] [--redundancy-group GROUP] [--priority N] [--enrollment-code CODE|--code-stdin]
   ivoai connect server add <alias> [--url URL] [--purpose PURPOSE] [--redundancy-group GROUP] [--priority N] [--enrollment-code CODE|--code-stdin]
   ivoai connect server list [--json] | show <alias> [--json] | test <alias> [--json]
+  ivoai connect server enable <alias> | disable <alias> | remove <alias>
+  ivoai connect server edit <alias> [--purpose PURPOSE] [--redundancy-group GROUP] [--priority N]
+  ivoai connect server re-enroll <alias> [--url URL] [--code-stdin]
   ivoai connect mcp [list] | add <name> <https-url> | remove <name>
   ivoai connect mcp auth set <name> --bearer-token-stdin
   ivoai connect mcp auth remove <name>

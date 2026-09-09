@@ -785,8 +785,11 @@ func TestConnectServerUsesDiscoveredMCPAndHooksEndpoints(t *testing.T) {
 	}
 	allCommands = strings.Join(commands, "\n")
 	allEnvironment = strings.Join(environments, "\n")
-	if !strings.Contains(allCommands, "mcp remove ivoai-context") || !strings.Contains(allCommands, "install-hooks --agent codex") {
+	if !strings.Contains(allCommands, "install-hooks --agent codex") {
 		t.Fatalf("managed integration cleanup missing:\n%s", allCommands)
+	}
+	if strings.Contains(allCommands, "mcp remove") {
+		t.Fatal("selective profile removal must not remove name-matching personal executor MCPs")
 	}
 	if strings.Contains(allCommands, "install-mcp") || strings.Contains(allCommands, "uninstall --apply") {
 		t.Fatalf("disconnect must not recreate the dead local MCP or broadly uninstall personal integrations:\n%s", allCommands)

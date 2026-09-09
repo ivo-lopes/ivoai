@@ -20,6 +20,45 @@ login do cliente oficial.
 
 ## ivoai server
 
+### TUI multi-server
+
+Abra **ivoai → Connections → IVOAI Servers**. **Add server** solicita alias único
+em minúsculas, purpose de conhecimento, URL HTTPS e enrollment code oculto.
+HTTP é aceito somente em loopback. Adicionar `company-b` nunca substitui
+`company-a`; um alias existente é rejeitado antes do enrollment.
+
+Selecione um alias para **Test connection**, habilitar/desabilitar,
+**Edit metadata**, **Re-enroll / rotate connection** ou **Remove server**.
+Remover exige `REMOVE <alias>` e afeta somente aquele profile e sua credencial.
+Re-enrollment exige `RE-ENROLL <alias>`, preserva ID estável, purpose e escolha de
+enabled, usando um código novo. O alias é estável, não um display name editável.
+Essas operações não removem registros MCP pessoais dos executores.
+
+A lista separa profiles configurados/enrolled dos **tested healthy**.
+Health fica `not_probed` até um teste explícito. Resultados ficam em cache neste
+menu por um minuto, nunca após restart. Profiles desabilitados preservam credenciais;
+reabilite sem enrollment enquanto a credencial for válida. Alterações valem para
+novas sessões gerenciadas; sessões em execução mantêm sua seleção de sources.
+
+A CLI equivalente usa exatamente o mesmo domínio:
+
+```sh
+ivoai connect server list
+ivoai connect server test company-a
+ivoai connect server disable company-a
+ivoai connect server enable company-a
+ivoai connect server edit company-a --purpose administration
+printf '%s\n' "$IVOAI_ENROLLMENT_CODE" | ivoai connect server re-enroll company-a --code-stdin
+ivoai connect server remove company-b
+```
+
+`connect server add` somente cria; use `re-enroll` para um alias existente.
+O legado `connect server` sem alias mantém sua reconexão de `default`.
+`default` é opcional e coexiste com outros aliases. Upgrade da v0.9.6 não exige
+migração de schema nem novo enrollment. Alterações concorrentes em profiles
+recebem erro de ocupado, permitindo nova tentativa antes de consumir o código.
+
+
 A conexão interativa solicita uma URL HTTPS base e um enrollment code. Profiles nomeados mantêm
 purposes e credenciais independentes. A automação pode fornecer a URL por flag e o código por
 standard input, evitando o histórico do shell. Por exemplo:
