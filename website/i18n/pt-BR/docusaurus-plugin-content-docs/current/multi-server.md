@@ -2,6 +2,11 @@
 
 ## Estados de diagnóstico
 
+Gerencie os mesmos profiles em **ivoai → Connections → IVOAI Servers**.
+Adicione, teste, habilite/desabilite, edite, faça re-enrollment e remova seletivamente
+pela TUI. Profiles desabilitados preservam credenciais. Veja [Conexões](connections.md).
+
+
 `ivoai status`, `ivoai doctor` e `ivoai memory status` priorizam os mesmos profiles
 do runtime. Probes MCP autenticados de leitura são separados da seleção de destino
 de hooks/escrita. Dois purposes distintos podem ter leituras saudáveis enquanto os

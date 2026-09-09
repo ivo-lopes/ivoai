@@ -20,6 +20,45 @@ Code's control. Disconnecting ivoai does not remove the official client login.
 
 ## ivoai server
 
+### Multi-server TUI
+
+Open **ivoai → Connections → IVOAI Servers**. **Add server** asks for a unique
+lowercase alias, knowledge purpose, HTTPS URL and hidden one-time enrollment code.
+HTTP is accepted only on loopback. Adding `company-b` never replaces `company-a`;
+an existing alias is rejected before enrollment.
+
+Select an alias to **Test connection**, enable/disable, **Edit metadata**,
+**Re-enroll / rotate connection**, or **Remove server**. Removal requires
+`REMOVE <alias>` and affects only that profile and its credential. Re-enrollment
+requires `RE-ENROLL <alias>`, preserves stable ID, purpose and enabled choice, and
+uses a fresh code. The alias itself is stable, not an editable display name.
+Personal executor MCP registrations are not removed by these operations.
+
+The list separates configured/enrolled profiles from **tested healthy** ones.
+Health is `not_probed` until an explicit test. Results are cached in this menu
+for one minute, never across restart. Disabled profiles retain credentials;
+re-enable without enrollment while the credential remains valid. Changes apply
+to new managed sessions; running sessions keep their existing source selection.
+
+The equivalent CLI uses exactly the same domain:
+
+```sh
+ivoai connect server list
+ivoai connect server test company-a
+ivoai connect server disable company-a
+ivoai connect server enable company-a
+ivoai connect server edit company-a --purpose administration
+printf '%s\n' "$IVOAI_ENROLLMENT_CODE" | ivoai connect server re-enroll company-a --code-stdin
+ivoai connect server remove company-b
+```
+
+`connect server add` is create-only; use `re-enroll` for an existing alias.
+The legacy no-alias `connect server` retains its `default` reconnection behavior.
+`default` is optional and coexists with other aliases. Upgrading from v0.9.6
+requires neither schema migration nor re-enrollment. Concurrent profile changes
+fail with a retryable busy error before consuming an enrollment code.
+
+
 Interactive connection asks for a base HTTPS URL and enrollment code. Named profiles
 keep independent purposes and credentials. Automation can provide the URL by flag
 and the code through standard input, avoiding shell history. For example:

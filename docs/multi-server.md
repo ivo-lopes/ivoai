@@ -18,6 +18,11 @@ Purpose and redundancy have different meanings:
 
 ## Diagnostic states
 
+Manage these same profiles through **ivoai → Connections → IVOAI Servers**.
+Add, test, enable/disable, edit, re-enroll and selectively remove profiles through
+the TUI. Disabled profiles keep their credentials. See [Connections](connections.md).
+
+
 `ivoai status`, `ivoai doctor` and `ivoai memory status` prioritize the same server
 profiles as the runtime. Authenticated MCP read probes are separate from hook/write
 destination selection. Two distinct purposes can have healthy reads while hooks

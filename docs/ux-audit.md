@@ -29,6 +29,22 @@ panel. Symbols are always paired with words, so status never depends on color al
 
 ## Menu and route inventory
 
+### Multi-server Connections (v0.9.7)
+
+The old single-default Connect/Disconnect pair is replaced by **IVOAI Servers**.
+Add is create-only; each profile has Test, Enable/Disable, Edit metadata,
+Re-enroll and confirmed Remove. Both CLI and TUI use ServerConnector/ServerPool
+and the existing stable-ID secret store. No separate TUI configuration exists.
+Enrollment status is never rendered as a live health probe. Recent explicit tests
+are cached for one minute; restart returns to not_probed.
+
+The existing terminal tokens, monospaced terminal font, left-aligned lists,
+keyboard selection, adaptive width and NO_COLOR fallback are retained. No new
+palette or decorative chrome was introduced. Destructive confirmation names the
+target alias. Normal labels distinguish enabled, connection, health and credential
+metadata without relying on color. Fixture smoke covers the actual launcher,
+keyboard navigation, no-echo input, persistence, failures and selective removal.
+
 | Surface | Decision | Rationale in managed mode |
 | --- | --- | --- |
 | IVOAI launcher: Automatic | KEEP / PRIMARY | Opens the OpenCode frontend under IVOAI control. |
@@ -70,7 +86,8 @@ the top level.
 auto
 status doctor doctor.inventory version
 setup update.dry-run update rollback uninstall
-connect.list connect.chatgpt disconnect.chatgpt connect.claude disconnect.claude connect.server disconnect.server
+connect.list connect.chatgpt disconnect.chatgpt connect.claude disconnect.claude connect.server
+servers.list servers.add servers.manage servers.test servers.toggle servers.edit servers.re-enroll servers.remove
 mcp.list mcp.add mcp.remove mcp.auth mcp.auth.remove mcp.header mcp.test
 launch.codex launch.claude launch.opencode
 memory.status memory.configure
