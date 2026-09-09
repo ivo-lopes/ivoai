@@ -1,5 +1,35 @@
 # Troubleshooting
 
+## Administrative workspaces outside Git
+
+Managed AUTO supports non-Git directories. Its Codex invocation puts
+`--skip-git-repo-check` after `exec`, including conversation resume. This skips only
+the repository check: authentication, sandbox, approval policy, Skill Gate and MCP
+isolation remain unchanged. Do not run `git init` merely to use AUTO or globally
+trust every directory.
+
+An older invocation failing before thread creation is classified as
+`non_git_repository_gate`. Upgrade and retry. `ivoai session show --json
+<session-id>` retains bounded `turn_attempts` even without a native session ID.
+`turn_state` / `executor_exit_code` describe execution; `frontend_state` /
+`frontend_exit_code` describe OpenCode. A normal frontend exit cannot make a failed
+turn successful. Prompts and arbitrary stderr are not stored in attempt metadata.
+
+## Legacy local `ai-memory` connection refused
+
+An old global `ai-memory` entry at `http://127.0.0.1:49374/mcp` is independent of the
+live session-local `ivoai-memory` / `ivoai-context` router. Do not start a local
+server or delete an MCP merely because its name is `ai-memory`.
+
+Setup/update migration requires the exact historical unauthenticated entry, an
+existing IVOAI-owned ai-memory installation and its IVOAI hook reference together.
+Customized or unproven entries are preserved. A private receipt records only the
+removed public entry; unrelated config and spool events remain untouched. Normal
+launches never perform this permanent migration. Fresh setup no longer registers
+the obsolete local alias. After upgrade, check `codex mcp list` and
+`ivoai connect server test <alias>`. A preserved personal entry needs its owner's
+configuration review, not automatic deletion.
+
 ## AUTO reports `ivoai_bridge_error`
 
 **Symptom:** the managed OpenCode conversation remains open but a turn reports an

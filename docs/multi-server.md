@@ -16,6 +16,24 @@ Purpose and redundancy have different meanings:
   failover. Writes are primary-only and are never retried automatically after an
   uncertain failure.
 
+## Diagnostic states
+
+`ivoai status`, `ivoai doctor` and `ivoai memory status` prioritize the same server
+profiles as the runtime. Authenticated MCP read probes are separate from hook/write
+destination selection. Two distinct purposes can have healthy reads while hooks
+report `ambiguous_no_write`; HTTP 409 for an ambiguous hook is not Memory offline.
+Select exactly one knowledge purpose for writes. Hooks never fan out; migration
+does not replay or delete queued events.
+
+List/show do not probe: their health object reports `probed=false` and `state`,
+`memory_state`, `context_state` as `not_probed`. Existing boolean fields remain for
+compatibility; false without a probe does not mean unhealthy. Use `connect server
+test` for a current probe. Read states distinguish `healthy`, `not_configured`,
+`not_probed`, `auth_error`, `transport_error`, `protocol_error` and `upstream_error`;
+aggregates can be `degraded`. Empty valid Context results are not failures.
+`status --json` uses the Doctor report envelope, including per-profile states and
+aggregate `hook_destination`, without credentials.
+
 ## Voicecorp and Mindsite example
 
 Use synthetic aliases and your own HTTPS origins and one-time enrollment codes:
