@@ -18,13 +18,15 @@ import (
 
 	"github.com/ivo-lopes/ivoai/internal/app"
 	"github.com/ivo-lopes/ivoai/internal/terminalui"
+	"golang.org/x/term"
 )
 
 type menuSession struct {
-	ctx      context.Context
-	app      *app.App
-	reader   *bufio.Reader
-	progress *terminalui.Progress
+	ctx          context.Context
+	app          *app.App
+	reader       *bufio.Reader
+	progress     *terminalui.Progress
+	serverHealth map[string]serverObservation
 }
 
 type menuAction struct {
@@ -42,7 +44,8 @@ func PublicMenuActionIDs() []string {
 	return []string{
 		"auto",
 		"status", "doctor", "doctor.inventory", "version", "setup", "update.dry-run", "update", "rollback", "uninstall",
-		"connect.list", "connect.chatgpt", "disconnect.chatgpt", "connect.claude", "disconnect.claude", "connect.server", "disconnect.server",
+		"connect.list", "connect.chatgpt", "disconnect.chatgpt", "connect.claude", "disconnect.claude", "connect.server",
+		"servers.list", "servers.add", "servers.manage", "servers.test", "servers.toggle", "servers.edit", "servers.re-enroll", "servers.remove",
 		"mcp.list", "mcp.add", "mcp.remove", "mcp.auth", "mcp.auth.remove", "mcp.header", "mcp.test", "launch.codex", "launch.claude", "launch.opencode", "memory.status", "memory.configure",
 		"session.direct.codex", "session.direct.claude", "session.direct.opencode", "session.orchestrated.codex", "session.orchestrated.claude", "session.list", "session.monitor", "session.stop",
 		"project.status", "project.init", "config.show", "config.headroom", "config.memory", "config.ruflo", "config.auto", "config.auto-planner", "config.auto-failover", "config.auto-checkpoint", "config.auto-strategy", "config.auto-parallel", "config.auto-bootstrap", "config.auto-escalation", "config.session-mode", "config.primary", "config.reviewer", "config.workers",
@@ -125,8 +128,7 @@ func (s *menuSession) connections() (bool, error) {
 		{id: "disconnect.chatgpt", label: "Disconnect ChatGPT state", disabled: disabledUnless(snapshot.ChatGPTConnected, "not connected"), run: s.simple(func() error { return s.app.DisconnectAgent(s.ctx, "chatgpt") })},
 		{id: "connect.claude", label: "Connect Claude Code", description: "Use the official Claude Code login flow", run: s.simple(func() error { return s.app.ConnectAgent(s.ctx, "claude") })},
 		{id: "disconnect.claude", label: "Disconnect Claude Code state", disabled: disabledUnless(snapshot.ClaudeConnected, "not connected"), run: s.simple(func() error { return s.app.DisconnectAgent(s.ctx, "claude") })},
-		{id: "connect.server", label: "Connect ivoai Server", description: "Discover and enroll with a one-time code", run: s.connectServer},
-		{id: "disconnect.server", label: "Disconnect ivoai Server", disabled: disabledUnless(snapshot.ServerConnected, "not connected"), run: s.confirmed("DISCONNECT", func() error { return s.app.DisconnectServer(s.ctx) })},
+		{id: "connect.server", label: "IVOAI Servers", description: "Add and manage independent server profiles", run: s.servers},
 		{id: "mcp", label: "External MCP Registry", run: s.mcp},
 	})
 }
@@ -331,7 +333,7 @@ func (s *menuSession) choose(title string, actions []menuAction, badges []termin
 		items = append(items, terminalui.Item{ID: action.id, Label: action.label, Description: action.description, DisabledReason: action.disabled})
 	}
 	input := io.Reader(s.reader)
-	if _, ok := s.app.In.(*os.File); ok {
+	if file, ok := s.app.In.(*os.File); ok && term.IsTerminal(int(file.Fd())) {
 		input = s.app.In
 	}
 	return (terminalui.Selector{Context: s.ctx, In: input, Out: s.app.Out, Version: s.app.Version}).Choose(title, items, badges)
@@ -401,20 +403,6 @@ func (s *menuSession) serverArgs(args ...string) func() (bool, error) {
 
 func (s *menuSession) confirmedServerProgress(phrase, label string, args ...string) func() (bool, error) {
 	return s.confirmedProgress(phrase, label, func() error { return runServer(s.ctx, args, s.app) })
-}
-
-func (s *menuSession) connectServer() (bool, error) {
-	serverURL, err := s.promptValidated("Server URL", false, "", validateHTTPSURL)
-	if err != nil {
-		return false, err
-	}
-	code, err := s.promptValidated("Enrollment code", true, "", validateEnrollmentCode)
-	if err != nil {
-		return false, err
-	}
-	return false, runProgress(s.ctx, s.app, "Connecting ivoai server", func() error {
-		return s.app.ConnectServer(s.ctx, serverURL, code)
-	})
 }
 
 func (s *menuSession) mcpAdd() (bool, error) {
@@ -694,7 +682,7 @@ func (s *menuSession) restore() (bool, error) {
 }
 
 func (s *menuSession) prompt(label string, secret bool, defaultValue string) (string, error) {
-	if file, ok := s.app.In.(*os.File); ok && file != nil {
+	if file, ok := s.app.In.(*os.File); ok && file != nil && term.IsTerminal(int(file.Fd())) {
 		value, err := s.app.Prompt(label+defaultSuffix(defaultValue)+": ", secret)
 		if value == "" {
 			value = defaultValue

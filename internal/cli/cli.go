@@ -13,6 +13,7 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/app"
 	"github.com/ivo-lopes/ivoai/internal/connections"
 	"github.com/ivo-lopes/ivoai/internal/platform"
+	"github.com/ivo-lopes/ivoai/internal/serverpool"
 	"github.com/ivo-lopes/ivoai/internal/session"
 	"github.com/ivo-lopes/ivoai/internal/terminalui"
 )
@@ -444,15 +445,31 @@ func connectServer(ctx context.Context, a *app.App, args []string) error {
 			} else {
 				value, err = a.ShowServer(alias)
 			}
-			if err != nil {
-				return err
+			if value.Alias != "" {
+				if writeErr := writeServerViews(a.Out, []app.ServerView{value}, jsonOutput); writeErr != nil {
+					return writeErr
+				}
 			}
-			return writeServerViews(a.Out, []app.ServerView{value}, jsonOutput)
-		case "add":
+			return err
+		case "enable", "disable", "remove":
+			if len(args) != 2 {
+				return fmt.Errorf("usage: ivoai connect server %s <alias>", args[0])
+			}
+			if args[0] == "remove" {
+				return a.DisconnectServerProfile(ctx, args[1], false)
+			}
+			return a.SetServerEnabled(args[1], args[0] == "enable")
+		case "edit":
+			return editServerMetadata(a, args[1:])
+		case "add", "re-enroll":
 			if len(args) < 2 {
 				return errors.New("usage: ivoai connect server add <alias> --url <https-url> [--purpose <purpose>] [--code-stdin]")
 			}
-			return connectServerProfile(ctx, a, args[1], args[2:])
+			mode := connections.EnrollmentCreate
+			if args[0] == "re-enroll" {
+				mode = connections.EnrollmentReplace
+			}
+			return connectServerProfileMode(ctx, a, args[1], args[2:], mode)
 		}
 	}
 	return connectServerProfile(ctx, a, "default", args)
@@ -478,6 +495,13 @@ func oneAliasAndJSON(args []string) (string, bool, error) {
 }
 
 func connectServerProfile(ctx context.Context, a *app.App, alias string, args []string) error {
+	return connectServerProfileMode(ctx, a, alias, args, connections.EnrollmentUpsert)
+}
+
+func connectServerProfileMode(ctx context.Context, a *app.App, alias string, args []string, mode connections.EnrollmentMode) error {
+	if err := serverpool.ValidateAlias(alias); err != nil {
+		return err
+	}
 	fs := flag.NewFlagSet("connect server", flag.ContinueOnError)
 	fs.SetOutput(a.Err)
 	serverURL := fs.String("url", "", "server base URL")
@@ -489,6 +513,27 @@ func connectServerProfile(ctx context.Context, a *app.App, alias string, args []
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
+	if fs.NArg() != 0 || *codeStdin && *code != "" {
+		return errors.New("unexpected arguments or conflicting enrollment code inputs")
+	}
+	if mode == connections.EnrollmentReplace {
+		metadataFlag := false
+		fs.Visit(func(value *flag.Flag) {
+			if value.Name == "purpose" || value.Name == "redundancy-group" || value.Name == "priority" {
+				metadataFlag = true
+			}
+		})
+		if metadataFlag {
+			return errors.New("re-enroll preserves metadata; use connect server edit to change it")
+		}
+		value, err := a.ShowServer(alias)
+		if err != nil {
+			return err
+		}
+		if *serverURL == "" {
+			*serverURL = value.URL
+		}
+	}
 	var err error
 	if *serverURL == "" {
 		*serverURL, err = a.Prompt("Server URL: ", false)
@@ -497,18 +542,18 @@ func connectServerProfile(ctx context.Context, a *app.App, alias string, args []
 		}
 	}
 	if *codeStdin {
-		b, readErr := io.ReadAll(io.LimitReader(a.In, 4096))
+		value, readErr := readMCPSecret(a)
 		if readErr != nil {
 			return readErr
 		}
-		*code = strings.TrimSpace(string(b))
+		*code = strings.TrimSpace(value)
 	} else if *code == "" {
 		*code, err = a.Prompt("Enrollment code: ", true)
 		if err != nil {
 			return err
 		}
 	}
-	options := connections.ConnectOptions{Alias: alias, Purpose: *purpose, RedundancyGroup: *group, Priority: *priority, BaseURL: *serverURL, Code: *code}
+	options := connections.ConnectOptions{Mode: mode, Alias: alias, Purpose: *purpose, RedundancyGroup: *group, Priority: *priority, BaseURL: *serverURL, Code: *code}
 	return runProgress(ctx, a, "Connecting ivoai server", func() error { return a.ConnectServerProfile(ctx, options) })
 }
 
@@ -540,7 +585,7 @@ func writeServerViews(w io.Writer, values []app.ServerView, jsonOutput bool) err
 		return json.NewEncoder(w).Encode(values)
 	}
 	if len(values) == 0 {
-		fmt.Fprintln(w, "No ivoai servers connected.")
+		fmt.Fprintln(w, "No IVOAI servers configured. Use Add server to enroll an independent profile.")
 		return nil
 	}
 	fmt.Fprintln(w, "Servers")
@@ -549,7 +594,7 @@ func writeServerViews(w io.Writer, values []app.ServerView, jsonOutput bool) err
 		if value.RedundancyGroup != "" {
 			group = fmt.Sprintf(" group=%s priority=%d", value.RedundancyGroup, value.Priority)
 		}
-		fmt.Fprintf(w, "  %-16s purpose=%-16s status=%s protocol=%d credential=%s%s\n", value.Alias, value.Purpose, value.Status, value.Protocol, configured(value.CredentialConfigured), group)
+		fmt.Fprintf(w, "  %s\n    %s\n    URL: %s\n    Credential: %s | Memory: %s | Context: %s%s\n", value.Alias, serverSummary(value), value.URL, configured(value.CredentialConfigured), value.Health.MemoryState, value.Health.ContextState, group)
 	}
 	return nil
 }
@@ -684,6 +729,9 @@ Usage:
   ivoai connect server [--url URL] [--purpose PURPOSE] [--redundancy-group GROUP] [--priority N] [--enrollment-code CODE|--code-stdin]
   ivoai connect server add <alias> [--url URL] [--purpose PURPOSE] [--redundancy-group GROUP] [--priority N] [--enrollment-code CODE|--code-stdin]
   ivoai connect server list [--json] | show <alias> [--json] | test <alias> [--json]
+  ivoai connect server enable <alias> | disable <alias> | remove <alias>
+  ivoai connect server edit <alias> [--purpose PURPOSE] [--redundancy-group GROUP] [--priority N]
+  ivoai connect server re-enroll <alias> [--url URL] [--code-stdin]
   ivoai connect mcp [list] | add <name> <https-url> | remove <name>
   ivoai connect mcp auth set <name> --bearer-token-stdin
   ivoai connect mcp auth remove <name>

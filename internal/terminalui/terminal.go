@@ -486,6 +486,11 @@ func readKeyEvent(ctx context.Context, reader *bufio.Reader, fd int, resize <-ch
 			default:
 			}
 		}
+		// A previous read may already contain the next key (paste/fast typing).
+		// Polling only the FD would stall while that key waits in bufio.
+		if reader.Buffered() > 0 {
+			break
+		}
 		poll := []unix.PollFd{{Fd: int32(fd), Events: unix.POLLIN}}
 		ready, err := unix.Poll(poll, 100)
 		if err != nil && !errors.Is(err, unix.EINTR) {

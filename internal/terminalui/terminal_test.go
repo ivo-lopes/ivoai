@@ -9,7 +9,30 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 )
+
+func TestReadKeyConsumesBufferedInputWithoutWaitingForMoreFDBytes(t *testing.T) {
+	input, output, err := os.Pipe()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer input.Close()
+	defer output.Close()
+	_, _ = output.Write([]byte("jk\r"))
+	reader := bufio.NewReader(input)
+	if _, err := reader.Peek(3); err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	for _, want := range []Key{KeyDown, KeyUp, KeyEnter} {
+		got, err := readKey(ctx, reader, int(input.Fd()))
+		if err != nil || got != want {
+			t.Fatalf("buffered key=%v want=%v error=%v", got, want, err)
+		}
+	}
+}
 
 func TestReadKeyHonorsCancellation(t *testing.T) {
 	reader, writer, err := os.Pipe()
