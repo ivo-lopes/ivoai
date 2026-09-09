@@ -487,6 +487,9 @@ func workerEnvironment(agentPath, executor string) []string {
 	result := make([]string, 0, len(os.Environ())+2)
 	for _, entry := range os.Environ() {
 		key, _, found := strings.Cut(entry, "=")
+		if key == "IVOAI_EXTERNAL_MCP_SESSION_TOKEN" {
+			continue
+		}
 		if found && (key == "PATH" || key == "DISABLE_AUTOUPDATER") {
 			continue
 		}

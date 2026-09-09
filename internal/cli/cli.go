@@ -562,6 +562,32 @@ func runMCP(a *app.App, args []string) error {
 			return errors.New("usage: ivoai connect mcp remove <name>")
 		}
 		return a.MCPRemove(args[1])
+	case "auth":
+		if len(args) == 3 && args[1] == "remove" {
+			return a.MCPClearAuth(args[2])
+		}
+		if len(args) != 4 || args[1] != "set" || args[3] != "--bearer-token-stdin" {
+			return errors.New("usage: ivoai connect mcp auth set <name> --bearer-token-stdin | auth remove <name>")
+		}
+		value, err := readMCPSecret(a)
+		if err != nil {
+			return err
+		}
+		return a.MCPSetBearer(args[2], value)
+	case "header":
+		if len(args) != 5 || args[1] != "set" || args[4] != "--value-stdin" {
+			return errors.New("usage: ivoai connect mcp header set <name> <header-name> --value-stdin")
+		}
+		value, err := readMCPSecret(a)
+		if err != nil {
+			return err
+		}
+		return a.MCPSetHeader(args[2], args[3], value)
+	case "test":
+		if len(args) != 2 {
+			return errors.New("usage: ivoai connect mcp test <name>")
+		}
+		return a.MCPTest(context.Background(), args[1])
 	default:
 		return fmt.Errorf("unknown MCP action %q", args[0])
 	}
@@ -652,6 +678,10 @@ Usage:
   ivoai connect server add <alias> [--url URL] [--purpose PURPOSE] [--redundancy-group GROUP] [--priority N] [--enrollment-code CODE|--code-stdin]
   ivoai connect server list [--json] | show <alias> [--json] | test <alias> [--json]
   ivoai connect mcp [list] | add <name> <https-url> | remove <name>
+  ivoai connect mcp auth set <name> --bearer-token-stdin
+  ivoai connect mcp auth remove <name>
+  ivoai connect mcp header set <name> <header-name> --value-stdin
+  ivoai connect mcp test <name>
   ivoai disconnect <chatgpt|claude|server [alias|--all]>
   ivoai codex [--knowledge-source <alias|purpose>] [-- agent arguments...]
   ivoai claude [--knowledge-source <alias|purpose>] [-- agent arguments...]

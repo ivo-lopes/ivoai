@@ -43,7 +43,7 @@ func PublicMenuActionIDs() []string {
 		"auto",
 		"status", "doctor", "doctor.inventory", "version", "setup", "update.dry-run", "update", "rollback", "uninstall",
 		"connect.list", "connect.chatgpt", "disconnect.chatgpt", "connect.claude", "disconnect.claude", "connect.server", "disconnect.server",
-		"mcp.list", "mcp.add", "mcp.remove", "launch.codex", "launch.claude", "launch.opencode", "memory.status", "memory.configure",
+		"mcp.list", "mcp.add", "mcp.remove", "mcp.auth", "mcp.auth.remove", "mcp.header", "mcp.test", "launch.codex", "launch.claude", "launch.opencode", "memory.status", "memory.configure",
 		"session.direct.codex", "session.direct.claude", "session.direct.opencode", "session.orchestrated.codex", "session.orchestrated.claude", "session.list", "session.monitor", "session.stop",
 		"project.status", "project.init", "config.show", "config.headroom", "config.memory", "config.ruflo", "config.auto", "config.auto-planner", "config.auto-failover", "config.auto-checkpoint", "config.auto-strategy", "config.auto-parallel", "config.auto-bootstrap", "config.auto-escalation", "config.session-mode", "config.primary", "config.reviewer", "config.workers",
 		"server.setup", "server.status", "server.doctor", "server.start", "server.stop", "server.restart", "server.logs",
@@ -239,6 +239,10 @@ func (s *menuSession) mcp() (bool, error) {
 	return s.loop("External MCP Registry", []menuAction{
 		{id: "mcp.list", label: "List MCPs", run: s.simple(s.app.MCPList)},
 		{id: "mcp.add", label: "Add MCP", run: s.mcpAdd},
+		{id: "mcp.auth", label: "Configure / Replace Credential", run: s.mcpConfigureAuth},
+		{id: "mcp.header", label: "Configure / Replace Header", description: "Private header value, including required workspace routing", run: s.mcpConfigureHeader},
+		{id: "mcp.auth.remove", label: "Remove Authentication", run: s.mcpClearAuth},
+		{id: "mcp.test", label: "Test MCP", description: "Authenticated initialize and tool discovery; no tool execution", run: s.mcpTest},
 		{id: "mcp.remove", label: "Remove MCP", run: s.mcpRemove},
 	})
 }
@@ -422,7 +426,98 @@ func (s *menuSession) mcpAdd() (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return false, s.app.MCPAdd(name, endpoint)
+	if err := s.app.MCPAdd(name, endpoint); err != nil {
+		return false, err
+	}
+	if err := s.mcpAuthFor(name); err != nil {
+		return false, err
+	}
+	return false, s.app.MCPTest(s.ctx, name)
+}
+
+func (s *menuSession) mcpAuthFor(name string) error {
+	mode, err := s.promptValidated("Authentication (none/bearer/header)", false, "none", func(value string) error {
+		if value != "none" && value != "bearer" && value != "header" {
+			return errors.New("choose none, bearer, or header")
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	if mode == "none" {
+		return s.app.MCPClearAuth(name)
+	}
+	if mode == "bearer" {
+		value, err := s.prompt("Bearer credential (hidden)", true, "")
+		if err != nil {
+			return err
+		}
+		if err := s.app.MCPSetBearer(name, value); err != nil {
+			return err
+		}
+	}
+	if mode == "header" {
+		fmt.Fprintln(s.app.Out, "Adding a private header preserves existing Bearer authentication. Use Remove Authentication to clear both.")
+	}
+	header, err := s.prompt("Additional header name (blank to finish)", false, "")
+	if err != nil {
+		return err
+	}
+	if header != "" {
+		value, err := s.prompt("Header value (hidden)", true, "")
+		if err != nil {
+			return err
+		}
+		return s.app.MCPSetHeader(name, header, value)
+	}
+	if mode == "header" {
+		return errors.New("header authentication requires a header name and value")
+	}
+	return nil
+}
+
+func (s *menuSession) mcpConfigureAuth() (bool, error) {
+	name, err := s.promptValidated("MCP name", false, "", validateIdentifier)
+	if err != nil {
+		return false, err
+	}
+	if err := s.mcpAuthFor(name); err != nil {
+		return false, err
+	}
+	return false, s.app.MCPTest(s.ctx, name)
+}
+func (s *menuSession) mcpConfigureHeader() (bool, error) {
+	name, err := s.promptValidated("MCP name", false, "", validateIdentifier)
+	if err != nil {
+		return false, err
+	}
+	header, err := s.prompt("Header name", false, "")
+	if err != nil {
+		return false, err
+	}
+	value, err := s.prompt("Header value (hidden)", true, "")
+	if err != nil {
+		return false, err
+	}
+	return false, s.app.MCPSetHeader(name, header, value)
+}
+func (s *menuSession) mcpClearAuth() (bool, error) {
+	name, err := s.promptValidated("MCP name", false, "", validateIdentifier)
+	if err != nil {
+		return false, err
+	}
+	if !s.confirm("REMOVE AUTH") {
+		return false, nil
+	}
+	return false, s.app.MCPClearAuth(name)
+}
+func (s *menuSession) mcpTest() (bool, error) {
+	name, err := s.promptValidated("MCP name", false, "", validateIdentifier)
+	if err != nil {
+		return false, err
+	}
+	return false, s.app.MCPTest(s.ctx, name)
 }
 
 func (s *menuSession) mcpRemove() (bool, error) {

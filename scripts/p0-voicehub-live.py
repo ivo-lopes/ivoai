@@ -24,7 +24,11 @@ parser = argparse.ArgumentParser()
 parser.add_argument("binary")
 parser.add_argument("--executor", choices=("codex", "claude"), required=True)
 parser.add_argument("--evidence", required=True)
+parser.add_argument("--prompt", default=PROMPT)
+parser.add_argument("--required-mcp-tool", action="append", default=[])
+parser.add_argument("--approve-external-tool", help="Approve exactly one visible server.tool read-only permission in the real TUI")
 args = parser.parse_args()
+PROMPT = args.prompt
 os.umask(0o077)
 evidence = Path(args.evidence)
 evidence.mkdir(parents=True, exist_ok=True)
@@ -153,13 +157,23 @@ try:
     command(PROMPT)
     deadline = time.monotonic()+300
     trace = None
+    permission_approved = False
+    permission_render = ""
     while time.monotonic() < deadline and process.poll() is None:
         value = json.loads(current_path.read_text())
         candidate = value.get("executor_trace")
         if candidate and candidate != baseline:
             trace = candidate
             break
-        pump(.3)
+        permission_render = (permission_render + pump(.3))[-65536:]
+        if args.approve_external_tool and not permission_approved:
+            server, tool = args.approve_external_tool.rsplit(".", 1)
+            plain = re.sub(r"\x1b\[[0-?]*[ -/]*[@-~]", "", permission_render)
+            if "IVOAI external MCP permission" in plain and server + " · " + tool in plain:
+                # Pinned upstream DialogConfirm starts on Confirm. Approve
+                # only the explicitly authorized tool, never arbitrary dialogs.
+                send("\r")
+                permission_approved = True
     if trace is None:
         raise RuntimeError("VOICEHUB_COMPLETION_TIMEOUT")
     (evidence / (args.executor+"-trace.json")).write_text(json.dumps(trace, indent=2)+"\n")
@@ -171,6 +185,12 @@ try:
             not trace.get("completion_event") or not trace.get("final_response_present") or
             not memory or not context):
         raise RuntimeError(f"VOICEHUB_ACCEPTANCE_FAILED memory={memory} context={context} failure={trace.get('failure_class', '')}")
+    if not set(args.required_mcp_tool).issubset(completed):
+        raise RuntimeError("REQUIRED_EXTERNAL_MCP_TOOL_NOT_COMPLETED")
+    if args.approve_external_tool and not permission_approved:
+        raise RuntimeError("INTERACTIVE_EXTERNAL_PERMISSION_NOT_OBSERVED")
+    if args.approve_external_tool:
+        print("INTERACTIVE_EXTERNAL_PERMISSION=PASS VISIBLE_APPROVAL_COUNT=1")
     if (value.get("requested_executor") != args.executor or
             value.get("requested_model") != model_id or value.get("effective_model") != model_id or
             value.get("requested_effort", "") != effort or value.get("effective_effort", "") != effort):
@@ -181,7 +201,7 @@ try:
     print(json.dumps({"executor": args.executor, "requested_model": model_id,
                       "effective_model": value.get("effective_model"), "reasoning": effort,
                       "evidence_source": value.get("configuration_source")}))
-    print("VOICEHUB_REPRODUCER=PASS TURN_SUCCESS=PASS MEMORY_LOOKUP=PASS CONTEXT_LOOKUP=PASS_OR_EMPTY_VALID BRIDGE_ERROR=false FINAL_RESPONSE_PRESENT=true REQUESTED_EFFECTIVE_MATCH=PASS")
+    print(("EXTERNAL_MCP_REPRODUCER" if args.required_mcp_tool else "VOICEHUB_REPRODUCER") + "=PASS TURN_SUCCESS=PASS MEMORY_LOOKUP=PASS CONTEXT_LOOKUP=PASS_OR_EMPTY_VALID BRIDGE_ERROR=false FINAL_RESPONSE_PRESENT=true REQUESTED_EFFECTIVE_MATCH=PASS")
 finally:
     if process.poll() is None:
         command("/exit")

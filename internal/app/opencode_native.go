@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/ivo-lopes/ivoai/internal/agents"
 	"github.com/ivo-lopes/ivoai/internal/config"
@@ -27,6 +28,15 @@ func (a *App) nativeOpenCode(cfg config.Config, state config.State, directory, r
 		environment = os.Environ()
 	}
 	permissions := opencodebridge.NativePermissionPolicy(cfg.OpenCode.PermissionMode, worker)
+	if worker {
+		filtered := []string{}
+		for _, entry := range environment {
+			if !strings.HasPrefix(entry, externalMCPTokenEnvironment+"=") {
+				filtered = append(filtered, entry)
+			}
+		}
+		environment = filtered
+	}
 	// These endpoints belong to the session-local knowledge router. Never
 	// project global MCPs or upstream credentials into controlled workers.
 	servers := map[string]any{}
@@ -43,6 +53,18 @@ func (a *App) nativeOpenCode(cfg config.Config, state config.State, directory, r
 				return nil
 			}
 			servers[item.name] = map[string]any{"type": "remote", "url": endpoint, "oauth": false, "headers": map[string]string{"Authorization": "Bearer {env:IVOAI_KNOWLEDGE_SESSION_TOKEN}"}}
+		}
+	}
+	if !worker {
+		for _, name := range externalMCPNames(cfg) {
+			entry := cfg.MCP.Servers[name]
+			if entry.HeaderEnv["Authorization"] != externalMCPTokenEnvironment {
+				continue
+			}
+			servers[name] = map[string]any{"type": "remote", "url": entry.URL, "oauth": false, "headers": map[string]string{"Authorization": "Bearer {env:" + externalMCPTokenEnvironment + "}"}}
+			if entry.SessionApproved {
+				permissions[name+"_*"] = "allow"
+			}
 		}
 	}
 	return &agents.NativeOpenCode{Options: opencodebridge.ManagedOptions{NativeExecutor: true, OpenCodePath: component.Path, Version: component.Version, Directory: directory, RuntimeDir: filepath.Join(runtime, "native-assets"), StateDir: filepath.Join(runtime, "native-state"), Environment: environment, PermissionMode: cfg.OpenCode.PermissionMode, NativePermissions: permissions, NativeMCP: servers, Instructions: knowledgepolicy.ResearchFirstInstructions}}

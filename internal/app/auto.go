@@ -56,6 +56,7 @@ func executorBridgeEnvironment(environment []string) []string {
 
 func managedFrontendEnvironment(environment []string) []string {
 	blocked := map[string]bool{
+		externalMCPTokenEnvironment:        true,
 		connections.ServerTokenEnvironment: true, knowledgeSessionTokenEnvironment: true,
 		"AI_MEMORY_SERVER_URL": true, "AI_MEMORY_AUTH_TOKEN": true,
 		"IVOAI_CONTEXT_MCP_URL": true, "IVOAI_MEMORY_MCP_URL": true,
@@ -105,7 +106,11 @@ func (a *App) autoBridgeArgs(executor string, existing []string, id, runtimeDir,
 	if err != nil {
 		return nil, err
 	}
-	return append(knowledgeArgs, args...), nil
+	externalArgs, err := processLocalExternalMCPArgs(executor, runtimeDir, cfg)
+	if err != nil {
+		return nil, err
+	}
+	return append(append(knowledgeArgs, externalArgs...), args...), nil
 }
 
 // stripManagedSelectionArgs keeps the OpenCode model picker authoritative for
@@ -373,9 +378,9 @@ func (a *App) AutoWithKnowledge(ctx context.Context, planner string, agentArgs, 
 	if err != nil {
 		return err
 	}
-	knowledge, err := a.prepareSessionKnowledge(ctx, cfg, selectors, current, runtimeDir, os.Environ(), func(event observability.Event) {
+	knowledge, err := a.prepareSessionKnowledgeWithApprovals(ctx, cfg, selectors, current, runtimeDir, os.Environ(), func(event observability.Event) {
 		_, _ = store.Update(id, func(current *session.Session) error { return session.AppendObservation(current, event) })
-	})
+	}, true)
 	if err != nil {
 		return err
 	}
@@ -511,12 +516,21 @@ func (a *App) AutoWithKnowledge(ctx context.Context, planner string, agentArgs, 
 	}
 	bridge, err := opencodebridge.Start(opencodebridge.Options{
 		NativePermissions: func() []opencodebridge.PermissionView {
-			if native == nil {
-				return nil
+			pending := []opencodebridge.PermissionView{}
+			if native != nil {
+				pending = append(pending, native.PendingPermissions()...)
 			}
-			return native.PendingPermissions()
+			if knowledge.external != nil {
+				for _, value := range knowledge.external.Pending() {
+					pending = append(pending, opencodebridge.PermissionView{ID: value.ID, Description: value.Description})
+				}
+			}
+			return pending
 		},
 		ReplyNativePermission: func(ctx context.Context, id string, allow bool) error {
+			if strings.HasPrefix(id, "ext_") && knowledge.external != nil {
+				return knowledge.external.Reply(id, allow)
+			}
 			if native == nil {
 				return errors.New("native executor unavailable")
 			}
@@ -783,6 +797,15 @@ func (a *App) AutoWithKnowledge(ctx context.Context, planner string, agentArgs, 
 		})
 		if updateErr != nil {
 			return updateErr
+		}
+		if knowledge.external != nil {
+			knowledge.external.UseNativeApprovals()
+			for name, entry := range cfg.MCP.Servers {
+				if entry.Kind == "external" {
+					entry.SessionApproved = cfg.OpenCode.ResolvedPermissionMode() == "full"
+					cfg.MCP.Servers[name] = entry
+				}
+			}
 		}
 		args, argsErr := a.autoBridgeArgs(current, agentArgs, id, runtimeDir, instructionsPath, cfg)
 		if argsErr != nil {

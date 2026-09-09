@@ -1085,7 +1085,19 @@ func (a *App) MCPList() error {
 		if entries[n].Enabled {
 			enabled = terminalui.Success("true", terminalui.ColorEnabled(a.Out))
 		}
-		fmt.Fprintf(a.Out, "%s\t%s\t%s\n", n, entries[n].URL, enabled)
+		credential := "not-configured"
+		auth := resolvedMCPAuth(entries[n])
+		if entries[n].Kind != "external" {
+			auth, credential = "server-managed", "server-managed"
+		}
+		if entries[n].Kind == "external" && resolvedMCPAuth(entries[n]) != "none" {
+			if _, err := (connections.Registry{Store: a.Store}).Headers(entries[n]); err == nil {
+				credential = "configured"
+			} else {
+				credential = "missing-or-invalid"
+			}
+		}
+		fmt.Fprintf(a.Out, "%q\t%s\t%s\tauth=%s credential=%s\n", n, safeMCPDisplayURL(entries[n].URL), enabled, auth, credential)
 	}
 	return nil
 }

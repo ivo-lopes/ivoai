@@ -77,6 +77,62 @@ ivoai connect mcp remove example
 Esses comandos gerenciam o registry do ivoai; a renderização específica de cada agent permanece
 um edge adapter, não uma fonte de verdade separada.
 
+### MCPs HTTP externos autenticados
+
+Prefira letras, números, underscores e hífens nos aliases. O Codex projeta pontos
+como underscores; aliases conflitantes falham explicitamente sem compartilhar credenciais.
+
+A autenticação de MCP externo pertence ao **client**, não ao `ivoai-server`.
+Entradas antigas continuam válidas com autenticação `none`. Credenciais Bearer e
+valores de headers ficam apenas na secret store privada `0600` do IVOAI, vinculados
+a um ID opaco e ao endpoint exato. Não são gravados no `config.toml`, em configurações
+dos agentes, argumentos de processo ou diagnósticos.
+
+O endpoint PAT do Plane exige Bearer e `X-Workspace-Slug`. O slug é o segmento do
+workspace na URL do Plane, não seu nome de exibição. Use variáveis preenchidas
+seguramente pelo operador; nunca cole um token literal no histórico do shell:
+
+```sh
+ivoai connect mcp add plane-team https://mcp.example.com/http/api-key/mcp
+printf '%s\n' "$PLANE_MCP_TOKEN" | ivoai connect mcp auth set plane-team --bearer-token-stdin
+printf '%s\n' "$PLANE_WORKSPACE_SLUG" | ivoai connect mcp header set plane-team X-Workspace-Slug --value-stdin
+ivoai connect mcp test plane-team
+ivoai connect mcp list
+ivoai auto
+```
+
+Executadas diretamente em terminal, as flags stdin usam entrada oculta. O launcher
+oferece o mesmo fluxo em **Connections → External MCP Registry → Add MCP**: nome,
+endpoint HTTPS, autenticação, credencial oculta, nome de header opcional e valor
+oculto, seguidos de inicialização e descoberta autenticadas. Entradas existentes
+têm as ações **Configure / Replace Credential**, **Configure / Replace Header**,
+**Remove Authentication** e **Test MCP**. Valores salvos nunca são exibidos.
+
+Repita `auth set` ou `header set` para fazer a rotação. `auth remove` remove Bearer e
+headers associados; `mcp remove` remove a entrada e sua credencial. Para alterar um
+endpoint autenticado, remova antes a autenticação. O comando de teste não executa
+ferramentas nem interpreta uma página HTML como prova de autenticação.
+
+No AUTO/OpenCode gerenciado, um gateway autenticado em loopback mantém as credenciais
+upstream dentro do processo IVOAI. Codex, Claude e OpenCode nativo recebem apenas a
+capability local. **Full** dispensa prompts de aprovação de MCP externo;
+**Interactive** usa o diálogo de permissões IVOAI existente antes de encaminhar cada
+chamada. Recusa, cancelamento ou timeout impedem a chamada upstream. A política
+`never` do Codex headless deixa de bloquear uma ferramenta atrás de um prompt
+impossível. As TUIs nativas explícitas de Codex/Claude mantêm sua própria aprovação.
+
+Full não desativa Skill Gate, sandbox do executor, permissões Unix ou isolamento de
+conhecimento. Workers consultivos read-only continuam sem herdar MCPs externos
+arbitrários; essas chamadas pertencem ao executor primário. Este hotfix não implementa
+OAuth no registry: use endpoint PAT/Bearer ou header compatível, não uma URL OAuth
+disfarçada de conexão Bearer. Nenhum arquivo global de OpenCode/Codex/Claude é reescrito.
+
+Ao diagnosticar, separe DNS, validação TLS do hostname, autenticação HTTP, headers
+de roteamento ausentes e aprovação da ferramenta. Um PAT válido sem o header de
+workspace obrigatório ainda pode retornar `401`. Nunca desative a validação TLS
+para contornar erro de certificado. Consulte o
+[contrato oficial de autenticação MCP do Plane](https://developers.plane.so/dev-tools/mcp-server).
+
 ## ChatGPT Web e Claude Web
 
 Produtos Web conectam diretamente ao MCP remoto unificado do server; eles não usam a credencial

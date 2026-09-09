@@ -71,7 +71,7 @@ auto
 status doctor doctor.inventory version
 setup update.dry-run update rollback uninstall
 connect.list connect.chatgpt disconnect.chatgpt connect.claude disconnect.claude connect.server disconnect.server
-mcp.list mcp.add mcp.remove
+mcp.list mcp.add mcp.remove mcp.auth mcp.auth.remove mcp.header mcp.test
 launch.codex launch.claude launch.opencode
 memory.status memory.configure
 session.direct.codex session.direct.claude session.direct.opencode session.orchestrated.codex session.orchestrated.claude

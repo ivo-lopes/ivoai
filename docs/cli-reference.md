@@ -16,6 +16,10 @@ Usage:
   ivoai connect server add <alias> [--url URL] [--purpose PURPOSE] [--redundancy-group GROUP] [--priority N] [--enrollment-code CODE|--code-stdin]
   ivoai connect server list [--json] | show <alias> [--json] | test <alias> [--json]
   ivoai connect mcp [list] | add <name> <https-url> | remove <name>
+  ivoai connect mcp auth set <name> --bearer-token-stdin
+  ivoai connect mcp auth remove <name>
+  ivoai connect mcp header set <name> <header-name> --value-stdin
+  ivoai connect mcp test <name>
   ivoai disconnect <chatgpt|claude|server [alias|--all]>
   ivoai codex [--knowledge-source <alias|purpose>] [-- agent arguments...]
   ivoai claude [--knowledge-source <alias|purpose>] [-- agent arguments...]
