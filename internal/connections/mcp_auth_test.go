@@ -65,6 +65,33 @@ func TestExternalMCPAuthenticationLifecycle(t *testing.T) {
 	}
 }
 
+func TestExternalMCPRemovalPreservesOtherCredential(t *testing.T) {
+	store := connStore(t.TempDir())
+	r := Registry{Store: store}
+	for _, name := range []string{"a", "b"} {
+		if err := r.Add(name, config.MCPServer{URL: "https://" + name + ".invalid/mcp", Enabled: true, Kind: "external"}); err != nil {
+			t.Fatal(err)
+		}
+		if err := r.SetBearer(name, "fixture-"+name); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := r.Remove("a"); err != nil {
+		t.Fatal(err)
+	}
+	entries, err := r.List()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, ok := entries["a"]; ok {
+		t.Fatal("entry not removed")
+	}
+	headers, err := r.Headers(entries["b"])
+	if err != nil || headers.Get("Authorization") != "Bearer fixture-b" {
+		t.Fatal("other credential changed")
+	}
+}
+
 func TestExternalMCPLegacyAndSanitizedChallenge(t *testing.T) {
 	store := connStore(t.TempDir())
 	cfg, err := store.Load()

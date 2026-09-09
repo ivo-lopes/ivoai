@@ -13,6 +13,37 @@ import (
 
 const toolCall = `{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"list_projects","arguments":{}}}`
 
+func TestExternalMCPDistinctTargetCredentials(t *testing.T) {
+	targets := []Target{}
+	for _, name := range []string{"a", "b"} {
+		upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if r.Header.Get("Authorization") != "Bearer fixture-"+name {
+				t.Error("credential crossover")
+			}
+			w.Header().Set("Content-Type", "application/json")
+			io.WriteString(w, `{"jsonrpc":"2.0","id":1,"result":{"content":[]}}`)
+		}))
+		t.Cleanup(upstream.Close)
+		targets = append(targets, Target{Name: name, URL: upstream.URL, Headers: http.Header{"Authorization": {"Bearer fixture-" + name}}})
+	}
+	g, err := Start(targets, "full")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer g.Close()
+	for i := range targets {
+		response, err := gatewayRequest(context.Background(), g, i, toolCall)
+		if err != nil {
+			t.Fatal(err)
+		}
+		io.Copy(io.Discard, response.Body)
+		response.Body.Close()
+		if response.StatusCode != 200 {
+			t.Fatal("target request failed")
+		}
+	}
+}
+
 func gatewayRequest(ctx context.Context, g *Gateway, index int, body string) (*http.Response, error) {
 	request, _ := http.NewRequestWithContext(ctx, "POST", g.URL(index), strings.NewReader(body))
 	request.Header.Set("Authorization", "Bearer "+g.Token())
