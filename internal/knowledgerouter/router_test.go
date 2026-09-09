@@ -787,6 +787,24 @@ func TestMemoryHookUsesSessionSourceAndLocalCapability(t *testing.T) {
 	}
 }
 
+func TestAmbiguousMemoryHookNeverFansOutAndDoesNotPoisonReadHealth(t *testing.T) {
+	a, b := newFakeSource(t, "alpha", "fixture-a"), newFakeSource(t, "beta", "fixture-b")
+	profiles := map[string]config.ServerProfile{"alpha": profile("alpha", "alpha", "", 0, a), "beta": profile("beta", "beta", "", 0, b)}
+	router := startTestRouter(t, profiles, nil, map[string]*fakeSource{"alpha": a, "beta": b})
+	_, status := callRouter(t, router, "/memory/checkpoint", `{"metadata":"fixture"}`)
+	if status != http.StatusConflict || a.requests.Load() != 0 || b.requests.Load() != 0 {
+		t.Fatal("ambiguous write reached an upstream")
+	}
+	_, status = callRouter(t, router, "/mcp/memory", `{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"fixture","version":"1"}}}`)
+	if status != http.StatusOK {
+		t.Fatalf("hook ambiguity broke Memory reads: %d", status)
+	}
+	_, status = callRouter(t, router, "/mcp/context", `{"jsonrpc":"2.0","id":2,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"fixture","version":"1"}}}`)
+	if status != http.StatusOK {
+		t.Fatalf("hook ambiguity broke Context reads: %d", status)
+	}
+}
+
 func TestRouterRefusesCrossOriginRedirectBeforeCredentialCrossover(t *testing.T) {
 	var targetRequests atomic.Int32
 	target := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, request *http.Request) {

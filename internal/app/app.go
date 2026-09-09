@@ -180,6 +180,9 @@ func (a *App) Setup(ctx context.Context) error {
 		}
 	}
 	installer := components.Installer{Runner: a.Runner, Store: a.Store, Out: a.Out}
+	if err := a.migrateLegacyMemory(); err != nil {
+		return fmt.Errorf("legacy Memory migration: %w", err)
+	}
 	if err := installer.Setup(ctx); err != nil {
 		return err
 	}
@@ -196,10 +199,10 @@ func (a *App) Setup(ctx context.Context) error {
 			a.warn("remote ai-memory integration is degraded; Codex and Claude Code remain usable", err)
 		}
 	} else if cfg.Memory.Enabled {
-		if err := mem.Configure(ctx, core.MemoryConfiguration{InstallMCP: true, InstallHooks: true}); err != nil {
+		if err := mem.Configure(ctx, core.MemoryConfiguration{InstallHooks: true}); err != nil {
 			a.warn("ai-memory hooks are degraded; Codex and Claude Code remain usable", err)
 		}
-	} else if err := mem.Disable(ctx); err != nil {
+	} else if err := mem.Manager.DisableHooks(ctx); err != nil {
 		a.warn("ai-memory is disabled but its previous integration could not be removed", err)
 	} else if len(cfg.Connections.Servers) > 0 {
 		if err := a.agentMCP(state).RemoveRemote(ctx); err != nil {
@@ -288,6 +291,7 @@ func (a *App) Status(ctx context.Context) error {
 		{"Compression", compressionStatus},
 		{"Context", contextHealthStatus(cfg, serverHealth)},
 		{"ai-memory", memoryHealthStatus(cfg, state.Components["ai-memory"], serverHealth)},
+		{"Memory hooks", statusValue{serverHealth.HookDestination, terminalui.StatusNeutral}},
 		{"Research", researchPriorityStatus(cfg)},
 		{"Ruflo", safeStatus(rufloHealth)},
 		{"Server", liveServerStatus(serverHealth)},
@@ -390,7 +394,7 @@ func (a *App) Status(ctx context.Context) error {
 		fmt.Fprintf(a.Out, "\nOverall: %s\n", terminalui.Warning("DEGRADED — run ivoai setup to repair components", terminalui.ColorEnabled(a.Out)))
 	} else if !rufloHealth.SafeMode || rufloHealth.ProviderExecution || rufloHealth.DurableMemory {
 		fmt.Fprintf(a.Out, "\nOverall: %s\n", terminalui.Warning("DEGRADED — run ivoai setup to repair the Ruflo safe profile", terminalui.ColorEnabled(a.Out)))
-	} else if serverHealth.Configured && (!serverHealth.Reachable || !serverHealth.ProtocolCompatible || (!serverHealth.TLS && !loopbackURL(serverHealth.URL))) {
+	} else if serverHealth.Configured && (serverHealth.HealthState == "degraded" || !serverHealth.Reachable || !serverHealth.ProtocolCompatible || (!serverHealth.TLS && !loopbackURL(serverHealth.URL))) {
 		fmt.Fprintf(a.Out, "\nOverall: %s\n", terminalui.Warning("DEGRADED", terminalui.ColorEnabled(a.Out))+" — local agents available; run ivoai doctor")
 	} else if cfg.Connections.ChatGPT.Status == "authentication-required" || cfg.Connections.Claude.Status == "authentication-required" {
 		fmt.Fprintln(a.Out, "\nOverall: DEGRADED — official client authentication required; run ivoai doctor")
@@ -408,44 +412,10 @@ type statusServerProfile struct {
 }
 
 func (a *App) probeServerProfiles(ctx context.Context, cfg config.Config) ([]statusServerProfile, doctor.Server) {
-	if len(cfg.Connections.Servers) == 0 {
-		legacy := doctor.ProbeServer(ctx, cfg.Connections.Server, a.statusHTTPClient())
-		return nil, legacy
-	}
-	aliases := make([]string, 0, len(cfg.Connections.Servers))
-	for alias := range cfg.Connections.Servers {
-		aliases = append(aliases, alias)
-	}
-	sort.Strings(aliases)
-	type outcome struct {
-		alias  string
-		health doctor.Server
-	}
-	channel := make(chan outcome, len(aliases))
-	for _, alias := range aliases {
-		profile := cfg.Connections.Servers[alias]
-		go func(alias string, profile config.ServerProfile) {
-			health := doctor.ProbeServer(ctx, config.Connection{Status: profile.Status, URL: profile.URL, Protocol: profile.Protocol}, a.statusHTTPClient())
-			channel <- outcome{alias: alias, health: health}
-		}(alias, profile)
-	}
-	byAlias := map[string]doctor.Server{}
-	for range aliases {
-		value := <-channel
-		byAlias[value.alias] = value.health
-	}
-	result := make([]statusServerProfile, 0, len(aliases))
-	aggregate := doctor.Server{Configured: true, TLS: true, ProtocolCompatible: true}
-	for _, alias := range aliases {
-		profile := cfg.Connections.Servers[alias]
-		health := byAlias[alias]
-		result = append(result, statusServerProfile{ServerProfile: profile, Health: health})
-		aggregate.Reachable = aggregate.Reachable || health.Reachable
-		aggregate.TLS = aggregate.TLS && health.TLS
-		aggregate.ProtocolCompatible = aggregate.ProtocolCompatible && health.ProtocolCompatible
-	}
-	if len(result) == 1 {
-		aggregate.URL = result[0].URL
+	profiles, aggregate := (doctor.Doctor{Store: a.Store, HTTPClient: a.statusHTTPClient()}).ProbeProfiles(ctx, cfg)
+	result := make([]statusServerProfile, 0, len(profiles))
+	for _, profile := range profiles {
+		result = append(result, statusServerProfile{ServerProfile: cfg.Connections.Servers[profile.Alias], Health: profile.Server})
 	}
 	return result, aggregate
 }
@@ -597,6 +567,9 @@ func liveServerStatus(health doctor.Server) statusValue {
 }
 
 func contextHealthStatus(cfg config.Config, health doctor.Server) statusValue {
+	if len(cfg.Connections.Servers) > 0 {
+		return readHealthStatus(health.ContextState)
+	}
 	contextConfigured := false
 	if server, ok := cfg.MCP.Servers["ivoai-context"]; ok && server.Enabled {
 		contextConfigured = true
@@ -611,6 +584,9 @@ func contextHealthStatus(cfg config.Config, health doctor.Server) statusValue {
 }
 
 func memoryHealthStatus(cfg config.Config, component config.ComponentState, health doctor.Server) statusValue {
+	if cfg.Memory.Enabled && len(cfg.Connections.Servers) > 0 {
+		return readHealthStatus(health.MemoryState)
+	}
 	if !componentPresent(component) {
 		return statusValue{"not installed", terminalui.StatusFailure}
 	}
@@ -635,6 +611,16 @@ func researchPriorityStatus(cfg config.Config) statusValue {
 	contextServer, contextRegistered := cfg.MCP.Servers["ivoai-context"]
 	memoryReady := cfg.Memory.Enabled && memoryRegistered && memoryServer.Enabled
 	contextReady := contextRegistered && contextServer.Enabled
+	if len(cfg.Connections.Servers) > 0 {
+		memoryReady, contextReady = false, false
+		for _, profile := range cfg.Connections.Servers {
+			if !profile.Enabled || profile.Status != "connected" {
+				continue
+			}
+			memoryReady = memoryReady || cfg.Memory.Enabled && profile.MemoryMCPURL != ""
+			contextReady = contextReady || profile.ContextMCPURL != ""
+		}
+	}
 	if memoryReady && contextReady {
 		return statusValue{"memory -> context -> web", terminalui.StatusSuccess}
 	}
@@ -771,7 +757,7 @@ func (a *App) ConnectServerProfile(ctx context.Context, options connections.Conn
 			a.warn("server connected, but generic ai-memory hooks are degraded", err)
 		}
 	} else {
-		if err := quietMem.Disable(ctx); err != nil {
+		if err := quietMem.Manager.DisableHooks(ctx); err != nil {
 			a.warn("ai-memory is disabled but its previous integration could not be removed", err)
 		}
 	}
@@ -854,7 +840,7 @@ func (a *App) TestServer(ctx context.Context, alias string) (ServerView, error) 
 }
 
 func serverView(profile config.ServerProfile, credential bool) ServerView {
-	return ServerView{ID: profile.ID, Alias: profile.Alias, URL: profile.URL, Purpose: profile.Purpose, RedundancyGroup: profile.RedundancyGroup, Priority: profile.Priority, Protocol: profile.Protocol, Enabled: profile.Enabled, Status: profile.Status, CredentialConfigured: credential, Features: profile.Features}
+	return ServerView{ID: profile.ID, Alias: profile.Alias, URL: profile.URL, Purpose: profile.Purpose, RedundancyGroup: profile.RedundancyGroup, Priority: profile.Priority, Protocol: profile.Protocol, Enabled: profile.Enabled, Status: profile.Status, CredentialConfigured: credential, Features: profile.Features, Health: connections.ProfileHealth{State: "not_probed", ContextState: "not_probed", MemoryState: "not_probed"}}
 }
 func (a *App) DisconnectServer(ctx context.Context) error {
 	return a.DisconnectServerProfile(ctx, "default", false)
@@ -879,11 +865,7 @@ func (a *App) DisconnectServerProfile(ctx context.Context, alias string, all boo
 		return err
 	}
 	if cfg.Memory.Enabled {
-		remaining, _ := a.Store.Load()
 		configuration := core.MemoryConfiguration{InstallHooks: true}
-		if len(remaining.Connections.Servers) == 0 {
-			configuration.InstallMCP = true
-		}
 		if err := mem.Configure(ctx, configuration); err != nil {
 			a.warn("server disconnected; offline ai-memory hooks could not be restored", err)
 		}
@@ -967,6 +949,17 @@ func (a *App) LaunchWithKnowledge(ctx context.Context, target string, args, sele
 }
 
 func (a *App) MemoryStatus(ctx context.Context) error {
+	cfg, loadErr := a.Store.Load()
+	if loadErr != nil {
+		return loadErr
+	}
+	if len(cfg.Connections.Servers) > 0 {
+		probeCtx, cancel := context.WithTimeout(ctx, liveServiceProbeTimeout)
+		defer cancel()
+		_, health := a.probeServerProfiles(probeCtx, cfg)
+		fmt.Fprintf(a.Out, "Memory read: %s\nContext read: %s\nMemory hooks: %s\n", health.MemoryState, health.ContextState, health.HookDestination)
+		return nil
+	}
 	state, _ := a.Store.LoadState()
 	status, err := a.memoryManager(state).Status(ctx)
 	if err == nil {
@@ -975,6 +968,9 @@ func (a *App) MemoryStatus(ctx context.Context) error {
 	return err
 }
 func (a *App) ReconfigureMemory(ctx context.Context) error {
+	if err := a.migrateLegacyMemory(); err != nil {
+		return err
+	}
 	cfg, err := a.Store.Load()
 	if err != nil {
 		return err
@@ -985,7 +981,7 @@ func (a *App) ReconfigureMemory(ctx context.Context) error {
 	quietMem.Manager.Out = nil
 	quietMem.Manager.Err = nil
 	if !cfg.Memory.Enabled {
-		if err := quietMem.Disable(ctx); err != nil {
+		if err := quietMem.Manager.DisableHooks(ctx); err != nil {
 			return err
 		}
 		if len(cfg.Connections.Servers) > 0 {
@@ -994,15 +990,6 @@ func (a *App) ReconfigureMemory(ctx context.Context) error {
 			}
 		}
 		return nil
-	}
-	if len(cfg.Connections.Servers) == 0 {
-		return mem.Configure(ctx, core.MemoryConfiguration{InstallMCP: true, InstallHooks: true})
-	}
-	if err := quietMem.Disable(ctx); err != nil {
-		return err
-	}
-	if err := a.agentMCP(state).RemoveRemote(ctx); err != nil {
-		a.warn("legacy global server MCP entries could not be removed", err)
 	}
 	return mem.Configure(ctx, core.MemoryConfiguration{InstallHooks: true})
 }

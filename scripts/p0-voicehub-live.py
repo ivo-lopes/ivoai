@@ -27,8 +27,11 @@ parser.add_argument("--evidence", required=True)
 parser.add_argument("--prompt", default=PROMPT)
 parser.add_argument("--required-mcp-tool", action="append", default=[])
 parser.add_argument("--approve-external-tool", help="Approve exactly one visible server.tool read-only permission in the real TUI")
+parser.add_argument("--startup-only", action="store_true",
+                    help="Run the literal OK runtime-startup check instead of the Memory/Context acceptance")
 args = parser.parse_args()
-PROMPT = args.prompt
+PROMPT = "Responda apenas OK." if args.startup_only else args.prompt
+initial_git_directory = (Path.cwd() / ".git").exists()
 os.umask(0o077)
 evidence = Path(args.evidence)
 evidence.mkdir(parents=True, exist_ok=True)
@@ -183,8 +186,21 @@ try:
     context = "context_search" in completed
     if (trace.get("failure_class") or trace.get("exit_code") != 0 or
             not trace.get("completion_event") or not trace.get("final_response_present") or
-            not memory or not context):
+            (not args.startup_only and (not memory or not context))):
         raise RuntimeError(f"VOICEHUB_ACCEPTANCE_FAILED memory={memory} context={context} failure={trace.get('failure_class', '')}")
+    if args.startup_only:
+        # The final delta may already have been drained while waiting for the
+        # persisted trace. Inspect the accumulated rendered output, excluding
+        # the echoed prompt, rather than requiring the TUI to redraw it again.
+        pump(1)
+        rendered_answer = re.sub(r"\x1b\[[0-?]*[ -/]*[@-~]", "", terminal_history).replace(PROMPT, "")
+        if not wait_rendered("OK", rendered_answer, seconds=8):
+            raise RuntimeError("RUNTIME_OK_RESPONSE_NOT_VISIBLE")
+        if not initial_git_directory and (Path.cwd() / ".git").exists():
+            raise RuntimeError("RUNTIME_CREATED_UNREQUESTED_GIT_REPOSITORY")
+        attempts = value.get("turn_attempts", [])
+        if not attempts or attempts[-1].get("turn_state") != "completed" or not attempts[-1].get("final_response_present"):
+            raise RuntimeError("RUNTIME_TURN_ATTEMPT_NOT_PERSISTED")
     if not set(args.required_mcp_tool).issubset(completed):
         raise RuntimeError("REQUIRED_EXTERNAL_MCP_TOOL_NOT_COMPLETED")
     if args.approve_external_tool and not permission_approved:
@@ -201,7 +217,10 @@ try:
     print(json.dumps({"executor": args.executor, "requested_model": model_id,
                       "effective_model": value.get("effective_model"), "reasoning": effort,
                       "evidence_source": value.get("configuration_source")}))
-    print(("EXTERNAL_MCP_REPRODUCER" if args.required_mcp_tool else "VOICEHUB_REPRODUCER") + "=PASS TURN_SUCCESS=PASS MEMORY_LOOKUP=PASS CONTEXT_LOOKUP=PASS_OR_EMPTY_VALID BRIDGE_ERROR=false FINAL_RESPONSE_PRESENT=true REQUESTED_EFFECTIVE_MATCH=PASS")
+    if args.startup_only:
+        print("RUNTIME_STARTUP_REPRODUCER=PASS AUTO_FRONTEND=OPENCODE EXECUTOR_EXIT_CODE=0 FINAL_RESPONSE_PRESENT=true BRIDGE_ERROR=false")
+    else:
+        print(("EXTERNAL_MCP_REPRODUCER" if args.required_mcp_tool else "VOICEHUB_REPRODUCER") + "=PASS TURN_SUCCESS=PASS MEMORY_LOOKUP=PASS CONTEXT_LOOKUP=PASS_OR_EMPTY_VALID BRIDGE_ERROR=false FINAL_RESPONSE_PRESENT=true REQUESTED_EFFECTIVE_MATCH=PASS")
 finally:
     if process.poll() is None:
         command("/exit")

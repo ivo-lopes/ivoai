@@ -111,6 +111,20 @@ func (m Manager) Disable(ctx context.Context) error {
 	return nil
 }
 
+// DisableHooks never removes MCPs/instructions/skills from other products.
+// Retain the spool and durable data; disable only the hook wiring explicitly.
+func (m Manager) DisableHooks(ctx context.Context) error {
+	if os.Getenv("IVOAI_TEST_MODE") == "1" {
+		return nil
+	}
+	path, err := m.binary()
+	if err != nil {
+		return err
+	}
+	_, err = m.Runner.Run(ctx, path, []string{"uninstall", "--only", "hooks", "--apply"}, platform.RunOptions{Stdout: m.Out, Stderr: m.Err, Timeout: 2 * time.Minute})
+	return err
+}
+
 func (m Manager) binary() (string, error) {
 	if m.Binary != "" {
 		return m.Binary, nil

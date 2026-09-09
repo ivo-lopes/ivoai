@@ -314,7 +314,11 @@ func TestStatusDoesNotDeclareReachableServerDownDuringSlowDNSClassLatency(t *tes
 			return
 		}
 		if r.URL.Path == "/health" || r.URL.Path == "/ready" {
-			w.WriteHeader(http.StatusNoContent)
+			state := "ready"
+			if r.URL.Path == "/health" {
+				state = "ok"
+			}
+			_ = json.NewEncoder(w).Encode(map[string]string{"status": state})
 			return
 		}
 		http.NotFound(w, r)
@@ -781,8 +785,11 @@ func TestConnectServerUsesDiscoveredMCPAndHooksEndpoints(t *testing.T) {
 	}
 	allCommands = strings.Join(commands, "\n")
 	allEnvironment = strings.Join(environments, "\n")
-	if !strings.Contains(allCommands, "install-mcp --client") || !strings.Contains(allCommands, "mcp remove ivoai-context") {
+	if !strings.Contains(allCommands, "mcp remove ivoai-context") || !strings.Contains(allCommands, "install-hooks --agent codex") {
 		t.Fatalf("managed integration cleanup missing:\n%s", allCommands)
+	}
+	if strings.Contains(allCommands, "install-mcp") || strings.Contains(allCommands, "uninstall --apply") {
+		t.Fatalf("disconnect must not recreate the dead local MCP or broadly uninstall personal integrations:\n%s", allCommands)
 	}
 	if strings.Contains(allCommands+allEnvironment, "server-scoped-token") || strings.Contains(allEnvironment, server.URL) {
 		t.Fatalf("stale remote credential or endpoint retained:\n%s\n%s", allCommands, allEnvironment)

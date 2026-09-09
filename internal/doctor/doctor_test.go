@@ -27,8 +27,10 @@ func TestDoctorReportsMultipleServersWithoutSecrets(t *testing.T) {
 		switch request.URL.Path {
 		case "/.well-known/ivoai":
 			json.NewEncoder(w).Encode(map[string]any{"protocol_version": 1, "health_endpoint": "/health", "ready_endpoint": "/ready"})
-		case "/health", "/ready":
-			w.WriteHeader(http.StatusOK)
+		case "/health":
+			json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+		case "/ready":
+			json.NewEncoder(w).Encode(map[string]string{"status": "ready"})
 		default:
 			http.NotFound(w, request)
 		}

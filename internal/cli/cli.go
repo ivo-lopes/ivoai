@@ -97,6 +97,9 @@ func runCommand(ctx context.Context, a *app.App, args []string) error {
 		}
 		return a.Setup(ctx)
 	case "status":
+		if len(args) == 2 && args[1] == "--json" {
+			return runDoctor(ctx, a, []string{"--json"})
+		}
 		return a.Status(ctx)
 	case "doctor":
 		return runDoctor(ctx, a, args[1:])
@@ -319,6 +322,9 @@ func runDoctor(ctx context.Context, a *app.App, args []string) error {
 	fmt.Fprintf(a.Out, "Headroom: installed=%s enabled=%s healthy=%s version=%s interactive-launch=%s\nCodex via Headroom: %s\nClaude Code via Headroom: %s\n", semanticBool(report.Headroom.Installed, color), semanticOptionalBool(report.Headroom.Enabled, color), semanticBool(report.Headroom.Healthy, color), report.Headroom.Version, report.Headroom.InteractiveLaunch, semanticOK(report.Headroom.CodexCompatible, color), semanticOK(report.Headroom.ClaudeCompatible, color))
 	fmt.Fprintf(a.Out, "Caveman: installed=%s managed=%s healthy=%s version=%s revision=%s license=%s trust=%s selected-provider=%s\n", semanticOptionalBool(report.Caveman.Installed, color), semanticOptionalBool(report.Caveman.Managed, color), semanticOptionalBool(report.Caveman.Healthy, color), report.Caveman.Version, report.Caveman.Revision, report.Caveman.License, report.Caveman.TrustLevel, report.CompressionProvider)
 	fmt.Fprintf(a.Out, "ai-memory: installed=%s version=%s hooks=%s server=%s\n", semanticBool(report.Memory.Installed, color), report.Memory.Version, semanticBool(report.Memory.Hooks, color), configured(report.Server.Configured))
+	if len(report.Servers) > 0 {
+		fmt.Fprintf(a.Out, "Knowledge: Memory read=%s Context read=%s hook destination=%s\n", report.Server.MemoryState, report.Server.ContextState, report.Server.HookDestination)
+	}
 	if len(report.Servers) > 0 {
 		fmt.Fprintln(a.Out, "Servers:")
 		for _, server := range report.Servers {
@@ -668,7 +674,8 @@ func usage(w io.Writer) {
 
 Usage:
   ivoai                         interactive menu
-  ivoai help | version | status | uninstall
+  ivoai help | version | uninstall
+  ivoai status [--json]
   ivoai setup [--mode client|server]
   ivoai doctor [--json] [--inventory]
   ivoai update [--dry-run] | update --rollback [--force]

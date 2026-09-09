@@ -141,6 +141,7 @@ type Options struct {
 	MaxFailovers       int
 	Status             func() Status
 	Mapping            PersistMapping
+	Attempt            func(TurnAttempt) error
 	LookupMapping      LookupMapping
 	ClaimRequest       ClaimRequest
 	Catalog            ModelCatalog
@@ -164,6 +165,7 @@ type Bridge struct {
 	maxFailovers          int
 	statusFn              func() Status
 	mapping               PersistMapping
+	attempt               func(TurnAttempt) error
 	lookup                LookupMapping
 	claim                 ClaimRequest
 	catalog               ModelCatalog
@@ -217,7 +219,7 @@ func Start(options Options) (*Bridge, error) {
 		authReference:   options.AuthReference,
 		listener:        listener, url: "http://" + listener.Addr().String(), token: token,
 		runner: options.Runner, selectFn: options.Select, monitor: options.Monitor, handoff: options.FailoverHandoff, maxFailovers: options.MaxFailovers, statusFn: options.Status,
-		mapping: options.Mapping, lookup: options.LookupMapping, claim: options.ClaimRequest, catalog: options.Catalog, authorizeSelection: options.AuthorizeSelection, onSelection: options.OnSelection,
+		mapping: options.Mapping, attempt: options.Attempt, lookup: options.LookupMapping, claim: options.ClaimRequest, catalog: options.Catalog, authorizeSelection: options.AuthorizeSelection, onSelection: options.OnSelection,
 		sessions: map[string]map[string]Mapping{}, lastExecutor: map[string]string{}, active: map[string]activeExecution{}, completed: map[string]cachedCompletion{}, closed: make(chan struct{}),
 	}
 	if bridge.maxFailovers <= 0 || bridge.maxFailovers > 2 {
@@ -529,6 +531,17 @@ func (b *Bridge) chat(w http.ResponseWriter, r *http.Request) {
 			err   error
 		}
 		finished := make(chan executionResult, 1)
+		turn := TurnAttempt{ID: fmt.Sprintf("%d_%d_%d", time.Now().UnixNano(), runID, attempt), Frontend: "opencode", FrontendSessionID: frontendID, RequestedExecutor: selection.Executor, EffectiveExecutor: executor, RequestedModel: selection.Model, RequestedEffort: selection.Effort, StartedAt: time.Now().UTC(), State: "running"}
+		if b.attempt != nil {
+			if err := b.attempt(turn); err != nil {
+				if stream {
+					_ = writeStreamError(w, "IVOAI could not persist the turn attempt", "turn_attempt_persistence_failure")
+				} else {
+					writeOpenAIError(w, http.StatusInternalServerError, "IVOAI could not persist the turn attempt")
+				}
+				return
+			}
+		}
 		go func(currentExecutor, currentPrompt, currentResume string, attemptCtx context.Context) {
 			value, runErr := b.runner.Run(attemptCtx, ExecutorRequest{
 				Executor: currentExecutor, Model: selection.Model, Effort: selection.Effort,
@@ -537,6 +550,21 @@ func (b *Bridge) chat(w http.ResponseWriter, r *http.Request) {
 			}, emit)
 			value.SelectionMode, value.RequestedModel, value.CatalogRevision = selection.Mode, selection.RequestedModel(), selection.CatalogRevision
 			value.AuthReference = authReference
+			ended := time.Now().UTC()
+			turn.EndedAt, turn.EffectiveModel, turn.EffectiveEffort = &ended, value.Model, value.Effort
+			turn.NativeSessionID, turn.Trace, turn.State = value.ExecutorSessionID, value.Trace, "completed"
+			if value.Trace != nil {
+				exit := value.Trace.ExitCode
+				turn.ExitCode, turn.FinalResponse = &exit, value.Trace.FinalResponse
+			}
+			if runErr != nil {
+				turn.State, turn.Failure = "failed", FailureClass(runErr)
+			}
+			if b.attempt != nil {
+				if err := b.attempt(turn); err != nil {
+					runErr = failure("turn_attempt_persistence_failure")
+				}
+			}
 			finished <- executionResult{value: value, err: runErr}
 		}(executor, prompt, resumeID, executionCtx)
 		limit := make(chan string, 1)
@@ -565,10 +593,10 @@ func (b *Bridge) chat(w http.ResponseWriter, r *http.Request) {
 				b.storeCompletion(requestKey, cachedCompletion{failed: true, selection: selectionKey})
 				_ = b.persistMapping(frontendID, executor, outcome.value)
 				if stream {
-					_ = writeStreamError(w, "IVOAI executor failed ("+failureClass+"); partial output was not accepted", failureClass)
+					_ = writeStreamError(w, executorErrorMessage(failureClass), failureClass)
 					return
 				}
-				writeOpenAIErrorCode(w, http.StatusBadGateway, "IVOAI executor failed", failureClass)
+				writeOpenAIErrorCode(w, http.StatusBadGateway, executorErrorMessage(failureClass), failureClass)
 				return
 			}
 			result = outcome.value
