@@ -48,6 +48,7 @@ func TestManagedOpenCodeUsesPrivateIsolatedConfiguration(t *testing.T) {
 	t.Setenv("GITHUB_TOKEN", "generic-secret-must-not-reach-frontend")
 	t.Setenv("SSH_AUTH_SOCK", "/tmp/agent-must-not-reach-frontend")
 	t.Setenv("IVOAI_KNOWLEDGE_SESSION_TOKEN", "must-not-reach-frontend")
+	t.Setenv("IVOAI_EXTERNAL_MCP_SESSION_TOKEN", "must-not-reach-frontend")
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	managed, err := StartManaged(ctx, ManagedOptions{OpenCodePath: wrapper, Version: "fixture", RuntimeDir: filepath.Join(root, "runtime"), StateDir: filepath.Join(root, "state"), Directory: root, Bridge: bridge, Instructions: "fixture instructions", ResumeSessionID: "ses_resume_fixture"})
@@ -73,7 +74,7 @@ func TestManagedOpenCodeUsesPrivateIsolatedConfiguration(t *testing.T) {
 			t.Fatalf("managed environment omitted %q", expected)
 		}
 	}
-	for _, forbidden := range []string{"OPENCODE_CONFIG_CONTENT=", "OPENCODE_CONFIG_DIR=", "OPENAI_API_KEY=", "GITHUB_TOKEN=", "SSH_AUTH_SOCK=", "IVOAI_KNOWLEDGE_SESSION_TOKEN=", "must-not-reach-frontend", "generic-secret-must-not-reach-frontend"} {
+	for _, forbidden := range []string{"OPENCODE_CONFIG_CONTENT=", "OPENCODE_CONFIG_DIR=", "OPENAI_API_KEY=", "GITHUB_TOKEN=", "SSH_AUTH_SOCK=", "IVOAI_KNOWLEDGE_SESSION_TOKEN=", "IVOAI_EXTERNAL_MCP_SESSION_TOKEN=", "must-not-reach-frontend", "generic-secret-must-not-reach-frontend"} {
 		if strings.Contains(environment, forbidden) {
 			t.Fatalf("managed frontend inherited forbidden environment key %q", forbidden)
 		}

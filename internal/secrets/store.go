@@ -23,6 +23,15 @@ type Data struct {
 	Schema  int                         `json:"schema,omitempty"`
 	Server  *ClientCredential           `json:"server,omitempty"`
 	Servers map[string]ClientCredential `json:"servers,omitempty"`
+	MCP     map[string]MCPCredential    `json:"mcp,omitempty"`
+}
+
+// MCPCredential is bound to an exact endpoint as well as an opaque identity.
+// Header values are private even when they look like harmless routing metadata.
+type MCPCredential struct {
+	Endpoint string            `json:"endpoint"`
+	Bearer   string            `json:"bearer,omitempty"`
+	Headers  map[string]string `json:"headers,omitempty"`
 }
 type Store struct{ Path string }
 

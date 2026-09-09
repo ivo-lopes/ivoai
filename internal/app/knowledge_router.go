@@ -15,6 +15,7 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/config"
 	"github.com/ivo-lopes/ivoai/internal/connections"
 	"github.com/ivo-lopes/ivoai/internal/core"
+	"github.com/ivo-lopes/ivoai/internal/externalmcp"
 	"github.com/ivo-lopes/ivoai/internal/knowledgerouter"
 	"github.com/ivo-lopes/ivoai/internal/observability"
 	"github.com/ivo-lopes/ivoai/internal/platform"
@@ -25,6 +26,7 @@ import (
 const knowledgeSessionTokenEnvironment = "IVOAI_KNOWLEDGE_SESSION_TOKEN"
 
 type sessionKnowledge struct {
+	external       *externalmcp.Gateway
 	router         *knowledgerouter.Router
 	selection      serverpool.Selection
 	environment    []string
@@ -50,7 +52,7 @@ func (k sessionKnowledge) healthFor(alias, fallback string) string {
 	return fallback
 }
 
-func (a *App) prepareSessionKnowledge(ctx context.Context, cfg config.Config, selectors []string, executor, runtimeDir string, existingEnvironment []string, observe func(observability.Event)) (sessionKnowledge, error) {
+func (a *App) prepareKnowledgeRouter(ctx context.Context, cfg config.Config, selectors []string, executor, runtimeDir string, existingEnvironment []string, observe func(observability.Event)) (sessionKnowledge, error) {
 	pool, err := serverpool.New(cfg.Connections.Servers)
 	if err != nil {
 		return sessionKnowledge{}, fmt.Errorf("load server pool: %w", err)
@@ -147,6 +149,9 @@ func coreComponentForKnowledge(operation string) core.ComponentID {
 }
 
 func (k sessionKnowledge) close() {
+	if k.external != nil {
+		k.external.Close()
+	}
 	if k.router != nil {
 		_ = k.router.Close(context.Background())
 	}

@@ -14,6 +14,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ivo-lopes/ivoai/internal/externalmcp"
 	"github.com/ivo-lopes/ivoai/internal/opencodebridge"
 	"github.com/ivo-lopes/ivoai/internal/routing"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -27,6 +28,7 @@ func TestLiveNativeOpenCodeAUTOExecutor(t *testing.T) {
 	var memoryCalls, contextCalls atomic.Int32
 	var approvalMode atomic.Bool
 	var controlPlaneRequired atomic.Bool
+	var externalCalls atomic.Int32
 	knowledge := func(name, text string, count *atomic.Int32) *httptest.Server {
 		server := mcp.NewServer(&mcp.Implementation{Name: name, Version: "fixture"}, nil)
 		server.AddTool(&mcp.Tool{Name: name, InputSchema: map[string]any{"type": "object", "properties": map[string]any{}}, Annotations: &mcp.ToolAnnotations{ReadOnlyHint: true}}, func(context.Context, *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -39,6 +41,23 @@ func TestLiveNativeOpenCodeAUTOExecutor(t *testing.T) {
 	defer memory.Close()
 	knowledgeContext := knowledge("context_health", "fixture-context-ok", &contextCalls)
 	defer knowledgeContext.Close()
+	external := knowledge("list_projects", "fixture-external-auth-ok", &externalCalls)
+	defer external.Close()
+	var authenticatedCalls atomic.Int32
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") != "Bearer fixture-upstream-pat" || r.Header.Get("X-Workspace-Slug") != "fixture-workspace" {
+			http.Error(w, "unauthorized", 401)
+			return
+		}
+		authenticatedCalls.Add(1)
+		external.Config.Handler.ServeHTTP(w, r)
+	}))
+	defer upstream.Close()
+	gateway, err := externalmcp.Start([]externalmcp.Target{{Name: "external", URL: upstream.URL, Headers: http.Header{"Authorization": {"Bearer fixture-upstream-pat"}, "X-Workspace-Slug": {"fixture-workspace"}}}}, "full")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer gateway.Close()
 	provider := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/v1/chat/completions" {
 			t.Errorf("unexpected native provider path %s", r.URL.Path)
@@ -71,6 +90,8 @@ func TestLiveNativeOpenCodeAUTOExecutor(t *testing.T) {
 			target = "context_health"
 		} else if controlPlaneRequired.Load() && !strings.Contains(string(body), "fixture-control-plane-ok") {
 			target = "control_plane_status"
+		} else if controlPlaneRequired.Load() && !strings.Contains(string(body), "fixture-external-auth-ok") {
+			target = "list_projects"
 		}
 		if target != "" {
 			name := ""
@@ -118,6 +139,9 @@ func TestLiveNativeOpenCodeAUTOExecutor(t *testing.T) {
 		t.Fatal("native Memory/Context tools not called")
 	}
 	native.Options.NativePermissions = opencodebridge.NativePermissionPolicy("full", false)
+	native.Options.Environment = append(native.Options.Environment, "IVOAI_EXTERNAL_MCP_SESSION_TOKEN="+gateway.Token())
+	native.Options.NativeMCP["external"] = map[string]any{"type": "remote", "url": gateway.URL(0), "oauth": false, "headers": map[string]string{"Authorization": "Bearer {env:IVOAI_EXTERNAL_MCP_SESSION_TOKEN}"}}
+	native.Options.NativePermissions["external_*"] = "allow"
 	controlEnvironment, err := opencodebridge.NativeControlPlaneEnvironment(native.Options.Environment)
 	if err != nil {
 		t.Fatal(err)
@@ -145,6 +169,10 @@ func TestLiveNativeOpenCodeAUTOExecutor(t *testing.T) {
 		t.Fatalf("frontend→IVOAI→native→knowledge failed: memory=%d context=%d err=%v", memoryCalls.Load(), contextCalls.Load(), err)
 	}
 	t.Log("AUTO_FRONTEND_NATIVE_E2E=PASS; MCP_MEMORY=PASS; MCP_CONTEXT=PASS")
+	if externalCalls.Load() != 1 || authenticatedCalls.Load() == 0 || len(gateway.Pending()) != 0 {
+		t.Fatal("native external MCP auth/Full approval failed")
+	}
+	t.Log("NATIVE_EXTERNAL_MCP_AUTH=PASS; UPSTREAM_SECRET_IN_NATIVE_CONFIG=false; FULL_APPROVAL_PROMPTS=0")
 	approvalMode.Store(true)
 	native.Options.NativePermissions = opencodebridge.NativePermissionPolicy("interactive", false)
 	for _, cancelTurn := range []bool{false, true} {
