@@ -68,9 +68,12 @@ ivoai session start --executor claude --mode orchestrated \
   --knowledge-source voicecorp
 ```
 
-Sem a flag, todos os profiles conectados e habilitados participam automaticamente da
-federação de leitura limitada. Um novo profile inscrito e habilitado será incluído
-nas futuras sessões sem filtro, sem alterar um alias especial `default`:
+Sessões diretas sem flag preservam a federação all-enabled. AUTO agora usa
+`purpose-auto`: seleciona aliases/purposes relevantes no prompt admitido antes de
+qualquer lookup institucional. Sem purpose relevante, não há consulta institucional.
+`--knowledge-source` permanece autoritativo. Configure
+`orchestration.auto.knowledge_routing=all-enabled` para o comportamento AUTO anterior,
+ou `explicit-only` para exigir seleção. A TUI de orquestração expõe a mesma policy:
 
 ```sh
 ivoai auto
@@ -120,13 +123,14 @@ nunca reescreve uma configuração MCP global do agente para trocar de organiza�
 
 Os hooks de ciclo de vida do ai-memory usam o mesmo roteador local à sessão. Portanto,
 sessões simultâneas da Voicecorp e da Mindsite permanecem independentes. O AUTO mantém
-a mesma seleção durante o failover entre Codex/Claude, e workers consultivos herdam os
-endpoints locais, não os tokens upstream.
+a mesma seleção admitida no turno durante o failover entre Codex/Claude. Workers
+recebem apenas seu subset aprovado e capabilities process-local, não todas as
+sources nem tokens upstream.
 
 No frontend gerenciado do OpenCode, o status compacto e o painel `/ivoai` mostram as
 quantidades configuradas, conectadas e selecionadas para a sessão a partir do mesmo
-snapshot do ServerPool usado pelo roteador. Sessões automáticas marcam todas as fontes
-habilitadas como selecionadas; sessões restritas diferenciam fontes selecionadas e
+snapshot do ServerPool usado pelo roteador. AUTO marca sources admitidas no prompt
+como selecionadas; sessões restritas diferenciam fontes selecionadas e
 excluídas. Uma fonte sem integridade é marcada tanto por um símbolo quanto por texto,
 e uma sessão automática pode continuar em um estado degradado visível. Uma fonte
 indisponível selecionada explicitamente falha antes de o frontend iniciar; assim, o

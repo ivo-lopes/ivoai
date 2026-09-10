@@ -7,6 +7,18 @@ through Ruflo or a copied provider credential.
 
 ## Start and conversation ownership
 
+AUTO requires an actionable objective, a concrete deliverable and observable
+acceptance criteria. Markdown headings are optional. An insufficient request is
+rejected with `waiting_for_refinement` and only the missing fields; it does not
+start workers or query institutional sources. Direct `ivoai codex`/`ivoai claude`
+remain available for unrestricted conversational intake.
+
+Example: `Read VERSION and report its value. Acceptance: return only the version.`
+
+The default per-turn pipeline is intake → purpose selection → bounded knowledge
+bootstrap → native DAG → explicit plan approval → controlled workers → integration
+and validation → primary synthesis. Full OpenCode permissions do not approve a plan.
+
 ```sh
 ivoai auto
 ivoai auto --planner codex
@@ -41,7 +53,7 @@ native model picker and `Ctrl+T` cycles only the reasoning variants supported by
 the selected model.
 
 With `IVOAI Automatic Orchestration`, quota and capability policy choose the
-executor and client-default model. Selecting an explicit Codex or Claude entry pins
+executor and a runtime-verified STRONG (or MAX) primary model. Selecting an explicit Codex or Claude entry pins
 that executor and model for the turn: an unavailable explicit choice fails clearly
 instead of silently switching providers. The footer and `/ivoai` panel show the
 selection mode, executor, effective model, and reasoning level. These non-sensitive
@@ -67,7 +79,7 @@ the same policy through the official process-scoped instruction mechanisms.
 4. If it has a confirmed hard limit, select an eligible alternate and record the
    startup failover. If both are exhausted or unauthenticated, enter `BLOCKED`
    without starting a primary or worker.
-5. Verify Ruflo safe mode and initialize a real provider-free swarm.
+5. Initialize the IVOAI native metadata-only coordinator; AUTO does not launch Ruflo.
 6. Register the primary's opaque lifecycle task.
 7. Start the authenticated OpenCode backend on `127.0.0.1`, attach the IVOAI-themed
    TUI, and route prompts to the selected official executor through the local bridge.
@@ -86,8 +98,9 @@ and workers. Ruflo keeps `provider_execution=false` and receives no prompts/resu
 The first substantive request has an enforced protocol rather than an optional prompt
 convention:
 
-1. attempt exactly one bounded `ivoai-memory` lookup and then one bounded
-   `ivoai-context` lookup before any Web lookup;
+1. apply Prompt Gate and `purpose-auto`; contact only the selected sources, then
+   attempt bounded Memory and Context lookups where relevant. A local-only task
+   can have no selected source and records both services as disabled;
 2. save a session-scoped, secret-free SharedContextBrief through
    `orchestration_bootstrap`;
 3. inspect quota and runtime capability state;
@@ -95,23 +108,26 @@ convention:
    task signals;
 5. call `orchestration_plan`, which calculates scores, execution tiers, economic
    delegation, and profiles;
-6. queue independent work with `orchestration_spawn_batch`, continue useful primary
+6. wait for the user to approve the plan (unless immediate start was configured),
+   then queue independent work with `orchestration_spawn_batch`, continue useful primary
    work, then wait by notification rather than polling;
 7. validate results, escalate only with evidence, synthesize, and checkpoint.
 
 The brief content is held only in a private runtime file. Session JSON stores a hash,
-timestamp, source health, and reference count. Workers receive the same brief, which
-avoids repeating the same initial Memory/Context query. They can perform an additional
-lookup when the bounded brief genuinely lacks necessary detail. Related later turns
-use delta planning; a material objective or project change refreshes the brief.
+timestamp, source health, and reference count. Each worker receives only its local
+objective/acceptance, relevant refs, dependency findings and explicit capability
+scope. The full prompt and shared context are not broadcast. New turns re-evaluate
+purpose selection; unknown auth continuity deliberately starts a fresh native turn.
 
 ## DAG scheduling and delegation
 
-`orchestration_delegate` remains available for backward-compatible synchronous
-delegation. The default automatic protocol uses `orchestration_plan`, asynchronous
+Legacy `orchestration_delegate` remains available in explicit orchestrated mode;
+native AUTO requires an approved plan. The automatic protocol uses `orchestration_plan`, asynchronous
 `orchestration_spawn`/`orchestration_spawn_batch`, `orchestration_wait`, and
-`orchestration_primary_complete`. Tasks are capped at 12 and workers at three (two by
-default). Unknown dependencies, cycles, duplicate work, unsafe labels, arbitrary
+`orchestration_primary_complete` and `orchestration_integrate`. Tasks are capped at
+12. Concurrency considers runnable DAG nodes, CPU/load, available RAM, I/O pressure
+when exposed and the user cap, with a safety ceiling of 12. Missing resource data
+degrades conservatively. Unknown dependencies, cycles, duplicate work, unsafe labels, arbitrary
 fields, or out-of-range scores are rejected.
 
 IvoAI calculates the capability score and maps it to LIGHT, BALANCED, STRONG, or MAX.
@@ -127,10 +143,11 @@ automatically into the primary instruction, SharedContextBrief, checkpoint, hand
 or session JSON.
 
 Every worker passes through the quota and capability router. Official clients run
-inference (`codex exec` or `claude --print`); Codex workers use a read-only sandbox
-plus MCP read allowlists, Claude workers use strict process-scoped MCP configuration
-and plan mode with mutation tools disabled, and Ruflo records only opaque lifecycle
-state. When bounded evidence is insufficient, the primary can explicitly recover an
+inference (`codex exec` or `claude --print`). Research/review workers are read-only;
+approved implementation writers use distinct owned worktrees and bounded write
+paths. Claude writers require the official restricted capability. MCPs are denied
+unless explicitly projected for that task; registry presence grants nothing.
+The native coordinator records only lifecycle metadata. When bounded evidence is insufficient, the primary can explicitly recover an
 exact artifact or a validated byte range through the local orchestrator MCP.
 References are session-scoped and survive Codex/Claude failover without copying
 bodies. Storage and prompt budgets are separate: the former preserves evidence, while
@@ -164,7 +181,7 @@ If the active provider reports a hard subscription limit, the supervisor:
 3. checks the alternate provider again;
 4. loads the last checkpoint, or creates an explicit interrupted fallback;
 5. reads bounded `git status` and diff-stat metadata without altering the worktree;
-6. restarts execution through the alternate official CLI with the handoff while the
+6. asks the user to approve the material executor change, then restarts through the alternate official CLI with the handoff while the
    same OpenCode UI remains attached;
 7. records current primary, reason, time, phase, and failover count.
 
@@ -209,11 +226,58 @@ differ.
 
 - Server, context, or ai-memory outage does not stop the official primary.
 - Headroom failure uses the existing direct-client fallback.
-- Ruflo failure stops automatic orchestration but does not affect `ivoai codex` or
-  `ivoai claude`.
+- Ruflo is not the native AUTO coordinator; explicit legacy orchestrated mode
+  retains its independent Ruflo gates.
 - Pending, not-exposed, and stale quota are distinct and never converted to `0%`.
 - Both confirmed exhausted providers produce a bounded waiting/blocked state; ivoai
   does not retry forever or activate PAYG inference.
 - WorkingContext failure activates no raw-output prompt fallback: the structured result
   is explicitly degraded and the official primary remains usable without external
   worker evidence.
+
+## Policies in the launcher and CLI
+
+Open `ivoai` → Configuration → Automatic orchestration to configure plan approval
+and orchestration policies. The CLI uses the same persistent config domain:
+
+```sh
+ivoai config set orchestration.auto.plan_execution approve
+ivoai config set orchestration.auto.knowledge_routing purpose-auto
+ivoai config set orchestration.auto.concurrency auto
+ivoai config set orchestration.auto.worker_cap 2
+ivoai config set orchestration.auto.parallel_writes true
+ivoai config set orchestration.auto.provider_preference auto
+ivoai config set orchestration.auto.low_quota_threshold 10
+```
+
+Changes apply to the next AUTO session. `plan_execution=immediate` is explicit
+opt-in; acceptance criteria cannot be disabled. `worker_cap=0` means automatic.
+Legacy `max_workers` settings are preserved as a user cap on first load.
+Knowledge policies also include `all-enabled` (compatibility federation) and
+`explicit-only`. `--knowledge-source` overrides purpose inference authoritatively.
+Purpose matching is conservative, label-based and honors negative exclusions;
+use explicit selection for ambiguous organization references. No write fan-out.
+
+At or below the configured quota threshold (10% by default), current authoritative
+budget telemetry proposes conservation. Unknown/stale quota is not zero or unlimited.
+Approve conservation or keep the current route. A material provider/model change
+has its own approval, separate from the plan; the primary stays strong by default.
+Claude remains optional and is omitted when unavailable, not removed from the product.
+
+The `/ivoai` panel shows readiness, plan/approval, task and worker counts, admitted
+concurrency, executor/model/effort per worker, source/MCP scope and quota state.
+It does not show worker transcripts or hidden reasoning.
+
+## Writer isolation and recovery
+
+Independent writers use separate worktrees. The coordinator collects only approved
+paths, builds integration in an isolated checkout and refuses conflicts or a changed
+primary tree. Failed worktrees remain recoverable; no automatic conflict resolution.
+When a worktree cannot be initialized, the fallback is sequential checked patches:
+workers remain read-only, return a bounded text diff and only IVOAI applies it after
+path and conflict checks. No `git init` is performed. Hidden configuration paths,
+symlinks, binary patches and renames are excluded from that fallback. Unsupported
+changes fail clearly instead of relaxing the sandbox. Existing server profiles,
+secret refs, MCP auth and OpenCode permission preferences need no re-enrollment.
+
+Profile management remains in [Connections](connections.md).

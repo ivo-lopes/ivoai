@@ -68,9 +68,12 @@ ivoai session start --executor claude --mode orchestrated \
   --knowledge-source voicecorp
 ```
 
-With no flag, all enabled connected profiles participate automatically in bounded
-read federation. A newly enrolled enabled profile is included in future unfiltered
-sessions without changing a special `default` alias:
+Direct sessions retain bounded all-enabled federation without a flag. AUTO now
+defaults to `purpose-auto`: an admitted prompt selects relevant aliases/purposes
+before any institutional lookup. No relevant purpose means no institutional query.
+Explicit `--knowledge-source` remains authoritative. Configure
+`orchestration.auto.knowledge_routing=all-enabled` for the previous AUTO behavior,
+or `explicit-only` to require selectors. The orchestration TUI exposes the same policy:
 
 ```sh
 ivoai auto
@@ -117,13 +120,13 @@ responses at 16 MiB, revokes the local capability on close, and never rewrites a
 global agent MCP configuration to switch organizations.
 
 ai-memory lifecycle hooks use the same session-local router. Concurrent Voicecorp
-and Mindsite sessions therefore remain independent. AUTO keeps the same selection
-through Codex/Claude failover, and advisory workers inherit the local endpoints,
-not upstream tokens.
+and Mindsite sessions therefore remain independent. AUTO keeps the same admitted
+turn selection through Codex/Claude failover. Workers receive only their approved
+subset and process-local capabilities, not the complete source set or upstream tokens.
 
 In the managed OpenCode frontend, the compact status and `/ivoai` panel show the
 configured, connected and session-selected counts from the same ServerPool snapshot
-used by the router. Automatic sessions label all enabled sources as selected;
+used by the router. AUTO labels sources admitted for the current prompt as selected;
 restricted sessions distinguish selected and excluded sources. An unhealthy source
 is marked with both a symbol and text, and an automatic session may continue in a
 visible degraded state. An explicitly selected unavailable source fails before the
