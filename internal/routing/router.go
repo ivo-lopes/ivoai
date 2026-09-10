@@ -4,19 +4,35 @@ import (
 	"errors"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/ivo-lopes/ivoai/internal/quota"
 )
 
 type Router struct {
+	// Strict requires an observed model of sufficient capability. Legacy direct
+	// routing retains its explicit client-default compatibility behavior.
+	Strict    bool
+	Latency   map[string]time.Duration
 	Registry  Registry
 	Quota     map[quota.Provider]quota.ProviderQuota
 	Overrides map[string]map[Tier]ProfileOverride
 }
 
 func (r Router) Resolve(input TaskInput, tier Tier) (ExecutionProfile, error) {
+	if input.Model != "" && input.Executor == "" {
+		return ExecutionProfile{}, errors.New("MODEL_UNAVAILABLE: explicit model requires its executor identity")
+	}
+	if tierRank(tier) == 0 {
+		return ExecutionProfile{}, errors.New("invalid requested model class")
+	}
 	providers := quota.ProviderNames()
-	if input.PreferredExecutor == "opencode" {
+	if input.Executor != "" {
+		if !quota.Supported(quota.Provider(input.Executor)) {
+			return ExecutionProfile{}, errors.New("PROVIDER_UNAVAILABLE: explicit executor is unsupported")
+		}
+		providers = []string{input.Executor}
+	} else if input.PreferredExecutor == "opencode" {
 		providers = []string{"opencode"} // Explicit native selection is restrictive.
 	} else if input.PreferredExecutor == "codex" || input.PreferredExecutor == "claude" {
 		providers = []string{input.PreferredExecutor, string(quota.Other(quota.Provider(input.PreferredExecutor)))}
@@ -25,6 +41,7 @@ func (r Router) Resolve(input TaskInput, tier Tier) (ExecutionProfile, error) {
 	type candidate struct {
 		profile  ExecutionProfile
 		pressure float64
+		latency  time.Duration
 	}
 	var candidates []candidate
 	for _, provider := range providers {
@@ -33,8 +50,26 @@ func (r Router) Resolve(input TaskInput, tier Tier) (ExecutionProfile, error) {
 			continue
 		}
 		override := r.Overrides[provider][tier]
+		if input.Model != "" {
+			override.Model = input.Model
+		}
+		if input.Effort != "" {
+			override.Effort = input.Effort
+		}
 		current := r.Quota[quota.Provider(provider)]
-		selected, modelSource := selectEligibleModel(capability.Models, tier, override.Model, current)
+		models := capability.Models
+		if r.Strict {
+			models = nil
+			for _, model := range capability.Models {
+				if model.Source == SourceRuntimeVerified && tierRank(model.CapabilityTier) >= tierRank(tier) && model.Availability != "unavailable" {
+					models = append(models, model)
+				}
+			}
+		}
+		selected, modelSource := selectEligibleModel(models, tier, override.Model, current)
+		if (r.Strict && selected == nil) || (override.Model != "" && (selected == nil || selected.Name != override.Model)) {
+			continue
+		}
 		if selected == nil && len(capability.Models) > 0 {
 			continue
 		}
@@ -46,7 +81,14 @@ func (r Router) Resolve(input TaskInput, tier Tier) (ExecutionProfile, error) {
 			continue
 		}
 		effort, effortSource := resolveEffort(tier, override.Effort, selected, capability.SupportsEffort)
-		candidates = append(candidates, candidate{profile: ExecutionProfile{Provider: provider, Model: model, Effort: effort, Tier: tier, ModelSource: modelSource, EffortSource: effortSource}, pressure: quotaPressure(current)})
+		if override.Effort != "" && effort != override.Effort {
+			continue
+		}
+		reason := "minimum_sufficient_capability_and_quota"
+		if input.Executor != "" || input.Model != "" || input.Effort != "" {
+			reason = "explicit_override"
+		}
+		candidates = append(candidates, candidate{profile: ExecutionProfile{Provider: provider, Model: model, Effort: effort, Tier: tier, ModelSource: modelSource, EffortSource: effortSource, RequestedExecutor: input.Executor, RequestedModel: input.Model, RequestedEffort: input.Effort, Reason: reason}, pressure: quotaPressure(current), latency: r.Latency[provider]})
 	}
 	if len(candidates) == 0 {
 		return ExecutionProfile{}, errors.New("no subscription-backed execution profile satisfies the task")
@@ -54,6 +96,9 @@ func (r Router) Resolve(input TaskInput, tier Tier) (ExecutionProfile, error) {
 	sort.SliceStable(candidates, func(i, j int) bool {
 		if (candidates[i].profile.Provider == "opencode") != (candidates[j].profile.Provider == "opencode") {
 			return candidates[j].profile.Provider == "opencode"
+		}
+		if candidates[i].pressure == candidates[j].pressure && input.Scores.LatencySensitivity > 0 && candidates[i].latency > 0 && candidates[j].latency > 0 && candidates[i].latency != candidates[j].latency {
+			return candidates[i].latency < candidates[j].latency
 		}
 		return candidates[i].pressure < candidates[j].pressure
 	})

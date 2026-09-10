@@ -57,6 +57,9 @@ func ResolvePlan(id string, inputs []TaskInput, weights Weights, resolve func(Ta
 	known := make(map[string]struct{}, len(inputs))
 	work := make(map[string]TaskInput, len(inputs))
 	for _, input := range inputs {
+		if input.MinimumTier != "" && tierRank(input.MinimumTier) == 0 {
+			return Plan{}, errors.New("invalid minimum capability tier")
+		}
 		if !taskIDPattern.MatchString(input.ID) || !rolePattern.MatchString(input.Role) {
 			return Plan{}, errors.New("task IDs and roles must be bounded safe labels")
 		}
@@ -93,6 +96,9 @@ func ResolvePlan(id string, inputs []TaskInput, weights Weights, resolve func(Ta
 			return Plan{}, fmt.Errorf("task %q: %w", input.ID, err)
 		}
 		tier := TierForScore(score)
+		if tierRank(input.MinimumTier) > tierRank(tier) {
+			tier = input.MinimumTier
+		}
 		profile, err := resolve(input, tier)
 		if err != nil {
 			return Plan{}, fmt.Errorf("task %q: %w", input.ID, err)
