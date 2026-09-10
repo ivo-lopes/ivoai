@@ -145,7 +145,8 @@ esac
 	a.StartOpenCodeManaged = func(ctx context.Context, options opencodebridge.ManagedOptions) (managedOpenCodeFrontend, error) {
 		payload, err := json.Marshal(map[string]any{
 			"model": "auto", "stream": false,
-			"messages": []map[string]string{{"role": "user", "content": "fixture request"}},
+			// AUTO now requires a real intake contract even in transport fixtures.
+			"messages": []map[string]string{{"role": "user", "content": "Read the fixture and report its status. Acceptance: return only fixture complete; do not modify any files."}},
 		})
 		if err != nil {
 			return nil, err

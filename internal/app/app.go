@@ -71,6 +71,7 @@ const liveServiceProbeTimeout = 8 * time.Second
 // MenuSnapshot is a non-secret, read-only view used by the interactive UI.
 // It deliberately contains no endpoint credentials or raw configuration.
 type MenuSnapshot struct {
+	PlanExecution         string
 	SetupComplete         bool
 	ComponentsReady       bool
 	ChatGPTConnected      bool
@@ -143,6 +144,7 @@ func (a *App) MenuSnapshot() (MenuSnapshot, error) {
 		ReviewExecutor:        cfg.Orchestration.ReviewExecutor,
 		MaxWorkers:            cfg.Orchestration.MaxWorkers,
 		AutoEnabled:           cfg.Orchestration.Auto.Enabled,
+		PlanExecution:         cfg.Orchestration.Auto.ResolvedPlanExecution(),
 		DefaultPlanner:        cfg.Orchestration.Auto.DefaultPlanner,
 		AutomaticFailover:     cfg.Orchestration.Auto.AutomaticFailover,
 		CheckpointEnabled:     cfg.Orchestration.Auto.CheckpointEnabled,
@@ -1157,6 +1159,8 @@ func (a *App) ConfigSet(key, value string) error {
 		c.Orchestration.Auto.Enabled = parsed
 	case "orchestration.auto.default_planner":
 		c.Orchestration.Auto.DefaultPlanner = strings.ToLower(value)
+	case "orchestration.auto.plan_execution":
+		c.Orchestration.Auto.PlanExecution = strings.ToLower(strings.TrimSpace(value))
 	case "orchestration.auto.automatic_failover":
 		parsed, parseErr := parseBool(value)
 		if parseErr != nil {

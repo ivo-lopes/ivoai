@@ -28,6 +28,8 @@ import (
 var rolePattern = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_-]{0,63}$`)
 
 type Server struct {
+	NativePolicy          bool
+	RequirePlanApproval   bool
 	Store                 session.Store
 	SessionID             string
 	Adapter               WorkerAdapter
@@ -182,6 +184,9 @@ func (s *Server) agents(_ context.Context, _ *mcp.CallToolRequest) (*mcp.CallToo
 }
 
 func (s *Server) delegate(ctx context.Context, request *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	if s.RequirePlanApproval {
+		return nil, errors.New("PLAN_APPROVAL_REQUIRED: use the planned task lifecycle instead of unplanned delegation")
+	}
 	var args struct {
 		Role     string `json:"role"`
 		Task     string `json:"task"`

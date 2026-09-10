@@ -13,6 +13,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/ivo-lopes/ivoai/internal/promptgate"
 	"github.com/ivo-lopes/ivoai/internal/quota"
 	"io"
 	"net"
@@ -91,6 +92,13 @@ type ServerView struct {
 }
 
 type Status struct {
+	PlanState           string       `json:"plan_state,omitempty"`
+	TaskCount           int          `json:"task_count,omitempty"`
+	WorkersActive       int          `json:"workers_active,omitempty"`
+	WorkersQueued       int          `json:"workers_queued,omitempty"`
+	WorkersDone         int          `json:"workers_done,omitempty"`
+	PromptReadiness     string       `json:"prompt_readiness,omitempty"`
+	PromptMissing       []string     `json:"prompt_missing,omitempty"`
 	ResumePolicy        string       `json:"resume_policy,omitempty"`
 	PermissionMode      string       `json:"permission_mode"`
 	Version             string       `json:"version"`
@@ -126,6 +134,9 @@ type Status struct {
 }
 
 type Options struct {
+	// RequirePromptGate is always enabled by AUTO. Direct executor sessions keep
+	// their own intake contract; it is not a user-configurable bypass for AUTO.
+	RequirePromptGate     bool
 	NativePermissions     func() []PermissionView
 	ReplyNativePermission func(context.Context, string, bool) error
 	// AuthReference returns only an official non-sensitive identity/epoch.
@@ -150,6 +161,8 @@ type Options struct {
 }
 
 type Bridge struct {
+	requirePromptGate     bool
+	promptReadiness       promptgate.Result
 	nativePermissions     func() []PermissionView
 	replyNativePermission func(context.Context, string, bool) error
 	authReference         func(context.Context, string) (string, error)
@@ -214,6 +227,7 @@ func Start(options Options) (*Bridge, error) {
 		return nil, fmt.Errorf("listen for OpenCode bridge: %w", err)
 	}
 	bridge := &Bridge{
+		requirePromptGate: options.RequirePromptGate,
 		nativePermissions: options.NativePermissions, replyNativePermission: options.ReplyNativePermission,
 		selectAlternate: options.SelectAlternate,
 		authReference:   options.AuthReference,
@@ -289,6 +303,15 @@ func (b *Bridge) health(w http.ResponseWriter, _ *http.Request) {
 
 func (b *Bridge) status(w http.ResponseWriter, _ *http.Request) {
 	value := b.statusFn()
+	if b.requirePromptGate {
+		b.mu.Lock()
+		value.PromptReadiness = b.promptReadiness.State
+		value.PromptMissing = append([]string(nil), b.promptReadiness.Missing...)
+		b.mu.Unlock()
+		if value.PromptReadiness == "" {
+			value.PromptReadiness = "waiting_for_prompt"
+		}
+	}
 	value.UpdatedAt = time.Now().UTC()
 	writeJSON(w, http.StatusOK, value)
 }
@@ -364,6 +387,18 @@ func (b *Bridge) chat(w http.ResponseWriter, r *http.Request) {
 		}
 		writeCompletion(w, request.Model, request.Stream, previousCompletion.content)
 		return
+	}
+	if b.requirePromptGate {
+		readiness := promptgate.Assess(prompt)
+		b.mu.Lock()
+		b.promptReadiness = readiness
+		b.mu.Unlock()
+		if !readiness.Ready {
+			// A refusal is a completed intake response, not an executor turn.
+			// No selector, auth reprobe, mapping, claim, or runner is invoked.
+			writeCompletion(w, request.Model, request.Stream, readiness.Message())
+			return
+		}
 	}
 	b.mu.Lock()
 	mappings := b.sessions[frontendID]

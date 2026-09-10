@@ -12,6 +12,7 @@ import (
 
 	"github.com/ivo-lopes/ivoai/internal/core"
 	"github.com/ivo-lopes/ivoai/internal/observability"
+	"github.com/ivo-lopes/ivoai/internal/orchestration"
 	"github.com/ivo-lopes/ivoai/internal/platform"
 	"github.com/ivo-lopes/ivoai/internal/quota"
 	"github.com/ivo-lopes/ivoai/internal/routing"
@@ -88,6 +89,7 @@ func planSchema() map[string]any {
 	}
 	scores["required"] = []string{"complexity", "risk", "reasoning_depth", "context_breadth", "verification_need", "parallel_value", "latency_sensitivity"}
 	task := object(map[string]any{
+		"acceptance": stringList(), "constraints": stringList(), "context_references": stringList(), "allowed_mcps": stringList(), "skills": stringList(), "write_paths": stringList(),
 		"id": safeString(64), "role": safeString(64), "task": safeText(workers.MaxTaskBytes),
 		"dependencies":          map[string]any{"type": "array", "maxItems": routing.MaxTasks, "uniqueItems": true, "items": safeString(64)},
 		"parallel_group":        map[string]any{"type": "string", "maxLength": 64},
@@ -100,16 +102,8 @@ func planSchema() map[string]any {
 
 type planInput struct {
 	Tasks []struct {
-		ID                    string         `json:"id"`
-		Role                  string         `json:"role"`
-		Task                  string         `json:"task"`
-		Dependencies          []string       `json:"dependencies"`
-		ParallelGroup         string         `json:"parallel_group"`
-		RequiredCapabilities  []string       `json:"required_capabilities"`
-		Scores                routing.Scores `json:"scores"`
-		PreferredExecutor     string         `json:"preferred_executor"`
-		Delegate              bool           `json:"delegate"`
-		IntentionalRedundancy bool           `json:"intentional_redundancy"`
+		routing.TaskInput
+		Delegate bool `json:"delegate"`
 	} `json:"tasks"`
 }
 
@@ -172,7 +166,24 @@ func (s *Server) plan(ctx context.Context, request *mcp.CallToolRequest) (*mcp.C
 	inputs := make([]routing.TaskInput, 0, len(args.Tasks))
 	delegated := map[string]bool{}
 	for _, task := range args.Tasks {
-		inputs = append(inputs, routing.TaskInput{ID: task.ID, Role: task.Role, Task: task.Task, Dependencies: task.Dependencies, ParallelGroup: task.ParallelGroup, RequiredCapabilities: task.RequiredCapabilities, Scores: task.Scores, PreferredExecutor: task.PreferredExecutor, IntentionalRedundancy: task.IntentionalRedundancy})
+		input := task.TaskInput
+		if s.NativePolicy {
+			profile, err := orchestration.CapabilityProfile(task.Role)
+			if err != nil {
+				return nil, err
+			}
+			if len(task.Acceptance) == 0 {
+				return nil, errors.New("local acceptance criteria are required for each planned task")
+			}
+			if _, err := scopedBrief(session.SharedContextBrief{}, input); err != nil {
+				return nil, err
+			}
+			input.MinimumTier = profile.MinimumTier
+			if !profile.Write && len(input.WritePaths) > 0 {
+				return nil, errors.New("worker role does not permit writes")
+			}
+		}
+		inputs = append(inputs, input)
 		beneficial, _, _ := routing.DelegationDecision(task.Scores)
 		delegated[task.ID] = task.Delegate && s.Parallelism && beneficial
 	}
@@ -217,6 +228,27 @@ func (s *Server) plan(ctx context.Context, request *mcp.CallToolRequest) (*mcp.C
 	s.mu.Unlock()
 	if err := s.persistPlan(resolved); err != nil {
 		return nil, err
+	}
+	if s.RequirePlanApproval {
+		if err := s.Store.RequestDecision(s.SessionID, planID, "plan"); err != nil {
+			return nil, err
+		}
+		if _, err := s.Store.Update(s.SessionID, func(value *session.Session) error { value.CurrentPhase = "waiting_for_plan_approval"; return nil }); err != nil {
+			return nil, err
+		}
+		if err := s.Store.WaitDecision(ctx, s.SessionID, planID); err != nil {
+			_, _ = s.Store.Update(s.SessionID, func(value *session.Session) error {
+				value.CurrentPhase = "plan_rejected"
+				if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+					value.CurrentPhase = "plan_cancelled"
+				}
+				return nil
+			})
+			return nil, err
+		}
+		if _, err := s.Store.Update(s.SessionID, func(value *session.Session) error { value.CurrentPhase = "parallel_dispatch"; return nil }); err != nil {
+			return nil, err
+		}
 	}
 	return toolResult(planMetadata(resolved))
 }
@@ -266,13 +298,22 @@ func (s *Server) spawnBatch(_ context.Context, request *mcp.CallToolRequest) (*m
 	if strictArguments(request, &args) != nil || len(args.TaskIDs) == 0 || len(args.TaskIDs) > routing.MaxTasks {
 		return nil, errors.New("valid plan_id and bounded task_ids are required")
 	}
+	if err := s.requireApprovedPlan(args.PlanID); err != nil {
+		return nil, err
+	}
 	s.mu.Lock()
 	plan := s.plans[args.PlanID]
 	if plan == nil {
 		s.mu.Unlock()
 		return nil, errors.New("plan is unavailable in this bridge process")
 	}
+	seen := make(map[string]bool, len(args.TaskIDs))
 	for _, id := range args.TaskIDs {
+		if seen[id] {
+			s.mu.Unlock()
+			return nil, errors.New("duplicate task in dispatch batch")
+		}
+		seen[id] = true
 		task := plan.Tasks[id]
 		if task == nil || task.Task.State == "primary" {
 			s.mu.Unlock()
@@ -282,7 +323,11 @@ func (s *Server) spawnBatch(_ context.Context, request *mcp.CallToolRequest) (*m
 			s.mu.Unlock()
 			return nil, fmt.Errorf("task %q was already dispatched", id)
 		}
-		task.Task.State, task.Queued = "queued", true
+	}
+	// Validate the complete batch before mutating any task. A malformed final
+	// entry must not leave its preceding tasks invisibly queued.
+	for _, id := range args.TaskIDs {
+		plan.Tasks[id].Task.State, plan.Tasks[id].Queued = "queued", true
 	}
 	s.signalLocked()
 	s.mu.Unlock()
@@ -298,11 +343,18 @@ func (s *Server) primaryComplete(_ context.Context, request *mcp.CallToolRequest
 	if strictArguments(request, &args) != nil {
 		return nil, errors.New("valid plan_id and task_id are required")
 	}
+	if err := s.requireApprovedPlan(args.PlanID); err != nil {
+		return nil, err
+	}
 	s.mu.Lock()
 	plan := s.plans[args.PlanID]
 	if plan == nil || plan.Tasks[args.TaskID] == nil || plan.Tasks[args.TaskID].Task.State != "primary" {
 		s.mu.Unlock()
 		return nil, errors.New("primary-owned task is unavailable")
+	}
+	if !s.dependenciesCompleteLocked(plan, plan.Tasks[args.TaskID].Task.Dependencies) {
+		s.mu.Unlock()
+		return nil, errors.New("task dependencies are not complete")
 	}
 	plan.Tasks[args.TaskID].Task.State = string(session.StateCompleted)
 	s.signalLocked()
@@ -312,7 +364,29 @@ func (s *Server) primaryComplete(_ context.Context, request *mcp.CallToolRequest
 	return toolResult(map[string]any{"plan_id": args.PlanID, "task_id": args.TaskID, "state": session.StateCompleted})
 }
 
+func (s *Server) requireApprovedPlan(planID string) error {
+	if s.RequirePlanApproval {
+		value, err := s.Store.Get(s.SessionID)
+		if err != nil {
+			return err
+		}
+		approved := false
+		for _, decision := range value.Decisions {
+			if decision.Kind == "plan" && decision.ID == planID && decision.State == "approved" {
+				approved = true
+			}
+		}
+		if !approved {
+			return errors.New("PLAN_APPROVAL_REQUIRED: planned work cannot proceed before user approval")
+		}
+	}
+	return nil
+}
+
 func (s *Server) startTask(planID, taskID string, allowQueued bool) (string, error) {
+	if err := s.requireApprovedPlan(planID); err != nil {
+		return "", err
+	}
 	if s.Adapter == nil || s.Control == nil {
 		return "", errors.New("parallel worker runtime is unavailable")
 	}
@@ -380,6 +454,7 @@ func (s *Server) executeTask(planID, taskID, workerID string) {
 		ctx = context.Background()
 	}
 	workerCtx, cancel := context.WithCancel(ctx)
+	defer cancel()
 	s.cancels[workerID] = cancel
 	s.mu.Unlock()
 
@@ -388,6 +463,11 @@ func (s *Server) executeTask(planID, taskID, workerID string) {
 		s.completeTask(planID, taskID, workerID, session.StateFailed, 1, workers.Result{}, false, err)
 		return
 	}
+	defer func() {
+		cleanupCtx, cleanupCancel := context.WithTimeout(context.Background(), 15*time.Second)
+		defer cleanupCancel()
+		_ = s.Control.CancelLifecycle(cleanupCtx, taskLifecycle)
+	}()
 	_, _ = s.Store.Update(s.SessionID, func(current *session.Session) error {
 		if worker := findWorker(current, workerID); worker != nil {
 			worker.RufloTaskID = taskLifecycle
@@ -396,8 +476,22 @@ func (s *Server) executeTask(planID, taskID, workerID string) {
 	})
 	brief := ""
 	if loaded, loadErr := s.Store.LoadBrief(s.SessionID); loadErr == nil {
-		if encoded, encodeErr := json.Marshal(loaded); encodeErr == nil {
+		if s.NativePolicy {
+			brief, err = scopedBrief(loaded, value.TaskInput)
+			if err != nil {
+				cancel()
+				s.completeTask(planID, taskID, workerID, session.StateFailed, 1, workers.Result{}, false, err)
+				return
+			}
+		} else if encoded, encodeErr := json.Marshal(loaded); encodeErr == nil {
 			brief = string(encoded)
+		}
+	} else if s.NativePolicy {
+		brief, err = scopedBrief(session.SharedContextBrief{}, value.TaskInput)
+		if err != nil {
+			cancel()
+			s.completeTask(planID, taskID, workerID, session.StateFailed, 1, workers.Result{}, false, err)
+			return
 		}
 	}
 	result, runErr := s.Adapter.Run(workerCtx, workers.Request{Executor: value.Profile.Provider, Task: value.Task, Model: value.Profile.Model, Effort: value.Profile.Effort, Profile: string(value.Tier), TaskWeight: value.CapabilityScore, SharedContextBrief: brief, ResultBudget: workers.ResultBudgetForTier(string(value.Tier)), Directory: s.Directory, Runtime: s.RuntimeDir}, func(observation workers.Observation) {
@@ -416,7 +510,6 @@ func (s *Server) executeTask(planID, taskID, workerID string) {
 		s.persistRuntimePlan(planID)
 	})
 	cancel()
-	_ = s.Control.CancelLifecycle(context.Background(), taskLifecycle)
 	state, exitCode := session.StateCompleted, result.ExitCode
 	if runErr != nil {
 		state = session.StateFailed

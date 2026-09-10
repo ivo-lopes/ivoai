@@ -133,6 +133,7 @@ type OrchestrationConfig struct {
 	Auto              AutoConfig `toml:"auto"`
 }
 type AutoConfig struct {
+	PlanExecution       string                 `toml:"plan_execution,omitempty"`
 	Enabled             bool                   `toml:"enabled"`
 	DefaultPlanner      string                 `toml:"default_planner"`
 	AutomaticFailover   bool                   `toml:"automatic_failover"`
@@ -143,6 +144,14 @@ type AutoConfig struct {
 	Optimization        AutoOptimizationConfig `toml:"optimization"`
 	Profiles            AutoProfilesConfig     `toml:"profiles"`
 }
+
+func (c AutoConfig) ResolvedPlanExecution() string {
+	if c.PlanExecution == "" {
+		return "approve"
+	}
+	return c.PlanExecution
+}
+
 type AutoOptimizationConfig struct {
 	Strategy               string            `toml:"strategy"`
 	Parallelism            bool              `toml:"parallelism"`
@@ -361,6 +370,9 @@ func ValidateOrchestration(value OrchestrationConfig) error {
 	}
 	if !quota.Supported(quota.Provider(value.Auto.DefaultPlanner)) {
 		return errors.New("orchestration auto default_planner must be codex, claude or opencode")
+	}
+	if mode := value.Auto.ResolvedPlanExecution(); mode != "approve" && mode != "immediate" {
+		return errors.New("orchestration auto plan_execution must be approve or immediate")
 	}
 	if value.Auto.QuotaRefreshSeconds < 30 || value.Auto.QuotaRefreshSeconds > 300 {
 		return errors.New("orchestration auto quota_refresh_seconds must be between 30 and 300")

@@ -43,6 +43,7 @@ type menuAction struct {
 func PublicMenuActionIDs() []string {
 	return []string{
 		"auto",
+		"config.auto-gate", "config.auto-plan",
 		"status", "doctor", "doctor.inventory", "version", "setup", "update.dry-run", "update", "rollback", "uninstall",
 		"connect.list", "connect.chatgpt", "disconnect.chatgpt", "connect.claude", "disconnect.claude", "connect.server",
 		"servers.list", "servers.add", "servers.manage", "servers.test", "servers.toggle", "servers.edit", "servers.re-enroll", "servers.remove",
@@ -194,6 +195,14 @@ func (s *menuSession) configuration() (bool, error) {
 		{id: "config.memory", label: toggleLabel("ai-memory", snapshot.MemoryEnabled), run: s.simple(func() error { return s.app.ConfigSet("memory.enabled", opposite(snapshot.MemoryEnabled)) })},
 		{id: "config.ruflo", label: toggleLabel("Ruflo", snapshot.RufloEnabled), run: s.simple(func() error { return s.app.ConfigSet("orchestration.enabled", opposite(snapshot.RufloEnabled)) })},
 		{id: "config.auto", label: toggleLabel("Automatic Orchestration", snapshot.AutoEnabled), run: s.simple(func() error { return s.app.ConfigSet("orchestration.auto.enabled", opposite(snapshot.AutoEnabled)) })},
+		{id: "config.auto-gate", label: "AUTO Prompt Gate: Acceptance Required", disabled: "Refine insufficient prompts; direct commands keep their own contract"},
+		{id: "config.auto-plan", label: "Plan Execution: " + snapshot.PlanExecution, description: "Plan approval is separate from tool permissions and quota routing approval", run: s.simple(func() error {
+			mode := "immediate"
+			if snapshot.PlanExecution == "immediate" {
+				mode = "approve"
+			}
+			return s.app.ConfigSet("orchestration.auto.plan_execution", mode)
+		})},
 		{id: "config.auto-planner", label: "Automatic Planner: " + strings.ToUpper(snapshot.DefaultPlanner), run: s.simple(func() error {
 			return s.app.ConfigSet("orchestration.auto.default_planner", otherExecutor(snapshot.DefaultPlanner))
 		})},

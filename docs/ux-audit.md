@@ -96,6 +96,7 @@ session.list session.monitor session.stop
 project.status project.init
 config.show config.headroom config.memory config.ruflo config.auto config.auto-planner config.auto-failover config.auto-checkpoint
 config.auto-strategy config.auto-parallel config.auto-bootstrap config.auto-escalation config.session-mode config.primary config.reviewer config.workers
+config.auto-gate config.auto-plan
 server.setup server.status server.doctor server.start server.stop server.restart server.logs
 server.enrollment.create server.enrollment.list server.enrollment.revoke
 server.web-access.create server.web-access.list server.web-access.revoke

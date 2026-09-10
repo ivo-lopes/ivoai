@@ -27,6 +27,13 @@ export function panel(status) {
     line(`frontend=${clean(status.frontend, "OpenCode")} · primary=${clean(status.primary)} · state=${clean(status.session_state)}`),
     line(`mode=${clean(status.selection_mode, "auto")} · requested=${clean(status.requested_model, "automatic")} · model=${clean(status.effective_model, "UNKNOWN")} · reasoning=${clean(status.effective_effort, "UNKNOWN")}`),
     line("Executors", "heading")]
+  const orchestration = []
+  if (status.prompt_readiness) {
+    orchestration.push(line(`Prompt readiness: ${clean(status.prompt_readiness)}`))
+    for (const field of (Array.isArray(status.prompt_missing) ? status.prompt_missing : []).slice(0, 5)) orchestration.push(line(`Missing: ${clean(field)}`, "warning"))
+  }
+  if (status.plan_state) orchestration.push(line(`Plan: ${clean(status.plan_state)} · ${Number.isSafeInteger(status.task_count) ? status.task_count : 0} tasks`), line(`Workers: ${Number.isSafeInteger(status.workers_active) ? status.workers_active : 0} active / ${Number.isSafeInteger(status.workers_queued) ? status.workers_queued : 0} queued / ${Number.isSafeInteger(status.workers_done) ? status.workers_done : 0} done`))
+  result.splice(2, 0, ...orchestration)
   for (const [id, name] of [["codex", "Codex"], ["claude", "Claude"], ["opencode", "OpenCode"]]) {
     const auth = clean(status[id + "_auth"])
     result.push(line(`${auth === "authenticated" ? "✓" : "!"} ${name} ${auth} · quota=${clean(status[id + "_quota"])}`))

@@ -239,7 +239,19 @@ func (a *App) openCodeAutoStatus(store session.Store, id string, cfg config.Conf
 	if selectedConnected < selectedCount && selectedCount > 0 {
 		state = string(session.StateDegraded)
 	}
+	activeWorkers, queuedWorkers, doneWorkers := 0, 0, 0
+	for _, task := range value.Tasks {
+		switch task.State {
+		case session.StateRunning, session.StateStarting:
+			activeWorkers++
+		case session.StateQueued, session.StatePlanned:
+			queuedWorkers++
+		case session.StateCompleted:
+			doneWorkers++
+		}
+	}
 	return opencodebridge.Status{
+		PlanState: value.CurrentPhase, TaskCount: len(value.Tasks), WorkersActive: activeWorkers, WorkersQueued: queuedWorkers, WorkersDone: doneWorkers,
 		PermissionMode: cfg.OpenCode.ResolvedPermissionMode(),
 		ResumePolicy:   "fresh native turn; identity unverified",
 		Version:        a.Version, SessionID: id, Frontend: "opencode", Primary: value.PrimaryExecutor, Mode: string(value.Mode), SessionState: state,
@@ -515,8 +527,24 @@ func (a *App) AutoWithKnowledge(ctx context.Context, planner string, agentArgs, 
 		modelCatalog = opencodebridge.CatalogFromRegistry(registry)
 	}
 	bridge, err := opencodebridge.Start(opencodebridge.Options{
+		RequirePromptGate: true,
 		NativePermissions: func() []opencodebridge.PermissionView {
 			pending := []opencodebridge.PermissionView{}
+			if value, err := store.Get(id); err == nil {
+				for _, decision := range value.Decisions {
+					if decision.State != "pending" {
+						continue
+					}
+					description := "Approve the proposed quota routing change?"
+					if decision.Kind == "plan" {
+						description = fmt.Sprintf("Plan ready: %d tasks. Approve execution?", len(value.Tasks))
+						for _, task := range value.Tasks {
+							description += fmt.Sprintf(" | %s: %s (%s/%s; %d dependencies)", task.ID, task.Role, task.Executor, task.Tier, len(task.Dependencies))
+						}
+					}
+					pending = append(pending, opencodebridge.PermissionView{ID: decision.ID, Description: description})
+				}
+			}
 			if native != nil {
 				pending = append(pending, native.PendingPermissions()...)
 			}
@@ -527,14 +555,17 @@ func (a *App) AutoWithKnowledge(ctx context.Context, planner string, agentArgs, 
 			}
 			return pending
 		},
-		ReplyNativePermission: func(ctx context.Context, id string, allow bool) error {
-			if strings.HasPrefix(id, "ext_") && knowledge.external != nil {
-				return knowledge.external.Reply(id, allow)
+		ReplyNativePermission: func(ctx context.Context, permissionID string, allow bool) error {
+			if strings.HasPrefix(permissionID, "plan_") || strings.HasPrefix(permissionID, "routing_") {
+				return store.ResolveDecision(id, permissionID, allow)
+			}
+			if strings.HasPrefix(permissionID, "ext_") && knowledge.external != nil {
+				return knowledge.external.Reply(permissionID, allow)
 			}
 			if native == nil {
 				return errors.New("native executor unavailable")
 			}
-			return native.ReplyPermission(ctx, id, allow)
+			return native.ReplyPermission(ctx, permissionID, allow)
 		},
 		AuthReference: func(probeCtx context.Context, executor string) (string, error) {
 			// The current official probes expose authentication/eligibility, not

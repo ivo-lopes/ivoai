@@ -288,7 +288,8 @@ func (a *App) OrchestratorServe(ctx context.Context, id string) error {
 		registry.Providers["opencode"] = native.Capability()
 	}
 	server := orchestrator.Server{
-		Store: store, SessionID: id, Directory: value.WorkingDirectory, RuntimeDir: runtimeDir,
+		RequirePlanApproval: value.Mode == session.ModeAuto && cfg.Orchestration.Auto.ResolvedPlanExecution() == "approve",
+		Store:               store, SessionID: id, Directory: value.WorkingDirectory, RuntimeDir: runtimeDir,
 		ReviewExecutor:        cfg.Orchestration.ReviewExecutor,
 		Adapter:               workers.Adapter{NativeOpenCode: native, Runner: a.Runner, CodexSHA256: value.CodexSHA256, CodexPath: state.Components["codex"].Path, ClaudePath: state.Components["claude-code"].Path, HeadroomPath: state.Components["headroom"].Path, HeadroomEnabled: cfg.Compression.Provider == "headroom" && cfg.Headroom.Enabled, KnowledgeServers: knowledgeServers},
 		Control:               orchestration.RufloOrchestratorAdapter{Control: orchestration.ControlPlane{Manager: a.orchestrationManager(state), RuntimeDir: runtimeDir}, Managed: state.Components["ruflo"].Managed},

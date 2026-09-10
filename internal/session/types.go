@@ -121,6 +121,7 @@ type ExecutorSessionMapping struct {
 }
 
 type Session struct {
+	Decisions            []Decision                             `json:"decisions,omitempty"`
 	TurnAttempts         []json.RawMessage                      `json:"turn_attempts,omitempty"`
 	TurnState            string                                 `json:"turn_state,omitempty"`
 	FrontendState        State                                  `json:"frontend_state,omitempty"`

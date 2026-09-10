@@ -323,6 +323,9 @@ func (s Store) withLock(operation func() error) error {
 }
 
 func validate(value Session) error {
+	if err := validateDecisions(value.Decisions); err != nil {
+		return err
+	}
 	if err := ValidateID(value.SessionID); err != nil {
 		return err
 	}
