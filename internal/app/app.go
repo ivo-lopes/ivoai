@@ -71,6 +71,12 @@ const liveServiceProbeTimeout = 8 * time.Second
 // MenuSnapshot is a non-secret, read-only view used by the interactive UI.
 // It deliberately contains no endpoint credentials or raw configuration.
 type MenuSnapshot struct {
+	KnowledgeRouting      string
+	Concurrency           string
+	WorkerCap             int
+	ParallelWrites        bool
+	ProviderPreference    string
+	LowQuotaThreshold     int
 	PlanExecution         string
 	SetupComplete         bool
 	ComponentsReady       bool
@@ -128,6 +134,12 @@ func (a *App) MenuSnapshot() (MenuSnapshot, error) {
 		configured, enabled, connected = 1, 1, 1
 	}
 	return MenuSnapshot{
+		KnowledgeRouting:      cfg.Orchestration.Auto.ResolvedKnowledgeRouting(),
+		Concurrency:           cfg.Orchestration.Auto.ResolvedConcurrency(),
+		WorkerCap:             cfg.Orchestration.Auto.WorkerCap,
+		ParallelWrites:        cfg.Orchestration.Auto.ParallelWrites,
+		ProviderPreference:    cfg.Orchestration.Auto.ResolvedProviderPreference(),
+		LowQuotaThreshold:     cfg.Orchestration.Auto.ResolvedLowQuotaThreshold(),
 		SetupComplete:         !state.SetupCompletedAt.IsZero(),
 		ComponentsReady:       requiredComponentsReady(state),
 		ChatGPTConnected:      cfg.Connections.ChatGPT.Status == "connected",
@@ -1161,6 +1173,31 @@ func (a *App) ConfigSet(key, value string) error {
 		c.Orchestration.Auto.DefaultPlanner = strings.ToLower(value)
 	case "orchestration.auto.plan_execution":
 		c.Orchestration.Auto.PlanExecution = strings.ToLower(strings.TrimSpace(value))
+	case "orchestration.auto.knowledge_routing":
+		c.Orchestration.Auto.KnowledgeRouting = strings.ToLower(strings.TrimSpace(value))
+	case "orchestration.auto.concurrency":
+		c.Orchestration.Auto.Concurrency = strings.ToLower(strings.TrimSpace(value))
+	case "orchestration.auto.provider_preference":
+		c.Orchestration.Auto.ProviderPreference = strings.ToLower(strings.TrimSpace(value))
+	case "orchestration.auto.worker_cap", "orchestration.auto.low_quota_threshold":
+		parsed, parseErr := strconv.Atoi(value)
+		if parseErr != nil {
+			return errors.New("orchestration policy value must be an integer")
+		}
+		if key == "orchestration.auto.worker_cap" {
+			c.Orchestration.Auto.WorkerCap = parsed
+		} else {
+			if parsed == 0 {
+				return errors.New("low_quota_threshold must be between 1 and 100 percent")
+			}
+			c.Orchestration.Auto.LowQuotaThreshold = parsed
+		}
+	case "orchestration.auto.parallel_writes":
+		parsed, parseErr := parseBool(value)
+		if parseErr != nil {
+			return parseErr
+		}
+		c.Orchestration.Auto.ParallelWrites = parsed
 	case "orchestration.auto.automatic_failover":
 		parsed, parseErr := parseBool(value)
 		if parseErr != nil {
@@ -1185,6 +1222,7 @@ func (a *App) ConfigSet(key, value string) error {
 			return errors.New("auto max_workers must be an integer between 1 and 3")
 		}
 		c.Orchestration.Auto.MaxWorkers = parsed
+		c.Orchestration.Auto.WorkerCap = parsed
 	case "orchestration.auto.optimization.parallelism":
 		parsed, parseErr := parseBool(value)
 		if parseErr != nil {

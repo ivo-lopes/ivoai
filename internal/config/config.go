@@ -133,6 +133,12 @@ type OrchestrationConfig struct {
 	Auto              AutoConfig `toml:"auto"`
 }
 type AutoConfig struct {
+	KnowledgeRouting    string                 `toml:"knowledge_routing,omitempty"`
+	Concurrency         string                 `toml:"concurrency,omitempty"`
+	WorkerCap           int                    `toml:"worker_cap"`
+	ParallelWrites      bool                   `toml:"parallel_writes"`
+	ProviderPreference  string                 `toml:"provider_preference,omitempty"`
+	LowQuotaThreshold   int                    `toml:"low_quota_threshold,omitempty"`
 	PlanExecution       string                 `toml:"plan_execution,omitempty"`
 	Enabled             bool                   `toml:"enabled"`
 	DefaultPlanner      string                 `toml:"default_planner"`
@@ -150,6 +156,34 @@ func (c AutoConfig) ResolvedPlanExecution() string {
 		return "approve"
 	}
 	return c.PlanExecution
+}
+
+func (c AutoConfig) ResolvedKnowledgeRouting() string {
+	if c.KnowledgeRouting == "" {
+		return "purpose-auto"
+	}
+	return c.KnowledgeRouting
+}
+
+func (c AutoConfig) ResolvedConcurrency() string {
+	if c.Concurrency == "" {
+		return "auto"
+	}
+	return c.Concurrency
+}
+
+func (c AutoConfig) ResolvedProviderPreference() string {
+	if c.ProviderPreference == "" {
+		return "auto"
+	}
+	return c.ProviderPreference
+}
+
+func (c AutoConfig) ResolvedLowQuotaThreshold() int {
+	if c.LowQuotaThreshold == 0 {
+		return 10
+	}
+	return c.LowQuotaThreshold
 }
 
 type AutoOptimizationConfig struct {
@@ -310,6 +344,18 @@ func (s *Store) Load() (Config, error) {
 	if err := toml.Unmarshal(b, &c); err != nil {
 		return Config{}, fmt.Errorf("parse config: %w", err)
 	}
+	// Preserve an existing user's legacy worker maximum on upgrade. Writing
+	// worker_cap=0 explicitly distinguishes new automatic capacity from a
+	// missing v0.9.7 field; otherwise a restart could silently restore the cap.
+	if orchestration, ok := document["orchestration"].(map[string]any); ok {
+		if auto, ok := orchestration["auto"].(map[string]any); ok {
+			_, modern := auto["worker_cap"]
+			_, legacy := auto["max_workers"]
+			if !modern && legacy {
+				c.Orchestration.Auto.WorkerCap = c.Orchestration.Auto.MaxWorkers
+			}
+		}
+	}
 	if c.IVOAI.Version != ConfigSchemaVersion {
 		return Config{}, fmt.Errorf("unsupported config schema %d", c.IVOAI.Version)
 	}
@@ -373,6 +419,21 @@ func ValidateOrchestration(value OrchestrationConfig) error {
 	}
 	if mode := value.Auto.ResolvedPlanExecution(); mode != "approve" && mode != "immediate" {
 		return errors.New("orchestration auto plan_execution must be approve or immediate")
+	}
+	if mode := value.Auto.ResolvedKnowledgeRouting(); mode != "purpose-auto" && mode != "all-enabled" && mode != "explicit-only" {
+		return errors.New("knowledge_routing must be purpose-auto, all-enabled or explicit-only")
+	}
+	if mode := value.Auto.ResolvedConcurrency(); mode != "auto" && mode != "sequential" {
+		return errors.New("concurrency must be auto or sequential")
+	}
+	if value.Auto.WorkerCap < 0 || value.Auto.WorkerCap > 12 {
+		return errors.New("worker_cap must be 0 (automatic) or between 1 and 12")
+	}
+	if mode := value.Auto.ResolvedProviderPreference(); mode != "auto" && mode != "codex" && mode != "claude" {
+		return errors.New("provider_preference must be auto, codex or claude")
+	}
+	if threshold := value.Auto.ResolvedLowQuotaThreshold(); threshold < 1 || threshold > 100 {
+		return errors.New("low_quota_threshold must be between 1 and 100 percent")
 	}
 	if value.Auto.QuotaRefreshSeconds < 30 || value.Auto.QuotaRefreshSeconds > 300 {
 		return errors.New("orchestration auto quota_refresh_seconds must be between 30 and 300")
@@ -472,6 +533,7 @@ func normalizeLegacyServers(c *Config) {
 
 func defaultAutoConfig() AutoConfig {
 	return AutoConfig{
+		PlanExecution: "approve", KnowledgeRouting: "purpose-auto", Concurrency: "auto", ParallelWrites: true, ProviderPreference: "auto", LowQuotaThreshold: 10,
 		Enabled: true, DefaultPlanner: "codex", AutomaticFailover: true, CheckpointEnabled: true,
 		QuotaRefreshSeconds: 45, MaxWorkers: 2,
 		Quota:        AutoQuotaConfig{Enabled: true, ShowWeekly: true, ShowMonthly: true, ShowSession: true, ShowContext: true, ShowModelScoped: true},
