@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/ivo-lopes/ivoai/internal/core"
@@ -23,18 +24,23 @@ import (
 )
 
 type runtimePlan struct {
-	Plan    routing.Plan
-	Tasks   map[string]*runtimeTask
-	Workers map[string]string
+	workMu     sync.Mutex
+	worktrees  *orchestration.Worktrees
+	workIDs    map[string]string
+	integrated bool
+	Plan       routing.Plan
+	Tasks      map[string]*runtimeTask
+	Workers    map[string]string
 }
 
 type runtimeTask struct {
-	Task      routing.Task
-	WorkerID  string
-	Result    workerResult
-	Queued    bool
-	Settled   bool
-	StartedAt time.Time
+	RoutePending bool
+	Task         routing.Task
+	WorkerID     string
+	Result       workerResult
+	Queued       bool
+	Settled      bool
+	StartedAt    time.Time
 }
 
 func (s *Server) addAutomaticTools(server *mcp.Server, read, write *mcp.ToolAnnotations) {
@@ -46,6 +52,9 @@ func (s *Server) addAutomaticTools(server *mcp.Server, read, write *mcp.ToolAnno
 	server.AddTool(&mcp.Tool{Name: "orchestration_primary_complete", Description: "Mark primary-owned planned work complete so dependent advisory workers can start.", InputSchema: object(map[string]any{"plan_id": safeString(80), "task_id": safeString(64)}, "plan_id", "task_id"), Annotations: write}, s.primaryComplete)
 	server.AddTool(&mcp.Tool{Name: "orchestration_wait", Description: "Wait without busy-looping for any or all selected tasks, with a bounded timeout.", InputSchema: object(map[string]any{"plan_id": safeString(80), "task_ids": map[string]any{"type": "array", "minItems": 1, "maxItems": routing.MaxTasks, "uniqueItems": true, "items": safeString(64)}, "mode": map[string]any{"type": "string", "enum": []string{"any", "all"}}, "timeout_seconds": map[string]any{"type": "integer", "minimum": 1, "maximum": 300}}, "plan_id", "task_ids", "mode"), Annotations: read}, s.wait)
 	server.AddTool(&mcp.Tool{Name: "orchestration_escalate", Description: "Escalate a failed or insufficient task by one capability tier after recording an evidence-based reason.", InputSchema: object(map[string]any{"plan_id": safeString(80), "task_id": safeString(64), "reason": map[string]any{"type": "string", "minLength": 3, "maxLength": 1024}}, "plan_id", "task_id", "reason"), Annotations: write}, s.escalate)
+	if s.NativePolicy {
+		server.AddTool(&mcp.Tool{Name: "orchestration_integrate", Description: "Integrate completed, approved worktree changes in an isolated checkout before fast-forwarding the primary. Conflicts preserve all evidence and never auto-resolve. Required before final synthesis of a native DAG.", InputSchema: object(map[string]any{"plan_id": safeString(80)}, "plan_id"), Annotations: write}, s.integrate)
+	}
 }
 
 func (s *Server) capabilities(_ context.Context, _ *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -55,7 +64,7 @@ func (s *Server) capabilities(_ context.Context, _ *mcp.CallToolRequest) (*mcp.C
 		for _, model := range capability.Models {
 			models = append(models, map[string]any{"name": displayModel(model.Name), "tier": model.CapabilityTier, "supported_efforts": model.SupportedEfforts, "default": model.IsDefault, "source": model.Source})
 		}
-		providers[name] = map[string]any{"version": capability.Version, "authenticated": capability.Authenticated, "worker_capable": capability.WorkerCapable, "supports_effort": capability.SupportsEffort, "source": capability.Source, "models": models}
+		providers[name] = map[string]any{"version": capability.Version, "authenticated": capability.Authenticated, "worker_capable": capability.WorkerCapable, "capabilities": capability.Capabilities, "supports_effort": capability.SupportsEffort, "source": capability.Source, "models": models}
 	}
 	return toolResult(map[string]any{"providers": providers})
 }
@@ -69,8 +78,8 @@ func bootstrapSchema() map[string]any {
 		"objective": safeText(4096), "facts": stringList(), "decisions": stringList(), "references": stringList(), "constraints": stringList(), "gaps": stringList(),
 		"memory_status":            map[string]any{"type": "string", "enum": []string{"ready", "degraded", "unavailable", "disabled"}},
 		"context_status":           map[string]any{"type": "string", "enum": []string{"ready", "degraded", "unavailable", "disabled"}},
-		"memory_lookup_performed":  map[string]any{"type": "boolean", "const": true},
-		"context_lookup_performed": map[string]any{"type": "boolean", "const": true},
+		"memory_lookup_performed":  map[string]any{"type": "boolean"},
+		"context_lookup_performed": map[string]any{"type": "boolean"},
 	}
 	return object(properties, "objective", "memory_status", "context_status", "memory_lookup_performed", "context_lookup_performed")
 }
@@ -89,7 +98,8 @@ func planSchema() map[string]any {
 	}
 	scores["required"] = []string{"complexity", "risk", "reasoning_depth", "context_breadth", "verification_need", "parallel_value", "latency_sensitivity"}
 	task := object(map[string]any{
-		"acceptance": stringList(), "constraints": stringList(), "context_references": stringList(), "allowed_mcps": stringList(), "skills": stringList(), "write_paths": stringList(),
+		"executor": map[string]any{"type": "string", "enum": quota.ProviderNames()}, "model": safeText(128), "effort": safeText(32),
+		"acceptance": stringList(), "constraints": stringList(), "context_references": stringList(), "knowledge_sources": stringList(), "allowed_mcps": stringList(), "skills": stringList(), "write_paths": stringList(),
 		"id": safeString(64), "role": safeString(64), "task": safeText(workers.MaxTaskBytes),
 		"dependencies":          map[string]any{"type": "array", "maxItems": routing.MaxTasks, "uniqueItems": true, "items": safeString(64)},
 		"parallel_group":        map[string]any{"type": "string", "maxLength": 64},
@@ -113,7 +123,16 @@ func (s *Server) bootstrap(_ context.Context, request *mcp.CallToolRequest) (*mc
 		MemoryLookupPerformed  bool `json:"memory_lookup_performed"`
 		ContextLookupPerformed bool `json:"context_lookup_performed"`
 	}
-	if strictArguments(request, &args) != nil || !args.MemoryLookupPerformed || !args.ContextLookupPerformed {
+	if strictArguments(request, &args) != nil {
+		return nil, errors.New("invalid knowledge bootstrap")
+	}
+	v, err := s.Store.Get(s.SessionID)
+	if err != nil {
+		return nil, err
+	}
+	memorySkipped := s.NativePolicy && v.MemoryStatus == "disabled" && args.MemoryStatus == "disabled"
+	contextSkipped := s.NativePolicy && v.ContextStatus == "disabled" && args.ContextStatus == "disabled"
+	if (!args.MemoryLookupPerformed && !memorySkipped) || (!args.ContextLookupPerformed && !contextSkipped) {
 		return nil, errors.New("first-turn bootstrap requires one bounded Memory lookup and one bounded Context lookup")
 	}
 	metadata, err := s.Store.SaveBrief(s.SessionID, args.SharedContextBrief)
@@ -152,6 +171,26 @@ func knowledgeObservation(value string) (observability.State, observability.Reas
 }
 
 func (s *Server) plan(ctx context.Context, request *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	if s.NativePolicy {
+		if !s.planMu.TryLock() {
+			return nil, errors.New("PLAN_IN_PROGRESS: another plan is being admitted")
+		}
+		defer s.planMu.Unlock()
+		s.mu.Lock()
+		existing := make([]*runtimePlan, 0, len(s.plans))
+		for _, plan := range s.plans {
+			existing = append(existing, plan)
+		}
+		s.mu.Unlock()
+		for _, plan := range existing {
+			plan.workMu.Lock()
+			integrated := plan.integrated
+			plan.workMu.Unlock()
+			if !integrated {
+				return nil, errors.New("PLAN_IN_PROGRESS: finish or cancel the current DAG before replacing it")
+			}
+		}
+	}
 	value, err := s.Store.Get(s.SessionID)
 	if err != nil {
 		return nil, err
@@ -167,6 +206,9 @@ func (s *Server) plan(ctx context.Context, request *mcp.CallToolRequest) (*mcp.C
 	delegated := map[string]bool{}
 	for _, task := range args.Tasks {
 		input := task.TaskInput
+		if s.NativePolicy && input.PreferredExecutor == "" {
+			input.PreferredExecutor = s.ProviderPreference
+		}
 		if s.NativePolicy {
 			profile, err := orchestration.CapabilityProfile(task.Role)
 			if err != nil {
@@ -179,6 +221,10 @@ func (s *Server) plan(ctx context.Context, request *mcp.CallToolRequest) (*mcp.C
 				return nil, err
 			}
 			input.MinimumTier = profile.MinimumTier
+			input.RequiredCapabilities = append(input.RequiredCapabilities, "filesystem_read")
+			if len(input.WritePaths) > 0 {
+				input.RequiredCapabilities = append(input.RequiredCapabilities, "filesystem_write")
+			}
 			if !profile.Write && len(input.WritePaths) > 0 {
 				return nil, errors.New("worker role does not permit writes")
 			}
@@ -186,6 +232,11 @@ func (s *Server) plan(ctx context.Context, request *mcp.CallToolRequest) (*mcp.C
 		inputs = append(inputs, input)
 		beneficial, _, _ := routing.DelegationDecision(task.Scores)
 		delegated[task.ID] = task.Delegate && s.Parallelism && beneficial
+		if s.NativePolicy && len(input.WritePaths) > 0 {
+			// Writers must use the controlled adapter even for a single task.
+			// Cheap-task heuristics cannot grant writes to the frontend primary.
+			delegated[task.ID] = true
+		}
 	}
 	planID, err := newPlanID()
 	if err != nil {
@@ -254,9 +305,11 @@ func (s *Server) plan(ctx context.Context, request *mcp.CallToolRequest) (*mcp.C
 }
 
 func (s *Server) resolveProfile(ctx context.Context, input routing.TaskInput, tier routing.Tier) (routing.ExecutionProfile, error) {
-	registry := s.Registry
-	if registry.Providers == nil {
-		registry.Providers = map[string]routing.ProviderCapability{}
+	// Probes refresh this resolution only. Do not mutate the shared catalog
+	// map while another task is planning or reprobeing authentication.
+	registry := routing.Registry{Providers: make(map[string]routing.ProviderCapability, len(s.Registry.Providers))}
+	for name, capability := range s.Registry.Providers {
+		registry.Providers[name] = capability
 	}
 	quotas := map[quota.Provider]quota.ProviderQuota{}
 	value, _ := s.Store.Get(s.SessionID)
@@ -272,7 +325,7 @@ func (s *Server) resolveProfile(ctx context.Context, input routing.TaskInput, ti
 			registry.Providers[string(provider)] = capability
 		}
 	}
-	return (routing.Router{Registry: registry, Quota: quotas, Overrides: s.Overrides}).Resolve(input, tier)
+	return (routing.Router{Strict: s.NativePolicy, Registry: registry, Quota: quotas, Overrides: s.Overrides}).Resolve(input, tier)
 }
 
 func (s *Server) spawn(_ context.Context, request *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
@@ -409,9 +462,20 @@ func (s *Server) startTask(planID, taskID string, allowQueued bool) (string, err
 		s.mu.Unlock()
 		return "", errors.New("task dependencies are not complete")
 	}
-	if s.activeWorkersLocked() >= s.maxWorkers() {
+	admissionLimit := s.maxWorkers()
+	if s.activeWorkersLocked() >= admissionLimit {
 		s.mu.Unlock()
 		return "", errors.New("session worker limit reached")
+	}
+	if s.NativePolicy && len(task.Task.WritePaths) > 0 {
+		for _, activePlan := range s.plans {
+			for _, active := range activePlan.Tasks {
+				if (active.Task.State == "starting" || active.Task.State == "running") && len(active.Task.WritePaths) > 0 && (!s.ParallelWrites || writeScopesOverlap(task.Task.WritePaths, active.Task.WritePaths)) {
+					s.mu.Unlock()
+					return "", errors.New("parallel_write_degraded: waiting for active writer with shared scope or sequential policy")
+				}
+			}
+		}
 	}
 	workerID, err := newWorkerID()
 	if err != nil {
@@ -423,6 +487,7 @@ func (s *Server) startTask(planID, taskID string, allowQueued bool) (string, err
 	plan.Workers[workerID] = taskID
 	s.signalLocked()
 	s.mu.Unlock()
+	_, _ = s.Store.Update(s.SessionID, func(v *session.Session) error { v.ConcurrencyLimit = admissionLimit; return nil })
 	if err := s.appendWorker(task.Task, workerID); err != nil {
 		s.mu.Lock()
 		if current := s.plans[planID]; current != nil {
@@ -457,20 +522,60 @@ func (s *Server) executeTask(planID, taskID, workerID string) {
 	defer cancel()
 	s.cancels[workerID] = cancel
 	s.mu.Unlock()
+	var release func()
+	var taskLifecycle string
+	finish := func(state session.State, code int, result workers.Result, headroom bool, failure error) {
+		cancel()
+		if release != nil {
+			release()
+			release = nil
+		}
+		if taskLifecycle != "" {
+			cleanupCtx, cleanupCancel := context.WithTimeout(context.Background(), 15*time.Second)
+			cleanupErr := s.Control.CancelLifecycle(cleanupCtx, taskLifecycle)
+			cleanupCancel()
+			if cleanupErr != nil && failure == nil {
+				state, code, failure = session.StateFailed, 1, errors.New("worker lifecycle cleanup failed")
+			}
+		}
+		s.completeTask(planID, taskID, workerID, state, code, result, headroom, failure)
+	}
 
+	if s.NativePolicy {
+		profile, routeErr := s.refreshNativeRoute(workerCtx, value)
+		if routeErr != nil {
+			finish(session.StateFailed, 1, workers.Result{}, false, routeErr)
+			return
+		}
+		value.Profile = profile
+		_, err := s.Store.Update(s.SessionID, func(v *session.Session) error {
+			if w := findWorker(v, workerID); w != nil {
+				w.Executor, w.Effort, w.EffortSource = profile.Provider, profile.Effort, string(profile.EffortSource)
+				w.Model = session.ModelInfo{Name: displayModel(profile.Model), Source: session.ModelSource(profile.ModelSource)}
+			}
+			return nil
+		})
+		if err != nil {
+			finish(session.StateFailed, 1, workers.Result{}, false, err)
+			return
+		}
+		s.mu.Lock()
+		task.Task.Profile = profile
+		s.mu.Unlock()
+		s.persistRuntimePlan(planID)
+	}
 	taskLifecycle, err := s.Control.RegisterLifecycle(workerCtx, "worker", workerID)
 	if err != nil {
-		s.completeTask(planID, taskID, workerID, session.StateFailed, 1, workers.Result{}, false, err)
+		finish(session.StateFailed, 1, workers.Result{}, false, err)
 		return
 	}
-	defer func() {
-		cleanupCtx, cleanupCancel := context.WithTimeout(context.Background(), 15*time.Second)
-		defer cleanupCancel()
-		_ = s.Control.CancelLifecycle(cleanupCtx, taskLifecycle)
-	}()
 	_, _ = s.Store.Update(s.SessionID, func(current *session.Session) error {
 		if worker := findWorker(current, workerID); worker != nil {
-			worker.RufloTaskID = taskLifecycle
+			if current.Coordinator == "native" {
+				worker.LifecycleID = taskLifecycle
+			} else {
+				worker.RufloTaskID = taskLifecycle
+			}
 		}
 		return nil
 	})
@@ -480,7 +585,7 @@ func (s *Server) executeTask(planID, taskID, workerID string) {
 			brief, err = scopedBrief(loaded, value.TaskInput)
 			if err != nil {
 				cancel()
-				s.completeTask(planID, taskID, workerID, session.StateFailed, 1, workers.Result{}, false, err)
+				finish(session.StateFailed, 1, workers.Result{}, false, err)
 				return
 			}
 		} else if encoded, encodeErr := json.Marshal(loaded); encodeErr == nil {
@@ -490,11 +595,28 @@ func (s *Server) executeTask(planID, taskID, workerID string) {
 		brief, err = scopedBrief(session.SharedContextBrief{}, value.TaskInput)
 		if err != nil {
 			cancel()
-			s.completeTask(planID, taskID, workerID, session.StateFailed, 1, workers.Result{}, false, err)
+			finish(session.StateFailed, 1, workers.Result{}, false, err)
 			return
 		}
 	}
-	result, runErr := s.Adapter.Run(workerCtx, workers.Request{Executor: value.Profile.Provider, Task: value.Task, Model: value.Profile.Model, Effort: value.Profile.Effort, Profile: string(value.Tier), TaskWeight: value.CapabilityScore, SharedContextBrief: brief, ResultBudget: workers.ResultBudgetForTier(string(value.Tier)), Directory: s.Directory, Runtime: s.RuntimeDir}, func(observation workers.Observation) {
+	if s.NativePolicy {
+		brief, err = s.addDependencyFindings(planID, value, brief)
+		if err != nil {
+			finish(session.StateFailed, 1, workers.Result{}, false, err)
+			return
+		}
+	}
+	request := workers.Request{Executor: value.Profile.Provider, Task: value.Task, Model: value.Profile.Model, Effort: value.Profile.Effort, Profile: string(value.Tier), TaskWeight: value.CapabilityScore, SharedContextBrief: brief, ResultBudget: workers.ResultBudgetForTier(string(value.Tier)), Directory: s.Directory, Runtime: s.RuntimeDir}
+	collect := func() error { return nil }
+	if s.NativePolicy {
+		request, collect, err = s.prepareNativeRequest(workerCtx, planID, workerID, value, request)
+		release = request.Release
+		if err != nil {
+			finish(session.StateFailed, 1, workers.Result{}, false, err)
+			return
+		}
+	}
+	result, runErr := s.Adapter.Run(workerCtx, request, func(observation workers.Observation) {
 		s.mu.Lock()
 		if currentPlan := s.plans[planID]; currentPlan != nil && currentPlan.Tasks[taskID] != nil {
 			currentPlan.Tasks[taskID].Task.State = string(session.StateRunning)
@@ -509,6 +631,9 @@ func (s *Server) executeTask(planID, taskID, workerID string) {
 		})
 		s.persistRuntimePlan(planID)
 	})
+	if runErr == nil {
+		runErr = collect()
+	}
 	cancel()
 	state, exitCode := session.StateCompleted, result.ExitCode
 	if runErr != nil {
@@ -517,7 +642,7 @@ func (s *Server) executeTask(planID, taskID, workerID string) {
 			exitCode = 1
 		}
 	}
-	s.completeTask(planID, taskID, workerID, state, exitCode, result, result.HeadroomUsed, runErr)
+	finish(state, exitCode, result, result.HeadroomUsed, runErr)
 }
 
 func (s *Server) completeTask(planID, taskID, workerID string, state session.State, exitCode int, raw workers.Result, headroom bool, runErr error) {
@@ -628,7 +753,7 @@ func (s *Server) escalate(ctx context.Context, request *mcp.CallToolRequest) (*m
 		return nil, errors.New("planned task is unavailable")
 	}
 	task := plan.Tasks[args.TaskID]
-	if task.Task.State != string(session.StateFailed) && task.Task.State != string(session.StateCompleted) {
+	if (task.Task.State != string(session.StateFailed) && task.Task.State != string(session.StateCompleted)) || !task.Settled && task.WorkerID != "" || task.RoutePending {
 		s.mu.Unlock()
 		return nil, errors.New("only a completed or failed task can be escalated")
 	}
@@ -638,10 +763,27 @@ func (s *Server) escalate(ctx context.Context, request *mcp.CallToolRequest) (*m
 		return nil, errors.New("task is already at MAX")
 	}
 	input := task.Task.TaskInput
+	previous := task.Task.Profile
+	task.RoutePending = true
 	s.mu.Unlock()
+	defer func() { s.mu.Lock(); task.RoutePending = false; s.mu.Unlock() }()
 	profile, err := s.resolveProfile(ctx, input, next)
 	if err != nil {
 		return nil, err
+	}
+	if s.NativePolicy {
+		id, err := newPlanID()
+		if err != nil {
+			return nil, err
+		}
+		id = strings.Replace(id, "plan_", "routing_", 1)
+		summary := platform.Redact(fmt.Sprintf("Approve task escalation %s: %s/%s/%s → %s/%s/%s (%s)? Prior work is preserved; no automatic conflict resolution.", args.TaskID, previous.Provider, previous.Model, previous.Effort, profile.Provider, profile.Model, profile.Effort, next))
+		if err := s.Store.RequestDecisionSummary(s.SessionID, id, "routing", summary); err != nil {
+			return nil, err
+		}
+		if err := s.Store.WaitDecision(ctx, s.SessionID, id); err != nil {
+			return nil, err
+		}
 	}
 	s.mu.Lock()
 	task.Task.Tier, task.Task.Profile, task.Task.State, task.Task.EscalationCount, task.Task.EscalationReason = next, profile, "planned", task.Task.EscalationCount+1, args.Reason
@@ -715,12 +857,29 @@ func (s *Server) activeWorkersLocked() int {
 }
 
 func (s *Server) maxWorkers() int {
-	if !s.Parallelism {
+	if !s.Parallelism || s.Sequential {
 		return 1
 	}
 	value, err := s.Store.Get(s.SessionID)
 	if err != nil || value.MaxWorkers < 1 {
 		return 1
+	}
+	if s.NativePolicy {
+		read := s.HostResources
+		if read == nil {
+			read = orchestration.ReadHostResources
+		}
+		// Called under s.mu. Count only active or dependency-ready nodes, not
+		// blocked descendants; a large host cannot invent useful parallelism.
+		runnable := 0
+		for _, plan := range s.plans {
+			for _, task := range plan.Tasks {
+				if task.Task.State == "starting" || task.Task.State == "running" || ((task.Task.State == "queued" || task.Task.State == "planned") && s.dependenciesCompleteLocked(plan, task.Task.Dependencies)) {
+					runnable++
+				}
+			}
+		}
+		return max(1, orchestration.Concurrency(read(), orchestration.ConcurrencyInputs{Runnable: runnable, UserCap: value.MaxWorkers, ProviderSlots: runnable, WorkerMemoryBytes: 1 << 30}))
 	}
 	if value.MaxWorkers > 3 {
 		return 3
@@ -792,7 +951,7 @@ func (s *Server) persistRuntimePlan(planID string) {
 }
 
 func taskMetadata(task routing.Task) session.TaskMetadata {
-	return session.TaskMetadata{ID: task.ID, Role: task.Role, Dependencies: append([]string(nil), task.Dependencies...), ParallelGroup: task.ParallelGroup, CapabilityScore: task.CapabilityScore, Tier: string(task.Tier), Executor: task.Profile.Provider, Model: session.ModelInfo{Name: displayModel(task.Profile.Model), Source: session.ModelSource(task.Profile.ModelSource)}, Effort: task.Profile.Effort, EffortSource: string(task.Profile.EffortSource), State: session.State(task.State), DurationMilliseconds: task.DurationMilliseconds, HeadroomUsed: task.HeadroomUsed, IntentionalRedundancy: task.IntentionalRedundancy, Escalations: task.EscalationCount, EscalationReason: task.EscalationReason, ExecutionMode: task.ExecutionMode, DelegationBenefit: task.DelegationBenefit, DelegationOverhead: task.DelegationOverhead, DelegationReason: task.DelegationReason}
+	return session.TaskMetadata{KnowledgeSources: append([]string(nil), task.KnowledgeSources...), AllowedMCPs: append([]string(nil), task.AllowedMCPs...), Skills: append([]string(nil), task.Skills...), ID: task.ID, Role: task.Role, Dependencies: append([]string(nil), task.Dependencies...), ParallelGroup: task.ParallelGroup, CapabilityScore: task.CapabilityScore, Tier: string(task.Tier), Executor: task.Profile.Provider, Model: session.ModelInfo{Name: displayModel(task.Profile.Model), Source: session.ModelSource(task.Profile.ModelSource)}, Effort: task.Profile.Effort, EffortSource: string(task.Profile.EffortSource), State: session.State(task.State), DurationMilliseconds: task.DurationMilliseconds, HeadroomUsed: task.HeadroomUsed, IntentionalRedundancy: task.IntentionalRedundancy, Escalations: task.EscalationCount, EscalationReason: task.EscalationReason, ExecutionMode: task.ExecutionMode, DelegationBenefit: task.DelegationBenefit, DelegationOverhead: task.DelegationOverhead, DelegationReason: task.DelegationReason}
 }
 
 func planMetadata(plan routing.Plan) map[string]any {

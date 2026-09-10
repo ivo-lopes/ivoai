@@ -55,6 +55,7 @@ type TaskInput struct {
 	Acceptance        []string `json:"acceptance,omitempty"`
 	Constraints       []string `json:"constraints,omitempty"`
 	ContextReferences []string `json:"context_references,omitempty"`
+	KnowledgeSources  []string `json:"knowledge_sources,omitempty"`
 	AllowedMCPs       []string `json:"allowed_mcps,omitempty"`
 	Skills            []string `json:"skills,omitempty"`
 	WritePaths        []string `json:"write_paths,omitempty"`
@@ -124,6 +125,7 @@ type ModelCapability struct {
 }
 
 type ProviderCapability struct {
+	Capabilities   map[string]bool   `json:"capabilities,omitempty"`
 	Provider       string            `json:"provider"`
 	Version        string            `json:"version,omitempty"`
 	Authenticated  bool              `json:"authenticated"`

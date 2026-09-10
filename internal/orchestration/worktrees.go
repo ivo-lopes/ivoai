@@ -33,6 +33,7 @@ type Worktree struct {
 type Worktrees struct {
 	mu                             sync.Mutex
 	repository, root, base, prefix string
+	integrated                     string
 	owned                          map[string]Worktree
 }
 
@@ -63,6 +64,14 @@ func NewWorktrees(ctx context.Context, repository, runtimeDir string) (*Worktree
 }
 
 func (m *Worktrees) Create(ctx context.Context, taskID string) (Worktree, error) {
+	return m.CreateWithDependencies(ctx, taskID, nil)
+}
+
+// CreateWithDependencies materializes only the already-collected ancestor
+// changes required by a task. Validation and dependent writers can therefore
+// observe prior results without exposing concurrent primary-tree mutations.
+// dependencyIDs must be in the approved DAG's topological order.
+func (m *Worktrees) CreateWithDependencies(ctx context.Context, taskID string, dependencyIDs []string) (Worktree, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if !taskIdentity.MatchString(taskID) {
@@ -71,12 +80,47 @@ func (m *Worktrees) Create(ctx context.Context, taskID string) (Worktree, error)
 	if _, ok := m.owned[taskID]; ok {
 		return Worktree{}, errors.New("WORKTREE_FAILED: task already owns a worktree")
 	}
+	commits := []string{}
+	seen := map[string]bool{}
+	for _, id := range dependencyIDs {
+		dependency, ok := m.owned[id]
+		if !ok || dependency.Commit == "" || seen[id] {
+			return Worktree{}, errors.New("WORKTREE_FAILED: dependency changes unavailable")
+		}
+		seen[id] = true
+		if dependency.Commit != dependency.Base {
+			commits = append(commits, dependency.Commit)
+		}
+	}
 	w := Worktree{TaskID: taskID, Branch: m.prefix + taskID, Path: filepath.Join(m.root, taskID), Base: m.base}
 	if _, err := gitOutput(ctx, m.repository, "worktree", "add", "-b", w.Branch, w.Path, w.Base); err != nil {
 		return Worktree{}, err
 	}
 	m.owned[taskID] = w
+	if len(commits) > 0 {
+		args := append([]string{"-c", "commit.gpgsign=false", "cherry-pick"}, commits...)
+		if _, err := gitOutput(ctx, w.Path, args...); err != nil {
+			return w, errors.New("INTEGRATION_CONFLICT: dependency worktree retained for review")
+		}
+		base, err := gitOutput(ctx, w.Path, "rev-parse", "HEAD")
+		if err != nil {
+			return w, err
+		}
+		w.Base = base
+		m.owned[taskID] = w
+	}
 	return w, nil
+}
+
+func (m *Worktrees) Snapshot() []Worktree {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	result := make([]Worktree, 0, len(m.owned))
+	for _, w := range m.owned {
+		result = append(result, w)
+	}
+	sort.Slice(result, func(i, j int) bool { return result[i].TaskID < result[j].TaskID })
+	return result
 }
 
 // Collect commits only changes within the approved path scope. A worker may
@@ -177,6 +221,9 @@ func (m *Worktrees) Integrate(ctx context.Context, taskIDs []string) (string, er
 	if err != nil {
 		return "", err
 	}
+	if m.integrated != "" && head == m.integrated {
+		return head, nil
+	}
 	if head != m.base {
 		return "", errors.New("INTEGRATION_CONFLICT: primary HEAD changed")
 	}
@@ -193,6 +240,7 @@ func (m *Worktrees) Integrate(ctx context.Context, taskIDs []string) (string, er
 		}
 	}
 	if len(commits) == 0 {
+		m.integrated = head
 		return head, nil
 	}
 	path, err := os.MkdirTemp(m.root, "integration-")
@@ -222,6 +270,7 @@ func (m *Worktrees) Integrate(ctx context.Context, taskIDs []string) (string, er
 	if _, err = gitOutput(ctx, m.repository, "merge", "--ff-only", "--no-edit", integrated); err != nil {
 		return "", err
 	}
+	m.integrated = integrated
 	if _, err = gitOutput(ctx, m.repository, "worktree", "remove", path); err != nil {
 		return integrated, err
 	}

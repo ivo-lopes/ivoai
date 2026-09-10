@@ -146,7 +146,7 @@ func (n *NativeOpenCode) Probe(ctx context.Context) (quota.ProviderQuota, error)
 			n.mu.Unlock()
 		}
 	}()
-	capabilitySet := routing.ProviderCapability{Provider: "opencode", Source: routing.SourceRuntimeVerified}
+	capabilitySet := routing.ProviderCapability{Provider: "opencode", Source: routing.SourceRuntimeVerified, Capabilities: map[string]bool{"filesystem_read": true, "filesystem_write": true}}
 	value := quota.ProviderQuota{Provider: quota.ProviderOpenCode, TelemetryUnknown: true, Source: "official OpenCode provider/auth metadata", ObservedAt: time.Now().UTC(), Reason: "native authentication/capability unavailable; quota telemetry unknown"}
 	options := n.Options
 	options.RuntimeDir = filepath.Join(options.RuntimeDir, "discovery")

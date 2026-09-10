@@ -16,6 +16,7 @@ const MaxDecisions = 64
 type Decision struct {
 	ID         string     `json:"id"`
 	Kind       string     `json:"kind"`
+	Summary    string     `json:"summary,omitempty"`
 	State      string     `json:"state"`
 	CreatedAt  time.Time  `json:"created_at"`
 	ResolvedAt *time.Time `json:"resolved_at,omitempty"`
@@ -34,6 +35,9 @@ func validateDecisions(values []Decision) error {
 			return errors.New("invalid session decision identity")
 		}
 		seen[d.ID] = true
+		if d.Summary != "" && !safeText(d.Summary, 1024) {
+			return errors.New("invalid decision metadata")
+		}
 		switch d.State {
 		case "pending":
 			if d.ResolvedAt != nil {
@@ -51,6 +55,12 @@ func validateDecisions(values []Decision) error {
 }
 
 func (s Store) RequestDecision(sessionID, id, kind string) error {
+	return s.RequestDecisionSummary(sessionID, id, kind, "")
+}
+
+// RequestDecisionSummary is a host-only UI boundary. summary must be generated
+// from public routing metadata, never a prompt, tool output or model rationale.
+func (s Store) RequestDecisionSummary(sessionID, id, kind, summary string) error {
 	_, err := s.Update(sessionID, func(v *Session) error {
 		if !v.Active() {
 			return errors.New("session is not active")
@@ -63,7 +73,7 @@ func (s Store) RequestDecision(sessionID, id, kind string) error {
 		if len(v.Decisions) >= MaxDecisions {
 			return errors.New("session decision limit reached")
 		}
-		v.Decisions = append(v.Decisions, Decision{ID: id, Kind: kind, State: "pending", CreatedAt: time.Now().UTC()})
+		v.Decisions = append(v.Decisions, Decision{ID: id, Kind: kind, Summary: summary, State: "pending", CreatedAt: time.Now().UTC()})
 		return nil
 	})
 	return err

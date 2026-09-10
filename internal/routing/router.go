@@ -49,6 +49,16 @@ func (r Router) Resolve(input TaskInput, tier Tier) (ExecutionProfile, error) {
 		if !ok || !capability.WorkerCapable || !capability.Authenticated {
 			continue
 		}
+		compatible := true
+		for _, required := range input.RequiredCapabilities {
+			if !capability.Capabilities[required] {
+				compatible = false
+				break
+			}
+		}
+		if !compatible {
+			continue
+		}
 		override := r.Overrides[provider][tier]
 		if input.Model != "" {
 			override.Model = input.Model

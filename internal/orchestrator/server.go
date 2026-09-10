@@ -17,6 +17,7 @@ import (
 
 	"github.com/ivo-lopes/ivoai/internal/core"
 	"github.com/ivo-lopes/ivoai/internal/observability"
+	"github.com/ivo-lopes/ivoai/internal/orchestration"
 	"github.com/ivo-lopes/ivoai/internal/quota"
 	"github.com/ivo-lopes/ivoai/internal/routing"
 	"github.com/ivo-lopes/ivoai/internal/session"
@@ -28,6 +29,15 @@ import (
 var rolePattern = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_-]{0,63}$`)
 
 type Server struct {
+	planMu                sync.Mutex
+	LowQuotaThreshold     int
+	ProviderPreference    string
+	routingMu             sync.Mutex
+	WorktreeRoot          string
+	PrepareWorker         func(context.Context, routing.Task, workers.Request) (workers.Request, error)
+	HostResources         func() orchestration.HostResources
+	Sequential            bool
+	ParallelWrites        bool
 	NativePolicy          bool
 	RequirePlanApproval   bool
 	Store                 session.Store
@@ -136,7 +146,11 @@ func (s *Server) authorized() error {
 	if err != nil {
 		return err
 	}
-	if !value.Active() || (value.Mode != session.ModeOrchestrated && value.Mode != session.ModeAuto) || value.SwarmID == "" || !value.RufloHealthy || !value.RufloSafeMode || value.ProviderExecution {
+	safeCoordinator := value.Coordinator == "native" && value.Mode == session.ModeAuto && value.SwarmID == "native_"+value.SessionID
+	if value.Coordinator == "" || value.Coordinator == "ruflo" {
+		safeCoordinator = value.SwarmID != "" && value.RufloHealthy && value.RufloSafeMode
+	}
+	if !value.Active() || (value.Mode != session.ModeOrchestrated && value.Mode != session.ModeAuto) || !safeCoordinator || value.ProviderExecution {
 		return errors.New("orchestration bridge requires an active safe orchestrated session")
 	}
 	return nil
@@ -184,7 +198,7 @@ func (s *Server) agents(_ context.Context, _ *mcp.CallToolRequest) (*mcp.CallToo
 }
 
 func (s *Server) delegate(ctx context.Context, request *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-	if s.RequirePlanApproval {
+	if s.RequirePlanApproval || s.NativePolicy {
 		return nil, errors.New("PLAN_APPROVAL_REQUIRED: use the planned task lifecycle instead of unplanned delegation")
 	}
 	var args struct {

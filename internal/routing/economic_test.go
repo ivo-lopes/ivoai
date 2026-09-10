@@ -72,3 +72,20 @@ func TestEconomicObservedLatencyBreaksEquivalentQuotaTie(t *testing.T) {
 		t.Fatalf("profile=%+v error=%v", p, err)
 	}
 }
+
+func TestEconomicCapabilityRequirementsAreConstraintsNotHints(t *testing.T) {
+	r := Router{Registry: economicRegistry(), Strict: true}
+	c := r.Registry.Providers["claude"]
+	c.Capabilities = map[string]bool{"filesystem_read": true}
+	r.Registry.Providers["claude"] = c
+	p, err := r.Resolve(TaskInput{RequiredCapabilities: []string{"filesystem_read"}}, TierLight)
+	if err != nil || p.Provider != "claude" {
+		t.Fatal("required capability ignored", err)
+	}
+	if _, err := r.Resolve(TaskInput{Executor: "codex", RequiredCapabilities: []string{"filesystem_read"}}, TierLight); err == nil {
+		t.Fatal("explicit unsupported capability accepted")
+	}
+	if _, err := r.Resolve(TaskInput{RequiredCapabilities: []string{"disable_sandbox"}}, TierLight); err == nil {
+		t.Fatal("unknown capability accepted")
+	}
+}

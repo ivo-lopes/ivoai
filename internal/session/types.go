@@ -33,6 +33,9 @@ type BootstrapMetadata struct {
 }
 
 type TaskMetadata struct {
+	KnowledgeSources      []string  `json:"knowledge_sources,omitempty"`
+	AllowedMCPs           []string  `json:"allowed_mcps,omitempty"`
+	Skills                []string  `json:"skills,omitempty"`
 	ID                    string    `json:"id"`
 	Role                  string    `json:"role"`
 	Dependencies          []string  `json:"dependencies,omitempty"`
@@ -86,6 +89,11 @@ type ModelInfo struct {
 }
 
 type Worker struct {
+	WorktreePath      string                     `json:"worktree_path,omitempty"`
+	WorktreeBranch    string                     `json:"worktree_branch,omitempty"`
+	WorktreeBase      string                     `json:"worktree_base,omitempty"`
+	WorktreeCommit    string                     `json:"worktree_commit,omitempty"`
+	LifecycleID       string                     `json:"lifecycle_id,omitempty"`
 	ID                string                     `json:"id"`
 	Role              string                     `json:"role"`
 	Executor          string                     `json:"executor"`
@@ -121,6 +129,10 @@ type ExecutorSessionMapping struct {
 }
 
 type Session struct {
+	ConcurrencyLimit     int                                    `json:"concurrency_limit,omitempty"`
+	QuotaMode            string                                 `json:"quota_mode,omitempty"`
+	PrimaryLifecycleID   string                                 `json:"primary_lifecycle_id,omitempty"`
+	Coordinator          string                                 `json:"coordinator,omitempty"`
 	Decisions            []Decision                             `json:"decisions,omitempty"`
 	TurnAttempts         []json.RawMessage                      `json:"turn_attempts,omitempty"`
 	TurnState            string                                 `json:"turn_state,omitempty"`

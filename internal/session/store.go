@@ -323,6 +323,14 @@ func (s Store) withLock(operation func() error) error {
 }
 
 func validate(value Session) error {
+	if value.ConcurrencyLimit < 0 || value.ConcurrencyLimit > MaxNativeWorkers {
+		return errors.New("invalid concurrency admission limit")
+	}
+	switch value.QuotaMode {
+	case "", "normal", "conservation_pending_confirmation", "conservation_active", "keep_current", "degraded":
+	default:
+		return errors.New("invalid quota mode")
+	}
 	if err := validateDecisions(value.Decisions); err != nil {
 		return err
 	}
@@ -377,7 +385,17 @@ func validate(value Session) error {
 	if value.WorkingDirectory == "" || !filepath.IsAbs(value.WorkingDirectory) || strings.ContainsAny(value.WorkingDirectory, "\x00\x1b\r\n") {
 		return errors.New("invalid session working directory")
 	}
-	if value.MaxWorkers < 1 || value.MaxWorkers > 3 || len(value.Workers) > 256 {
+	if value.Coordinator != "" && value.Coordinator != "native" && value.Coordinator != "ruflo" {
+		return errors.New("invalid session coordinator")
+	}
+	if value.Coordinator == "native" && value.Mode != ModeAuto {
+		return errors.New("native coordinator requires AUTO mode")
+	}
+	workerLimit := 3
+	if value.Coordinator == "native" {
+		workerLimit = MaxNativeWorkers
+	}
+	if value.MaxWorkers < 1 || value.MaxWorkers > workerLimit || len(value.Workers) > 256 {
 		return errors.New("invalid worker limit")
 	}
 	if !validState(value.State) || !validModel(value.PrimaryModel) {
@@ -396,6 +414,25 @@ func validate(value Session) error {
 	}
 	if (value.SwarmID != "" && !safeText(value.SwarmID, 128)) || (value.PrimaryRufloTaskID != "" && !safeText(value.PrimaryRufloTaskID, 128)) {
 		return errors.New("invalid Ruflo lifecycle metadata")
+	}
+	if value.PrimaryLifecycleID != "" && !safeText(value.PrimaryLifecycleID, 128) {
+		return errors.New("invalid primary lifecycle identity")
+	}
+	for _, worker := range value.Workers {
+		if worker.WorktreePath != "" && (!filepath.IsAbs(worker.WorktreePath) || !safeText(worker.WorktreePath, 4096)) {
+			return errors.New("invalid worker worktree path")
+		}
+		if worker.WorktreeBranch != "" && !safeText(worker.WorktreeBranch, 128) {
+			return errors.New("invalid worker worktree branch")
+		}
+		for _, sha := range []string{worker.WorktreeBase, worker.WorktreeCommit} {
+			if sha != "" && !validGitObjectID(sha) {
+				return errors.New("invalid worker worktree commit")
+			}
+		}
+		if worker.LifecycleID != "" && !safeText(worker.LifecycleID, 128) {
+			return errors.New("invalid worker lifecycle identity")
+		}
 	}
 	if (value.Mode == ModeOrchestrated || value.Mode == ModeAuto) && value.State != StateStarting && value.State != StateBlocked && value.SwarmID == "" {
 		return errors.New("orchestrated session requires a swarm ID")
@@ -432,6 +469,16 @@ func validate(value Session) error {
 		}
 		knownTasks := map[string]struct{}{}
 		for _, task := range value.Tasks {
+			for _, list := range [][]string{task.KnowledgeSources, task.AllowedMCPs, task.Skills} {
+				if len(list) > 32 {
+					return errors.New("task capability metadata exceeds limit")
+				}
+				for _, name := range list {
+					if !safeText(name, 128) {
+						return errors.New("invalid task capability metadata")
+					}
+				}
+			}
 			if !safeText(task.ID, 64) || !safeText(task.Role, 64) || task.CapabilityScore < 0 || task.CapabilityScore > 100 || !oneOf(task.Tier, "LIGHT", "BALANCED", "STRONG", "MAX") || !validState(task.State) || !validModel(task.Model) || task.Escalations < 0 || task.Escalations > 3 || !oneOf(task.ExecutionMode, "", "primary", "worker") || task.DelegationBenefit < 0 || task.DelegationBenefit > 100 || task.DelegationOverhead < 0 || task.DelegationOverhead > 100 || task.DelegationReason != "" && !safeText(task.DelegationReason, 128) || task.EffortSource != "" && !oneOf(task.EffortSource, "runtime_verified", "capability_registry", "configured", "argument", "default", "unsupported", "unknown") {
 				return errors.New("invalid automatic task metadata")
 			}
@@ -484,7 +531,7 @@ func validate(value Session) error {
 			activeWorkers++
 		}
 	}
-	if activeWorkers > value.MaxWorkers || activeWorkers > 3 {
+	if activeWorkers > value.MaxWorkers || activeWorkers > workerLimit {
 		return errors.New("active worker limit exceeded")
 	}
 	return nil
