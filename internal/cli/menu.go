@@ -43,6 +43,7 @@ type menuAction struct {
 func PublicMenuActionIDs() []string {
 	return []string{
 		"auto",
+		"config.auto-gate", "config.auto-plan", "config.auto-policy", "policy.sources", "policy.concurrency", "policy.worker-cap", "policy.writes", "policy.provider", "policy.low-quota", "policy.primary", "policy.mcp", "policy.confirmation",
 		"status", "doctor", "doctor.inventory", "version", "setup", "update.dry-run", "update", "rollback", "uninstall",
 		"connect.list", "connect.chatgpt", "disconnect.chatgpt", "connect.claude", "disconnect.claude", "connect.server",
 		"servers.list", "servers.add", "servers.manage", "servers.test", "servers.toggle", "servers.edit", "servers.re-enroll", "servers.remove",
@@ -144,7 +145,7 @@ func (s *menuSession) agents() (bool, error) {
 func (s *menuSession) sessions() (bool, error) {
 	snapshot, _ := s.app.MenuSnapshot()
 	return s.loop("Session Control", []menuAction{
-		{id: "auto", label: "IVOAI Automatic Session", description: "OpenCode frontend with quota-aware Codex/Claude execution and safe Ruflo delegation", disabled: disabledUnless(snapshot.AutoEnabled, "automatic orchestration disabled"), run: func() (bool, error) { return true, s.app.Auto(s.ctx, "", nil) }},
+		{id: "auto", label: "IVOAI Automatic Session", description: "OpenCode frontend with prompt gate, approved native DAG and scoped workers", disabled: disabledUnless(snapshot.AutoEnabled, "automatic orchestration disabled"), run: func() (bool, error) { return true, s.app.Auto(s.ctx, "", nil) }},
 		{id: "session.direct.codex", label: "Direct Session — Codex", description: "Official Codex runtime with session observability; Ruflo is not started", run: func() (bool, error) { return true, s.app.SessionStart(s.ctx, "codex", "direct", nil) }},
 		{id: "session.direct.claude", label: "Direct Session — Claude Code", description: "Official Claude Code runtime with session observability; Ruflo is not started", run: func() (bool, error) { return true, s.app.SessionStart(s.ctx, "claude", "direct", nil) }},
 		{id: "session.direct.opencode", label: "Standalone Session — OpenCode", description: "Unmodified upstream OpenCode provider path; IVOAI AUTO bridge is not used", run: func() (bool, error) { return true, s.app.SessionStart(s.ctx, "opencode", "direct", nil) }},
@@ -194,6 +195,15 @@ func (s *menuSession) configuration() (bool, error) {
 		{id: "config.memory", label: toggleLabel("ai-memory", snapshot.MemoryEnabled), run: s.simple(func() error { return s.app.ConfigSet("memory.enabled", opposite(snapshot.MemoryEnabled)) })},
 		{id: "config.ruflo", label: toggleLabel("Ruflo", snapshot.RufloEnabled), run: s.simple(func() error { return s.app.ConfigSet("orchestration.enabled", opposite(snapshot.RufloEnabled)) })},
 		{id: "config.auto", label: toggleLabel("Automatic Orchestration", snapshot.AutoEnabled), run: s.simple(func() error { return s.app.ConfigSet("orchestration.auto.enabled", opposite(snapshot.AutoEnabled)) })},
+		{id: "config.auto-policy", label: "Orchestration Policies", description: "Sources, worker capacity, write isolation and quota conservation", run: s.orchestrationPolicies},
+		{id: "config.auto-gate", label: "AUTO Prompt Gate: Acceptance Required", disabled: "Refine insufficient prompts; direct commands keep their own contract"},
+		{id: "config.auto-plan", label: "Plan Execution: " + snapshot.PlanExecution, description: "Plan approval is separate from tool permissions and quota routing approval", run: s.simple(func() error {
+			mode := "immediate"
+			if snapshot.PlanExecution == "immediate" {
+				mode = "approve"
+			}
+			return s.app.ConfigSet("orchestration.auto.plan_execution", mode)
+		})},
 		{id: "config.auto-planner", label: "Automatic Planner: " + strings.ToUpper(snapshot.DefaultPlanner), run: s.simple(func() error {
 			return s.app.ConfigSet("orchestration.auto.default_planner", otherExecutor(snapshot.DefaultPlanner))
 		})},

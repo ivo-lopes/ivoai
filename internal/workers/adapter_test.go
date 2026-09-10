@@ -77,7 +77,7 @@ printf 'worker result' > "$result"
 		t.Fatalf("result=%+v observation=%+v", result, observation)
 	}
 	args, _ := os.ReadFile(argsFile)
-	if !strings.Contains(string(args), `mcp_servers."external-write".enabled=false`) || !strings.Contains(string(args), `mcp_servers."ivoai-memory".enabled_tools=["memory_query","memory_recent","memory_read_page","memory_status"]`) || !strings.Contains(string(args), "exec\n--sandbox\nread-only\n--json\n--output-last-message\n") || !strings.Contains(string(args), "--model\nfixture-model\n-\n") {
+	if !strings.Contains(string(args), `mcp_servers.external-write.enabled=false`) || !strings.Contains(string(args), `mcp_servers.ivoai-memory.enabled_tools=["memory_query","memory_recent","memory_read_page","memory_status"]`) || !strings.Contains(string(args), "exec\n--sandbox\nread-only\n--json\n--output-last-message\n") || !strings.Contains(string(args), "--model\nfixture-model\n-\n") {
 		t.Fatalf("unexpected Codex argv: %q", args)
 	}
 	assertResearchPriority(t, string(args))

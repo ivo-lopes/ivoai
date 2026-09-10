@@ -2,26 +2,30 @@
 
 `ivoai auto` uses an in-process policy engine and the session-local
 `ivoai-orchestrator` MCP. The pinned OpenCode TUI is the frontend; IVOAI remains the
-conversation owner and only authoritative writer, and the official Codex or Claude
-Code CLI is the selected executor. The scheduler only launches bounded, read-only
-advisory workers through those same official subscription clients.
+conversation owner and integration authority. Official clients execute bounded
+tasks; approved writers use isolated worktrees, never concurrent writes to the
+primary checkout. Native AUTO does not depend on Ruflo lifecycle.
 
 ## First substantive turn
 
 The primary follows this order:
 
 ```text
-Memory lookup -> Context lookup -> SharedContextBrief -> task analysis
-  -> validated DAG -> scores -> quota/capability routing -> async dispatch
-  -> result validation -> primary synthesis -> bounded checkpoint
+Prompt readiness -> purpose-auto -> selected Memory/Context -> bounded brief
+  -> validated DAG -> scores -> quota/capability routing -> plan approval
+  -> host/DAG admission -> scoped workers -> result validation
+  -> checked integration -> strong primary synthesis
 ```
 
-The first Memory and Context attempts occur once. `orchestration_bootstrap` stores a
+Acceptance criteria are mandatory. Insufficient prompts return missing fields and
+wait for refinement, without planning or launching workers. Selected, relevant
+Memory and Context attempts occur once. `orchestration_bootstrap` stores a
 maximum-64-KiB, secret-free brief in the private session runtime directory. Session
 JSON retains only its timestamp, source statuses, reference count, and SHA-256 hash.
-Workers receive the brief automatically and query shared knowledge again only if a
-detail is missing. A material objective or project change requires a fresh bootstrap;
-related later turns use delta planning.
+Each worker receives only its local objective, acceptance, constraints, permitted
+sources/tools and relevant dependency references. The complete primary prompt and
+brief are not broadcast. A new managed turn performs a new admission/bootstrap;
+native resume still requires proven auth continuity.
 
 Memory and Context failures are independent. If either or both are unavailable, the
 brief records a degraded source and the session may continue when the task is still
@@ -59,10 +63,11 @@ benefit  = round((45*parallel_value + 20*verification_need + 20*risk
 overhead = 25 + 20*(100-complexity)/100 + 5*latency_sensitivity/100
 ```
 
-A worker is used only when `benefit > overhead`, parallel execution is enabled, and
+A read-only worker is used when `benefit > overhead`, parallel execution is enabled, and
 the planner marked the work delegable. Otherwise the task stays in the primary. This
 keeps a typo fix local while allowing independent inventory, architecture, and
-security work to overlap.
+security work to overlap. Writers always use the controlled adapter with explicit
+relative write paths, including a single small implementation task.
 
 ## Capability and profile resolution
 
@@ -73,16 +78,15 @@ tier, then planner preference. Model names are never invented.
   `codex app-server` `model/list` response. IvoAI passes a selected model with
   `--model` and verified effort through process-scoped
   `model_reasoning_effort` configuration.
-- Claude Code exposes verified effort choices in its official CLI help. It has no
-  equivalent structured model catalog in the validated client, so IvoAI leaves the
-  model empty and uses the official client default. A verified effort is passed with
-  `--effort`.
-- If explicit effort is unsupported, IvoAI sends none and records
-  `effort_source=unsupported`; it never labels the client default as a confirmed
-  effort.
+- Claude Code discovery uses the official client's model/capability surface and
+  help. If it cannot prove a compatible model/effort or safe writer capability,
+  that route is ineligible rather than being guessed. A verified effort is passed
+  with `--effort`; an unauthenticated optional Claude client does not block Codex.
+- Unsupported explicit model/effort selection fails closed. Absent reasoning
+  capability is reported as unsupported, never as a verified default.
 
-Capability metadata is cached in a private XDG cache keyed by official client
-version. An update or version change invalidates it. Empty profile overrides mean
+Capability metadata is saved as a private diagnostic snapshot. Each new discovery
+uses the official client; stale snapshots are not routing authority. Empty profile overrides mean
 automatic resolution. A non-empty configured model is eligible only if it exists in
 the runtime catalog.
 
@@ -107,19 +111,27 @@ Automatic sessions add these MCP methods:
 - `orchestration_result` — read a bounded result held in bridge memory;
 - `orchestration_escalate` — move one tier upward with an evidence-based reason;
 - `orchestration_cancel` — cancel only a worker owned by the session.
+- `orchestration_integrate` — check and integrate approved changes before synthesis.
 
-The scheduler defaults to two workers and hard-caps concurrency at three. Dependencies
-must complete before a queued task starts. Prompts and results stay in bridge memory,
-not session JSON or Ruflo. Worker result budgets are tier-bounded, and worker prompts
+Concurrency uses dependency-ready tasks, CPU, available memory, load, observable
+I/O pressure, quota and the user cap, with an absolute bounded limit of 12. Unknown
+resources degrade conservatively. Dependencies must complete before a queued task
+starts. Prompts and results do not enter session JSON. Worker result budgets are tier-bounded, and worker prompts
 ask for conclusions, facts, evidence, issues, and recommendations instead of a long
 narrative.
 
-Codex workers run with `--sandbox read-only`, disable inherited MCP servers, and
-allowlist only managed Memory/Context read tools. Claude workers use a strict
-process-scoped MCP configuration, plan permission mode, and explicit filesystem and
-memory mutation denials. Both retain shared knowledge access through the scoped server
-environment.
-Ruflo receives only opaque lifecycle IDs.
+Read workers run with read-only policies. Approved writers run in owned worktrees
+with checked write scopes. MCP access is deny-by-default per task; configured does
+not mean authorized. Official clients receive only process-local projections and
+never another client's credentials. If worktrees cannot initialize, writers run
+sequentially as read-only patch producers; IVOAI checks paths and applies patches
+under one lease. Unsupported changes fail closed. Conflicts retain evidence and
+require resolution; they are not automatically merged away.
+
+The primary defaults to a verified STRONG or MAX catalog model. Workers select the
+lowest sufficient tier. At 10% remaining quota or below, a separate confirmation
+proposes conservation; it never silently downgrades the primary or changes a
+material route. Rejecting keeps the existing route while it remains eligible.
 
 ## Escalation, observability, and limits
 
@@ -138,3 +150,5 @@ Headroom 0.36.0 is bypassed whenever authoritative shared-knowledge material is 
 the primary or worker path because its tool-result protection is not proven safe for
 those exact responses. Direct agent modes, Web MCP, ai-memory, and Context remain
 independent of the automatic scheduler.
+
+See [Automatic orchestration](auto-orchestration.md) for TUI and CLI policies.

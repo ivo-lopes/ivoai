@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="generator" content="Docusaurus v3.10.2">
 <title data-rh="true">Automatic orchestration | IVOAI</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="http://localhost:7780/docs/next/auto-orchestration"><meta data-rh="true" property="og:locale" content="en_US"><meta data-rh="true" property="og:locale:alternate" content="pt_BR"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="Automatic orchestration | IVOAI"><meta data-rh="true" name="description" content="ivoai auto is the quota-aware conversational mode. Its interactive frontend is a"><meta data-rh="true" property="og:description" content="ivoai auto is the quota-aware conversational mode. Its interactive frontend is a"><link data-rh="true" rel="icon" href="/img/favicon.svg"><link data-rh="true" rel="canonical" href="http://localhost:7780/docs/next/auto-orchestration"><link data-rh="true" rel="alternate" href="http://localhost:7780/docs/next/auto-orchestration" hreflang="en-US"><link data-rh="true" rel="alternate" href="http://localhost:7780/pt-BR/docs/next/auto-orchestration" hreflang="pt-BR"><link data-rh="true" rel="alternate" href="http://localhost:7780/docs/next/auto-orchestration" hreflang="x-default"><script data-rh="true" type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Automatic orchestration","item":"http://localhost:7780/docs/next/auto-orchestration"}]}</script><link rel="stylesheet" href="/assets/css/styles.d8784d9c.css">
-<script src="/assets/js/runtime~main.bcb2c819.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.6f356925.js" defer="defer"></script>
 <script src="/assets/js/main.8d6a6370.js" defer="defer"></script>
 </head>
 <body>
@@ -17,6 +17,15 @@ private managed OpenCode TUI. IVOAI remains the control plane and invokes the
 official Codex or Claude Code CLI as the selected executor; inference is never sent
 through Ruflo or a copied provider credential.</p>
 <h2 class="anchor anchorTargetStickyNavbar_UW1m" id="start-and-conversation-ownership">Start and conversation ownership<a href="#start-and-conversation-ownership" class="hash-link" aria-label="Direct link to Start and conversation ownership" title="Direct link to Start and conversation ownership" translate="no">​</a></h2>
+<p>AUTO requires an actionable objective, a concrete deliverable and observable
+acceptance criteria. Markdown headings are optional. An insufficient request is
+rejected with <code>waiting_for_refinement</code> and only the missing fields; it does not
+start workers or query institutional sources. Direct <code>ivoai codex</code>/<code>ivoai claude</code>
+remain available for unrestricted conversational intake.</p>
+<p>Example: <code>Read VERSION and report its value. Acceptance: return only the version.</code></p>
+<p>The default per-turn pipeline is intake → purpose selection → bounded knowledge
+bootstrap → native DAG → explicit plan approval → controlled workers → integration
+and validation → primary synthesis. Full OpenCode permissions do not approve a plan.</p>
 <div class="language-sh codeBlockContainer_hJIO theme-code-block" style="--prism-color:#bfc7d5;--prism-background-color:#292d3e"><div class="codeBlockContent_tbZp"><pre tabindex="0" class="prism-code language-sh codeBlock_e7Om thin-scrollbar" style="color:#bfc7d5;background-color:#292d3e"><code class="codeBlockLines_QMIf"><div class="token-line" style="color:#bfc7d5"><span class="token plain">ivoai auto</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">ivoai auto </span><span class="token parameter variable" style="color:rgb(191, 199, 213)">--planner</span><span class="token plain"> codex</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">ivoai auto </span><span class="token parameter variable" style="color:rgb(191, 199, 213)">--planner</span><span class="token plain"> claude</span><br></div></code></pre></div></div>
 <p>Without a flag, the prompt shows cached subscription quota and uses the configured
 planner (<code>codex</code> by default) when Enter is pressed. OpenCode is the frontend while
@@ -42,7 +51,7 @@ reasoning variants reported by the installed official clients. <code>/models</co
 native model picker and <code>Ctrl+T</code> cycles only the reasoning variants supported by
 the selected model.</p>
 <p>With <code>IVOAI Automatic Orchestration</code>, quota and capability policy choose the
-executor and client-default model. Selecting an explicit Codex or Claude entry pins
+executor and a runtime-verified STRONG (or MAX) primary model. Selecting an explicit Codex or Claude entry pins
 that executor and model for the turn: an unavailable explicit choice fails clearly
 instead of silently switching providers. The footer and <code>/ivoai</code> panel show the
 selection mode, executor, effective model, and reasoning level. These non-sensitive
@@ -65,7 +74,7 @@ the same policy through the official process-scoped instruction mechanisms.</p>
 <li class="">If it has a confirmed hard limit, select an eligible alternate and record the
 startup failover. If both are exhausted or unauthenticated, enter <code>BLOCKED</code>
 without starting a primary or worker.</li>
-<li class="">Verify Ruflo safe mode and initialize a real provider-free swarm.</li>
+<li class="">Initialize the IVOAI native metadata-only coordinator; AUTO does not launch Ruflo.</li>
 <li class="">Register the primary&#x27;s opaque lifecycle task.</li>
 <li class="">Start the authenticated OpenCode backend on <code>127.0.0.1</code>, attach the IVOAI-themed
 TUI, and route prompts to the selected official executor through the local bridge.</li>
@@ -82,8 +91,9 @@ and workers. Ruflo keeps <code>provider_execution=false</code> and receives no p
 <p>The first substantive request has an enforced protocol rather than an optional prompt
 convention:</p>
 <ol>
-<li class="">attempt exactly one bounded <code>ivoai-memory</code> lookup and then one bounded
-<code>ivoai-context</code> lookup before any Web lookup;</li>
+<li class="">apply Prompt Gate and <code>purpose-auto</code>; contact only the selected sources, then
+attempt bounded Memory and Context lookups where relevant. A local-only task
+can have no selected source and records both services as disabled;</li>
 <li class="">save a session-scoped, secret-free SharedContextBrief through
 <code>orchestration_bootstrap</code>;</li>
 <li class="">inspect quota and runtime capability state;</li>
@@ -91,21 +101,24 @@ convention:</p>
 task signals;</li>
 <li class="">call <code>orchestration_plan</code>, which calculates scores, execution tiers, economic
 delegation, and profiles;</li>
-<li class="">queue independent work with <code>orchestration_spawn_batch</code>, continue useful primary
+<li class="">wait for the user to approve the plan (unless immediate start was configured),
+then queue independent work with <code>orchestration_spawn_batch</code>, continue useful primary
 work, then wait by notification rather than polling;</li>
 <li class="">validate results, escalate only with evidence, synthesize, and checkpoint.</li>
 </ol>
 <p>The brief content is held only in a private runtime file. Session JSON stores a hash,
-timestamp, source health, and reference count. Workers receive the same brief, which
-avoids repeating the same initial Memory/Context query. They can perform an additional
-lookup when the bounded brief genuinely lacks necessary detail. Related later turns
-use delta planning; a material objective or project change refreshes the brief.</p>
+timestamp, source health, and reference count. Each worker receives only its local
+objective/acceptance, relevant refs, dependency findings and explicit capability
+scope. The full prompt and shared context are not broadcast. New turns re-evaluate
+purpose selection; unknown auth continuity deliberately starts a fresh native turn.</p>
 <h2 class="anchor anchorTargetStickyNavbar_UW1m" id="dag-scheduling-and-delegation">DAG scheduling and delegation<a href="#dag-scheduling-and-delegation" class="hash-link" aria-label="Direct link to DAG scheduling and delegation" title="Direct link to DAG scheduling and delegation" translate="no">​</a></h2>
-<p><code>orchestration_delegate</code> remains available for backward-compatible synchronous
-delegation. The default automatic protocol uses <code>orchestration_plan</code>, asynchronous
+<p>Legacy <code>orchestration_delegate</code> remains available in explicit orchestrated mode;
+native AUTO requires an approved plan. The automatic protocol uses <code>orchestration_plan</code>, asynchronous
 <code>orchestration_spawn</code>/<code>orchestration_spawn_batch</code>, <code>orchestration_wait</code>, and
-<code>orchestration_primary_complete</code>. Tasks are capped at 12 and workers at three (two by
-default). Unknown dependencies, cycles, duplicate work, unsafe labels, arbitrary
+<code>orchestration_primary_complete</code> and <code>orchestration_integrate</code>. Tasks are capped at
+12. Concurrency considers runnable DAG nodes, CPU/load, available RAM, I/O pressure
+when exposed and the user cap, with a safety ceiling of 12. Missing resource data
+degrades conservatively. Unknown dependencies, cycles, duplicate work, unsafe labels, arbitrary
 fields, or out-of-range scores are rejected.</p>
 <p>IvoAI calculates the capability score and maps it to LIGHT, BALANCED, STRONG, or MAX.
 It separately compares parallel/quality gain with worker startup and context-transfer
@@ -118,10 +131,11 @@ The primary receives only a bounded <code>WorkerResult</code> with summary, find
 automatically into the primary instruction, SharedContextBrief, checkpoint, handoff,
 or session JSON.</p>
 <p>Every worker passes through the quota and capability router. Official clients run
-inference (<code>codex exec</code> or <code>claude --print</code>); Codex workers use a read-only sandbox
-plus MCP read allowlists, Claude workers use strict process-scoped MCP configuration
-and plan mode with mutation tools disabled, and Ruflo records only opaque lifecycle
-state. When bounded evidence is insufficient, the primary can explicitly recover an
+inference (<code>codex exec</code> or <code>claude --print</code>). Research/review workers are read-only;
+approved implementation writers use distinct owned worktrees and bounded write
+paths. Claude writers require the official restricted capability. MCPs are denied
+unless explicitly projected for that task; registry presence grants nothing.
+The native coordinator records only lifecycle metadata. When bounded evidence is insufficient, the primary can explicitly recover an
 exact artifact or a validated byte range through the local orchestrator MCP.
 References are session-scoped and survive Codex/Claude failover without copying
 bodies. Storage and prompt budgets are separate: the former preserves evidence, while
@@ -150,7 +164,7 @@ continuity around the same official agent session.</p>
 <li class="">checks the alternate provider again;</li>
 <li class="">loads the last checkpoint, or creates an explicit interrupted fallback;</li>
 <li class="">reads bounded <code>git status</code> and diff-stat metadata without altering the worktree;</li>
-<li class="">restarts execution through the alternate official CLI with the handoff while the
+<li class="">asks the user to approve the material executor change, then restarts through the alternate official CLI with the handoff while the
 same OpenCode UI remains attached;</li>
 <li class="">records current primary, reason, time, phase, and failover count.</li>
 </ol>
@@ -185,14 +199,44 @@ differ.</p>
 <ul>
 <li class="">Server, context, or ai-memory outage does not stop the official primary.</li>
 <li class="">Headroom failure uses the existing direct-client fallback.</li>
-<li class="">Ruflo failure stops automatic orchestration but does not affect <code>ivoai codex</code> or
-<code>ivoai claude</code>.</li>
+<li class="">Ruflo is not the native AUTO coordinator; explicit legacy orchestrated mode
+retains its independent Ruflo gates.</li>
 <li class="">Pending, not-exposed, and stale quota are distinct and never converted to <code>0%</code>.</li>
 <li class="">Both confirmed exhausted providers produce a bounded waiting/blocked state; ivoai
 does not retry forever or activate PAYG inference.</li>
 <li class="">WorkingContext failure activates no raw-output prompt fallback: the structured result
 is explicitly degraded and the official primary remains usable without external
 worker evidence.</li>
-</ul></div><footer class="theme-doc-footer docusaurus-mt-lg"><div class="row margin-top--sm theme-doc-footer-edit-meta-row"><div class="col noPrint_H9in"><a href="https://github.com/ivo-lopes/ivoai/edit/main/../docs/auto-orchestration.md" target="_blank" rel="noopener noreferrer" class="theme-edit-this-page"><svg fill="currentColor" height="20" width="20" viewBox="0 0 40 40" class="iconEdit_kAoA" aria-hidden="true"><g><path d="m34.5 11.7l-3 3.1-6.3-6.3 3.1-3q0.5-0.5 1.2-0.5t1.1 0.5l3.9 3.9q0.5 0.4 0.5 1.1t-0.5 1.2z m-29.5 17.1l18.4-18.5 6.3 6.3-18.4 18.4h-6.3v-6.2z"></path></g></svg>Edit this page</a></div><div class="col lastUpdated_HMyn"></div></div></footer></article><nav class="docusaurus-mt-lg pagination-nav" aria-label="Docs pages"><a class="pagination-nav__link pagination-nav__link--prev" href="/docs/next/executors"><div class="pagination-nav__sublabel">Previous</div><div class="pagination-nav__label">Executors</div></a><a class="pagination-nav__link pagination-nav__link--next" href="/docs/next/auto-scheduler"><div class="pagination-nav__sublabel">Next</div><div class="pagination-nav__label">Automatic scheduler and model routing</div></a></nav></div></div><div class="col col--3"><div class="tableOfContents_dNY2 thin-scrollbar theme-doc-toc-desktop"><ul class="table-of-contents table-of-contents__left-border"><li><a href="#start-and-conversation-ownership" class="table-of-contents__link toc-highlight">Start and conversation ownership</a></li><li><a href="#model-and-reasoning-selection" class="table-of-contents__link toc-highlight">Model and reasoning selection</a></li><li><a href="#startup-sequence" class="table-of-contents__link toc-highlight">Startup sequence</a></li><li><a href="#first-turn-planning-and-shared-knowledge" class="table-of-contents__link toc-highlight">First-turn planning and shared knowledge</a></li><li><a href="#dag-scheduling-and-delegation" class="table-of-contents__link toc-highlight">DAG scheduling and delegation</a></li><li><a href="#progressive-escalation" class="table-of-contents__link toc-highlight">Progressive escalation</a></li><li><a href="#checkpoints-and-failover" class="table-of-contents__link toc-highlight">Checkpoints and failover</a></li><li><a href="#observability-and-state" class="table-of-contents__link toc-highlight">Observability and state</a></li><li><a href="#failure-isolation" class="table-of-contents__link toc-highlight">Failure isolation</a></li></ul></div></div></div></div></main></div></div></div><footer class="theme-layout-footer footer footer--dark"><div class="container container-fluid"><div class="row footer__links"><div class="theme-layout-footer-column col footer__col"><div class="footer__title">Operate</div><ul class="footer__items clean-list"><li class="footer__item"><a class="footer__link-item" href="/docs/installation">Install</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/troubleshooting">Troubleshooting</a></li></ul></div><div class="theme-layout-footer-column col footer__col"><div class="footer__title">Build</div><ul class="footer__items clean-list"><li class="footer__item"><a class="footer__link-item" href="/docs/architecture">Architecture</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/development">Development</a></li></ul></div></div><div class="footer__bottom text--center"><div class="footer__copyright">Copyright © 2026 IVOAI. MIT licensed.</div></div></div></footer></div>
+</ul>
+<h2 class="anchor anchorTargetStickyNavbar_UW1m" id="policies-in-the-launcher-and-cli">Policies in the launcher and CLI<a href="#policies-in-the-launcher-and-cli" class="hash-link" aria-label="Direct link to Policies in the launcher and CLI" title="Direct link to Policies in the launcher and CLI" translate="no">​</a></h2>
+<p>Open <code>ivoai</code> → Configuration → Automatic orchestration to configure plan approval
+and orchestration policies. The CLI uses the same persistent config domain:</p>
+<div class="language-sh codeBlockContainer_hJIO theme-code-block" style="--prism-color:#bfc7d5;--prism-background-color:#292d3e"><div class="codeBlockContent_tbZp"><pre tabindex="0" class="prism-code language-sh codeBlock_e7Om thin-scrollbar" style="color:#bfc7d5;background-color:#292d3e"><code class="codeBlockLines_QMIf"><div class="token-line" style="color:#bfc7d5"><span class="token plain">ivoai config </span><span class="token builtin class-name" style="color:rgb(255, 203, 107)">set</span><span class="token plain"> orchestration.auto.plan_execution approve</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">ivoai config </span><span class="token builtin class-name" style="color:rgb(255, 203, 107)">set</span><span class="token plain"> orchestration.auto.knowledge_routing purpose-auto</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">ivoai config </span><span class="token builtin class-name" style="color:rgb(255, 203, 107)">set</span><span class="token plain"> orchestration.auto.concurrency auto</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">ivoai config </span><span class="token builtin class-name" style="color:rgb(255, 203, 107)">set</span><span class="token plain"> orchestration.auto.worker_cap </span><span class="token number" style="color:rgb(247, 140, 108)">2</span><span class="token plain"></span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">ivoai config </span><span class="token builtin class-name" style="color:rgb(255, 203, 107)">set</span><span class="token plain"> orchestration.auto.parallel_writes </span><span class="token boolean" style="color:rgb(255, 88, 116)">true</span><span class="token plain"></span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">ivoai config </span><span class="token builtin class-name" style="color:rgb(255, 203, 107)">set</span><span class="token plain"> orchestration.auto.provider_preference auto</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">ivoai config </span><span class="token builtin class-name" style="color:rgb(255, 203, 107)">set</span><span class="token plain"> orchestration.auto.low_quota_threshold </span><span class="token number" style="color:rgb(247, 140, 108)">10</span><br></div></code></pre></div></div>
+<p>Changes apply to the next AUTO session. <code>plan_execution=immediate</code> is explicit
+opt-in; acceptance criteria cannot be disabled. <code>worker_cap=0</code> means automatic.
+Legacy <code>max_workers</code> settings are preserved as a user cap on first load.
+Knowledge policies also include <code>all-enabled</code> (compatibility federation) and
+<code>explicit-only</code>. <code>--knowledge-source</code> overrides purpose inference authoritatively.
+Purpose matching is conservative, label-based and honors negative exclusions;
+use explicit selection for ambiguous organization references. No write fan-out.</p>
+<p>At or below the configured quota threshold (10% by default), current authoritative
+budget telemetry proposes conservation. Unknown/stale quota is not zero or unlimited.
+Approve conservation or keep the current route. A material provider/model change
+has its own approval, separate from the plan; the primary stays strong by default.
+Claude remains optional and is omitted when unavailable, not removed from the product.</p>
+<p>The <code>/ivoai</code> panel shows readiness, plan/approval, task and worker counts, admitted
+concurrency, executor/model/effort per worker, source/MCP scope and quota state.
+It does not show worker transcripts or hidden reasoning.</p>
+<h2 class="anchor anchorTargetStickyNavbar_UW1m" id="writer-isolation-and-recovery">Writer isolation and recovery<a href="#writer-isolation-and-recovery" class="hash-link" aria-label="Direct link to Writer isolation and recovery" title="Direct link to Writer isolation and recovery" translate="no">​</a></h2>
+<p>Independent writers use separate worktrees. The coordinator collects only approved
+paths, builds integration in an isolated checkout and refuses conflicts or a changed
+primary tree. Failed worktrees remain recoverable; no automatic conflict resolution.
+When a worktree cannot be initialized, the fallback is sequential checked patches:
+workers remain read-only, return a bounded text diff and only IVOAI applies it after
+path and conflict checks. No <code>git init</code> is performed. Hidden configuration paths,
+symlinks, binary patches and renames are excluded from that fallback. Unsupported
+changes fail clearly instead of relaxing the sandbox. Existing server profiles,
+secret refs, MCP auth and OpenCode permission preferences need no re-enrollment.</p>
+<p>Profile management remains in <a class="" href="/docs/next/connections">Connections</a>.</p></div><footer class="theme-doc-footer docusaurus-mt-lg"><div class="row margin-top--sm theme-doc-footer-edit-meta-row"><div class="col noPrint_H9in"><a href="https://github.com/ivo-lopes/ivoai/edit/main/../docs/auto-orchestration.md" target="_blank" rel="noopener noreferrer" class="theme-edit-this-page"><svg fill="currentColor" height="20" width="20" viewBox="0 0 40 40" class="iconEdit_kAoA" aria-hidden="true"><g><path d="m34.5 11.7l-3 3.1-6.3-6.3 3.1-3q0.5-0.5 1.2-0.5t1.1 0.5l3.9 3.9q0.5 0.4 0.5 1.1t-0.5 1.2z m-29.5 17.1l18.4-18.5 6.3 6.3-18.4 18.4h-6.3v-6.2z"></path></g></svg>Edit this page</a></div><div class="col lastUpdated_HMyn"></div></div></footer></article><nav class="docusaurus-mt-lg pagination-nav" aria-label="Docs pages"><a class="pagination-nav__link pagination-nav__link--prev" href="/docs/next/executors"><div class="pagination-nav__sublabel">Previous</div><div class="pagination-nav__label">Executors</div></a><a class="pagination-nav__link pagination-nav__link--next" href="/docs/next/auto-scheduler"><div class="pagination-nav__sublabel">Next</div><div class="pagination-nav__label">Automatic scheduler and model routing</div></a></nav></div></div><div class="col col--3"><div class="tableOfContents_dNY2 thin-scrollbar theme-doc-toc-desktop"><ul class="table-of-contents table-of-contents__left-border"><li><a href="#start-and-conversation-ownership" class="table-of-contents__link toc-highlight">Start and conversation ownership</a></li><li><a href="#model-and-reasoning-selection" class="table-of-contents__link toc-highlight">Model and reasoning selection</a></li><li><a href="#startup-sequence" class="table-of-contents__link toc-highlight">Startup sequence</a></li><li><a href="#first-turn-planning-and-shared-knowledge" class="table-of-contents__link toc-highlight">First-turn planning and shared knowledge</a></li><li><a href="#dag-scheduling-and-delegation" class="table-of-contents__link toc-highlight">DAG scheduling and delegation</a></li><li><a href="#progressive-escalation" class="table-of-contents__link toc-highlight">Progressive escalation</a></li><li><a href="#checkpoints-and-failover" class="table-of-contents__link toc-highlight">Checkpoints and failover</a></li><li><a href="#observability-and-state" class="table-of-contents__link toc-highlight">Observability and state</a></li><li><a href="#failure-isolation" class="table-of-contents__link toc-highlight">Failure isolation</a></li><li><a href="#policies-in-the-launcher-and-cli" class="table-of-contents__link toc-highlight">Policies in the launcher and CLI</a></li><li><a href="#writer-isolation-and-recovery" class="table-of-contents__link toc-highlight">Writer isolation and recovery</a></li></ul></div></div></div></div></main></div></div></div><footer class="theme-layout-footer footer footer--dark"><div class="container container-fluid"><div class="row footer__links"><div class="theme-layout-footer-column col footer__col"><div class="footer__title">Operate</div><ul class="footer__items clean-list"><li class="footer__item"><a class="footer__link-item" href="/docs/installation">Install</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/troubleshooting">Troubleshooting</a></li></ul></div><div class="theme-layout-footer-column col footer__col"><div class="footer__title">Build</div><ul class="footer__items clean-list"><li class="footer__item"><a class="footer__link-item" href="/docs/architecture">Architecture</a></li><li class="footer__item"><a class="footer__link-item" href="/docs/development">Development</a></li></ul></div></div><div class="footer__bottom text--center"><div class="footer__copyright">Copyright © 2026 IVOAI. MIT licensed.</div></div></div></footer></div>
 </body>
 </html>

@@ -16,14 +16,15 @@ import (
 // ID to an official IVOAI executor selection. HTTP input is never parsed into
 // executor arguments.
 type ModelSpec struct {
-	ID               string   `json:"id"`
-	Name             string   `json:"name"`
-	Mode             string   `json:"mode"`
-	Executor         string   `json:"executor,omitempty"`
-	UpstreamModel    string   `json:"upstream_model,omitempty"`
-	SupportedEfforts []string `json:"supported_efforts,omitempty"`
-	DefaultEffort    string   `json:"default_effort,omitempty"`
-	ModelSource      string   `json:"model_source,omitempty"`
+	CapabilityTier   routing.Tier `json:"capability_tier,omitempty"`
+	ID               string       `json:"id"`
+	Name             string       `json:"name"`
+	Mode             string       `json:"mode"`
+	Executor         string       `json:"executor,omitempty"`
+	UpstreamModel    string       `json:"upstream_model,omitempty"`
+	SupportedEfforts []string     `json:"supported_efforts,omitempty"`
+	DefaultEffort    string       `json:"default_effort,omitempty"`
+	ModelSource      string       `json:"model_source,omitempty"`
 }
 
 type ModelCatalog struct {
@@ -75,7 +76,8 @@ func CatalogFromRegistry(registry routing.Registry) ModelCatalog {
 				defaultEffort = ""
 			}
 			entries = append(entries, ModelSpec{
-				ID: id, Name: displayExecutor(provider) + " · " + name, Mode: "explicit", Executor: provider,
+				CapabilityTier: model.CapabilityTier,
+				ID:             id, Name: displayExecutor(provider) + " · " + name, Mode: "explicit", Executor: provider,
 				UpstreamModel: upstream, SupportedEfforts: efforts, DefaultEffort: defaultEffort, ModelSource: string(model.Source),
 			})
 		}
@@ -115,6 +117,19 @@ func safeDisplayText(value string) bool {
 }
 
 func DefaultCatalog() ModelCatalog { return newCatalog(nil) }
+
+// StrongPrimary resolves only observed capabilities. Model IDs and versions
+// never determine strength, and a weak/client default is not a silent fallback.
+func (c ModelCatalog) StrongPrimary(executor string) (ModelSpec, bool) {
+	for _, tier := range []routing.Tier{routing.TierStrong, routing.TierMax} {
+		for _, entry := range c.entries {
+			if entry.Executor == executor && entry.ModelSource == string(routing.SourceRuntimeVerified) && entry.CapabilityTier == tier && entry.UpstreamModel != "" {
+				return entry, true
+			}
+		}
+	}
+	return ModelSpec{}, false
+}
 
 func (c ModelCatalog) Entries() []ModelSpec {
 	result := append([]ModelSpec(nil), c.entries...)

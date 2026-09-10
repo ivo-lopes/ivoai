@@ -17,6 +17,7 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/config"
 	"github.com/ivo-lopes/ivoai/internal/opencodebridge"
 	"github.com/ivo-lopes/ivoai/internal/quota"
+	"github.com/ivo-lopes/ivoai/internal/routing"
 	"github.com/ivo-lopes/ivoai/internal/secrets"
 	"github.com/ivo-lopes/ivoai/internal/serverpool"
 	"github.com/ivo-lopes/ivoai/internal/session"
@@ -116,6 +117,14 @@ func exhausted(provider quota.Provider) quota.ProviderQuota {
 
 func autoTestApp(t *testing.T, root, codexBody, claudeBody string) *App {
 	t.Helper()
+	// These legacy fixtures exercise launch/argv/failover, not model planning.
+	// Their official-client stand-in explicitly completes one synthetic task;
+	// native DAG and approval behavior are tested by the scheduler contracts.
+	testBinary, err := os.Executable()
+	if err != nil {
+		t.Fatal(err)
+	}
+	complete := "\n" + shellArgument(testBinary) + " -test.run '^TestAutoTransportFixtureCompletion$' >/dev/null\n"
 	ruflo := appExecutable(t, root, "ruflo", `#!/bin/sh
 case "$*" in
   "--version") echo 'ruflo v3.38.12' ;;
@@ -128,7 +137,11 @@ esac
 	claudeBody += "\nprintf '%s\\n' '{\"type\":\"system\",\"session_id\":\"claude_fixture\"}'\nprintf '%s\\n' '{\"type\":\"stream_event\",\"event\":{\"type\":\"content_block_delta\",\"delta\":{\"type\":\"text_delta\",\"text\":\"fixture complete\"}}}'\n"
 	codexBody += "\nprintf '%s\\n' '{\"type\":\"turn.completed\"}'\n"
 	claudeBody += "\nprintf '%s\\n' '{\"type\":\"result\",\"subtype\":\"success\",\"is_error\":false}'\n"
+	codexBody += complete
+	claudeBody += complete
+	codexBody = strings.Replace(codexBody, "#!/bin/sh\n", "#!/bin/sh\nif [ \"$1 $2 $3\" = 'mcp list --json' ]; then printf '[]\\n'; exit 0; fi\n", 1)
 	a := sessionTestApp(t, root, appExecutable(t, root, "codex", codexBody), appExecutable(t, root, "claude", claudeBody), ruflo)
+	t.Setenv("IVOAI_TRANSPORT_FIXTURE_SESSIONS", a.Store.Paths.SessionsDir)
 	opencode := appExecutable(t, root, "opencode", "#!/bin/sh\nexit 0\n")
 	t.Setenv("IVOAI_TEST_MODE", "1")
 	state, err := a.Store.LoadState()
@@ -143,9 +156,34 @@ esac
 		t.Fatal(err)
 	}
 	a.StartOpenCodeManaged = func(ctx context.Context, options opencodebridge.ManagedOptions) (managedOpenCodeFrontend, error) {
+		// Simulate the operator explicitly approving routing proposals in this
+		// transport fixture. Rejection/no-approval are covered independently.
+		decisionCtx, stopDecisions := context.WithCancel(ctx)
+		defer stopDecisions()
+		go func() {
+			ticker := time.NewTicker(10 * time.Millisecond)
+			defer ticker.Stop()
+			store := session.Store{Root: a.Store.Paths.SessionsDir}
+			for {
+				select {
+				case <-decisionCtx.Done():
+					return
+				case <-ticker.C:
+					values, _ := store.List()
+					for _, v := range values {
+						for _, d := range v.Decisions {
+							if d.State == "pending" && d.Kind == "routing" {
+								_ = store.ResolveDecision(v.SessionID, d.ID, true)
+							}
+						}
+					}
+				}
+			}
+		}()
 		payload, err := json.Marshal(map[string]any{
 			"model": "auto", "stream": false,
-			"messages": []map[string]string{{"role": "user", "content": "fixture request"}},
+			// AUTO now requires a real intake contract even in transport fixtures.
+			"messages": []map[string]string{{"role": "user", "content": "Read the fixture and report its status. Acceptance: return only fixture complete; do not modify any files."}},
 		})
 		if err != nil {
 			return nil, err
@@ -169,7 +207,10 @@ esac
 		}
 		return fakeManagedOpenCode{environment: options.Environment}, nil
 	}
-	catalog := opencodebridge.DefaultCatalog()
+	catalog := opencodebridge.CatalogFromRegistry(routing.Registry{Providers: map[string]routing.ProviderCapability{
+		"codex":  {Authenticated: true, Models: []routing.ModelCapability{{Name: "fixture-codex", Source: routing.SourceRuntimeVerified, CapabilityTier: routing.TierStrong}}},
+		"claude": {Authenticated: true, Models: []routing.ModelCapability{{Name: "fixture-claude", Source: routing.SourceRuntimeVerified, CapabilityTier: routing.TierStrong}}},
+	}})
 	a.OpenCodeModelCatalog = &catalog
 	previous, _ := os.Getwd()
 	t.Cleanup(func() { _ = os.Chdir(previous) })
@@ -177,6 +218,31 @@ esac
 		t.Fatal(err)
 	}
 	return a
+}
+
+func TestAutoTransportFixtureCompletion(t *testing.T) {
+	root := os.Getenv("IVOAI_TRANSPORT_FIXTURE_SESSIONS")
+	if root == "" {
+		return
+	}
+	store := session.Store{Root: root}
+	values, err := store.List()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, value := range values {
+		if !value.Active() || value.CurrentPhase != "planning" {
+			continue
+		}
+		_, err := store.Update(value.SessionID, func(v *session.Session) error {
+			v.CurrentPhase = "synthesizing"
+			v.Tasks = []session.TaskMetadata{{ID: "fixture", Role: "research", Tier: "STRONG", State: session.StateCompleted, Model: session.UnknownModel(), ExecutionMode: "primary"}}
+			return nil
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
 }
 
 func TestAutoStartupFallbackNeverLaunchesExhaustedProvider(t *testing.T) {
@@ -188,7 +254,7 @@ func TestAutoStartupFallbackNeverLaunchesExhaustedProvider(t *testing.T) {
 		quota.ProviderCodex:  probeFunc(func(context.Context) (quota.ProviderQuota, error) { return exhausted(quota.ProviderCodex), nil }),
 		quota.ProviderClaude: probeFunc(func(context.Context) (quota.ProviderQuota, error) { return available(quota.ProviderClaude), nil }),
 	}}
-	if err := a.Auto(context.Background(), "codex", nil); err != nil {
+	if err := a.Auto(context.Background(), "", nil); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := os.Stat(codexMarker); !errors.Is(err, os.ErrNotExist) {
@@ -257,7 +323,7 @@ func TestAutoStartsClaudeWhenCodexRuntimeIsUnavailable(t *testing.T) {
 		quota.ProviderCodex:  probeFunc(func(context.Context) (quota.ProviderQuota, error) { return exhausted(quota.ProviderCodex), nil }),
 		quota.ProviderClaude: probeFunc(func(context.Context) (quota.ProviderQuota, error) { return available(quota.ProviderClaude), nil }),
 	}}
-	if err := a.Auto(context.Background(), "codex", nil); err != nil {
+	if err := a.Auto(context.Background(), "", nil); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := os.Stat(claudeMarker); err != nil {
@@ -285,7 +351,7 @@ func TestAutoFailoverPreservesSelectedKnowledgeSource(t *testing.T) {
 		quota.ProviderCodex:  probeFunc(func(context.Context) (quota.ProviderQuota, error) { return exhausted(quota.ProviderCodex), nil }),
 		quota.ProviderClaude: probeFunc(func(context.Context) (quota.ProviderQuota, error) { return available(quota.ProviderClaude), nil }),
 	}}
-	if err := a.AutoWithKnowledge(context.Background(), "codex", nil, []string{"mindsite"}); err != nil {
+	if err := a.AutoWithKnowledge(context.Background(), "", nil, []string{"mindsite"}); err != nil {
 		t.Fatal(err)
 	}
 	body, err := os.ReadFile(marker)
@@ -326,7 +392,7 @@ func TestAutoMidSessionFailoverPreservesWorkingTreeAndHandoff(t *testing.T) {
 	a.AutoPollInterval = 20 * time.Millisecond
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	if err := a.Auto(ctx, "codex", nil); err != nil {
+	if err := a.Auto(ctx, "", nil); err != nil {
 		t.Fatal(err)
 	}
 	body, err := os.ReadFile(tracked)

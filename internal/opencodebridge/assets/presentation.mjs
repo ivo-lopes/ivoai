@@ -27,6 +27,22 @@ export function panel(status) {
     line(`frontend=${clean(status.frontend, "OpenCode")} · primary=${clean(status.primary)} · state=${clean(status.session_state)}`),
     line(`mode=${clean(status.selection_mode, "auto")} · requested=${clean(status.requested_model, "automatic")} · model=${clean(status.effective_model, "UNKNOWN")} · reasoning=${clean(status.effective_effort, "UNKNOWN")}`),
     line("Executors", "heading")]
+  const orchestration = []
+  if (status.prompt_readiness) {
+    orchestration.push(line(`Prompt readiness: ${clean(status.prompt_readiness)}`))
+    for (const field of (Array.isArray(status.prompt_missing) ? status.prompt_missing : []).slice(0, 5)) orchestration.push(line(`Missing: ${clean(field)}`, "warning"))
+  }
+  if (status.plan_state) orchestration.push(line(`Plan: ${clean(status.plan_state)} · ${Number.isSafeInteger(status.task_count) ? status.task_count : 0} tasks`), line(`Workers: ${Number.isSafeInteger(status.workers_active) ? status.workers_active : 0} active / ${Number.isSafeInteger(status.workers_queued) ? status.workers_queued : 0} queued / ${Number.isSafeInteger(status.workers_done) ? status.workers_done : 0} done`))
+  if (status.concurrency_policy) orchestration.push(line(`Concurrency: ${clean(status.concurrency_policy)} → ${Number.isSafeInteger(status.concurrency_limit) && status.concurrency_limit > 0 ? status.concurrency_limit : "pending DAG"} · cap=${status.worker_cap > 0 ? status.worker_cap : "auto"}`))
+  if (status.knowledge_policy) orchestration.push(line(`Knowledge routing: ${clean(status.knowledge_policy)} · worker MCPs: deny-by-default`))
+  if (status.quota_mode) orchestration.push(line(`Quota mode: ${clean(status.quota_mode)}`))
+  if (status.parallel_write_degraded) orchestration.push(line("Parallel writes: degraded · worktree unavailable · sequential checked patches / read-only workers"))
+  for (const worker of (Array.isArray(status.workers) ? status.workers : []).slice(0, 12)) {
+    orchestration.push(line(`${clean(worker.id)} · ${clean(worker.role)} · ${clean(worker.state)}`),
+      line(`  ${clean(worker.executor)} / ${clean(worker.tier)} / ${clean(worker.model)} · reasoning=${clean(worker.effort, "unsupported")}`),
+      line(`  purposes=${(Array.isArray(worker.purposes) ? worker.purposes : []).slice(0, 8).map(x => clean(x)).join(", ") || "none"} · MCPs=${(Array.isArray(worker.mcps) ? worker.mcps : []).slice(0, 16).map(x => clean(x)).join(", ") || "none"}`))
+  }
+  result.splice(2, 0, ...orchestration)
   for (const [id, name] of [["codex", "Codex"], ["claude", "Claude"], ["opencode", "OpenCode"]]) {
     const auth = clean(status[id + "_auth"])
     result.push(line(`${auth === "authenticated" ? "✓" : "!"} ${name} ${auth} · quota=${clean(status[id + "_quota"])}`))

@@ -85,12 +85,12 @@ Automatic mode uses the pinned OpenCode TUI as its interactive frontend while IV
 remains the planner, logical session owner, authoritative writer and result
 consolidator. IVOAI invokes the chosen official Codex or Claude Code CLI behind a
 private loopback bridge, using each client's existing subscription login without
-copying credentials into OpenCode. It verifies both subscription clients before
-starting Ruflo, automatically uses the alternate when the requested
+copying credentials into OpenCode. Native AUTO verifies eligible clients without
+requiring Ruflo. It can propose an alternate when the current
 provider has a confirmed hard limit, refreshes quota before and after worker work,
 and monitors the active primary. A hard mid-session limit stops only the matching
 process group, preserves the worktree, and starts the alternate with a bounded
-checkpoint plus Git status/diff-stat summary. At most two consecutive automatic
+checkpoint plus Git status/diff-stat summary after routing approval. At most two consecutive automatic
 failovers are accepted; a successful checkpoint resets that counter.
 
 The OpenCode frontend stays attached across bounded executor failover. Codex receives
@@ -100,11 +100,13 @@ session-only `--settings` file that captures structured statusline telemetry. No
 permanent third-party configuration is overwritten. Details are in
 [auto-orchestration.md](auto-orchestration.md).
 
-On the first substantive request, Memory and Context are each attempted once and a
-bounded SharedContextBrief is shared with workers. IvoAI validates the task DAG,
-calculates weighted capability tiers, keeps uneconomic work in the primary, and
-launches independent advisory workers concurrently. Workers are structurally
-read-only; the primary remains the only writer. Full task text and result bodies never
+AUTO first requires an objective, deliverable and observable acceptance criteria.
+Purpose-auto selects relevant institutional sources before bounded knowledge
+lookups. IVOAI validates the DAG and waits for plan approval by default. It calculates
+weighted capability tiers, keeps uneconomic read-only work in the primary, and
+launches dependency-ready workers within host and user limits. Each worker receives
+a local SharedContextBrief and deny-by-default MCP capabilities. Approved writers
+use isolated worktrees; IVOAI checks integration before primary synthesis. Full task text and result bodies never
 enter session JSON; only bounded WorkingContext ResultRefs do. Details of scoring and routing are in
 [auto-scheduler.md](auto-scheduler.md).
 

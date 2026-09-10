@@ -7,6 +7,10 @@ import {clean, logo, panel, servers, fitRows, cellWidth} from "./assets/presenta
 const source = (alias, selected = true, health = "healthy") => ({alias, purpose: alias, enabled: true, selected, health, auth_state: health === "healthy" ? "authenticated" : "not verified"})
 const normal = {frontend:"opencode", primary:"codex", session_state:"running", selection_mode:"auto", effective_model:"fixture-model", effective_effort:"high", permission_mode:"interactive", resume_policy:"fresh native turn; identity unverified", codex_auth:"authenticated", codex_quota:"available", claude_auth:"not configured", claude_quota:"N/A", opencode_auth:"authenticated", opencode_quota:"unknown", memory:"ready", context:"ready", compression:"direct", skills:"policy-gated", version:"fixture", configured_count:2, connected_count:2, enabled_count:2, selected_count:2, knowledge_mode:"federated", servers:[source("source-A"),source("source-B")]}
 const states = {
+ sequential_patch:{...normal,prompt_readiness:"ready",plan_state:"running",task_count:2,workers_active:1,workers_queued:1,parallel_write_degraded:true,concurrency_policy:"sequential",concurrency_limit:1,worker_cap:2,quota_mode:"normal"},
+ plan_approval:{...normal,prompt_readiness:"ready",plan_state:"waiting_for_plan_approval",task_count:3,workers_queued:2,concurrency_policy:"auto",worker_cap:2,knowledge_policy:"purpose-auto",quota_mode:"normal"},
+ parallel_workers:{...normal,prompt_readiness:"ready",plan_state:"running",task_count:3,workers_active:2,workers_queued:1,concurrency_policy:"auto",concurrency_limit:2,worker_cap:2,knowledge_policy:"purpose-auto",quota_mode:"normal",workers:[{id:"implementation-a",role:"implementation",state:"running",executor:"codex",tier:"BALANCED",model:"fixture-balanced",effort:"medium",purposes:[],mcps:[]},{id:"research-b",role:"research",state:"running",executor:"claude",tier:"LIGHT",model:"fixture-economical",effort:"low",purposes:["source-B"],mcps:["plane"]}]},
+ quota_approval:{...normal,prompt_readiness:"ready",plan_state:"waiting_for_routing_approval",task_count:3,workers_queued:2,quota_mode:"conservation_pending_confirmation",concurrency_policy:"auto",concurrency_limit:2,knowledge_policy:"purpose-auto"},
  normal,
  full:{...normal, permission_mode:"full"},
  interactive:{...normal,permission_mode:"interactive"},
@@ -54,4 +58,14 @@ test("Unicode width and non-color state remain accessible",()=>{
  for(const width of [12,52,92,152])for(const row of fitRows([{text:"界 é 🧪 ".repeat(40),role:"text"}],width))assert.ok(cellWidth(row.text)<=width)
  for(const state of Object.values(states))for(const row of panel(state))if(row.role==="warning")assert.ok(row.text.startsWith("!"))
  assert.match(panel(states.stale).map(row=>row.text).join("\n"),/stale.*N\/A/)
+})
+test("orchestration metadata stays bounded at every supported width",()=>{
+ for(const state of [states.plan_approval,states.parallel_workers,states.quota_approval,states.sequential_patch])for(const width of [60,100,160]){
+  const rows=fitRows(panel(state),width-8)
+  for(const row of rows)assert.ok(cellWidth(row.text)<=width-8)
+  const text=rows.map(x=>x.text).join("\n")
+  assert.match(text,/Prompt readiness: ready/)
+  assert.match(text,/Quota mode:/)
+  assert.doesNotMatch(text,/Bearer|access_token|prompt body|worker transcript/i)
+ }
 })

@@ -13,6 +13,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/ivo-lopes/ivoai/internal/promptgate"
 	"github.com/ivo-lopes/ivoai/internal/quota"
 	"io"
 	"net"
@@ -91,41 +92,72 @@ type ServerView struct {
 }
 
 type Status struct {
-	ResumePolicy        string       `json:"resume_policy,omitempty"`
-	PermissionMode      string       `json:"permission_mode"`
-	Version             string       `json:"version"`
-	SessionID           string       `json:"session_id"`
-	Frontend            string       `json:"frontend"`
-	Primary             string       `json:"primary"`
-	SelectionMode       string       `json:"selection_mode,omitempty"`
-	RequestedExecutor   string       `json:"requested_executor,omitempty"`
-	RequestedEffort     string       `json:"requested_effort,omitempty"`
-	RequestedModel      string       `json:"requested_model,omitempty"`
-	EffectiveModel      string       `json:"effective_model,omitempty"`
-	EffectiveEffort     string       `json:"effective_effort,omitempty"`
-	ConfigurationSource string       `json:"configuration_source,omitempty"`
-	Mode                string       `json:"mode"`
-	SessionState        string       `json:"session_state"`
-	KnowledgeMode       string       `json:"knowledge_mode"`
-	ConfiguredCount     int          `json:"configured_count"`
-	EnabledCount        int          `json:"enabled_count"`
-	ConnectedCount      int          `json:"connected_count"`
-	SelectedCount       int          `json:"selected_count"`
-	Servers             []ServerView `json:"servers"`
-	CodexAuth           string       `json:"codex_auth"`
-	ClaudeAuth          string       `json:"claude_auth"`
-	CodexQuota          string       `json:"codex_quota"`
-	ClaudeQuota         string       `json:"claude_quota"`
-	OpenCodeAuth        string       `json:"opencode_auth"`
-	OpenCodeQuota       string       `json:"opencode_quota"`
-	Compression         string       `json:"compression"`
-	Memory              string       `json:"memory"`
-	Context             string       `json:"context"`
-	Skills              string       `json:"skills"`
-	UpdatedAt           time.Time    `json:"updated_at"`
+	KnowledgePolicy       string       `json:"knowledge_policy,omitempty"`
+	ConcurrencyPolicy     string       `json:"concurrency_policy,omitempty"`
+	ConcurrencyLimit      int          `json:"concurrency_limit,omitempty"`
+	WorkerCap             int          `json:"worker_cap,omitempty"`
+	Workers               []WorkerView `json:"workers,omitempty"`
+	QuotaMode             string       `json:"quota_mode,omitempty"`
+	ParallelWriteDegraded bool         `json:"parallel_write_degraded,omitempty"`
+	PlanState             string       `json:"plan_state,omitempty"`
+	TaskCount             int          `json:"task_count,omitempty"`
+	WorkersActive         int          `json:"workers_active,omitempty"`
+	WorkersQueued         int          `json:"workers_queued,omitempty"`
+	WorkersDone           int          `json:"workers_done,omitempty"`
+	PromptReadiness       string       `json:"prompt_readiness,omitempty"`
+	PromptMissing         []string     `json:"prompt_missing,omitempty"`
+	ResumePolicy          string       `json:"resume_policy,omitempty"`
+	PermissionMode        string       `json:"permission_mode"`
+	Version               string       `json:"version"`
+	SessionID             string       `json:"session_id"`
+	Frontend              string       `json:"frontend"`
+	Primary               string       `json:"primary"`
+	SelectionMode         string       `json:"selection_mode,omitempty"`
+	RequestedExecutor     string       `json:"requested_executor,omitempty"`
+	RequestedEffort       string       `json:"requested_effort,omitempty"`
+	RequestedModel        string       `json:"requested_model,omitempty"`
+	EffectiveModel        string       `json:"effective_model,omitempty"`
+	EffectiveEffort       string       `json:"effective_effort,omitempty"`
+	ConfigurationSource   string       `json:"configuration_source,omitempty"`
+	Mode                  string       `json:"mode"`
+	SessionState          string       `json:"session_state"`
+	KnowledgeMode         string       `json:"knowledge_mode"`
+	ConfiguredCount       int          `json:"configured_count"`
+	EnabledCount          int          `json:"enabled_count"`
+	ConnectedCount        int          `json:"connected_count"`
+	SelectedCount         int          `json:"selected_count"`
+	Servers               []ServerView `json:"servers"`
+	CodexAuth             string       `json:"codex_auth"`
+	ClaudeAuth            string       `json:"claude_auth"`
+	CodexQuota            string       `json:"codex_quota"`
+	ClaudeQuota           string       `json:"claude_quota"`
+	OpenCodeAuth          string       `json:"opencode_auth"`
+	OpenCodeQuota         string       `json:"opencode_quota"`
+	Compression           string       `json:"compression"`
+	Memory                string       `json:"memory"`
+	Context               string       `json:"context"`
+	Skills                string       `json:"skills"`
+	UpdatedAt             time.Time    `json:"updated_at"`
+}
+
+// WorkerView intentionally excludes task prompts, transcripts, result bodies,
+// filesystem paths and credentials. Only operational metadata reaches the TUI.
+type WorkerView struct {
+	ID       string   `json:"id"`
+	Role     string   `json:"role"`
+	Executor string   `json:"executor"`
+	Tier     string   `json:"tier"`
+	Model    string   `json:"model"`
+	Effort   string   `json:"effort"`
+	State    string   `json:"state"`
+	Purposes []string `json:"purposes"`
+	MCPs     []string `json:"mcps"`
 }
 
 type Options struct {
+	// RequirePromptGate is always enabled by AUTO. Direct executor sessions keep
+	// their own intake contract; it is not a user-configurable bypass for AUTO.
+	RequirePromptGate     bool
 	NativePermissions     func() []PermissionView
 	ReplyNativePermission func(context.Context, string, bool) error
 	// AuthReference returns only an official non-sensitive identity/epoch.
@@ -150,6 +182,8 @@ type Options struct {
 }
 
 type Bridge struct {
+	requirePromptGate     bool
+	promptReadiness       promptgate.Result
 	nativePermissions     func() []PermissionView
 	replyNativePermission func(context.Context, string, bool) error
 	authReference         func(context.Context, string) (string, error)
@@ -214,6 +248,7 @@ func Start(options Options) (*Bridge, error) {
 		return nil, fmt.Errorf("listen for OpenCode bridge: %w", err)
 	}
 	bridge := &Bridge{
+		requirePromptGate: options.RequirePromptGate,
 		nativePermissions: options.NativePermissions, replyNativePermission: options.ReplyNativePermission,
 		selectAlternate: options.SelectAlternate,
 		authReference:   options.AuthReference,
@@ -289,6 +324,15 @@ func (b *Bridge) health(w http.ResponseWriter, _ *http.Request) {
 
 func (b *Bridge) status(w http.ResponseWriter, _ *http.Request) {
 	value := b.statusFn()
+	if b.requirePromptGate {
+		b.mu.Lock()
+		value.PromptReadiness = b.promptReadiness.State
+		value.PromptMissing = append([]string(nil), b.promptReadiness.Missing...)
+		b.mu.Unlock()
+		if value.PromptReadiness == "" {
+			value.PromptReadiness = "waiting_for_prompt"
+		}
+	}
 	value.UpdatedAt = time.Now().UTC()
 	writeJSON(w, http.StatusOK, value)
 }
@@ -364,6 +408,18 @@ func (b *Bridge) chat(w http.ResponseWriter, r *http.Request) {
 		}
 		writeCompletion(w, request.Model, request.Stream, previousCompletion.content)
 		return
+	}
+	if b.requirePromptGate {
+		readiness := promptgate.Assess(prompt)
+		b.mu.Lock()
+		b.promptReadiness = readiness
+		b.mu.Unlock()
+		if !readiness.Ready {
+			// A refusal is a completed intake response, not an executor turn.
+			// No selector, auth reprobe, mapping, claim, or runner is invoked.
+			writeCompletion(w, request.Model, request.Stream, readiness.Message())
+			return
+		}
 	}
 	b.mu.Lock()
 	mappings := b.sessions[frontendID]

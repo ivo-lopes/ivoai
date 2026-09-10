@@ -12,6 +12,31 @@ func testPaths(root string) Paths {
 	return Paths{ConfigDir: filepath.Join(root, "config"), DataDir: filepath.Join(root, "data"), StateDir: filepath.Join(root, "state"), CacheDir: filepath.Join(root, "cache"), BinDir: filepath.Join(root, "bin"), Config: filepath.Join(root, "config", "config.toml"), State: filepath.Join(root, "state", "state.toml"), Secrets: filepath.Join(root, "config", "secrets.json"), Ownership: filepath.Join(root, "state", "ownership.toml"), HooksDir: filepath.Join(root, "data", "hooks")}
 }
 
+func TestOrchestrationPolicyUpgradePreservesLegacyCapAndExplicitAuto(t *testing.T) {
+	store := NewStore(testPaths(t.TempDir()))
+	if err := store.Ensure(); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(store.Paths.Config, []byte("[ivoai]\nversion=1\n[opencode]\npermission_mode='full'\n[orchestration.auto]\nmax_workers=3\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := store.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Orchestration.Auto.WorkerCap != 3 || cfg.Orchestration.Auto.ResolvedPlanExecution() != "approve" || cfg.Orchestration.Auto.ResolvedKnowledgeRouting() != "purpose-auto" || !cfg.Orchestration.Auto.ParallelWrites || cfg.OpenCode.PermissionMode != "full" {
+		t.Fatal("upgrade policy changed existing cap or permissions")
+	}
+	cfg.Orchestration.Auto.WorkerCap = 0
+	if err := store.Save(cfg); err != nil {
+		t.Fatal(err)
+	}
+	reloaded, err := store.Load()
+	if err != nil || reloaded.Orchestration.Auto.WorkerCap != 0 || reloaded.Orchestration.Auto.MaxWorkers != 3 {
+		t.Fatal("explicit auto capacity or rollback legacy cap lost", err)
+	}
+}
+
 func TestStoresPreserveUnknownFieldsAndRemoveKnownDynamicEntries(t *testing.T) {
 	store := NewStore(testPaths(t.TempDir()))
 	if err := store.Ensure(); err != nil {

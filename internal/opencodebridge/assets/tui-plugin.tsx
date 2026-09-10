@@ -35,7 +35,8 @@ const tui = async (api: any, options: any) => {
       permissionDialog = false
       api.ui.dialog.clear()
     }
-    api.ui.dialog.replace(() => <api.ui.DialogConfirm title={String(permission.id).startsWith("ext_") ? "IVOAI external MCP permission" : "IVOAI native executor permission"} message={clean(permission.description, "Permission details unavailable", 1024)} onConfirm={() => reply(true)} onCancel={() => reply(false)} />, () => reply(false))
+    const title = String(permission.id).startsWith("plan_") ? "IVOAI plan approval" : String(permission.id).startsWith("routing_") ? "IVOAI quota routing approval" : String(permission.id).startsWith("ext_") ? "IVOAI external MCP permission" : "IVOAI native executor permission"
+    api.ui.dialog.replace(() => <api.ui.DialogConfirm title={title} message={clean(permission.description, "Permission details unavailable", 2048)} onConfirm={() => reply(true)} onCancel={() => reply(false)} />, () => reply(false))
   }
 
   const refresh = async () => {

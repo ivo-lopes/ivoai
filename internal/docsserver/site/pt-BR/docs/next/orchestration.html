@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="generator" content="Docusaurus v3.10.2">
 <title data-rh="true">Controle e orquestração de sessões | IVOAI</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="http://localhost:7780/pt-BR/docs/next/orchestration"><meta data-rh="true" property="og:locale" content="pt_BR"><meta data-rh="true" property="og:locale:alternate" content="en_US"><meta data-rh="true" name="docusaurus_locale" content="pt-BR"><meta data-rh="true" name="docsearch:language" content="pt-BR"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="Controle e orquestração de sessões | IVOAI"><meta data-rh="true" name="description" content="O ivoai possui modos de sessão direto, orquestrado explícito e automático. Nenhum"><meta data-rh="true" property="og:description" content="O ivoai possui modos de sessão direto, orquestrado explícito e automático. Nenhum"><link data-rh="true" rel="icon" href="/pt-BR/img/favicon.svg"><link data-rh="true" rel="canonical" href="http://localhost:7780/pt-BR/docs/next/orchestration"><link data-rh="true" rel="alternate" href="http://localhost:7780/docs/next/orchestration" hreflang="en-US"><link data-rh="true" rel="alternate" href="http://localhost:7780/pt-BR/docs/next/orchestration" hreflang="pt-BR"><link data-rh="true" rel="alternate" href="http://localhost:7780/docs/next/orchestration" hreflang="x-default"><script data-rh="true" type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Controle e orquestração de sessões","item":"http://localhost:7780/pt-BR/docs/next/orchestration"}]}</script><link rel="stylesheet" href="/pt-BR/assets/css/styles.92d12545.css">
-<script src="/pt-BR/assets/js/runtime~main.ef15e058.js" defer="defer"></script>
+<script src="/pt-BR/assets/js/runtime~main.f41f3e6d.js" defer="defer"></script>
 <script src="/pt-BR/assets/js/main.5560c250.js" defer="defer"></script>
 </head>
 <body>
@@ -70,12 +70,12 @@ enquanto o IVOAI permanece como planner, proprietário lógico da sessão, write
 autoritativo e consolidador de resultados. O IVOAI invoca a CLI oficial selecionada
 do Codex ou Claude Code por trás de uma bridge privada em loopback, usando o login de
 assinatura existente em cada cliente sem copiar credenciais para o OpenCode. Ele
-verifica ambos os clientes de assinatura antes de iniciar o Ruflo, usa automaticamente
-a alternativa quando o provider solicitado possui um limite rígido confirmado,
+verifica clientes elegíveis sem exigir Ruflo no AUTO nativo. Pode propor uma
+alternativa quando o provider atual possui um limite rígido confirmado,
 atualiza a cota antes e depois do trabalho de um worker e monitora o primary ativo. Um
 limite rígido no meio da sessão interrompe apenas o grupo de processos correspondente,
 preserva a working tree e inicia a alternativa com um checkpoint limitado mais um
-resumo de Git status/diff-stat. São aceitos no máximo dois failovers automáticos
+resumo de Git status/diff-stat, após aprovação da mudança. São aceitos no máximo dois failovers automáticos
 consecutivos; um checkpoint bem-sucedido zera esse contador.</p>
 <p>O frontend OpenCode permanece conectado durante o failover limitado entre executores.
 O Codex recebe instruções da sessão por uma substituição oficial de configuração com
@@ -83,11 +83,13 @@ escopo de processo. O Claude as recebe por <code>--append-system-prompt-file</co
 <code>--settings</code> privado e exclusivo da sessão, que captura telemetria estruturada da
 statusline. Nenhuma configuração permanente de terceiros é sobrescrita. Os detalhes
 estão em <a class="" href="/pt-BR/docs/next/auto-orchestration">auto-orchestration.md</a>.</p>
-<p>Na primeira solicitação significativa, Memory e Context são tentados uma vez cada, e
-um SharedContextBrief limitado é compartilhado com os workers. O IvoAI valida o DAG
-de tarefas, calcula níveis ponderados de capability, mantém no primary os trabalhos
-antieconômicos e inicia simultaneamente workers consultivos independentes. Os workers
-são estruturalmente somente leitura; o primary continua sendo o único writer. O texto
+<p>AUTO exige primeiro objetivo, entregável e critérios de aceite observáveis.
+Purpose-auto seleciona sources relevantes antes de Memory/Context. O IVOAI valida o
+DAG e aguarda aprovação por padrão. Calcula tiers de capability, mantém trabalho
+read-only antieconômico no primary e inicia workers conforme dependências, host e
+limite do usuário. Cada worker recebe um brief local e MCPs deny-by-default.
+Writers aprovados usam worktrees isoladas; o IVOAI verifica a integração antes da
+síntese do primary. O texto
 integral da tarefa e o corpo dos resultados nunca entram no JSON da sessão; apenas
 ResultRefs limitadas do WorkingContext entram. Detalhes de pontuação e roteamento estão
 em <a class="" href="/pt-BR/docs/next/auto-scheduler">auto-scheduler.md</a>.</p>

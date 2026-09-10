@@ -51,6 +51,19 @@ func DefaultWeights() Weights {
 }
 
 type TaskInput struct {
+	MinimumTier       Tier     `json:"minimum_tier,omitempty"`
+	Acceptance        []string `json:"acceptance,omitempty"`
+	Constraints       []string `json:"constraints,omitempty"`
+	ContextReferences []string `json:"context_references,omitempty"`
+	KnowledgeSources  []string `json:"knowledge_sources,omitempty"`
+	AllowedMCPs       []string `json:"allowed_mcps,omitempty"`
+	Skills            []string `json:"skills,omitempty"`
+	WritePaths        []string `json:"write_paths,omitempty"`
+	// Explicit overrides are constraints, unlike PreferredExecutor, which is a
+	// ranking preference. They must never silently route to a different model.
+	Executor              string   `json:"executor,omitempty"`
+	Model                 string   `json:"model,omitempty"`
+	Effort                string   `json:"effort,omitempty"`
 	ID                    string   `json:"id"`
 	Role                  string   `json:"role"`
 	Task                  string   `json:"task"`
@@ -63,12 +76,16 @@ type TaskInput struct {
 }
 
 type ExecutionProfile struct {
-	Provider     string `json:"provider"`
-	Model        string `json:"model,omitempty"`
-	Effort       string `json:"effort,omitempty"`
-	Tier         Tier   `json:"tier"`
-	ModelSource  Source `json:"model_source"`
-	EffortSource Source `json:"effort_source"`
+	RequestedExecutor string `json:"requested_executor,omitempty"`
+	RequestedModel    string `json:"requested_model,omitempty"`
+	RequestedEffort   string `json:"requested_effort,omitempty"`
+	Reason            string `json:"reason,omitempty"`
+	Provider          string `json:"provider"`
+	Model             string `json:"model,omitempty"`
+	Effort            string `json:"effort,omitempty"`
+	Tier              Tier   `json:"tier"`
+	ModelSource       Source `json:"model_source"`
+	EffortSource      Source `json:"effort_source"`
 }
 
 type Task struct {
@@ -108,6 +125,7 @@ type ModelCapability struct {
 }
 
 type ProviderCapability struct {
+	Capabilities   map[string]bool   `json:"capabilities,omitempty"`
 	Provider       string            `json:"provider"`
 	Version        string            `json:"version,omitempty"`
 	Authenticated  bool              `json:"authenticated"`

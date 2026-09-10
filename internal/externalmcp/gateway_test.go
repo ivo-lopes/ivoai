@@ -13,6 +13,35 @@ import (
 
 const toolCall = `{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"list_projects","arguments":{}}}`
 
+func TestWorkerScopeCannotBypassToolGrantEvenInFullMode(t *testing.T) {
+	var calls atomic.Int32
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		calls.Add(1)
+		w.Header().Set("Content-Type", "application/json")
+		io.WriteString(w, `{"jsonrpc":"2.0","id":1,"result":{"content":[]}}`)
+	}))
+	defer upstream.Close()
+	g, err := Start([]Target{{Name: "plane", URL: upstream.URL, Restricted: true, AllowedTools: []string{"list_projects"}}}, "full")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer g.Close()
+	for _, body := range []string{toolCall, strings.ReplaceAll(toolCall, "list_projects", "delete_project"), `{"jsonrpc":"2.0","id":1,"method":"resources/read","params":{}}`} {
+		response, err := gatewayRequest(context.Background(), g, 0, body)
+		if err != nil {
+			t.Fatal(err)
+		}
+		payload, _ := io.ReadAll(response.Body)
+		response.Body.Close()
+		if body != toolCall && !strings.Contains(string(payload), "MCP_DENIED") {
+			t.Fatal("scope denial missing")
+		}
+	}
+	if calls.Load() != 1 {
+		t.Fatal("denied operation reached upstream")
+	}
+}
+
 func TestExternalMCPDistinctTargetCredentials(t *testing.T) {
 	targets := []Target{}
 	for _, name := range []string{"a", "b"} {

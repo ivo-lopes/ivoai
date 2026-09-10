@@ -61,6 +61,10 @@ func (a *App) prepareKnowledgeRouter(ctx context.Context, cfg config.Config, sel
 	if err != nil {
 		return sessionKnowledge{}, err
 	}
+	return a.prepareKnowledgeSelection(ctx, cfg, selection, executor, runtimeDir, existingEnvironment, observe)
+}
+
+func (a *App) prepareKnowledgeSelection(ctx context.Context, cfg config.Config, selection serverpool.Selection, executor, runtimeDir string, existingEnvironment []string, observe func(observability.Event)) (sessionKnowledge, error) {
 	result := sessionKnowledge{selection: selection, environment: cleanKnowledgeEnvironment(existingEnvironment), config: cfg, healthMu: &sync.RWMutex{}, health: map[string]string{}, healthObserved: map[string]time.Time{}}
 	for alias, profile := range cfg.Connections.Servers {
 		if profile.Enabled && profile.Status == "connected" {

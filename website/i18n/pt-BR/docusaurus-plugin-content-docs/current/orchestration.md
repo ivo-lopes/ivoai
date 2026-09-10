@@ -88,12 +88,12 @@ enquanto o IVOAI permanece como planner, proprietário lógico da sessão, write
 autoritativo e consolidador de resultados. O IVOAI invoca a CLI oficial selecionada
 do Codex ou Claude Code por trás de uma bridge privada em loopback, usando o login de
 assinatura existente em cada cliente sem copiar credenciais para o OpenCode. Ele
-verifica ambos os clientes de assinatura antes de iniciar o Ruflo, usa automaticamente
-a alternativa quando o provider solicitado possui um limite rígido confirmado,
+verifica clientes elegíveis sem exigir Ruflo no AUTO nativo. Pode propor uma
+alternativa quando o provider atual possui um limite rígido confirmado,
 atualiza a cota antes e depois do trabalho de um worker e monitora o primary ativo. Um
 limite rígido no meio da sessão interrompe apenas o grupo de processos correspondente,
 preserva a working tree e inicia a alternativa com um checkpoint limitado mais um
-resumo de Git status/diff-stat. São aceitos no máximo dois failovers automáticos
+resumo de Git status/diff-stat, após aprovação da mudança. São aceitos no máximo dois failovers automáticos
 consecutivos; um checkpoint bem-sucedido zera esse contador.
 
 O frontend OpenCode permanece conectado durante o failover limitado entre executores.
@@ -103,11 +103,13 @@ escopo de processo. O Claude as recebe por `--append-system-prompt-file` e um ar
 statusline. Nenhuma configuração permanente de terceiros é sobrescrita. Os detalhes
 estão em [auto-orchestration.md](auto-orchestration.md).
 
-Na primeira solicitação significativa, Memory e Context são tentados uma vez cada, e
-um SharedContextBrief limitado é compartilhado com os workers. O IvoAI valida o DAG
-de tarefas, calcula níveis ponderados de capability, mantém no primary os trabalhos
-antieconômicos e inicia simultaneamente workers consultivos independentes. Os workers
-são estruturalmente somente leitura; o primary continua sendo o único writer. O texto
+AUTO exige primeiro objetivo, entregável e critérios de aceite observáveis.
+Purpose-auto seleciona sources relevantes antes de Memory/Context. O IVOAI valida o
+DAG e aguarda aprovação por padrão. Calcula tiers de capability, mantém trabalho
+read-only antieconômico no primary e inicia workers conforme dependências, host e
+limite do usuário. Cada worker recebe um brief local e MCPs deny-by-default.
+Writers aprovados usam worktrees isoladas; o IVOAI verifica a integração antes da
+síntese do primary. O texto
 integral da tarefa e o corpo dos resultados nunca entram no JSON da sessão; apenas
 ResultRefs limitadas do WorkingContext entram. Detalhes de pontuação e roteamento estão
 em [auto-scheduler.md](auto-scheduler.md).

@@ -6,6 +6,25 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/routing"
 )
 
+func TestAutomaticPrimaryRequiresObservedStrongClassWithoutModelHardcodes(t *testing.T) {
+	registry := routing.Registry{Providers: map[string]routing.ProviderCapability{"codex": {Authenticated: true, Models: []routing.ModelCapability{
+		{Name: "fixture-fast", CapabilityTier: routing.TierLight, Source: routing.SourceRuntimeVerified, IsDefault: true},
+		{Name: "fixture-strong", CapabilityTier: routing.TierStrong, Source: routing.SourceRuntimeVerified},
+		{Name: "unverified-max", CapabilityTier: routing.TierMax, Source: routing.SourceUnknown},
+	}}}}
+	catalog := CatalogFromRegistry(registry)
+	model, ok := catalog.StrongPrimary("codex")
+	if !ok || model.UpstreamModel != "fixture-strong" {
+		t.Fatal("primary silently selected weak/default model")
+	}
+	capability := registry.Providers["codex"]
+	capability.Models = append(capability.Models[:1], capability.Models[2:]...)
+	registry.Providers["codex"] = capability
+	if _, ok := CatalogFromRegistry(registry).StrongPrimary("codex"); ok {
+		t.Fatal("unverified model claimed strong capability")
+	}
+}
+
 func TestCatalogPublishesRuntimeModelsAndOnlySupportedEfforts(t *testing.T) {
 	catalog := CatalogFromRegistry(routing.Registry{Providers: map[string]routing.ProviderCapability{
 		"codex":  {Provider: "codex", Authenticated: true, Models: []routing.ModelCapability{{Name: "gpt-fixture", SupportedEfforts: []string{"low", "high"}, DefaultEffort: "high", Source: routing.SourceRuntimeVerified}}},

@@ -138,7 +138,8 @@ func StartManaged(ctx context.Context, options ManagedOptions) (*Managed, error)
 		environment = setEnv(environment, "OPENCODE_DISABLE_DEFAULT_PLUGINS", "0")
 		for _, entry := range existing {
 			key, value, _ := strings.Cut(entry, "=")
-			if key == "IVOAI_KNOWLEDGE_SESSION_TOKEN" || key == "IVOAI_EXTERNAL_MCP_SESSION_TOKEN" || key == "IVOAI_CONTEXT_MCP_URL" || key == "IVOAI_MEMORY_MCP_URL" {
+			workerToken := strings.TrimPrefix(key, "IVOAI_WORKER_MCP_TOKEN_")
+			if key == "IVOAI_KNOWLEDGE_SESSION_TOKEN" || key == "IVOAI_EXTERNAL_MCP_SESSION_TOKEN" || key == "IVOAI_CONTEXT_MCP_URL" || key == "IVOAI_MEMORY_MCP_URL" || len(workerToken) == 1 && workerToken[0] >= 'A' && workerToken[0] <= 'P' && workerToken != key {
 				environment = setEnv(environment, key, value)
 			}
 		}

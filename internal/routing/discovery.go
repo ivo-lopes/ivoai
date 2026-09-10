@@ -30,9 +30,12 @@ func (d Discoverer) Discover(ctx context.Context) Registry {
 	// session: availability can change without a CLI version change.
 	result := Registry{Providers: map[string]ProviderCapability{}}
 	if capability, err := d.codex(ctx); err == nil {
+		capability.Capabilities = map[string]bool{"filesystem_read": true, "filesystem_write": true, "shell_read": true, "reasoning": capability.SupportsEffort}
 		result.Providers["codex"] = capability
 	}
 	if capability, err := d.claude(ctx); err == nil {
+		help, _ := commandOutput(ctx, d.ClaudePath, "--help")
+		capability.Capabilities = map[string]bool{"filesystem_read": true, "filesystem_write": strings.Contains(help, "--restricted") && strings.Contains(help, "acceptEdits"), "reasoning": capability.SupportsEffort}
 		result.Providers["claude"] = capability
 	}
 	d.saveCache(result)
@@ -165,14 +168,14 @@ func safeModelName(value string) bool {
 func catalogTier(description string) Tier {
 	value := strings.ToLower(description)
 	switch {
+	case strings.Contains(value, "frontier"), strings.Contains(value, "most capable"), strings.Contains(value, "hardest"):
+		return TierMax
+	case strings.Contains(value, "strong"):
+		return TierStrong
 	case strings.Contains(value, "cost-efficient"), strings.Contains(value, "cost sensitive"), strings.Contains(value, "fast"):
 		return TierLight
 	case strings.Contains(value, "balanced"), strings.Contains(value, "everyday"):
 		return TierBalanced
-	case strings.Contains(value, "strong"):
-		return TierStrong
-	case strings.Contains(value, "frontier"), strings.Contains(value, "most capable"), strings.Contains(value, "hardest"):
-		return TierMax
 	default:
 		return ""
 	}
