@@ -19,7 +19,7 @@ func (n *nativeAutoFixture) Run(_ context.Context, r opencodebridge.ExecutorRequ
 	return opencodebridge.ExecutorResult{ExecutorSessionID: "native_fixture_session", Model: "fixture/model"}, emit("native fixture final")
 }
 func TestAutoCanSelectNativeOpenCodeWhenOnlyEligible(t *testing.T) {
-	for _, planner := range []string{"codex", "opencode"} {
+	for _, planner := range []string{"", "opencode"} {
 		t.Run(planner, func(t *testing.T) {
 			a := autoTestApp(t, t.TempDir(), "#!/bin/sh\nexit 0\n", "#!/bin/sh\nexit 0\n")
 			runner := &nativeAutoFixture{}

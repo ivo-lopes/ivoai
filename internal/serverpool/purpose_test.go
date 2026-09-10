@@ -22,6 +22,9 @@ func TestPurposeSelectionDoesNotImplicitlyFederate(t *testing.T) {
 		{"Mindsite inventory", 1},
 		{"Compare Voicecorp e Mindsite", 2},
 		{"Leia VERSION do diretório local", 0},
+		{"Read Voicecorp inventory. Do not query Mindsite.", 1},
+		{"Não consultar Mindsite. Analise Voicecorp.", 1},
+		{"Compare no external data; exclude Voicecorp and Mindsite.", 0},
 	} {
 		selected, err := pool.ResolvePurposes(PurposeAuto, nil, pool.MentionedPurposes(tc.prompt))
 		if err != nil || len(selected.Groups) != tc.want {

@@ -287,12 +287,18 @@ func (a *App) OrchestratorServe(ctx context.Context, id string) error {
 	if nativeCapabilityAvailable(ctx, native) {
 		registry.Providers["opencode"] = native.Capability()
 	}
+	var lifecycle orchestrator.LifecycleControl = orchestration.RufloOrchestratorAdapter{Control: orchestration.ControlPlane{Manager: a.orchestrationManager(state), RuntimeDir: runtimeDir}, Managed: state.Components["ruflo"].Managed}
+	if value.Coordinator == "native" {
+		lifecycle = orchestration.NativeOrchestrator{Store: store, SessionID: id}
+	}
 	server := orchestrator.Server{
+		LowQuotaThreshold: cfg.Orchestration.Auto.ResolvedLowQuotaThreshold(), ProviderPreference: cfg.Orchestration.Auto.ResolvedProviderPreference(),
+		NativePolicy: value.Coordinator == "native", Sequential: cfg.Orchestration.Auto.ResolvedConcurrency() == "sequential", ParallelWrites: cfg.Orchestration.Auto.ParallelWrites,
 		RequirePlanApproval: value.Mode == session.ModeAuto && cfg.Orchestration.Auto.ResolvedPlanExecution() == "approve",
 		Store:               store, SessionID: id, Directory: value.WorkingDirectory, RuntimeDir: runtimeDir,
 		ReviewExecutor:        cfg.Orchestration.ReviewExecutor,
 		Adapter:               workers.Adapter{NativeOpenCode: native, Runner: a.Runner, CodexSHA256: value.CodexSHA256, CodexPath: state.Components["codex"].Path, ClaudePath: state.Components["claude-code"].Path, HeadroomPath: state.Components["headroom"].Path, HeadroomEnabled: cfg.Compression.Provider == "headroom" && cfg.Headroom.Enabled, KnowledgeServers: knowledgeServers},
-		Control:               orchestration.RufloOrchestratorAdapter{Control: orchestration.ControlPlane{Manager: a.orchestrationManager(state), RuntimeDir: runtimeDir}, Managed: state.Components["ruflo"].Managed},
+		Control:               lifecycle,
 		Quota:                 quotaManager,
 		CheckpointEnabled:     cfg.Orchestration.Auto.CheckpointEnabled,
 		BootstrapRequired:     value.Mode == session.ModeAuto && cfg.Orchestration.Auto.Optimization.SharedContextBootstrap,
@@ -303,6 +309,24 @@ func (a *App) OrchestratorServe(ctx context.Context, id string) error {
 		Overrides:             routingOverrides(cfg.Orchestration.Auto.Profiles),
 		WorkingContext:        workingStore,
 		Compressor:            a.workingContextCompressor(cfg, state, runtimeDir),
+	}
+	if value.Coordinator == "native" {
+		server.PrepareWorker = func(ctx context.Context, task routing.Task, request workers.Request) (workers.Request, error) {
+			request, err := a.prepareWorkerAccess(ctx, cfg, store, id, task, request)
+			if err != nil {
+				return request, err
+			}
+			if request.Executor == "opencode" {
+				native := a.nativeOpenCode(cfg, state, request.Directory, filepath.Join(runtimeDir, "native-worker-"+task.ID), nil, true)
+				if native == nil {
+					request.Release()
+					return request, errors.New("native OpenCode worker unavailable")
+				}
+				native.Options = request.Access.ConfigureNative(native.Options)
+				request.Native = native
+			}
+			return request, nil
+		}
 	}
 	runErr := server.Run(ctx)
 	if workingStore != nil {
@@ -340,7 +364,17 @@ func (a *App) orchestratedAgentArgs(executor string, existing []string, id, runt
 			encoded[index] = strconv.Quote(value)
 		}
 		arguments := "mcp_servers.ivoai-orchestrator.args=[" + strings.Join(encoded, ",") + "]"
-		return append([]string{"-c", command, "-c", arguments}, existing...), nil
+		// The coordinator is mandatory, not an optional background MCP. Its
+		// official capability probes can outlast Codex's optional startup grace.
+		// Forward only path metadata so isolated XDG installs resolve the same
+		// IVOAI session; never embed secret values in command arguments.
+		return append([]string{"-c", command, "-c", arguments,
+			"-c", `mcp_servers.ivoai-orchestrator.enabled=true`,
+			"-c", `mcp_servers.ivoai-orchestrator.required=true`,
+			"-c", `mcp_servers.ivoai-orchestrator.startup_timeout_sec=90`,
+			"-c", `mcp_servers.ivoai-orchestrator.tool_timeout_sec=900`,
+			"-c", `mcp_servers.ivoai-orchestrator.env_vars=["XDG_CONFIG_HOME","XDG_DATA_HOME","XDG_STATE_HOME","XDG_CACHE_HOME"]`,
+		}, existing...), nil
 	}
 	configPath := filepath.Join(runtimeDir, "claude-mcp.json")
 	body, err := json.Marshal(map[string]any{"mcpServers": map[string]any{"ivoai-orchestrator": map[string]any{"type": "stdio", "command": executable, "args": bridgeArgs}}})
@@ -364,6 +398,12 @@ func (a *App) cleanupSession(store session.Store, id string, control core.Orches
 			if worker.RufloTaskID != "" && control != nil {
 				_ = control.CancelLifecycle(context.Background(), worker.RufloTaskID)
 			}
+			if worker.LifecycleID != "" && control != nil {
+				_ = control.CancelLifecycle(context.Background(), worker.LifecycleID)
+			}
+		}
+		if value.PrimaryLifecycleID != "" && control != nil {
+			_ = control.CancelLifecycle(context.Background(), value.PrimaryLifecycleID)
 		}
 		if value.PrimaryRufloTaskID != "" && control != nil {
 			_ = control.CancelLifecycle(context.Background(), value.PrimaryRufloTaskID)

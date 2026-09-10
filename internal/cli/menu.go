@@ -145,7 +145,7 @@ func (s *menuSession) agents() (bool, error) {
 func (s *menuSession) sessions() (bool, error) {
 	snapshot, _ := s.app.MenuSnapshot()
 	return s.loop("Session Control", []menuAction{
-		{id: "auto", label: "IVOAI Automatic Session", description: "OpenCode frontend with quota-aware Codex/Claude execution and safe Ruflo delegation", disabled: disabledUnless(snapshot.AutoEnabled, "automatic orchestration disabled"), run: func() (bool, error) { return true, s.app.Auto(s.ctx, "", nil) }},
+		{id: "auto", label: "IVOAI Automatic Session", description: "OpenCode frontend with prompt gate, approved native DAG and scoped workers", disabled: disabledUnless(snapshot.AutoEnabled, "automatic orchestration disabled"), run: func() (bool, error) { return true, s.app.Auto(s.ctx, "", nil) }},
 		{id: "session.direct.codex", label: "Direct Session — Codex", description: "Official Codex runtime with session observability; Ruflo is not started", run: func() (bool, error) { return true, s.app.SessionStart(s.ctx, "codex", "direct", nil) }},
 		{id: "session.direct.claude", label: "Direct Session — Claude Code", description: "Official Claude Code runtime with session observability; Ruflo is not started", run: func() (bool, error) { return true, s.app.SessionStart(s.ctx, "claude", "direct", nil) }},
 		{id: "session.direct.opencode", label: "Standalone Session — OpenCode", description: "Unmodified upstream OpenCode provider path; IVOAI AUTO bridge is not used", run: func() (bool, error) { return true, s.app.SessionStart(s.ctx, "opencode", "direct", nil) }},

@@ -44,16 +44,42 @@ func (p Pool) MentionedPurposes(prompt string) []string {
 	words := func(value string) []string {
 		return strings.FieldsFunc(strings.ToLower(value), func(r rune) bool { return !unicode.IsLetter(r) && !unicode.IsDigit(r) && r != '-' && r != '_' })
 	}
-	mentioned := map[string]bool{}
-	for _, word := range words(prompt) {
-		mentioned[word] = true
+	mentioned, excluded := map[string]bool{}, map[string]bool{}
+	// A negative source instruction is an exclusion, not a reason to contact
+	// that source. Conservative exclusions win over positive mentions. More
+	// ambiguous routing stays empty and can be overridden explicitly.
+	for _, clause := range strings.FieldsFunc(strings.ToLower(prompt), func(r rune) bool { return strings.ContainsRune(".;!\n", r) }) {
+		tokens := words(clause)
+		negative := false
+		for _, word := range tokens {
+			switch word {
+			case "not", "no", "never", "without", "exclude", "excluded", "excluding", "não", "nao", "sem", "exceto", "excluir":
+				negative = true
+			}
+		}
+		for _, word := range tokens {
+			mentioned[word] = true
+			if negative {
+				excluded[word] = true
+			}
+		}
 	}
 	selected := map[string]bool{}
+	excludedPurposes := map[string]bool{}
 	for alias, profile := range p.profiles {
-		if !profile.Enabled {
+		if excluded[strings.ToLower(alias)] || excluded[strings.ToLower(profile.Purpose)] {
+			excludedPurposes[profile.Purpose] = true
+		}
+	}
+	for alias, profile := range p.profiles {
+		if !profile.Enabled || excludedPurposes[profile.Purpose] {
 			continue
 		}
-		if mentioned[strings.ToLower(alias)] || mentioned[strings.ToLower(profile.Purpose)] {
+		aliasLabel, purposeLabel := strings.ToLower(alias), strings.ToLower(profile.Purpose)
+		if excluded[aliasLabel] || excluded[purposeLabel] {
+			continue
+		}
+		if mentioned[aliasLabel] || mentioned[purposeLabel] {
 			selected[profile.Purpose] = true
 		}
 	}

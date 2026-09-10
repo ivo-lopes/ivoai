@@ -45,6 +45,7 @@ var providerEnvironment = map[string]struct{}{
 }
 
 type Request struct {
+	PatchOnly          bool
 	Native             NativeExecutor
 	Access             *Access
 	Release            func()
@@ -271,6 +272,14 @@ var readOnlyKnowledgeTools = map[string][]string{
 // tools. Codex supports per-server enablement and tool allowlists. Claude Code
 // supports a strict, process-scoped MCP configuration. Failure to establish the
 // boundary fails the worker closed; the authoritative primary remains usable.
+// IsolateCodexMCPs reuses the official inventory boundary for a controlled
+// primary as well as workers. Callers append only their managed projections;
+// those explicitly re-enable their session-local servers after this deny list.
+func (a Adapter) IsolateCodexMCPs(ctx context.Context, executable string, args []string) ([]string, error) {
+	a.KnowledgeServers = nil
+	return a.isolateMCPs(ctx, executable, "codex", args)
+}
+
 func (a Adapter) isolateMCPs(ctx context.Context, executable, executor string, args []string) ([]string, error) {
 	switch executor {
 	case "codex":
@@ -381,6 +390,9 @@ func workerArgs(request Request) ([]string, string, error) {
 		instructions += "\nYou are an implementation worker in an IVOAI-owned isolated worktree. Modify only the approved write_paths in your task brief. Never commit, change Git history, modify credentials, mutate services or external state. The control plane collects and integrates changes after validation. Return bounded findings and validation evidence."
 	} else {
 		instructions += "\nYou are an advisory read-only worker. Never modify files, repositories, configuration, services, or external state. Return only task-specific conclusions, relevant facts, evidence, issues, recommendations, or a proposed patch for the primary to evaluate. Avoid narrative repetition."
+	}
+	if request.PatchOnly {
+		instructions += "\nSequential implementation fallback: remain read-only and return ONLY a complete unified Git diff (diff --git headers, no Markdown fences or prose) for the approved write_paths. Never apply the patch yourself. The IVOAI control plane checks and applies it sequentially. No binary files, renames, symlinks, hidden configuration or credentials."
 	}
 	if request.Executor == "codex" {
 		file := filepath.Join(request.Runtime, "codex-result-"+requestID()+".txt")

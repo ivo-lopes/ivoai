@@ -16,6 +16,7 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/externalmcp"
 	"github.com/ivo-lopes/ivoai/internal/observability"
 	"github.com/ivo-lopes/ivoai/internal/platform"
+	"github.com/ivo-lopes/ivoai/internal/serverpool"
 )
 
 const externalMCPTokenEnvironment = "IVOAI_EXTERNAL_MCP_SESSION_TOKEN"
@@ -25,7 +26,17 @@ func (a *App) prepareSessionKnowledge(ctx context.Context, cfg config.Config, se
 }
 
 func (a *App) prepareSessionKnowledgeWithApprovals(ctx context.Context, cfg config.Config, selectors []string, executor, runtimeDir string, environment []string, observe func(observability.Event), managed bool) (sessionKnowledge, error) {
-	result, err := a.prepareKnowledgeRouter(ctx, cfg, selectors, executor, runtimeDir, environment, observe)
+	return a.prepareSessionKnowledgeSelection(ctx, cfg, selectors, nil, executor, runtimeDir, environment, observe, managed)
+}
+
+func (a *App) prepareSessionKnowledgeSelection(ctx context.Context, cfg config.Config, selectors []string, selection *serverpool.Selection, executor, runtimeDir string, environment []string, observe func(observability.Event), managed bool) (sessionKnowledge, error) {
+	var result sessionKnowledge
+	var err error
+	if selection == nil {
+		result, err = a.prepareKnowledgeRouter(ctx, cfg, selectors, executor, runtimeDir, environment, observe)
+	} else {
+		result, err = a.prepareKnowledgeSelection(ctx, cfg, *selection, executor, runtimeDir, environment, observe)
+	}
 	if err != nil {
 		return result, err
 	}

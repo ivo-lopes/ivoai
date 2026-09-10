@@ -20,6 +20,7 @@ import (
 )
 
 type ExecutorSpec struct {
+	ObserveProgress      func(ExecutionTrace)
 	Version              string
 	ObserveConfiguration bool
 	SHA256               string
@@ -177,6 +178,13 @@ func (r CLIRunner) Run(ctx context.Context, request ExecutorRequest, emit func(s
 	structuredFailureClass := ""
 	claudeTools := make(map[string]int)
 	parseErr := ScanJSONLines(stdout, func(value map[string]any) error {
+		if spec.ObserveProgress != nil {
+			defer func() {
+				progress := trace
+				progress.Tools = append([]ToolTrace(nil), trace.Tools...)
+				spec.ObserveProgress(progress)
+			}()
+		}
 		trace.Events++
 		trace.LastEvent = safeExecutorText(stringValue(value["type"]), 64)
 		if sessionID, ok := value["session_id"].(string); ok && safeID(sessionID) {

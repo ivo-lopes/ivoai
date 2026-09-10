@@ -32,6 +32,9 @@ var artifact = regexp.MustCompile(`(?i)\b(relatório|relatorio|report|findings|r
 var observable = regexp.MustCompile(`(?i)(?:\b(?:retornar|retorne|return|returns|informe|output|deve|must|shall|passes|passa|funciona|works|intact[oa]|unchanged|updated|atualizad[oa]s?|implementad[oa]s?|implemented|sem alteração|no changes|contém|contains|exit|identifi(?:que|ed)|com findings)\b|(?:=|==|>=|<=)\s*\S+)`)
 var vague = regexp.MustCompile(`(?i)^(?:[-*\d.)\s]*)(?:ok|done|feito|tbd|todo|a/b/c|a, b, c|yes|sim|sucesso|success|tudo funcionando|everything works|critérios|criteria)[.!\s]*$`)
 
+var unresolvedTarget = regexp.MustCompile(`(?i)\b(?:this|that|it|isso|isto|aquilo)\b`)
+var namedTarget = regexp.MustCompile("(?i)(?:`[^`]+`|[a-z0-9_-]+\\.[a-z0-9_-]+|https?://[^ ]+|\\b(?:repo(?:sitory)?|repositório|servidor|server|file|arquivo|error|erro)\\s+[A-Z0-9][A-Za-z0-9_-]+)")
+
 // Assess is deliberately conservative: ambiguous prose is returned to the
 // user, not guessed at by a premium model. A keyword list or an empty heading
 // is not a contract. Constraints/context are required only when the objective
@@ -49,11 +52,17 @@ func Assess(prompt string) Result {
 		objective = prompt
 	}
 	objectiveOK := action.MatchString(objective) && substantive(objective)
+	// A referent is a relation, not a keyword requirement: an explicit scope
+	// or named target resolves it; a deliverable/acceptance heading alone does
+	// not tell the control plane what "fix this" is allowed to change.
+	if unresolvedTarget.MatchString(objective) && !namedTarget.MatchString(objective) && !substantive(sections["context"]) {
+		objectiveOK = false
+	}
 	deliverable := sections["deliverable"]
 	if deliverable == "" {
 		deliverable = objective
 	}
-	deliverableOK := artifact.MatchString(deliverable) && substantive(deliverable)
+	deliverableOK := (artifact.MatchString(deliverable) || namedTarget.MatchString(deliverable)) && substantive(deliverable)
 	criteria := sections["acceptance"]
 	// Natural-language acceptance is accepted without a prescribed heading:
 	// e.g. "The result must contain ..." / "O relatório deve conter ...".
