@@ -49,13 +49,25 @@ func (t *probeTransport) diagnostic() string {
 }
 
 func (r Registry) Test(ctx context.Context, entry config.MCPServer) (int, error) {
+	tools, err := r.DiscoverTools(ctx, entry)
+	return len(tools), err
+}
+
+// MCPToolCapability contains public tool metadata only. Annotation absence is
+// not evidence of read-only behavior; worker projections fail closed then.
+type MCPToolCapability struct {
+	Name     string
+	ReadOnly bool
+}
+
+func (r Registry) DiscoverTools(ctx context.Context, entry config.MCPServer) ([]MCPToolCapability, error) {
 	headers, err := r.Headers(entry)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 	gateway, err := externalmcp.Start([]externalmcp.Target{{Name: "probe", URL: entry.URL, Headers: headers}}, "full")
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 	defer gateway.Close()
 	ctx, cancel := context.WithTimeout(ctx, 45*time.Second)
@@ -64,12 +76,19 @@ func (r Registry) Test(ctx context.Context, entry config.MCPServer) (int, error)
 	transport := &probeTransport{token: gateway.Token(), scheme: "none"}
 	session, err := client.Connect(ctx, &mcp.StreamableClientTransport{Endpoint: gateway.URL(0), DisableStandaloneSSE: true, HTTPClient: &http.Client{Transport: transport}}, nil)
 	if err != nil {
-		return 0, fmt.Errorf("external MCP initialize failed (%s); check endpoint, TLS, authentication and required headers", transport.diagnostic())
+		return nil, fmt.Errorf("external MCP initialize failed (%s); check endpoint, TLS, authentication and required headers", transport.diagnostic())
 	}
 	defer session.Close()
 	tools, err := session.ListTools(ctx, nil)
 	if err != nil {
-		return 0, fmt.Errorf("external MCP tools/list failed (%s)", transport.diagnostic())
+		return nil, fmt.Errorf("external MCP tools/list failed (%s)", transport.diagnostic())
 	}
-	return len(tools.Tools), nil
+	if len(tools.Tools) > 128 || tools.NextCursor != "" {
+		return nil, fmt.Errorf("external MCP bounded tool inventory is incomplete")
+	}
+	result := make([]MCPToolCapability, 0, len(tools.Tools))
+	for _, tool := range tools.Tools {
+		result = append(result, MCPToolCapability{Name: tool.Name, ReadOnly: tool.Annotations != nil && tool.Annotations.ReadOnlyHint})
+	}
+	return result, nil
 }

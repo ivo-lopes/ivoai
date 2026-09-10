@@ -27,6 +27,11 @@ import (
 type Target struct {
 	Name, URL string
 	Headers   http.Header
+	// Restricted is used for task-local worker projections. Empty AllowedTools
+	// denies every call; nil is not a wildcard. Primary/legacy targets retain
+	// their existing transport and interactive approval contract.
+	Restricted   bool
+	AllowedTools []string
 }
 type Permission struct{ ID, Description string }
 type pending struct {
@@ -41,6 +46,15 @@ type Gateway struct {
 	mu          sync.Mutex
 	pending     map[string]pending
 	cancel      context.CancelFunc
+	admission   func() bool
+}
+
+// SetAdmission installs an additional control-plane gate, independent from
+// Full/Interactive tool approvals. It is never configured by an MCP client.
+func (g *Gateway) SetAdmission(check func() bool) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	g.admission = check
 }
 
 func Start(targets []Target, mode string) (*Gateway, error) {
@@ -66,6 +80,20 @@ func Start(targets []Target, mode string) (*Gateway, error) {
 			listener.Close()
 			cancel()
 			return nil, errors.New("unsafe MCP name")
+		}
+		allowedTools := make(map[string]bool, len(target.AllowedTools))
+		if len(target.AllowedTools) > 128 {
+			listener.Close()
+			cancel()
+			return nil, errors.New("worker MCP tool scope exceeds limit")
+		}
+		for _, name := range target.AllowedTools {
+			if !safeName(name) {
+				listener.Close()
+				cancel()
+				return nil, errors.New("invalid worker MCP tool scope")
+			}
+			allowedTools[name] = true
 		}
 		endpoint, err := url.Parse(target.URL)
 		if err != nil || endpoint.User != nil || endpoint.RawQuery != "" || endpoint.Fragment != "" || endpoint.Host == "" || (endpoint.Scheme != "https" && !(endpoint.Scheme == "http" && (endpoint.Hostname() == "127.0.0.1" || endpoint.Hostname() == "localhost"))) {
@@ -140,12 +168,30 @@ func Start(targets []Target, mode string) (*Gateway, error) {
 						http.Error(w, "invalid MCP tool call", 400)
 						return
 					}
+					if target.Restricted && !allowedTools[message.Params.Name] {
+						w.Header().Set("Content-Type", "application/json")
+						_ = json.NewEncoder(w).Encode(map[string]any{"jsonrpc": "2.0", "id": message.ID, "result": map[string]any{"isError": true, "content": []map[string]string{{"type": "text", "text": "MCP_DENIED: tool is outside this worker's approved capability scope"}}}})
+						return
+					}
+					g.mu.Lock()
+					admission := g.admission
+					g.mu.Unlock()
+					if admission != nil && !admission() {
+						w.Header().Set("Content-Type", "application/json")
+						_ = json.NewEncoder(w).Encode(map[string]any{"jsonrpc": "2.0", "id": message.ID, "result": map[string]any{"isError": true, "content": []map[string]string{{"type": "text", "text": "PLAN_APPROVAL_REQUIRED: external work cannot execute before the IVOAI plan is admitted"}}}})
+						return
+					}
 					if g.interactive.Load() && !g.approve(requestCtx, target.Name+" · "+message.Params.Name) {
 						w.Header().Set("Content-Type", "application/json")
 						_ = json.NewEncoder(w).Encode(map[string]any{"jsonrpc": "2.0", "id": message.ID, "result": map[string]any{"isError": true, "content": []map[string]string{{"type": "text", "text": "IVOAI external MCP permission denied or cancelled"}}}})
 						return
 					}
-				case "initialize", "notifications/initialized", "notifications/cancelled", "ping", "tools/list", "resources/list", "resources/templates/list", "resources/read", "prompts/list", "prompts/get":
+				case "initialize", "notifications/initialized", "notifications/cancelled", "ping", "tools/list":
+				case "resources/list", "resources/templates/list", "resources/read", "prompts/list", "prompts/get":
+					if target.Restricted {
+						http.Error(w, "MCP_DENIED: method is outside worker scope", http.StatusForbidden)
+						return
+					}
 				default:
 					http.Error(w, "unsupported external MCP method", 400)
 					return

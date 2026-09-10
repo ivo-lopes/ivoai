@@ -26,6 +26,7 @@ const (
 )
 
 type Input struct {
+	ExplicitOnly          bool
 	Intent                string
 	Executor              string
 	Required              []string
@@ -67,12 +68,18 @@ func (g Gate) Evaluate(ctx context.Context, input Input) (Result, error) {
 		}
 	}
 	if len(active) == 0 {
+		if len(input.Required) > 0 {
+			return result, errors.New("required worker skills are unavailable")
+		}
 		result.Events = append(result.Events, g.event(input, observability.OperationSkillGate, observability.StateCompleted, "", observability.ReasonDirect))
 		g.emit(result.Events)
 		return result, nil
 	}
 	index := skills.Index{Entries: active}
 	candidates := index.Search(skills.SearchQuery{Text: boundedIntent(input.Intent), Executor: input.Executor, Limit: maxSelectedSkills})
+	if input.ExplicitOnly {
+		candidates = nil
+	}
 	for _, candidate := range candidates {
 		result.Events = append(result.Events, g.event(input, observability.OperationSkillCandidate, observability.StateSelected, candidate.Entry.ID, observability.ReasonCapabilityMatch))
 	}

@@ -31,6 +31,25 @@ func TestGateAllowsEmptyRegistryAndSelectsNoSkills(t *testing.T) {
 	}
 }
 
+func TestWorkerExplicitSkillScopeCannotAutoActivateOrIgnoreMissingRequired(t *testing.T) {
+	gate := testGate(t.TempDir())
+	if _, err := gate.Evaluate(context.Background(), Input{ExplicitOnly: true, Required: []string{"missing"}, Executor: "codex"}); err == nil {
+		t.Fatal("missing required skill accepted")
+	}
+	source := promoteGatePack(t, &gate, gateArchive(t, map[string]string{"skills/build/SKILL.md": "BUILD"}), gateRevisionA)
+	entry := gateEntry("build", source, "skills/build/SKILL.md", nil, nil, skills.RiskLow)
+	entry.Triggers = []string{"implement"}
+	saveGateRegistry(t, gate.Registry, []skills.Entry{entry})
+	result, err := gate.Evaluate(context.Background(), Input{ExplicitOnly: true, Intent: "implement", Executor: "codex"})
+	if err != nil || len(result.Selected) != 0 || result.Instructions != "" {
+		t.Fatal("worker inherited unrequested skills")
+	}
+	result, err = gate.Evaluate(context.Background(), Input{ExplicitOnly: true, Required: []string{"build"}, Executor: "codex"})
+	if err != nil || len(result.Selected) != 1 || result.Selected[0] != "build" {
+		t.Fatal("explicit skill unavailable", err)
+	}
+}
+
 func TestGateRanksMetadataResolvesDependencyAndLoadsOnlySelectedBodies(t *testing.T) {
 	root := t.TempDir()
 	gate := testGate(root)
