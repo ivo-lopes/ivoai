@@ -136,7 +136,11 @@ func (s *Server) initializeContext(ctx context.Context) {
 }
 
 func (s *Server) protocolServer() *mcp.Server {
-	server := mcp.NewServer(&mcp.Implementation{Name: "ivoai-orchestrator", Version: "1", Description: "Session-local delegation to official Codex and Claude Code workers"}, &mcp.ServerOptions{Instructions: "Delegate only bounded tasks needed by the active ivoai session. Ruflo coordinates lifecycle but never performs inference."})
+	instructions := "Delegate only bounded tasks needed by the active ivoai session. Ruflo coordinates explicit legacy orchestration lifecycle but never performs inference."
+	if s.NativePolicy {
+		instructions = "IVOAI owns native AUTO DAG lifecycle. Follow the approved plan's execution_mode: queue only worker tasks, complete primary tasks after their dependencies, wait for workers and integrate before synthesis. Never use legacy orchestration_delegate in native AUTO."
+	}
+	server := mcp.NewServer(&mcp.Implementation{Name: "ivoai-orchestrator", Version: "1", Description: "Session-local delegation to official Codex and Claude Code workers"}, &mcp.ServerOptions{Instructions: instructions})
 	s.addTools(server)
 	return server
 }

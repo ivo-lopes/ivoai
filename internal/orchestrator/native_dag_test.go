@@ -86,7 +86,7 @@ func TestNativeDAGWorkersUseIsolatedWorktreesAndDependencyView(t *testing.T) {
 	}
 	adapter := &isolatedFixtureAdapter{gate: make(chan struct{}), directories: map[string]string{}}
 	provider := quota.ProviderQuota{Provider: quota.ProviderCodex, Authenticated: true, Eligible: true, Source: "fixture", ObservedAt: time.Now()}
-	s := &Server{Store: store, SessionID: id, NativePolicy: true, Parallelism: true, ParallelWrites: true,
+	s := &Server{Store: store, SessionID: id, NativePolicy: true, Parallelism: true, ParallelWrites: true, ProviderPreference: "auto",
 		Directory: repo, RuntimeDir: root, WorktreeRoot: t.TempDir(), Adapter: adapter, Control: orchestration.NativeOrchestrator{Store: store, SessionID: id},
 		HostResources: func() orchestration.HostResources {
 			return orchestration.HostResources{CPUs: 8, AvailableMemoryBytes: 16 << 30}
@@ -106,6 +106,7 @@ func TestNativeDAGWorkersUseIsolatedWorktreesAndDependencyView(t *testing.T) {
 	tasks := []map[string]any{}
 	for _, taskID := range []string{"a", "b", "validate"} {
 		task := taskFixture(taskID, nil)
+		delete(task, "preferred_executor")
 		task["task"], task["acceptance"] = taskID, []string{"fixture feature returns expected result"}
 		if taskID == "validate" {
 			task["role"], task["dependencies"] = "review", []string{"a", "b"}

@@ -95,3 +95,55 @@ func TestNativeLowQuotaRequiresConfirmationAndPreservesExplicitRoute(t *testing.
 		})
 	}
 }
+
+func TestPrimaryOnlyPlanLowQuotaIsVisibleWithoutSpawningWorkers(t *testing.T) {
+	for _, approve := range []bool{false, true} {
+		root := t.TempDir()
+		store, id := automaticBridgeSession(t, root)
+		now := time.Now()
+		q := quota.ProviderQuota{Provider: quota.ProviderCodex, Authenticated: true, Eligible: true, ObservedAt: now, Source: "fixture", Windows: []quota.Window{quota.FromUsed(quota.KindWeekly, 91, nil, "fixture", now)}}
+		s := &Server{Store: store, SessionID: id, Registry: routing.Registry{Providers: map[string]routing.ProviderCapability{"codex": {Authenticated: true}}}, LowQuotaThreshold: 10, Quota: &quota.Manager{Store: quota.Store{Root: filepath.Join(root, "quota")}, Probes: map[quota.Provider]quota.Probe{quota.ProviderCodex: staticProbe{q}}}}
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		done := make(chan error, 1)
+		go func() { done <- s.acknowledgePlanQuota(ctx) }()
+		for {
+			v, err := store.Get(id)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if len(v.Decisions) > 0 {
+				if len(v.Workers) != 0 || v.CurrentPrimary != "codex" {
+					t.Fatal("quota proposal executed work")
+				}
+				if err := store.ResolveDecision(id, v.Decisions[0].ID, approve); err != nil {
+					t.Fatal(err)
+				}
+				break
+			}
+			select {
+			case <-ctx.Done():
+				t.Fatal("missing primary-only quota alert")
+			case <-time.After(10 * time.Millisecond):
+			}
+		}
+		if err := <-done; err != nil {
+			t.Fatal(err)
+		}
+		v, _ := store.Get(id)
+		want := "keep_current"
+		if approve {
+			want = "conservation_active"
+		}
+		if v.QuotaMode != want {
+			t.Fatalf("quota mode=%s", v.QuotaMode)
+		}
+		if err := s.acknowledgePlanQuota(ctx); err != nil {
+			t.Fatal(err)
+		}
+		v, _ = store.Get(id)
+		if len(v.Decisions) != 1 {
+			t.Fatal("repeated acknowledged quota proposal")
+		}
+		cancel()
+	}
+}

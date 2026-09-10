@@ -34,6 +34,7 @@ type Worktrees struct {
 	mu                             sync.Mutex
 	repository, root, base, prefix string
 	integrated                     string
+	workingSubdirectory            string
 	owned                          map[string]Worktree
 }
 
@@ -44,6 +45,14 @@ func NewWorktrees(ctx context.Context, repository, runtimeDir string) (*Worktree
 	root, err := gitOutput(ctx, repository, "rev-parse", "--show-toplevel")
 	if err != nil {
 		return nil, err
+	}
+	physical, err := filepath.EvalSymlinks(repository)
+	if err != nil {
+		return nil, errors.New("WORKTREE_FAILED: working directory unavailable")
+	}
+	relative, err := filepath.Rel(root, physical)
+	if err != nil || relative == ".." || strings.HasPrefix(relative, ".."+string(filepath.Separator)) {
+		return nil, errors.New("WORKTREE_FAILED: working directory outside repository")
 	}
 	if err = cleanTree(ctx, root); err != nil {
 		return nil, err
@@ -60,7 +69,13 @@ func NewWorktrees(ctx context.Context, repository, runtimeDir string) (*Worktree
 	if err != nil {
 		return nil, errors.New("WORKTREE_FAILED: private runtime unavailable")
 	}
-	return &Worktrees{repository: root, root: path, base: base, prefix: "ivoai/" + hex.EncodeToString(nonce[:]) + "/", owned: map[string]Worktree{}}, nil
+	return &Worktrees{repository: root, root: path, base: base, workingSubdirectory: relative, prefix: "ivoai/" + hex.EncodeToString(nonce[:]) + "/", owned: map[string]Worktree{}}, nil
+}
+
+// WorkingDirectory preserves a session launched in a repository subdirectory.
+// Worktree provenance still records the checkout root.
+func (m *Worktrees) WorkingDirectory(w Worktree) string {
+	return filepath.Join(w.Path, m.workingSubdirectory)
 }
 
 func (m *Worktrees) Create(ctx context.Context, taskID string) (Worktree, error) {
@@ -129,6 +144,22 @@ func (m *Worktrees) Snapshot() []Worktree {
 func (m *Worktrees) Collect(ctx context.Context, taskID string, allowed []string) (Worktree, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+	if m.workingSubdirectory != "" && m.workingSubdirectory != "." {
+		scoped := make([]string, 0, len(allowed))
+		for _, path := range allowed {
+			// Validate before prefixing; joining must not normalize traversal
+			// into an otherwise valid repository-relative capability.
+			probe := path
+			if strings.HasSuffix(path, "/") {
+				probe += "scope-check"
+			}
+			if !approvedPath(probe, []string{path}) {
+				return Worktree{}, errors.New("WORKTREE_FAILED: invalid relative write scope")
+			}
+			scoped = append(scoped, filepath.ToSlash(m.workingSubdirectory)+"/"+path)
+		}
+		allowed = scoped
+	}
 	w, ok := m.owned[taskID]
 	if !ok {
 		return Worktree{}, errors.New("WORKTREE_FAILED: unknown owner")

@@ -25,8 +25,15 @@ func writeScopesOverlap(a, b []string) bool {
 	return false
 }
 
-func (s *Server) prepareNativeRequest(ctx context.Context, planID, workerID string, task routing.Task, request workers.Request) (workers.Request, func() error, error) {
-	complete := func() error { return nil }
+func (s *Server) prepareNativeRequest(ctx context.Context, planID, workerID string, task routing.Task, request workers.Request) (workers.Request, func(workers.Result) error, error) {
+	complete := func(workers.Result) error { return nil }
+	var releaseWorkspace func()
+	prepared := false
+	defer func() {
+		if !prepared && releaseWorkspace != nil {
+			releaseWorkspace()
+		}
+	}()
 	profile, err := orchestration.CapabilityProfile(task.Role)
 	if err != nil {
 		return request, complete, err
@@ -62,7 +69,7 @@ func (s *Server) prepareNativeRequest(ctx context.Context, planID, workerID stri
 		for _, dep := range dependencies {
 			dependencyWorkIDs = append(dependencyWorkIDs, plan.workIDs[dep])
 		}
-		if plan.worktrees == nil {
+		if plan.worktrees == nil && plan.sequential == nil {
 			// Recovery data is outside the disposable session runtime. Failed or
 			// conflicting work must survive closing the frontend.
 			root := s.WorktreeRoot
@@ -72,45 +79,74 @@ func (s *Server) prepareNativeRequest(ctx context.Context, planID, workerID stri
 			if err = platform.EnsurePrivateDir(root); err == nil {
 				plan.worktrees, err = orchestration.NewWorktrees(ctx, s.Directory, root)
 			}
+			if err != nil {
+				plan.sequential = orchestration.NewSequentialPatch(s.Directory)
+			}
 		}
 		manager := plan.worktrees
+		sequential := plan.sequential
 		plan.workMu.Unlock()
-		if err != nil || manager == nil {
-			return request, complete, errors.New("WORKTREE_FAILED: isolated writes unavailable; no concurrent primary-tree writes permitted")
-		}
-		// Every attempt owns a distinct checkout. Retrying a failed writer must
-		// never erase its previous uncollected evidence or reuse its branch.
-		w, err := manager.CreateWithDependencies(ctx, workerID, dependencyWorkIDs)
-		if w.Path != "" {
-			plan.workMu.Lock()
-			plan.workIDs[task.ID] = workerID
-			plan.workMu.Unlock()
-			_, saveErr := s.Store.Update(s.SessionID, func(value *session.Session) error {
-				if worker := findWorker(value, workerID); worker != nil {
-					worker.WorktreePath, worker.WorktreeBranch, worker.WorktreeBase = w.Path, w.Branch, w.Base
+		if sequential != nil {
+			releaseWorkspace, err = sequential.Acquire(ctx)
+			if err != nil {
+				return request, complete, err
+			}
+			request.PatchOnly = write
+			write = false // The child remains sandboxed read-only in fallback.
+			if request.PatchOnly {
+				request.Task += "\n\nSequential fallback: return ONLY a complete unified Git diff for the approved write_paths, without fences or prose. Do not apply it yourself."
+				complete = func(result workers.Result) error {
+					if result.Truncated || result.ExitCode != 0 {
+						return errors.New("WORKTREE_FAILED: incomplete sequential patch")
+					}
+					return sequential.Apply(ctx, result.Text, task.WritePaths)
 				}
+			}
+			_, err = s.Store.Update(s.SessionID, func(v *session.Session) error {
+				v.ParallelWriteDegraded = true
 				return nil
 			})
-			if saveErr != nil {
-				return request, complete, saveErr
-			}
-		}
-		if err != nil {
-			return request, complete, err
-		}
-		request.Directory = w.Path
-		complete = func() error {
-			collected, err := manager.Collect(ctx, workerID, task.WritePaths)
 			if err != nil {
+				return request, complete, err
+			}
+		} else {
+			if manager == nil {
+				return request, complete, errors.New("WORKTREE_FAILED: isolated writes unavailable")
+			}
+			// Every attempt owns a distinct checkout. Retrying a failed writer must
+			// never erase its previous uncollected evidence or reuse its branch.
+			w, err := manager.CreateWithDependencies(ctx, workerID, dependencyWorkIDs)
+			if w.Path != "" {
+				plan.workMu.Lock()
+				plan.workIDs[task.ID] = workerID
+				plan.workMu.Unlock()
+				_, saveErr := s.Store.Update(s.SessionID, func(value *session.Session) error {
+					if worker := findWorker(value, workerID); worker != nil {
+						worker.WorktreePath, worker.WorktreeBranch, worker.WorktreeBase = w.Path, w.Branch, w.Base
+					}
+					return nil
+				})
+				if saveErr != nil {
+					return request, complete, saveErr
+				}
+			}
+			if err != nil {
+				return request, complete, err
+			}
+			request.Directory = manager.WorkingDirectory(w)
+			complete = func(workers.Result) error {
+				collected, err := manager.Collect(ctx, workerID, task.WritePaths)
+				if err != nil {
+					return err
+				}
+				_, err = s.Store.Update(s.SessionID, func(value *session.Session) error {
+					if worker := findWorker(value, workerID); worker != nil {
+						worker.WorktreeCommit = collected.Commit
+					}
+					return nil
+				})
 				return err
 			}
-			_, err = s.Store.Update(s.SessionID, func(value *session.Session) error {
-				if worker := findWorker(value, workerID); worker != nil {
-					worker.WorktreeCommit = collected.Commit
-				}
-				return nil
-			})
-			return err
 		}
 	}
 	// A native task never inherits the legacy session-wide knowledge envelope.
@@ -126,6 +162,16 @@ func (s *Server) prepareNativeRequest(ctx context.Context, planID, workerID stri
 	if request.Access == nil {
 		request.Access, err = workers.NewAccess(request.Directory, write, nil)
 	}
+	if err == nil && releaseWorkspace != nil {
+		prior := request.Release
+		request.Release = func() {
+			if prior != nil {
+				prior()
+			}
+			releaseWorkspace()
+		}
+	}
+	prepared = err == nil
 	return request, complete, err
 }
 
@@ -174,7 +220,7 @@ func (s *Server) integrate(ctx context.Context, request *mcp.CallToolRequest) (*
 	if plan.integrated {
 		return toolResult(map[string]any{"plan_id": args.PlanID, "integrated": true})
 	}
-	if len(ids) > 0 {
+	if len(ids) > 0 && plan.sequential == nil {
 		if plan.worktrees == nil {
 			return nil, errors.New("WORKTREE_FAILED: no collected implementation work")
 		}

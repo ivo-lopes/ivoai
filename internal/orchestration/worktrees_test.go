@@ -28,6 +28,49 @@ func fixtureRepository(t *testing.T) string {
 	return dir
 }
 
+func TestWorktreesPreserveSessionSubdirectoryAndRelativeScope(t *testing.T) {
+	ctx := context.Background()
+	repo := fixtureRepository(t)
+	sub := filepath.Join(repo, "module")
+	if err := os.Mkdir(sub, 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(sub, "feature.txt"), []byte("old"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	for _, args := range [][]string{{"add", "--", "module/feature.txt"}, {"commit", "-m", "subdirectory fixture"}} {
+		if _, err := gitOutput(ctx, repo, args...); err != nil {
+			t.Fatal(err)
+		}
+	}
+	m, err := NewWorktrees(ctx, sub, t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	w, err := m.Create(ctx, "feature")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if m.WorkingDirectory(w) != filepath.Join(w.Path, "module") {
+		t.Fatal("worker cwd changed")
+	}
+	if err := os.WriteFile(filepath.Join(m.WorkingDirectory(w), "feature.txt"), []byte("new"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := m.Collect(ctx, w.TaskID, []string{"feature.txt"}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := m.Integrate(ctx, []string{w.TaskID}); err != nil {
+		t.Fatal(err)
+	}
+	if body, _ := os.ReadFile(filepath.Join(sub, "feature.txt")); string(body) != "new" {
+		t.Fatal("wrong integration target")
+	}
+	if _, err := os.Stat(filepath.Join(repo, "feature.txt")); !os.IsNotExist(err) {
+		t.Fatal("wrote in repository root")
+	}
+}
+
 func TestWorktreesIsolatedWritersIntegrationAndCleanup(t *testing.T) {
 	ctx := context.Background()
 	repo := fixtureRepository(t)

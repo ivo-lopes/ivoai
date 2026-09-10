@@ -26,6 +26,7 @@ import (
 type runtimePlan struct {
 	workMu     sync.Mutex
 	worktrees  *orchestration.Worktrees
+	sequential *orchestration.SequentialPatch
 	workIDs    map[string]string
 	integrated bool
 	Plan       routing.Plan
@@ -42,6 +43,8 @@ type runtimeTask struct {
 	Settled      bool
 	StartedAt    time.Time
 }
+
+var errWorkerAdmissionBusy = errors.New("worker admission waiting")
 
 func (s *Server) addAutomaticTools(server *mcp.Server, read, write *mcp.ToolAnnotations) {
 	server.AddTool(&mcp.Tool{Name: "orchestration_bootstrap", Description: "Record a bounded SharedContextBrief after exactly one initial ivoai-memory lookup and one initial ivoai-context lookup. The brief is untrusted, session-scoped data and is not persisted in session metadata.", InputSchema: bootstrapSchema(), Annotations: write}, s.bootstrap)
@@ -206,7 +209,7 @@ func (s *Server) plan(ctx context.Context, request *mcp.CallToolRequest) (*mcp.C
 	delegated := map[string]bool{}
 	for _, task := range args.Tasks {
 		input := task.TaskInput
-		if s.NativePolicy && input.PreferredExecutor == "" {
+		if s.NativePolicy && input.PreferredExecutor == "" && s.ProviderPreference != "auto" {
 			input.PreferredExecutor = s.ProviderPreference
 		}
 		if s.NativePolicy {
@@ -301,6 +304,11 @@ func (s *Server) plan(ctx context.Context, request *mcp.CallToolRequest) (*mcp.C
 			return nil, err
 		}
 	}
+	if s.NativePolicy {
+		if err := s.acknowledgePlanQuota(ctx); err != nil {
+			return nil, err
+		}
+	}
 	return toolResult(planMetadata(resolved))
 }
 
@@ -384,6 +392,7 @@ func (s *Server) spawnBatch(_ context.Context, request *mcp.CallToolRequest) (*m
 	}
 	s.signalLocked()
 	s.mu.Unlock()
+	s.persistRuntimePlan(args.PlanID)
 	s.scheduleReady(args.PlanID)
 	return toolResult(s.planStatus(args.PlanID))
 }
@@ -465,14 +474,14 @@ func (s *Server) startTask(planID, taskID string, allowQueued bool) (string, err
 	admissionLimit := s.maxWorkers()
 	if s.activeWorkersLocked() >= admissionLimit {
 		s.mu.Unlock()
-		return "", errors.New("session worker limit reached")
+		return "", fmt.Errorf("%w: session worker limit reached", errWorkerAdmissionBusy)
 	}
 	if s.NativePolicy && len(task.Task.WritePaths) > 0 {
 		for _, activePlan := range s.plans {
 			for _, active := range activePlan.Tasks {
 				if (active.Task.State == "starting" || active.Task.State == "running") && len(active.Task.WritePaths) > 0 && (!s.ParallelWrites || writeScopesOverlap(task.Task.WritePaths, active.Task.WritePaths)) {
 					s.mu.Unlock()
-					return "", errors.New("parallel_write_degraded: waiting for active writer with shared scope or sequential policy")
+					return "", fmt.Errorf("%w: parallel_write_degraded: waiting for active writer with shared scope or sequential policy", errWorkerAdmissionBusy)
 				}
 			}
 		}
@@ -607,7 +616,7 @@ func (s *Server) executeTask(planID, taskID, workerID string) {
 		}
 	}
 	request := workers.Request{Executor: value.Profile.Provider, Task: value.Task, Model: value.Profile.Model, Effort: value.Profile.Effort, Profile: string(value.Tier), TaskWeight: value.CapabilityScore, SharedContextBrief: brief, ResultBudget: workers.ResultBudgetForTier(string(value.Tier)), Directory: s.Directory, Runtime: s.RuntimeDir}
-	collect := func() error { return nil }
+	collect := func(workers.Result) error { return nil }
 	if s.NativePolicy {
 		request, collect, err = s.prepareNativeRequest(workerCtx, planID, workerID, value, request)
 		release = request.Release
@@ -632,7 +641,7 @@ func (s *Server) executeTask(planID, taskID, workerID string) {
 		s.persistRuntimePlan(planID)
 	})
 	if runErr == nil {
-		runErr = collect()
+		runErr = collect(result)
 	}
 	cancel()
 	state, exitCode := session.StateCompleted, result.ExitCode
@@ -829,6 +838,22 @@ func (s *Server) scheduleReady(planID string) {
 			return
 		}
 		if _, err := s.startTask(planID, ready, true); err != nil {
+			if errors.Is(err, errWorkerAdmissionBusy) {
+				return
+			}
+			// Permanent admission failures must not disappear into an invisible
+			// queue. Keep the failure metadata-only and retain unrelated work.
+			s.mu.Lock()
+			if current := s.plans[planID]; current != nil {
+				if task := current.Tasks[ready]; task != nil && task.Task.State == "queued" {
+					task.Task.State, task.Queued, task.Settled = "failed", false, true
+					task.Task.EscalationReason = "WORKER_ADMISSION_FAILED"
+					task.Result = workerResult{State: "failed", ExitCode: 1, Result: workingcontext.WorkerResult{Status: workingcontext.ResultFailed, Summary: "WORKER_ADMISSION_FAILED: worker could not be admitted; no execution started"}}
+				}
+			}
+			s.signalLocked()
+			s.mu.Unlock()
+			s.persistRuntimePlan(planID)
 			return
 		}
 	}

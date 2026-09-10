@@ -13,6 +13,57 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/session"
 )
 
+// acknowledgePlanQuota also covers primary-only plans. This approval enables
+// conservation proposals, not a blanket authorization to change providers.
+func (s *Server) acknowledgePlanQuota(ctx context.Context) error {
+	s.routingMu.Lock()
+	defer s.routingMu.Unlock()
+	if s.Quota == nil {
+		return errors.New("QUOTA_UNAVAILABLE: native admission requires official probes")
+	}
+	v, err := s.Store.Get(s.SessionID)
+	if err != nil || v.QuotaMode == "conservation_active" || v.QuotaMode == "keep_current" {
+		return err
+	}
+	snapshot := map[quota.Provider]quota.ProviderQuota{}
+	for name := range s.Registry.Providers {
+		q, _ := s.Quota.Probe(ctx, quota.Provider(name), false)
+		snapshot[quota.Provider(name)] = q
+	}
+	proposal := orchestration.QuotaConservation(snapshot, s.LowQuotaThreshold)
+	if len(proposal.Providers) == 0 {
+		return nil
+	}
+	id, err := newPlanID()
+	if err != nil {
+		return err
+	}
+	id = strings.Replace(id, "plan_", "routing_", 1)
+	summary := fmt.Sprintf("Quota at or below %d%%. Enable conservation for new workers while keeping the primary strong? Material route changes still require separate approval. Reject to keep current routing.", proposal.Threshold)
+	if err := s.Store.RequestDecisionSummary(s.SessionID, id, "routing", summary); err != nil {
+		return err
+	}
+	_, err = s.Store.Update(s.SessionID, func(v *session.Session) error {
+		v.CurrentPhase, v.QuotaMode = "waiting_for_routing_approval", "conservation_pending_confirmation"
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	decisionErr := s.Store.WaitDecision(ctx, s.SessionID, id)
+	if decisionErr != nil && decisionErr.Error() != "PLAN_OR_ROUTING_REJECTED" {
+		return decisionErr
+	}
+	_, err = s.Store.Update(s.SessionID, func(v *session.Session) error {
+		v.CurrentPhase, v.QuotaMode = "parallel_dispatch", "conservation_active"
+		if decisionErr != nil {
+			v.QuotaMode = "keep_current"
+		}
+		return nil
+	})
+	return err
+}
+
 // refreshNativeRoute runs before starting the official child. A plan's route
 // is stable until a fresh probe proves it unavailable or the operator approves
 // conservation. A material route change always has its own UI decision.
@@ -44,7 +95,7 @@ func (s *Server) refreshNativeRoute(ctx context.Context, task routing.Task) (rou
 		return task.Profile, nil
 	}
 	input := task.TaskInput
-	if input.PreferredExecutor == "" {
+	if input.PreferredExecutor == "" && s.ProviderPreference != "auto" {
 		input.PreferredExecutor = s.ProviderPreference
 	}
 	proposed, err := router.Resolve(input, task.Tier)
