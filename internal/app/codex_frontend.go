@@ -18,6 +18,7 @@ func (a *App) runCodexFrontend(ctx context.Context, bridge *opencodebridge.Bridg
 func frontendSelection(catalog opencodebridge.ModelCatalog, provider string, args []string) (string, string, error) {
 	model := "auto"
 	effort := ""
+	requested := session.ParseModelArgument(args)
 	for i, arg := range args {
 		setting := ""
 		if (arg == "-c" || arg == "--config") && i+1 < len(args) {
@@ -32,6 +33,12 @@ func frontendSelection(catalog opencodebridge.ModelCatalog, provider string, arg
 		if strings.HasPrefix(setting, "model_reasoning_effort=") {
 			effort = strings.Trim(strings.TrimPrefix(setting, "model_reasoning_effort="), `"'`)
 		}
+		if strings.HasPrefix(setting, "model=") {
+			requested = strings.Trim(strings.TrimPrefix(setting, "model="), `"'`)
+		}
+		if strings.HasPrefix(arg, "-m") && len(arg) > 2 && !strings.HasPrefix(arg, "--") {
+			requested = strings.TrimPrefix(arg, "-m")
+		}
 		if arg == "--effort" && i+1 < len(args) {
 			effort = args[i+1]
 		}
@@ -39,7 +46,7 @@ func frontendSelection(catalog opencodebridge.ModelCatalog, provider string, arg
 			effort = strings.TrimPrefix(arg, "--effort=")
 		}
 	}
-	if requested := session.ParseModelArgument(args); requested != "" {
+	if requested != "" {
 		model = ""
 		for _, entry := range catalog.Entries() {
 			if entry.Executor == provider && (entry.UpstreamModel == requested || entry.ID == requested) {

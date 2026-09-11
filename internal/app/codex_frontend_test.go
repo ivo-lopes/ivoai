@@ -22,4 +22,10 @@ func TestFrontendExplicitModelAndReasoningRemainAuthoritative(t *testing.T) {
 	if _, _, err := frontendSelection(catalog, "claude", []string{"--model", "observed-fixture"}); err == nil {
 		t.Fatal("provider override crossed")
 	}
+	for _, args := range [][]string{{"-c", `model="observed-fixture"`}, {"--config=model=observed-fixture"}, {"-cmodel=observed-fixture"}, {"-mobserved-fixture"}} {
+		id, _, err := frontendSelection(catalog, "codex", args)
+		if err != nil || id != model {
+			t.Fatal("official model override was silently ignored", err)
+		}
+	}
 }
