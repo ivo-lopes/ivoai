@@ -406,6 +406,9 @@ func managedEnvironment(existing []string, stateDir string, paths managedPaths, 
 		"PATH": true, "TERM": true, "COLORTERM": true, "TERM_PROGRAM": true,
 		"TERM_PROGRAM_VERSION": true, "LANG": true, "LANGUAGE": true, "TZ": true,
 		"TMPDIR": true, "NO_COLOR": true, "IVOAI_ASCII": true,
+		// Desktop socket references are needed by native clipboard backends.
+		// Do not forward session buses, agent sockets, or provider credentials.
+		"DISPLAY": true, "WAYLAND_DISPLAY": true, "XDG_RUNTIME_DIR": true,
 	}
 	result := make([]string, 0, len(existing)+len(values))
 	for _, entry := range existing {

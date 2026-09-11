@@ -142,7 +142,15 @@ func TestLiveManagedOpenCodeResizeKeyboard(t *testing.T) {
 	wait(start, "variant")
 	send("high")
 	send("\r")
-	send("safe keyboard fixture")
+	send("safe keyboard fixture line one")
+	send("\x1b[13;2u") // Kitty/CSI-u Shift+Enter, not Ctrl+J.
+	runner.mu.Lock()
+	beforeSubmit := len(runner.requests)
+	runner.mu.Unlock()
+	if beforeSubmit != 0 {
+		t.Fatal("Shift+Enter submitted instead of inserting a newline")
+	}
+	send("line two")
 	send("\r")
 	deadline := time.Now().Add(15 * time.Second)
 	for time.Now().Before(deadline) {
@@ -154,6 +162,9 @@ func TestLiveManagedOpenCodeResizeKeyboard(t *testing.T) {
 		}
 		runner.mu.Unlock()
 		if count > 0 {
+			if count != 1 || !strings.Contains(request.Prompt, "line one\nline two") {
+				t.Fatal("multiline composer did not preserve one logical prompt")
+			}
 			if request.Model != "fixture-model" || request.Effort != "high" {
 				t.Fatalf("selection not effective: %s", fmt.Sprint(request.Model, request.Effort))
 			}
