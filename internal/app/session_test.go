@@ -205,6 +205,9 @@ esac
 	if value.OrchestrationMode != "orchestrated" || value.Frontend != "codex" || value.Coordinator != "native" || value.PrimaryProvider != "codex" || len(value.Workers) != 0 || len(value.TurnAttempts) != 0 || value.State != session.StateCompleted {
 		t.Fatalf("session=%+v", value)
 	}
+	if value.FrontendState != session.StateCompleted || value.FrontendExitCode == nil || *value.FrontendExitCode != 0 {
+		t.Fatal("Codex frontend exit metadata missing")
+	}
 	calls, _ := os.ReadFile(rufloCalls)
 	callText := string(calls)
 	if strings.Contains(callText, "swarm init") || strings.Contains(callText, "task create") {

@@ -422,7 +422,7 @@ func (a *App) finishSession(store session.Store, id string, final session.State,
 	now := time.Now().UTC()
 	_, _ = store.Update(id, func(value *session.Session) error {
 		value.State, value.ExitCode = final, &exitCode
-		if value.Frontend == "opencode" {
+		if value.Frontend == "opencode" || value.Frontend == "codex" {
 			value.FrontendState, value.FrontendExitCode = final, &exitCode
 		}
 		if final == session.StateWaiting {
