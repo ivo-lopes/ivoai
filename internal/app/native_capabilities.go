@@ -20,6 +20,7 @@ import (
 type NativeCapabilityStatus struct {
 	ID                string   `json:"id"`
 	Name              string   `json:"name"`
+	Type              string   `json:"type"`
 	Status            string   `json:"status"`
 	Revision          string   `json:"revision"`
 	AvailableRevision string   `json:"available_revision"`
@@ -53,7 +54,12 @@ func (a *App) NativeCapabilities(ctx context.Context) ([]NativeCapabilityStatus,
 	for _, id := range skillcatalog.NativeIDs() {
 		source, _ := catalog.Source(id)
 		preference := cfg.Skills.Sources[id]
-		row := NativeCapabilityStatus{ID: id, Name: source.DisplayName, Status: "available", AvailableRevision: source.Provenance.Revision, Pinned: preference.Pinned, Disabled: preference.Disabled}
+		row := NativeCapabilityStatus{ID: id, Name: source.DisplayName, Type: "skill pack", Status: "available", AvailableRevision: source.Provenance.Revision, Pinned: preference.Pinned, Disabled: preference.Disabled}
+		if id == "i-have-adhd" {
+			row.Type = "interaction profile"
+		} else if id == "ponytail" {
+			row.Type = "efficiency capability"
+		}
 		for index, c := range source.Classifications {
 			row.Skills = append(row.Skills, c.CanonicalID)
 			if index == 0 {
@@ -225,7 +231,7 @@ func (a *App) PrintNativeCapabilities(ctx context.Context, id string) error {
 		if id != "" && row.ID != id {
 			continue
 		}
-		fmt.Fprintf(a.Out, "%s (%s): %s | risk=%s | executors=%s | policy=%s | pinned=%t | update=%t\n", row.Name, row.ID, row.Status, row.Risk, strings.Join(row.Compatibility, ","), row.SelectionPolicy, row.Pinned, row.UpdateAvailable)
+		fmt.Fprintf(a.Out, "%s (%s): %s | type=%s | risk=%s | executors=%s | policy=%s | pinned=%t | update=%t\n", row.Name, row.ID, row.Status, row.Type, row.Risk, strings.Join(row.Compatibility, ","), row.SelectionPolicy, row.Pinned, row.UpdateAvailable)
 		if id != "" {
 			fmt.Fprintf(a.Out, "Revision: %s\nAvailable: %s\nSkills: %s\nProvenance: immutable commit + local SHA-256 (not an independent signature)\n", row.Revision, row.AvailableRevision, strings.Join(row.Skills, ", "))
 			return nil
@@ -234,5 +240,10 @@ func (a *App) PrintNativeCapabilities(ctx context.Context, id string) error {
 	if id != "" {
 		return errors.New("unknown native capability source")
 	}
+	counts := map[string]int{}
+	for _, row := range rows {
+		counts[row.Status]++
+	}
+	fmt.Fprintf(a.Out, "Native Pack: %d ready / %d available / %d disabled / %d quarantined / %d integrity failures\n", counts["ready"], counts["available"], counts["disabled"], counts["quarantined"], counts["integrity-failure"])
 	return nil
 }
