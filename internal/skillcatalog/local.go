@@ -14,6 +14,7 @@ import (
 	"reflect"
 	"sort"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/ivo-lopes/ivoai/internal/supplychain"
 )
@@ -76,6 +77,9 @@ func (s LocalSource) archive(ctx context.Context) ([]byte, error) {
 		}
 		if closeErr != nil {
 			return nil, closeErr
+		}
+		if !utf8.Valid(body) || bytes.IndexByte(body, 0) >= 0 {
+			return nil, errors.New("local capability contains non-text content")
 		}
 		total += len(body)
 		if len(body) > maxSkillDocument || total > 8<<20 {

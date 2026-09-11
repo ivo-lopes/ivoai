@@ -90,3 +90,14 @@ func TestLocalSourceRejectsSymlinkParent(t *testing.T) {
 		t.Fatal("symlink parent accepted")
 	}
 }
+
+func TestLocalSourceRejectsDisguisedBinary(t *testing.T) {
+	for _, body := range [][]byte{[]byte("\x7fELF\x00binary"), {0xff, 0xfe, 0xfd}} {
+		source, ref := localFixture(t)
+		source.Files = fstest.MapFS{"SKILL.md": &fstest.MapFile{Data: body, Mode: 0600}}
+		source.Paths = []string{"SKILL.md"}
+		if _, err := source.Resolve(context.Background(), ref); err == nil {
+			t.Fatal("binary content accepted as declarative markdown")
+		}
+	}
+}
