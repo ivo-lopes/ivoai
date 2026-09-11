@@ -53,6 +53,7 @@ func TestLiveNativeAUTOArtifact(t *testing.T) {
 	if output, err := pack.CombinedOutput(); err != nil {
 		t.Fatalf("native pack materialization: %v: %s", err, output)
 	}
+	t.Setenv("IVOAI_NATIVE_SMOKE_CAPABILITIES", "1")
 	command := exec.Command("python3", "../../scripts/smoke-native-auto.py", binary, root)
 	command.Stdout, command.Stderr = os.Stdout, os.Stderr
 	if err := command.Run(); err != nil {

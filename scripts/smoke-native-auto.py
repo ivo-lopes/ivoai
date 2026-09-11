@@ -113,6 +113,7 @@ try:
     send("\r")
     wait_for(lambda text, _: "insufficient" in text.lower(), 45, "PROMPT_GATE_FAILED")
     assert not metadata().get("workers"), "WORKER_STARTED_BEFORE_GATE"
+    assert not any(e.get("operation") == "skill.gate" for e in metadata().get("observability", [])), "SKILL_GATE_BEFORE_PROMPT_GATE"
     print("INSUFFICIENT_PROMPT_REJECTED=PASS NO_WORKER_BEFORE_GATE=true", flush=True)
     prompt = "Read VERSION in this fixture repository and report its value without modifying files. Acceptance: return exactly fixture-1 as the final response. Use a single primary-owned research task, record its completion and integrate the plan before synthesis."
     if complex_case:
@@ -141,6 +142,13 @@ try:
         paths = {w.get("worktree_path") for w in value.get("workers", []) if w.get("worktree_path")}
         assert len(paths) >= 2 and str(repo) not in paths, "WORKTREES_NOT_ISOLATED"
         assert peak_workers >= 2, "PARALLEL_WORKERS_NOT_OBSERVED"
+        if os.environ.get("IVOAI_NATIVE_SMOKE_CAPABILITIES") == "1":
+            capability_workers = value.get("workers", [])
+            implementations = [w for w in capability_workers if w.get("role") == "implementation"]
+            assert implementations and any("ponytail" in w.get("selected_skills", []) for w in implementations), "PONYTAIL_NOT_SELECTED"
+            assert all("ponytail" not in w.get("selected_skills", []) for w in capability_workers if w.get("role") != "implementation"), "PONYTAIL_ROLE_CROSSOVER"
+            assert all(len(w.get("selected_skills", [])) <= 3 for w in capability_workers), "SKILL_BROADCAST"
+            print("NATIVE_CAPABILITY_METADATA=PASS PONYTAIL_IMPLEMENTATION_ONLY=PASS NO_GLOBAL_SKILL_BROADCAST=true", flush=True)
         print("DAG_COMPLEX=PASS PARALLEL_WORKERS=PASS WORKTREES=PASS FIXTURE_ACCEPTANCE=PASS", flush=True)
     print("PLAN_APPROVAL=PASS DAG_PRIMARY_ONLY=PASS FINAL_SYNTHESIS=PASS AUTO_FRONTEND=OPENCODE", flush=True)
 finally:
