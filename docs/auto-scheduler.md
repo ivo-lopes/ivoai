@@ -1,6 +1,6 @@
 # Automatic scheduler and model routing
 
-`ivoai auto` uses an in-process policy engine and the session-local
+`ivoai opencode` uses an in-process policy engine and the session-local
 `ivoai-orchestrator` MCP. The pinned OpenCode TUI is the frontend; IVOAI remains the
 conversation owner and integration authority. Official clients execute bounded
 tasks; approved writers use isolated worktrees, never concurrent writes to the

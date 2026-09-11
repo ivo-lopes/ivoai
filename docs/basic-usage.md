@@ -4,12 +4,17 @@
 ivoai codex
 ivoai claude
 ivoai opencode
-ivoai auto
 ivoai status
 ivoai doctor
 ```
 
-`ivoai auto` and `ivoai opencode` open the managed OpenCode frontend. Codex and
-Claude remain the official subscription-backed executors selected by IVOAI; neither
-requires a second OpenCode login. `ivoai codex` and `ivoai claude` retain their
-explicit native interfaces.
+`ivoai codex` starts the IVOAI-controlled Codex-oriented terminal. `ivoai opencode`
+starts managed OpenCode. Both use the same prompt gate, native DAG, plan approval,
+worker scheduler and capability policies. Codex is the preferred primary in the
+Codex frontend, not necessarily every worker's executor.
+
+Use `ivoai codex --direct` or `ivoai opencode --direct` for the official standalone
+clients without orchestration. `ivoai claude` is unchanged. `ivoai auto` remains a
+deprecated alias for `ivoai opencode`, with a warning on stderr only.
+
+See [Orchestrated frontends](orchestrated-frontends.md) for prompts and decisions.

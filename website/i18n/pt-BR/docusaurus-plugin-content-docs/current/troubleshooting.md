@@ -158,7 +158,7 @@ presumida.
 
 ## O frontend OpenCode gerenciado não inicia
 
-**Sintoma:** `ivoai auto` ou `ivoai opencode` encerra antes de aparecer a TUI com
+**Sintoma:** `ivoai opencode` encerra antes de aparecer a TUI com
 branding IVOAI. **Causas comuns:** componente pinado ausente, versão diferente do
 manifest ou backend loopback privado sem readiness. Execute `ivoai status` e
 `ivoai doctor`; repare somente por `ivoai setup` ou updater transacional. Não aponte

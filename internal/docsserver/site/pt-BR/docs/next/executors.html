@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="generator" content="Docusaurus v3.10.2">
 <title data-rh="true">Executores | IVOAI</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="http://localhost:7780/pt-BR/docs/next/executors"><meta data-rh="true" property="og:locale" content="pt_BR"><meta data-rh="true" property="og:locale:alternate" content="en_US"><meta data-rh="true" name="docusaurus_locale" content="pt-BR"><meta data-rh="true" name="docsearch:language" content="pt-BR"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="Executores | IVOAI"><meta data-rh="true" name="description" content="Sessões HTTP controladas"><meta data-rh="true" property="og:description" content="Sessões HTTP controladas"><link data-rh="true" rel="icon" href="/pt-BR/img/favicon.svg"><link data-rh="true" rel="canonical" href="http://localhost:7780/pt-BR/docs/next/executors"><link data-rh="true" rel="alternate" href="http://localhost:7780/docs/next/executors" hreflang="en-US"><link data-rh="true" rel="alternate" href="http://localhost:7780/pt-BR/docs/next/executors" hreflang="pt-BR"><link data-rh="true" rel="alternate" href="http://localhost:7780/docs/next/executors" hreflang="x-default"><script data-rh="true" type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Executores","item":"http://localhost:7780/pt-BR/docs/next/executors"}]}</script><link rel="stylesheet" href="/pt-BR/assets/css/styles.92d12545.css">
-<script src="/pt-BR/assets/js/runtime~main.80b044e2.js" defer="defer"></script>
-<script src="/pt-BR/assets/js/main.5560c250.js" defer="defer"></script>
+<script src="/pt-BR/assets/js/runtime~main.ed63f56d.js" defer="defer"></script>
+<script src="/pt-BR/assets/js/main.9bcac026.js" defer="defer"></script>
 </head>
 <body>
 <svg style="display: none;"><defs>
@@ -24,7 +24,7 @@ esse mesmo lifecycle controlado após os critérios de elegibilidade do schedule
 <h2 class="anchor anchorTargetStickyNavbar_UW1m" id="opencode-nativo-elegível-no-auto">OpenCode nativo elegível no AUTO<a href="#opencode-nativo-elegível-no-auto" class="hash-link" aria-label="Link direto para OpenCode nativo elegível no AUTO" title="Link direto para OpenCode nativo elegível no AUTO" translate="no">​</a></h2>
 <p>Sem nova preferência, o IVOAI preserva a prioridade existente de Codex/Claude e
 considera o OpenCode nativo como terceiro candidato. Para selecioná-lo explicitamente:</p>
-<p><code>ivoai auto --planner opencode</code></p>
+<p><code>ivoai opencode --planner opencode</code></p>
 <p>A seleção explícita falha de forma fechada se não houver modelo nativo autenticado
 e capaz de usar ferramentas. O model picker também apresenta entradas sem ambiguidade
 para os IDs nativos <code>provider/model</code> e suas variantes descobertas. Nenhum modelo,
@@ -86,7 +86,7 @@ comuns em arquivos são permitidas; shell, edições, acesso fora do diretório 
 operações exigem aprovação do OpenCode. Configure uma vez no IVOAI:</p>
 <div class="language-bash codeBlockContainer_hJIO theme-code-block" style="--prism-color:#bfc7d5;--prism-background-color:#292d3e"><div class="codeBlockContent_tbZp"><pre tabindex="0" class="prism-code language-bash codeBlock_e7Om thin-scrollbar" style="color:#bfc7d5;background-color:#292d3e"><code class="codeBlockLines_QMIf"><div class="token-line" style="color:#bfc7d5"><span class="token plain">ivoai config </span><span class="token builtin class-name" style="color:rgb(255, 203, 107)">set</span><span class="token plain"> opencode.permission_mode full</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">ivoai status</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">ivoai config </span><span class="token builtin class-name" style="color:rgb(255, 203, 107)">set</span><span class="token plain"> opencode.permission_mode interactive</span><br></div></code></pre></div></div>
 <p>O último comando restaura as aprovações interativas. A alteração vale na próxima
-sessão gerenciada de <code>ivoai auto</code> ou <code>ivoai opencode</code>, não no backend já aberto.
+sessão gerenciada de <code>ivoai opencode</code>, não no backend já aberto.
 O painel <code>/ivoai</code> mostra o modo efetivo da sessão. <code>full</code> pré-aprova as operações
 configuráveis do OpenCode; leituras diretas de <code>.env</code> e <code>.env.*</code> continuam negadas
 (<code>.env.example</code> é permitido). Trata-se de política de aprovação, não de sandbox para
@@ -97,11 +97,14 @@ autenticação pessoais ou de projeto do OpenCode não são editadas. A execuç�
 bridge de Codex/Claude não exige login adicional; a execução nativa opcional do
 OpenCode exige a autenticação oficial própria do provider escolhido.</p>
 <h2 class="anchor anchorTargetStickyNavbar_UW1m" id="codex">Codex<a href="#codex" class="hash-link" aria-label="Link direto para Codex" title="Link direto para Codex" translate="no">​</a></h2>
-<p><code>ivoai codex</code> inicia o cliente oficial e preserva seu login da assinatura do ChatGPT.</p>
+<p><code>ivoai codex</code> inicia o frontend orquestrado controlado pelo IVOAI, usando o executor
+Codex estruturado oficial. Codex é o primary preferencial, não o executor obrigatório
+de todos os workers. <code>ivoai codex --direct</code> preserva a TUI oficial sem Prompt Gate
+ou DAG. A autenticação permanece sob responsabilidade do cliente oficial.</p>
 <h2 class="anchor anchorTargetStickyNavbar_UW1m" id="claude-code">Claude Code<a href="#claude-code" class="hash-link" aria-label="Link direto para Claude Code" title="Link direto para Claude Code" translate="no">​</a></h2>
 <p><code>ivoai claude</code> inicia o cliente oficial e preserva seu login nativo da assinatura.</p>
 <h2 class="anchor anchorTargetStickyNavbar_UW1m" id="opencode">OpenCode<a href="#opencode" class="hash-link" aria-label="Link direto para OpenCode" title="Link direto para OpenCode" translate="no">​</a></h2>
-<p><code>ivoai auto</code> e <code>ivoai opencode</code> iniciam a TUI do OpenCode na versão fixada como o
+<p><code>ivoai opencode</code> iniciam a TUI do OpenCode na versão fixada como o
 frontend gerenciado do IVOAI. O backend do OpenCode escuta apenas em uma porta
 aleatória autenticada no loopback. Sua configuração gerenciada e isolada desabilita
 a configuração do projeto, o compartilhamento e a atualização automática do

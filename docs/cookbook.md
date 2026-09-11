@@ -41,7 +41,7 @@ create --ttl 10m`. On the client, pass each code through standard input:
 ```bash
 ivoai connect server add company-a --url https://ai-a.example.com --purpose company-a --code-stdin
 ivoai connect server add company-b --url https://ai-b.example.com --purpose company-b --code-stdin
-ivoai auto
+ivoai opencode
 ```
 
 Restrict a session with `--knowledge-source company-a`. Repeat the flag for an
@@ -57,11 +57,11 @@ the write target is ambiguous.
 ivoai codex
 ivoai claude
 ivoai opencode
-ivoai auto
-ivoai auto --planner codex
+ivoai opencode
+ivoai opencode --planner codex
 ```
 
-`ivoai auto` and `ivoai opencode` open the managed OpenCode frontend. IVOAI routes
+`ivoai opencode` open the managed OpenCode frontend. IVOAI routes
 turns to the official Codex or Claude Code CLI, so their existing subscription login
 is reused without copying a provider token. For an unmodified standalone OpenCode
 provider session, use `ivoai session start --executor opencode --mode direct`.

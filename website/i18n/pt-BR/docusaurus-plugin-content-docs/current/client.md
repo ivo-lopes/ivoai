@@ -91,8 +91,10 @@ Overall: READY — external connections pending
 
 ## Launch do agent
 
-`ivoai codex` e `ivoai claude` abrem suas interfaces Direct oficiais. `ivoai opencode`, assim como
-`ivoai auto`, abre uma TUI OpenCode pinada e anexada ao control plane privado do IVOAI. O IVOAI
+`ivoai codex` abre o terminal orquestrado controlado pelo IVOAI; `--direct` preserva
+a TUI oficial. `ivoai claude` continua direto. `ivoai opencode` abre a TUI OpenCode
+pinada e anexada ao mesmo control plane. O menu **Launch Orchestration** oferece
+os dois frontends e sessões diretas explícitas. Veja [frontends](orchestrated-frontends.md). O IVOAI
 roteia turnos para a CLI oficial Codex ou Claude Code e reutiliza o login que já pertence àquele
 client sem lê-lo ou copiá-lo. Um overlay OpenCode gerenciado e privado desabilita config de projeto,
 sharing e auto-update; a configuração global e o store de provider do usuário permanecem intactos.
@@ -103,7 +105,7 @@ global do agent:
 ```sh
 ivoai codex --knowledge-source mindsite
 ivoai claude --knowledge-source voicecorp
-ivoai auto --knowledge-source mindsite
+ivoai opencode --knowledge-source mindsite
 ```
 
 Sem `--knowledge-source`, todas as fontes conectadas e habilitadas participam da federation de
@@ -195,7 +197,7 @@ credenciais.
 
 ## Modo de conversa automático
 
-`ivoai auto` abre o frontend OpenCode gerenciado e mostra estado limitado de executor, quota e
+`ivoai opencode` abre o frontend OpenCode gerenciado e mostra estado limitado de executor, quota e
 knowledge pertencente ao IVOAI. A preferência de planner configurada seleciona o executor oficial
 inicial; `--planner codex` e `--planner claude` fazem override para a sessão. Codex/Claude nunca
 assumem a tela. OpenCode fornece a UI enquanto IVOAI mantém ownership da sessão, seleção de provider

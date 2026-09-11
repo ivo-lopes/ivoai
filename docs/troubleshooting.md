@@ -157,7 +157,7 @@ Claude monthly is not assumed.
 
 ## Managed OpenCode frontend does not start
 
-**Symptom:** `ivoai auto` or `ivoai opencode` exits before the IVOAI-branded TUI
+**Symptom:** `ivoai opencode` exits before the IVOAI-branded TUI
 appears. **Common causes:** the pinned managed component is missing, its version no
 longer matches the manifest, or the private loopback backend could not become ready.
 Run `ivoai status` and `ivoai doctor`; repair only through `ivoai setup` or the

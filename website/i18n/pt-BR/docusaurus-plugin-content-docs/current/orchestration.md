@@ -1,15 +1,15 @@
 # Controle e orquestração de sessões
 
-O ivoai possui modos de sessão direto, orquestrado explícito e automático. Nenhum
-deles adiciona uma credencial de provider pay-as-you-go, nem substitui a interface
-oficial do Codex ou do Claude Code.
+O IVOAI oferece um core nativo compartilhado pelos frontends Codex e OpenCode.
+Veja [Frontends orquestrados](orchestrated-frontends.md). Os clientes oficiais
+permanecem disponíveis em modo direto explícito, sem nova credencial de provider.
 
 ## Modo direto
 
 Os comandos estabelecidos continuam sendo o caminho mais curto:
 
 ```sh
-ivoai codex
+ivoai codex --direct
 ivoai claude
 ```
 
@@ -40,7 +40,11 @@ ivoai session start --executor codex --mode orchestrated
 ivoai session start --executor claude --mode orchestrated
 ```
 
-Antes de abrir o cliente primary, o ivoai verifica a versão instalada e o profile
+Codex e OpenCode orquestrados usam admissão nativa, aprovação do plano e despacho
+automático pelo mesmo scheduler. O modo histórico Claude orquestrado abaixo
+permanece inalterado; `ivoai claude` continua direto.
+
+Nesse modo histórico Claude, antes de abrir o primary, o ivoai verifica a versão e o profile
 seguro do Ruflo, confirma que a execução pelo provider e a memória durável do Ruflo
 estão desabilitadas, executa um `swarm init` real, obtém e verifica seu Swarm ID e
 registra uma tarefa opaca do ciclo de vida do primary. Um gate com falha interrompe a
@@ -78,9 +82,9 @@ final sobre provider, modelo verificado em runtime, esforço e se a delegação 
 ## Modo automático
 
 ```sh
-ivoai auto
-ivoai auto --planner codex
-ivoai auto --planner claude
+ivoai opencode
+ivoai opencode --planner codex
+ivoai opencode --planner claude
 ```
 
 O modo automático usa a TUI do OpenCode na versão fixada como frontend interativo,

@@ -2,7 +2,11 @@
 
 ## Codex
 
-`ivoai codex` launches the official client and preserves its ChatGPT subscription login.
+`ivoai codex` opens an IVOAI-controlled terminal backed by the official Codex
+structured executor. Prompt admission happens before execution, not through an
+advisory instruction. Codex is the preferred strong primary; eligible Claude
+workers remain available. `ivoai codex --direct` opens the official Codex TUI
+without the prompt gate or automatic DAG. Both preserve official authentication.
 
 ## Claude Code
 
@@ -10,7 +14,7 @@
 
 ## OpenCode
 
-`ivoai auto` and `ivoai opencode` launch the pinned OpenCode TUI as the managed IVOAI
+`ivoai opencode` (and deprecated alias `ivoai auto`) launches the pinned OpenCode TUI as the managed IVOAI
 frontend. The OpenCode backend listens only on an authenticated random loopback port.
 Its isolated managed configuration disables project configuration, sharing, and
 OpenCode auto-update; direct `opencode` use outside IVOAI remains untouched.
@@ -28,7 +32,7 @@ ivoai config set opencode.permission_mode interactive
 ```
 
 The last command restores interactive approvals. Changes apply to the next managed
-`ivoai auto` or `ivoai opencode` session, not to an already running backend.
+`ivoai opencode` session, not to an already running backend.
 `/ivoai` displays the effective session permission mode. `full` pre-approves
 OpenCode's configurable operations; direct reads of `.env` and `.env.*` remain
 denied (`.env.example` is allowed). This is an approval policy, not a secret sandbox.
@@ -78,7 +82,7 @@ same controlled lifecycle after the scheduler's eligibility checks.
 Without a new preference, IVOAI preserves its existing Codex/Claude priority and
 considers native OpenCode as a third candidate. To select it explicitly:
 
-`ivoai auto --planner opencode`
+`ivoai opencode --planner opencode`
 
 Explicit native selection fails closed if no authenticated, tool-capable native
 model is available. The managed model picker also contains namespaced entries for

@@ -25,9 +25,9 @@ Usage:
   ivoai connect mcp header set <name> <header-name> --value-stdin
   ivoai connect mcp test <name>
   ivoai disconnect <chatgpt|claude|server [alias|--all]>
-  ivoai codex [--knowledge-source <alias|purpose>] [-- agent arguments...]
+  ivoai codex [--direct] [--knowledge-source <alias|purpose>] [-- agent arguments...]
   ivoai claude [--knowledge-source <alias|purpose>] [-- agent arguments...]
-  ivoai opencode [--knowledge-source <alias|purpose>]
+  ivoai opencode [--direct] [--planner codex|claude|opencode] [--knowledge-source <alias|purpose>] [-- agent arguments...]
   ivoai auto [--planner codex|claude|opencode] [--knowledge-source <alias|purpose>] [-- agent arguments...]
   ivoai session start --executor <codex|claude|opencode> --mode <direct|orchestrated> [--knowledge-source <alias|purpose>] [-- agent arguments...]
   ivoai session list [--json] | show [--json] <id> | stop <id>
