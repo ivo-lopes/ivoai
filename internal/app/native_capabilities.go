@@ -21,6 +21,7 @@ type NativeCapabilityStatus struct {
 	ID                string   `json:"id"`
 	Name              string   `json:"name"`
 	Type              string   `json:"type"`
+	AutoSelect        string   `json:"auto_select"`
 	Status            string   `json:"status"`
 	Revision          string   `json:"revision"`
 	AvailableRevision string   `json:"available_revision"`
@@ -54,11 +55,19 @@ func (a *App) NativeCapabilities(ctx context.Context) ([]NativeCapabilityStatus,
 	for _, id := range skillcatalog.NativeIDs() {
 		source, _ := catalog.Source(id)
 		preference := cfg.Skills.Sources[id]
-		row := NativeCapabilityStatus{ID: id, Name: source.DisplayName, Type: "skill pack", Status: "available", AvailableRevision: source.Provenance.Revision, Pinned: preference.Pinned, Disabled: preference.Disabled}
+		row := NativeCapabilityStatus{ID: id, Name: source.DisplayName, Type: "skill pack", AutoSelect: "role/trigger candidate; policy gated", Status: "available", AvailableRevision: source.Provenance.Revision, Pinned: preference.Pinned, Disabled: preference.Disabled}
 		if id == "i-have-adhd" {
 			row.Type = "interaction profile"
+			row.AutoSelect = "manual task request only"
 		} else if id == "ponytail" {
 			row.Type = "efficiency capability"
+			row.AutoSelect = cfg.Skills.ResolvedPonytail()
+			if row.AutoSelect == "auto" {
+				row.AutoSelect = "implementation only; policy gated"
+			}
+		}
+		if preference.Disabled {
+			row.AutoSelect = "disabled"
 		}
 		for index, c := range source.Classifications {
 			row.Skills = append(row.Skills, c.CanonicalID)
@@ -248,7 +257,7 @@ func (a *App) PrintNativeCapabilities(ctx context.Context, id string) error {
 		if id != "" && row.ID != id {
 			continue
 		}
-		fmt.Fprintf(a.Out, "%s (%s): %s | type=%s | risk=%s | executors=%s | policy=%s | pinned=%t | update=%t\n", row.Name, row.ID, row.Status, row.Type, row.Risk, strings.Join(row.Compatibility, ","), row.SelectionPolicy, row.Pinned, row.UpdateAvailable)
+		fmt.Fprintf(a.Out, "%s (%s): %s | type=%s | auto-select=%s | risk=%s | executors=%s | policy=%s | pinned=%t | update=%t\n", row.Name, row.ID, row.Status, row.Type, row.AutoSelect, row.Risk, strings.Join(row.Compatibility, ","), row.SelectionPolicy, row.Pinned, row.UpdateAvailable)
 		if id != "" {
 			fmt.Fprintf(a.Out, "Revision: %s\nAvailable: %s\nSkills: %s\nProvenance: immutable commit + local SHA-256 (not an independent signature)\n", row.Revision, row.AvailableRevision, strings.Join(row.Skills, ", "))
 			return nil

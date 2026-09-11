@@ -21,7 +21,7 @@ func (s *menuSession) capabilities() (bool, error) {
 			{id: "capabilities.ponytail", label: "Ponytail: " + cfg.Skills.ResolvedPonytail(), description: "Auto applies only to implementation workers", run: s.ponytailPolicy},
 		}
 		for _, row := range rows {
-			actions = append(actions, menuAction{id: "capability." + row.ID, label: row.Name + " — " + row.Status, description: fmt.Sprintf("Type: %s | risk: %s | policy: %s | pinned: %t | update: %t", row.Type, row.Risk, row.SelectionPolicy, row.Pinned, row.UpdateAvailable), run: func() (bool, error) { return s.manageCapability(row.ID) }})
+			actions = append(actions, menuAction{id: "capability." + row.ID, label: row.Name + " — " + row.Status, description: fmt.Sprintf("Type: %s | auto-select: %s | risk: %s | policy: %s | pinned: %t | update: %t", row.Type, row.AutoSelect, row.Risk, row.SelectionPolicy, row.Pinned, row.UpdateAvailable), run: func() (bool, error) { return s.manageCapability(row.ID) }})
 		}
 		id, err := s.choose("Skills & Capabilities — installed does not mean authorized", actions, nil)
 		if err != nil || id == "" {
