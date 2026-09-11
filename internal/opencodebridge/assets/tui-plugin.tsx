@@ -1,8 +1,12 @@
 /** @jsxImportSource @opentui/solid */
 import { For, Show, createSignal, onCleanup } from "solid-js"
 import { clean, logo, panel, servers, fitRows } from "./presentation.mjs"
+import { installKeyboardProtocol } from "./keyboard.mjs"
 
 const tui = async (api: any, options: any) => {
+  const restoreKeyboard = installKeyboardProtocol(api.renderer, process.stdout, process.env.TERM)
+  onCleanup(restoreKeyboard)
+  api.lifecycle.onDispose(restoreKeyboard)
   const [status, setStatus] = createSignal<any>({
     configured_count: 0,
     enabled_count: 0,

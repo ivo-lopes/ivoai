@@ -33,6 +33,9 @@ var tuiPlugin []byte
 //go:embed assets/presentation.mjs
 var tuiPresentation []byte
 
+//go:embed assets/keyboard.mjs
+var tuiKeyboard []byte
+
 //go:embed assets/ivoai-theme.json
 var ivoaiTheme []byte
 
@@ -280,7 +283,7 @@ func writeManagedAssets(options ManagedOptions) (managedPaths, error) {
 	serverPath := filepath.Join(assets, "server-plugin.mjs")
 	tuiPath := filepath.Join(assets, "tui-plugin.tsx")
 	instructionsPath := filepath.Join(assets, "instructions.md")
-	for path, body := range map[string][]byte{serverPath: serverPlugin, tuiPath: tuiPlugin, filepath.Join(assets, "presentation.mjs"): tuiPresentation, paths.theme: ivoaiTheme, instructionsPath: []byte(options.Instructions)} {
+	for path, body := range map[string][]byte{serverPath: serverPlugin, tuiPath: tuiPlugin, filepath.Join(assets, "presentation.mjs"): tuiPresentation, filepath.Join(assets, "keyboard.mjs"): tuiKeyboard, paths.theme: ivoaiTheme, instructionsPath: []byte(options.Instructions)} {
 		if err := platform.AtomicWritePrivate(body, path); err != nil {
 			return managedPaths{}, err
 		}
@@ -306,7 +309,8 @@ func writeManagedAssets(options ManagedOptions) (managedPaths, error) {
 	}
 	tuiConfiguration := map[string]any{
 		"$schema": "https://opencode.ai/tui.json", "theme": "ivoai",
-		"plugin": []any{[]any{tuiURI, map[string]string{"bridge": options.Bridge.URL(), "token": options.Bridge.Token(), "theme": paths.theme}}},
+		"keybinds": map[string]string{"input_submit": "return", "input_newline": "shift+return,ctrl+return,alt+return,ctrl+j"},
+		"plugin":   []any{[]any{tuiURI, map[string]string{"bridge": options.Bridge.URL(), "token": options.Bridge.Token(), "theme": paths.theme}}},
 	}
 	for path, value := range map[string]any{paths.config: configuration, paths.tui: tuiConfiguration} {
 		body, err := json.MarshalIndent(value, "", "  ")
