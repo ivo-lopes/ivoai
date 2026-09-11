@@ -1,4 +1,83 @@
-# Fundamentos do Skill Control Plane
+# Skills nativas e Capability Control Plane
+
+## Pack nativo (v0.9.9)
+
+Instalação, setup e update do client materializam um subconjunto declarativo de
+treze fontes curadas no registry privado e no supply-chain existentes. Codex e
+Claude compartilham esse registry; nenhuma Skill é copiada para suas configurações
+pessoais. Sessões AUTO e seleção de workers não dependem de downloads upstream.
+
+Fontes: Anthropic Cybersecurity Skills (mantida pela comunidade), Caveman, Codex
+Security, Hallmark, i-have-adhd, Impeccable, MarketingSkills, Ponytail, reverse-skill,
+Superpowers, Taste Skill, UI UX Pro Max e Matt Pocock Skills. O intake histórico
+`awesome-gpt-image-2` não integra o pack. O subconjunto inicial de Matt Pocock é
+`domain-modeling`, com referências ADR/context-format, não o repositório completo.
+
+### Gestão pela TUI e CLI
+
+Abra `ivoai` → **Skills & Capabilities** para inspecionar metadados, atualizar o
+baseline revisado, habilitar/desabilitar, pin/unpin e rollback por fonte. Rollback
+exige revisão anterior disponível e confirmação na TUI. O mesmo domínio atende:
+
+```sh
+ivoai skills list
+ivoai skills show ponytail
+ivoai skills doctor
+ivoai skills update
+ivoai skills disable hallmark
+ivoai skills enable hallmark
+ivoai skills pin ponytail
+ivoai skills unpin ponytail
+ivoai skills rollback ponytail
+ivoai config set skills.ponytail auto
+```
+
+Update reconcilia o baseline da release instalada; não confia automaticamente no
+HEAD upstream. Revisões novas exigem revisão do catálogo. Pin preserva a revisão
+local ativa. Disable preserva objetos/provenance, mas impede seleção inclusive
+como dependência. Sem revisão anterior, rollback retorna erro explícito.
+
+Preferências ficam no config do client: `skills.ponytail` e
+`skills.sources.<source-id>.disabled/pinned`, sem credenciais. Registry schema 1
+permanece. Só vínculos explícitos ao artifact autorizam substituição; nome ou URL
+iguais não autorizam adotar Skills pessoais. Colisões falham de forma fechada.
+Profiles, MCP auth, autenticação dos providers e políticas existentes são preservados.
+
+### Seleção por worker e Ponytail
+
+O AUTO não carrega bodies no intake: Prompt Quality Gate e aprovação do plano
+precedem o preparo dos workers. Seleção usa papel e triggers/keywords curados;
+dependencies, conflitos, compatibilidade, risco e capabilities disponíveis são
+verificados antes do body. Referências declarativas ficam locais, sob demanda,
+sem broadcast em briefs. Contadores de candidatos, bodies lidos e bytes não são
+estimativas de tokens economizados.
+
+Ponytail oferece `off`, `auto` (default) e `on`, também na TUI. Auto vale somente
+para implementation workers e exclui risco 70 ou superior. Research, documentation,
+security, ops e synthesis não o recebem automaticamente. On solicita seleção,
+mas não supera disable, compatibilidade ou policy. O primary não recebe broadcast
+do pack. Ponytail não pode reduzir aceite, migração, segurança ou validação
+necessária, nem alterar executor/model/reasoning, MCPs, DAG ou worktrees.
+
+### Disponibilidade não é autorização
+
+`ready` significa materializado e íntegro localmente. A selection policy é
+independente: security com tools exige aprovação; shell/alto risco pode continuar
+negado. Codex Security permanece Codex-only; o ToolProvider executável especializado
+não é implementado por este pack. Reverse engineering não é autoautorizado.
+Scripts/binários upstream não são empacotados nem executados: referências
+declarativas estão disponíveis, mas workflows dependentes desses helpers podem
+estar indisponíveis pela policy atual. Full não desativa o Skill Gate.
+`impeccable-craft-floor` e `ui-ux-pro-max-guidelines` oferecem referências
+declarativas revisadas, independentes dos workflows completos que dependem de
+shell. Roles exclusivos continuam impedindo directors concorrentes no mesmo worker.
+
+Revisão imutável e SHA-256 local não são assinatura/attestation independente.
+Corrupção falha de forma fechada; use `skills doctor`, sem editar o registry ou
+apagar Skills pessoais. Promoção conserva revisão anterior. Setup/reapply explícito
+pode restaurar um índice nativo ausente após rollback do binário, sem adotar
+entradas pessoais. OpenCode mostra IDs selecionados e Ponytail por worker, nunca
+bodies, prompts privados, credenciais ou transcripts.
 
 Este documento descreve os fundamentos implementados por IVOAI-13, IVOAI-14,
 IVOAI-16, IVOAI-48 e IVOAI-49, além de atualizações seguras de packs, do Skill Gate
@@ -191,8 +270,9 @@ binários.
 
 ## Skill Gate de sessão gerenciada
 
-Antes de a UI oficial do Codex ou Claude receber a primeira instrução substantiva de
-uma sessão gerenciada, o gate local executa:
+Sessões diretas Codex/Claude preservam o Skill Gate pessoal. No AUTO, o pack nativo
+é selecionado por worker, depois do Prompt Gate e da aprovação do plano; não é
+injetado na sessão do primary. O gate local executa:
 
 ```text
 bounded session intent
@@ -216,15 +296,16 @@ policy ou autoridade de orchestration.
 
 ## Overlay de upstreams curados
 
-`internal/skillcatalog/catalog.json` registra uma pré-triagem limitada das 13 fontes
-upstream nomeadas. Ele mantém três camadas separadas:
+`internal/skillcatalog/catalog.json` registra 14 fontes: as 13 fontes nativas e
+o intake histórico de imagens, excluído do pack nativo. Ele mantém três camadas separadas:
 
 1. nome e descrição fornecidos pelo upstream;
 2. repositório, default branch, licença, commit e digest observados pelo IVOAI;
 3. domain, triggers, phase, role, conflicts, risk, capabilities solicitadas e
    compatibilidade de executor pertencentes ao IVOAI.
 
-O catálogo não vendoriza bodies completos de terceiros. Um classifier aceita apenas
+A release embute bodies declarativos selecionados, referências e licenças, não
+executáveis upstream nem repositórios inteiros. Um classifier aceita apenas
 o commit revisado e o digest do arquivo selecionado. Atualizar um commit upstream
 exige, portanto, uma atualização revisada do catálogo antes da promoção automática.
 Packs de visual direction compartilham um role exclusive, para que o graph rejeite

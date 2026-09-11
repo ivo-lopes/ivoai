@@ -418,6 +418,7 @@ func (index Index) Search(query SearchQuery) []Candidate {
 		limit = 20
 	}
 	terms := normalizedTerms(query.Text)
+	phraseText := " " + strings.Join(strings.Fields(strings.ToLower(query.Text)), " ") + " "
 	var result []Candidate
 	for _, entry := range index.Entries {
 		if entry.Lifecycle != LifecycleStaged && entry.Lifecycle != LifecycleActive {
@@ -433,6 +434,18 @@ func (index Index) Search(query SearchQuery) []Candidate {
 			continue
 		}
 		score := 0
+		// Triggers and keywords may be curated phrases, not just single words.
+		// Match phrase boundaries without consulting or loading skill bodies.
+		for _, phrase := range entry.Triggers {
+			if strings.Contains(phrase, " ") && strings.Contains(phraseText, " "+phrase+" ") {
+				score += 100
+			}
+		}
+		for _, phrase := range entry.Keywords {
+			if strings.Contains(phrase, " ") && strings.Contains(phraseText, " "+phrase+" ") {
+				score += 30
+			}
+		}
 		for _, term := range terms {
 			if contains(entry.Triggers, term) {
 				score += 100

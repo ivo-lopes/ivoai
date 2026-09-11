@@ -239,6 +239,52 @@ func testManager(root string, discoverer *fakeDiscoverer, fetcher *fakeFetcher) 
 	}
 }
 
+func TestPackUpdateDoesNotAdoptPersonalEntryByURL(t *testing.T) {
+	source := resolved(revisionA, skillArchive(t, "A", 0600, 64))
+	personal := syntheticEntry("personal", "", revisionA, source.Integrity.Digest, nil)
+	registry := skills.Registry{Schema: skills.RegistrySchemaVersion, Entries: []skills.Entry{personal}}
+	entry := syntheticEntry("native", source.ID, revisionA, source.Integrity.Digest, nil)
+	next, err := replacePack(registry, source, []skills.Entry{entry})
+	if err != nil || len(next.Entries) != 2 {
+		t.Fatal("personal source entry lost", err)
+	}
+	if len(packEntries(next, source.ID, source.Source)) != 1 {
+		t.Fatal("personal entry adopted by URL")
+	}
+	remaining := removePack(next, source.ID, source.Source)
+	if len(remaining.Entries) != 1 || remaining.Entries[0].ID != "personal" || remaining.Entries[0].ArtifactID != "" {
+		t.Fatal("personal entry changed")
+	}
+	entry.ID = personal.ID
+	if _, err := replacePack(registry, source, []skills.Entry{entry}); err == nil {
+		t.Fatal("personal name collision must fail closed")
+	}
+}
+
+func TestCatalogMaterializationIsNotExecutionAuthorization(t *testing.T) {
+	manager := Manager{Policy: policy.DefaultEngine(), CatalogOnly: true}
+	a := syntheticEntry("a", "pack", revisionA, strings.Repeat("a", 64), []string{"shell.execute"})
+	a.Risk = skills.RiskCritical
+	a.Role, a.RoleMode = "visual_director", skills.RoleExclusive
+	b := a
+	b.ID = "b"
+	if err := manager.validatePolicy([]skills.Entry{a, b}); err != nil {
+		t.Fatal("alternatives cannot be inventoried", err)
+	}
+	decision := manager.Policy.Evaluate(policy.Request{SubjectID: a.ID, SubjectKind: policy.SubjectSkill, DeclaredCapabilities: a.Capabilities, RequestedCapabilities: a.Capabilities, Risk: a.Risk, MetadataValid: true, ConflictResolved: true})
+	if decision.Decision != policy.Deny {
+		t.Fatal("materialization granted execution authority")
+	}
+	b.RequiredDependencies = []string{"a"}
+	if err := manager.validatePolicy([]skills.Entry{a, b}); err == nil {
+		t.Fatal("conflicting required dependency accepted")
+	}
+	a.Role = "control_plane"
+	if err := manager.validatePolicy([]skills.Entry{a}); err == nil {
+		t.Fatal("control plane authority accepted")
+	}
+}
+
 func fixedClassifier(capabilities []string) Classifier {
 	return ClassifierFunc(func(_ context.Context, source supplychain.ResolvedSource, root string) ([]skills.Entry, error) {
 		path := filepath.Join(root, "skills", "demo", "SKILL.md")

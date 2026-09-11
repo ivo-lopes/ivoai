@@ -73,6 +73,7 @@ func envOr(key, fallback string) string {
 }
 
 type Config struct {
+	Skills        SkillsConfig        `toml:"skills"`
 	OpenCode      OpenCodeConfig      `toml:"opencode"`
 	IVOAI         IVOAIConfig         `toml:"ivoai"`
 	Client        ClientConfig        `toml:"client"`
@@ -82,6 +83,47 @@ type Config struct {
 	Orchestration OrchestrationConfig `toml:"orchestration"`
 	Connections   ConnectionsConfig   `toml:"connections"`
 	MCP           MCPConfig           `toml:"mcp"`
+}
+
+// Capability preferences share the client configuration, not a second registry.
+// Empty values preserve old configurations and resolve to conservative defaults.
+type SkillsConfig struct {
+	Ponytail string                       `toml:"ponytail,omitempty"`
+	Sources  map[string]SkillSourcePolicy `toml:"sources,omitempty"`
+}
+
+type SkillSourcePolicy struct {
+	Disabled bool `toml:"disabled"`
+	Pinned   bool `toml:"pinned"`
+}
+
+func (c SkillsConfig) ResolvedPonytail() string {
+	if c.Ponytail == "" {
+		return "auto"
+	}
+	return c.Ponytail
+}
+
+func ValidateSkills(c SkillsConfig) error {
+	switch c.ResolvedPonytail() {
+	case "off", "auto", "on":
+	default:
+		return errors.New("skills.ponytail must be off, auto or on")
+	}
+	if len(c.Sources) > 256 {
+		return errors.New("too many capability source policies")
+	}
+	for id := range c.Sources {
+		if len(id) == 0 || len(id) > 128 {
+			return errors.New("invalid capability source ID")
+		}
+		for _, ch := range id {
+			if !(ch >= 'a' && ch <= 'z' || ch >= '0' && ch <= '9' || ch == '-') {
+				return errors.New("invalid capability source ID")
+			}
+		}
+	}
+	return nil
 }
 
 type OpenCodeConfig struct {
@@ -395,6 +437,9 @@ func (s *Store) Load() (Config, error) {
 	if err := ValidateOrchestration(c.Orchestration); err != nil {
 		return Config{}, err
 	}
+	if err := ValidateSkills(c.Skills); err != nil {
+		return Config{}, err
+	}
 	return c, nil
 }
 
@@ -542,6 +587,9 @@ func defaultAutoConfig() AutoConfig {
 }
 
 func (s *Store) Save(c Config) error {
+	if err := ValidateSkills(c.Skills); err != nil {
+		return err
+	}
 	if err := ValidateOpenCode(c.OpenCode); err != nil {
 		return err
 	}

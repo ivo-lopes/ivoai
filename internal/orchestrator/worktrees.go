@@ -152,11 +152,25 @@ func (s *Server) prepareNativeRequest(ctx context.Context, planID, workerID stri
 	// A native task never inherits the legacy session-wide knowledge envelope.
 	// Host policy must explicitly project any requested MCP/skill capability.
 	if s.PrepareWorker != nil {
+		request.WorkerID = workerID
 		request, err = s.PrepareWorker(ctx, task, request)
 	} else if len(task.AllowedMCPs) > 0 || len(task.Skills) > 0 {
 		err = errors.New("MCP_DENIED: task capability projection unavailable")
 	}
 	if err != nil {
+		return request, complete, err
+	}
+	_, err = s.Store.Update(s.SessionID, func(value *session.Session) error {
+		if worker := findWorker(value, workerID); worker != nil {
+			worker.SelectedSkills = append([]string(nil), request.SelectedSkills...)
+		}
+		return nil
+	})
+	if err != nil {
+		if request.Release != nil {
+			request.Release()
+			request.Release = nil
+		}
 		return request, complete, err
 	}
 	if request.Access == nil {

@@ -98,6 +98,7 @@ config.show config.headroom config.memory config.ruflo config.auto config.auto-p
 config.auto-strategy config.auto-parallel config.auto-bootstrap config.auto-escalation config.session-mode config.primary config.reviewer config.workers
 config.auto-gate config.auto-plan
 config.auto-policy policy.sources policy.concurrency policy.worker-cap policy.writes policy.provider policy.low-quota policy.primary policy.mcp policy.confirmation
+capabilities.update capabilities.ponytail capability.inspect capability.enable capability.disable capability.pin capability.unpin capability.update capability.rollback
 server.setup server.status server.doctor server.start server.stop server.restart server.logs
 server.enrollment.create server.enrollment.list server.enrollment.revoke
 server.web-access.create server.web-access.list server.web-access.revoke

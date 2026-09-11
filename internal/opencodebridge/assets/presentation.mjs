@@ -41,6 +41,7 @@ export function panel(status) {
     orchestration.push(line(`${clean(worker.id)} · ${clean(worker.role)} · ${clean(worker.state)}`),
       line(`  ${clean(worker.executor)} / ${clean(worker.tier)} / ${clean(worker.model)} · reasoning=${clean(worker.effort, "unsupported")}`),
       line(`  purposes=${(Array.isArray(worker.purposes) ? worker.purposes : []).slice(0, 8).map(x => clean(x)).join(", ") || "none"} · MCPs=${(Array.isArray(worker.mcps) ? worker.mcps : []).slice(0, 16).map(x => clean(x)).join(", ") || "none"}`))
+    if (Array.isArray(worker.skills)) orchestration.push(line(`  Skills=${worker.skills.slice(0, 12).map(x => clean(x)).join(", ") || "none"} · Ponytail=${worker.skills.includes("ponytail") ? "active" : "inactive"}`))
   }
   result.splice(2, 0, ...orchestration)
   for (const [id, name] of [["codex", "Codex"], ["claude", "Claude"], ["opencode", "OpenCode"]]) {

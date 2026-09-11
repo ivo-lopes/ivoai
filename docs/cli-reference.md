@@ -33,6 +33,9 @@ Usage:
   ivoai session list [--json] | show [--json] <id> | stop <id>
   ivoai monitor [--watch] [--session <id>] [--json]
   ivoai memory [status|configure]
+  ivoai skills list | show <source-id> | doctor
+  ivoai skills update [source-id]
+  ivoai skills enable <source-id> | disable <source-id> | pin <source-id> | unpin <source-id> | rollback <source-id>
   ivoai config [show|set <key> <value>]
   ivoai project [init|status]
   ivoai server setup | status | doctor | start | stop | restart

@@ -45,6 +45,7 @@ var providerEnvironment = map[string]struct{}{
 }
 
 type Request struct {
+	WorkerID           string
 	PatchOnly          bool
 	Native             NativeExecutor
 	Access             *Access
@@ -57,6 +58,7 @@ type Request struct {
 	TaskWeight         int
 	SharedContextBrief string
 	SkillInstructions  string
+	SelectedSkills     []string
 	ResultBudget       int
 	Directory          string
 	Runtime            string

@@ -1,4 +1,97 @@
-# Skill Control Plane foundation
+# Native Skills and Capability Control Plane
+
+## Native pack (v0.9.9)
+
+Installation and client setup/update materialize a release-pinned, declarative
+subset from thirteen curated sources into the **existing** private registry and
+immutable supply-chain store. Normal AUTO sessions and worker selection need no
+upstream network access. Codex and Claude share this registry; no files are copied
+to their personal/global skill directories.
+
+Sources: Anthropic Cybersecurity Skills (community-maintained), Caveman,
+Codex Security, Hallmark, i-have-adhd, Impeccable, MarketingSkills, Ponytail,
+reverse-skill, Superpowers, Taste Skill, UI UX Pro Max, and Matt Pocock Skills.
+The historical `awesome-gpt-image-2` intake remains catalogued but is **not** part
+of the native pack. Matt Pocock's initial reviewed subset is `domain-modeling`
+with its ADR/context-format references, not the complete repository.
+
+### Manage from the TUI or CLI
+
+Open `ivoai` → **Skills & Capabilities**. Inspect source metadata, install/update
+the reviewed baseline, enable/disable, pin/unpin, or roll back a source. Rollback
+requires an existing previous revision and explicit TUI confirmation. These
+actions call the same client service as:
+
+```sh
+ivoai skills list
+ivoai skills show ponytail
+ivoai skills doctor
+ivoai skills update
+ivoai skills disable hallmark
+ivoai skills enable hallmark
+ivoai skills pin ponytail
+ivoai skills unpin ponytail
+ivoai skills rollback ponytail
+ivoai config set skills.ponytail auto
+```
+
+`skills update` reconciles the baseline shipped with the installed IVOAI release;
+it does not silently trust a newer upstream branch head. A new upstream revision
+requires a reviewed catalog baseline. Pins preserve the active local revision.
+Disabled sources keep their objects and provenance but cannot be selected,
+including as a dependency. A missing previous revision is an explicit error.
+
+Preferences live in the existing client `config.toml` (`skills.ponytail` and
+`skills.sources.<source-id>.disabled/pinned`). They contain no credentials.
+Registry schema 1 is retained. Updates only replace explicitly artifact-bound
+entries; a matching name or upstream URL never authorizes replacing a personal
+entry. Name collisions fail closed. Existing server profiles, MCP authentication,
+provider authentication and orchestration settings are not reset.
+
+### Selection and Ponytail
+
+AUTO never loads Skill bodies during prompt intake. The Prompt Quality Gate and
+plan approval precede worker preparation. Each worker ranks a bounded subset of
+native metadata using its role and curated triggers/keywords. Dependencies,
+exclusive roles, executor compatibility, risk and available capabilities are
+checked before selected bodies are read. Read-only declarative references remain
+local and are fetched only when relevant; they are not broadcast into briefs.
+Candidate count, loaded-body count and loaded bytes are operational counters,
+not estimates of tokens saved.
+
+Ponytail modes are `off`, `auto` (default), and `on`, available in the same TUI.
+Auto applies only to implementation workers and excludes tasks with risk score
+70 or higher. Research, documentation, security, ops and synthesis do not inherit
+it automatically. `on` requests selection but does not override disabled sources,
+compatibility or IVOAI policy. The primary never receives a native-pack broadcast.
+Ponytail cannot reduce required acceptance, migrations, security or necessary
+validation. It cannot select models/executors, alter MCP grants, create workers,
+or change assigned worktrees.
+
+### Availability is not authorization
+
+`ready` means materialized and locally integrity-verified, not authorized for
+every task. The displayed selection policy is independent. Tool-using security
+entries require policy approval; shell-dependent/high-risk entries may be denied.
+Codex Security remains Codex-only and its specialized executable ToolProvider is
+not implemented by this pack. Reverse engineering is not automatically authorized.
+Upstream helper scripts/binaries are intentionally not bundled or executed;
+declarative references remain available, but helper-dependent workflows can be
+unavailable under the current policy. `permission_mode=full` does not bypass this.
+Impeccable's `impeccable-craft-floor` and UI UX Pro Max's
+`ui-ux-pro-max-guidelines` expose reviewed declarative references independently
+of their shell-dependent full workflows. Exclusive visual-direction roles still
+prevent competing directors from being injected together.
+
+The immutable source revision and local SHA-256 establish reproducible local
+integrity, **not** an independent signature or attestation. On corruption,
+selection fails closed; inspect `skills doctor` rather than manually changing
+the registry or deleting personal skills. Per-source promotion retains the
+previous immutable revision. Explicit setup/reapply can restore a missing native
+index after binary rollback without taking ownership of personal entries.
+
+OpenCode displays selected Skill IDs and Ponytail state per worker. Bodies,
+private prompts, credentials and transcripts are excluded from this metadata.
 
 This document describes the foundation implemented by IVOAI-13, IVOAI-14,
 IVOAI-16, IVOAI-48, and IVOAI-49, plus safe pack updates, the managed-session
@@ -191,8 +284,9 @@ scripts, or binaries.
 
 ## Managed-session Skill Gate
 
-Before the official Codex or Claude UI receives the first substantive managed
-session instruction, the local gate performs:
+Direct Codex/Claude sessions retain the personal Skill Gate. In AUTO, the native
+pack is selected per worker, after Prompt Gate and plan approval; it is not
+injected into the primary session. The local gate performs:
 
 ```text
 bounded session intent
@@ -216,15 +310,16 @@ orchestration authority.
 
 ## Curated upstream overlay
 
-`internal/skillcatalog/catalog.json` records a bounded pre-triage of the 13
-named upstream sources. It keeps three layers separate:
+`internal/skillcatalog/catalog.json` records 14 sources: the 13 native sources
+and historical image-generation intake excluded from the native pack. It keeps three layers separate:
 
 1. upstream-provided name and description;
 2. IVOAI-observed repository, default branch, license, commit, and digest;
 3. IVOAI-owned domain, triggers, phase, role, conflicts, risk, requested
    capabilities, and executor compatibility.
 
-The catalog does not vendor full third-party bodies. A classifier accepts only
+The release embeds selected declarative bodies, references, and licenses, not
+upstream executables or whole repositories. A classifier accepts only
 the reviewed commit and selected file digest. Updating an upstream commit
 therefore requires a reviewed catalog refresh before automatic promotion.
 Visual-direction packs share an exclusive role so the graph rejects competing

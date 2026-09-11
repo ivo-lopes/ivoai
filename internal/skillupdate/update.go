@@ -54,6 +54,13 @@ type Manager struct {
 	AvailableCapabilities map[string]bool
 	MaximumRisk           skills.RiskTier
 	Doctor                func(context.Context, string) error
+	// CatalogOnly materializes reviewed declarative inventory without granting
+	// execution permission. Runtime selection still requires the Skill Gate.
+	// Mutually exclusive alternatives and provider-specific entries may coexist.
+	CatalogOnly bool
+	// ReconcileMissingIndex is reserved for explicit native setup/reapply after
+	// a binary rollback restored an older registry but retained immutable cache.
+	ReconcileMissingIndex bool
 }
 
 type Result struct {
@@ -84,6 +91,32 @@ func (m Manager) Update(ctx context.Context, reference supplychain.Reference) (R
 		return Result{}, fmt.Errorf("automatic skill update denied: %s", trust.Reason)
 	}
 	if active, _, activeErr := m.Supply.Active(resolved.ID); activeErr == nil && active.Revision == resolved.Revision {
+		if m.CatalogOnly && m.ReconcileMissingIndex {
+			registry, err := m.Registry.Load()
+			if err != nil {
+				return Result{}, err
+			}
+			if len(packEntries(registry, resolved.ID, "")) == 0 {
+				_, root, err := m.Supply.Active(resolved.ID)
+				if err != nil {
+					return Result{}, err
+				}
+				entries, err := m.classify(ctx, active, root)
+				if err != nil {
+					return Result{}, err
+				}
+				if err := m.validatePolicy(entries); err != nil {
+					return Result{}, err
+				}
+				next, err := replacePack(registry, active, entries)
+				if err != nil {
+					return Result{}, err
+				}
+				if err := m.Registry.Save(next); err != nil {
+					return Result{}, err
+				}
+			}
+		}
 		if err := m.ValidateConsistency(ctx, resolved.ID); err != nil {
 			return Result{}, fmt.Errorf("no-change skill pack is inconsistent: %w", err)
 		}
@@ -305,6 +338,26 @@ func (m Manager) classify(ctx context.Context, source supplychain.ResolvedSource
 }
 
 func (m Manager) validatePolicy(entries []skills.Entry) error {
+	if m.CatalogOnly {
+		registry := skills.Registry{Schema: skills.RegistrySchemaVersion, Entries: entries}
+		declared := map[string]bool{}
+		for _, entry := range entries {
+			for _, capability := range entry.Capabilities {
+				if _, known := m.Policy.Capabilities[capability]; !known {
+					return fmt.Errorf("unknown catalog capability %s", capability)
+				}
+				declared[capability] = true
+			}
+		}
+		// Check each dependency closure, not a fictitious execution requesting
+		// every alternative at once. No permissions leave this validation scope.
+		for _, entry := range entries {
+			if _, err := (skills.Resolver{Registry: registry}).Resolve(skills.ResolutionRequest{IDs: []string{entry.ID}, AvailableCapabilities: declared, MaximumRisk: skills.RiskCritical}); err != nil {
+				return err
+			}
+		}
+		return nil
+	}
 	ids := make([]string, 0, len(entries))
 	for _, entry := range entries {
 		ids = append(ids, entry.ID)
@@ -363,7 +416,9 @@ func replacePack(registry skills.Registry, source supplychain.ResolvedSource, en
 func removePack(registry skills.Registry, artifactID, sourceURL string) skills.Registry {
 	result := skills.Registry{Schema: skills.RegistrySchemaVersion, UpdatedAt: registry.UpdatedAt, Entries: make([]skills.Entry, 0, len(registry.Entries))}
 	for _, entry := range registry.Entries {
-		if entry.ArtifactID == artifactID || entry.ArtifactID == "" && sourceURL != "" && entry.Provenance.Source.URL == sourceURL {
+		// Sharing an upstream URL is not proof that IVOAI owns a personal or
+		// legacy entry. Only an explicit artifact binding grants update scope.
+		if entry.ArtifactID != "" && entry.ArtifactID == artifactID {
 			continue
 		}
 		result.Entries = append(result.Entries, entry)
@@ -374,7 +429,7 @@ func removePack(registry skills.Registry, artifactID, sourceURL string) skills.R
 func packEntries(registry skills.Registry, artifactID, sourceURL string) []skills.Entry {
 	var result []skills.Entry
 	for _, entry := range registry.Entries {
-		if entry.ArtifactID == artifactID || entry.ArtifactID == "" && sourceURL != "" && entry.Provenance.Source.URL == sourceURL {
+		if entry.ArtifactID != "" && entry.ArtifactID == artifactID {
 			result = append(result, entry)
 		}
 	}

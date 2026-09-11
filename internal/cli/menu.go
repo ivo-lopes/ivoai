@@ -43,6 +43,7 @@ type menuAction struct {
 func PublicMenuActionIDs() []string {
 	return []string{
 		"auto",
+		"capabilities.update", "capabilities.ponytail", "capability.inspect", "capability.enable", "capability.disable", "capability.pin", "capability.unpin", "capability.update", "capability.rollback",
 		"config.auto-gate", "config.auto-plan", "config.auto-policy", "policy.sources", "policy.concurrency", "policy.worker-cap", "policy.writes", "policy.provider", "policy.low-quota", "policy.primary", "policy.mcp", "policy.confirmation",
 		"status", "doctor", "doctor.inventory", "version", "setup", "update.dry-run", "update", "rollback", "uninstall",
 		"connect.list", "connect.chatgpt", "disconnect.chatgpt", "connect.claude", "disconnect.claude", "connect.server",
@@ -78,6 +79,7 @@ func menu(ctx context.Context, a *app.App) error {
 			{id: "configuration", label: "Configuration", description: "Headroom, ai-memory, and Ruflo safe settings", run: session.configuration},
 			{id: "server", label: "Server Administration", description: "Local services, enrollment, connectors, backup, and gateway", run: session.server},
 			{id: "remote", label: "Remote Server", description: "Read-only administration through the connected gateway", disabled: disabledUnless(snapshot.ServerConnected, "server not connected"), run: session.remote},
+			{id: "capabilities", label: "Skills & Capabilities", description: "Native pack, provenance, update policies, and Ponytail", run: session.capabilities},
 			{id: "exit", label: "Exit", description: "Return to your shell", run: func() (bool, error) { return true, nil }},
 		}
 		id, err := session.choose("Personal AI runtime", actions, badges)

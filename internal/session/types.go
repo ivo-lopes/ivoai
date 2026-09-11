@@ -89,6 +89,7 @@ type ModelInfo struct {
 }
 
 type Worker struct {
+	SelectedSkills    []string                   `json:"selected_skills,omitempty"`
 	WorktreePath      string                     `json:"worktree_path,omitempty"`
 	WorktreeBranch    string                     `json:"worktree_branch,omitempty"`
 	WorktreeBase      string                     `json:"worktree_base,omitempty"`
