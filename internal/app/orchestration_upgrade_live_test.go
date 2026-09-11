@@ -88,16 +88,24 @@ func TestOrchestrationPublishedBinaryConfigUpgradeRollback(t *testing.T) {
 	}
 	run(candidate, "config", "set", "orchestration.auto.plan_execution", "immediate")
 	run(candidate, "config", "set", "orchestration.auto.worker_cap", "2")
+	run(candidate, "skills", "update")
+	run(candidate, "config", "set", "skills.ponytail", "off")
+	run(candidate, "skills", "pin", "ponytail")
 	check()
 	// Rollback must still read and update familiar settings while preserving
 	// unknown new policy keys for a later reapply.
 	run(previous, "config", "set", "headroom.enabled", "false")
 	check()
 	run(candidate, "config", "set", "orchestration.auto.knowledge_routing", "purpose-auto")
+	run(candidate, "skills", "update")
+	run(candidate, "skills", "doctor")
 	check()
 	current, _ := store.Load()
 	if current.Orchestration.Auto.ResolvedPlanExecution() != "immediate" || current.Orchestration.Auto.WorkerCap != 2 {
 		t.Fatal("rollback/reapply dropped new policy")
+	}
+	if current.Skills.ResolvedPonytail() != "off" || !current.Skills.Sources["ponytail"].Pinned {
+		t.Fatal("rollback/reapply dropped native capability policy")
 	}
 	t.Log("CONFIG_UPGRADE=PASS CONFIG_ROLLBACK_REAPPLY=PASS PROFILES=2 SECRET_ISOLATION=PASS PERMISSION_FULL_PERSISTED=true")
 }

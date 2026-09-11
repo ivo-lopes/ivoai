@@ -7,6 +7,7 @@ import (
 
 	"github.com/ivo-lopes/ivoai/internal/observability"
 	"github.com/ivo-lopes/ivoai/internal/policy"
+	"github.com/ivo-lopes/ivoai/internal/skillcatalog"
 	"github.com/ivo-lopes/ivoai/internal/skillgate"
 	"github.com/ivo-lopes/ivoai/internal/skills"
 	"github.com/ivo-lopes/ivoai/internal/supplychain"
@@ -18,7 +19,9 @@ func (a *App) evaluateSessionSkills(ctx context.Context, executor, cwd string, a
 		Supply:   supplychain.Manager{Root: filepath.Join(a.Store.Paths.DataDir, "supply-chain")},
 		Policy:   policy.DefaultEngine(),
 	}
-	result, err := gate.Evaluate(ctx, skillgate.Input{Intent: sessionSkillIntent(cwd, args), Executor: executor})
+	// Native pack bodies belong to individual workers, not a primary/session
+	// broadcast. Existing personal selection remains compatible.
+	result, err := gate.Evaluate(ctx, skillgate.Input{Intent: sessionSkillIntent(cwd, args), Executor: executor, ExcludedArtifacts: skillcatalog.NativeIDs()})
 	if result.Degraded {
 		a.warn("Skill Gate degraded; continuing without unavailable external skills", nil)
 	}

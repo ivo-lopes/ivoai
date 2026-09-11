@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -61,5 +62,8 @@ func (a *App) RegisterInstall() error {
 		item.Launchers = []string{launcher}
 	}
 	ownership.Components["ivoai"] = item
-	return a.Store.SaveOwnership(ownership)
+	if err := a.Store.SaveOwnership(ownership); err != nil {
+		return err
+	}
+	return a.NativeCapabilityAction(context.Background(), "update", "")
 }

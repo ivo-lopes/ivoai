@@ -59,7 +59,7 @@ func TestManagedDirectLaunchesApplySkillGateToAllDirectExecutors(t *testing.T) {
 	}
 }
 
-func TestAutomaticSessionAppliesLocalSkillGateWithoutChangingQuotaRouting(t *testing.T) {
+func TestAutomaticSessionDoesNotLoadSkillsBeforePromptGate(t *testing.T) {
 	root := t.TempDir()
 	arguments := filepath.Join(root, "codex-args")
 	a := autoTestApp(t, root, "#!/bin/sh\nprintf '%s\\n' \"$@\" > '"+arguments+"'\n", "#!/bin/sh\nexit 0\n")
@@ -72,7 +72,7 @@ func TestAutomaticSessionAppliesLocalSkillGateWithoutChangingQuotaRouting(t *tes
 		t.Fatal(err)
 	}
 	body, err := os.ReadFile(arguments)
-	if err != nil || !strings.Contains(string(body), "AUTO VALIDATED SKILL") || !strings.Contains(string(body), "developer_instructions=") {
+	if err != nil || strings.Contains(string(body), "AUTO VALIDATED SKILL") || !strings.Contains(string(body), "developer_instructions=") {
 		t.Fatalf("automatic args=%q err=%v", body, err)
 	}
 	values, err := a.SessionList()
@@ -83,8 +83,8 @@ func TestAutomaticSessionAppliesLocalSkillGateWithoutChangingQuotaRouting(t *tes
 	for _, event := range values[0].Observability {
 		foundGate = foundGate || event.Operation == "skill.gate"
 	}
-	if !foundGate {
-		t.Fatal("automatic session did not persist bounded Skill Gate observability")
+	if foundGate {
+		t.Fatal("AUTO evaluated Skills before receiving an approved prompt")
 	}
 }
 

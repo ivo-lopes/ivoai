@@ -8,6 +8,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -19,6 +20,33 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/skills"
 	"github.com/ivo-lopes/ivoai/internal/supplychain"
 )
+
+func TestHundredMetadataEntriesLoadOnlyTwoSelectedBodies(t *testing.T) {
+	gate := testGate(t.TempDir())
+	files := map[string]string{}
+	for i := 0; i < 120; i++ {
+		files[fmt.Sprintf("skills/item-%03d/SKILL.md", i)] = "fixture body"
+	}
+	source := promoteGatePack(t, &gate, gateArchive(t, files), gateRevisionA)
+	var entries []skills.Entry
+	for i := 0; i < 120; i++ {
+		id := fmt.Sprintf("item-%03d", i)
+		entries = append(entries, gateEntry(id, source, "skills/"+id+"/SKILL.md", nil, nil, skills.RiskLow))
+	}
+	saveGateRegistry(t, gate.Registry, entries)
+	reads := 0
+	gate.ReadFile = func(path string, maximum int64) ([]byte, error) {
+		reads++
+		return platform.ReadRegularFile(path, maximum)
+	}
+	result, err := gate.Evaluate(context.Background(), Input{ExplicitOnly: true, Candidates: []string{"item-010", "item-100"}, Executor: "claude"})
+	if err != nil || reads != 2 || result.LoadedBodyCount != 2 || len(result.Selected) != 2 {
+		t.Fatalf("lazy reads=%d selected=%v error=%v", reads, result.Selected, err)
+	}
+	if result.LoadedBytes != 2*len("fixture body") {
+		t.Fatal("invalid byte metric")
+	}
+}
 
 const gateRevisionA = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 
@@ -74,6 +102,9 @@ func TestGateRanksMetadataResolvesDependencyAndLoadsOnlySelectedBodies(t *testin
 	}
 	if !strings.Contains(result.Instructions, "BASE BODY") || !strings.Contains(result.Instructions, "BUILD BODY") || strings.Contains(result.Instructions, "UNSELECTED SECRET BODY") {
 		t.Fatalf("unexpected lazy bundle: %q", result.Instructions)
+	}
+	if result.CandidateCount != 1 || result.LoadedBodyCount != 2 || result.LoadedBytes != len("BASE BODY")+len("BUILD BODY") {
+		t.Fatalf("lazy read counters must include dependencies, not unselected bodies: %+v", result)
 	}
 }
 

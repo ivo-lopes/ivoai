@@ -143,6 +143,7 @@ type Status struct {
 // WorkerView intentionally excludes task prompts, transcripts, result bodies,
 // filesystem paths and credentials. Only operational metadata reaches the TUI.
 type WorkerView struct {
+	Skills   []string `json:"skills,omitempty"`
 	ID       string   `json:"id"`
 	Role     string   `json:"role"`
 	Executor string   `json:"executor"`

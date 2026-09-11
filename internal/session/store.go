@@ -419,6 +419,14 @@ func validate(value Session) error {
 		return errors.New("invalid primary lifecycle identity")
 	}
 	for _, worker := range value.Workers {
+		if len(worker.SelectedSkills) > 12 {
+			return errors.New("too many selected worker skills")
+		}
+		for _, id := range worker.SelectedSkills {
+			if !safeText(id, 128) {
+				return errors.New("invalid selected worker skill")
+			}
+		}
 		if worker.WorktreePath != "" && (!filepath.IsAbs(worker.WorktreePath) || !safeText(worker.WorktreePath, 4096)) {
 			return errors.New("invalid worker worktree path")
 		}

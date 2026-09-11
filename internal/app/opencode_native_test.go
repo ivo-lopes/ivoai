@@ -45,8 +45,10 @@ func TestAutoCanSelectNativeOpenCodeWhenOnlyEligible(t *testing.T) {
 			for _, event := range sessions[0].Observability {
 				gate = gate || event.Operation == "skill.gate"
 			}
-			if !gate {
-				t.Fatal("native AUTO bypassed Skill Gate")
+			// This fixture exercises frontend dispatch, not an approved task.
+			// v0.9.9 must defer substantive skill selection to worker preparation.
+			if gate {
+				t.Fatal("native AUTO selected skills before Prompt Gate and plan approval")
 			}
 		})
 	}

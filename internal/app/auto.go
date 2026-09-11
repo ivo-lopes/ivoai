@@ -277,7 +277,13 @@ func (a *App) openCodeAutoStatus(store session.Store, id string, cfg config.Conf
 					purposes = append(purposes, p.Purpose)
 				}
 			}
-			workerViews = append(workerViews, opencodebridge.WorkerView{ID: task.ID, Role: task.Role, Executor: task.Executor, Tier: task.Tier, Model: task.Model.Name, Effort: task.Effort, State: string(task.State), Purposes: purposes, MCPs: append([]string(nil), task.AllowedMCPs...)})
+			selectedSkills := []string{}
+			for _, worker := range value.Workers {
+				if worker.TaskID == task.ID {
+					selectedSkills = append([]string(nil), worker.SelectedSkills...)
+				}
+			}
+			workerViews = append(workerViews, opencodebridge.WorkerView{ID: task.ID, Role: task.Role, Executor: task.Executor, Tier: task.Tier, Model: task.Model.Name, Effort: task.Effort, State: string(task.State), Purposes: purposes, MCPs: append([]string(nil), task.AllowedMCPs...), Skills: selectedSkills})
 		}
 		switch task.State {
 		case session.StateRunning, session.StateStarting:
@@ -466,20 +472,8 @@ func (a *App) AutoWithKnowledge(ctx context.Context, planner string, agentArgs, 
 		current.KnowledgeSources = knowledge.aliases()
 		return nil
 	})
-	skillResult, err := a.evaluateSessionSkills(ctx, current, cwd, agentArgs)
-	if err != nil {
-		_ = store.CleanupRuntime(id)
-		_, _ = store.Update(id, func(current *session.Session) error { current.State = session.StateFailed; return nil })
-		return err
-	}
-	if _, err = store.Update(id, func(current *session.Session) error {
-		return appendSkillObservations(skillResult.Events, id, func(event observability.Event) error {
-			return session.AppendObservation(current, event)
-		})
-	}); err != nil {
-		_ = store.CleanupRuntime(id)
-		return err
-	}
+	// AUTO intake has not passed the Prompt Gate or plan approval yet.
+	// Skills are selected per approved worker, never from cwd/launcher args.
 	control := orchestration.NativeOrchestrator{Store: store, SessionID: id}
 	swarm, err := control.Initialize(ctx, workerCap)
 	if err != nil {
@@ -511,9 +505,6 @@ func (a *App) AutoWithKnowledge(ctx context.Context, planner string, agentArgs, 
 	}()
 	instructionsPath := filepath.Join(runtimeDir, "automatic-instructions.md")
 	instructions := automaticInstructions(cfg.Orchestration.Auto.CheckpointEnabled)
-	if skillResult.Instructions != "" {
-		instructions += "\n\n" + skillResult.Instructions
-	}
 	if err := platform.AtomicWritePrivate([]byte(instructions), instructionsPath); err != nil {
 		return err
 	}

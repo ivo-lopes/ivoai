@@ -200,6 +200,9 @@ func (a *App) Setup(ctx context.Context) error {
 	if err := installer.Setup(ctx); err != nil {
 		return err
 	}
+	if err := a.NativeCapabilityAction(ctx, "update", ""); err != nil {
+		return fmt.Errorf("native capability pack: %w", err)
+	}
 	state, err := a.Store.LoadState()
 	if err != nil {
 		return err
@@ -1120,6 +1123,8 @@ func (a *App) ConfigSet(key, value string) error {
 		return err
 	}
 	switch key {
+	case "skills.ponytail":
+		c.Skills.Ponytail = strings.ToLower(strings.TrimSpace(value))
 	case "opencode.permission_mode":
 		c.OpenCode.PermissionMode = strings.ToLower(strings.TrimSpace(value))
 		if err := config.ValidateOpenCode(c.OpenCode); err != nil {

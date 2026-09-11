@@ -15,6 +15,7 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/routing"
 	"github.com/ivo-lopes/ivoai/internal/serverpool"
 	"github.com/ivo-lopes/ivoai/internal/session"
+	"github.com/ivo-lopes/ivoai/internal/skillcatalog"
 	"github.com/ivo-lopes/ivoai/internal/skillgate"
 	"github.com/ivo-lopes/ivoai/internal/skills"
 	"github.com/ivo-lopes/ivoai/internal/supplychain"
@@ -130,11 +131,43 @@ func (a *App) prepareWorkerAccess(ctx context.Context, cfg config.Config, store 
 		targets = append(targets, target)
 	}
 	gate := skillgate.Gate{Registry: skills.Store{Path: skills.RegistryPath(a.Store.Paths.StateDir)}, Supply: supplychain.Manager{Root: filepath.Join(a.Store.Paths.DataDir, "supply-chain")}, Policy: policy.DefaultEngine()}
-	skillResult, err := gate.Evaluate(ctx, skillgate.Input{ExplicitOnly: true, Required: task.Skills, Executor: request.Executor, AvailableCapabilities: capabilities})
+	registry, err := gate.Registry.Load()
+	if err != nil {
+		return request, err
+	}
+	excluded := []string{}
+	for id, preference := range cfg.Skills.Sources {
+		if preference.Disabled {
+			excluded = append(excluded, id)
+		}
+	}
+	if cfg.Skills.ResolvedPonytail() == "off" {
+		excluded = append(excluded, "ponytail")
+	}
+	candidates := skillcatalog.WorkerCandidates(registry, task.Role, task.Task, request.Executor, cfg.Skills.ResolvedPonytail())
+	if cfg.Skills.ResolvedPonytail() == "auto" && (task.Role != "implementation" || task.Scores.Risk >= 70) {
+		excluded = append(excluded, "ponytail")
+	}
+	skillResult, err := gate.Evaluate(ctx, skillgate.Input{ExplicitOnly: true, Required: task.Skills, Candidates: candidates, ExcludedArtifacts: excluded, Executor: request.Executor, AvailableCapabilities: capabilities})
+	if len(skillResult.Events) > 0 {
+		_, saveErr := store.Update(id, func(value *session.Session) error {
+			for _, event := range skillResult.Events {
+				event.SessionID, event.TaskID, event.WorkerID = id, task.ID, request.WorkerID
+				if err := session.AppendObservation(value, event); err != nil {
+					return err
+				}
+			}
+			return nil
+		})
+		if saveErr != nil {
+			return request, saveErr
+		}
+	}
 	if err != nil {
 		return request, err
 	}
 	request.SkillInstructions = skillResult.Instructions
+	request.SelectedSkills = append([]string(nil), skillResult.Selected...)
 	grants := []workers.MCPGrant{}
 	if len(targets) > 0 {
 		// Plan approval grants these read-only capabilities, not arbitrary MCP
