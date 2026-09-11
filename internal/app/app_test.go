@@ -111,9 +111,18 @@ func TestSetupIsIdempotentAndReadyWithoutConnections(t *testing.T) {
 		t.Fatal(err)
 	}
 	status := out.String()
-	for _, expected := range []string{"Overall: READY", "Codex", "installed / not connected", "Ruflo", "provider execution disabled", "Skill registry", "ready / empty", "default caveman / effective caveman"} {
+	for _, expected := range []string{"Overall: READY", "Codex", "installed / not connected", "Ruflo", "provider execution disabled", "Skill registry", "ready / active=15 staged=0 quarantined=0", "default caveman / effective caveman"} {
 		if !strings.Contains(status, expected) {
 			t.Fatalf("missing %q in:\n%s", expected, status)
+		}
+	}
+	pack, err := a.NativeCapabilities(context.Background())
+	if err != nil || len(pack) != 13 {
+		t.Fatal("setup did not materialize the approved native pack", err)
+	}
+	for _, source := range pack {
+		if source.Status != "ready" {
+			t.Fatal("native source not ready after idempotent setup", source.ID)
 		}
 	}
 	report := a.Doctor(context.Background())
