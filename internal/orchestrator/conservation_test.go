@@ -9,9 +9,16 @@ import (
 
 	"github.com/ivo-lopes/ivoai/internal/quota"
 	"github.com/ivo-lopes/ivoai/internal/routing"
+	"github.com/ivo-lopes/ivoai/internal/session"
 )
 
 func TestNativeLowQuotaRequiresConfirmationAndPreservesExplicitRoute(t *testing.T) {
+	for _, frontend := range []string{"codex", "opencode"} {
+		t.Run(frontend, func(t *testing.T) { testFrontendConservationRouting(t, frontend) })
+	}
+}
+
+func testFrontendConservationRouting(t *testing.T, frontend string) {
 	for _, tc := range []struct {
 		name              string
 		remaining         float64
@@ -27,6 +34,9 @@ func TestNativeLowQuotaRequiresConfirmationAndPreservesExplicitRoute(t *testing.
 		t.Run(tc.name, func(t *testing.T) {
 			root := t.TempDir()
 			store, id := automaticBridgeSession(t, root)
+			if _, err := store.Update(id, func(v *session.Session) error { v.Frontend = frontend; return nil }); err != nil {
+				t.Fatal(err)
+			}
 			registry := routing.Registry{Providers: map[string]routing.ProviderCapability{}}
 			probes := map[quota.Provider]quota.Probe{}
 			for _, provider := range []quota.Provider{quota.ProviderCodex, quota.ProviderClaude} {
@@ -83,6 +93,9 @@ func TestNativeLowQuotaRequiresConfirmationAndPreservesExplicitRoute(t *testing.
 				t.Fatalf("provider=%s err=%v", got.profile.Provider, got.err)
 			}
 			v, _ := store.Get(id)
+			if v.Frontend != frontend || v.PrimaryExecutor != "codex" {
+				t.Fatal("worker routing changed frontend or primary")
+			}
 			if !tc.decision && len(v.Decisions) != 0 {
 				t.Fatal("unexpected quota confirmation")
 			}
