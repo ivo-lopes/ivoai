@@ -43,6 +43,12 @@ func TestNativeCapabilitiesPersistentSelectiveManagement(t *testing.T) {
 		if row.Status != "ready" {
 			t.Fatalf("source %s: %s", row.ID, row.Status)
 		}
+		if row.ID == "i-have-adhd" && row.AutoSelect != "manual task request only" {
+			t.Fatal("interaction profile advertised automatic selection")
+		}
+		if row.ID == "ponytail" && row.AutoSelect != "implementation only; policy gated" {
+			t.Fatal("Ponytail auto scope missing from metadata")
+		}
 	}
 	for _, action := range []string{"disable", "pin"} {
 		if err := a.NativeCapabilityAction(ctx, action, "ponytail"); err != nil {
