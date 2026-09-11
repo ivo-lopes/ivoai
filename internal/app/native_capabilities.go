@@ -162,6 +162,7 @@ func (a *App) NativeCapabilityAction(ctx context.Context, action, id string) err
 			if preference.Pinned {
 				continue
 			}
+			source, _ := skillcatalog.NativeSource(sourceID)
 			// A matching name alone does not establish release ownership.
 			if active, root, activeErr := manager.Supply.Active(sourceID); activeErr == nil {
 				if _, err := (skillcatalog.NativeClassifier{}).Classify(ctx, active, root); err != nil {
@@ -169,8 +170,24 @@ func (a *App) NativeCapabilityAction(ctx context.Context, action, id string) err
 				}
 			} else if !errors.Is(activeErr, os.ErrNotExist) {
 				return fmt.Errorf("native source %s: existing object integrity failure; preserved", sourceID)
+			} else {
+				registry, err := manager.Registry.Load()
+				if err != nil {
+					return err
+				}
+				for _, entry := range registry.Entries {
+					if entry.ArtifactID != sourceID {
+						continue
+					}
+					known := false
+					for _, classification := range source.Source.Classifications {
+						known = known || classification.CanonicalID == entry.ID
+					}
+					if !known || entry.Lifecycle != skills.LifecycleQuarantined || entry.QuarantineReason != "native_materialization_failed" || entry.Provenance.Source.URL != source.Source.Upstream.Repository {
+						return fmt.Errorf("native source %s: existing registry binding has no release-owned active object; preserved", sourceID)
+					}
+				}
 			}
-			source, _ := skillcatalog.NativeSource(sourceID)
 			if _, err := manager.Update(ctx, supplychain.Reference{ID: sourceID, Kind: supplychain.KindSkill, Source: source.Source.Upstream.Repository}); err != nil {
 				if quarantineErr := quarantineMissingNative(manager, sourceID); quarantineErr != nil {
 					return fmt.Errorf("native source %s: materialization failed; quarantine metadata could not be saved", sourceID)

@@ -11,6 +11,8 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/config"
 	"github.com/ivo-lopes/ivoai/internal/routing"
 	"github.com/ivo-lopes/ivoai/internal/session"
+	"github.com/ivo-lopes/ivoai/internal/skillcatalog"
+	"github.com/ivo-lopes/ivoai/internal/skills"
 	"github.com/ivo-lopes/ivoai/internal/workers"
 )
 
@@ -104,6 +106,34 @@ func TestNativeQuarantineReusesRegistryAndReapply(t *testing.T) {
 	}
 	if err := manager.ValidateConsistency(context.Background(), "ponytail"); err != nil {
 		t.Fatal("quarantine overwrote valid active revision", err)
+	}
+}
+
+func TestNativePackPreservesUnownedArtifactIDCollision(t *testing.T) {
+	a := nativeCapabilityTestApp(t)
+	if err := a.Store.Ensure(); err != nil {
+		t.Fatal(err)
+	}
+	manager, err := a.nativeManager("ponytail")
+	if err != nil {
+		t.Fatal(err)
+	}
+	entries, err := skillcatalog.NativeQuarantine("ponytail")
+	if err != nil {
+		t.Fatal(err)
+	}
+	entries[0].ID = "personal-custom-profile"
+	entries[0].Lifecycle = skills.LifecycleStaged
+	entries[0].QuarantineReason = ""
+	if err := manager.Registry.Save(skills.Registry{Schema: skills.RegistrySchemaVersion, Entries: entries}); err != nil {
+		t.Fatal(err)
+	}
+	if err := a.NativeCapabilityAction(context.Background(), "update", "ponytail"); err == nil {
+		t.Fatal("unowned artifact identity adopted")
+	}
+	after, err := manager.Registry.Load()
+	if err != nil || len(after.Entries) != 1 || after.Entries[0].ID != entries[0].ID || after.Entries[0].Lifecycle != skills.LifecycleStaged {
+		t.Fatal("personal entry mutated", err)
 	}
 }
 
