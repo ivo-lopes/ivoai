@@ -1,5 +1,40 @@
 # Solução de problemas
 
+## Teclado e clipboard do OpenCode gerenciado
+
+`ivoai opencode` usa **Enter para enviar** e **Shift+Enter para uma nova linha**.
+O suporte ao teclado Kitty permanece no upstream. Em terminais compatíveis com
+xterm, o IVOAI consulta `modifyOtherKeys`, habilita o modo 2 somente após uma
+resposta compatível e restaura o modo anterior ao sair. Nenhuma configuração
+pessoal do terminal/OpenCode é editada. O alias antigo `ivoai auto` usa a mesma
+integração.
+
+O terminal precisa informar o modificador: se Enter e Shift+Enter produzirem CR,
+a aplicação não consegue distingui-los. Terminais VTE antigos podem ter essa
+limitação. Use um terminal com protocolo de teclado aprimorado; se xterm estiver
+instalado, `xterm -e ivoai opencode` é uma opção local ao processo, sem mudar
+configurações globais. Ctrl+J não é o fluxo padrão de multiline do IVOAI.
+Veja o [protocolo de modificadores xterm](https://invisible-island.net/xterm/ctlseqs/ctlseqs.html)
+e o [mapeamento de Return no VTE 0.80.1](https://github.com/GNOME/vte/blob/0.80.1/src/keymap.cc#L111).
+
+A cópia para o desktop exige um backend acessível: `wl-copy` no Wayland, ou
+`xclip`/`xsel` no X11. O ambiente gerenciado repassa somente as referências de
+display necessárias (`WAYLAND_DISPLAY`, `XDG_RUNTIME_DIR`, `DISPLAY`), não o
+barramento da sessão, SSH agent ou credenciais de providers. O IVOAI não instala
+pacotes do desktop durante a sessão. `wl-paste` ou `xclip -selection clipboard -o`
+permitem verificar a entrega fora da TUI; não imprima conteúdo sensível em logs.
+
+O patch do OpenCode gerenciado propaga falhas do backend e evita esperar por
+stdout mantido aberto pelo processo que detém o clipboard. O feedback de sucesso
+exige sucesso do backend nativo. OSC52 continua como tentativa de entrega, não
+como comprovação, especialmente via SSH. Um backend indisponível produz feedback
+de falha/entrega não confirmada em vez de um falso sucesso.
+
+Os assets da release incluem binários OpenCode gerenciados e metadados de
+proveniência com checksums separados. O build modificado se identifica como
+`1.18.25-ivoai.1`, não como o artefato upstream intacto. Os objetos imutáveis
+anteriores continuam disponíveis para rollback.
+
 ## Gestão de conexões multi-server
 
 - **Alias already exists:** Add nunca substitui. Selecione o alias e use Re-enroll
