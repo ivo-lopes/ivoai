@@ -438,21 +438,25 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 	if err := validateManagedAgentRuntime(selectedComponent, state); err != nil {
 		return fmt.Errorf("selected automatic executor is unavailable: %w", err)
 	}
-	value.CurrentPrimary, value.PrimaryExecutor = current, current
+	visiblePrimary := current
+	if decision.Fallback {
+		visiblePrimary = planner
+	}
+	value.CurrentPrimary, value.PrimaryExecutor = visiblePrimary, visiblePrimary
 	if decision.Fallback {
 		a.printStartupFallback(planner, current, decision.Reason)
 	}
 	value, err = store.Update(id, func(currentSession *session.Session) error {
-		currentSession.CurrentPrimary, currentSession.PrimaryExecutor = current, current
-		if err := session.AppendObservation(currentSession, observability.Event{Category: observability.CategoryExecutor, Operation: observability.OperationExecutorSelect, State: observability.StateSelected, Provider: current, Executor: current, Component: providerComponent(current), RoutingReason: observability.ReasonPrimaryAvailable}); err != nil {
+		currentSession.CurrentPrimary, currentSession.PrimaryExecutor = visiblePrimary, visiblePrimary
+		selectionState := observability.StateSelected
+		if decision.Fallback {
+			selectionState = observability.StatePending
+		}
+		if err := session.AppendObservation(currentSession, observability.Event{Category: observability.CategoryExecutor, Operation: observability.OperationExecutorSelect, State: selectionState, Provider: current, Executor: current, Component: providerComponent(current), RoutingReason: observability.ReasonPrimaryAvailable}); err != nil {
 			return err
 		}
 		if decision.Fallback {
-			now := time.Now().UTC()
-			currentSession.FailoverCount = 1
-			currentSession.LastFailoverAt = &now
-			currentSession.LastFailoverReason = decision.Reason
-			if err := session.AppendObservation(currentSession, observability.Event{Category: observability.CategoryFallback, Operation: observability.OperationFallbackRoute, State: observability.StateSelected, Provider: planner, Executor: current, Component: providerComponent(current), RoutingReason: observability.ReasonAlternateSelected, FallbackReason: observability.ReasonProviderQuotaExhausted}); err != nil {
+			if err := session.AppendObservation(currentSession, observability.Event{Category: observability.CategoryFallback, Operation: observability.OperationFallbackRoute, State: observability.StatePending, Provider: planner, Executor: current, Component: providerComponent(current), RoutingReason: observability.ReasonAlternateSelected, FallbackReason: observability.ReasonProviderQuotaExhausted}); err != nil {
 				return err
 			}
 		}
@@ -485,7 +489,7 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 		return nil
 	})
 	cfg = knowledge.config
-	a.printAutoPreflight(value.Quota, current, value, originalConfig)
+	a.printAutoPreflight(value.Quota, visiblePrimary, value, originalConfig)
 	value, _ = store.Update(id, func(current *session.Session) error {
 		current.KnowledgeSources = knowledge.aliases()
 		return nil
@@ -501,7 +505,7 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 	}
 	value, err = store.Update(id, func(sessionValue *session.Session) error {
 		sessionValue.SwarmID, sessionValue.SwarmState = swarm.ID, "active"
-		sessionValue.CurrentPrimary, sessionValue.PrimaryExecutor = current, current
+		sessionValue.CurrentPrimary, sessionValue.PrimaryExecutor = visiblePrimary, visiblePrimary
 		sessionValue.CurrentPhase = "starting_primary"
 		return session.AppendObservation(sessionValue, observability.Event{Category: observability.CategoryOrchestration, Operation: observability.OperationOrchestrationInitialize, State: observability.StateCompleted, Component: core.ComponentOrchestration, RoutingReason: observability.ReasonPolicyAllowed})
 	})
@@ -576,6 +580,28 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 	selected := current
 	startupRoutePending := decision.Fallback
 	var selectedMu sync.Mutex
+	approveStartupRoute := func(requestCtx context.Context, to string) error {
+		if !startupRoutePending {
+			return nil
+		}
+		if err := confirmPrimaryRoute(requestCtx, store, id, planner, to); err != nil {
+			return err
+		}
+		_, err := store.Update(id, func(s *session.Session) error {
+			s.CurrentPrimary, s.PrimaryExecutor = to, to
+			if to != planner {
+				now := time.Now().UTC()
+				s.FailoverCount++
+				s.LastFailoverAt = &now
+				s.LastFailoverReason = decision.Reason
+			}
+			return nil
+		})
+		if err == nil {
+			startupRoutePending = false
+		}
+		return err
+	}
 	modelCatalog := opencodebridge.DefaultCatalog()
 	if a.OpenCodeModelCatalog != nil {
 		modelCatalog = *a.OpenCodeModelCatalog
@@ -672,10 +698,9 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 			selectedMu.Lock()
 			defer selectedMu.Unlock()
 			if startupRoutePending {
-				if err := confirmPrimaryRoute(requestCtx, store, id, planner, selected); err != nil {
+				if err := approveStartupRoute(requestCtx, selected); err != nil {
 					return "", err
 				}
-				startupRoutePending = false
 			}
 			preferred := quota.Provider(selected)
 			if quota.Supported(quota.Provider(previous)) {
@@ -745,7 +770,10 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 			defer selectedMu.Unlock()
 			previous := selected
 			if startupRoutePending {
-				previous = planner
+				if err := approveStartupRoute(requestCtx, selection.Executor); err != nil {
+					return err
+				}
+				previous = selection.Executor
 			}
 			if err := confirmPrimaryRoute(requestCtx, store, id, previous, selection.Executor); err != nil {
 				return err
@@ -1376,7 +1404,7 @@ func (a *App) autoServiceStatuses(ctx context.Context, cfg config.Config, state 
 }
 
 func (a *App) printStartupFallback(from, to, reason string) {
-	fmt.Fprintf(a.Out, "\nRequested primary    %s\nAutomatic fallback  %s\nReason              %s\n", displayProvider(from), displayProvider(to), reason)
+	fmt.Fprintf(a.Out, "\nRequested primary   %s\nProposed fallback   %s\nApproval            required before execution\nReason              %s\n", displayProvider(from), displayProvider(to), reason)
 }
 
 func (a *App) printNoProvider(values map[quota.Provider]quota.ProviderQuota) {
