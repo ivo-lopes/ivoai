@@ -1,7 +1,9 @@
 # Automatic orchestration
 
-`ivoai auto` is the quota-aware conversational mode. Its interactive frontend is a
-private managed OpenCode TUI. IVOAI remains the control plane and invokes the
+`ivoai codex` and `ivoai opencode` are orchestrated frontends of the same quota-aware
+control plane. Codex uses IVOAI-controlled terminal admission; OpenCode uses a
+private managed TUI. See [frontend commands and decisions](orchestrated-frontends.md).
+IVOAI remains the control plane and invokes the
 official Codex or Claude Code CLI as the selected executor; inference is never sent
 through Ruflo or a copied provider credential.
 
@@ -10,7 +12,7 @@ through Ruflo or a copied provider credential.
 AUTO requires an actionable objective, a concrete deliverable and observable
 acceptance criteria. Markdown headings are optional. An insufficient request is
 rejected with `waiting_for_refinement` and only the missing fields; it does not
-start workers or query institutional sources. Direct `ivoai codex`/`ivoai claude`
+start workers or query institutional sources. Direct `ivoai codex --direct`/`ivoai claude`
 remain available for unrestricted conversational intake.
 
 Example: `Read VERSION and report its value. Acceptance: return only the version.`
@@ -20,9 +22,10 @@ bootstrap → native DAG → explicit plan approval → controlled workers → i
 and validation → primary synthesis. Full OpenCode permissions do not approve a plan.
 
 ```sh
-ivoai auto
-ivoai auto --planner codex
-ivoai auto --planner claude
+ivoai codex
+ivoai opencode
+ivoai opencode --planner codex
+ivoai opencode --planner claude
 ```
 
 Without a flag, the prompt shows cached subscription quota and uses the configured

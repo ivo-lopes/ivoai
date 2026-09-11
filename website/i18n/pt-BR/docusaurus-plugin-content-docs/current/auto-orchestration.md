@@ -1,14 +1,20 @@
 # Orquestração automática
 
-`ivoai auto` usa o OpenCode pinado como frontend gerenciado. O IVOAI é a
+`ivoai codex` e `ivoai opencode` compartilham o mesmo core. O primeiro usa admissão
+e interação de terminal controladas pelo IVOAI; o segundo usa OpenCode.
+Veja [Frontends orquestrados](orchestrated-frontends.md). `ivoai auto` é alias
+deprecated. Para a TUI oficial sem orquestração, escolha `--direct` explicitamente.
+
+`ivoai opencode` usa o OpenCode pinado como frontend gerenciado. O IVOAI é a
 autoridade de prompt, sources, DAG, quota, modelos, workers e integração. Codex,
 Claude opcional e Native OpenCode elegível mantêm autenticação oficial própria.
 O IVOAI não copia credentials de providers para o OpenCode.
 
 ```sh
-ivoai auto
-ivoai auto --planner codex
-ivoai auto --planner claude
+ivoai codex
+ivoai opencode
+ivoai opencode --planner codex
+ivoai opencode --planner claude
 ```
 
 ## Prompt e plano
@@ -78,7 +84,7 @@ mencionado. Não é um classificador semântico institucional completo. Ambiguid
 não consulta todos os servidores. Uma instrução negativa de source exclui o
 purpose. Use override explícito para desambiguar:
 
-Use `ivoai auto --knowledge-source company-a`; repita `--knowledge-source` para
+Use `ivoai opencode --knowledge-source company-a`; repita `--knowledge-source` para
 selecionar um subset explícito com mais de uma source.
 
 `all-enabled` preserva a federação compatível; `explicit-only` não seleciona

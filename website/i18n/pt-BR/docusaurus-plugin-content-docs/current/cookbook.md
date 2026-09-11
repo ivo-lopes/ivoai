@@ -42,7 +42,7 @@ create --ttl 10m`. No cliente, forneça cada código pela entrada padrão:
 ```bash
 ivoai connect server add company-a --url https://ai-a.example.com --purpose company-a --code-stdin
 ivoai connect server add company-b --url https://ai-b.example.com --purpose company-b --code-stdin
-ivoai auto
+ivoai opencode
 ```
 
 Restrinja uma sessão com `--knowledge-source company-a`. Repita a flag para selecionar
@@ -59,11 +59,11 @@ escrita for ambíguo.
 ivoai codex
 ivoai claude
 ivoai opencode
-ivoai auto
-ivoai auto --planner codex
+ivoai opencode
+ivoai opencode --planner codex
 ```
 
-`ivoai auto` e `ivoai opencode` abrem o frontend gerenciado do OpenCode. O IVOAI
+`ivoai opencode` abrem o frontend gerenciado do OpenCode. O IVOAI
 roteia os turnos para a CLI oficial do Codex ou do Claude Code; assim, seus logins de
 assinatura existentes são reutilizados sem copiar um token de provider. Para uma
 sessão independente e inalterada com um provider do OpenCode, use

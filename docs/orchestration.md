@@ -1,14 +1,15 @@
 # Session control and orchestration
 
-ivoai has direct, explicit orchestrated, and automatic session modes. None adds a pay-as-you-go provider
-credential, and neither replaces the official Codex or Claude Code interface.
+IVOAI exposes one native orchestration core through Codex and OpenCode frontends.
+See [Orchestrated frontends](orchestrated-frontends.md). The official clients remain
+available in explicit direct mode; no new provider credential is introduced.
 
 ## Direct mode
 
 The established commands remain the shortest path:
 
 ```sh
-ivoai codex
+ivoai codex --direct
 ivoai claude
 ```
 
@@ -38,7 +39,11 @@ ivoai session start --executor codex --mode orchestrated
 ivoai session start --executor claude --mode orchestrated
 ```
 
-Before the primary client opens, ivoai verifies the installed Ruflo version and safe
+Codex and OpenCode orchestrated sessions use native prompt admission, plan approval,
+automatic DAG dispatch and the same economic router. The historical Claude explicit
+orchestrated mode below is unchanged; `ivoai claude` itself remains direct.
+
+For that historical Claude mode, before the primary client opens, ivoai verifies the installed Ruflo version and safe
 profile, confirms that provider execution and durable Ruflo memory are disabled,
 executes a real `swarm init`, obtains and verifies its Swarm ID, and registers an
 opaque primary lifecycle task. A failed gate stops the launch with a non-zero status;
@@ -76,9 +81,9 @@ provider, runtime-verified model, effort, and whether delegation is economical.
 ## Automatic mode
 
 ```sh
-ivoai auto
-ivoai auto --planner codex
-ivoai auto --planner claude
+ivoai opencode
+ivoai opencode --planner codex
+ivoai opencode --planner claude
 ```
 
 Automatic mode uses the pinned OpenCode TUI as its interactive frontend while IVOAI

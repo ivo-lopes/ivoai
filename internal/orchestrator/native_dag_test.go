@@ -57,6 +57,11 @@ func (a *isolatedFixtureAdapter) Run(ctx context.Context, request workers.Reques
 }
 
 func TestNativeDAGWorkersUseIsolatedWorktreesAndDependencyView(t *testing.T) {
+	t.Run("manual-dispatch-compatibility", func(t *testing.T) { testNativeDAGWorktrees(t, false) })
+	t.Run("automatic-dispatch", func(t *testing.T) { testNativeDAGWorktrees(t, true) })
+}
+
+func testNativeDAGWorktrees(t *testing.T, automatic bool) {
 	repo := t.TempDir()
 	git := func(args ...string) {
 		t.Helper()
@@ -86,7 +91,7 @@ func TestNativeDAGWorkersUseIsolatedWorktreesAndDependencyView(t *testing.T) {
 	}
 	adapter := &isolatedFixtureAdapter{gate: make(chan struct{}), directories: map[string]string{}}
 	provider := quota.ProviderQuota{Provider: quota.ProviderCodex, Authenticated: true, Eligible: true, Source: "fixture", ObservedAt: time.Now()}
-	s := &Server{Store: store, SessionID: id, NativePolicy: true, Parallelism: true, ParallelWrites: true, ProviderPreference: "auto",
+	s := &Server{Store: store, SessionID: id, NativePolicy: true, AutomaticDispatch: automatic, Parallelism: true, ParallelWrites: true, ProviderPreference: "auto",
 		Directory: repo, RuntimeDir: root, WorktreeRoot: t.TempDir(), Adapter: adapter, Control: orchestration.NativeOrchestrator{Store: store, SessionID: id},
 		HostResources: func() orchestration.HostResources {
 			return orchestration.HostResources{CPUs: 8, AvailableMemoryBytes: 16 << 30}
@@ -122,8 +127,10 @@ func TestNativeDAGWorkersUseIsolatedWorktreesAndDependencyView(t *testing.T) {
 		t.Fatal(err)
 	}
 	planID := result.StructuredContent.(map[string]any)["plan_id"].(string)
-	if _, err := s.spawnBatch(ctx, toolRequest(map[string]any{"plan_id": planID, "task_ids": []string{"validate", "a", "b"}})); err != nil {
-		t.Fatal(err)
+	if !automatic {
+		if _, err := s.spawnBatch(ctx, toolRequest(map[string]any{"plan_id": planID, "task_ids": []string{"validate", "a", "b"}})); err != nil {
+			t.Fatal(err)
+		}
 	}
 	if _, err := s.wait(ctx, toolRequest(map[string]any{"plan_id": planID, "task_ids": []string{"validate", "a", "b"}, "mode": "all", "timeout_seconds": 8})); err != nil {
 		t.Fatal(err)

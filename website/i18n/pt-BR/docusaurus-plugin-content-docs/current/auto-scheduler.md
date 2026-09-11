@@ -1,6 +1,6 @@
 # Scheduler automático e roteamento de modelos
 
-`ivoai auto` usa o DAG nativo do IVOAI e o MCP local `ivoai-orchestrator`.
+`ivoai opencode` usa o DAG nativo do IVOAI e o MCP local `ivoai-orchestrator`.
 OpenCode é o frontend; o IVOAI controla admissão, policy, concorrência e integração.
 O modo AUTO nativo não depende do lifecycle Ruflo do modo orchestrated legado.
 

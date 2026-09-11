@@ -39,6 +39,7 @@ type Server struct {
 	Sequential            bool
 	ParallelWrites        bool
 	NativePolicy          bool
+	AutomaticDispatch     bool
 	RequirePlanApproval   bool
 	Store                 session.Store
 	SessionID             string

@@ -39,8 +39,8 @@ func (a *App) SessionStartWithKnowledge(ctx context.Context, executor string, mo
 	if mode != session.ModeDirect && mode != session.ModeOrchestrated {
 		return errors.New("session mode must be direct or orchestrated")
 	}
-	if executor == "opencode" && mode != session.ModeDirect {
-		return errors.New("OpenCode orchestrated/AUTO execution is deferred to IVOAI-22; use direct mode")
+	if mode == session.ModeOrchestrated && (executor == "codex" || executor == "opencode") {
+		return a.OrchestratedWithKnowledge(ctx, executor, "", args, selectors)
 	}
 	cfg, err := a.Store.Load()
 	if err != nil {
@@ -293,7 +293,7 @@ func (a *App) OrchestratorServe(ctx context.Context, id string) error {
 	}
 	server := orchestrator.Server{
 		LowQuotaThreshold: cfg.Orchestration.Auto.ResolvedLowQuotaThreshold(), ProviderPreference: cfg.Orchestration.Auto.ResolvedProviderPreference(),
-		NativePolicy: value.Coordinator == "native", Sequential: cfg.Orchestration.Auto.ResolvedConcurrency() == "sequential", ParallelWrites: cfg.Orchestration.Auto.ParallelWrites,
+		NativePolicy: value.Coordinator == "native", AutomaticDispatch: value.Coordinator == "native", Sequential: cfg.Orchestration.Auto.ResolvedConcurrency() == "sequential", ParallelWrites: cfg.Orchestration.Auto.ParallelWrites,
 		RequirePlanApproval: value.Mode == session.ModeAuto && cfg.Orchestration.Auto.ResolvedPlanExecution() == "approve",
 		Store:               store, SessionID: id, Directory: value.WorkingDirectory, RuntimeDir: runtimeDir,
 		ReviewExecutor:        cfg.Orchestration.ReviewExecutor,
@@ -422,7 +422,7 @@ func (a *App) finishSession(store session.Store, id string, final session.State,
 	now := time.Now().UTC()
 	_, _ = store.Update(id, func(value *session.Session) error {
 		value.State, value.ExitCode = final, &exitCode
-		if value.Frontend == "opencode" {
+		if value.Frontend == "opencode" || value.Frontend == "codex" {
 			value.FrontendState, value.FrontendExitCode = final, &exitCode
 		}
 		if final == session.StateWaiting {

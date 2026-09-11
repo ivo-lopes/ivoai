@@ -73,8 +73,8 @@ func (s Store) Delete(id string) error {
 		return err
 	}
 	return s.withLock(func() error {
-		if filepath.Dir(s.path(id)) == s.nativeDir() {
-			if err := s.validateNativeDir(); err != nil {
+		if filepath.Dir(s.path(id)) != s.Root {
+			if err := s.validateSessionNamespace(filepath.Dir(s.path(id))); err != nil {
 				return err
 			}
 		}
@@ -117,14 +117,16 @@ func (s Store) List() ([]Session, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := s.validateNativeDir(); err == nil {
-		native, readErr := os.ReadDir(s.nativeDir())
-		if readErr != nil {
-			return nil, readErr
+	for _, directory := range []string{s.nativeDir(), s.frontendDir()} {
+		if err := s.validateSessionNamespace(directory); err == nil {
+			native, readErr := os.ReadDir(directory)
+			if readErr != nil {
+				return nil, readErr
+			}
+			entries = append(entries, native...)
+		} else if !errors.Is(err, fs.ErrNotExist) {
+			return nil, err
 		}
-		entries = append(entries, native...)
-	} else if !errors.Is(err, fs.ErrNotExist) {
-		return nil, err
 	}
 	values := make([]Session, 0, len(entries))
 	seen := map[string]bool{}
@@ -201,6 +203,12 @@ func (s Store) CleanupRuntime(id string) error {
 }
 
 func (s Store) write(value Session) error {
+	// Additive metadata keeps legacy mode/primary_executor fields intact.
+	value.PrimaryProvider = value.PrimaryExecutor
+	value.OrchestrationMode = string(value.Mode)
+	if value.Mode == ModeAuto {
+		value.OrchestrationMode = string(ModeOrchestrated)
+	}
 	if err := validate(value); err != nil {
 		return err
 	}
@@ -222,18 +230,25 @@ func (s Store) write(value Session) error {
 		return errors.New("session metadata exceeds size limit")
 	}
 	path := s.path(value.SessionID)
-	if nativeSession(value) && filepath.Dir(path) != s.nativeDir() {
-		if err := platform.EnsurePrivateDir(s.nativeDir()); err != nil {
+	namespace := ""
+	if nativeSession(value) {
+		namespace = s.nativeDir()
+	}
+	if value.Frontend == "codex" {
+		namespace = s.frontendDir()
+	}
+	if namespace != "" && filepath.Dir(path) != namespace {
+		if err := platform.EnsurePrivateDir(namespace); err != nil {
 			return err
 		}
-		target := s.nativePath(value.SessionID)
+		target := filepath.Join(namespace, value.SessionID+".json")
 		if err := os.Rename(path, target); err != nil && !errors.Is(err, fs.ErrNotExist) {
 			return err
 		}
 		path = target
 	}
-	if filepath.Dir(path) == s.nativeDir() {
-		if err := s.validateNativeDir(); err != nil {
+	if filepath.Dir(path) != s.Root {
+		if err := s.validateSessionNamespace(filepath.Dir(path)); err != nil {
 			return err
 		}
 	}
@@ -241,8 +256,8 @@ func (s Store) write(value Session) error {
 }
 
 func (s Store) read(path string) (Session, error) {
-	if filepath.Dir(path) == s.nativeDir() {
-		if err := s.validateNativeDir(); err != nil {
+	if filepath.Dir(path) != s.Root {
+		if err := s.validateSessionNamespace(filepath.Dir(path)); err != nil {
 			return Session{}, err
 		}
 	}
@@ -343,7 +358,7 @@ func validate(value Session) error {
 	if value.PrimaryExecutor != "codex" && value.PrimaryExecutor != "claude" && value.PrimaryExecutor != "opencode" {
 		return errors.New("invalid primary executor")
 	}
-	if value.Frontend != "" && value.Frontend != "opencode" {
+	if value.Frontend != "" && value.Frontend != "opencode" && value.Frontend != "codex" {
 		return errors.New("invalid session frontend")
 	}
 	if value.FrontendSessionID != "" && !safeText(value.FrontendSessionID, 128) || value.ExecutorSessionID != "" && !safeText(value.ExecutorSessionID, 128) {

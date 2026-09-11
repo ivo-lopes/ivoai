@@ -2,6 +2,10 @@
 
 ## Interactive menu
 
+**Launch Orchestration** offers **Codex Orchestrated**, **OpenCode Orchestrated**
+and explicit **Codex/Claude/OpenCode Direct** sessions. Orchestration settings,
+Skills and Ponytail are shared across frontends. See [frontends](orchestrated-frontends.md).
+
 **Connections → IVOAI Servers** manages independent profiles. Add a server,
 then select its alias to test, enable/disable, edit, re-enroll or remove it.
 See [Connections](connections.md) for the complete flow.
@@ -96,8 +100,9 @@ Overall: READY — external connections pending
 
 ## Agent launch
 
-`ivoai codex` and `ivoai claude` open their official direct interfaces. `ivoai
-opencode`, like `ivoai auto`, opens a pinned OpenCode TUI attached to IVOAI's private
+`ivoai codex` opens the IVOAI-controlled orchestrated terminal; `--direct` preserves
+the official TUI. `ivoai claude` is unchanged. `ivoai opencode` opens a pinned
+OpenCode TUI attached to the same IVOAI
 control plane. IVOAI routes turns to the official Codex or Claude Code CLI and reuses
 the login already owned by that client without reading or copying it. A private
 managed OpenCode overlay disables project configuration, sharing and auto-update;
@@ -109,7 +114,7 @@ global agent configuration:
 ```sh
 ivoai codex --knowledge-source mindsite
 ivoai claude --knowledge-source voicecorp
-ivoai auto --knowledge-source mindsite
+ivoai opencode --knowledge-source mindsite
 ```
 
 With no `--knowledge-source`, every enabled connected source participates in bounded
@@ -206,7 +211,7 @@ isolated per session. Session metadata stores selected aliases, never credential
 
 ## Automatic conversation mode
 
-`ivoai auto` opens the managed OpenCode frontend and shows bounded IVOAI-owned
+`ivoai opencode` opens the managed OpenCode frontend and shows bounded IVOAI-owned
 executor, quota and knowledge state. The configured planner preference selects the
 initial official executor; `--planner codex` and `--planner claude` override it for
 the session. Codex/Claude never take over the screen. OpenCode supplies the UI while

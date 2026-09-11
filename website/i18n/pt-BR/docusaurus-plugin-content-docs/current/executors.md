@@ -16,7 +16,7 @@ esse mesmo lifecycle controlado após os critérios de elegibilidade do schedule
 Sem nova preferência, o IVOAI preserva a prioridade existente de Codex/Claude e
 considera o OpenCode nativo como terceiro candidato. Para selecioná-lo explicitamente:
 
-`ivoai auto --planner opencode`
+`ivoai opencode --planner opencode`
 
 A seleção explícita falha de forma fechada se não houver modelo nativo autenticado
 e capaz de usar ferramentas. O model picker também apresenta entradas sem ambiguidade
@@ -95,7 +95,7 @@ ivoai config set opencode.permission_mode interactive
 ```
 
 O último comando restaura as aprovações interativas. A alteração vale na próxima
-sessão gerenciada de `ivoai auto` ou `ivoai opencode`, não no backend já aberto.
+sessão gerenciada de `ivoai opencode`, não no backend já aberto.
 O painel `/ivoai` mostra o modo efetivo da sessão. `full` pré-aprova as operações
 configuráveis do OpenCode; leituras diretas de `.env` e `.env.*` continuam negadas
 (`.env.example` é permitido). Trata-se de política de aprovação, não de sandbox para
@@ -108,7 +108,10 @@ OpenCode exige a autenticação oficial própria do provider escolhido.
 
 ## Codex
 
-`ivoai codex` inicia o cliente oficial e preserva seu login da assinatura do ChatGPT.
+`ivoai codex` inicia o frontend orquestrado controlado pelo IVOAI, usando o executor
+Codex estruturado oficial. Codex é o primary preferencial, não o executor obrigatório
+de todos os workers. `ivoai codex --direct` preserva a TUI oficial sem Prompt Gate
+ou DAG. A autenticação permanece sob responsabilidade do cliente oficial.
 
 ## Claude Code
 
@@ -116,7 +119,7 @@ OpenCode exige a autenticação oficial própria do provider escolhido.
 
 ## OpenCode
 
-`ivoai auto` e `ivoai opencode` iniciam a TUI do OpenCode na versão fixada como o
+`ivoai opencode` iniciam a TUI do OpenCode na versão fixada como o
 frontend gerenciado do IVOAI. O backend do OpenCode escuta apenas em uma porta
 aleatória autenticada no loopback. Sua configuração gerenciada e isolada desabilita
 a configuração do projeto, o compartilhamento e a atualização automática do

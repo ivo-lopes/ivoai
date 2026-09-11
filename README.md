@@ -24,7 +24,7 @@ ChatGPT Web, and Claude Web.
 ```text
 Desktop / notebook                         Private Linux servers
 
-ivoai auto ── OpenCode TUI ── IVOAI control plane ── Codex/Claude executor
+ivoai opencode ── OpenCode TUI ── IVOAI control plane ── Codex/Claude executor
     │          ├── quota + model/effort routing  │
     │          ├── async read-only workers       │
     │          └── safe Ruflo lifecycle          │
@@ -73,8 +73,10 @@ subscription login. No provider token is copied into OpenCode. Direct `opencode`
 outside IVOAI remains unchanged, and a standalone OpenCode-owned provider session is
 still available through `ivoai session start --executor opencode --mode direct`.
 
-Direct agent commands are unchanged. For observable or delegated work, use explicit
-session modes:
+`ivoai codex` now starts the IVOAI-controlled Codex-oriented orchestrated terminal.
+`ivoai opencode` uses the same core through managed OpenCode. `ivoai auto` remains
+a deprecated alias; `ivoai codex --direct` and `ivoai opencode --direct` preserve
+the standalone clients. Claude is unchanged. See [frontends](docs/orchestrated-frontends.md).
 
 ```sh
 ivoai session start --executor codex --mode direct
@@ -85,15 +87,15 @@ ivoai monitor --watch
 For the quota-aware conversational mode, run:
 
 ```sh
-ivoai auto                         # OpenCode UI; choose the executor, Codex default
-ivoai auto --planner codex         # OpenCode UI + Codex executor
-ivoai auto --planner claude        # OpenCode UI + Claude Code executor
+ivoai opencode                         # OpenCode UI; choose the executor, Codex default
+ivoai opencode --planner codex         # OpenCode UI + Codex executor
+ivoai opencode --planner claude        # OpenCode UI + Claude Code executor
 ivoai codex --knowledge-source mindsite
 ivoai claude --knowledge-source voicecorp
 ```
 
-Named servers remain connected simultaneously. With no `--knowledge-source`, every
-enabled connected server participates in bounded read federation. Supplying one or
+Named servers remain connected simultaneously. With no `--knowledge-source`,
+purpose-auto selects only relevant sources. Supplying one or
 more `--knowledge-source` flags restricts that session to exactly those aliases or
 purposes. Writes are never broadcast: an ambiguous new Memory write fails until a
 single destination is selected.
@@ -207,7 +209,7 @@ ivoai update --rollback      # restore the prior compatible transaction
 ivoai project init           # optional project-specific identity
 ivoai session list           # non-sensitive session metadata
 ivoai monitor --watch        # primary, swarm, workers, services
-ivoai auto --planner codex   # automatic quota-aware conversation
+ivoai opencode --planner codex   # automatic quota-aware conversation
 ivoai server status          # local server services
 ivoai server backup          # authoritative data backup
 ```
