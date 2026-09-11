@@ -50,7 +50,7 @@ func TestDirectSessionUsesExistingRuntimeWithoutRuflo(t *testing.T) {
 	}
 }
 
-func TestOpenCodeDirectSessionUsesSkillGateAndRejectsOrchestration(t *testing.T) {
+func TestOpenCodeDirectSessionUsesSkillGateAndOrchestrationUsesControlledFrontend(t *testing.T) {
 	root := t.TempDir()
 	marker := filepath.Join(root, "opencode-instructions")
 	opencode := appExecutable(t, root, "opencode", "#!/bin/sh\npath=$(printf '%s' \"$OPENCODE_CONFIG_CONTENT\" | sed 's/.*\\[\"\\([^\"]*\\)\"\\].*/\\1/')\ncp \"$path\" '"+marker+"'\n")
@@ -76,7 +76,7 @@ func TestOpenCodeDirectSessionUsesSkillGateAndRejectsOrchestration(t *testing.T)
 	if err != nil || len(values) != 1 || values[0].PrimaryExecutor != "opencode" || values[0].HeadroomRequested || values[0].RufloEnabled || values[0].PrimaryModel.Name != "provider/model" {
 		t.Fatalf("sessions=%+v err=%v", values, err)
 	}
-	if err := a.SessionStart(context.Background(), "opencode", session.ModeOrchestrated, nil); err == nil || !strings.Contains(err.Error(), "deferred to IVOAI-22") {
+	if err := a.SessionStart(context.Background(), "opencode", session.ModeOrchestrated, nil); err == nil || !strings.Contains(err.Error(), "direct fallback refused") {
 		t.Fatalf("orchestrated OpenCode error=%v", err)
 	}
 }
@@ -168,7 +168,7 @@ while [ ! -f "` + release + `" ]; do sleep 0.02; done
 	}
 }
 
-func TestOrchestratedSessionInitializesSwarmBeforeOfficialPrimary(t *testing.T) {
+func TestOrchestratedCodexSessionUsesNativeAdmissionNotRuflo(t *testing.T) {
 	root := t.TempDir()
 	rufloCalls := filepath.Join(root, "ruflo-calls")
 	codexArgs := filepath.Join(root, "codex-args")
@@ -193,6 +193,7 @@ esac
 	if err := os.Chdir(root); err != nil {
 		t.Fatal(err)
 	}
+	a.In = strings.NewReader("corrija isso")
 	if err := a.SessionStart(context.Background(), "codex", session.ModeOrchestrated, nil); err != nil {
 		t.Fatal(err)
 	}
@@ -201,17 +202,17 @@ esac
 		t.Fatalf("sessions=%+v err=%v", values, err)
 	}
 	value := values[0]
-	if value.Mode != session.ModeOrchestrated || value.SwarmID != "swarm-smoke-123" || value.PrimaryRufloTaskID != "task-smoke-123" || !value.RufloHealthy || !value.RufloSafeMode || value.ProviderExecution || value.State != session.StateCompleted {
+	if value.OrchestrationMode != "orchestrated" || value.Frontend != "codex" || value.Coordinator != "native" || value.PrimaryProvider != "codex" || len(value.Workers) != 0 || len(value.TurnAttempts) != 0 || value.State != session.StateCompleted {
 		t.Fatalf("session=%+v", value)
 	}
 	calls, _ := os.ReadFile(rufloCalls)
 	callText := string(calls)
-	if strings.Index(callText, "swarm init") < 0 || strings.Index(callText, "task create") < strings.Index(callText, "swarm init") {
-		t.Fatalf("Ruflo lifecycle order invalid:\n%s", calls)
+	if strings.Contains(callText, "swarm init") || strings.Contains(callText, "task create") {
+		t.Fatal("native frontend invoked Ruflo")
 	}
 	args, _ := os.ReadFile(codexArgs)
-	if !strings.Contains(string(args), "mcp_servers.ivoai-orchestrator.command=") || !strings.Contains(string(args), "_orchestrator-serve") {
-		t.Fatalf("local bridge not attached to primary: %q", args)
+	if strings.Contains(string(args), "exec\n") {
+		t.Fatal("Codex executed before prompt admission")
 	}
 	if _, err := os.Stat(filepath.Join(a.Store.Paths.SessionsDir, "runtime", value.SessionID)); !os.IsNotExist(err) {
 		t.Fatalf("session runtime was not cleaned: %v", err)

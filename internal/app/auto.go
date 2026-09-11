@@ -295,13 +295,14 @@ func (a *App) openCodeAutoStatus(store session.Store, id string, cfg config.Conf
 		}
 	}
 	return opencodebridge.Status{
+		OrchestrationMode: "orchestrated", PrimaryProvider: value.PrimaryExecutor,
 		KnowledgePolicy: cfg.Orchestration.Auto.ResolvedKnowledgeRouting(), ConcurrencyPolicy: cfg.Orchestration.Auto.ResolvedConcurrency(), ConcurrencyLimit: value.ConcurrencyLimit, WorkerCap: cfg.Orchestration.Auto.WorkerCap, Workers: workerViews,
 		QuotaMode:             value.QuotaMode,
 		ParallelWriteDegraded: value.ParallelWriteDegraded,
 		PlanState:             value.CurrentPhase, TaskCount: len(value.Tasks), WorkersActive: activeWorkers, WorkersQueued: queuedWorkers, WorkersDone: doneWorkers,
 		PermissionMode: cfg.OpenCode.ResolvedPermissionMode(),
 		ResumePolicy:   "fresh native turn; identity unverified",
-		Version:        a.Version, SessionID: id, Frontend: "opencode", Primary: value.PrimaryExecutor, Mode: string(value.Mode), SessionState: state,
+		Version:        a.Version, SessionID: id, Frontend: value.Frontend, Primary: value.PrimaryExecutor, Mode: string(value.Mode), SessionState: state,
 		SelectionMode: value.SelectionMode, RequestedExecutor: value.RequestedExecutor, RequestedModel: value.RequestedModel, RequestedEffort: value.RequestedEffort, EffectiveModel: value.EffectiveModel, EffectiveEffort: value.EffectiveEffort, ConfigurationSource: value.ConfigurationSource,
 		KnowledgeMode: mode, ConfiguredCount: len(servers), EnabledCount: enabled, ConnectedCount: connected, SelectedCount: selectedCount, Servers: servers,
 		CodexAuth: auth(quota.ProviderCodex), ClaudeAuth: auth(quota.ProviderClaude), CodexQuota: quotaState(quota.ProviderCodex), ClaudeQuota: quotaState(quota.ProviderClaude),
@@ -311,7 +312,21 @@ func (a *App) openCodeAutoStatus(store session.Store, id string, cfg config.Conf
 }
 
 func (a *App) AutoWithKnowledge(ctx context.Context, planner string, agentArgs, selectors []string) error {
+	return a.OrchestratedWithKnowledge(ctx, "opencode", planner, agentArgs, selectors)
+}
+
+// OrchestratedWithKnowledge is the shared session boundary. Frontends only
+// collect input and decisions; admission, routing and execution remain here.
+func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, planner string, agentArgs, selectors []string) error {
+	if frontendName != "codex" && frontendName != "opencode" {
+		return errors.New("orchestrated frontend must be codex or opencode")
+	}
 	explicitPlanner := strings.TrimSpace(planner) != ""
+	if frontendName == "codex" && planner == "" {
+		// A preference can be changed only through the shared routing decision;
+		// an explicit --planner override remains fail-closed.
+		planner = "codex"
+	}
 	cfg, err := a.Store.Load()
 	if err != nil {
 		return err
@@ -337,7 +352,10 @@ func (a *App) AutoWithKnowledge(ctx context.Context, planner string, agentArgs, 
 		return err
 	}
 	state, codexResolution, _ := a.resolveCodex(ctx, state)
-	frontendPreflightErr := validateManagedAgentRuntime("opencode", state)
+	var frontendPreflightErr error
+	if frontendName == "opencode" {
+		frontendPreflightErr = validateManagedAgentRuntime("opencode", state)
+	}
 	cwd, err := os.Getwd()
 	if err != nil {
 		return err
@@ -357,7 +375,7 @@ func (a *App) AutoWithKnowledge(ctx context.Context, planner string, agentArgs, 
 	value := session.Session{
 		Coordinator: "native",
 		SessionID:   id, StartedAt: now, UpdatedAt: now, Mode: session.ModeAuto, Auto: true,
-		InitialPlanner: planner, CurrentPrimary: planner, PrimaryExecutor: planner, Frontend: "opencode",
+		InitialPlanner: planner, CurrentPrimary: planner, PrimaryExecutor: planner, Frontend: frontendName,
 		WorkingDirectory: cwd, PrimaryModel: session.ResolveModel("", session.ParseModelArgument(agentArgs), planner, agentModelConfig(planner)),
 		HeadroomRequested: cfg.Compression.Provider == "headroom" && cfg.Headroom.Enabled, CompressionProvider: cfg.Compression.Provider, CompressionRequested: cfg.Compression.Provider != "direct", ProviderExecution: false,
 		Workers: []session.Worker{}, MaxWorkers: workerCap,
@@ -572,8 +590,13 @@ func (a *App) AutoWithKnowledge(ctx context.Context, planner string, agentArgs, 
 		modelCatalog = opencodebridge.CatalogFromRegistry(registry)
 	}
 	turnState := &autoTurnState{knowledge: knowledge}
+	initialModel, initialEffort, err := frontendSelection(modelCatalog, planner, agentArgs)
+	if err != nil {
+		return err
+	}
 	bridgeRunner = a.scopeAutoRunner(bridgeRunner, originalConfig, state, store, id, cwd, runtimeDir, instructionsPath, agentArgs, selectors, turnState, modelCatalog)
 	bridge, err := opencodebridge.Start(opencodebridge.Options{
+		Frontend: frontendName, InitialModel: initialModel, InitialEffort: initialEffort,
 		RequirePromptGate: true,
 		NativePermissions: func() []opencodebridge.PermissionView {
 			knowledge, native := turnState.snapshot()
@@ -718,7 +741,19 @@ func (a *App) AutoWithKnowledge(ctx context.Context, planner string, agentArgs, 
 				}
 				return errors.New("selected executor or model is not eligible")
 			}
-			return nil
+			selectedMu.Lock()
+			defer selectedMu.Unlock()
+			previous := selected
+			if startupRoutePending {
+				previous = planner
+			}
+			if err := confirmPrimaryRoute(requestCtx, store, id, previous, selection.Executor); err != nil {
+				return err
+			}
+			selected = selection.Executor
+			startupRoutePending = false
+			_, err := store.Update(id, func(s *session.Session) error { s.CurrentPrimary, s.PrimaryExecutor = selected, selected; return nil })
+			return err
 		},
 		OnSelection: func(selection opencodebridge.Selection) {
 			_, _ = store.Update(id, func(currentSession *session.Session) error {
@@ -866,7 +901,7 @@ func (a *App) AutoWithKnowledge(ctx context.Context, planner string, agentArgs, 
 				return false, listErr
 			}
 			for _, candidate := range values {
-				if candidate.SessionID == id || candidate.Frontend != "opencode" || candidate.WorkingDirectory != cwd || candidate.KnowledgeScopeID != scopeID {
+				if candidate.SessionID == id || candidate.Frontend != frontendName || candidate.WorkingDirectory != cwd || candidate.KnowledgeScopeID != scopeID {
 					continue
 				}
 				if _, exists := candidate.FrontendRequests[key]; exists {
@@ -902,6 +937,24 @@ func (a *App) AutoWithKnowledge(ctx context.Context, planner string, agentArgs, 
 		return err
 	}
 	defer bridge.Close(context.Background())
+	if frontendName == "codex" {
+		_, err := store.Update(id, func(s *session.Session) error {
+			s.FrontendPID, s.PrimaryPID = os.Getpid(), os.Getpid()
+			s.FrontendProcessStart, s.PrimaryProcessStart = session.ProcessStart(os.Getpid()), session.ProcessStart(os.Getpid())
+			s.State, s.CurrentPhase = session.StateRunning, "intake"
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+		err = a.runCodexFrontend(ctx, bridge, id)
+		if err != nil {
+			a.finishSession(store, id, session.StateFailed, exitCode(err))
+			return err
+		}
+		a.finishSession(store, id, session.StateCompleted, 0)
+		return nil
+	}
 	starter := a.StartOpenCodeManaged
 	if starter == nil {
 		starter = func(ctx context.Context, options opencodebridge.ManagedOptions) (managedOpenCodeFrontend, error) {
@@ -909,57 +962,11 @@ func (a *App) AutoWithKnowledge(ctx context.Context, planner string, agentArgs, 
 		}
 	}
 	fallback := func(cause error) error {
-		selectedMu.Lock()
-		pendingRoute := startupRoutePending
-		selectedMu.Unlock()
-		if pendingRoute {
-			a.finishSession(store, id, session.StateFailed, 1)
-			return errors.New("ROUTING_APPROVAL_REQUIRED: frontend unavailable; unapproved executor substitution refused")
-		}
-		latest, loadErr := store.Get(id)
-		if loadErr != nil {
-			return loadErr
-		}
-		// Never launch a second writer after a request reached the bridge, or
-		// bypass an existing frontend's exclusive lease.
-		if ctx.Err() != nil || len(latest.FrontendRequests) > 0 || strings.Contains(cause.Error(), "already active") {
-			a.finishSession(store, id, session.StateFailed, 1)
-			return fmt.Errorf("managed frontend unavailable; direct fallback refused to protect session ownership: %w", cause)
-		}
-		if current == "opencode" {
-			a.finishSession(store, id, session.StateFailed, 1)
-			fmt.Fprintln(a.Err, "AUTO_STATE=DEGRADED\nOpenCode frontend unavailable. Native OpenCode requires the controlled HTTP frontend; no personal configuration or alternate executor was substituted.")
-			return errors.New("managed OpenCode frontend unavailable; controlled native executor cannot use an unmanaged TUI fallback")
-		}
-		fmt.Fprintf(a.Err, "AUTO_STATE=DEGRADED\nOpenCode frontend unavailable (%s). Starting the selected %s native TUI; OpenCode panel and model picker are unavailable in this session. No request has been dispatched.\n", platform.Redact(cause.Error()), current)
-		_, updateErr := store.Update(id, func(s *session.Session) error {
-			s.Frontend = ""
-			s.CurrentPhase = "degraded_direct_frontend"
-			return nil
-		})
-		if updateErr != nil {
-			return updateErr
-		}
-		if knowledge.external != nil {
-			knowledge.external.UseNativeApprovals()
-			for name, entry := range cfg.MCP.Servers {
-				if entry.Kind == "external" {
-					entry.SessionApproved = cfg.OpenCode.ResolvedPermissionMode() == "full"
-					cfg.MCP.Servers[name] = entry
-				}
-			}
-		}
-		args, argsErr := a.autoBridgeArgs(current, agentArgs, id, runtimeDir, instructionsPath, cfg)
-		if argsErr != nil {
-			return argsErr
-		}
-		launchErr := a.launchAutomaticPrimary(ctx, store, id, current, args, state, cfg, environment, runtimeDir, compressionPolicy)
-		if launchErr != nil {
-			a.finishSession(store, id, session.StateFailed, exitCode(launchErr))
-			return launchErr
-		}
-		a.finishSession(store, id, session.StateCompleted, 0)
-		return nil
+		// Direct is an explicit escape hatch, never an implicit recovery path:
+		// an upstream TUI cannot enforce IVOAI turn admission.
+		a.finishSession(store, id, session.StateFailed, 1)
+		fmt.Fprintln(a.Err, "ORCHESTRATION_STATE=DEGRADED\nOpenCode frontend unavailable. No direct session was started. Use ivoai codex for the controlled terminal frontend, or explicitly choose --direct.")
+		return fmt.Errorf("managed frontend unavailable; direct fallback refused: %s", platform.Redact(cause.Error()))
 	}
 	if frontendPreflightErr != nil {
 		return fallback(frontendPreflightErr)
@@ -1313,7 +1320,7 @@ For the first substantive user request, do not immediately begin large work. Fol
 5. score every task from 0..100 for complexity, risk, reasoning_depth, context_breadth, verification_need, parallel_value, and latency_sensitivity;
 6. call orchestration_plan. IvoAI calculates the capability score and has final authority over provider, model, effort, and quota. Unless immediate execution is configured, this call waits for the user's plan approval in OpenCode. Do not perform planned work before it succeeds. Tool permission Full does not approve a plan;
 7. keep trivial work in the primary when delegation overhead exceeds expected benefit;
-8. call orchestration_spawn_batch for delegated work. IVOAI respects dependencies, host capacity and isolated writer worktrees. Continue useful read-only primary work while workers run;
+8. IVOAI automatically queues delegated work after plan and quota approval. Do not manually create agents. orchestration_spawn_batch remains idempotent for compatibility, but is not required to start workers. IVOAI respects dependencies, host capacity and isolated writer worktrees. Continue useful read-only primary work while workers run;
 9. call orchestration_primary_complete after each primary-owned task so dependent work may start, then use orchestration_wait without busy-looping;
 10. critically validate bounded worker ResultRefs and every global acceptance criterion. Do not claim a failed or incomplete task passed. Call orchestration_integrate after every task completes; it collects and integrates approved worktree changes. Conflicts are explicit blockers, never silently resolved. Then synthesize the final response. A final answer without a completed integrated DAG is rejected;
 11. ` + checkpoint + `

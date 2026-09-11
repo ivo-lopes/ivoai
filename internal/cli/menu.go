@@ -68,7 +68,7 @@ func menu(ctx context.Context, a *app.App) error {
 		}
 		badges := snapshotBadges(snapshot)
 		actions := []menuAction{
-			{id: "auto", label: "Automatic Orchestration", description: "Plan, route, delegate, checkpoint, and fail over by subscription quota", disabled: disabledUnless(snapshot.AutoEnabled, "automatic orchestration disabled"), run: func() (bool, error) { return true, session.app.Auto(session.ctx, "", nil) }},
+			{id: "auto", label: "Launch Orchestration", description: "Codex or OpenCode frontend; one IVOAI control plane. Explicit direct sessions are also available", disabled: disabledUnless(snapshot.AutoEnabled, "automatic orchestration disabled"), run: session.launch},
 			{id: "dashboard", label: "Dashboard", description: "Status, diagnostics, and version information", run: session.dashboard},
 			{id: "maintenance", label: "Setup & Maintenance", description: "Install, repair, update, rollback, or uninstall", run: session.maintenance},
 			{id: "connections", label: "Connections", description: "ChatGPT, Claude Code, ivoai server, and external MCPs", run: session.connections},
@@ -138,9 +138,19 @@ func (s *menuSession) connections() (bool, error) {
 
 func (s *menuSession) agents() (bool, error) {
 	return s.loop("Agents", []menuAction{
-		{id: "launch.codex", label: "Launch Codex", description: "Official Codex interface with IVOAI knowledge and safe compression", run: func() (bool, error) { return true, s.app.Launch(s.ctx, "codex", nil) }},
+		{id: "launch.codex", label: "Codex Orchestrated", description: "IVOAI-controlled intake, Codex primary, scoped Codex/Claude workers", run: func() (bool, error) { return true, s.app.OrchestratedWithKnowledge(s.ctx, "codex", "", nil, nil) }},
 		{id: "launch.claude", label: "Launch Claude Code", description: "Official Claude interface with IVOAI knowledge and safe compression", run: func() (bool, error) { return true, s.app.Launch(s.ctx, "claude", nil) }},
 		{id: "launch.opencode", label: "Launch IVOAI OpenCode frontend", description: "Managed OpenCode interface with IVOAI-routed Codex and Claude executors", run: func() (bool, error) { return true, s.app.Auto(s.ctx, "", nil) }},
+	})
+}
+
+func (s *menuSession) launch() (bool, error) {
+	return s.loop("Launch — auto is a deprecated alias for opencode", []menuAction{
+		{id: "launch.codex", label: "Codex Orchestrated", description: "Prompt gate, approved plan and automatic workers; Codex primary preference", run: func() (bool, error) { return true, s.app.OrchestratedWithKnowledge(s.ctx, "codex", "", nil, nil) }},
+		{id: "launch.opencode", label: "OpenCode Orchestrated", description: "Managed OpenCode frontend, same IVOAI policies and worker scheduler", run: func() (bool, error) { return true, s.app.Auto(s.ctx, "", nil) }},
+		{id: "session.direct.codex", label: "Codex Direct", description: "Official Codex TUI; no prompt gate or automatic DAG", run: func() (bool, error) { return true, s.app.SessionStart(s.ctx, "codex", "direct", nil) }},
+		{id: "session.direct.claude", label: "Claude Direct", description: "Optional official Claude client", run: func() (bool, error) { return true, s.app.SessionStart(s.ctx, "claude", "direct", nil) }},
+		{id: "session.direct.opencode", label: "OpenCode Direct", description: "Standalone official OpenCode; no orchestration", run: func() (bool, error) { return true, s.app.SessionStart(s.ctx, "opencode", "direct", nil) }},
 	})
 }
 
@@ -151,7 +161,7 @@ func (s *menuSession) sessions() (bool, error) {
 		{id: "session.direct.codex", label: "Direct Session — Codex", description: "Official Codex runtime with session observability; Ruflo is not started", run: func() (bool, error) { return true, s.app.SessionStart(s.ctx, "codex", "direct", nil) }},
 		{id: "session.direct.claude", label: "Direct Session — Claude Code", description: "Official Claude Code runtime with session observability; Ruflo is not started", run: func() (bool, error) { return true, s.app.SessionStart(s.ctx, "claude", "direct", nil) }},
 		{id: "session.direct.opencode", label: "Standalone Session — OpenCode", description: "Unmodified upstream OpenCode provider path; IVOAI AUTO bridge is not used", run: func() (bool, error) { return true, s.app.SessionStart(s.ctx, "opencode", "direct", nil) }},
-		{id: "session.orchestrated.codex", label: "Orchestrated Session — Codex", description: "Safe Ruflo swarm with official Codex primary and bounded workers", run: func() (bool, error) { return true, s.app.SessionStart(s.ctx, "codex", "orchestrated", nil) }},
+		{id: "session.orchestrated.codex", label: "Orchestrated Session — Codex", description: "Native IVOAI prompt gate, DAG and scoped workers", run: func() (bool, error) { return true, s.app.SessionStart(s.ctx, "codex", "orchestrated", nil) }},
 		{id: "session.orchestrated.claude", label: "Orchestrated Session — Claude Code", description: "Safe Ruflo swarm with official Claude Code primary and bounded workers", run: func() (bool, error) { return true, s.app.SessionStart(s.ctx, "claude", "orchestrated", nil) }},
 		{id: "session.list", label: "List Sessions", description: "Show non-sensitive lifecycle metadata", run: s.simple(func() error { return runSession(s.ctx, s.app, []string{"list"}) })},
 		{id: "session.monitor", label: "Monitor Latest Session", description: "Show primary, swarm, workers, and service health", run: s.simple(func() error { return runMonitor(s.ctx, s.app, nil) })},

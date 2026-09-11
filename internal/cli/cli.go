@@ -165,33 +165,34 @@ func runCommand(ctx context.Context, a *app.App, args []string) error {
 		return runConnect(ctx, a, args[1:])
 	case "disconnect":
 		return runDisconnect(ctx, a, args[1:])
-	case "codex", "claude":
+	case "claude":
 		rest, sources, err := extractKnowledgeSources(args[1:])
 		if err != nil {
 			return err
 		}
 		return a.LaunchWithKnowledge(ctx, args[0], trimDoubleDash(rest), sources)
-	case "opencode":
+	case "codex", "opencode", "auto":
 		rest, sources, err := extractKnowledgeSources(args[1:])
 		if err != nil {
 			return err
 		}
-		if len(trimDoubleDash(rest)) != 0 {
-			return errors.New("ivoai opencode uses the managed IVOAI frontend and accepts only --knowledge-source; use 'ivoai session start --executor opencode --mode direct --' for the standalone upstream CLI")
+		frontend := args[0]
+		if frontend == "auto" {
+			frontend = "opencode"
+			fmt.Fprintln(a.Err, "`ivoai auto` is deprecated; use `ivoai opencode`.")
 		}
-		return a.AutoWithKnowledge(ctx, "", nil, sources)
-	case "auto":
-		rest, sources, err := extractKnowledgeSources(args[1:])
-		if err != nil {
-			return err
+		// --direct must precede --; everything after -- belongs to the
+		// official client and is not reinterpreted as an IVOAI mode switch.
+		if len(rest) > 0 && rest[0] == "--direct" {
+			return a.SessionStartWithKnowledge(ctx, frontend, session.ModeDirect, trimDoubleDash(rest[1:]), sources)
 		}
-		fs := flag.NewFlagSet("auto", flag.ContinueOnError)
+		fs := flag.NewFlagSet(frontend, flag.ContinueOnError)
 		fs.SetOutput(a.Err)
 		planner := fs.String("planner", "", "codex, claude or opencode (native authentication required)")
 		if err := fs.Parse(rest); err != nil {
 			return err
 		}
-		return a.AutoWithKnowledge(ctx, *planner, trimDoubleDash(fs.Args()), sources)
+		return a.OrchestratedWithKnowledge(ctx, frontend, *planner, trimDoubleDash(fs.Args()), sources)
 	case "session":
 		return runSession(ctx, a, args[1:])
 	case "monitor":
@@ -740,9 +741,9 @@ Usage:
   ivoai connect mcp header set <name> <header-name> --value-stdin
   ivoai connect mcp test <name>
   ivoai disconnect <chatgpt|claude|server [alias|--all]>
-  ivoai codex [--knowledge-source <alias|purpose>] [-- agent arguments...]
+  ivoai codex [--direct] [--knowledge-source <alias|purpose>] [-- agent arguments...]
   ivoai claude [--knowledge-source <alias|purpose>] [-- agent arguments...]
-  ivoai opencode [--knowledge-source <alias|purpose>]
+  ivoai opencode [--direct] [--planner codex|claude|opencode] [--knowledge-source <alias|purpose>] [-- agent arguments...]
   ivoai auto [--planner codex|claude|opencode] [--knowledge-source <alias|purpose>] [-- agent arguments...]
   ivoai session start --executor <codex|claude|opencode> --mode <direct|orchestrated> [--knowledge-source <alias|purpose>] [-- agent arguments...]
   ivoai session list [--json] | show [--json] <id> | stop <id>

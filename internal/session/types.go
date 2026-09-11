@@ -154,6 +154,8 @@ type Session struct {
 	Mode                  Mode                                   `json:"mode"`
 	PrimaryExecutor       string                                 `json:"primary_executor"`
 	Frontend              string                                 `json:"frontend,omitempty"`
+	OrchestrationMode     string                                 `json:"orchestration_mode,omitempty"`
+	PrimaryProvider       string                                 `json:"primary_provider,omitempty"`
 	FrontendSessionID     string                                 `json:"frontend_session_id,omitempty"`
 	FrontendPID           int                                    `json:"frontend_pid,omitempty"`
 	FrontendProcessStart  string                                 `json:"frontend_process_start,omitempty"`

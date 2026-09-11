@@ -309,6 +309,18 @@ func (s *Server) plan(ctx context.Context, request *mcp.CallToolRequest) (*mcp.C
 			return nil, err
 		}
 	}
+	if s.AutomaticDispatch {
+		s.mu.Lock()
+		for _, task := range s.plans[planID].Tasks {
+			if task.Task.State == "planned" {
+				task.Task.State, task.Queued = "queued", true
+			}
+		}
+		s.signalLocked()
+		s.mu.Unlock()
+		s.persistRuntimePlan(planID)
+		s.scheduleReady(planID)
+	}
 	return toolResult(planMetadata(resolved))
 }
 
@@ -380,7 +392,7 @@ func (s *Server) spawnBatch(_ context.Context, request *mcp.CallToolRequest) (*m
 			s.mu.Unlock()
 			return nil, fmt.Errorf("task %q is unavailable or owned by the primary", id)
 		}
-		if task.Task.State != "planned" {
+		if task.Task.State != "planned" && !s.AutomaticDispatch {
 			s.mu.Unlock()
 			return nil, fmt.Errorf("task %q was already dispatched", id)
 		}
@@ -388,7 +400,9 @@ func (s *Server) spawnBatch(_ context.Context, request *mcp.CallToolRequest) (*m
 	// Validate the complete batch before mutating any task. A malformed final
 	// entry must not leave its preceding tasks invisibly queued.
 	for _, id := range args.TaskIDs {
-		plan.Tasks[id].Task.State, plan.Tasks[id].Queued = "queued", true
+		if plan.Tasks[id].Task.State == "planned" {
+			plan.Tasks[id].Task.State, plan.Tasks[id].Queued = "queued", true
+		}
 	}
 	s.signalLocked()
 	s.mu.Unlock()

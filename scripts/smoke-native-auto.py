@@ -20,6 +20,9 @@ import time
 
 binary, root = Path(sys.argv[1]).resolve(), Path(sys.argv[2]).resolve()
 complex_case = os.environ.get("IVOAI_NATIVE_SMOKE_COMPLEX") == "1"
+frontend = os.environ.get("IVOAI_NATIVE_SMOKE_FRONTEND", "opencode")
+assert frontend in {"codex", "opencode", "auto"}
+codex_frontend = frontend == "codex"
 repo = root / "fixture"
 repo.mkdir(mode=0o700)
 (repo / "VERSION").write_text("fixture-1\n")
@@ -39,7 +42,7 @@ def owner():
     os.setsid()
     fcntl.ioctl(0, termios.TIOCSCTTY, 0)
 
-process = subprocess.Popen([str(binary), "auto"], cwd=repo, stdin=slave,
+process = subprocess.Popen([str(binary), frontend], cwd=repo, stdin=slave,
                            stdout=slave, stderr=slave, preexec_fn=owner)
 os.close(slave)
 history = ""
@@ -65,7 +68,8 @@ def send(text):
     pump(.3)
 
 def metadata():
-    for path in sessions.glob("*.json"):
+    for path in (list(sessions.glob("*.json")) + list((sessions / ".native-opencode").glob("*.json"))
+                 + list((sessions / ".orchestrated-frontends").glob("*.json"))):
         value = json.loads(path.read_text())
         if value.get("working_directory") == str(repo):
             return value
@@ -80,11 +84,12 @@ def wait_for(predicate, timeout, failure):
         peak_workers = max(peak_workers, sum(w.get("state") == "running" for w in value.get("workers", [])))
         for decision in value.get("decisions", []):
             if (decision.get("kind") == "routing" and decision.get("state") == "pending"
-                    and decision["id"] not in handled_routing and "IVOAI quota routing approval" in plain):
+                    and decision["id"] not in handled_routing and
+                    ("IVOAI quota routing approval" in plain or codex_frontend and "/approve or /reject" in plain)):
                 # This smoke never authorizes a real cross-provider change or
                 # consumes quota deliberately. Keep the original strong route.
                 pump(1)
-                send("\x1b")
+                send("/reject\n" if codex_frontend else "\x1b")
                 handled_routing.add(decision["id"])
                 print("LOW_QUOTA_VISIBLE=true CONSERVATION_DECISION=KEEP_CURRENT", flush=True)
         if predicate(plain, value):
@@ -108,23 +113,24 @@ def wait_for(predicate, timeout, failure):
 
 try:
     wait_for(lambda text, _: "IVOAI control plane" in text or
-             "IVOAI Automatic Orchestration" in text, 120, "FRONTEND_NOT_READY")
+             "IVOAI Automatic Orchestration" in text or "Codex Orchestrated" in text, 120, "FRONTEND_NOT_READY")
     send("corrija o projeto")
-    send("\r")
+    send("\n/submit\n" if codex_frontend else "\r")
     wait_for(lambda text, _: "insufficient" in text.lower(), 45, "PROMPT_GATE_FAILED")
     assert not metadata().get("workers"), "WORKER_STARTED_BEFORE_GATE"
     assert not any(e.get("operation") == "skill.gate" for e in metadata().get("observability", [])), "SKILL_GATE_BEFORE_PROMPT_GATE"
     print("INSUFFICIENT_PROMPT_REJECTED=PASS NO_WORKER_BEFORE_GATE=true", flush=True)
     prompt = "Read VERSION in this fixture repository and report its value without modifying files. Acceptance: return exactly fixture-1 as the final response. Use a single primary-owned research task, record its completion and integrate the plan before synthesis."
     if complex_case:
-        prompt = "Objective: implement two independent changes in this small fixture repository and document them. Deliverables: a.sh must print exactly A, b.sh must print exactly B, and README.md explains both commands. Constraints: do not change protected.txt or VERSION; no external knowledge or MCP is necessary; use two independent implementation workers in isolated worktrees, plus bounded documentation and validation tasks. Acceptance: sh a.sh returns A with exit 0; sh b.sh returns B with exit 0; README.md documents both commands; protected.txt and VERSION are unchanged; final validation passes. Present the native DAG for approval, use orchestration_spawn_batch for dependency-ready workers, integrate and synthesize only after all local acceptance passes."
+        prompt = "Objective: implement two independent changes in this small fixture repository and document them. Deliverables: a.sh must print exactly A, b.sh must print exactly B, and README.md explains both commands. Constraints: do not change protected.txt or VERSION; no external knowledge or MCP is necessary; use two independent implementation workers in isolated worktrees, plus bounded documentation and validation tasks. Acceptance: sh a.sh returns A with exit 0; sh b.sh returns B with exit 0; README.md documents both commands; protected.txt and VERSION are unchanged; final validation passes. Present the native DAG for approval; let IVOAI automatically dispatch workers, integrate and synthesize only after all local acceptance passes."
     send(prompt)
-    send("\r")
+    send("\n/submit\n" if codex_frontend else "\r")
     wait_for(lambda text, value: any(d.get("kind") == "plan" and d.get("state") == "pending"
-             for d in value.get("decisions", [])) and "IVOAI plan approval" in text,
+             for d in value.get("decisions", [])) and
+             ("IVOAI plan approval" in text or codex_frontend and "/approve or /reject" in text),
              480 if complex_case else 240, "PLAN_NOT_PRESENTED")
     assert not metadata().get("workers"), "WORKER_STARTED_BEFORE_APPROVAL"
-    send("\r")  # Official DialogConfirm, only the fixture plan is approved.
+    send("/approve\n" if codex_frontend else "\r")  # Only the fixture plan is approved.
     print("PLAN_PRESENTED=true PLAN_APPROVAL_SENT=true", flush=True)
     wait_for(lambda _, value: value.get("current_phase") == "synthesizing" and
              (value.get("executor_trace") or {}).get("final_response_present"),
@@ -150,7 +156,8 @@ try:
             assert all(len(w.get("selected_skills", [])) <= 3 for w in capability_workers), "SKILL_BROADCAST"
             print("NATIVE_CAPABILITY_METADATA=PASS PONYTAIL_IMPLEMENTATION_ONLY=PASS NO_GLOBAL_SKILL_BROADCAST=true", flush=True)
         print("DAG_COMPLEX=PASS PARALLEL_WORKERS=PASS WORKTREES=PASS FIXTURE_ACCEPTANCE=PASS", flush=True)
-    print("PLAN_APPROVAL=PASS DAG_PRIMARY_ONLY=PASS FINAL_SYNTHESIS=PASS AUTO_FRONTEND=OPENCODE", flush=True)
+    assert value.get("frontend") == ("codex" if codex_frontend else "opencode")
+    print(f"PLAN_APPROVAL=PASS FINAL_SYNTHESIS=PASS FRONTEND={frontend}", flush=True)
 finally:
     if process.poll() is None:
         send("/exit")

@@ -111,6 +111,8 @@ type Status struct {
 	Version               string       `json:"version"`
 	SessionID             string       `json:"session_id"`
 	Frontend              string       `json:"frontend"`
+	OrchestrationMode     string       `json:"orchestration_mode,omitempty"`
+	PrimaryProvider       string       `json:"primary_provider,omitempty"`
 	Primary               string       `json:"primary"`
 	SelectionMode         string       `json:"selection_mode,omitempty"`
 	RequestedExecutor     string       `json:"requested_executor,omitempty"`
@@ -156,6 +158,10 @@ type WorkerView struct {
 }
 
 type Options struct {
+	InitialModel  string
+	InitialEffort string
+	// Frontend is trusted session metadata, never inferred from the executor.
+	Frontend string
 	// RequirePromptGate is always enabled by AUTO. Direct executor sessions keep
 	// their own intake contract; it is not a user-configurable bypass for AUTO.
 	RequirePromptGate     bool
@@ -183,6 +189,9 @@ type Options struct {
 }
 
 type Bridge struct {
+	initialModel          string
+	initialEffort         string
+	frontend              string
 	requirePromptGate     bool
 	promptReadiness       promptgate.Result
 	nativePermissions     func() []PermissionView
@@ -249,6 +258,7 @@ func Start(options Options) (*Bridge, error) {
 		return nil, fmt.Errorf("listen for OpenCode bridge: %w", err)
 	}
 	bridge := &Bridge{
+		frontend: options.Frontend, initialModel: options.InitialModel, initialEffort: options.InitialEffort,
 		requirePromptGate: options.RequirePromptGate,
 		nativePermissions: options.NativePermissions, replyNativePermission: options.ReplyNativePermission,
 		selectAlternate: options.SelectAlternate,
@@ -257,6 +267,9 @@ func Start(options Options) (*Bridge, error) {
 		runner: options.Runner, selectFn: options.Select, monitor: options.Monitor, handoff: options.FailoverHandoff, maxFailovers: options.MaxFailovers, statusFn: options.Status,
 		mapping: options.Mapping, attempt: options.Attempt, lookup: options.LookupMapping, claim: options.ClaimRequest, catalog: options.Catalog, authorizeSelection: options.AuthorizeSelection, onSelection: options.OnSelection,
 		sessions: map[string]map[string]Mapping{}, lastExecutor: map[string]string{}, active: map[string]activeExecution{}, completed: map[string]cachedCompletion{}, closed: make(chan struct{}),
+	}
+	if bridge.frontend == "" {
+		bridge.frontend = "opencode"
 	}
 	if bridge.maxFailovers <= 0 || bridge.maxFailovers > 2 {
 		bridge.maxFailovers = 2
@@ -268,6 +281,8 @@ func Start(options Options) (*Bridge, error) {
 	mux.HandleFunc("POST /native-permissions/reply", bridge.authorize(bridge.nativePermissionReply))
 	mux.HandleFunc("GET /v1/models", bridge.authorize(bridge.models))
 	mux.HandleFunc("POST /v1/chat/completions", bridge.authorize(bridge.chat))
+	// Both transports enter exactly the same authoritative turn admission.
+	mux.HandleFunc("POST /turn", bridge.authorize(bridge.chat))
 	bridge.server = &http.Server{
 		Handler:           mux,
 		ReadHeaderTimeout: 5 * time.Second,
@@ -346,7 +361,8 @@ func (b *Bridge) models(w http.ResponseWriter, _ *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]any{"object": "list", "data": data})
 }
 
-func (b *Bridge) Catalog() ModelCatalog { return b.catalog }
+func (b *Bridge) Catalog() ModelCatalog              { return b.catalog }
+func (b *Bridge) InitialSelection() (string, string) { return b.initialModel, b.initialEffort }
 
 type chatRequest struct {
 	Model           string        `json:"model"`
@@ -371,6 +387,9 @@ func (b *Bridge) chat(w http.ResponseWriter, r *http.Request) {
 		writeOpenAIError(w, http.StatusBadRequest, "invalid IVOAI bridge request")
 		return
 	}
+	if request.Model == "auto" && b.initialModel != "" && b.initialModel != "auto" {
+		request.Model, request.ReasoningEffort = b.initialModel, b.initialEffort
+	}
 	selection, ok := b.catalog.Resolve(request.Model, request.ReasoningEffort)
 	if !ok {
 		writeOpenAIErrorCode(w, http.StatusBadRequest, "unknown model or unsupported reasoning effort", "EXPLICIT_MODEL_UNAVAILABLE")
@@ -382,12 +401,18 @@ func (b *Bridge) chat(w http.ResponseWriter, r *http.Request) {
 		writeOpenAIError(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	frontendID := strings.TrimSpace(r.Header.Get("X-IVOAI-OpenCode-Session"))
+	frontendID := strings.TrimSpace(r.Header.Get("X-IVOAI-Session"))
+	if frontendID == "" {
+		frontendID = strings.TrimSpace(r.Header.Get("X-IVOAI-OpenCode-Session"))
+	}
 	if !safeID(frontendID) {
 		writeOpenAIError(w, http.StatusBadRequest, "missing or invalid OpenCode session identity")
 		return
 	}
-	messageID := strings.TrimSpace(r.Header.Get("X-IVOAI-OpenCode-Message"))
+	messageID := strings.TrimSpace(r.Header.Get("X-IVOAI-Message"))
+	if messageID == "" {
+		messageID = strings.TrimSpace(r.Header.Get("X-IVOAI-OpenCode-Message"))
+	}
 	if !safeID(messageID) {
 		writeOpenAIError(w, http.StatusBadRequest, "missing or invalid OpenCode message identity")
 		return
@@ -588,7 +613,7 @@ func (b *Bridge) chat(w http.ResponseWriter, r *http.Request) {
 			err   error
 		}
 		finished := make(chan executionResult, 1)
-		turn := TurnAttempt{ID: fmt.Sprintf("%d_%d_%d", time.Now().UnixNano(), runID, attempt), Frontend: "opencode", FrontendSessionID: frontendID, RequestedExecutor: selection.Executor, EffectiveExecutor: executor, RequestedModel: selection.Model, RequestedEffort: selection.Effort, StartedAt: time.Now().UTC(), State: "running"}
+		turn := TurnAttempt{ID: fmt.Sprintf("%d_%d_%d", time.Now().UnixNano(), runID, attempt), Frontend: b.frontend, FrontendSessionID: frontendID, RequestedExecutor: selection.Executor, EffectiveExecutor: executor, RequestedModel: selection.Model, RequestedEffort: selection.Effort, StartedAt: time.Now().UTC(), State: "running"}
 		if b.attempt != nil {
 			if err := b.attempt(turn); err != nil {
 				if stream {

@@ -13,6 +13,7 @@ import (
 )
 
 const nativeDirectory = ".native-opencode"
+const frontendDirectory = ".orchestrated-frontends"
 
 type diskSession struct {
 	Session
@@ -41,7 +42,15 @@ func nativeSession(value Session) bool {
 func (s Store) nativeDir() string           { return filepath.Join(s.Root, nativeDirectory) }
 func (s Store) nativePath(id string) string { return filepath.Join(s.nativeDir(), id+".json") }
 func (s Store) validateNativeDir() error {
-	info, err := os.Lstat(s.nativeDir())
+	return s.validateSessionNamespace(s.nativeDir())
+}
+
+func (s Store) frontendDir() string { return filepath.Join(s.Root, frontendDirectory) }
+func (s Store) validateSessionNamespace(directory string) error {
+	if directory != s.nativeDir() && directory != s.frontendDir() {
+		return errors.New("invalid session namespace")
+	}
+	info, err := os.Lstat(directory)
 	if err != nil {
 		return err
 	}
@@ -94,6 +103,12 @@ func (s Store) ReconcileNativeMetadata() error {
 }
 
 func (s Store) path(id string) string {
+	// v0.9.9 does not enumerate this namespace and cannot rewrite new frontend
+	// metadata during rollback. Reapply uses the same records, not a new store.
+	frontendPath := filepath.Join(s.frontendDir(), id+".json")
+	if _, err := os.Lstat(frontendPath); !errors.Is(err, fs.ErrNotExist) {
+		return frontendPath
+	}
 	path := s.nativePath(id)
 	if _, err := os.Lstat(path); !errors.Is(err, fs.ErrNotExist) {
 		return path
