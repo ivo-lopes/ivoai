@@ -46,6 +46,11 @@ func TestLiveNativeAUTOArtifact(t *testing.T) {
 	for _, name := range []string{"codex", "codex-code-mode-host", "opencode"} {
 		state.Components[name] = installed.Components[name]
 	}
+	if path := os.Getenv("IVOAI_NATIVE_SMOKE_OPENCODE_PATH"); path != "" {
+		// Public artifact tests can select the matching downloaded frontend;
+		// only isolated component metadata changes, never operator installation.
+		state.Components["opencode"] = config.ComponentState{Installed: true, Managed: true, Version: "1.18.25-ivoai.1", Path: path}
+	}
 	if err := store.SaveState(state); err != nil {
 		t.Fatal(err)
 	}

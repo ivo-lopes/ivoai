@@ -138,6 +138,13 @@ func (a *App) scopeAutoRunner(base opencodebridge.ExecutorRunner, original confi
 			return nil, nil, err
 		}
 		if k.external != nil {
+			k.external.SetToolAdmission(func(server, tool string) (bool, bool) {
+				v, err := store.Get(id)
+				if err != nil {
+					return false, false
+				}
+				return primaryMCPGrant(v, original, server, tool)
+			})
 			k.external.SetAdmission(func() bool {
 				v, err := store.Get(id)
 				if err != nil || !v.Active() || len(v.Tasks) == 0 || v.PlanID == "" {

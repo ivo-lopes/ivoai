@@ -606,6 +606,19 @@ func runMCP(a *app.App, args []string) error {
 		return a.MCPList()
 	}
 	switch args[0] {
+	case "enable", "disable", "tools":
+		if len(args) != 2 {
+			return errors.New("usage: ivoai connect mcp <enable|disable|tools> <name>")
+		}
+		if args[0] == "tools" {
+			return a.MCPTools(args[1])
+		}
+		return a.MCPEnable(args[1], args[0] == "enable")
+	case "policy", "direct-policy":
+		if len(args) != 3 {
+			return errors.New("usage: ivoai connect mcp policy <name> <read_only|read_auto_ask_mutating> | direct-policy <name> <read_only|disabled>")
+		}
+		return a.MCPPolicy(args[1], args[2], args[0] == "direct-policy")
 	case "add":
 		if len(args) != 3 {
 			return errors.New("usage: ivoai connect mcp add <name> <https-url>")
@@ -740,6 +753,10 @@ Usage:
   ivoai connect mcp auth remove <name>
   ivoai connect mcp header set <name> <header-name> --value-stdin
   ivoai connect mcp test <name>
+  ivoai connect mcp tools <name>
+  ivoai connect mcp enable <name> | disable <name>
+  ivoai connect mcp policy <name> <read_only|read_auto_ask_mutating>
+  ivoai connect mcp direct-policy <name> <read_only|disabled>
   ivoai disconnect <chatgpt|claude|server [alias|--all]>
   ivoai codex [--direct] [--knowledge-source <alias|purpose>] [-- agent arguments...]
   ivoai claude [--knowledge-source <alias|purpose>] [-- agent arguments...]

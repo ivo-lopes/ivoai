@@ -3,6 +3,9 @@ package orchestrator
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
+	"github.com/ivo-lopes/ivoai/internal/externalmcp"
+	"sort"
 	"strings"
 
 	"github.com/ivo-lopes/ivoai/internal/routing"
@@ -10,10 +13,44 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/workingcontext"
 )
 
+func cloneToolScope(scope map[string][]string) map[string][]string {
+	if scope == nil {
+		return nil
+	}
+	result := map[string][]string{}
+	for name, tools := range scope {
+		result[name] = append([]string(nil), tools...)
+	}
+	return result
+}
+
+func planGrantSummary(tasks []routing.Task) (string, error) {
+	summary := fmt.Sprintf("Approve %d tasks and these exact MCP grants?", len(tasks))
+	for _, task := range tasks {
+		names := []string{}
+		for name := range task.AllowedMCPTools {
+			names = append(names, name)
+		}
+		sort.Strings(names)
+		for _, name := range names {
+			tools := append([]string(nil), task.AllowedMCPTools[name]...)
+			sort.Strings(tools)
+			summary += fmt.Sprintf(" | %s: %s [%s]", task.ID, name, strings.Join(tools, ", "))
+		}
+	}
+	if len(summary) > 1024 {
+		return "", errors.New("MCP approval exceeds display budget; request fewer exact tools")
+	}
+	return summary, nil
+}
+
 // scopedBrief never broadcasts the session objective, facts, decisions, or
 // unrelated references. The host intersects requested references with already
 // admitted session evidence; text remains private input, not status metadata.
 func scopedBrief(shared session.SharedContextBrief, task routing.TaskInput) (string, error) {
+	if err := externalmcp.ValidateScope(task.AllowedMCPTools); err != nil {
+		return "", err
+	}
 	for _, items := range [][]string{task.Acceptance, task.Constraints, task.ContextReferences, task.KnowledgeSources, task.AllowedMCPs, task.Skills, task.WritePaths} {
 		if len(items) > 32 {
 			return "", errors.New("worker context list exceeds limit")
@@ -35,16 +72,17 @@ func scopedBrief(shared session.SharedContextBrief, task routing.TaskInput) (str
 		}
 	}
 	value := struct {
-		Objective    string   `json:"local_objective"`
-		Acceptance   []string `json:"local_acceptance"`
-		Constraints  []string `json:"constraints"`
-		References   []string `json:"references"`
-		Dependencies []string `json:"dependencies"`
-		Skills       []string `json:"skills"`
-		MCPs         []string `json:"allowed_mcps"`
-		WritePaths   []string `json:"write_paths"`
-		Sources      []string `json:"knowledge_sources"`
-	}{task.Task, task.Acceptance, task.Constraints, references, task.Dependencies, task.Skills, task.AllowedMCPs, task.WritePaths, task.KnowledgeSources}
+		Objective    string              `json:"local_objective"`
+		Acceptance   []string            `json:"local_acceptance"`
+		Constraints  []string            `json:"constraints"`
+		References   []string            `json:"references"`
+		Dependencies []string            `json:"dependencies"`
+		Skills       []string            `json:"skills"`
+		MCPs         []string            `json:"allowed_mcps"`
+		WritePaths   []string            `json:"write_paths"`
+		Sources      []string            `json:"knowledge_sources"`
+		Tools        map[string][]string `json:"allowed_mcp_tools"`
+	}{task.Task, task.Acceptance, task.Constraints, references, task.Dependencies, task.Skills, task.AllowedMCPs, task.WritePaths, task.KnowledgeSources, task.AllowedMCPTools}
 	body, err := json.Marshal(value)
 	if err != nil {
 		return "", err

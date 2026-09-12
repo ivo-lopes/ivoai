@@ -24,14 +24,15 @@ import (
 )
 
 type runtimePlan struct {
-	workMu     sync.Mutex
-	worktrees  *orchestration.Worktrees
-	sequential *orchestration.SequentialPatch
-	workIDs    map[string]string
-	integrated bool
-	Plan       routing.Plan
-	Tasks      map[string]*runtimeTask
-	Workers    map[string]string
+	approvalRequired bool
+	workMu           sync.Mutex
+	worktrees        *orchestration.Worktrees
+	sequential       *orchestration.SequentialPatch
+	workIDs          map[string]string
+	integrated       bool
+	Plan             routing.Plan
+	Tasks            map[string]*runtimeTask
+	Workers          map[string]string
 }
 
 type runtimeTask struct {
@@ -103,7 +104,8 @@ func planSchema() map[string]any {
 	task := object(map[string]any{
 		"executor": map[string]any{"type": "string", "enum": quota.ProviderNames()}, "model": safeText(128), "effort": safeText(32),
 		"acceptance": stringList(), "constraints": stringList(), "context_references": stringList(), "knowledge_sources": stringList(), "allowed_mcps": stringList(), "skills": stringList(), "write_paths": stringList(),
-		"id": safeString(64), "role": safeString(64), "task": safeText(workers.MaxTaskBytes),
+		"allowed_mcp_tools": map[string]any{"type": "object", "additionalProperties": stringList()},
+		"id":                safeString(64), "role": safeString(64), "task": safeText(workers.MaxTaskBytes),
 		"dependencies":          map[string]any{"type": "array", "maxItems": routing.MaxTasks, "uniqueItems": true, "items": safeString(64)},
 		"parallel_group":        map[string]any{"type": "string", "maxLength": 64},
 		"required_capabilities": map[string]any{"type": "array", "maxItems": 16, "uniqueItems": true, "items": safeString(64)},
@@ -241,6 +243,14 @@ func (s *Server) plan(ctx context.Context, request *mcp.CallToolRequest) (*mcp.C
 			delegated[task.ID] = true
 		}
 	}
+	requirePlanApproval := s.RequirePlanApproval
+	if s.CheckMCPGrants != nil {
+		required, err := s.CheckMCPGrants(ctx, inputs)
+		if err != nil {
+			return nil, err
+		}
+		requirePlanApproval = requirePlanApproval || required
+	}
 	planID, err := newPlanID()
 	if err != nil {
 		return nil, err
@@ -255,7 +265,7 @@ func (s *Server) plan(ctx context.Context, request *mcp.CallToolRequest) (*mcp.C
 		return nil, err
 	}
 	resolved.CreatedAt = time.Now().UTC()
-	runtimeValue := &runtimePlan{Plan: resolved, Tasks: map[string]*runtimeTask{}, Workers: map[string]string{}}
+	runtimeValue := &runtimePlan{approvalRequired: requirePlanApproval, Plan: resolved, Tasks: map[string]*runtimeTask{}, Workers: map[string]string{}}
 	for index := range resolved.Tasks {
 		task := resolved.Tasks[index]
 		_, task.DelegationBenefit, task.DelegationOverhead = routing.DelegationDecision(task.Scores)
@@ -283,8 +293,12 @@ func (s *Server) plan(ctx context.Context, request *mcp.CallToolRequest) (*mcp.C
 	if err := s.persistPlan(resolved); err != nil {
 		return nil, err
 	}
-	if s.RequirePlanApproval {
-		if err := s.Store.RequestDecision(s.SessionID, planID, "plan"); err != nil {
+	if requirePlanApproval {
+		summary, err := planGrantSummary(resolved.Tasks)
+		if err != nil {
+			return nil, err
+		}
+		if err := s.Store.RequestDecisionSummary(s.SessionID, planID, "plan", summary); err != nil {
 			return nil, err
 		}
 		if _, err := s.Store.Update(s.SessionID, func(value *session.Session) error { value.CurrentPhase = "waiting_for_plan_approval"; return nil }); err != nil {
@@ -441,7 +455,13 @@ func (s *Server) primaryComplete(_ context.Context, request *mcp.CallToolRequest
 }
 
 func (s *Server) requireApprovedPlan(planID string) error {
-	if s.RequirePlanApproval {
+	s.mu.Lock()
+	required := s.RequirePlanApproval
+	if plan := s.plans[planID]; plan != nil {
+		required = required || plan.approvalRequired
+	}
+	s.mu.Unlock()
+	if required {
 		value, err := s.Store.Get(s.SessionID)
 		if err != nil {
 			return err
@@ -990,7 +1010,7 @@ func (s *Server) persistRuntimePlan(planID string) {
 }
 
 func taskMetadata(task routing.Task) session.TaskMetadata {
-	return session.TaskMetadata{KnowledgeSources: append([]string(nil), task.KnowledgeSources...), AllowedMCPs: append([]string(nil), task.AllowedMCPs...), Skills: append([]string(nil), task.Skills...), ID: task.ID, Role: task.Role, Dependencies: append([]string(nil), task.Dependencies...), ParallelGroup: task.ParallelGroup, CapabilityScore: task.CapabilityScore, Tier: string(task.Tier), Executor: task.Profile.Provider, Model: session.ModelInfo{Name: displayModel(task.Profile.Model), Source: session.ModelSource(task.Profile.ModelSource)}, Effort: task.Profile.Effort, EffortSource: string(task.Profile.EffortSource), State: session.State(task.State), DurationMilliseconds: task.DurationMilliseconds, HeadroomUsed: task.HeadroomUsed, IntentionalRedundancy: task.IntentionalRedundancy, Escalations: task.EscalationCount, EscalationReason: task.EscalationReason, ExecutionMode: task.ExecutionMode, DelegationBenefit: task.DelegationBenefit, DelegationOverhead: task.DelegationOverhead, DelegationReason: task.DelegationReason}
+	return session.TaskMetadata{AllowedMCPTools: cloneToolScope(task.AllowedMCPTools), KnowledgeSources: append([]string(nil), task.KnowledgeSources...), AllowedMCPs: append([]string(nil), task.AllowedMCPs...), Skills: append([]string(nil), task.Skills...), ID: task.ID, Role: task.Role, Dependencies: append([]string(nil), task.Dependencies...), ParallelGroup: task.ParallelGroup, CapabilityScore: task.CapabilityScore, Tier: string(task.Tier), Executor: task.Profile.Provider, Model: session.ModelInfo{Name: displayModel(task.Profile.Model), Source: session.ModelSource(task.Profile.ModelSource)}, Effort: task.Profile.Effort, EffortSource: string(task.Profile.EffortSource), State: session.State(task.State), DurationMilliseconds: task.DurationMilliseconds, HeadroomUsed: task.HeadroomUsed, IntentionalRedundancy: task.IntentionalRedundancy, Escalations: task.EscalationCount, EscalationReason: task.EscalationReason, ExecutionMode: task.ExecutionMode, DelegationBenefit: task.DelegationBenefit, DelegationOverhead: task.DelegationOverhead, DelegationReason: task.DelegationReason}
 }
 
 func planMetadata(plan routing.Plan) map[string]any {

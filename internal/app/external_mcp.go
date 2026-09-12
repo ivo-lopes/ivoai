@@ -57,7 +57,23 @@ func (a *App) prepareSessionKnowledgeSelection(ctx context.Context, cfg config.C
 			result.close()
 			return sessionKnowledge{}, fmt.Errorf("external MCP %q: %w", name, err)
 		}
-		targets = append(targets, externalmcp.Target{Name: name, URL: entry.URL, Headers: headers})
+		target := externalmcp.Target{Name: name, URL: entry.URL, Headers: headers, Restricted: true}
+		// Discovery is read-only; no cached annotation can silently authorize a
+		// changed upstream tool. A unavailable MCP projects zero tools, not all.
+		if managed || entry.ResolvedDirectPolicy() == "read_only" {
+			inventory, probeErr := registry.DiscoverTools(ctx, entry)
+			if probeErr == nil {
+				for _, tool := range inventory {
+					if tool.ReadOnly {
+						target.AllowedTools = append(target.AllowedTools, tool.Name)
+					} else if managed && entry.ResolvedMCPPolicy() == "read_auto_ask_mutating" {
+						target.AllowedTools = append(target.AllowedTools, tool.Name)
+						target.ApprovalTools = append(target.ApprovalTools, tool.Name)
+					}
+				}
+			}
+		}
+		targets = append(targets, target)
 	}
 	mode := cfg.OpenCode.ResolvedPermissionMode()
 	if !managed {
@@ -69,6 +85,10 @@ func (a *App) prepareSessionKnowledgeSelection(ctx context.Context, cfg config.C
 		return sessionKnowledge{}, err
 	}
 	result.external = gateway
+	if managed {
+		// No grace window before the per-turn task admission callback is installed.
+		gateway.SetToolAdmission(func(string, string) (bool, bool) { return false, false })
+	}
 	result.environment = setProcessEnvironment(result.environment, externalMCPTokenEnvironment, gateway.Token())
 	servers := map[string]config.MCPServer{}
 	for name, entry := range result.config.MCP.Servers {
@@ -166,7 +186,7 @@ func (a *App) MCPTest(ctx context.Context, name string) error {
 	if !ok || entry.Kind != "external" {
 		return errors.New("external MCP not found")
 	}
-	count, err := registry.Test(ctx, entry)
+	count, err := registry.Refresh(ctx, name)
 	if err != nil {
 		return err
 	}

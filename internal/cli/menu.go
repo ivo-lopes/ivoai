@@ -49,6 +49,7 @@ func PublicMenuActionIDs() []string {
 		"connect.list", "connect.chatgpt", "disconnect.chatgpt", "connect.claude", "disconnect.claude", "connect.server",
 		"servers.list", "servers.add", "servers.manage", "servers.test", "servers.toggle", "servers.edit", "servers.re-enroll", "servers.remove",
 		"mcp.list", "mcp.add", "mcp.remove", "mcp.auth", "mcp.auth.remove", "mcp.header", "mcp.test", "launch.codex", "launch.claude", "launch.opencode", "memory.status", "memory.configure",
+		"mcp.tools", "mcp.enable", "mcp.policy", "mcp.direct-policy",
 		"session.direct.codex", "session.direct.claude", "session.direct.opencode", "session.orchestrated.codex", "session.orchestrated.claude", "session.list", "session.monitor", "session.stop",
 		"project.status", "project.init", "config.show", "config.headroom", "config.memory", "config.ruflo", "config.auto", "config.auto-planner", "config.auto-failover", "config.auto-checkpoint", "config.auto-strategy", "config.auto-parallel", "config.auto-bootstrap", "config.auto-escalation", "config.session-mode", "config.primary", "config.reviewer", "config.workers",
 		"server.setup", "server.status", "server.doctor", "server.start", "server.stop", "server.restart", "server.logs",
@@ -132,7 +133,7 @@ func (s *menuSession) connections() (bool, error) {
 		{id: "connect.claude", label: "Connect Claude Code", description: "Use the official Claude Code login flow", run: s.simple(func() error { return s.app.ConnectAgent(s.ctx, "claude") })},
 		{id: "disconnect.claude", label: "Disconnect Claude Code state", disabled: disabledUnless(snapshot.ClaudeConnected, "not connected"), run: s.simple(func() error { return s.app.DisconnectAgent(s.ctx, "claude") })},
 		{id: "connect.server", label: "IVOAI Servers", description: "Add and manage independent server profiles", run: s.servers},
-		{id: "mcp", label: "External MCP Registry", run: s.mcp},
+		{id: "mcp", label: "MCP Control Plane", run: s.mcp},
 	})
 }
 
@@ -260,13 +261,17 @@ func (s *menuSession) maxWorkers() (bool, error) {
 }
 
 func (s *menuSession) mcp() (bool, error) {
-	return s.loop("External MCP Registry", []menuAction{
+	return s.loop("MCP Control Plane", []menuAction{
 		{id: "mcp.list", label: "List MCPs", run: s.simple(s.app.MCPList)},
 		{id: "mcp.add", label: "Add MCP", run: s.mcpAdd},
 		{id: "mcp.auth", label: "Configure / Replace Credential", run: s.mcpConfigureAuth},
 		{id: "mcp.header", label: "Configure / Replace Header", description: "Private header value, including required workspace routing", run: s.mcpConfigureHeader},
 		{id: "mcp.auth.remove", label: "Remove Authentication", run: s.mcpClearAuth},
 		{id: "mcp.test", label: "Test MCP", description: "Authenticated initialize and tool discovery; no tool execution", run: s.mcpTest},
+		{id: "mcp.tools", label: "Tools / Health / Compatibility", description: "Bounded inventory; metadata does not grant access", run: s.mcpTools},
+		{id: "mcp.enable", label: "Enable / Disable MCP", description: "Preserve credentials and other entries", run: s.mcpEnable},
+		{id: "mcp.policy", label: "Tool Approval Policy", description: "Full permission never grants unapproved writes", run: s.mcpPolicy},
+		{id: "mcp.direct-policy", label: "Direct Session Policy", description: "Read-only or disabled; never grant everything", run: s.mcpDirectPolicy},
 		{id: "mcp.remove", label: "Remove MCP", run: s.mcpRemove},
 	})
 }

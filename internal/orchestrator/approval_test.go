@@ -3,9 +3,11 @@ package orchestrator
 import (
 	"context"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/ivo-lopes/ivoai/internal/routing"
 	"github.com/ivo-lopes/ivoai/internal/session"
 )
 
@@ -75,5 +77,52 @@ func TestPlanWaitsForUserDecisionAndCannotBeBypassed(t *testing.T) {
 				t.Fatalf("rejected plan phase = %q", v.CurrentPhase)
 			}
 		})
+	}
+}
+
+func TestImmediateExecutionStillRequiresExactMCPApproval(t *testing.T) {
+	root := t.TempDir()
+	id, _ := session.NewID()
+	now := time.Now().UTC()
+	store := session.Store{Root: filepath.Join(root, "sessions")}
+	value := session.Session{SessionID: id, StartedAt: now, UpdatedAt: now, Mode: session.ModeAuto, Auto: true, InitialPlanner: "codex", CurrentPrimary: "codex", PrimaryExecutor: "codex", WorkingDirectory: root, PrimaryModel: session.UnknownModel(), MaxWorkers: 2, ContextStatus: "disabled", MemoryStatus: "disabled", ServerStatus: "not-connected", State: session.StateRunning, SwarmID: "swarm-fixture", RufloHealthy: true}
+	if err := store.Create(value); err != nil {
+		t.Fatal(err)
+	}
+	s := &Server{Store: store, SessionID: id, CheckMCPGrants: func(context.Context, []routing.TaskInput) (bool, error) { return true, nil }}
+	s.initialize()
+	task := taskFixture("a", nil)
+	task["delegate"] = false
+	task["allowed_mcp_tools"] = map[string][]string{"plane": {"write_tool"}}
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	done := make(chan error, 1)
+	go func() { _, err := s.plan(ctx, toolRequest(map[string]any{"tasks": []any{task}})); done <- err }()
+	var plan string
+	for plan == "" && ctx.Err() == nil {
+		v, _ := store.Get(id)
+		if len(v.Decisions) > 0 {
+			plan = v.Decisions[0].ID
+			if !strings.Contains(v.Decisions[0].Summary, "plane [write_tool]") {
+				t.Fatal("exact approval not visible")
+			}
+		} else {
+			time.Sleep(time.Millisecond)
+		}
+	}
+	if plan == "" {
+		t.Fatal("missing MCP approval")
+	}
+	if err := s.requireApprovedPlan(plan); err == nil {
+		t.Fatal("immediate bypassed MCP approval")
+	}
+	if err := store.ResolveDecision(id, plan, true); err != nil {
+		t.Fatal(err)
+	}
+	if err := <-done; err != nil {
+		t.Fatal(err)
+	}
+	if err := s.requireApprovedPlan(plan); err != nil {
+		t.Fatal(err)
 	}
 }

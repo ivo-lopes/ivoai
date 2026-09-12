@@ -1107,7 +1107,7 @@ func (a *App) MCPList() error {
 				credential = "missing-or-invalid"
 			}
 		}
-		fmt.Fprintf(a.Out, "%q\t%s\t%s\tauth=%s credential=%s\n", n, safeMCPDisplayURL(entries[n].URL), enabled, auth, credential)
+		fmt.Fprintf(a.Out, "%q\t%s\t%s\tauth=%s credential=%s health=%s policy=%s direct=%s tools=%d\n", n, safeMCPDisplayURL(entries[n].URL), enabled, auth, credential, entries[n].MCPHealth(), entries[n].ResolvedMCPPolicy(), entries[n].ResolvedDirectPolicy(), len(entries[n].Tools))
 	}
 	return nil
 }

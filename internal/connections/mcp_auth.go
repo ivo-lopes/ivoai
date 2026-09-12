@@ -66,7 +66,7 @@ func (r Registry) changeAuth(name string, change func(*secrets.MCPCredential)) e
 		return err
 	}
 	entry, ok := cfg.MCP.Servers[name]
-	if !ok || entry.Kind != "external" || !validMCPName(name) {
+	if !ok || entry.Kind != "external" || !validMCPName(name) || IsManagedMCPName(name) {
 		return errors.New("external MCP not found")
 	}
 	if entry.ID == "" {
@@ -88,6 +88,7 @@ func (r Registry) changeAuth(name string, change func(*secrets.MCPCredential)) e
 		return errors.New("MCP credential endpoint mismatch; remove and re-register entry")
 	}
 	credential.Endpoint = entry.URL
+	entry.Tools, entry.Health, entry.ProbedAt = nil, "UNKNOWN", ""
 	change(&credential)
 	if len(credential.Headers) > 16 {
 		return errors.New("external MCP header limit exceeded")

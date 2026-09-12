@@ -311,6 +311,9 @@ func (a *App) OrchestratorServe(ctx context.Context, id string) error {
 		Compressor:            a.workingContextCompressor(cfg, state, runtimeDir),
 	}
 	if value.Coordinator == "native" {
+		server.CheckMCPGrants = func(ctx context.Context, tasks []routing.TaskInput) (bool, error) {
+			return a.checkMCPPlan(ctx, cfg, tasks)
+		}
 		server.PrepareWorker = func(ctx context.Context, task routing.Task, request workers.Request) (workers.Request, error) {
 			request, err := a.prepareWorkerAccess(ctx, cfg, store, id, task, request)
 			if err != nil {
