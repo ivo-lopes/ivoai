@@ -197,7 +197,14 @@ try:
         pump(.5)
         assert len(metadata().get("turn_attempts", [])) == before, "SHIFT_ENTER_SUBMITTED"
         send("Acceptance:" + acceptance)
+        # The renderer normally emits character-level diffs; request a full
+        # owned-PTY redraw before locating the two logical composer lines.
+        fcntl.ioctl(master, termios.TIOCSWINSZ, struct.pack("HHHH", 41, 121, 0, 0))
+        os.killpg(process.pid, signal.SIGWINCH)
         pump(.5)
+        fcntl.ioctl(master, termios.TIOCSWINSZ, struct.pack("HHHH", 40, 120, 0, 0))
+        os.killpg(process.pid, signal.SIGWINCH)
+        pump(1)
         first, _ = fixture_position("Read VERSION")
         second, _ = fixture_position("Acceptance:")
         assert second > first, "SHIFT_ENTER_DID_NOT_INSERT_NEWLINE"
