@@ -73,6 +73,9 @@ func TestScopedCodexArgsEnforceDefaultDenyAndWorkspaceSandbox(t *testing.T) {
 		t.Fatal(err)
 	}
 	joined := strings.Join(args, "\n")
+	if !strings.Contains(joined, `trust_level="untrusted"`) {
+		t.Fatal("Codex writer could persist implicit project trust")
+	}
 	for _, want := range []string{"features.apps=false", "features.hooks=false", "features.multi_agent=false", "features.plugins=false", "features.remote_plugin=false", "mcp_servers.personal.enabled=false", "mcp_servers.ivoai-memory.enabled=false", "workspace-write", "--skip-git-repo-check", "enabled_tools=[\"list_projects\"]", "IVOAI_WORKER_MCP_TOKEN_A"} {
 		if !strings.Contains(joined, want) {
 			t.Fatalf("missing boundary %q", want)

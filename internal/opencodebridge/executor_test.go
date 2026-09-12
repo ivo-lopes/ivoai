@@ -39,6 +39,9 @@ printf '%s\n' '{"type":"turn.completed"}'
 		t.Fatal(err)
 	}
 	args, _ := os.ReadFile(argsPath)
+	if strings.Count(string(args), `trust_level="untrusted"`) != 2 {
+		t.Fatal("primary start/resume could persist inferred project trust")
+	}
 	if !strings.Contains(string(args), `-c model_reasoning_effort="high" exec --skip-git-repo-check --color never -C `+root+` --json --model gpt-fixture`) || !strings.Contains(string(args), `-c model_reasoning_effort="low" exec --skip-git-repo-check --color never -C `+root+` resume --json --model gpt-fixture thread_fixture`) {
 		t.Fatalf("args=%q", args)
 	}

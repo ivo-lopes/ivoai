@@ -1,6 +1,7 @@
 package app
 
 import (
+	"crypto/sha256"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -17,6 +18,30 @@ func TestLiveNativeAUTOArtifact(t *testing.T) {
 	if binary == "" {
 		t.Skip("set IVOAI_NATIVE_SMOKE_BINARY to an installed/candidate artifact")
 	}
+	// Codex owns its real login. Guard its public configuration without copying
+	// provider credentials or printing any configuration content.
+	codexHome := os.Getenv("CODEX_HOME")
+	if codexHome == "" {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			t.Fatal(err)
+		}
+		codexHome = filepath.Join(home, ".codex")
+	}
+	configPath := filepath.Join(codexHome, "config.toml")
+	before, beforeErr := os.ReadFile(configPath)
+	if beforeErr != nil && !os.IsNotExist(beforeErr) {
+		t.Fatal("cannot guard Codex configuration")
+	}
+	beforeHash := sha256.Sum256(before)
+	t.Cleanup(func() {
+		after, afterErr := os.ReadFile(configPath)
+		if (beforeErr == nil) != (afterErr == nil) || sha256.Sum256(after) != beforeHash {
+			t.Error("PERSONAL_CODEX_CONFIG_MUTATIONS detected")
+		} else {
+			t.Log("PERSONAL_CODEX_CONFIG_MUTATIONS=0")
+		}
+	})
 	paths, err := config.ResolvePaths()
 	if err != nil {
 		t.Fatal(err)

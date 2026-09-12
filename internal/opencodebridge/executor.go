@@ -101,6 +101,7 @@ func (r CLIRunner) Run(ctx context.Context, request ExecutorRequest, emit func(s
 	args := append([]string(nil), spec.Args...)
 	if request.Executor == "codex" {
 		invocation := codexresolver.SplitExecArguments(spec.Args)
+		invocation.GlobalArgs = append(invocation.GlobalArgs, codexresolver.ProjectTrustArgs(spec.Dir)...)
 		args = invocation.Arguments(request.ExecutorSessionID, spec.Dir, appendSelectionArgs(nil, request))
 	} else {
 		args = append(args, "--print", "--verbose", "--output-format", "stream-json", "--include-partial-messages")

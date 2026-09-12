@@ -401,6 +401,7 @@ func workerArgs(request Request) ([]string, string, error) {
 	if request.Executor == "codex" {
 		file := filepath.Join(request.Runtime, "codex-result-"+requestID()+".txt")
 		args := []string{"-c", "developer_instructions=" + strconv.Quote(instructions)}
+		args = append(args, codexresolver.ProjectTrustArgs(request.Directory)...)
 		if request.Effort != "" {
 			args = append(args, "-c", "model_reasoning_effort="+strconv.Quote(request.Effort))
 		}
