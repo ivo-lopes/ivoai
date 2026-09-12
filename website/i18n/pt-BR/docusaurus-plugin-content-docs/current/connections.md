@@ -137,11 +137,11 @@ printf '%s\n' "$PLANE_MCP_TOKEN" | ivoai connect mcp auth set plane-team --beare
 printf '%s\n' "$PLANE_WORKSPACE_SLUG" | ivoai connect mcp header set plane-team X-Workspace-Slug --value-stdin
 ivoai connect mcp test plane-team
 ivoai connect mcp list
-ivoai auto
+ivoai codex
 ```
 
 Executadas diretamente em terminal, as flags stdin usam entrada oculta. O launcher
-oferece o mesmo fluxo em **Connections → External MCP Registry → Add MCP**: nome,
+oferece o mesmo fluxo em **Connections → MCP Control Plane → Add MCP**: nome,
 endpoint HTTPS, autenticação, credencial oculta, nome de header opcional e valor
 oculto, seguidos de inicialização e descoberta autenticadas. Entradas existentes
 têm as ações **Configure / Replace Credential**, **Configure / Replace Header**,
@@ -152,19 +152,56 @@ headers associados; `mcp remove` remove a entrada e sua credencial. Para alterar
 endpoint autenticado, remova antes a autenticação. O comando de teste não executa
 ferramentas nem interpreta uma página HTML como prova de autenticação.
 
-No AUTO/OpenCode gerenciado, um gateway autenticado em loopback mantém as credenciais
-upstream dentro do processo IVOAI. Codex, Claude e OpenCode nativo recebem apenas a
-capability local. **Full** dispensa prompts de aprovação de MCP externo;
-**Interactive** usa o diálogo de permissões IVOAI existente antes de encaminhar cada
-chamada. Recusa, cancelamento ou timeout impedem a chamada upstream. A política
-`never` do Codex headless deixa de bloquear uma ferramenta atrás de um prompt
-impossível. As TUIs nativas explícitas de Codex/Claude mantêm sua própria aprovação.
+### Configurar uma vez, autorizar ferramentas exatas
 
-Full não desativa Skill Gate, sandbox do executor, permissões Unix ou isolamento de
-conhecimento. Workers consultivos read-only continuam sem herdar MCPs externos
-arbitrários; essas chamadas pertencem ao executor primário. Este hotfix não implementa
-OAuth no registry: use endpoint PAT/Bearer ou header compatível, não uma URL OAuth
-disfarçada de conexão Bearer. Nenhum arquivo global de OpenCode/Codex/Claude é reescrito.
+Os dois frontends orquestrados usam este registry. Workers Codex/Claude e sessões
+Direct recebem projeções privadas por processo, nunca credenciais upstream.
+Habilitado não significa autorizado: cada task externa declara `allowed_mcp_tools`,
+por exemplo `{"company-a":["read_tool"]}`. Apenas `allowed_mcps` não concede tools
+externas. O primary usa somente grants de suas próprias tasks prontas; não herda
+grants dos workers. Cada worker recebe capability loopback independente, revogada
+ao terminar ou cancelar. A descoberta projeta somente ferramentas do escopo.
+
+**Test MCP** executa initialize/tools-list, não tools/call. Persiste metadata pública
+limitada e SHA-256 do schema de entrada, não schemas completos ou credenciais.
+`READ_ONLY` exige hint read-only do servidor; anotações explícitas de mutação geram
+`MUTATING`; ausência ou ambiguidade gera `UNKNOWN`. Nomes como `get_*` não comprovam
+autorização. Anotações do servidor continuam sendo declarações não confiáveis.
+
+A policy padrão `read_auto_ask_mutating` exige aprovação explícita do plano para
+tools mutating/unknown exatas, inclusive com início imediato configurado. A
+aprovação mostra task/servidor/tools. Uma ferramenta fora do plano continua negada:
+envie novo plano para novos grants. `read_only` impede tools não-read mesmo com
+aprovação. **Full** não ignora esses gates. **Interactive** pode confirmar cada
+chamada adicionalmente pela UI compartilhada, inclusive na TUI nativa Codex.
+Recusa, cancelamento ou timeout impedem encaminhamento. Skills não concedem acesso.
+
+A TUI oferece **Tools / Health / Compatibility**, **Enable / Disable MCP**,
+**Tool Approval Policy** e **Direct Session Policy**, usando o mesmo domínio da CLI:
+
+```sh
+ivoai connect mcp tools company-a
+ivoai connect mcp policy company-a read_auto_ask_mutating
+ivoai connect mcp direct-policy company-a read_only
+ivoai connect mcp disable company-a
+ivoai connect mcp enable company-a
+```
+
+Direct usa `read_only` por padrão; `disabled` não projeta tools chamáveis. Direct
+nunca significa grant-all. Disable preserva credencial e bloqueia novas projeções.
+Remove afeta somente a entrada externa selecionada. Identidades gerenciadas de
+Memory/Context/orchestrator são protegidas. Entradas autenticadas existentes
+mantêm seus IDs estáveis e referências de secrets.
+
+Health começa em `UNKNOWN`; depois pode ser `HEALTHY`, `AUTH_REQUIRED`, `AUTH_FAILED`,
+`UNREACHABLE` ou `PROTOCOL_ERROR`; entrada desabilitada mostra `DISABLED`. Refresh
+falho limpa inventário antigo. Projeções verificam metadata atual das tools; MCP
+indisponível nunca recebe acesso irrestrito. Purpose-auto continua selecionando
+conhecimento institucional independentemente dos grants MCP externos.
+
+Este registry não implementa OAuth: use endpoint PAT/Bearer ou header compatível,
+não uma URL OAuth disfarçada de Bearer. Configurações globais de OpenCode/Codex/Claude
+não são reescritas. Skills, sandboxes e isolamento de conhecimento continuam ativos.
 
 Ao diagnosticar, separe DNS, validação TLS do hostname, autenticação HTTP, headers
 de roteamento ausentes e aprovação da ferramenta. Um PAT válido sem o header de

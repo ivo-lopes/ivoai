@@ -7,6 +7,7 @@ Prompt admission happens at the protocol boundary before execution, not through 
 advisory instruction. Codex is the preferred strong primary; eligible Claude
 workers remain available. `ivoai codex --direct` opens the official Codex TUI
 without the prompt gate or automatic DAG. Both preserve official authentication.
+See [Orchestrated frontends](orchestrated-frontends.md) for compatibility boundaries.
 
 ## Claude Code
 
