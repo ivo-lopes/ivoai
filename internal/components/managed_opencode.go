@@ -59,7 +59,7 @@ func managedOpenCodeSpec(original Spec, encoded, platform string) (Spec, error) 
 		return Spec{}, invalid
 	}
 	parts := strings.Split(strings.TrimPrefix(parsed.Path, "/"), "/")
-	if len(parts) != 6 || strings.Join(parts[:4], "/") != "ivo-lopes/ivoai/releases/download" || parts[5] != archive || !regexp.MustCompile(`^v[0-9]+\.[0-9]+\.[0-9]+$`).MatchString(parts[4]) {
+	if len(parts) != 6 || strings.Join(parts[:4], "/") != "ivo-lopes/ivoai/releases/download" || parts[5] != archive || !regexp.MustCompile(`^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z]+([.-][0-9A-Za-z]+)*)?$`).MatchString(parts[4]) {
 		return Spec{}, invalid
 	}
 	result := original

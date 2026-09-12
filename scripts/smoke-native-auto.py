@@ -58,6 +58,8 @@ def pump(seconds=.2):
                 body = os.read(master, 65536)
             except OSError:
                 break
+            if b"\x1b[6n" in body:
+                os.write(master, b"\x1b[1;1R")
             history = (history + body.decode(errors="replace"))[-(1 << 20):]
         if process.poll() is not None:
             break
@@ -85,11 +87,16 @@ def wait_for(predicate, timeout, failure):
         for decision in value.get("decisions", []):
             if (decision.get("kind") == "routing" and decision.get("state") == "pending"
                     and decision["id"] not in handled_routing and
-                    ("IVOAI quota routing approval" in plain or codex_frontend and "/approve or /reject" in plain)):
+                    ("IVOAI quota routing approval" in plain or codex_frontend and "Keep current" in plain)):
                 # This smoke never authorizes a real cross-provider change or
                 # consumes quota deliberately. Keep the original strong route.
                 pump(1)
-                send("/reject\n" if codex_frontend else "\x1b")
+                if codex_frontend:
+                    send("\x1b[B\r")
+                    pump(.5)
+                    send("\r")
+                else:
+                    send("\x1b")
                 handled_routing.add(decision["id"])
                 print("LOW_QUOTA_VISIBLE=true CONSERVATION_DECISION=KEEP_CURRENT", flush=True)
         if predicate(plain, value):
@@ -113,9 +120,9 @@ def wait_for(predicate, timeout, failure):
 
 try:
     wait_for(lambda text, _: "IVOAI control plane" in text or
-             "IVOAI Automatic Orchestration" in text or "Codex Orchestrated" in text, 120, "FRONTEND_NOT_READY")
+             "IVOAI Automatic Orchestration" in text or codex_frontend and "OpenAI Codex" in text, 120, "FRONTEND_NOT_READY")
     send("corrija o projeto")
-    send("\n/submit\n" if codex_frontend else "\r")
+    send("\r")
     wait_for(lambda text, _: "insufficient" in text.lower(), 45, "PROMPT_GATE_FAILED")
     assert not metadata().get("workers"), "WORKER_STARTED_BEFORE_GATE"
     assert not any(e.get("operation") == "skill.gate" for e in metadata().get("observability", [])), "SKILL_GATE_BEFORE_PROMPT_GATE"
@@ -124,13 +131,16 @@ try:
     if complex_case:
         prompt = "Objective: implement two independent changes in this small fixture repository and document them. Deliverables: a.sh must print exactly A, b.sh must print exactly B, and README.md explains both commands. Constraints: do not change protected.txt or VERSION; no external knowledge or MCP is necessary; use two independent implementation workers in isolated worktrees, plus bounded documentation and validation tasks. Acceptance: sh a.sh returns A with exit 0; sh b.sh returns B with exit 0; README.md documents both commands; protected.txt and VERSION are unchanged; final validation passes. Present the native DAG for approval; let IVOAI automatically dispatch workers, integrate and synthesize only after all local acceptance passes."
     send(prompt)
-    send("\n/submit\n" if codex_frontend else "\r")
+    send("\r")
     wait_for(lambda text, value: any(d.get("kind") == "plan" and d.get("state") == "pending"
              for d in value.get("decisions", [])) and
-             ("IVOAI plan approval" in text or codex_frontend and "/approve or /reject" in text),
+             ("IVOAI plan approval" in text or codex_frontend and "Approve" in text),
              480 if complex_case else 240, "PLAN_NOT_PRESENTED")
     assert not metadata().get("workers"), "WORKER_STARTED_BEFORE_APPROVAL"
-    send("/approve\n" if codex_frontend else "\r")  # Only the fixture plan is approved.
+    send("\r")  # Only the fixture plan is approved.
+    if codex_frontend:
+        pump(.5)
+        send("\r")  # Native question review/submit, not a custom command.
     print("PLAN_PRESENTED=true PLAN_APPROVAL_SENT=true", flush=True)
     wait_for(lambda _, value: value.get("current_phase") == "synthesizing" and
              (value.get("executor_trace") or {}).get("final_response_present"),

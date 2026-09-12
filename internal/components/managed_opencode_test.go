@@ -40,6 +40,11 @@ func TestManagedOpenCodeBuildIdentity(t *testing.T) {
 	if original.Version != "1.18.25" || original.Assets["linux/amd64"].URL != "https://example.invalid/upstream" {
 		t.Fatal("upstream catalog was mutated")
 	}
+	preview := metadata
+	preview.URL = strings.Replace(preview.URL, "v0.10.1", "v0.10.1-rc.1", 1)
+	if _, err := managedOpenCodeSpec(original, encode(preview), "linux/amd64"); err != nil {
+		t.Fatal("official prerelease tag contract rejected", err)
+	}
 	for name, mutate := range map[string]func(*managedOpenCodeMetadata){
 		"different-platform": func(m *managedOpenCodeMetadata) { m.Platform = "linux/arm64" },
 		"different-upstream": func(m *managedOpenCodeMetadata) { m.UpstreamRevision = strings.Repeat("f", 40) },
