@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/ivo-lopes/ivoai/internal/agents"
+	"github.com/ivo-lopes/ivoai/internal/codexfrontend"
 	"github.com/ivo-lopes/ivoai/internal/config"
 	"github.com/ivo-lopes/ivoai/internal/connections"
 	"github.com/ivo-lopes/ivoai/internal/core"
@@ -975,12 +976,28 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 		if err != nil {
 			return err
 		}
-		err = a.runCodexFrontend(ctx, bridge, id)
+		var turnErr error
+		err, turnErr = a.runCodexFrontend(ctx, codexfrontend.Options{Binary: state.Components["codex"].Path, Directory: cwd, RuntimeDir: runtimeDir, SessionID: id, Bridge: bridge, Environment: frontendEnvironment}, func(observation agents.Observation) {
+			_, _ = store.Update(id, func(s *session.Session) error {
+				s.FrontendPID, s.PrimaryPID = observation.PID, observation.PID
+				s.FrontendProcessStart, s.PrimaryProcessStart = session.ProcessStart(observation.PID), session.ProcessStart(observation.PID)
+				s.CurrentPhase = "conversation"
+				return nil
+			})
+		})
 		if err != nil {
 			a.finishSession(store, id, session.StateFailed, exitCode(err))
 			return err
 		}
 		a.finishSession(store, id, session.StateCompleted, 0)
+		if turnErr != nil {
+			_, _ = store.Update(id, func(s *session.Session) error {
+				code := 1
+				s.State, s.ExitCode = session.StateFailed, &code
+				return nil
+			})
+			return turnErr
+		}
 		return nil
 	}
 	starter := a.StartOpenCodeManaged
@@ -993,7 +1010,7 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 		// Direct is an explicit escape hatch, never an implicit recovery path:
 		// an upstream TUI cannot enforce IVOAI turn admission.
 		a.finishSession(store, id, session.StateFailed, 1)
-		fmt.Fprintln(a.Err, "ORCHESTRATION_STATE=DEGRADED\nOpenCode frontend unavailable. No direct session was started. Use ivoai codex for the controlled terminal frontend, or explicitly choose --direct.")
+		fmt.Fprintln(a.Err, "ORCHESTRATION_STATE=DEGRADED\nOpenCode frontend unavailable. No direct session was started. Use ivoai codex for the native orchestrated Codex TUI, or explicitly choose --direct.")
 		return fmt.Errorf("managed frontend unavailable; direct fallback refused: %s", platform.Redact(cause.Error()))
 	}
 	if frontendPreflightErr != nil {

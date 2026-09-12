@@ -1,7 +1,7 @@
 # Automatic orchestration
 
 `ivoai codex` and `ivoai opencode` are orchestrated frontends of the same quota-aware
-control plane. Codex uses IVOAI-controlled terminal admission; OpenCode uses a
+control plane. Codex uses its native TUI with IVOAI App Server admission; OpenCode uses a
 private managed TUI. See [frontend commands and decisions](orchestrated-frontends.md).
 IVOAI remains the control plane and invokes the
 official Codex or Claude Code CLI as the selected executor; inference is never sent

@@ -1,7 +1,7 @@
 # Orquestração automática
 
 `ivoai codex` e `ivoai opencode` compartilham o mesmo core. O primeiro usa admissão
-e interação de terminal controladas pelo IVOAI; o segundo usa OpenCode.
+via App Server IVOAI e TUI nativa Codex; o segundo usa OpenCode.
 Veja [Frontends orquestrados](orchestrated-frontends.md). `ivoai auto` é alias
 deprecated. Para a TUI oficial sem orquestração, escolha `--direct` explicitamente.
 

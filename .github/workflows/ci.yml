@@ -52,6 +52,8 @@ jobs:
           exit "$status"
       - name: Managed OpenCode HTTP and attach integration
         run: scripts/test-managed-opencode.sh
+      - name: Native Codex TUI and fail-closed App Server admission
+        run: scripts/test-native-codex.sh
       - name: Race tests
         run: go test -race ./...
       - name: Vet

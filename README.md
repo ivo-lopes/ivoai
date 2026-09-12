@@ -73,7 +73,7 @@ subscription login. No provider token is copied into OpenCode. Direct `opencode`
 outside IVOAI remains unchanged, and a standalone OpenCode-owned provider session is
 still available through `ivoai session start --executor opencode --mode direct`.
 
-`ivoai codex` now starts the IVOAI-controlled Codex-oriented orchestrated terminal.
+`ivoai codex` starts the native Codex TUI through IVOAI-controlled App Server admission.
 `ivoai opencode` uses the same core through managed OpenCode. `ivoai auto` remains
 a deprecated alias; `ivoai codex --direct` and `ivoai opencode --direct` preserve
 the standalone clients. Claude is unchanged. See [frontends](docs/orchestrated-frontends.md).

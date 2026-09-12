@@ -8,7 +8,7 @@ ivoai status
 ivoai doctor
 ```
 
-`ivoai codex` abre o terminal controlado pelo IVOAI, com primary Codex preferencial.
+`ivoai codex` abre a TUI nativa Codex com admissão controlada pelo IVOAI e primary Codex preferencial.
 `ivoai opencode` abre o OpenCode gerenciado. Ambos compartilham Prompt Gate, DAG,
 aprovação, scheduler e policies; workers Claude continuam elegíveis.
 

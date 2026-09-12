@@ -1,5 +1,14 @@
 # Executores
 
+## Codex nativo orquestrado
+
+`ivoai codex` abre a TUI oficial diretamente, por uma façade App Server IVOAI.
+O Prompt Gate é aplicado antes de encaminhar o turno. Plano e routing usam
+aprovação nativa; o core continua criando workers Codex/Claude conforme policy.
+`ivoai codex --direct` preserva o cliente direto sem orquestração. Nenhuma
+credencial é copiada e a configuração pessoal permanece intacta.
+Veja [Frontends orquestrados](orchestrated-frontends.md) para limites de compatibilidade.
+
 ## Sessões HTTP controladas
 
 O contrato interno `OpenCodeExecutor.OpenSession` reutiliza o cliente HTTP/SSE

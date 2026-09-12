@@ -4,7 +4,7 @@
 
 | Comando | Admissão e execução |
 | --- | --- |
-| `ivoai codex` | Terminal IVOAI; primary Codex preferencial; orquestração compartilhada |
+| `ivoai codex` | TUI nativa Codex; admissão IVOAI; primary Codex preferencial |
 | `ivoai opencode` | TUI OpenCode gerenciada; primary resolvido pela policy |
 | `ivoai auto` | Alias deprecated de `ivoai opencode` durante v0.10.x |
 | `ivoai codex --direct` | Cliente oficial Codex, sem Prompt Gate/DAG |
@@ -17,19 +17,32 @@ oficial. `session start --executor codex|opencode --mode direct` continua dispon
 
 ## Terminal Codex
 
-Digite um prompt multilinha e termine com `/submit`:
+Digite o primeiro prompt diretamente no composer oficial Codex. Use seus
+controles multilinha nativos e Enter para enviar:
 
 ```text
 Read VERSION in the current directory and report its value.
 Acceptance: return only the version; do not modify files.
-/submit
 ```
 
-`/models` lista o catálogo verificado em runtime. `/model <id>` e
-`/reasoning <effort>` selecionam opções suportadas. `/status` mostra metadados;
-`/approve` ou `/reject` resolve a decisão exibida; `/cancel` interrompe o turno;
-`/exit` fecha o frontend. EOF envia o prompt pendente, mas nunca aprova decisões.
-Esta é uma camada IVOAI, não a TUI upstream Codex; `--direct` preserva essa TUI.
+O seletor nativo de modelo/reasoning escolhe um primary Codex verificado em
+runtime; workers mantêm routing independente. Planos e decisões de quota usam
+diálogos nativos, não `/approve`. Composer, navegação, scroll, seleção e interrupção
+continuam upstream. Não há pré-composer IVOAI.
+
+O [protocolo oficial App Server](https://learn.chatgpt.com/docs/app-server) conecta
+a TUI a uma façade IVOAI autenticada e process-local. Ela admite `turn/start`
+antes de encaminhar ao App Server oficial. Um adapter Responses privado retorna
+a síntese do core compartilhado, nunca tool calls nativos. Shell/exec, review,
+steering, escrita de configuração e métodos desconhecidos não contornam o gate.
+Use `--direct` para essas operações upstream fora da orquestração.
+
+Codex 0.153.4 e 0.154.0 foram testados. O transporte App Server é experimental no
+upstream; a integração local é pinada e testada. O frontend usa um Codex home
+efêmero, sem copiar credenciais. Workers mantêm autenticação oficial. Navegação
+da conversa funciona durante a sessão; resume/fork persistentes e alterações de
+configuração global não são expostos pela façade. IVOAI guarda metadados
+sanitizados, não um segundo store de transcripts.
 
 Prompt insuficiente não inicia worker nem execução substantiva. Critérios de aceite
 são obrigatórios nos dois frontends. Full não aprova planos. Immediate start

@@ -138,7 +138,7 @@ func (s *menuSession) connections() (bool, error) {
 
 func (s *menuSession) agents() (bool, error) {
 	return s.loop("Agents", []menuAction{
-		{id: "launch.codex", label: "Codex Orchestrated", description: "IVOAI-controlled intake, Codex primary, scoped Codex/Claude workers", run: func() (bool, error) { return true, s.app.OrchestratedWithKnowledge(s.ctx, "codex", "", nil, nil) }},
+		{id: "launch.codex", label: "Codex Orchestrated", description: "Native Codex TUI, IVOAI admission, scoped Codex/Claude workers", run: func() (bool, error) { return true, s.app.OrchestratedWithKnowledge(s.ctx, "codex", "", nil, nil) }},
 		{id: "launch.claude", label: "Launch Claude Code", description: "Official Claude interface with IVOAI knowledge and safe compression", run: func() (bool, error) { return true, s.app.Launch(s.ctx, "claude", nil) }},
 		{id: "launch.opencode", label: "Launch IVOAI OpenCode frontend", description: "Managed OpenCode interface with IVOAI-routed Codex and Claude executors", run: func() (bool, error) { return true, s.app.Auto(s.ctx, "", nil) }},
 	})
@@ -146,7 +146,7 @@ func (s *menuSession) agents() (bool, error) {
 
 func (s *menuSession) launch() (bool, error) {
 	return s.loop("Launch — auto is a deprecated alias for opencode", []menuAction{
-		{id: "launch.codex", label: "Codex Orchestrated", description: "Prompt gate, approved plan and automatic workers; Codex primary preference", run: func() (bool, error) { return true, s.app.OrchestratedWithKnowledge(s.ctx, "codex", "", nil, nil) }},
+		{id: "launch.codex", label: "Codex Orchestrated", description: "Native Codex TUI; prompt gate, native plan approval and automatic workers", run: func() (bool, error) { return true, s.app.OrchestratedWithKnowledge(s.ctx, "codex", "", nil, nil) }},
 		{id: "launch.opencode", label: "OpenCode Orchestrated", description: "Managed OpenCode frontend, same IVOAI policies and worker scheduler", run: func() (bool, error) { return true, s.app.Auto(s.ctx, "", nil) }},
 		{id: "session.direct.codex", label: "Codex Direct", description: "Official Codex TUI; no prompt gate or automatic DAG", run: func() (bool, error) { return true, s.app.SessionStart(s.ctx, "codex", "direct", nil) }},
 		{id: "session.direct.claude", label: "Claude Direct", description: "Optional official Claude client", run: func() (bool, error) { return true, s.app.SessionStart(s.ctx, "claude", "direct", nil) }},

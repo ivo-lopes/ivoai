@@ -45,6 +45,8 @@ jobs:
         run: |
           node --test internal/opencodebridge/keyboard.test.mjs
           scripts/test-managed-opencode.sh
+      - name: Native Codex TUI and fail-closed App Server admission
+        run: scripts/test-native-codex.sh
       - name: ShellCheck
         run: shellcheck install.sh scripts/*.sh
       - name: Vulnerability scan

@@ -2,8 +2,8 @@
 
 ## Codex
 
-`ivoai codex` opens an IVOAI-controlled terminal backed by the official Codex
-structured executor. Prompt admission happens before execution, not through an
+`ivoai codex` opens the native Codex TUI through an IVOAI-owned App Server façade.
+Prompt admission happens at the protocol boundary before execution, not through an
 advisory instruction. Codex is the preferred strong primary; eligible Claude
 workers remain available. `ivoai codex --direct` opens the official Codex TUI
 without the prompt gate or automatic DAG. Both preserve official authentication.

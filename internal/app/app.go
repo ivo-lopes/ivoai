@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/ivo-lopes/ivoai/internal/agents"
+	"github.com/ivo-lopes/ivoai/internal/codexfrontend"
 	"github.com/ivo-lopes/ivoai/internal/codexresolver"
 	"github.com/ivo-lopes/ivoai/internal/components"
 	"github.com/ivo-lopes/ivoai/internal/config"
@@ -53,6 +54,7 @@ type App struct {
 	OpenCodeBridgeRunner opencodebridge.ExecutorRunner
 	OpenCodeModelCatalog *opencodebridge.ModelCatalog
 	StartOpenCodeManaged func(context.Context, opencodebridge.ManagedOptions) (managedOpenCodeFrontend, error)
+	StartCodexNative     func(context.Context, codexfrontend.Options) (nativeCodexFrontend, error)
 	// ExecutablePath is accepted only in IVOAI_TEST_MODE so hermetic update
 	// matrix tests never replace the running go test binary.
 	ExecutablePath string
@@ -64,6 +66,13 @@ type managedOpenCodeFrontend interface {
 	BackendURL() string
 	BackendLoopback() bool
 	Close(context.Context) error
+}
+
+type nativeCodexFrontend interface {
+	Args() []string
+	Environment() []string
+	TurnError() error
+	Close()
 }
 
 const liveServiceProbeTimeout = 8 * time.Second

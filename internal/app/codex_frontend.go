@@ -5,13 +5,27 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/ivo-lopes/ivoai/internal/agents"
+	"github.com/ivo-lopes/ivoai/internal/codexfrontend"
 	"github.com/ivo-lopes/ivoai/internal/opencodebridge"
 	"github.com/ivo-lopes/ivoai/internal/session"
 )
 
-func (a *App) runCodexFrontend(ctx context.Context, bridge *opencodebridge.Bridge, id string) error {
-	model, effort := bridge.InitialSelection()
-	return bridge.RunTerminal(ctx, opencodebridge.TerminalOptions{SessionID: id, Model: model, Effort: effort, In: a.In, Out: a.Out})
+func (a *App) runCodexFrontend(ctx context.Context, options codexfrontend.Options, observe func(agents.Observation)) (error, error) {
+	start := a.StartCodexNative
+	if start == nil {
+		start = func(ctx context.Context, options codexfrontend.Options) (nativeCodexFrontend, error) {
+			return codexfrontend.Start(ctx, options)
+		}
+	}
+	frontend, err := start(ctx, options)
+	if err != nil {
+		return err, nil
+	}
+	defer frontend.Close()
+	runtime := agents.Runtime{Runner: a.Runner, In: a.In, Out: a.Out, Err: a.Err, AgentPath: options.Binary, Environment: frontend.Environment(), RuntimeDir: options.RuntimeDir}
+	err = runtime.LaunchObserved(ctx, "codex", frontend.Args(), false, observe)
+	return err, frontend.TurnError()
 }
 
 // Invocation overrides resolve against the same runtime catalog as the picker.

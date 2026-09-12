@@ -3,6 +3,7 @@ package app
 import (
 	"bytes"
 	"context"
+	"errors"
 	"io"
 	"os"
 	"path/filepath"
@@ -11,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ivo-lopes/ivoai/internal/codexfrontend"
 	"github.com/ivo-lopes/ivoai/internal/codexresolver"
 	"github.com/ivo-lopes/ivoai/internal/config"
 	"github.com/ivo-lopes/ivoai/internal/observability"
@@ -183,6 +185,13 @@ case "$*" in
 esac
 `)
 	a := sessionTestApp(t, root, codex, appExecutable(t, root, "claude", "#!/bin/sh\nexit 0\n"), ruflo)
+	a.StartCodexNative = func(ctx context.Context, options codexfrontend.Options) (nativeCodexFrontend, error) {
+		text, err := options.Bridge.SubmitTurn(ctx, options.SessionID, "native_fixture_intake", "corrija isso", "auto", "")
+		if err != nil || !strings.Contains(text, "insufficient") {
+			t.Fatal("native frontend did not reuse shared admission")
+		}
+		return fixtureNativeFrontend{}, nil
+	}
 	t.Setenv("IVOAI_TEST_MODE", "1")
 	state, _ := a.Store.LoadState()
 	if err := a.orchestrationManager(state).Configure(context.Background(), true); err != nil {
@@ -217,8 +226,44 @@ esac
 	if strings.Contains(string(args), "exec\n") {
 		t.Fatal("Codex executed before prompt admission")
 	}
+	if !strings.Contains(string(args), "--remote\n") {
+		t.Fatal("orchestrated Codex did not launch the native remote TUI")
+	}
 	if _, err := os.Stat(filepath.Join(a.Store.Paths.SessionsDir, "runtime", value.SessionID)); !os.IsNotExist(err) {
 		t.Fatalf("session runtime was not cleaned: %v", err)
+	}
+}
+
+type fixtureNativeFrontend struct{ turnErr error }
+
+func (fixtureNativeFrontend) Args() []string        { return []string{"--remote", "ws://127.0.0.1:1"} }
+func (fixtureNativeFrontend) Environment() []string { return os.Environ() }
+func (fixtureNativeFrontend) Close()                {}
+func (f fixtureNativeFrontend) TurnError() error    { return f.turnErr }
+
+func TestNativeFrontendExitDoesNotEraseTurnFailure(t *testing.T) {
+	root := t.TempDir()
+	client := appExecutable(t, root, "codex", "#!/bin/sh\nexit 0\n")
+	a := sessionTestApp(t, root, client, client, client)
+	t.Setenv("IVOAI_TEST_MODE", "1")
+	a.StartCodexNative = func(context.Context, codexfrontend.Options) (nativeCodexFrontend, error) {
+		return fixtureNativeFrontend{turnErr: errors.New("WORKER_FAILED")}, nil
+	}
+	previous, _ := os.Getwd()
+	t.Cleanup(func() { _ = os.Chdir(previous) })
+	if err := os.Chdir(root); err != nil {
+		t.Fatal(err)
+	}
+	if err := a.SessionStart(context.Background(), "codex", session.ModeOrchestrated, nil); err == nil {
+		t.Fatal("failed native turn returned success")
+	}
+	values, err := a.SessionList()
+	if err != nil || len(values) != 1 {
+		t.Fatal("native session unavailable")
+	}
+	s := values[0]
+	if s.State != session.StateFailed || s.FrontendState != session.StateCompleted || s.FrontendExitCode == nil || *s.FrontendExitCode != 0 {
+		t.Fatal("frontend and worker result were conflated")
 	}
 }
 
