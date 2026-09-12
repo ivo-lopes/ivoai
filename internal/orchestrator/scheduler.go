@@ -759,6 +759,16 @@ func (s *Server) wait(ctx context.Context, request *mcp.CallToolRequest) (*mcp.C
 	for {
 		s.mu.Lock()
 		ready, err := s.waitReadyLocked(args.PlanID, args.TaskIDs, args.Mode)
+		var primaryRequired []string
+		if err == nil && !ready {
+			plan := s.plans[args.PlanID]
+			for _, id := range args.TaskIDs {
+				task := plan.Tasks[id]
+				if task.Task.State == "primary" && s.dependenciesCompleteLocked(plan, task.Task.Dependencies) {
+					primaryRequired = append(primaryRequired, id)
+				}
+			}
+		}
 		notify := s.notify
 		s.mu.Unlock()
 		if err != nil {
@@ -766,6 +776,12 @@ func (s *Server) wait(ctx context.Context, request *mcp.CallToolRequest) (*mcp.C
 		}
 		if ready {
 			return toolResult(s.planStatus(args.PlanID))
+		}
+		if len(primaryRequired) > 0 {
+			// The caller is the primary, so blocking here cannot make its own
+			// runnable work finish. Preserve incomplete state and return the
+			// explicit next action instead of waiting until the timeout.
+			return toolResult(map[string]any{"waiting_for_primary": true, "primary_task_ids": primaryRequired, "required_action": "Perform and verify each primary-owned task, then call orchestration_primary_complete. Wait only on delegated workers; integrate all completed tasks before final synthesis.", "plan": s.planStatus(args.PlanID)})
 		}
 		select {
 		case <-ctx.Done():

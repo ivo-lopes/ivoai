@@ -168,6 +168,8 @@ def wait_for(predicate, timeout, failure):
                       "workers": len(value.get("workers", [])),
                       "tools": trace.get("mcp_operations", []),
                       "task_states": [t.get("state") for t in value.get("tasks", [])],
+                      "trust_screen": "Do you trust" in history,
+                      "login_screen": "Sign in with ChatGPT" in history,
                       "turn_failure": (value.get("turn_attempts") or [{}])[-1].get("failure_class")}), flush=True)
     raise RuntimeError(failure)
 
@@ -179,6 +181,11 @@ try:
         previous_clipboard = clipboard_read()
     wait_for(lambda text, _: "IVOAI control plane" in text or
              "IVOAI Automatic Orchestration" in text or codex_frontend and "OpenAI Codex" in text, 120, "FRONTEND_NOT_READY")
+    if codex_frontend:
+        # The banner can precede startup/config initialization. Do not send
+        # fixture input until the native composer has rendered its footer.
+        wait_for(lambda text, _: "context left" in text or "? for shortcuts" in text,
+                 60, "NATIVE_COMPOSER_NOT_READY")
     send("corrija o projeto")
     send("\r")
     wait_for(lambda text, _: "insufficient" in text.lower(), 45, "PROMPT_GATE_FAILED")
