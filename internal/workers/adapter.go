@@ -308,7 +308,7 @@ func (a Adapter) isolateMCPs(ctx context.Context, executable, executor string, a
 		}
 		// Provider-side apps, hooks and native sub-agents cannot create another
 		// tool path outside the IVOAI task grant. These are process-local flags.
-		restrictions := []string{"-c", "features.apps=false", "-c", "features.hooks=false", "-c", "features.multi_agent=false"}
+		restrictions := []string{"-c", "features.apps=false", "-c", "features.hooks=false", "-c", "features.multi_agent=false", "-c", "features.plugins=false", "-c", "features.remote_plugin=false"}
 		seen := map[string]bool{}
 		for _, server := range servers {
 			if !codexServerIdentifier.MatchString(server.Name) || seen[server.Name] {
@@ -401,6 +401,7 @@ func workerArgs(request Request) ([]string, string, error) {
 	if request.Executor == "codex" {
 		file := filepath.Join(request.Runtime, "codex-result-"+requestID()+".txt")
 		args := []string{"-c", "developer_instructions=" + strconv.Quote(instructions)}
+		args = append(args, codexresolver.ProjectTrustArgs(request.Directory)...)
 		if request.Effort != "" {
 			args = append(args, "-c", "model_reasoning_effort="+strconv.Quote(request.Effort))
 		}

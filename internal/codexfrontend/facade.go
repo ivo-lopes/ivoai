@@ -19,6 +19,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/coder/websocket"
@@ -126,6 +127,17 @@ func Start(ctx context.Context, options Options) (*Facade, error) {
 	go func() { _ = f.server.Serve(f.listener) }()
 	args := append(f.configArgs(), "app-server", "--listen", "stdio://")
 	f.process = exec.CommandContext(ctx, options.Binary, args...)
+	// App Server may own background children (e.g. plugin discovery). Bound
+	// them to this instance so cancellation cannot leave directory writers.
+	f.process.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	f.process.Cancel = func() error {
+		err := syscall.Kill(-f.process.Process.Pid, syscall.SIGKILL)
+		if errors.Is(err, syscall.ESRCH) {
+			return os.ErrProcessDone
+		}
+		return err
+	}
+	f.process.WaitDelay = time.Second
 	f.process.Dir, f.process.Env = options.Directory, f.Environment()
 	f.process.Stderr = io.Discard // Never retain upstream diagnostic prompt/env content.
 	f.upstream, err = f.process.StdinPipe()
@@ -163,6 +175,7 @@ func (f *Facade) configArgs() []string {
 		`sandbox_mode="read-only"`, `approval_policy="never"`,
 		`web_search="disabled"`, `history.persistence="none"`,
 		`features.hooks=false`, `features.apps=false`,
+		`features.plugins=false`, `features.remote_plugin=false`,
 		`features.multi_agent=false`, `features.code_mode_prewarm=false`,
 	}
 	if f.effort != "" {
@@ -232,6 +245,9 @@ func (f *Facade) close() {
 			}
 			<-f.done
 		}
+		// The parent can exit before its descendants; cancel the owned group
+		// before removing the private home, not only when Wait times out.
+		_ = syscall.Kill(-f.process.Process.Pid, syscall.SIGKILL)
 	}
 	// The directory is newly allocated by this instance, never an operator path.
 	if f.home != "" && filepath.Dir(f.home) == filepath.Clean(f.options.RuntimeDir) {

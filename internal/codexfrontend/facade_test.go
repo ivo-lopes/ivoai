@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -21,6 +22,45 @@ import (
 type writeBuffer struct{ bytes.Buffer }
 
 func (*writeBuffer) Close() error { return nil }
+
+func TestNativeCloseStopsBackgroundDirectoryWriters(t *testing.T) {
+	root := t.TempDir()
+	ready, leaked := filepath.Join(root, "ready"), filepath.Join(root, "leaked")
+	binary := filepath.Join(root, "fake-codex")
+	body := "#!/bin/sh\n(sleep 0.5; touch '" + leaked + "') &\ntouch '" + ready + "'\ncat >/dev/null\n"
+	if err := os.WriteFile(binary, []byte(body), 0700); err != nil {
+		t.Fatal(err)
+	}
+	catalog := opencodebridge.CatalogFromRegistry(routing.Registry{Providers: map[string]routing.ProviderCapability{"codex": {Provider: "codex", Authenticated: true, Models: []routing.ModelCapability{{Name: "fixture-strong", CapabilityTier: routing.TierStrong, SupportedEfforts: []string{"high"}, DefaultEffort: "high", Source: routing.SourceRuntimeVerified}}}}})
+	bridge, err := opencodebridge.Start(opencodebridge.Options{Frontend: "codex", Catalog: catalog, Runner: &fixtureRunner{}, Select: func(context.Context, string) (string, error) { return "codex", nil }, Status: func() opencodebridge.Status { return opencodebridge.Status{Frontend: "codex"} }})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer bridge.Close(context.Background())
+	f, err := Start(context.Background(), Options{Binary: binary, Directory: root, RuntimeDir: root, SessionID: "cleanup", Bridge: bridge, Environment: []string{"PATH=/usr/bin:/bin", "HOME=" + root}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	for i := 0; i < 100; i++ {
+		if _, err := os.Stat(ready); err == nil {
+			break
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+	if _, err := os.Stat(ready); err != nil {
+		t.Fatal("fixture did not start")
+	}
+	args := strings.Join(f.Args(), " ")
+	if !strings.Contains(args, "features.plugins=false") || !strings.Contains(args, "features.remote_plugin=false") {
+		t.Fatal("native plugin plane must remain disabled")
+	}
+	f.Close()
+	time.Sleep(600 * time.Millisecond)
+	if _, err := os.Stat(leaked); !os.IsNotExist(err) {
+		t.Fatal("native descendant survived frontend cleanup")
+	}
+}
 
 func TestNativeAdmissionFailsClosed(t *testing.T) {
 	for _, method := range []string{"turn/start", "turn/steer", "command/exec", "thread/shellCommand", "process/spawn", "review/start", "thread/inject_items", "config/value/write", "unknown/newExecution"} {

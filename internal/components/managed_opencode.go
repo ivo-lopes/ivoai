@@ -64,7 +64,11 @@ func managedOpenCodeSpec(original Spec, encoded, platform string) (Spec, error) 
 	}
 	result := original
 	result.Version, result.Revision = metadata.Version, metadata.Revision
-	result.DefaultBranch, result.TrustLevel = "main", "publisher_checksum"
+	// This is an IVOAI-published rebuild, not the upstream signed binary.
+	// Use the existing digest-only policy tier; do not invent a trust label
+	// that the component promotion gate cannot validate.
+	result.DefaultBranch, result.TrustLevel = "main", "checksum_only"
+	result.SignatureStatus, result.AttestationStatus = "not_exposed", "not_exposed"
 	result.Assets = map[string]Asset{platform: {URL: metadata.URL, SHA256: metadata.SHA256}}
 	return result, nil
 }

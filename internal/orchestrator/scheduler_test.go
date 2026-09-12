@@ -243,6 +243,12 @@ func TestWaitRequiresExplicitPrimaryCompletion(t *testing.T) {
 	if err != nil || ready {
 		t.Fatalf("pending primary task reported complete: ready=%v err=%v", ready, err)
 	}
+	waitCtx, cancelWait := context.WithCancel(context.Background())
+	cancelWait() // The self-wait must return actionable state without sleeping.
+	waitResult, err := server.wait(waitCtx, toolRequest(map[string]any{"plan_id": planID, "task_ids": []string{"primary"}, "mode": "all", "timeout_seconds": 300}))
+	if err != nil || waitResult.StructuredContent.(map[string]any)["waiting_for_primary"] != true {
+		t.Fatalf("primary self-wait did not return required work: result=%+v err=%v", waitResult, err)
+	}
 	if _, err := server.primaryComplete(context.Background(), toolRequest(map[string]any{"plan_id": planID, "task_id": "primary"})); err != nil {
 		t.Fatal(err)
 	}
