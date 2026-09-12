@@ -306,7 +306,9 @@ func (a Adapter) isolateMCPs(ctx context.Context, executable, executor string, a
 		if err := decoder.Decode(&trailing); !errors.Is(err, io.EOF) {
 			return nil, errors.New("isolate Codex worker MCPs: invalid trailing data")
 		}
-		restrictions := make([]string, 0, len(servers)*2+8)
+		// Provider-side apps, hooks and native sub-agents cannot create another
+		// tool path outside the IVOAI task grant. These are process-local flags.
+		restrictions := []string{"-c", "features.apps=false", "-c", "features.hooks=false", "-c", "features.multi_agent=false"}
 		seen := map[string]bool{}
 		for _, server := range servers {
 			if !codexServerIdentifier.MatchString(server.Name) || seen[server.Name] {

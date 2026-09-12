@@ -137,7 +137,7 @@ func (a *App) autoBridgeArgs(executor string, existing []string, id, runtimeDir,
 	if executor == "codex" {
 		args = append(args, "--sandbox", "read-only", "--ask-for-approval", "never", "-c", `mcp_servers.ivoai-orchestrator.default_tools_approval_mode="approve"`)
 	} else if executor == "claude" {
-		args = append(args, "--tools", "Read,Glob,Grep", "--disallowedTools", "Bash,Edit,Write,NotebookEdit,Agent,Task", "--allowedTools", "mcp__ivoai-orchestrator__*")
+		args = append(args, "--strict-mcp-config", "--tools", "Read,Glob,Grep", "--disallowedTools", "Bash,Edit,Write,NotebookEdit,Agent,Task", "--allowedTools", "mcp__ivoai-orchestrator__*")
 	}
 	return args, nil
 }
