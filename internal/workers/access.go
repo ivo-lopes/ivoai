@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ivo-lopes/ivoai/internal/externalmcp"
 	"github.com/ivo-lopes/ivoai/internal/opencodebridge"
 	"github.com/ivo-lopes/ivoai/internal/platform"
 )
@@ -78,7 +79,6 @@ func (a *Access) ConfigureNative(options opencodebridge.ManagedOptions) opencode
 	return options
 }
 
-var toolIdentifier = regexp.MustCompile(`^[a-zA-Z][a-zA-Z0-9_-]{0,95}$`)
 var codexServerIdentifier = regexp.MustCompile(`^[a-zA-Z0-9_-]{1,128}$`)
 
 func NewAccess(directory string, write bool, grants []MCPGrant) (*Access, error) {
@@ -93,13 +93,14 @@ func NewAccess(directory string, write bool, grants []MCPGrant) (*Access, error)
 	seen := map[string]bool{}
 	for _, grant := range grants {
 		u, err := url.Parse(grant.URL)
-		if err != nil || u.Scheme != "http" || u.Hostname() != "127.0.0.1" || u.Port() == "" || u.User != nil || u.RawQuery != "" || u.Fragment != "" || !toolIdentifier.MatchString(grant.Name) || seen[grant.Name] || len(grant.Tools) == 0 || len(grant.Tools) > 128 || len(grant.Token) < 16 || len(grant.Token) > 256 || strings.ContainsAny(grant.Token, "\r\n\x00") {
+		identity := strings.ReplaceAll(grant.Name, ".", "_")
+		if err != nil || u.Scheme != "http" || u.Hostname() != "127.0.0.1" || u.Port() == "" || u.User != nil || u.RawQuery != "" || u.Fragment != "" || !externalmcp.ValidToolName(grant.Name) || len(grant.Name) > 64 || seen[identity] || len(grant.Tools) == 0 || len(grant.Tools) > 128 || len(grant.Token) < 16 || len(grant.Token) > 256 || strings.ContainsAny(grant.Token, "\r\n\x00") {
 			return nil, errors.New("MCP_DENIED: invalid task-scoped loopback grant")
 		}
-		seen[grant.Name] = true
+		seen[identity] = true
 		tools := append([]string(nil), grant.Tools...)
 		for _, name := range tools {
-			if !toolIdentifier.MatchString(name) {
+			if !externalmcp.ValidToolName(name) {
 				return nil, errors.New("MCP_DENIED: invalid tool grant")
 			}
 		}
@@ -146,7 +147,7 @@ func (a Adapter) isolateScopedMCPs(ctx context.Context, executable string, reque
 		}
 		projection := []string{}
 		for i, grant := range access.grants {
-			key := "mcp_servers." + access.prefix + grant.Name
+			key := "mcp_servers." + access.prefix + strings.ReplaceAll(grant.Name, ".", "_")
 			projection = append(projection,
 				"-c", key+".url="+strconv.Quote(grant.URL),
 				"-c", key+".bearer_token_env_var="+strconv.Quote(access.tokenVariable(i)),

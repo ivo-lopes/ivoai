@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ivo-lopes/ivoai/internal/externalmcp"
 	"github.com/ivo-lopes/ivoai/internal/platform"
 	"github.com/ivo-lopes/ivoai/internal/quota"
 	"github.com/ivo-lopes/ivoai/internal/workingcontext"
@@ -492,6 +493,9 @@ func validate(value Session) error {
 		}
 		knownTasks := map[string]struct{}{}
 		for _, task := range value.Tasks {
+			if err := externalmcp.ValidateScope(task.AllowedMCPTools); err != nil {
+				return err
+			}
 			for _, list := range [][]string{task.KnowledgeSources, task.AllowedMCPs, task.Skills} {
 				if len(list) > 32 {
 					return errors.New("task capability metadata exceeds limit")

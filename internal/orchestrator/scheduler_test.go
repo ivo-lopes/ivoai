@@ -264,6 +264,27 @@ func TestStrictArgumentsRejectsTrailingJSON(t *testing.T) {
 	}
 }
 
+func TestNativeBootstrapUnselectedSourcesAreDisabled(t *testing.T) {
+	root := t.TempDir()
+	store, id := automaticBridgeSession(t, root)
+	_, err := store.Update(id, func(v *session.Session) error {
+		v.MemoryStatus, v.ContextStatus = "disabled", "disabled"
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	server := &Server{Store: store, SessionID: id, NativePolicy: true}
+	brief := map[string]any{"objective": "read local fixture", "memory_status": "degraded", "context_status": "degraded", "memory_lookup_performed": false, "context_lookup_performed": false}
+	if _, err := server.bootstrap(context.Background(), toolRequest(brief)); err == nil {
+		t.Fatal("unperformed lookups cannot be reported as degraded lookups")
+	}
+	brief["memory_status"], brief["context_status"] = "disabled", "disabled"
+	if _, err := server.bootstrap(context.Background(), toolRequest(brief)); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestRelatedTurnUsesDeltaPlanWithoutRepeatingBootstrap(t *testing.T) {
 	root := t.TempDir()
 	store, id := automaticBridgeSession(t, root)

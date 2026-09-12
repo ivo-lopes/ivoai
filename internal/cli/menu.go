@@ -49,6 +49,7 @@ func PublicMenuActionIDs() []string {
 		"connect.list", "connect.chatgpt", "disconnect.chatgpt", "connect.claude", "disconnect.claude", "connect.server",
 		"servers.list", "servers.add", "servers.manage", "servers.test", "servers.toggle", "servers.edit", "servers.re-enroll", "servers.remove",
 		"mcp.list", "mcp.add", "mcp.remove", "mcp.auth", "mcp.auth.remove", "mcp.header", "mcp.test", "launch.codex", "launch.claude", "launch.opencode", "memory.status", "memory.configure",
+		"mcp.tools", "mcp.enable", "mcp.policy", "mcp.direct-policy",
 		"session.direct.codex", "session.direct.claude", "session.direct.opencode", "session.orchestrated.codex", "session.orchestrated.claude", "session.list", "session.monitor", "session.stop",
 		"project.status", "project.init", "config.show", "config.headroom", "config.memory", "config.ruflo", "config.auto", "config.auto-planner", "config.auto-failover", "config.auto-checkpoint", "config.auto-strategy", "config.auto-parallel", "config.auto-bootstrap", "config.auto-escalation", "config.session-mode", "config.primary", "config.reviewer", "config.workers",
 		"server.setup", "server.status", "server.doctor", "server.start", "server.stop", "server.restart", "server.logs",
@@ -132,13 +133,13 @@ func (s *menuSession) connections() (bool, error) {
 		{id: "connect.claude", label: "Connect Claude Code", description: "Use the official Claude Code login flow", run: s.simple(func() error { return s.app.ConnectAgent(s.ctx, "claude") })},
 		{id: "disconnect.claude", label: "Disconnect Claude Code state", disabled: disabledUnless(snapshot.ClaudeConnected, "not connected"), run: s.simple(func() error { return s.app.DisconnectAgent(s.ctx, "claude") })},
 		{id: "connect.server", label: "IVOAI Servers", description: "Add and manage independent server profiles", run: s.servers},
-		{id: "mcp", label: "External MCP Registry", run: s.mcp},
+		{id: "mcp", label: "MCP Control Plane", run: s.mcp},
 	})
 }
 
 func (s *menuSession) agents() (bool, error) {
 	return s.loop("Agents", []menuAction{
-		{id: "launch.codex", label: "Codex Orchestrated", description: "IVOAI-controlled intake, Codex primary, scoped Codex/Claude workers", run: func() (bool, error) { return true, s.app.OrchestratedWithKnowledge(s.ctx, "codex", "", nil, nil) }},
+		{id: "launch.codex", label: "Codex Orchestrated", description: "Native Codex TUI, IVOAI admission, scoped Codex/Claude workers", run: func() (bool, error) { return true, s.app.OrchestratedWithKnowledge(s.ctx, "codex", "", nil, nil) }},
 		{id: "launch.claude", label: "Launch Claude Code", description: "Official Claude interface with IVOAI knowledge and safe compression", run: func() (bool, error) { return true, s.app.Launch(s.ctx, "claude", nil) }},
 		{id: "launch.opencode", label: "Launch IVOAI OpenCode frontend", description: "Managed OpenCode interface with IVOAI-routed Codex and Claude executors", run: func() (bool, error) { return true, s.app.Auto(s.ctx, "", nil) }},
 	})
@@ -146,7 +147,7 @@ func (s *menuSession) agents() (bool, error) {
 
 func (s *menuSession) launch() (bool, error) {
 	return s.loop("Launch — auto is a deprecated alias for opencode", []menuAction{
-		{id: "launch.codex", label: "Codex Orchestrated", description: "Prompt gate, approved plan and automatic workers; Codex primary preference", run: func() (bool, error) { return true, s.app.OrchestratedWithKnowledge(s.ctx, "codex", "", nil, nil) }},
+		{id: "launch.codex", label: "Codex Orchestrated", description: "Native Codex TUI; prompt gate, native plan approval and automatic workers", run: func() (bool, error) { return true, s.app.OrchestratedWithKnowledge(s.ctx, "codex", "", nil, nil) }},
 		{id: "launch.opencode", label: "OpenCode Orchestrated", description: "Managed OpenCode frontend, same IVOAI policies and worker scheduler", run: func() (bool, error) { return true, s.app.Auto(s.ctx, "", nil) }},
 		{id: "session.direct.codex", label: "Codex Direct", description: "Official Codex TUI; no prompt gate or automatic DAG", run: func() (bool, error) { return true, s.app.SessionStart(s.ctx, "codex", "direct", nil) }},
 		{id: "session.direct.claude", label: "Claude Direct", description: "Optional official Claude client", run: func() (bool, error) { return true, s.app.SessionStart(s.ctx, "claude", "direct", nil) }},
@@ -260,13 +261,17 @@ func (s *menuSession) maxWorkers() (bool, error) {
 }
 
 func (s *menuSession) mcp() (bool, error) {
-	return s.loop("External MCP Registry", []menuAction{
+	return s.loop("MCP Control Plane", []menuAction{
 		{id: "mcp.list", label: "List MCPs", run: s.simple(s.app.MCPList)},
 		{id: "mcp.add", label: "Add MCP", run: s.mcpAdd},
 		{id: "mcp.auth", label: "Configure / Replace Credential", run: s.mcpConfigureAuth},
 		{id: "mcp.header", label: "Configure / Replace Header", description: "Private header value, including required workspace routing", run: s.mcpConfigureHeader},
 		{id: "mcp.auth.remove", label: "Remove Authentication", run: s.mcpClearAuth},
 		{id: "mcp.test", label: "Test MCP", description: "Authenticated initialize and tool discovery; no tool execution", run: s.mcpTest},
+		{id: "mcp.tools", label: "Tools / Health / Compatibility", description: "Bounded inventory; metadata does not grant access", run: s.mcpTools},
+		{id: "mcp.enable", label: "Enable / Disable MCP", description: "Preserve credentials and other entries", run: s.mcpEnable},
+		{id: "mcp.policy", label: "Tool Approval Policy", description: "Full permission never grants unapproved writes", run: s.mcpPolicy},
+		{id: "mcp.direct-policy", label: "Direct Session Policy", description: "Read-only or disabled; never grant everything", run: s.mcpDirectPolicy},
 		{id: "mcp.remove", label: "Remove MCP", run: s.mcpRemove},
 	})
 }

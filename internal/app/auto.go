@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/ivo-lopes/ivoai/internal/agents"
+	"github.com/ivo-lopes/ivoai/internal/codexfrontend"
 	"github.com/ivo-lopes/ivoai/internal/config"
 	"github.com/ivo-lopes/ivoai/internal/connections"
 	"github.com/ivo-lopes/ivoai/internal/core"
@@ -136,7 +137,7 @@ func (a *App) autoBridgeArgs(executor string, existing []string, id, runtimeDir,
 	if executor == "codex" {
 		args = append(args, "--sandbox", "read-only", "--ask-for-approval", "never", "-c", `mcp_servers.ivoai-orchestrator.default_tools_approval_mode="approve"`)
 	} else if executor == "claude" {
-		args = append(args, "--tools", "Read,Glob,Grep", "--disallowedTools", "Bash,Edit,Write,NotebookEdit,Agent,Task", "--allowedTools", "mcp__ivoai-orchestrator__*")
+		args = append(args, "--strict-mcp-config", "--tools", "Read,Glob,Grep", "--disallowedTools", "Bash,Edit,Write,NotebookEdit,Agent,Task", "--allowedTools", "mcp__ivoai-orchestrator__*")
 	}
 	return args, nil
 }
@@ -636,7 +637,7 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 					if decision.Summary != "" {
 						description = decision.Summary
 					}
-					if decision.Kind == "plan" {
+					if decision.Kind == "plan" && decision.Summary == "" {
 						description = fmt.Sprintf("Plan ready: %d tasks. Approve execution?", len(value.Tasks))
 						for _, task := range value.Tasks {
 							description += fmt.Sprintf(" | %s: %s (%s/%s; %d dependencies)", task.ID, task.Role, task.Executor, task.Tier, len(task.Dependencies))
@@ -975,12 +976,28 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 		if err != nil {
 			return err
 		}
-		err = a.runCodexFrontend(ctx, bridge, id)
+		var turnErr error
+		err, turnErr = a.runCodexFrontend(ctx, codexfrontend.Options{Binary: state.Components["codex"].Path, Directory: cwd, RuntimeDir: runtimeDir, SessionID: id, Bridge: bridge, Environment: frontendEnvironment}, func(observation agents.Observation) {
+			_, _ = store.Update(id, func(s *session.Session) error {
+				s.FrontendPID, s.PrimaryPID = observation.PID, observation.PID
+				s.FrontendProcessStart, s.PrimaryProcessStart = session.ProcessStart(observation.PID), session.ProcessStart(observation.PID)
+				s.CurrentPhase = "conversation"
+				return nil
+			})
+		})
 		if err != nil {
 			a.finishSession(store, id, session.StateFailed, exitCode(err))
 			return err
 		}
 		a.finishSession(store, id, session.StateCompleted, 0)
+		if turnErr != nil {
+			_, _ = store.Update(id, func(s *session.Session) error {
+				code := 1
+				s.State, s.ExitCode = session.StateFailed, &code
+				return nil
+			})
+			return turnErr
+		}
 		return nil
 	}
 	starter := a.StartOpenCodeManaged
@@ -993,7 +1010,7 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 		// Direct is an explicit escape hatch, never an implicit recovery path:
 		// an upstream TUI cannot enforce IVOAI turn admission.
 		a.finishSession(store, id, session.StateFailed, 1)
-		fmt.Fprintln(a.Err, "ORCHESTRATION_STATE=DEGRADED\nOpenCode frontend unavailable. No direct session was started. Use ivoai codex for the controlled terminal frontend, or explicitly choose --direct.")
+		fmt.Fprintln(a.Err, "ORCHESTRATION_STATE=DEGRADED\nOpenCode frontend unavailable. No direct session was started. Use ivoai codex for the native orchestrated Codex TUI, or explicitly choose --direct.")
 		return fmt.Errorf("managed frontend unavailable; direct fallback refused: %s", platform.Redact(cause.Error()))
 	}
 	if frontendPreflightErr != nil {
@@ -1342,9 +1359,9 @@ func automaticInstructions(checkpointEnabled bool) string {
 
 For the first substantive user request, do not immediately begin large work. Follow this enforced protocol:
 1. use only knowledge sources selected by IVOAI purpose routing. When available and relevant, perform one bounded lookup in ivoai-memory, then one in ivoai-context. An unavailable or unselected source is disabled, not a reason to query another purpose; do not invent lookups;
-2. call orchestration_bootstrap with a concise SharedContextBrief containing only relevant facts, decisions, references, constraints, known state, and gaps; report either source as degraded when unavailable;
+2. call orchestration_bootstrap with a concise SharedContextBrief containing only relevant facts, decisions, references, constraints, known state, and gaps. For an unselected or absent source, set its status to disabled and its lookup_performed flag to false. Only report degraded/unavailable after attempting a selected source; never claim a lookup occurred when it did not;
 3. inspect orchestration_quota and orchestration_capabilities;
-4. decompose the request into the smallest useful non-overlapping tasks, their dependencies and parallel groups. Every task needs local acceptance criteria and one role: research, implementation, review, security, documentation, ops, synthesis. Include only relevant context_references, knowledge_sources (selected aliases), constraints, skills, allowed_mcps and write_paths; empty MCP selection means no MCP access. All writes belong to implementation/documentation workers with explicit relative write_paths. Include a dependency-aware validation task for implementation acceptance;
+4. decompose the request into the smallest useful non-overlapping tasks, their dependencies and parallel groups. Every task needs local acceptance criteria and one role: research, implementation, review, security, documentation, ops, synthesis. Include only relevant context_references, knowledge_sources (selected aliases), constraints, skills, allowed_mcps, allowed_mcp_tools (server alias to exact tool names), and write_paths; A server name alone grants no external tools. Empty exact scope denies every tool. Explicit mutating/unknown tools require plan approval even in Full; immediate start still requires explicit approval for non-read tools. Primary tasks also need exact tool grants, and never inherit worker grants. All writes belong to implementation/documentation workers with explicit relative write_paths. Include a dependency-aware validation task for implementation acceptance;
 5. score every task from 0..100 for complexity, risk, reasoning_depth, context_breadth, verification_need, parallel_value, and latency_sensitivity;
 6. call orchestration_plan. IvoAI calculates the capability score and has final authority over provider, model, effort, and quota. Unless immediate execution is configured, this call waits for the user's plan approval in OpenCode. Do not perform planned work before it succeeds. Tool permission Full does not approve a plan;
 7. keep trivial work in the primary when delegation overhead exceeds expected benefit;

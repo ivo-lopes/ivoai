@@ -32,6 +32,9 @@ type Target struct {
 	// their existing transport and interactive approval contract.
 	Restricted   bool
 	AllowedTools []string
+	// ApprovalTools must be confirmed even in full mode. Only IVOAI may mark
+	// an exact task/tool as already approved through SetToolAdmission.
+	ApprovalTools []string
 }
 type Permission struct{ ID, Description string }
 type pending struct {
@@ -39,14 +42,21 @@ type pending struct {
 	reply chan bool
 }
 type Gateway struct {
-	url, token  string
-	interactive atomic.Bool
-	server      *http.Server
-	transport   *http.Transport
-	mu          sync.Mutex
-	pending     map[string]pending
-	cancel      context.CancelFunc
-	admission   func() bool
+	url, token    string
+	interactive   atomic.Bool
+	server        *http.Server
+	transport     *http.Transport
+	mu            sync.Mutex
+	pending       map[string]pending
+	cancel        context.CancelFunc
+	admission     func() bool
+	toolAdmission func(server, tool string) (allowed, approved bool)
+}
+
+func (g *Gateway) SetToolAdmission(check func(string, string) (bool, bool)) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	g.toolAdmission = check
 }
 
 // SetAdmission installs an additional control-plane gate, independent from
@@ -82,7 +92,11 @@ func Start(targets []Target, mode string) (*Gateway, error) {
 			return nil, errors.New("unsafe MCP name")
 		}
 		allowedTools := make(map[string]bool, len(target.AllowedTools))
-		if len(target.AllowedTools) > 128 {
+		approvalTools := map[string]bool{}
+		for _, name := range target.ApprovalTools {
+			approvalTools[name] = true
+		}
+		if len(target.AllowedTools) > MaxInventoryTools {
 			listener.Close()
 			cancel()
 			return nil, errors.New("worker MCP tool scope exceeds limit")
@@ -126,6 +140,9 @@ func Start(targets []Target, mode string) (*Gateway, error) {
 					return errors.New("external MCP redirect refused")
 				}
 				response.Header.Del("Set-Cookie")
+				if target.Restricted && response.Request.Context().Value(inventoryRequestKey{}) == true && response.StatusCode == http.StatusOK {
+					return filterInventory(response, allowedTools)
+				}
 				response.Body = &boundedBody{ReadCloser: response.Body, remaining: 16 << 20}
 				return nil
 			},
@@ -175,18 +192,30 @@ func Start(targets []Target, mode string) (*Gateway, error) {
 					}
 					g.mu.Lock()
 					admission := g.admission
+					toolAdmission := g.toolAdmission
 					g.mu.Unlock()
+					approved := false
+					if toolAdmission != nil {
+						allowed, priorApproval := toolAdmission(target.Name, message.Params.Name)
+						if !allowed {
+							writeDenied(w, message.ID, "MCP_DENIED: exact task/tool grant is absent or revoked")
+							return
+						}
+						approved = priorApproval
+					}
 					if admission != nil && !admission() {
 						w.Header().Set("Content-Type", "application/json")
 						_ = json.NewEncoder(w).Encode(map[string]any{"jsonrpc": "2.0", "id": message.ID, "result": map[string]any{"isError": true, "content": []map[string]string{{"type": "text", "text": "PLAN_APPROVAL_REQUIRED: external work cannot execute before the IVOAI plan is admitted"}}}})
 						return
 					}
-					if g.interactive.Load() && !g.approve(requestCtx, target.Name+" · "+message.Params.Name) {
+					if (g.interactive.Load() || approvalTools[message.Params.Name] && !approved) && !g.approve(requestCtx, target.Name+" · "+message.Params.Name) {
 						w.Header().Set("Content-Type", "application/json")
 						_ = json.NewEncoder(w).Encode(map[string]any{"jsonrpc": "2.0", "id": message.ID, "result": map[string]any{"isError": true, "content": []map[string]string{{"type": "text", "text": "IVOAI external MCP permission denied or cancelled"}}}})
 						return
 					}
-				case "initialize", "notifications/initialized", "notifications/cancelled", "ping", "tools/list":
+				case "tools/list":
+					r = r.WithContext(context.WithValue(r.Context(), inventoryRequestKey{}, true))
+				case "initialize", "notifications/initialized", "notifications/cancelled", "ping":
 				case "resources/list", "resources/templates/list", "resources/read", "prompts/list", "prompts/get":
 					if target.Restricted {
 						http.Error(w, "MCP_DENIED: method is outside worker scope", http.StatusForbidden)

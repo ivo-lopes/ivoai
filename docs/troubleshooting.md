@@ -1,5 +1,39 @@
 # Troubleshooting
 
+## Managed OpenCode keyboard and clipboard
+
+`ivoai opencode` uses **Enter to send** and **Shift+Enter for a new line**.
+Kitty keyboard support remains upstream-owned. For xterm-compatible terminals,
+IVOAI queries `modifyOtherKeys`, enables mode 2 only after a supported response,
+and restores the previous mode on exit. Personal terminal/OpenCode configuration
+is not edited. The old `ivoai auto` alias uses the same integration.
+
+A terminal must report the modifier: if Enter and Shift+Enter both produce CR,
+the application cannot distinguish them. Older VTE terminals can have this
+limitation. Use a terminal with enhanced keyboard support; if xterm is installed,
+`xterm -e ivoai opencode` is a process-local option requiring no global settings.
+Ctrl+J is not the IVOAI default multiline workflow.
+See the [xterm modifier protocol](https://invisible-island.net/xterm/ctlseqs/ctlseqs.html)
+and the [VTE 0.80.1 Return mapping](https://github.com/GNOME/vte/blob/0.80.1/src/keymap.cc#L111).
+
+Desktop copying requires an accessible backend: `wl-copy` on Wayland, or
+`xclip`/`xsel` on X11. The managed environment forwards only the necessary display
+references (`WAYLAND_DISPLAY`, `XDG_RUNTIME_DIR`, `DISPLAY`), not the session bus,
+SSH agent or provider credentials. IVOAI does not install desktop packages during
+a session. `wl-paste` or `xclip -selection clipboard -o` can verify delivery outside
+the TUI; avoid printing sensitive clipboard contents into logs.
+
+The managed OpenCode source patch propagates backend failures and avoids waiting
+on stdout retained by a background clipboard owner. Successful feedback requires
+native backend success. OSC52 remains best effort: sending its escape sequence
+alone does not certify delivery, particularly over SSH. An unavailable backend
+produces failed/unconfirmed feedback instead of a false success toast.
+
+Release archives include separately checksummed managed OpenCode binaries and
+provenance metadata. The patched build is identified as `1.18.25-ivoai.1`, not as
+the untouched upstream artifact. Existing immutable objects remain available for
+rollback.
+
 ## Multi-server connection management
 
 - **Alias already exists:** Add never replaces. Select that alias and use Re-enroll

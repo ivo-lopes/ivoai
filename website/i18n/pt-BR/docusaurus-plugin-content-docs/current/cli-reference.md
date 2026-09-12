@@ -24,6 +24,10 @@ Usage:
   ivoai connect mcp auth remove <name>
   ivoai connect mcp header set <name> <header-name> --value-stdin
   ivoai connect mcp test <name>
+  ivoai connect mcp tools <name>
+  ivoai connect mcp enable <name> | disable <name>
+  ivoai connect mcp policy <name> <read_only|read_auto_ask_mutating>
+  ivoai connect mcp direct-policy <name> <read_only|disabled>
   ivoai disconnect <chatgpt|claude|server [alias|--all]>
   ivoai codex [--direct] [--knowledge-source <alias|purpose>] [-- agent arguments...]
   ivoai claude [--knowledge-source <alias|purpose>] [-- agent arguments...]

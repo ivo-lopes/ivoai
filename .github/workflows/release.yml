@@ -42,7 +42,11 @@ jobs:
           go test -race ./...
           go vet ./...
       - name: Managed OpenCode HTTP and attach integration
-        run: scripts/test-managed-opencode.sh
+        run: |
+          node --test internal/opencodebridge/keyboard.test.mjs
+          scripts/test-managed-opencode.sh
+      - name: Native Codex TUI and fail-closed App Server admission
+        run: scripts/test-native-codex.sh
       - name: ShellCheck
         run: shellcheck install.sh scripts/*.sh
       - name: Vulnerability scan
@@ -58,22 +62,30 @@ jobs:
 
   build:
     needs: verify
-    runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 45
     strategy:
       fail-fast: false
       matrix:
         include:
           - goos: linux
             goarch: amd64
+            runner: ubuntu-24.04
           - goos: linux
             goarch: arm64
+            runner: ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
       - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
         with:
           go-version-file: go.mod
           cache: true
+      - name: Build and verify patched managed frontend
+        run: |
+          scripts/build-managed-opencode.sh "$PWD/dist/release"
+          scripts/test-patched-opencode.sh \
+            "$PWD/dist/release/ivoai-opencode_linux_${{ matrix.goarch }}.tar.gz" \
+            "$PWD/dist/release/managed-opencode-${{ matrix.goarch }}.json"
       - name: Build archive
         env:
           CGO_ENABLED: "0"
@@ -82,12 +94,16 @@ jobs:
           VERSION: ${{ github.ref_name }}
         run: |
           mkdir -p dist
-          go build -trimpath -ldflags "-s -w -X main.version=${VERSION#v}" -o dist/ivoai ./cmd/ivoai
-          tar -C dist -czf "ivoai_${GOOS}_${GOARCH}.tar.gz" ivoai
+          metadata="dist/release/managed-opencode-${GOARCH}.json"
+          url="https://github.com/ivo-lopes/ivoai/releases/download/${VERSION}/ivoai-opencode_${GOOS}_${GOARCH}.tar.gz"
+          managed_build="$(jq -c --arg url "$url" '. + {url:$url}' "$metadata" | base64 -w0)"
+          go build -trimpath -ldflags "-s -w -X main.version=${VERSION#v} -X github.com/ivo-lopes/ivoai/internal/components.managedOpenCodeBuild=${managed_build}" -o dist/ivoai ./cmd/ivoai
+          go version -m dist/ivoai | grep -F 'vcs.modified=false'
+          tar -C dist -czf "dist/release/ivoai_${GOOS}_${GOARCH}.tar.gz" ivoai
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: ivoai-${{ matrix.goos }}-${{ matrix.goarch }}
-          path: ivoai_${{ matrix.goos }}_${{ matrix.goarch }}.tar.gz
+          path: dist/release/*
 
   skill:
     needs: verify
@@ -117,7 +133,7 @@ jobs:
           pattern: ivoai-*
           merge-multiple: true
       - name: Generate checksums
-        run: sha256sum ivoai_*.tar.gz ivoai-memory-context.zip > checksums.txt
+        run: sha256sum ivoai_*.tar.gz ivoai-opencode_*.tar.gz managed-opencode-*.json ivoai-memory-context.zip > checksums.txt
       - name: Publish GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -134,9 +150,9 @@ jobs:
           fi
           # Upload into a draft first. A failed upload must never leave a
           # partially populated public release under an immutable tag.
-          gh release create "${GITHUB_REF_NAME}" ivoai_*.tar.gz ivoai-memory-context.zip checksums.txt --verify-tag --draft --notes-file "$notes_file" "${release_flags[@]}"
+          gh release create "${GITHUB_REF_NAME}" ivoai_*.tar.gz ivoai-opencode_*.tar.gz managed-opencode-*.json ivoai-memory-context.zip checksums.txt --verify-tag --draft --notes-file "$notes_file" "${release_flags[@]}"
           mapfile -t actual_assets < <(gh release view "${GITHUB_REF_NAME}" --json assets --jq '.assets[].name' | sort)
-          mapfile -t expected_assets < <(printf '%s\n' checksums.txt ivoai-memory-context.zip ivoai_linux_amd64.tar.gz ivoai_linux_arm64.tar.gz | sort)
+          mapfile -t expected_assets < <(printf '%s\n' checksums.txt ivoai-memory-context.zip ivoai_linux_amd64.tar.gz ivoai_linux_arm64.tar.gz ivoai-opencode_linux_amd64.tar.gz ivoai-opencode_linux_arm64.tar.gz managed-opencode-amd64.json managed-opencode-arm64.json | sort)
           if [[ "${actual_assets[*]}" != "${expected_assets[*]}" ]]; then
             echo "draft release asset set is incomplete; leaving draft unpublished" >&2
             printf 'expected: %s\nactual: %s\n' "${expected_assets[*]}" "${actual_assets[*]}" >&2

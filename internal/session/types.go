@@ -33,29 +33,30 @@ type BootstrapMetadata struct {
 }
 
 type TaskMetadata struct {
-	KnowledgeSources      []string  `json:"knowledge_sources,omitempty"`
-	AllowedMCPs           []string  `json:"allowed_mcps,omitempty"`
-	Skills                []string  `json:"skills,omitempty"`
-	ID                    string    `json:"id"`
-	Role                  string    `json:"role"`
-	Dependencies          []string  `json:"dependencies,omitempty"`
-	ParallelGroup         string    `json:"parallel_group,omitempty"`
-	CapabilityScore       int       `json:"capability_score"`
-	Tier                  string    `json:"tier"`
-	Executor              string    `json:"executor,omitempty"`
-	Model                 ModelInfo `json:"model"`
-	Effort                string    `json:"effort,omitempty"`
-	EffortSource          string    `json:"effort_source"`
-	State                 State     `json:"state"`
-	DurationMilliseconds  int64     `json:"duration_ms,omitempty"`
-	HeadroomUsed          bool      `json:"headroom_used"`
-	IntentionalRedundancy bool      `json:"intentional_redundancy,omitempty"`
-	Escalations           int       `json:"escalations,omitempty"`
-	EscalationReason      string    `json:"escalation_reason,omitempty"`
-	ExecutionMode         string    `json:"execution_mode"`
-	DelegationBenefit     int       `json:"delegation_benefit"`
-	DelegationOverhead    int       `json:"delegation_overhead"`
-	DelegationReason      string    `json:"delegation_reason"`
+	KnowledgeSources      []string            `json:"knowledge_sources,omitempty"`
+	AllowedMCPs           []string            `json:"allowed_mcps,omitempty"`
+	AllowedMCPTools       map[string][]string `json:"allowed_mcp_tools,omitempty"`
+	Skills                []string            `json:"skills,omitempty"`
+	ID                    string              `json:"id"`
+	Role                  string              `json:"role"`
+	Dependencies          []string            `json:"dependencies,omitempty"`
+	ParallelGroup         string              `json:"parallel_group,omitempty"`
+	CapabilityScore       int                 `json:"capability_score"`
+	Tier                  string              `json:"tier"`
+	Executor              string              `json:"executor,omitempty"`
+	Model                 ModelInfo           `json:"model"`
+	Effort                string              `json:"effort,omitempty"`
+	EffortSource          string              `json:"effort_source"`
+	State                 State               `json:"state"`
+	DurationMilliseconds  int64               `json:"duration_ms,omitempty"`
+	HeadroomUsed          bool                `json:"headroom_used"`
+	IntentionalRedundancy bool                `json:"intentional_redundancy,omitempty"`
+	Escalations           int                 `json:"escalations,omitempty"`
+	EscalationReason      string              `json:"escalation_reason,omitempty"`
+	ExecutionMode         string              `json:"execution_mode"`
+	DelegationBenefit     int                 `json:"delegation_benefit"`
+	DelegationOverhead    int                 `json:"delegation_overhead"`
+	DelegationReason      string              `json:"delegation_reason"`
 }
 
 type State string

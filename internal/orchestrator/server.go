@@ -29,6 +29,7 @@ import (
 var rolePattern = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_-]{0,63}$`)
 
 type Server struct {
+	CheckMCPGrants        func(context.Context, []routing.TaskInput) (bool, error)
 	planMu                sync.Mutex
 	LowQuotaThreshold     int
 	ProviderPreference    string

@@ -302,12 +302,17 @@ type MCPConfig struct {
 	Servers map[string]MCPServer `toml:"servers"`
 }
 type MCPServer struct {
-	ID       string `toml:"id,omitempty"`
-	AuthMode string `toml:"auth_mode,omitempty"`
-	URL      string `toml:"url"`
-	HooksURL string `toml:"hooks_url,omitempty"`
-	Enabled  bool   `toml:"enabled"`
-	Kind     string `toml:"kind"`
+	Tools        []MCPTool `toml:"tools,omitempty"`
+	Health       string    `toml:"health,omitempty"`
+	ProbedAt     string    `toml:"probed_at,omitempty"`
+	Policy       string    `toml:"policy,omitempty"`
+	DirectPolicy string    `toml:"direct_policy,omitempty"`
+	ID           string    `toml:"id,omitempty"`
+	AuthMode     string    `toml:"auth_mode,omitempty"`
+	URL          string    `toml:"url"`
+	HooksURL     string    `toml:"hooks_url,omitempty"`
+	Enabled      bool      `toml:"enabled"`
+	Kind         string    `toml:"kind"`
 	// Runtime-only environment references, never secret values or persisted config.
 	HeaderEnv       map[string]string `toml:"-" json:"-"`
 	SessionApproved bool              `toml:"-" json:"-"`
@@ -612,9 +617,13 @@ func (s *Store) Save(c Config) error {
 		"connections.servers.*.alias", "connections.servers.*.url", "connections.servers.*.purpose", "connections.servers.*.redundancy_group",
 		"connections.servers.*.context_mcp_url", "connections.servers.*.memory_mcp_url", "connections.servers.*.memory_hooks_url", "connections.servers.*.server_version",
 		"mcp.servers.*.hooks_url", "mcp.servers.*.auth_mode", "mcp.servers.*.id",
+		"mcp.servers.*.tools", "mcp.servers.*.health", "mcp.servers.*.probed_at", "mcp.servers.*.policy", "mcp.servers.*.direct_policy",
 	})
 	if err != nil {
 		return fmt.Errorf("encode config: %w", err)
+	}
+	if len(b) > 4<<20 {
+		return errors.New("configuration exceeds the bounded storage limit")
 	}
 	return platform.AtomicWritePrivate(b, s.Paths.Config)
 }

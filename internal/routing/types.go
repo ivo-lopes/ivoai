@@ -51,14 +51,15 @@ func DefaultWeights() Weights {
 }
 
 type TaskInput struct {
-	MinimumTier       Tier     `json:"minimum_tier,omitempty"`
-	Acceptance        []string `json:"acceptance,omitempty"`
-	Constraints       []string `json:"constraints,omitempty"`
-	ContextReferences []string `json:"context_references,omitempty"`
-	KnowledgeSources  []string `json:"knowledge_sources,omitempty"`
-	AllowedMCPs       []string `json:"allowed_mcps,omitempty"`
-	Skills            []string `json:"skills,omitempty"`
-	WritePaths        []string `json:"write_paths,omitempty"`
+	MinimumTier       Tier                `json:"minimum_tier,omitempty"`
+	Acceptance        []string            `json:"acceptance,omitempty"`
+	Constraints       []string            `json:"constraints,omitempty"`
+	ContextReferences []string            `json:"context_references,omitempty"`
+	KnowledgeSources  []string            `json:"knowledge_sources,omitempty"`
+	AllowedMCPs       []string            `json:"allowed_mcps,omitempty"`
+	AllowedMCPTools   map[string][]string `json:"allowed_mcp_tools,omitempty"`
+	Skills            []string            `json:"skills,omitempty"`
+	WritePaths        []string            `json:"write_paths,omitempty"`
 	// Explicit overrides are constraints, unlike PreferredExecutor, which is a
 	// ranking preference. They must never silently route to a different model.
 	Executor              string   `json:"executor,omitempty"`

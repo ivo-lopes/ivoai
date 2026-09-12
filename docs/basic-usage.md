@@ -8,7 +8,7 @@ ivoai status
 ivoai doctor
 ```
 
-`ivoai codex` starts the IVOAI-controlled Codex-oriented terminal. `ivoai opencode`
+`ivoai codex` starts the native Codex TUI with IVOAI-controlled admission. `ivoai opencode`
 starts managed OpenCode. Both use the same prompt gate, native DAG, plan approval,
 worker scheduler and capability policies. Codex is the preferred primary in the
 Codex frontend, not necessarily every worker's executor.

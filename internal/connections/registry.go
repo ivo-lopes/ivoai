@@ -38,6 +38,11 @@ func (r Registry) Add(name string, server config.MCPServer) error {
 	if c.MCP.Servers == nil {
 		c.MCP.Servers = map[string]config.MCPServer{}
 	}
+	for other := range c.MCP.Servers {
+		if other != name && strings.ReplaceAll(other, ".", "_") == strings.ReplaceAll(name, ".", "_") {
+			return fmt.Errorf("MCP aliases collide in Codex projection; choose a distinct alias")
+		}
+	}
 	if old, exists := c.MCP.Servers[name]; exists {
 		if old.Kind != "external" {
 			return fmt.Errorf("cannot replace managed MCP")
@@ -46,6 +51,10 @@ func (r Registry) Add(name string, server config.MCPServer) error {
 			return fmt.Errorf("remove authentication before changing MCP endpoint")
 		}
 		server.ID, server.AuthMode = old.ID, old.AuthMode
+		server.Policy, server.DirectPolicy = old.Policy, old.DirectPolicy
+		if old.URL == server.URL {
+			server.Tools, server.Health, server.ProbedAt = old.Tools, old.Health, old.ProbedAt
+		}
 	}
 	if server.ID == "" {
 		id, err := newMCPID()
@@ -67,7 +76,7 @@ func (r Registry) Remove(name string) error {
 	if !exists {
 		return nil
 	}
-	if entry.Kind != "external" {
+	if entry.Kind != "external" || IsManagedMCPName(name) {
 		return fmt.Errorf("cannot remove managed MCP through external registry")
 	}
 	if entry.ID != "" {

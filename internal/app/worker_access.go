@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"path/filepath"
+	"sort"
 	"sync"
 
 	"github.com/ivo-lopes/ivoai/internal/config"
@@ -26,6 +27,14 @@ import (
 // never endpoints, headers or credentials. Every worker receives an independent
 // revocable loopback capability. Institutional credentials remain in IVOAI.
 func (a *App) prepareWorkerAccess(ctx context.Context, cfg config.Config, store session.Store, id string, task routing.Task, request workers.Request) (workers.Request, error) {
+	latest, err := a.Store.Load()
+	if err != nil {
+		return request, err
+	}
+	cfg.MCP = latest.MCP // disable/rotation applies to newly created workers
+	if err := externalmcp.ValidateScope(task.AllowedMCPTools); err != nil {
+		return request, err
+	}
 	profile, err := orchestration.CapabilityProfile(task.Role)
 	if err != nil {
 		return request, err
@@ -74,7 +83,20 @@ func (a *App) prepareWorkerAccess(ctx context.Context, cfg config.Config, store 
 	targets := []externalmcp.Target{}
 	capabilities := map[string]bool{"filesystem.read": true, "filesystem.write": profile.Write && len(task.WritePaths) > 0 && !request.PatchOnly}
 	seen := map[string]bool{}
-	for _, name := range task.AllowedMCPs {
+	names := append([]string(nil), task.AllowedMCPs...)
+	for name := range task.AllowedMCPTools {
+		found := false
+		for _, existing := range names {
+			if existing == name {
+				found = true
+			}
+		}
+		if !found {
+			names = append(names, name)
+		}
+	}
+	sort.Strings(names)
+	for _, name := range names {
 		if seen[name] {
 			return request, errors.New("MCP_DENIED: duplicate worker MCP")
 		}
@@ -102,6 +124,18 @@ func (a *App) prepareWorkerAccess(ctx context.Context, cfg config.Config, store 
 				target.AllowedTools = []string{"context_search", "context_get_document", "context_recent", "context_health"}
 				capabilities["context.read"] = true
 			}
+			if requested, exact := task.AllowedMCPTools[name]; exact {
+				allowed := map[string]bool{}
+				for _, tool := range target.AllowedTools {
+					allowed[tool] = true
+				}
+				for _, tool := range requested {
+					if !allowed[tool] {
+						return request, errors.New("MCP_DENIED: managed knowledge scope is read-only")
+					}
+				}
+				target.AllowedTools = append([]string(nil), requested...)
+			}
 		} else {
 			entry, ok := cfg.MCP.Servers[name]
 			if !ok || !entry.Enabled || entry.Kind != "external" || connections.IsManagedMCPName(name) {
@@ -112,14 +146,24 @@ func (a *App) prepareWorkerAccess(ctx context.Context, cfg config.Config, store 
 			if err != nil {
 				return request, err
 			}
-			for _, tool := range inventory {
-				if tool.ReadOnly {
-					target.AllowedTools = append(target.AllowedTools, tool.Name)
-				}
+			if len(task.AllowedMCPTools[name]) == 0 {
+				return request, errors.New("MCP_DENIED: external workers require exact allowed_mcp_tools, not a server-only grant")
 			}
-			// Writes are not inferred from a server name or full frontend mode.
-			if len(target.AllowedTools) == 0 {
-				return request, errors.New("MCP_DENIED: no verified read-only worker tools")
+			known := map[string]connections.MCPToolCapability{}
+			for _, tool := range inventory {
+				known[tool.Name] = tool
+			}
+			for _, name := range task.AllowedMCPTools[name] {
+				tool, ok := known[name]
+				if !ok {
+					return request, errors.New("MCP_DENIED: requested tool absent from inventory")
+				}
+				if !tool.ReadOnly {
+					if entry.ResolvedMCPPolicy() != "read_auto_ask_mutating" || !approvedPlan(current) {
+						return request, errors.New("MCP_DENIED: mutating or unknown tool requires explicit plan approval")
+					}
+				}
+				target.AllowedTools = append(target.AllowedTools, name)
 			}
 			target.URL = entry.URL
 			target.Headers, err = registry.Headers(entry)
@@ -170,8 +214,8 @@ func (a *App) prepareWorkerAccess(ctx context.Context, cfg config.Config, store 
 	request.SelectedSkills = append([]string(nil), skillResult.Selected...)
 	grants := []workers.MCPGrant{}
 	if len(targets) > 0 {
-		// Plan approval grants these read-only capabilities, not arbitrary MCP
-		// writes. The proxy enforces the allowlist even for a malicious child.
+		// An approved plan grants only these exact tools. Full permission never
+		// broadens the scope, and Release revokes the independent worker token.
 		gateway, err = externalmcp.Start(targets, "full")
 		if err != nil {
 			return request, err

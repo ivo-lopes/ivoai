@@ -21,6 +21,7 @@ type fakeRunner struct {
 	requests []ExecutorRequest
 	result   ExecutorResult
 	err      error
+	text     string
 }
 
 type blockingRunner struct {
@@ -86,8 +87,12 @@ func (f *fakeRunner) Run(_ context.Context, request ExecutorRequest, emit func(s
 	f.requests = append(f.requests, request)
 	f.mu.Unlock()
 	if f.err == nil {
-		_ = emit("bridge ")
-		_ = emit("ok")
+		if f.text != "" {
+			_ = emit(f.text)
+		} else {
+			_ = emit("bridge ")
+			_ = emit("ok")
+		}
 	}
 	return f.result, f.err
 }

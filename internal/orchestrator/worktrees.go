@@ -154,7 +154,7 @@ func (s *Server) prepareNativeRequest(ctx context.Context, planID, workerID stri
 	if s.PrepareWorker != nil {
 		request.WorkerID = workerID
 		request, err = s.PrepareWorker(ctx, task, request)
-	} else if len(task.AllowedMCPs) > 0 || len(task.Skills) > 0 {
+	} else if len(task.AllowedMCPs) > 0 || len(task.AllowedMCPTools) > 0 || len(task.Skills) > 0 {
 		err = errors.New("MCP_DENIED: task capability projection unavailable")
 	}
 	if err != nil {

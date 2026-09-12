@@ -35,7 +35,7 @@ jobs:
       - name: Generated CLI reference is current
         run: scripts/generate-cli-reference.sh --check
       - name: Managed TUI semantic goldens (read-only comparison)
-        run: node --test internal/opencodebridge/presentation.test.mjs
+        run: node --test internal/opencodebridge/presentation.test.mjs internal/opencodebridge/keyboard.test.mjs
       - name: Unit tests
         shell: bash
         run: |
@@ -52,6 +52,8 @@ jobs:
           exit "$status"
       - name: Managed OpenCode HTTP and attach integration
         run: scripts/test-managed-opencode.sh
+      - name: Native Codex TUI and fail-closed App Server admission
+        run: scripts/test-native-codex.sh
       - name: Race tests
         run: go test -race ./...
       - name: Vet
@@ -66,6 +68,32 @@ jobs:
           govulncheck ./...
       - name: v0.5.0 upgrade and rollback matrix
         run: scripts/upgrade-matrix.sh
+
+  managed-frontend:
+    name: Patched managed frontend (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Build pinned source patch without dependency hooks
+        run: scripts/build-managed-opencode.sh "$PWD/dist/managed-frontend"
+      - name: Native TUI success and failure feedback
+        run: |
+          scripts/test-patched-opencode.sh \
+            "$PWD/dist/managed-frontend/ivoai-opencode_linux_${{ matrix.arch }}.tar.gz" \
+            "$PWD/dist/managed-frontend/managed-opencode-${{ matrix.arch }}.json"
 
   install-smoke:
     name: Install smoke (${{ matrix.name }})

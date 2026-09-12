@@ -15,4 +15,7 @@ func TestAutomaticInstructionsEnforceFirstTurnSchedulerProtocol(t *testing.T) {
 	if strings.Contains(value, "OPENAI_API_KEY") || strings.Contains(value, "ANTHROPIC_API_KEY") {
 		t.Fatal("automatic instructions must not request provider credentials")
 	}
+	if !strings.Contains(value, "set its status to disabled and its lookup_performed flag to false") {
+		t.Fatal("unselected sources must not be reported as failed lookups")
+	}
 }

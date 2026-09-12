@@ -73,7 +73,7 @@ func TestScopedCodexArgsEnforceDefaultDenyAndWorkspaceSandbox(t *testing.T) {
 		t.Fatal(err)
 	}
 	joined := strings.Join(args, "\n")
-	for _, want := range []string{"mcp_servers.personal.enabled=false", "mcp_servers.ivoai-memory.enabled=false", "workspace-write", "--skip-git-repo-check", "enabled_tools=[\"list_projects\"]", "IVOAI_WORKER_MCP_TOKEN_A"} {
+	for _, want := range []string{"features.apps=false", "features.hooks=false", "features.multi_agent=false", "mcp_servers.personal.enabled=false", "mcp_servers.ivoai-memory.enabled=false", "workspace-write", "--skip-git-repo-check", "enabled_tools=[\"list_projects\"]", "IVOAI_WORKER_MCP_TOKEN_A"} {
 		if !strings.Contains(joined, want) {
 			t.Fatalf("missing boundary %q", want)
 		}

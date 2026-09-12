@@ -74,7 +74,7 @@ const (
 // DefaultCatalog mirrors manifest/components.yaml. Release CI compares the
 // validated versions before publishing, while keeping the binary self-contained.
 func DefaultCatalog() []Spec {
-	return []Spec{
+	catalog := []Spec{
 		{Name: "codex", Executable: "codex", Version: "0.153.4", Strategy: StrategyBinary, Assets: map[string]Asset{
 			"linux/amd64": {URL: "https://github.com/openai/codex/releases/download/rust-v0.153.4/codex-x86_64-unknown-linux-musl.tar.gz", SHA256: "f479424eca092484dc40d87ae28c44f4cc40234a60045d6131e493800d814a30"},
 			"linux/arm64": {URL: "https://github.com/openai/codex/releases/download/rust-v0.153.4/codex-aarch64-unknown-linux-musl.tar.gz", SHA256: "5cda6182bd94c3a30f2eb63a495489ebf7f691fddb14d70f48c6c1a5071b6cde"},
@@ -115,6 +115,19 @@ func DefaultCatalog() []Spec {
 		}},
 		{Name: "ruflo", Executable: "ruflo", Version: "3.38.12", Package: "ruflo", PackageURL: "https://registry.npmjs.org/ruflo/-/ruflo-3.38.12.tgz", Integrity: "sha512-NOQnhI/fKok9aM0c+NR/6r6K81LJIO9ZwX7UZUJqIZFU/jg8edMX2qvQVaJfh+wdGCWP7oCdZyxjnNn/5MVr0Q==", Strategy: StrategyNPMIsolated},
 	}
+	if managedOpenCodeBuild != "" {
+		for index := range catalog {
+			if catalog[index].Name != "opencode" {
+				continue
+			}
+			projected, err := managedOpenCodeSpec(catalog[index], managedOpenCodeBuild, runtime.GOOS+"/"+runtime.GOARCH)
+			if err != nil {
+				panic("invalid release-managed OpenCode build metadata")
+			}
+			catalog[index] = projected
+		}
+	}
+	return catalog
 }
 
 type Installer struct {

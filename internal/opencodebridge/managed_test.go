@@ -47,6 +47,11 @@ func TestManagedOpenCodeUsesPrivateIsolatedConfiguration(t *testing.T) {
 	t.Setenv("OPENAI_API_KEY", "must-not-reach-frontend")
 	t.Setenv("GITHUB_TOKEN", "generic-secret-must-not-reach-frontend")
 	t.Setenv("SSH_AUTH_SOCK", "/tmp/agent-must-not-reach-frontend")
+	t.Setenv("DISPLAY", ":42")
+	t.Setenv("WAYLAND_DISPLAY", "wayland-fixture")
+	t.Setenv("XDG_RUNTIME_DIR", filepath.Join(root, "desktop-runtime"))
+	t.Setenv("DBUS_SESSION_BUS_ADDRESS", "bus-must-not-reach-frontend")
+	t.Setenv("XAUTHORITY", "authority-must-not-reach-frontend")
 	t.Setenv("IVOAI_KNOWLEDGE_SESSION_TOKEN", "must-not-reach-frontend")
 	t.Setenv("IVOAI_EXTERNAL_MCP_SESSION_TOKEN", "must-not-reach-frontend")
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -69,6 +74,16 @@ func TestManagedOpenCodeUsesPrivateIsolatedConfiguration(t *testing.T) {
 		t.Fatalf("managed attach did not preserve the approved resume session: %v", args)
 	}
 	environment := strings.Join(managed.Env(), "\n")
+	for _, expected := range []string{"DISPLAY=:42", "WAYLAND_DISPLAY=wayland-fixture", "XDG_RUNTIME_DIR=" + filepath.Join(root, "desktop-runtime")} {
+		if !strings.Contains(environment, expected+"\n") && !strings.HasSuffix(environment, expected) {
+			t.Fatalf("desktop clipboard reference omitted: %s", strings.SplitN(expected, "=", 2)[0])
+		}
+	}
+	for _, forbidden := range []string{"DBUS_SESSION_BUS_ADDRESS=", "XAUTHORITY="} {
+		if strings.Contains(environment, forbidden) {
+			t.Fatalf("unnecessary desktop authority propagated: %s", forbidden)
+		}
+	}
 	for _, expected := range []string{"OPENCODE_DISABLE_PROJECT_CONFIG=1", "OPENCODE_DISABLE_AUTOUPDATE=1", "OPENCODE_DISABLE_MODELS_FETCH=1", "OPENCODE_DISABLE_LSP_DOWNLOAD=1", "OPENCODE_DISABLE_EXTERNAL_SKILLS=1", "OPENCODE_DISABLE_DEFAULT_PLUGINS=1", "OPENCODE_CONFIG=", "OPENCODE_TUI_CONFIG=", "XDG_CONFIG_HOME="} {
 		if !strings.Contains(environment, expected) {
 			t.Fatalf("managed environment omitted %q", expected)
