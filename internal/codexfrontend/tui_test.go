@@ -148,6 +148,13 @@ func TestLiveNativeTUI(t *testing.T) {
 	}
 	send := func(text string) { write(text); time.Sleep(250 * time.Millisecond) }
 	wait("fixture-strong")
+	send("/resume")
+	send("\r")
+	wait("Resume a previous session")
+	send("\x1b")
+	if runner.calls.Load() != 0 {
+		t.Fatal("picker executed a worker")
+	}
 	send("/model")
 	send("\r")
 	wait("Select Model and Effort")

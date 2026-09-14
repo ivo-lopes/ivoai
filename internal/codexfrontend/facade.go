@@ -59,6 +59,10 @@ type Facade struct {
 	remoteToken, providerToken, home string
 	mu                               sync.Mutex
 	client                           *websocket.Conn
+	clients                          map[*websocket.Conn]bool
+	pending                          map[string]clientRequest
+	requestSequence                  uint64
+	initializedResult                json.RawMessage
 	active                           *admittedTurn
 	sequence                         uint64
 	decisions                        map[string]string
@@ -225,9 +229,15 @@ func (f *Facade) close() {
 	if f.active != nil && f.active.cancel != nil {
 		f.active.cancel()
 	}
-	client := f.client
+	clients := make([]*websocket.Conn, 0, len(f.clients)+1)
+	for client := range f.clients {
+		clients = append(clients, client)
+	}
+	if f.clients == nil && f.client != nil {
+		clients = append(clients, f.client)
+	}
 	f.mu.Unlock()
-	if client != nil {
+	for _, client := range clients {
 		_ = client.CloseNow()
 	}
 	if f.server != nil {
@@ -265,9 +275,9 @@ func (f *Facade) connect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	f.mu.Lock()
-	if f.client != nil {
+	if len(f.clients) >= 8 {
 		f.mu.Unlock()
-		http.Error(w, "frontend already connected", 409)
+		http.Error(w, "frontend connection limit", 429)
 		return
 	}
 	client, err := websocket.Accept(w, r, nil)
@@ -275,10 +285,18 @@ func (f *Facade) connect(w http.ResponseWriter, r *http.Request) {
 		f.mu.Unlock()
 		return
 	}
-	f.client = client
+	primary := f.client == nil
+	if primary {
+		f.client = client
+	}
+	if f.clients == nil {
+		f.clients = make(map[*websocket.Conn]bool)
+		f.pending = make(map[string]clientRequest)
+	}
+	f.clients[client] = primary
 	f.mu.Unlock()
 	client.SetReadLimit(maxFrame)
-	defer func() { _ = client.CloseNow(); f.cancel() }()
+	defer f.disconnect(client, primary)
 	for {
 		kind, body, err := client.Read(f.ctx)
 		if err != nil {
@@ -291,7 +309,7 @@ func (f *Facade) connect(w http.ResponseWriter, r *http.Request) {
 		if json.Unmarshal(body, &message) != nil {
 			return
 		}
-		f.handle(message)
+		f.handleClient(client, primary, message)
 	}
 }
 
@@ -302,12 +320,36 @@ func (f *Facade) send(message any) {
 	}
 	f.mu.Lock()
 	client := f.client
+	var envelope rpc
+	if json.Unmarshal(body, &envelope) == nil && envelope.Method == "" && len(envelope.ID) != 0 {
+		if origin, ok := f.pending[string(envelope.ID)]; ok {
+			delete(f.pending, string(envelope.ID))
+			client = origin.client
+			if origin.method == "initialize" && len(envelope.Error) == 0 {
+				f.initializedResult = append(json.RawMessage(nil), envelope.Result...)
+			}
+			envelope.ID = origin.id
+			body, _ = json.Marshal(envelope)
+			if _, connected := f.clients[client]; !connected {
+				client = nil
+			}
+		} else if strings.HasPrefix(string(envelope.ID), `"ivoai-rpc-`) {
+			// A disconnected picker must never leak its response to the primary.
+			client = nil
+		}
+	}
 	f.mu.Unlock()
 	if client != nil {
 		ctx, cancel := context.WithTimeout(f.ctx, 5*time.Second)
 		defer cancel()
 		if client.Write(ctx, websocket.MessageText, body) != nil {
-			f.cancel()
+			_ = client.CloseNow()
+			f.mu.Lock()
+			primary := client == f.client
+			f.mu.Unlock()
+			if primary {
+				f.cancel()
+			}
 		}
 	}
 }
