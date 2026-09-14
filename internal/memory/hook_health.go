@@ -110,7 +110,8 @@ func (m HookMaintenance) wrapper(event string) string {
 	// degradation is reported once by preflight/doctor, not once per hook event.
 	return "#!/bin/sh\n# ivoai-owned lifecycle hook v1\n" +
 		"if [ ! -x " + shellQuote(m.Binary) + " ]; then exit 0; fi\n" +
-		shellQuote(m.Binary) + " --data-dir " + shellQuote(m.DataDir) + " hook --event " + shellQuote(event) + " --agent " + shellQuote(m.Agent) + " --project-strategy repo-root 2>/dev/null\nexit 0\n"
+		"if [ -z \"${AI_MEMORY_SERVER_URL:-}\" ]; then exit 0; fi\n" +
+		shellQuote(m.Binary) + " --data-dir " + shellQuote(m.DataDir) + " hook --event " + shellQuote(event) + " --agent " + shellQuote(m.Agent) + " --server-url \"$AI_MEMORY_SERVER_URL\" --auth-token \"${AI_MEMORY_AUTH_TOKEN:-}\" --project-strategy repo-root 2>/dev/null\nexit 0\n"
 }
 
 func (m HookMaintenance) Inspect(repair bool) ([]HookHealth, error) {

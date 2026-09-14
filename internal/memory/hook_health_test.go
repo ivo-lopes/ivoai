@@ -1,15 +1,44 @@
 package memory
 
 import (
+	"context"
 	"encoding/json"
+	"io"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/ivo-lopes/ivoai/internal/platform"
 )
+
+func TestInstalledHookRuntimeInIsolatedEnvironment(t *testing.T) {
+	binary := os.Getenv("IVOAI_HOOK_SMOKE_BINARY")
+	if binary == "" {
+		t.Skip("explicit managed binary required")
+	}
+	if !filepath.IsAbs(binary) {
+		t.Fatal("absolute binary required")
+	}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		io.WriteString(w, `{"ok":true}`)
+	}))
+	defer server.Close()
+	for _, agent := range []string{"codex", "claude-code"} {
+		t.Run(agent, func(t *testing.T) {
+			root := t.TempDir()
+			_, err := (platform.ExecRunner{}).Run(context.Background(), binary, []string{"--data-dir", filepath.Join(root, "data"), "hook", "--event", "stop", "--agent", agent, "--server-url", server.URL, "--project-strategy", "repo-root"}, platform.RunOptions{Dir: root, CleanEnv: true, Env: []string{"HOME=" + root, "PATH=/usr/bin:/bin", "AI_MEMORY_SERVER_URL=" + server.URL}, Stdin: strings.NewReader("{}"), Stdout: io.Discard, Stderr: io.Discard, Timeout: 10 * time.Second})
+			if err != nil {
+				t.Fatal("installed hook failed in isolated runtime (output intentionally suppressed)")
+			}
+		})
+	}
+}
 
 func TestOwnedHookRepairPreservesForeignAndIsIdempotent(t *testing.T) {
 	root := t.TempDir()
@@ -83,6 +112,43 @@ func TestHookInstallEnvironmentExcludesAmbientCredentials(t *testing.T) {
 	}
 	if !strings.Contains(env, "CODEX_HOME=") {
 		t.Fatal("provider isolation home lost")
+	}
+}
+
+func TestWrapperSuppliesTransientEndpointAndAuthentication(t *testing.T) {
+	root := t.TempDir()
+	binary := filepath.Join(root, "ai-memory")
+	// Successful output proves the wrapper did not merely swallow a failure.
+	script := `#!/bin/sh
+endpoint= auth=
+while [ "$#" -gt 0 ]; do
+case "$1" in
+--server-url) shift; endpoint="$1";;
+--auth-token) shift; auth="$1";;
+esac
+shift
+done
+[ "$endpoint" = "http://127.0.0.1:12345" ] || exit 91
+[ "$auth" = "transient-fixture-canary" ] || exit 92
+printf 'hook-executed'
+`
+	if err := platform.AtomicWriteFile([]byte(script), binary, 0700); err != nil {
+		t.Fatal(err)
+	}
+	m := HookMaintenance{Agent: "codex", Binary: binary, DataDir: root}
+	wrapper := filepath.Join(root, "hook.sh")
+	body := m.wrapper("stop")
+	if strings.Contains(body, "transient-fixture-canary") {
+		t.Fatal("bearer persisted")
+	}
+	if err := platform.AtomicWritePrivate([]byte(body), wrapper); err != nil {
+		t.Fatal(err)
+	}
+	cmd := exec.Command("/bin/sh", wrapper)
+	cmd.Env = []string{"PATH=/usr/bin:/bin", "AI_MEMORY_SERVER_URL=http://127.0.0.1:12345", "AI_MEMORY_AUTH_TOKEN=transient-fixture-canary"}
+	out, err := cmd.Output()
+	if err != nil || string(out) != "hook-executed" {
+		t.Fatal("wrapper did not execute the configured hook")
 	}
 }
 
