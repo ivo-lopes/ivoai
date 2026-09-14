@@ -55,7 +55,19 @@ func TestLiveNativeTUI(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(root, ".codex", "config.toml"), []byte(projectConfig), 0600); err != nil {
 		t.Fatal(err)
 	}
-	f, err := Start(ctx, Options{Binary: binary, Directory: root, RuntimeDir: root, SessionID: "native_tui_fixture", Bridge: bridge, Environment: os.Environ()})
+	var historyMu sync.Mutex
+	history := map[string]int{}
+	var selectedThread string
+	f, err := Start(ctx, Options{Binary: binary, Directory: root, RuntimeDir: root, NativeHome: filepath.Join(root, "native-history"), SessionID: "native_tui_fixture", Bridge: bridge, Environment: os.Environ(),
+		ThreadAvailable: func(id string) bool { historyMu.Lock(); defer historyMu.Unlock(); return history[id] > 0 },
+		ThreadSelected: func(id string) error {
+			historyMu.Lock()
+			defer historyMu.Unlock()
+			history[id]++
+			selectedThread = id
+			return nil
+		},
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -182,6 +194,32 @@ func TestLiveNativeTUI(t *testing.T) {
 	}
 	if runner.effort.Load() != "medium" {
 		t.Fatal("native reasoning selection did not reach the primary override")
+	}
+	historyMu.Lock()
+	firstThread := selectedThread
+	historyMu.Unlock()
+	send("/new")
+	send("\r")
+	time.Sleep(300 * time.Millisecond)
+	send("/resume")
+	send("\r")
+	send("\r")
+	deadline := time.Now().Add(10 * time.Second)
+	resumed := false
+	for time.Now().Before(deadline) {
+		historyMu.Lock()
+		resumed = len(history) >= 2 && selectedThread == firstThread && history[firstThread] >= 2
+		historyMu.Unlock()
+		if resumed {
+			break
+		}
+		time.Sleep(50 * time.Millisecond)
+	}
+	if !resumed {
+		t.Fatal("native picker did not switch back to original conversation")
+	}
+	if runner.calls.Load() != 1 {
+		t.Fatal("native resume replayed completed turn")
 	}
 	t.Log(fmt.Sprintf("native composer gate=PASS approval=PASS synthesis=PASS worker_calls=%d", runner.calls.Load()))
 }

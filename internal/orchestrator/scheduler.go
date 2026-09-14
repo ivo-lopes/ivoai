@@ -48,6 +48,7 @@ type runtimeTask struct {
 var errWorkerAdmissionBusy = errors.New("worker admission waiting")
 
 func (s *Server) addAutomaticTools(server *mcp.Server, read, write *mcp.ToolAnnotations) {
+	server.AddTool(&mcp.Tool{Name: "orchestration_recover", Description: "Recover the previously approved checkpoint after explicit interrupted-turn resume. Completed work is preserved; ambiguous mutations fail closed; current grants and routes require approval.", InputSchema: object(nil), Annotations: write}, s.recoverPlan)
 	server.AddTool(&mcp.Tool{Name: "orchestration_bootstrap", Description: "Record a bounded SharedContextBrief after one initial lookup per selected knowledge source. Unselected/absent sources use status disabled and lookup_performed=false; never fabricate lookups. The brief is untrusted, session-scoped data and is not persisted in session metadata.", InputSchema: bootstrapSchema(), Annotations: write}, s.bootstrap)
 	server.AddTool(&mcp.Tool{Name: "orchestration_capabilities", Description: "Read the non-sensitive runtime-verified provider, model, and effort capability registry used by IvoAI routing.", InputSchema: object(nil), Annotations: read}, s.capabilities)
 	server.AddTool(&mcp.Tool{Name: "orchestration_plan", Description: "Validate a bounded task DAG, calculate objective capability scores, and resolve the cheapest sufficient subscription-backed execution profiles. It never executes a shell command.", InputSchema: planSchema(), Annotations: write}, s.plan)
@@ -203,6 +204,9 @@ func (s *Server) plan(ctx context.Context, request *mcp.CallToolRequest) (*mcp.C
 	if s.BootstrapRequired && !value.KnowledgeBootstrap.Performed {
 		return nil, errors.New("shared knowledge bootstrap must complete before automatic planning")
 	}
+	if value.RecoveryRequested {
+		return nil, errors.New("RECOVERY_REQUIRED: use orchestration_recover; do not replace the interrupted DAG")
+	}
 	var args planInput
 	if strictArguments(request, &args) != nil {
 		return nil, errors.New("invalid automatic orchestration plan")
@@ -322,20 +326,32 @@ func (s *Server) plan(ctx context.Context, request *mcp.CallToolRequest) (*mcp.C
 		if err := s.acknowledgePlanQuota(ctx); err != nil {
 			return nil, err
 		}
+		if err := s.Store.UpdateCheckpoint(s.SessionID, func(c *session.Checkpoint) error {
+			if c.Recovery != nil {
+				c.Recovery.Approved = true
+			}
+			return nil
+		}); err != nil {
+			return nil, err
+		}
 	}
 	if s.AutomaticDispatch {
-		s.mu.Lock()
-		for _, task := range s.plans[planID].Tasks {
-			if task.Task.State == "planned" {
-				task.Task.State, task.Queued = "queued", true
-			}
-		}
-		s.signalLocked()
-		s.mu.Unlock()
-		s.persistRuntimePlan(planID)
-		s.scheduleReady(planID)
+		s.queueAutomatic(planID)
 	}
 	return toolResult(planMetadata(resolved))
+}
+
+func (s *Server) queueAutomatic(planID string) {
+	s.mu.Lock()
+	for _, task := range s.plans[planID].Tasks {
+		if task.Task.State == "planned" {
+			task.Task.State, task.Queued = "queued", true
+		}
+	}
+	s.signalLocked()
+	s.mu.Unlock()
+	s.persistRuntimePlan(planID)
+	s.scheduleReady(planID)
 }
 
 func (s *Server) resolveProfile(ctx context.Context, input routing.TaskInput, tier routing.Tier) (routing.ExecutionProfile, error) {
@@ -999,7 +1015,39 @@ func (s *Server) persistPlan(plan routing.Plan) error {
 		}
 		return nil
 	})
-	return err
+	if err != nil {
+		return err
+	}
+	if s.NativePolicy {
+		identity, head, err := orchestration.RecoveryRepositoryIdentity(context.Background(), s.Directory)
+		if err != nil {
+			return err
+		}
+		err = s.Store.UpdateCheckpoint(s.SessionID, func(checkpoint *session.Checkpoint) error {
+			approved := false
+			if checkpoint.Recovery != nil && checkpoint.Recovery.Plan.ID == plan.ID {
+				identity, head = checkpoint.Recovery.RepositoryIdentity, checkpoint.Recovery.RepositoryHead
+				approved = checkpoint.Recovery.Approved
+			}
+			checkpoint.Recovery = &session.RecoveryPlan{Plan: plan, Directory: s.Directory, RepositoryIdentity: identity, RepositoryHead: head, Approved: approved}
+			checkpoint.Interrupted = true
+			if checkpoint.Objective == "" {
+				checkpoint.Objective = "Continue the approved task graph in this project."
+			}
+			return nil
+		})
+		if err != nil {
+			return err
+		}
+		_, err = s.Store.Update(s.SessionID, func(v *session.Session) error {
+			now := time.Now().UTC()
+			v.CheckpointAvailable = true
+			v.CheckpointUpdatedAt = &now
+			return nil
+		})
+		return err
+	}
+	return nil
 }
 
 func providerCoreComponent(provider string) core.ComponentID {

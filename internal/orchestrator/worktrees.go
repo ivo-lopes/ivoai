@@ -255,6 +255,15 @@ func (s *Server) integrate(ctx context.Context, request *mcp.CallToolRequest) (*
 		}
 	}
 	plan.integrated = true
+	if err := s.Store.UpdateCheckpoint(s.SessionID, func(checkpoint *session.Checkpoint) error {
+		if checkpoint.Recovery != nil {
+			checkpoint.Recovery.Integrated = true
+		}
+		checkpoint.Interrupted = false
+		return nil
+	}); err != nil {
+		return nil, err
+	}
 	_, err := s.Store.Update(s.SessionID, func(value *session.Session) error { value.CurrentPhase = "synthesizing"; return nil })
 	if err != nil {
 		return nil, err

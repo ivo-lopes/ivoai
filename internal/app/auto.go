@@ -90,7 +90,7 @@ func resumableOpenCodeSession(store session.Store, currentID, cwd, scopeID strin
 		return "", err
 	}
 	for _, candidate := range values {
-		if candidate.SessionID == currentID || candidate.State != session.StateCompleted || candidate.Frontend != "opencode" || candidate.WorkingDirectory != cwd || candidate.KnowledgeScopeID != scopeID || candidate.FrontendSessionID == "" {
+		if candidate.SessionID == currentID || candidate.Mode != session.ModeAuto || candidate.Coordinator != "native" || candidate.State != session.StateCompleted || candidate.Frontend != "opencode" || candidate.WorkingDirectory != cwd || candidate.KnowledgeScopeID != scopeID || candidate.FrontendSessionID == "" {
 			continue
 		}
 		return candidate.FrontendSessionID, nil
@@ -361,9 +361,24 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 	if err != nil {
 		return err
 	}
+	if resumeID, _ := ctx.Value(resumeSessionKey{}).(string); resumeID != "" {
+		previous, err := (session.Store{Root: a.Store.Paths.SessionsDir}).Get(resumeID)
+		if err != nil {
+			return err
+		}
+		cwd = previous.WorkingDirectory
+	}
+	handoff, hasHandoff := ctx.Value(handoffSessionKey{}).(handoffSeed)
+	if hasHandoff {
+		cwd = handoff.Directory
+	}
 	id, err := session.NewID()
 	if err != nil {
 		return err
+	}
+	resumeID, _ := ctx.Value(resumeSessionKey{}).(string)
+	if resumeID != "" {
+		id = resumeID
 	}
 	now := time.Now().UTC()
 	// AUTO has no prompt yet. Configuration metadata is sufficient here; live
@@ -385,6 +400,9 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 		OptimizationStrategy: cfg.Orchestration.Auto.Optimization.Strategy,
 	}
 	pinCodex(&value, codexResolution)
+	if hasHandoff {
+		value.Lineage = &handoff.Lineage
+	}
 	for _, event := range initialAutoObservations(value) {
 		if err := session.AppendObservation(&value, event); err != nil {
 			return err
@@ -394,11 +412,49 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 	if err := store.ReconcileNativeMetadata(); err != nil {
 		return err
 	}
-	if err := store.Create(value); err != nil {
+	lease, err := store.Acquire(id)
+	if err != nil {
 		return err
 	}
+	if resumeID != "" {
+		value, err = store.Reopen(id, cwd, session.ModeAuto)
+		if err == nil && value.Frontend != frontendName {
+			value, err = store.Update(id, func(v *session.Session) error {
+				v.SetFrontend(frontendName, v.FrontendSessions[frontendName])
+				return nil
+			})
+		}
+	} else {
+		err = store.Create(value)
+	}
+	if err != nil {
+		_ = lease.Close()
+		return err
+	}
+	if hasHandoff {
+		if err := saveHandoffCheckpoint(store, id, handoff.Brief); err != nil {
+			_ = lease.Close()
+			return err
+		}
+	}
+	recoveryRequested, _ := ctx.Value(recoverySessionKey{}).(bool)
+	_, err = store.Update(id, func(v *session.Session) error { v.RecoveryRequested = recoveryRequested; return nil })
+	if err != nil {
+		_ = lease.Close()
+		return err
+	}
+	initialPrompt := ""
+	if recoveryRequested {
+		initialPrompt = recoveryPrompt
+	}
+	if hasHandoff {
+		initialPrompt = handoffInput(handoff.Brief)
+	}
+	binding := newConversationBinding(store, value, lease)
+	defer binding.Close()
+	currentID := binding.ID
 	manager := a.automaticQuotaManager(cfg, state)
-	native := a.nativeOpenCode(cfg, state, cwd, filepath.Join(a.Store.Paths.CacheDir, "native-discovery", id), nil, false)
+	native := a.nativeOpenCode(cfg, state, cwd, filepath.Join(a.Store.Paths.CacheDir, "native-discovery", currentID()), nil, false)
 	if native != nil && manager.Probes[quota.ProviderOpenCode] == nil {
 		manager.Probes[quota.ProviderOpenCode] = native
 	}
@@ -406,7 +462,7 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 		current, _ := manager.Probe(ctx, provider, true)
 		value.Quota[provider] = current
 	}
-	_, _ = store.Update(id, func(current *session.Session) error {
+	_, _ = store.Update(currentID(), func(current *session.Session) error {
 		current.Quota = value.Quota
 		for _, provider := range quota.Providers() {
 			for _, event := range quotaObservations(provider, value.Quota[provider]) {
@@ -424,7 +480,7 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 		err = errors.New("PROVIDER_UNAVAILABLE: explicit executor unavailable; no fallback allowed")
 	}
 	if err != nil {
-		_, _ = store.Update(id, func(current *session.Session) error {
+		_, _ = store.Update(currentID(), func(current *session.Session) error {
 			current.State, current.CurrentPhase = session.StateBlocked, "waiting_for_quota"
 			return nil
 		})
@@ -447,7 +503,7 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 	if decision.Fallback {
 		a.printStartupFallback(planner, current, decision.Reason)
 	}
-	value, err = store.Update(id, func(currentSession *session.Session) error {
+	value, err = store.Update(currentID(), func(currentSession *session.Session) error {
 		currentSession.CurrentPrimary, currentSession.PrimaryExecutor = visiblePrimary, visiblePrimary
 		selectionState := observability.StateSelected
 		if decision.Fallback {
@@ -466,7 +522,7 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 	if err != nil {
 		return err
 	}
-	runtimeDir, err := store.RuntimeDir(id)
+	runtimeDir, err := store.RuntimeDir(currentID())
 	if err != nil {
 		return err
 	}
@@ -474,37 +530,43 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 	intakeConfig := cfg
 	intakeConfig.Orchestration.Auto.KnowledgeRouting = "explicit-only"
 	knowledge, err := a.prepareAutoPromptKnowledge(ctx, intakeConfig, nil, "", current, runtimeDir, func(event observability.Event) {
-		_, _ = store.Update(id, func(current *session.Session) error { return session.AppendObservation(current, event) })
+		_, _ = store.Update(currentID(), func(current *session.Session) error { return session.AppendObservation(current, event) })
 	})
 	if err != nil {
 		return err
 	}
 	defer knowledge.close()
 	scopeID := knowledgeScopeID(cwd, knowledge)
-	resumeFrontendID, err := resumableOpenCodeSession(store, id, cwd, scopeID)
+	resumeFrontendID, err := resumableOpenCodeSession(store, currentID(), cwd, scopeID)
 	if err != nil {
 		return err
 	}
-	_, _ = store.Update(id, func(currentSession *session.Session) error {
+	if resumeID != "" {
+		resumeFrontendID = value.FrontendSessionID
+	}
+	if hasHandoff {
+		resumeFrontendID = ""
+	}
+	_, _ = store.Update(currentID(), func(currentSession *session.Session) error {
 		currentSession.KnowledgeScopeID = scopeID
 		return nil
 	})
 	cfg = knowledge.config
 	a.printAutoPreflight(value.Quota, visiblePrimary, value, originalConfig)
-	value, _ = store.Update(id, func(current *session.Session) error {
+	value, _ = store.Update(currentID(), func(current *session.Session) error {
 		current.KnowledgeSources = knowledge.aliases()
 		return nil
 	})
 	// AUTO intake has not passed the Prompt Gate or plan approval yet.
 	// Skills are selected per approved worker, never from cwd/launcher args.
-	control := orchestration.NativeOrchestrator{Store: store, SessionID: id}
+	control := orchestration.NativeOrchestrator{Store: store, SessionID: currentID()}
 	swarm, err := control.Initialize(ctx, workerCap)
 	if err != nil {
-		_ = store.CleanupRuntime(id)
-		_, _ = store.Update(id, func(current *session.Session) error { current.State = session.StateFailed; return nil })
+		_ = store.CleanupRuntime(currentID())
+		_, _ = store.Update(currentID(), func(current *session.Session) error { current.State = session.StateFailed; return nil })
 		return fmt.Errorf("automatic session refused: %w", err)
 	}
-	value, err = store.Update(id, func(sessionValue *session.Session) error {
+	value, err = store.Update(currentID(), func(sessionValue *session.Session) error {
 		sessionValue.SwarmID, sessionValue.SwarmState = swarm.ID, "active"
 		sessionValue.CurrentPrimary, sessionValue.PrimaryExecutor = visiblePrimary, visiblePrimary
 		sessionValue.CurrentPhase = "starting_primary"
@@ -512,19 +574,24 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 	})
 	if err != nil {
 		_ = control.Stop(context.Background())
-		_ = store.CleanupRuntime(id)
+		_ = store.CleanupRuntime(currentID())
 		return err
 	}
-	taskID, err := control.RegisterLifecycle(ctx, "primary", id)
+	taskID, err := control.RegisterLifecycle(ctx, "primary", currentID())
 	if err != nil {
 		_ = control.Stop(context.Background())
-		_ = store.CleanupRuntime(id)
+		_ = store.CleanupRuntime(currentID())
 		return err
 	}
-	_, _ = store.Update(id, func(current *session.Session) error { current.PrimaryLifecycleID = taskID; return nil })
+	_, _ = store.Update(currentID(), func(current *session.Session) error { current.PrimaryLifecycleID = taskID; return nil })
 	defer func() {
 		_ = control.CancelLifecycle(context.Background(), taskID)
-		_ = a.cleanupSession(store, id, control)
+		binding.mu.Lock()
+		visited := append([]string(nil), binding.visited...)
+		binding.mu.Unlock()
+		for _, visitedID := range visited {
+			_ = a.cleanupSession(store, visitedID, orchestration.NativeOrchestrator{Store: store, SessionID: visitedID})
+		}
 	}()
 	instructionsPath := filepath.Join(runtimeDir, "automatic-instructions.md")
 	instructions := automaticInstructions(cfg.Orchestration.Auto.CheckpointEnabled)
@@ -536,11 +603,11 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 	compressionPolicy := sharedKnowledgeCompressionPolicyFor(originalConfig, len(knowledge.aliases()))
 	bridgeRunner := a.OpenCodeBridgeRunner
 	if bridgeRunner == nil {
-		codexArgs, argsErr := a.autoBridgeArgs("codex", agentArgs, id, runtimeDir, instructionsPath, cfg)
+		codexArgs, argsErr := a.autoBridgeArgs("codex", agentArgs, currentID(), runtimeDir, instructionsPath, cfg)
 		if argsErr != nil {
 			return argsErr
 		}
-		claudeArgs, argsErr := a.autoBridgeArgs("claude", agentArgs, id, runtimeDir, instructionsPath, cfg)
+		claudeArgs, argsErr := a.autoBridgeArgs("claude", agentArgs, currentID(), runtimeDir, instructionsPath, cfg)
 		if argsErr != nil {
 			return argsErr
 		}
@@ -573,7 +640,7 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 			if envErr != nil {
 				return envErr
 			}
-			native.Options.NativeMCP["ivoai-orchestrator"] = map[string]any{"type": "local", "command": []string{executable, "_orchestrator-serve", "--session", id}, "environment": controlEnvironment}
+			native.Options.NativeMCP["ivoai-orchestrator"] = map[string]any{"type": "local", "command": []string{executable, "_orchestrator-serve", "--session", currentID()}, "environment": controlEnvironment}
 			manager.Probes[quota.ProviderOpenCode] = native
 			bridgeRunner = agents.RoutedRunner{Official: bridgeRunner, Native: native}
 		}
@@ -585,10 +652,10 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 		if !startupRoutePending {
 			return nil
 		}
-		if err := confirmPrimaryRoute(requestCtx, store, id, planner, to); err != nil {
+		if err := confirmPrimaryRoute(requestCtx, store, currentID(), planner, to); err != nil {
 			return err
 		}
-		_, err := store.Update(id, func(s *session.Session) error {
+		_, err := store.Update(currentID(), func(s *session.Session) error {
 			s.CurrentPrimary, s.PrimaryExecutor = to, to
 			if to != planner {
 				now := time.Now().UTC()
@@ -621,14 +688,28 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 	if err != nil {
 		return err
 	}
-	bridgeRunner = a.scopeAutoRunner(bridgeRunner, originalConfig, state, store, id, cwd, runtimeDir, instructionsPath, agentArgs, selectors, turnState, modelCatalog)
+	baseRunner := bridgeRunner
+	bridgeRunner = turnRunnerFunc(func(turnCtx context.Context, request opencodebridge.ExecutorRequest, emit func(string) error) (opencodebridge.ExecutorResult, error) {
+		turnID := currentID()
+		turnDir, err := store.RuntimeDir(turnID)
+		if err != nil {
+			return opencodebridge.ExecutorResult{}, err
+		}
+		path := filepath.Join(turnDir, "automatic-instructions.md")
+		if err := platform.AtomicWritePrivate([]byte(instructions), path); err != nil {
+			return opencodebridge.ExecutorResult{}, err
+		}
+		runner := a.scopeAutoRunner(baseRunner, originalConfig, state, store, turnID, cwd, turnDir, path, agentArgs, selectors, turnState, modelCatalog)
+		return runner.Run(turnCtx, request, emit)
+	})
 	bridge, err := opencodebridge.Start(opencodebridge.Options{
-		Frontend: frontendName, InitialModel: initialModel, InitialEffort: initialEffort,
+		SelectConversation: binding.Select,
+		Frontend:           frontendName, InitialModel: initialModel, InitialEffort: initialEffort,
 		RequirePromptGate: true,
 		NativePermissions: func() []opencodebridge.PermissionView {
 			knowledge, native := turnState.snapshot()
 			pending := []opencodebridge.PermissionView{}
-			if value, err := store.Get(id); err == nil {
+			if value, err := store.Get(currentID()); err == nil {
 				for _, decision := range value.Decisions {
 					if decision.State != "pending" {
 						continue
@@ -659,7 +740,7 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 		ReplyNativePermission: func(ctx context.Context, permissionID string, allow bool) error {
 			knowledge, native := turnState.snapshot()
 			if strings.HasPrefix(permissionID, "plan_") || strings.HasPrefix(permissionID, "routing_") {
-				return store.ResolveDecision(id, permissionID, allow)
+				return store.ResolveDecision(currentID(), permissionID, allow)
 			}
 			if strings.HasPrefix(permissionID, "ext_") && knowledge.external != nil {
 				return knowledge.external.Reply(permissionID, allow)
@@ -670,14 +751,20 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 			return native.ReplyPermission(ctx, permissionID, allow)
 		},
 		AuthReference: func(probeCtx context.Context, executor string) (string, error) {
-			// The current official probes expose authentication/eligibility, not
-			// a stable account identity. Reprobe on every turn and conservatively
-			// start a fresh native conversation rather than reuse across accounts.
+			// Reprobe live eligibility, then ask the official client for an
+			// identity fingerprint. Never read/copy provider authentication files.
 			observed, probeErr := manager.Probe(probeCtx, quota.Provider(executor), true)
 			if probeErr != nil || !observed.Authenticated {
 				return "", errors.New("executor authentication unavailable")
 			}
-			return "", nil
+			if a.OpenCodeBridgeRunner != nil {
+				return "", nil
+			}
+			if a.ProviderAccountReference != nil {
+				return a.ProviderAccountReference(probeCtx, executor)
+			}
+			component := providerComponent(executor)
+			return quota.AccountReference(probeCtx, state.Components[string(component)].Path, executor)
 		},
 		PreferredExecutor: current,
 		Runner:            bridgeRunner,
@@ -691,7 +778,7 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 			}
 			resolved, err := manager.ResolveCandidates(routeCtx, quota.ProviderCodex, "", true, excluded)
 			if err == nil {
-				err = confirmPrimaryRoute(routeCtx, store, id, from, string(resolved.Resolved))
+				err = confirmPrimaryRoute(routeCtx, store, currentID(), from, string(resolved.Resolved))
 			}
 			return string(resolved.Resolved), err
 		},
@@ -717,11 +804,11 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 			if explicitPlanner && string(resolved.Resolved) != planner {
 				return "", errors.New("PROVIDER_UNAVAILABLE: explicit executor cannot silently fail over")
 			}
-			if err := confirmPrimaryRoute(requestCtx, store, id, string(preferred), string(resolved.Resolved)); err != nil {
+			if err := confirmPrimaryRoute(requestCtx, store, currentID(), string(preferred), string(resolved.Resolved)); err != nil {
 				return "", err
 			}
 			selected = string(resolved.Resolved)
-			_, _ = store.Update(id, func(currentSession *session.Session) error {
+			_, _ = store.Update(currentID(), func(currentSession *session.Session) error {
 				currentSession.CurrentPrimary, currentSession.PrimaryExecutor = selected, selected
 				currentSession.CurrentPhase, currentSession.State = "conversation", session.StateRunning
 				return session.AppendObservation(currentSession, observability.Event{Category: observability.CategoryExecutor, Operation: observability.OperationExecutorSelect, State: observability.StateSelected, Provider: selected, Executor: selected, Component: providerComponent(selected), RoutingReason: observability.ReasonPrimaryAvailable})
@@ -742,9 +829,9 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 		},
 		FailoverHandoff: func(from, to, reason string) string {
 			_ = manager.MarkExhausted(quota.Provider(from), reason)
-			handoff := a.failoverBootstrap(store, id, from, to, reason, cwd)
+			handoff := a.failoverBootstrap(store, currentID(), from, to, reason, cwd)
 			failedAt := time.Now().UTC()
-			_, _ = store.Update(id, func(currentSession *session.Session) error {
+			_, _ = store.Update(currentID(), func(currentSession *session.Session) error {
 				currentSession.FailoverCount++
 				currentSession.ConsecutiveFailovers++
 				currentSession.LastFailoverAt = &failedAt
@@ -754,7 +841,7 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 				currentSession.CurrentPhase, currentSession.State = "automatic_failover", session.StateStarting
 				return session.AppendObservation(currentSession, observability.Event{Category: observability.CategoryFallback, Operation: observability.OperationFallbackRoute, State: observability.StateSelected, Provider: from, Executor: to, Component: providerComponent(to), RoutingReason: observability.ReasonAlternateSelected, FallbackReason: observability.ReasonProviderQuotaExhausted})
 			})
-			fmt.Fprintf(a.Out, "\nAutomatic Failover\nFrom       %s\nTo         %s\nReason     %s\nCheckpoint %s\nWorking tree preserved\n\n", displayProvider(from), displayProvider(to), reason, checkpointLabel(store, id))
+			fmt.Fprintf(a.Out, "\nAutomatic Failover\nFrom       %s\nTo         %s\nReason     %s\nCheckpoint %s\nWorking tree preserved\n\n", displayProvider(from), displayProvider(to), reason, checkpointLabel(store, currentID()))
 			return handoff
 		},
 		MaxFailovers: 2,
@@ -776,16 +863,16 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 				}
 				previous = selection.Executor
 			}
-			if err := confirmPrimaryRoute(requestCtx, store, id, previous, selection.Executor); err != nil {
+			if err := confirmPrimaryRoute(requestCtx, store, currentID(), previous, selection.Executor); err != nil {
 				return err
 			}
 			selected = selection.Executor
 			startupRoutePending = false
-			_, err := store.Update(id, func(s *session.Session) error { s.CurrentPrimary, s.PrimaryExecutor = selected, selected; return nil })
+			_, err := store.Update(currentID(), func(s *session.Session) error { s.CurrentPrimary, s.PrimaryExecutor = selected, selected; return nil })
 			return err
 		},
 		OnSelection: func(selection opencodebridge.Selection) {
-			_, _ = store.Update(id, func(currentSession *session.Session) error {
+			_, _ = store.Update(currentID(), func(currentSession *session.Session) error {
 				currentSession.SelectionMode = selection.Mode
 				currentSession.RequestedExecutor = ""
 				if selection.Mode == "explicit" {
@@ -814,11 +901,11 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 				currentQuotas[provider] = current
 				probeErrors[provider] = probeErr
 			}
-			return a.openCodeAutoStatus(store, id, originalConfig, knowledge, true, currentQuotas, compressionPolicy, probeErrors)
+			return a.openCodeAutoStatus(store, currentID(), originalConfig, knowledge, true, currentQuotas, compressionPolicy, probeErrors)
 		},
 		Attempt: func(attempt opencodebridge.TurnAttempt) error {
-			attempt.SessionID = id
-			_, updateErr := store.Update(id, func(current *session.Session) error {
+			attempt.SessionID = currentID()
+			_, updateErr := store.Update(currentID(), func(current *session.Session) error {
 				body, err := json.Marshal(attempt)
 				if err != nil {
 					return err
@@ -853,8 +940,8 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 			return updateErr
 		},
 		Mapping: func(mapping opencodebridge.Mapping) error {
-			_, updateErr := store.Update(id, func(currentSession *session.Session) error {
-				currentSession.FrontendSessionID = mapping.FrontendSessionID
+			_, updateErr := store.Update(currentID(), func(currentSession *session.Session) error {
+				currentSession.SetFrontend(frontendName, mapping.FrontendSessionID)
 				currentSession.ExecutorSessionID = mapping.ExecutorSessionID
 				currentSession.CurrentPrimary, currentSession.PrimaryExecutor = mapping.Executor, mapping.Executor
 				currentSession.SelectionMode = mapping.SelectionMode
@@ -895,13 +982,23 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 				return nil
 			}
 			for _, candidate := range values {
-				if candidate.Frontend != "opencode" || candidate.WorkingDirectory != cwd || candidate.KnowledgeScopeID != scopeID {
+				if candidate.Frontend != frontendName || candidate.WorkingDirectory != cwd {
 					continue
 				}
 				mappings := make([]session.ExecutorSessionMapping, 0, 2)
 				for key, mapping := range candidate.ExecutorSessions {
 					if key == frontendID || strings.TrimPrefix(key, mapping.Executor+":") == frontendID {
 						mappings = append(mappings, mapping)
+					}
+				}
+				// An explicit frontend switch creates a new presentation thread,
+				// not a new provider conversation. Only the leased logical session
+				// can supply this fallback; bridge account proof remains mandatory.
+				if len(mappings) == 0 && candidate.SessionID == currentID() && candidate.FrontendSessionID == frontendID {
+					for _, mapping := range candidate.ExecutorSessions {
+						if mapping.Executor == candidate.PrimaryExecutor {
+							mappings = append(mappings, mapping)
+						}
 					}
 				}
 				sort.Slice(mappings, func(i, j int) bool { return mappings[i].UpdatedAt.After(mappings[j].UpdatedAt) })
@@ -930,7 +1027,7 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 				return false, listErr
 			}
 			for _, candidate := range values {
-				if candidate.SessionID == id || candidate.Frontend != frontendName || candidate.WorkingDirectory != cwd || candidate.KnowledgeScopeID != scopeID {
+				if candidate.SessionID == currentID() || candidate.Frontend != frontendName || candidate.WorkingDirectory != cwd || candidate.KnowledgeScopeID != scopeID {
 					continue
 				}
 				if _, exists := candidate.FrontendRequests[key]; exists {
@@ -938,7 +1035,7 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 				}
 			}
 			claimed := false
-			_, updateErr := store.Update(id, func(currentSession *session.Session) error {
+			_, updateErr := store.Update(currentID(), func(currentSession *session.Session) error {
 				if currentSession.FrontendRequests == nil {
 					currentSession.FrontendRequests = map[string]time.Time{}
 				}
@@ -967,7 +1064,7 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 	}
 	defer bridge.Close(context.Background())
 	if frontendName == "codex" {
-		_, err := store.Update(id, func(s *session.Session) error {
+		_, err := store.Update(currentID(), func(s *session.Session) error {
 			s.FrontendPID, s.PrimaryPID = os.Getpid(), os.Getpid()
 			s.FrontendProcessStart, s.PrimaryProcessStart = session.ProcessStart(os.Getpid()), session.ProcessStart(os.Getpid())
 			s.State, s.CurrentPhase = session.StateRunning, "intake"
@@ -977,8 +1074,19 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 			return err
 		}
 		var turnErr error
-		err, turnErr = a.runCodexFrontend(ctx, codexfrontend.Options{Binary: state.Components["codex"].Path, Directory: cwd, RuntimeDir: runtimeDir, SessionID: id, Bridge: bridge, Environment: frontendEnvironment}, func(observation agents.Observation) {
-			_, _ = store.Update(id, func(s *session.Session) error {
+		nativeRoot := filepath.Join(a.Store.Paths.StateDir, "codex-conversations")
+		if err := platform.EnsurePrivateDir(nativeRoot); err != nil {
+			return err
+		}
+		projectHash := sha256.Sum256([]byte(cwd))
+		nativeHome := filepath.Join(nativeRoot, fmt.Sprintf("%x", projectHash[:16]))
+		resumeThread := ""
+		if resumeID != "" {
+			resumeThread = value.FrontendSessionID
+		}
+		err, turnErr = a.runCodexFrontend(ctx, codexfrontend.Options{Binary: state.Components["codex"].Path, Directory: cwd, RuntimeDir: runtimeDir, SessionID: currentID(), Bridge: bridge, Environment: frontendEnvironment,
+			NativeHome: nativeHome, ResumeThreadID: resumeThread, InitialPrompt: initialPrompt, ThreadAvailable: binding.Available, ThreadSelected: binding.Select}, func(observation agents.Observation) {
+			_, _ = store.Update(currentID(), func(s *session.Session) error {
 				s.FrontendPID, s.PrimaryPID = observation.PID, observation.PID
 				s.FrontendProcessStart, s.PrimaryProcessStart = session.ProcessStart(observation.PID), session.ProcessStart(observation.PID)
 				s.CurrentPhase = "conversation"
@@ -986,12 +1094,12 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 			})
 		})
 		if err != nil {
-			a.finishSession(store, id, session.StateFailed, exitCode(err))
+			a.finishSession(store, currentID(), session.StateFailed, exitCode(err))
 			return err
 		}
-		a.finishSession(store, id, session.StateCompleted, 0)
+		a.finishSession(store, currentID(), session.StateCompleted, 0)
 		if turnErr != nil {
-			_, _ = store.Update(id, func(s *session.Session) error {
+			_, _ = store.Update(currentID(), func(s *session.Session) error {
 				code := 1
 				s.State, s.ExitCode = session.StateFailed, &code
 				return nil
@@ -1009,7 +1117,7 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 	fallback := func(cause error) error {
 		// Direct is an explicit escape hatch, never an implicit recovery path:
 		// an upstream TUI cannot enforce IVOAI turn admission.
-		a.finishSession(store, id, session.StateFailed, 1)
+		a.finishSession(store, currentID(), session.StateFailed, 1)
 		fmt.Fprintln(a.Err, "ORCHESTRATION_STATE=DEGRADED\nOpenCode frontend unavailable. No direct session was started. Use ivoai codex for the native orchestrated Codex TUI, or explicitly choose --direct.")
 		return fmt.Errorf("managed frontend unavailable; direct fallback refused: %s", platform.Redact(cause.Error()))
 	}
@@ -1021,11 +1129,22 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 		return fallback(err)
 	}
 	defer frontend.Close(context.Background())
+	if initialPrompt != "" {
+		transport, ok := frontend.(interface {
+			SubmitPrompt(context.Context, string, string, string) error
+		})
+		if !ok {
+			return errors.New("FRONTEND_RECOVERY_SUBMISSION_UNAVAILABLE")
+		}
+		if err := transport.SubmitPrompt(ctx, resumeFrontendID, cwd, initialPrompt); err != nil {
+			return err
+		}
+	}
 	fmt.Fprintf(a.Out, "Starting IVOAI on the managed OpenCode frontend...\n")
-	openCode := agents.Runtime{Runner: a.Runner, In: a.In, Out: a.Out, Err: a.Err, AgentPath: state.Components["opencode"].Path, Environment: frontend.Env(), RuntimeDir: runtimeDir}
+	openCode := agents.Runtime{Runner: a.Runner, In: a.In, Out: a.Out, Err: a.Err, AgentPath: state.Components["opencode"].Path, Environment: frontend.Env(), RuntimeDir: runtimeDir, Directory: cwd}
 	implementation := agents.OpenCodeExecutor{Runtime: openCode, Version: state.Components["opencode"].Version, Managed: state.Components["opencode"].Managed}
 	launchErr := implementation.StartSession(ctx, core.SessionRequest{Args: frontend.Args(), CompressionEnabled: false}, func(observation core.SessionObservation) {
-		_, _ = store.Update(id, func(currentSession *session.Session) error {
+		_, _ = store.Update(currentID(), func(currentSession *session.Session) error {
 			currentSession.FrontendPID = observation.PID
 			currentSession.FrontendProcessStart = session.ProcessStart(observation.PID)
 			// PrimaryPID remains populated for backward-compatible stop/recovery.
@@ -1039,7 +1158,7 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 		_ = frontend.Close(context.Background())
 		return fallback(launchErr)
 	}
-	a.finishSession(store, id, session.StateCompleted, 0)
+	a.finishSession(store, currentID(), session.StateCompleted, 0)
 	return nil
 }
 

@@ -45,6 +45,12 @@ type autoTurnRunner struct {
 	validate func() error
 }
 
+type turnRunnerFunc func(context.Context, opencodebridge.ExecutorRequest, func(string) error) (opencodebridge.ExecutorResult, error)
+
+func (f turnRunnerFunc) Run(ctx context.Context, request opencodebridge.ExecutorRequest, emit func(string) error) (opencodebridge.ExecutorResult, error) {
+	return f(ctx, request, emit)
+}
+
 func (r autoTurnRunner) Run(ctx context.Context, request opencodebridge.ExecutorRequest, emit func(string) error) (opencodebridge.ExecutorResult, error) {
 	if !promptgate.Assess(request.Prompt).Ready {
 		return opencodebridge.ExecutorResult{}, &opencodebridge.ExecutorFailure{Class: "PROMPT_INSUFFICIENT", ExitCode: -1}
@@ -122,7 +128,9 @@ func (a *App) scopeAutoRunner(base opencodebridge.ExecutorRunner, original confi
 			value.KnowledgeSources = k.aliases()
 			value.KnowledgeScopeID = knowledgeScopeID(cwd, k)
 			value.CurrentPhase = "planning"
-			value.Tasks = nil
+			if !value.RecoveryRequested {
+				value.Tasks = nil
+			}
 			value.KnowledgeBootstrap = session.BootstrapMetadata{}
 			value.MemoryStatus, value.ContextStatus = "disabled", "disabled"
 			if k.config.MCP.Servers["ivoai-memory"].Enabled {
@@ -147,7 +155,7 @@ func (a *App) scopeAutoRunner(base opencodebridge.ExecutorRunner, original confi
 			})
 			k.external.SetAdmission(func() bool {
 				v, err := store.Get(id)
-				if err != nil || !v.Active() || len(v.Tasks) == 0 || v.PlanID == "" {
+				if err != nil || !v.Active() || v.RecoveryRequested || len(v.Tasks) == 0 || v.PlanID == "" {
 					return false
 				}
 				if original.Orchestration.Auto.ResolvedPlanExecution() == "immediate" {

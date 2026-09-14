@@ -165,6 +165,7 @@ type Options struct {
 	// RequirePromptGate is always enabled by AUTO. Direct executor sessions keep
 	// their own intake contract; it is not a user-configurable bypass for AUTO.
 	RequirePromptGate     bool
+	SelectConversation    func(string) error
 	NativePermissions     func() []PermissionView
 	ReplyNativePermission func(context.Context, string, bool) error
 	// AuthReference returns only an official non-sensitive identity/epoch.
@@ -193,6 +194,7 @@ type Bridge struct {
 	initialEffort         string
 	frontend              string
 	requirePromptGate     bool
+	selectConversation    func(string) error
 	promptReadiness       promptgate.Result
 	nativePermissions     func() []PermissionView
 	replyNativePermission func(context.Context, string, bool) error
@@ -261,9 +263,10 @@ func Start(options Options) (*Bridge, error) {
 		frontend: options.Frontend, initialModel: options.InitialModel, initialEffort: options.InitialEffort,
 		requirePromptGate: options.RequirePromptGate,
 		nativePermissions: options.NativePermissions, replyNativePermission: options.ReplyNativePermission,
-		selectAlternate: options.SelectAlternate,
-		authReference:   options.AuthReference,
-		listener:        listener, url: "http://" + listener.Addr().String(), token: token,
+		selectAlternate:    options.SelectAlternate,
+		authReference:      options.AuthReference,
+		selectConversation: options.SelectConversation,
+		listener:           listener, url: "http://" + listener.Addr().String(), token: token,
 		runner: options.Runner, selectFn: options.Select, monitor: options.Monitor, handoff: options.FailoverHandoff, maxFailovers: options.MaxFailovers, statusFn: options.Status,
 		mapping: options.Mapping, attempt: options.Attempt, lookup: options.LookupMapping, claim: options.ClaimRequest, catalog: options.Catalog, authorizeSelection: options.AuthorizeSelection, onSelection: options.OnSelection,
 		sessions: map[string]map[string]Mapping{}, lastExecutor: map[string]string{}, active: map[string]activeExecution{}, completed: map[string]cachedCompletion{}, closed: make(chan struct{}),
@@ -447,6 +450,12 @@ func (b *Bridge) chat(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	if b.selectConversation != nil {
+		if err := b.selectConversation(frontendID); err != nil {
+			writeOpenAIErrorCode(w, http.StatusConflict, "conversation ownership unavailable", "SESSION_ALREADY_ACTIVE")
+			return
+		}
+	}
 	b.mu.Lock()
 	mappings := b.sessions[frontendID]
 	previousExecutor := b.lastExecutor[frontendID]
@@ -460,7 +469,11 @@ func (b *Bridge) chat(w http.ResponseWriter, r *http.Request) {
 			if previousExecutor == "" {
 				previousExecutor = stored.Executor
 			}
-			mappings[stored.Executor] = stored
+			// Lookup returns newest first, including a frontend-switch fallback.
+			// Do not replace that mapping with an older thread for the provider.
+			if _, exists := mappings[stored.Executor]; !exists {
+				mappings[stored.Executor] = stored
+			}
 		}
 		b.mu.Lock()
 		b.sessions[frontendID] = mappings
@@ -511,7 +524,10 @@ func (b *Bridge) chat(w http.ResponseWriter, r *http.Request) {
 	}
 	if previous, ok := mappings[executor]; ok {
 		identityMatches := b.authReference == nil || authReference != "" && previous.AuthReference == authReference
-		if identityMatches && (previous.RequestedModel == selection.RequestedModel() || previous.RequestedModel == selection.RequestedID || previous.RequestedModel == "" && selection.Mode == "auto") {
+		// Conversation identity is independent of the current model. The native
+		// resume request carries the newly authorized runtime selection; changing
+		// a model must not silently discard same-provider conversation history.
+		if identityMatches {
 			resumeID = previous.ExecutorSessionID
 		}
 	}

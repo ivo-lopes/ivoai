@@ -131,6 +131,7 @@ type ExecutorSessionMapping struct {
 }
 
 type Session struct {
+	RecoveryRequested     bool                                   `json:"recovery_requested,omitempty"`
 	ParallelWriteDegraded bool                                   `json:"parallel_write_degraded,omitempty"`
 	ConcurrencyLimit      int                                    `json:"concurrency_limit,omitempty"`
 	QuotaMode             string                                 `json:"quota_mode,omitempty"`
@@ -158,6 +159,8 @@ type Session struct {
 	OrchestrationMode     string                                 `json:"orchestration_mode,omitempty"`
 	PrimaryProvider       string                                 `json:"primary_provider,omitempty"`
 	FrontendSessionID     string                                 `json:"frontend_session_id,omitempty"`
+	FrontendSessions      map[string]string                      `json:"frontend_sessions,omitempty"`
+	Lineage               *HandoffLineage                        `json:"handoff_lineage,omitempty"`
 	FrontendPID           int                                    `json:"frontend_pid,omitempty"`
 	FrontendProcessStart  string                                 `json:"frontend_process_start,omitempty"`
 	ExecutorSessionID     string                                 `json:"executor_session_id,omitempty"`

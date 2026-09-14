@@ -189,6 +189,15 @@ func (s Store) CleanupRuntime(id string) error {
 	if err := ValidateID(id); err != nil {
 		return err
 	}
+	// Upgrade existing bounded checkpoints before removing process-local
+	// transports. Corruption is not permission to destroy recovery evidence.
+	if checkpoint, err := s.LoadCheckpoint(id); err == nil {
+		if err := s.SaveCheckpoint(id, checkpoint); err != nil {
+			return err
+		}
+	} else if !errors.Is(err, fs.ErrNotExist) {
+		return err
+	}
 	path := filepath.Join(s.Root, "runtime", id)
 	info, err := os.Lstat(path)
 	if errors.Is(err, fs.ErrNotExist) {
@@ -361,6 +370,17 @@ func validate(value Session) error {
 	}
 	if value.Frontend != "" && value.Frontend != "opencode" && value.Frontend != "codex" {
 		return errors.New("invalid session frontend")
+	}
+	if !validLineage(value.Lineage) {
+		return errors.New("invalid handoff lineage")
+	}
+	if len(value.FrontendSessions) > 2 {
+		return errors.New("invalid frontend mapping count")
+	}
+	for frontend, id := range value.FrontendSessions {
+		if (frontend != "codex" && frontend != "opencode") || !safeText(id, 128) || id == "" {
+			return errors.New("invalid frontend mapping")
+		}
 	}
 	if value.FrontendSessionID != "" && !safeText(value.FrontendSessionID, 128) || value.ExecutorSessionID != "" && !safeText(value.ExecutorSessionID, 128) {
 		return errors.New("invalid frontend session mapping")

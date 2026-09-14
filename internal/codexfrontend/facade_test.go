@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -52,6 +53,13 @@ func TestNativeCloseStopsBackgroundDirectoryWriters(t *testing.T) {
 		t.Fatal("fixture did not start")
 	}
 	args := strings.Join(f.Args(), " ")
+	if strings.Contains(args, "sandbox_mode=") || strings.Contains(args, "approval_policy=") {
+		t.Fatal("remote TUI permission overrides prevent native resume")
+	}
+	serverArgs := strings.Join(f.configArgs(), " ")
+	if !strings.Contains(serverArgs, `sandbox_mode="read-only"`) || !strings.Contains(serverArgs, `approval_policy="never"`) {
+		t.Fatal("owned App Server must retain fail-closed permission enforcement")
+	}
 	if !strings.Contains(args, "features.plugins=false") || !strings.Contains(args, "features.remote_plugin=false") {
 		t.Fatal("native plugin plane must remain disabled")
 	}
@@ -160,7 +168,13 @@ func TestLiveNativeAppServerAdmission(t *testing.T) {
 	}
 	defer bridge.Close(context.Background())
 	root := t.TempDir()
-	f, err := Start(ctx, Options{Binary: binary, Directory: root, RuntimeDir: root, SessionID: "native_fixture", Bridge: bridge, Environment: os.Environ()})
+	var mappedMu sync.Mutex
+	mapped := map[string]bool{}
+	options := Options{Binary: binary, Directory: root, RuntimeDir: root, NativeHome: filepath.Join(root, "provider-native"), SessionID: "native_fixture", Bridge: bridge, Environment: os.Environ(),
+		ThreadSelected:  func(id string) error { mappedMu.Lock(); defer mappedMu.Unlock(); mapped[id] = true; return nil },
+		ThreadAvailable: func(id string) bool { mappedMu.Lock(); defer mappedMu.Unlock(); return mapped[id] },
+	}
+	f, err := Start(ctx, options)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -281,6 +295,37 @@ func TestLiveNativeAppServerAdmission(t *testing.T) {
 	if f.TurnError() == nil || !runner.cancelled.Load() {
 		t.Fatal("native interrupt lost the worker cancellation or failure state")
 	}
+	_ = client.CloseNow()
+	f.Close()
+	f, err = Start(ctx, options)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	headers.Set("Authorization", "Bearer "+f.remoteToken)
+	client, _, err = websocket.Dial(ctx, "ws://"+f.listener.Addr().String(), &websocket.DialOptions{HTTPHeader: headers})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer client.CloseNow()
+	send(1, "initialize", map[string]any{"clientInfo": map[string]any{"name": "ivoai_fixture", "version": "0.10.3"}, "capabilities": map[string]any{"experimentalApi": true}})
+	if event := waitID("1"); len(event.Error) > 0 {
+		t.Fatal("restart initialize failed")
+	}
+	_ = client.Write(ctx, websocket.MessageText, []byte(`{"method":"initialized"}`))
+	send(2, "thread/list", map[string]any{"modelProviders": []string{"ivoai"}, "sourceKinds": []string{}})
+	if event := waitID("2"); !strings.Contains(string(event.Result), started.Thread.ID) {
+		t.Fatalf("native history absent: %.600s", event.Result)
+	}
+	send(3, "thread/resume", map[string]any{"threadId": started.Thread.ID})
+	if event := waitID("3"); len(event.Error) > 0 || !strings.Contains(string(event.Result), "fixture synthesis") {
+		t.Fatalf("native resume failed: %.600s %.600s", event.Error, event.Result)
+	}
+	send(4, "turn/start", map[string]any{"threadId": started.Thread.ID, "input": []any{map[string]any{"type": "text", "text": "corrija isso"}}})
+	if event := waitID("4"); !bytes.Contains(event.Error, []byte("PROMPT_INSUFFICIENT")) {
+		t.Fatal("resume bypassed prompt gate")
+	}
+	t.Log("native history persisted; restart/list/resume/gate PASS; no transcript copied into IVOAI metadata")
 }
 
 var _ io.WriteCloser = (*writeBuffer)(nil)

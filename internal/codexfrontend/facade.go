@@ -10,7 +10,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"net"
 	"net/http"
@@ -24,6 +23,7 @@ import (
 
 	"github.com/coder/websocket"
 	"github.com/ivo-lopes/ivoai/internal/opencodebridge"
+	"github.com/ivo-lopes/ivoai/internal/platform"
 	"github.com/ivo-lopes/ivoai/internal/promptgate"
 )
 
@@ -31,8 +31,14 @@ const maxFrame = 2 << 20
 
 type Options struct {
 	Binary, Directory, RuntimeDir, SessionID string
-	Bridge                                   *opencodebridge.Bridge
-	Environment                              []string
+	// NativeHome is provider-owned conversation state, separate from the
+	// bounded IVOAI journal and from the operator's personal Codex config.
+	NativeHome, ResumeThreadID string
+	InitialPrompt              string
+	ThreadAvailable            func(string) bool
+	ThreadSelected             func(string) error
+	Bridge                     *opencodebridge.Bridge
+	Environment                []string
 }
 
 type rpc struct {
@@ -64,9 +70,10 @@ type Facade struct {
 	requestSequence                  uint64
 	initializedResult                json.RawMessage
 	active                           *admittedTurn
-	sequence                         uint64
 	decisions                        map[string]string
 	threads                          map[string]bool
+	currentThread                    string
+	threadEvents                     map[string]rpc
 	model, effort                    string
 	upstream                         io.WriteCloser
 	upstreamMu                       sync.Mutex
@@ -106,6 +113,18 @@ func Start(ctx context.Context, options Options) (*Facade, error) {
 		return nil, err
 	}
 	f.home, err = os.MkdirTemp(options.RuntimeDir, "codex-native-")
+	if options.NativeHome != "" {
+		// Remove only the empty temporary directory just allocated above.
+		if err == nil {
+			_ = os.Remove(f.home)
+		}
+		f.home = options.NativeHome
+		if !filepath.IsAbs(f.home) {
+			err = errors.New("INVALID_NATIVE_HOME")
+		} else {
+			err = platform.EnsurePrivateDir(f.home)
+		}
+	}
 	if err != nil {
 		cancel()
 		return nil, err
@@ -209,7 +228,26 @@ func (f *Facade) Environment() []string {
 }
 
 func (f *Facade) Args() []string {
-	return append(f.configArgs(), "--remote", "ws://"+f.listener.Addr().String(), "--remote-auth-token-env", "IVOAI_NATIVE_REMOTE_TOKEN")
+	// The native remote-resume UI rejects client-side permission overrides.
+	// Enforcement belongs to the owned server (configArgs + sanitized thread/
+	// turn admission), not duplicated presentation flags. This does not grant
+	// any native tool capability to the TUI.
+	args := []string{}
+	settings := f.configArgs()
+	for i := 0; i < len(settings); i += 2 {
+		if strings.HasPrefix(settings[i+1], "sandbox_mode=") || strings.HasPrefix(settings[i+1], "approval_policy=") {
+			continue
+		}
+		args = append(args, settings[i], settings[i+1])
+	}
+	args = append(args, "--remote", "ws://"+f.listener.Addr().String(), "--remote-auth-token-env", "IVOAI_NATIVE_REMOTE_TOKEN")
+	if f.options.ResumeThreadID != "" {
+		args = append(args, "resume", f.options.ResumeThreadID)
+	}
+	if f.options.InitialPrompt != "" {
+		args = append(args, f.options.InitialPrompt)
+	}
+	return args
 }
 
 func (f *Facade) Close() {
@@ -260,7 +298,7 @@ func (f *Facade) close() {
 		_ = syscall.Kill(-f.process.Process.Pid, syscall.SIGKILL)
 	}
 	// The directory is newly allocated by this instance, never an operator path.
-	if f.home != "" && filepath.Dir(f.home) == filepath.Clean(f.options.RuntimeDir) {
+	if f.options.NativeHome == "" && f.home != "" && filepath.Dir(f.home) == filepath.Clean(f.options.RuntimeDir) {
 		_ = os.RemoveAll(f.home)
 	}
 }
@@ -317,6 +355,14 @@ func (f *Facade) send(message any) {
 	body, err := json.Marshal(message)
 	if err != nil {
 		return
+	}
+	var response rpc
+	if json.Unmarshal(body, &response) == nil && response.Method == "" {
+		f.mu.Lock()
+		origin := f.pending[string(response.ID)]
+		f.mu.Unlock()
+		response = f.filterHistory(origin.method, response)
+		body, _ = json.Marshal(response)
 	}
 	f.mu.Lock()
 	client := f.client
@@ -378,6 +424,42 @@ func (f *Facade) readUpstream(reader io.Reader) {
 			f.cancel()
 			return
 		}
+		if message.Method == "" && len(message.Error) == 0 {
+			f.mu.Lock()
+			origin := f.pending[string(message.ID)]
+			f.mu.Unlock()
+			if origin.method == "thread/resume" || origin.method == "thread/start" && f.options.ThreadSelected != nil {
+				var result struct {
+					Thread struct {
+						ID string `json:"id"`
+					} `json:"thread"`
+				}
+				if json.Unmarshal(message.Result, &result) != nil || result.Thread.ID == "" {
+					f.reject(message.ID, "INVALID_NATIVE_RESUME_RESPONSE")
+					continue
+				}
+				if f.options.ThreadSelected != nil {
+					if err := f.options.ThreadSelected(result.Thread.ID); err != nil {
+						f.mu.Lock()
+						delete(f.threadEvents, result.Thread.ID)
+						f.mu.Unlock()
+						f.reject(message.ID, "NATIVE_THREAD_MAPPING_FAILED")
+						continue
+					}
+				}
+				f.mu.Lock()
+				f.threads[result.Thread.ID] = true
+				f.currentThread = result.Thread.ID
+				started, notify := f.threadEvents[result.Thread.ID]
+				delete(f.threadEvents, result.Thread.ID)
+				f.mu.Unlock()
+				f.send(message)
+				if notify {
+					f.send(started)
+				}
+				continue
+			}
+		}
 		if len(message.Error) > 0 {
 			f.mu.Lock()
 			if f.active != nil && string(f.active.requestID) == string(message.ID) {
@@ -393,10 +475,24 @@ func (f *Facade) readUpstream(reader io.Reader) {
 				} `json:"thread"`
 			}
 			_ = json.Unmarshal(message.Params, &p)
+			if f.options.ThreadSelected != nil {
+				// Commit the mapping when the corresponding request succeeds;
+				// discovery failure must not terminate the primary connection.
+				f.mu.Lock()
+				if f.threadEvents == nil {
+					f.threadEvents = map[string]rpc{}
+				}
+				if len(f.threadEvents) < 8 {
+					f.threadEvents[p.Thread.ID] = message
+				}
+				f.mu.Unlock()
+				continue
+			}
 			f.mu.Lock()
 			if len(f.threads) < 128 {
 				f.threads[p.Thread.ID] = true
 			}
+			f.currentThread = p.Thread.ID
 			f.mu.Unlock()
 		}
 		if message.Method == "turn/started" || message.Method == "turn/completed" {
@@ -433,6 +529,9 @@ func (f *Facade) readUpstream(reader io.Reader) {
 }
 
 func (f *Facade) handle(message rpc) {
+	if !f.allowHistoryRead(message) {
+		return
+	}
 	if message.Method == "" {
 		var key string
 		_ = json.Unmarshal(message.ID, &key)
@@ -468,7 +567,14 @@ func (f *Facade) handle(message rpc) {
 		f.forward(message)
 	case "model/list":
 		f.send(map[string]any{"id": message.ID, "result": f.models()})
-	case "thread/start":
+	case "thread/start", "thread/resume":
+		f.mu.Lock()
+		busy := f.active != nil
+		f.mu.Unlock()
+		if busy {
+			f.reject(message.ID, "TURN_STILL_ACTIVE")
+			return
+		}
 		var p map[string]any
 		if json.Unmarshal(message.Params, &p) != nil {
 			f.reject(message.ID, "INVALID_THREAD")
@@ -476,7 +582,22 @@ func (f *Facade) handle(message rpc) {
 		}
 		// Never accept provider, tools, hooks or policy configuration from the UI.
 		selection, _ := f.options.Bridge.Catalog().Resolve(f.model, f.effort)
-		clean := map[string]any{"cwd": f.options.Directory, "model": selection.Model, "modelProvider": "ivoai", "sandbox": "read-only", "approvalPolicy": "never", "ephemeral": true}
+		clean := map[string]any{"cwd": f.options.Directory, "model": selection.Model, "modelProvider": "ivoai", "sandbox": "read-only", "approvalPolicy": "never", "ephemeral": f.options.NativeHome == ""}
+		if message.Method == "thread/resume" {
+			thread, _ := p["threadId"].(string)
+			f.mu.Lock()
+			busy := f.active != nil
+			f.mu.Unlock()
+			if busy {
+				f.reject(message.ID, "TURN_STILL_ACTIVE")
+				return
+			}
+			if f.options.ThreadAvailable == nil || !f.options.ThreadAvailable(thread) {
+				f.reject(message.ID, "NATIVE_SESSION_NOT_MANAGED")
+				return
+			}
+			clean["threadId"] = thread
+		}
 		message.Params, _ = json.Marshal(clean)
 		f.forward(message)
 	case "turn/start":
@@ -539,7 +660,7 @@ func (f *Facade) admit(message rpc) {
 		return
 	}
 	f.mu.Lock()
-	if f.active != nil || !f.threads[p.ThreadID] {
+	if f.active != nil || !f.threads[p.ThreadID] || f.currentThread != "" && f.currentThread != p.ThreadID {
 		f.mu.Unlock()
 		f.reject(message.ID, "TURN_NOT_AVAILABLE")
 		return
@@ -563,8 +684,13 @@ func (f *Facade) admit(message rpc) {
 		f.reject(message.ID, "MODEL_UNAVAILABLE: explicit Codex primary selection cannot fall back silently")
 		return
 	}
-	f.sequence++
-	f.active = &admittedTurn{thread: p.ThreadID, requestID: append(json.RawMessage(nil), message.ID...), message: fmt.Sprintf("native_%d", f.sequence), prompt: prompt, model: model, effort: effort}
+	turnID, err := randomToken()
+	if err != nil {
+		f.mu.Unlock()
+		f.reject(message.ID, "TURN_ID_UNAVAILABLE")
+		return
+	}
+	f.active = &admittedTurn{thread: p.ThreadID, requestID: append(json.RawMessage(nil), message.ID...), message: "native_" + turnID, prompt: prompt, model: model, effort: effort}
 	f.lastTurnError = nil
 	f.model, f.effort = model, effort
 	f.mu.Unlock()

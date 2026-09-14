@@ -23,7 +23,7 @@ func (a *App) runCodexFrontend(ctx context.Context, options codexfrontend.Option
 		return err, nil
 	}
 	defer frontend.Close()
-	runtime := agents.Runtime{Runner: a.Runner, In: a.In, Out: a.Out, Err: a.Err, AgentPath: options.Binary, Environment: frontend.Environment(), RuntimeDir: options.RuntimeDir}
+	runtime := agents.Runtime{Runner: a.Runner, In: a.In, Out: a.Out, Err: a.Err, AgentPath: options.Binary, Environment: frontend.Environment(), RuntimeDir: options.RuntimeDir, Directory: options.Directory}
 	err = runtime.LaunchObserved(ctx, "codex", frontend.Args(), false, observe)
 	return err, frontend.TurnError()
 }

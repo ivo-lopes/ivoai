@@ -53,7 +53,7 @@ func (f *Facade) responses(w http.ResponseWriter, r *http.Request) {
 	}
 	finished := make(chan result, 1)
 	go func() {
-		text, err := f.options.Bridge.SubmitTurn(ctx, f.options.SessionID, turn.message, turn.prompt, turn.model, turn.effort)
+		text, err := f.options.Bridge.SubmitTurn(ctx, turn.thread, turn.message, turn.prompt, turn.model, turn.effort)
 		finished <- result{text, err}
 	}()
 	ticker := time.NewTicker(200 * time.Millisecond)

@@ -51,10 +51,11 @@ type App struct {
 	HTTPClient       *http.Client
 	// OpenCodeBridgeRunner and StartOpenCodeManaged are injected only by
 	// hermetic tests. Production uses the official managed adapters.
-	OpenCodeBridgeRunner opencodebridge.ExecutorRunner
-	OpenCodeModelCatalog *opencodebridge.ModelCatalog
-	StartOpenCodeManaged func(context.Context, opencodebridge.ManagedOptions) (managedOpenCodeFrontend, error)
-	StartCodexNative     func(context.Context, codexfrontend.Options) (nativeCodexFrontend, error)
+	OpenCodeBridgeRunner     opencodebridge.ExecutorRunner
+	ProviderAccountReference func(context.Context, string) (string, error)
+	OpenCodeModelCatalog     *opencodebridge.ModelCatalog
+	StartOpenCodeManaged     func(context.Context, opencodebridge.ManagedOptions) (managedOpenCodeFrontend, error)
+	StartCodexNative         func(context.Context, codexfrontend.Options) (nativeCodexFrontend, error)
 	// ExecutablePath is accepted only in IVOAI_TEST_MODE so hermetic update
 	// matrix tests never replace the running go test binary.
 	ExecutablePath string
