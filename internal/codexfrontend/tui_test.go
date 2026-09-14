@@ -152,6 +152,9 @@ func TestLiveNativeTUI(t *testing.T) {
 		mu.Unlock()
 		// This opt-in test contains only synthetic input and a private provider
 		// with no account credentials. Bound the diagnostic; never use it live.
+		if startupErr := f.TurnError(); startupErr != nil {
+			t.Logf("native lifecycle: %v", startupErr)
+		}
 		if len(text) > 2000 {
 			text = text[len(text)-2000:]
 		}

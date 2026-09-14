@@ -81,6 +81,7 @@ type Facade struct {
 	done                             chan error
 	closeOnce                        sync.Once
 	lastTurnError                    error
+	startupDiagnostics               *startupTail
 }
 
 func randomToken() (string, error) {
@@ -162,7 +163,9 @@ func Start(ctx context.Context, options Options) (*Facade, error) {
 	}
 	f.process.WaitDelay = time.Second
 	f.process.Dir, f.process.Env = options.Directory, f.Environment()
-	f.process.Stderr = io.Discard // Never retain upstream diagnostic prompt/env content.
+	diagnostics := &startupTail{}
+	f.startupDiagnostics = diagnostics
+	f.process.Stderr = diagnostics
 	f.upstream, err = f.process.StdinPipe()
 	if err != nil {
 		f.Close()
@@ -178,7 +181,14 @@ func Start(ctx context.Context, options Options) (*Facade, error) {
 		return nil, errors.New("CODEX_APP_SERVER_START_FAILED")
 	}
 	f.done = make(chan error, 1)
-	go func() { f.readUpstream(output); f.done <- f.process.Wait(); f.cancel() }()
+	started := time.Now()
+	go func() {
+		f.readUpstream(output)
+		err := f.process.Wait()
+		f.recordProcessExit(f.process.ProcessState.ExitCode(), started, diagnostics)
+		f.done <- err
+		f.cancel()
+	}()
 	return f, nil
 }
 
@@ -373,6 +383,9 @@ func (f *Facade) send(message any) {
 			client = origin.client
 			if origin.method == "initialize" && len(envelope.Error) == 0 {
 				f.initializedResult = append(json.RawMessage(nil), envelope.Result...)
+				if f.startupDiagnostics != nil {
+					f.startupDiagnostics.stop()
+				}
 			}
 			envelope.ID = origin.id
 			body, _ = json.Marshal(envelope)
