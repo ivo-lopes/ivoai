@@ -3,6 +3,7 @@ package orchestrator
 import (
 	"context"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"testing"
 	"time"
@@ -12,6 +13,80 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/routing"
 	"github.com/ivo-lopes/ivoai/internal/session"
 )
+
+func TestRecoveryCollectedInterruptedWriterKeepsCompletedTasks(t *testing.T) {
+	store, id := recoveryFixture(t)
+	repo := t.TempDir()
+	git := func(args ...string) {
+		t.Helper()
+		cmd := exec.Command("git", args...)
+		cmd.Dir = repo
+		if output, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("fixture git: %v %s", err, output)
+		}
+	}
+	git("init", "-q")
+	git("config", "user.name", "Fixture")
+	git("config", "user.email", "fixture@example.invalid")
+	if err := os.WriteFile(filepath.Join(repo, "protected.txt"), []byte("intact"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	git("add", "protected.txt")
+	git("-c", "core.hooksPath=/dev/null", "-c", "commit.gpgsign=false", "commit", "-qm", "fixture")
+	ctx := context.Background()
+	identity, head, err := orchestration.RecoveryRepositoryIdentity(ctx, repo)
+	if err != nil {
+		t.Fatal(err)
+	}
+	workRoot := filepath.Join(store.Root, "worktree-recovery")
+	if err := os.MkdirAll(workRoot, 0700); err != nil {
+		t.Fatal(err)
+	}
+	manager, err := orchestration.NewWorktrees(ctx, repo, workRoot)
+	if err != nil {
+		t.Fatal(err)
+	}
+	w, err := manager.Create(ctx, "worker_11111111111111111111111111111111")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(w.Path, "feature.txt"), []byte("completed once"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	w, err = manager.Collect(ctx, w.TaskID, []string{"feature.txt"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := store.UpdateCheckpoint(id, func(c *session.Checkpoint) error {
+		c.Recovery.Directory, c.Recovery.RepositoryIdentity, c.Recovery.RepositoryHead = repo, identity, head
+		c.Recovery.Plan.Tasks[2].Role = "implementation"
+		c.Recovery.Plan.Tasks[2].WritePaths = []string{"feature.txt"}
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := store.Update(id, func(v *session.Session) error {
+		v.WorkingDirectory = repo
+		v.Tasks[2].Role, v.Tasks[2].State = "implementation", session.StateFailed
+		v.Workers = []session.Worker{{ID: w.TaskID, TaskID: "t3", Role: "implementation", Executor: "codex", State: session.StateFailed, Model: session.UnknownModel(), WorktreePath: w.Path, WorktreeBranch: w.Branch, WorktreeBase: w.Base, WorktreeCommit: w.Commit}}
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	preview, err := ReconcileRecovery(ctx, store, id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(preview.Completed) != 3 || len(preview.Pending) != 1 || preview.Pending[0] != "t4" {
+		t.Fatal("completed or collected work scheduled twice")
+	}
+	if _, err := preview.worktrees.Integrate(ctx, []string{w.TaskID}); err != nil {
+		t.Fatal(err)
+	}
+	if body, _ := os.ReadFile(filepath.Join(repo, "feature.txt")); string(body) != "completed once" {
+		t.Fatal("recovered writer lost")
+	}
+}
 
 func TestRecoveryDispatchesOnlyPendingAfterNewApproval(t *testing.T) {
 	store, id := recoveryFixture(t)
