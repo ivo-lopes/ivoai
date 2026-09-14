@@ -267,6 +267,30 @@ func TestNativeFrontendExitDoesNotEraseTurnFailure(t *testing.T) {
 	}
 }
 
+func TestNativeFrontendFailurePreservesStartupCauseAndExitCode(t *testing.T) {
+	root := t.TempDir()
+	client := appExecutable(t, root, "codex", "#!/bin/sh\nexit 37\n")
+	a := sessionTestApp(t, root, client, client, client)
+	t.Setenv("IVOAI_TEST_MODE", "1")
+	cause := errors.New("CODEX_APP_SERVER_STARTUP_FAILED: phase=initialize exit_code=78 reason=configuration_load_failed")
+	a.StartCodexNative = func(context.Context, codexfrontend.Options) (nativeCodexFrontend, error) {
+		return fixtureNativeFrontend{turnErr: cause}, nil
+	}
+	previous, _ := os.Getwd()
+	t.Cleanup(func() { _ = os.Chdir(previous) })
+	if err := os.Chdir(root); err != nil {
+		t.Fatal(err)
+	}
+	err := a.SessionStart(context.Background(), "codex", session.ModeOrchestrated, nil)
+	if !errors.Is(err, cause) || exitCode(err) != 37 {
+		t.Fatalf("startup cause or native exit code lost: %v", err)
+	}
+	values, listErr := a.SessionList()
+	if listErr != nil || len(values) != 1 || values[0].State != session.StateFailed {
+		t.Fatal("failed startup did not retain failed session metadata")
+	}
+}
+
 func TestClaudeCodeDirectAndOrchestratedSessions(t *testing.T) {
 	for _, mode := range []session.Mode{session.ModeDirect, session.ModeOrchestrated} {
 		mode := mode

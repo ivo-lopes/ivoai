@@ -65,7 +65,7 @@ func (s *startupTail) category() string {
 func (f *Facade) recordProcessExit(exitCode int, started time.Time, tail *startupTail) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	if len(f.initializedResult) != 0 || f.lastTurnError != nil || f.ctx.Err() != nil {
+	if len(f.initializedResult) != 0 || f.lastTurnError != nil || (f.ctx.Err() != nil && exitCode <= 0) {
 		return
 	}
 	f.lastTurnError = fmt.Errorf("CODEX_APP_SERVER_STARTUP_FAILED: phase=initialize exit_code=%d reason=%s elapsed_ms=%d", exitCode, tail.category(), time.Since(started).Milliseconds())

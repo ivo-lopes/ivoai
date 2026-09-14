@@ -25,6 +25,9 @@ func (a *App) runCodexFrontend(ctx context.Context, options codexfrontend.Option
 	defer frontend.Close()
 	runtime := agents.Runtime{Runner: a.Runner, In: a.In, Out: a.Out, Err: a.Err, AgentPath: options.Binary, Environment: frontend.Environment(), RuntimeDir: options.RuntimeDir, Directory: options.Directory}
 	err = runtime.LaunchObserved(ctx, "codex", frontend.Args(), false, observe)
+	// Join the owned App Server before reading its causal diagnostic. A TUI
+	// transport failure can exit just before the upstream waiter records why.
+	frontend.Close()
 	return err, frontend.TurnError()
 }
 

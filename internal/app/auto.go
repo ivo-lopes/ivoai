@@ -1099,7 +1099,9 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 		})
 		if err != nil {
 			a.finishSession(store, currentID(), session.StateFailed, exitCode(err))
-			return err
+			// Preserve the native client's exit code and the bounded upstream
+			// cause; a connection reset alone is not an actionable diagnosis.
+			return errors.Join(turnErr, err)
 		}
 		a.finishSession(store, currentID(), session.StateCompleted, 0)
 		if turnErr != nil {

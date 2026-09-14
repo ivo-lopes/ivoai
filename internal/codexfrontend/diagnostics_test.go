@@ -75,3 +75,17 @@ func TestStartupDiagnosticsDoesNotReclassifyNormalCancellation(t *testing.T) {
 		t.Fatal("normal cancellation classified as startup failure")
 	}
 }
+
+func TestStartupDiagnosticsPreservesNaturalFailureDuringCleanup(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	tail := &startupTail{}
+	_, _ = tail.Write([]byte("error loading config"))
+	f := &Facade{ctx: ctx}
+	// A positive OS exit status is not the signal sent by owned cleanup.
+	// The TUI may already have exited by the time the upstream waiter runs.
+	f.recordProcessExit(78, time.Now(), tail)
+	if f.TurnError() == nil || !strings.Contains(f.TurnError().Error(), "exit_code=78") {
+		t.Fatal("cleanup erased the upstream's natural startup failure")
+	}
+}
