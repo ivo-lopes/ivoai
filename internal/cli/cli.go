@@ -243,6 +243,44 @@ func runSession(ctx context.Context, a *app.App, args []string) error {
 		return errors.New("usage: ivoai session <start|list|show|resume|recover|handoff|stop>")
 	}
 	switch args[0] {
+	case "native":
+		fs := flag.NewFlagSet("session native", flag.ContinueOnError)
+		fs.SetOutput(a.Err)
+		asJSON := fs.Bool("json", false, "output metadata only")
+		if err := fs.Parse(args[1:]); err != nil || fs.NArg() != 0 {
+			return errors.New("usage: ivoai session native [--json]")
+		}
+		threads, err := a.SessionNativeDiscover(ctx, "")
+		if err != nil {
+			return err
+		}
+		if *asJSON {
+			return json.NewEncoder(a.Out).Encode(threads)
+		}
+		for _, thread := range threads {
+			fmt.Fprintf(a.Out, "%s  %s  %s  EXPLICIT_ADOPTION\n", thread.ID, thread.Provider, thread.Directory)
+		}
+		return nil
+	case "adopt":
+		if len(args) < 2 {
+			return errors.New("usage: ivoai session adopt <codex-thread-id> --confirm [--json]")
+		}
+		fs := flag.NewFlagSet("session adopt", flag.ContinueOnError)
+		fs.SetOutput(a.Err)
+		confirmed := fs.Bool("confirm", false, "explicitly associate the selected native conversation")
+		asJSON := fs.Bool("json", false, "output metadata only")
+		if err := fs.Parse(args[2:]); err != nil || fs.NArg() != 0 {
+			return errors.New("invalid session adopt arguments")
+		}
+		value, err := a.SessionAdoptCodex(ctx, args[1], *confirmed)
+		if err != nil {
+			return err
+		}
+		if *asJSON {
+			return json.NewEncoder(a.Out).Encode(value)
+		}
+		fmt.Fprintf(a.Out, "Adopted native Codex conversation as %s (mode=%s). Use session resume to continue.\n", value.SessionID, value.Mode)
+		return nil
 	case "handoff":
 		if len(args) < 2 {
 			return errors.New("usage: ivoai session handoff <id> --to codex|claude [--confirm]")
@@ -250,6 +288,8 @@ func runSession(ctx context.Context, a *app.App, args []string) error {
 		fs := flag.NewFlagSet("session handoff", flag.ContinueOnError)
 		fs.SetOutput(a.Err)
 		to := fs.String("to", "", "destination provider")
+		mode := fs.String("mode", "", "explicit destination mode: direct or orchestrated")
+		frontend := fs.String("frontend", "", "orchestrated destination presentation")
 		confirmed := fs.Bool("confirm", false, "explicitly authorize cross-provider bounded context transfer")
 		if err := fs.Parse(args[2:]); err != nil || fs.NArg() != 0 {
 			return errors.New("invalid handoff arguments")
@@ -257,7 +297,7 @@ func runSession(ctx context.Context, a *app.App, args []string) error {
 		if !*confirmed {
 			return errors.New("HANDOFF_CONFIRMATION_REQUIRED: inspect the session, then repeat with --confirm to authorize transfer to the selected provider")
 		}
-		return a.SessionHandoff(ctx, args[1], *to, *confirmed)
+		return a.SessionHandoffDestination(ctx, args[1], *to, *mode, *frontend, *confirmed)
 	case "recover":
 		if len(args) != 2 {
 			return errors.New("usage: ivoai session recover <session-id>")
@@ -270,11 +310,19 @@ func runSession(ctx context.Context, a *app.App, args []string) error {
 		fs := flag.NewFlagSet("session resume", flag.ContinueOnError)
 		fs.SetOutput(a.Err)
 		frontend := fs.String("frontend", "", "presentation frontend (orchestrated only)")
+		mode := fs.String("mode", "", "explicit Codex admission mode: direct or orchestrated")
+		confirmed := fs.Bool("confirm", false, "confirm admission mode change")
 		if err := fs.Parse(args[2:]); err != nil || fs.NArg() != 0 {
 			return errors.New("invalid session resume arguments")
 		}
 		if *frontend != "" {
+			if *mode != "" {
+				return errors.New("select either frontend or admission mode")
+			}
 			return a.SessionResumeFrontend(ctx, args[1], *frontend)
+		}
+		if *mode != "" {
+			return a.SessionResumeMode(ctx, args[1], *mode, *confirmed)
 		}
 		return a.SessionResume(ctx, args[1])
 	case "start":
@@ -826,9 +874,14 @@ Usage:
   ivoai session list [--json] | show [--json] <id> | stop <id>
   ivoai session resume <id> [--frontend codex|opencode]
   ivoai session recover <id>
-  ivoai session handoff <id> --to codex|claude --confirm
+  ivoai session handoff <id> --to codex|claude|opencode --confirm [--mode direct|orchestrated] [--frontend codex|opencode]
+  ivoai session native [--json]
+  ivoai session adopt <codex-thread-id> --confirm [--json]
+  ivoai session resume <id> --mode direct|orchestrated --confirm
   ivoai monitor [--watch] [--session <id>] [--json]
   ivoai memory [status|configure]
+  ivoai memory hooks <status|validate|repair> [--json]
+  ivoai memory hooks repair [--verified-previous-binary <owned-ai-memory-path>]
   ivoai skills list | show <source-id> | doctor
   ivoai skills update [source-id]
   ivoai skills enable <source-id> | disable <source-id> | pin <source-id> | unpin <source-id> | rollback <source-id>

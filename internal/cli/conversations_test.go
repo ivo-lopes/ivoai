@@ -21,7 +21,7 @@ func TestConversationTUIInspectAndHandoffCancellation(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Select conversation, inspect, handoff, Claude, decline confirmation, back.
-	a.In = strings.NewReader("1\n1\n6\n1\nNO\n0\n0\n0\n")
+	a.In = strings.NewReader("1\n1\n7\n1\nNO\n0\n0\n0\n")
 	s := menuSession{ctx: context.Background(), app: a, reader: bufio.NewReader(a.In)}
 	if _, err := s.conversations(); err != nil {
 		t.Fatal(err)

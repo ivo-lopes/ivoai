@@ -131,6 +131,9 @@ type ExecutorSessionMapping struct {
 }
 
 type Session struct {
+	NativeAdoption        *NativeAdoption                        `json:"native_adoption,omitempty"`
+	NativeStoreScope      string                                 `json:"native_store_scope,omitempty"`
+	ModeTransitions       []ModeTransition                       `json:"mode_transitions,omitempty"`
 	RecoveryRequested     bool                                   `json:"recovery_requested,omitempty"`
 	ParallelWriteDegraded bool                                   `json:"parallel_write_degraded,omitempty"`
 	ConcurrencyLimit      int                                    `json:"concurrency_limit,omitempty"`

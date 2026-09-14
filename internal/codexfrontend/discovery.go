@@ -9,8 +9,10 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
+	"unicode"
 
 	"github.com/ivo-lopes/ivoai/internal/platform"
 	"github.com/ivo-lopes/ivoai/internal/session"
@@ -131,7 +133,7 @@ func DiscoverNative(ctx context.Context, binary, cwd, runtimeRoot string, state 
 		result = response.Data
 	}
 	for _, thread := range result {
-		if !session.ValidNativeUUID(thread.ID) || thread.Directory != cwd || (thread.Provider != "openai" && thread.Provider != "ivoai") {
+		if !session.ValidNativeUUID(thread.ID) || thread.Directory != cwd || len(thread.Directory) > 4096 || strings.IndexFunc(thread.Directory, unicode.IsControl) >= 0 || platform.Redact(thread.Directory) != thread.Directory || (thread.Provider != "openai" && thread.Provider != "ivoai") {
 			return nil, errors.New("NATIVE_SESSION_NOT_PORTABLE")
 		}
 	}

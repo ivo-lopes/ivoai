@@ -37,9 +37,14 @@ Usage:
   ivoai session list [--json] | show [--json] <id> | stop <id>
   ivoai session resume <id> [--frontend codex|opencode]
   ivoai session recover <id>
-  ivoai session handoff <id> --to codex|claude --confirm
+  ivoai session handoff <id> --to codex|claude|opencode --confirm [--mode direct|orchestrated] [--frontend codex|opencode]
+  ivoai session native [--json]
+  ivoai session adopt <codex-thread-id> --confirm [--json]
+  ivoai session resume <id> --mode direct|orchestrated --confirm
   ivoai monitor [--watch] [--session <id>] [--json]
   ivoai memory [status|configure]
+  ivoai memory hooks <status|validate|repair> [--json]
+  ivoai memory hooks repair [--verified-previous-binary <owned-ai-memory-path>]
   ivoai skills list | show <source-id> | doctor
   ivoai skills update [source-id]
   ivoai skills enable <source-id> | disable <source-id> | pin <source-id> | unpin <source-id> | rollback <source-id>

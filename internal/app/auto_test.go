@@ -204,10 +204,20 @@ esac
 		if err != nil {
 			return nil, err
 		}
-		_, _ = io.Copy(io.Discard, response.Body)
+		responseBody, _ := io.ReadAll(io.LimitReader(response.Body, 4096))
 		_ = response.Body.Close()
 		if response.StatusCode != http.StatusOK {
-			return nil, errors.New("fixture OpenCode bridge request failed")
+			var failure struct {
+				Error struct {
+					Code string `json:"code"`
+				} `json:"error"`
+			}
+			_ = json.Unmarshal(responseBody, &failure)
+			code := failure.Error.Code
+			if len(code) > 80 || strings.IndexFunc(code, func(r rune) bool { return !(r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r == '_') }) >= 0 {
+				code = "invalid_error_code"
+			}
+			return nil, errors.New("fixture OpenCode bridge request failed: " + code)
 		}
 		return fakeManagedOpenCode{environment: options.Environment}, nil
 	}

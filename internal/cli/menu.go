@@ -161,6 +161,7 @@ func (s *menuSession) sessions() (bool, error) {
 	snapshot, _ := s.app.MenuSnapshot()
 	return s.loop("Session Control", []menuAction{
 		{id: "session.continuity", label: "Conversations — Inspect / Resume", description: "Choose an IVOAI session; preserve native conversation and execution mode", run: s.conversations},
+		{id: "session.adopt", label: "Adopt native Codex conversation", description: "Discover current-project native threads; explicitly associate one without copying history", run: s.nativeConversations},
 		{id: "auto", label: "IVOAI Automatic Session", description: "OpenCode frontend with prompt gate, approved native DAG and scoped workers", disabled: disabledUnless(snapshot.AutoEnabled, "automatic orchestration disabled"), run: func() (bool, error) { return true, s.app.Auto(s.ctx, "", nil) }},
 		{id: "session.direct.codex", label: "Direct Session — Codex", description: "Official Codex runtime with session observability; Ruflo is not started", run: func() (bool, error) { return true, s.app.SessionStart(s.ctx, "codex", "direct", nil) }},
 		{id: "session.direct.claude", label: "Direct Session — Claude Code", description: "Official Claude Code runtime with session observability; Ruflo is not started", run: func() (bool, error) { return true, s.app.SessionStart(s.ctx, "claude", "direct", nil) }},

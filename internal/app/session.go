@@ -98,9 +98,23 @@ func (a *App) SessionStartWithKnowledge(ctx context.Context, executor string, mo
 	}
 	nativeID := ""
 	if mode == session.ModeDirect && executor == "codex" && resumeID == "" {
+		resumeIndex := -1
 		for i, arg := range args {
 			if arg == "resume" && i+1 < len(args) && session.ValidNativeUUID(args[i+1]) {
 				nativeID = args[i+1]
+				resumeIndex = i
+			}
+		}
+		if nativeID != "" {
+			mapped, lookupErr := (session.Store{Root: a.Store.Paths.SessionsDir}).FindCodexNative(nativeID, cwd)
+			if lookupErr == nil {
+				// --direct resume <exact-id> is an explicit admission choice,
+				// not permission to duplicate an existing logical conversation.
+				overrides := append(append([]string{}, args[:resumeIndex]...), args[resumeIndex+2:]...)
+				return a.resumeCodexMode(ctx, mapped.SessionID, "direct", true, overrides)
+			}
+			if lookupErr.Error() != "NATIVE_SESSION_NOT_MANAGED" {
+				return lookupErr
 			}
 		}
 	}

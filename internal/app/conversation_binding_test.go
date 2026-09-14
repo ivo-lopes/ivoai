@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ivo-lopes/ivoai/internal/codexfrontend"
 	"github.com/ivo-lopes/ivoai/internal/quota"
 	"github.com/ivo-lopes/ivoai/internal/session"
 )
@@ -44,6 +45,23 @@ func TestConversationFrontendSwitchReusesVerifiedProviderThread(t *testing.T) {
 	values, _ := store.List()
 	if len(values) != 1 {
 		t.Fatal("frontend switch duplicated IVOAI session")
+	}
+	a.StartCodexNative = func(_ context.Context, options codexfrontend.Options) (nativeCodexFrontend, error) {
+		if options.ResumeThreadID != "thread_presentation" {
+			t.Fatal("frontend return invented another native presentation thread")
+		}
+		return fixtureNativeFrontend{}, nil
+	}
+	if err := a.SessionResumeFrontend(context.Background(), id, "codex"); err != nil {
+		t.Fatal(err)
+	}
+	got, err = store.Get(id)
+	if err != nil || got.Frontend != "codex" || got.FrontendSessionID != "thread_presentation" || got.ExecutorSessionID != "thread_fixture" || got.ExecutorSessions["codex:thread_presentation"].ExecutorSessionID != "thread_fixture" {
+		t.Fatal("return frontend changed native provider mapping", err)
+	}
+	values, _ = store.List()
+	if len(values) != 1 {
+		t.Fatal("round-trip presentation switch duplicated logical conversation")
 	}
 }
 

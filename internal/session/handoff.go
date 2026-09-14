@@ -62,5 +62,6 @@ func validLineage(l *HandoffLineage) bool {
 	if l == nil {
 		return true
 	}
-	return ValidateID(l.SourceSession) == nil && (l.SourceProvider == "codex" || l.SourceProvider == "claude") && (l.DestinationProvider == "codex" || l.DestinationProvider == "claude") && l.SourceProvider != l.DestinationProvider && !l.ConfirmedAt.IsZero() && safeText(l.Reason, 128)
+	validProvider := func(p string) bool { return p == "codex" || p == "claude" || p == "opencode" }
+	return ValidateID(l.SourceSession) == nil && validProvider(l.SourceProvider) && validProvider(l.DestinationProvider) && l.SourceProvider != l.DestinationProvider && !l.ConfirmedAt.IsZero() && safeText(l.Reason, 128)
 }

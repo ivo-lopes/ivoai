@@ -38,12 +38,55 @@ impediam selecionar uma conversa. Esses controles permanecem no App Server
 IVOAI e nos requests sanitizados, não nos flags de resume da TUI. A remoção da
 duplicação no cliente não enfraquece o Prompt Gate nem o sandbox do servidor.
 
-O Codex mantém seu histórico nativo em um home privado e persistente por projeto.
-IVOAI não copia configuração pessoal nem autenticação para esse diretório. O
-executor oficial continua dono do login e de seu histórico. IVOAI guarda mappings
+Novas conversas portáveis usam o histórico pertencente ao Codex com um home de
+configuração IVOAI isolado. O `sqlite_home` oficial tem precedência sobre
+`CODEX_SQLITE_HOME`. Apenas diretórios de conversas e locks nativos são
+compartilhados: não se copia banco, transcript, configuração ou autenticação.
+Históricos gerenciados legados continuam legíveis no local original, sem migração
+silenciosa para outro store. O executor oficial continua dono do login e de seu
+histórico. IVOAI guarda mappings
 opacos e fingerprint da identidade da conta, não credenciais. Previews do picker
 são tráfego transitório, não entradas do journal. Sem prova compatível de conta,
 não se reutiliza um mapping não verificado.
+
+Threads paginadas legadas não podem mudar entre bancos Codex independentes só
+informando o caminho do rollout: o resume do Codex 0.154.0 continua exigindo o
+contexto/índice paginado original. Uma tentativa focada foi recusada pelo App
+Server oficial. O resume original permanece disponível; uma troca de modo que
+exigiria mover esse estado retorna `NATIVE_SESSION_NOT_PORTABLE`, sem copiar banco
+ou inventar outra conversa. Novas conversas no estado compartilhado e adoções do
+store nativo elegível não têm essa restrição.
+
+### Adoção explícita e modo do próximo turno
+
+Em **Session Control → Adopt native Codex conversation**, selecione uma das até
+100 threads elegíveis do projeto atual e confirme a associação. Equivalente CLI:
+
+```sh
+ivoai session native --json
+ivoai session adopt <codex-thread-id> --confirm
+ivoai session resume <ivoai-session-id>
+ivoai session resume <ivoai-session-id> --mode direct --confirm
+ivoai session resume <ivoai-session-id> --mode orchestrated --confirm
+```
+
+A adoção registra somente identidade, origem do projeto e confirmação. Uma
+associação já existente mantém seu ID e modo; uma nova adoção é orquestrada.
+O picker `/resume` lista a conversa após adoção. Execute a descoberta no diretório
+original; um ID exato pode ser adotado mesmo fora da listagem recente limitada.
+Trocar modo altera a admissão dos próximos turnos, não o histórico passado.
+
+| Transição | Classe |
+| --- | --- |
+| Codex nativo/direto/orquestrado no mesmo store elegível | `SAME_NATIVE`: mesma thread; adoção/troca de modo explícitas quando necessárias |
+| Frontend Codex ↔ OpenCode, mantendo primary | `SAME_IVOAI_SESSION`: mesma identidade lógica e mapping verificado |
+| Conversa Codex externa → associação IVOAI | `EXPLICIT_ADOPTION`: exatamente uma conversa, sem importação global |
+| Provider próprio do OpenCode direto ↔ primary Codex/Claude orquestrado | `EXPLICIT_HANDOFF`: nova conversa nativa com lineage; não igualdade de IDs |
+
+Com checkpoint bounded disponível, use
+`ivoai session handoff <id> --to codex --mode orchestrated --frontend opencode --confirm`
+ou `ivoai session handoff <id> --to opencode --mode direct --confirm`.
+Sem checkpoint, o erro é explícito: não se substitui o brief por transcript copiado.
 
 Cada novo turno usa modelo/effort e routing de conhecimento atuais. Informações
 já discutidas continuam na conversa nativa; resume não apaga esse histórico.
@@ -66,7 +109,7 @@ Sources históricas não recebem novas consultas ou grants automaticamente.
 - **Handoff:** transfere explicitamente um brief limitado para uma nova conversa
   do provider escolhido. `--confirm` autoriza a transferência, separadamente da
   aprovação do plano. A linhagem registra origem, destino e momento da decisão.
-  Direct continua direct; orchestrated continua orchestrated. Não copia transcript,
+  O modo é preservado salvo escolha explícita de `--mode` no destino. Não copia transcript,
   grant de ferramenta nem credencial.
 
 `AMBIGUOUS_PREVIOUS_EXECUTION` impede repetir uma escrita sem commit coletado e

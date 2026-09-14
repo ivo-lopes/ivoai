@@ -348,6 +348,23 @@ func (s Store) withLock(operation func() error) error {
 }
 
 func validate(value Session) error {
+	if value.NativeStoreScope != "" {
+		if raw, err := hex.DecodeString(value.NativeStoreScope); err != nil || len(raw) != 32 {
+			return errors.New("INVALID_NATIVE_STORE_SCOPE")
+		}
+	}
+	if err := validateAdoption(value.NativeAdoption); err != nil {
+		return err
+	}
+	if len(value.ModeTransitions) > 16 {
+		return errors.New("INVALID_MODE_TRANSITIONS")
+	}
+	for _, transition := range value.ModeTransitions {
+		validMode := func(m Mode) bool { return m == ModeDirect || m == ModeAuto }
+		if !validMode(transition.From) || !validMode(transition.To) || transition.From == transition.To || transition.ConfirmedAt.IsZero() {
+			return errors.New("INVALID_MODE_TRANSITIONS")
+		}
+	}
 	if value.ConcurrencyLimit < 0 || value.ConcurrencyLimit > MaxNativeWorkers {
 		return errors.New("invalid concurrency admission limit")
 	}

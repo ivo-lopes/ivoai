@@ -19,10 +19,16 @@ type handoffSeed struct {
 // Confirmation is separate from plan approval. No provider is selected or
 // started before this explicit operator decision.
 func (a *App) SessionHandoff(ctx context.Context, id, to string, confirmed bool) error {
+	return a.SessionHandoffDestination(ctx, id, to, "", "", confirmed)
+}
+
+// An explicit destination mode is required when a frontend switch also moves
+// between OpenCode's own conversation and an IVOAI-managed primary provider.
+func (a *App) SessionHandoffDestination(ctx context.Context, id, to, mode, frontend string, confirmed bool) error {
 	if !confirmed {
 		return errors.New("HANDOFF_CONFIRMATION_REQUIRED")
 	}
-	if to != "codex" && to != "claude" {
+	if to != "codex" && to != "claude" && to != "opencode" {
 		return errors.New("INVALID_HANDOFF_PROVIDER")
 	}
 	store := session.Store{Root: a.Store.Paths.SessionsDir}
@@ -38,8 +44,24 @@ func (a *App) SessionHandoff(ctx context.Context, id, to string, confirmed bool)
 	if source.PrimaryExecutor == to {
 		return errors.New("USE_NATIVE_RESUME_FOR_SAME_PROVIDER")
 	}
-	if source.PrimaryExecutor != "codex" && source.PrimaryExecutor != "claude" {
+	if source.PrimaryExecutor != "codex" && source.PrimaryExecutor != "claude" && source.PrimaryExecutor != "opencode" {
 		return errors.New("HANDOFF_SOURCE_NOT_SUPPORTED")
+	}
+	destinationMode := source.Mode
+	if mode != "" {
+		destinationMode = session.Mode(mode)
+		if destinationMode == session.ModeOrchestrated {
+			destinationMode = session.ModeAuto
+		}
+	}
+	if destinationMode != session.ModeAuto && destinationMode != session.ModeDirect {
+		return errors.New("HANDOFF_MODE_NOT_SUPPORTED")
+	}
+	if to == "opencode" && destinationMode != session.ModeDirect {
+		return errors.New("OPENCODE_PROVIDER_REQUIRES_DIRECT_MODE")
+	}
+	if frontend != "" && (destinationMode != session.ModeAuto || (frontend != "codex" && frontend != "opencode") || (frontend == "codex" && to != "codex")) {
+		return errors.New("INVALID_HANDOFF_FRONTEND")
 	}
 	if session.ProcessMatches(source.PrimaryPID, source.PrimaryProcessStart) || session.ProcessMatches(source.FrontendPID, source.FrontendProcessStart) {
 		return errors.New("SESSION_ALREADY_ACTIVE")
@@ -55,15 +77,21 @@ func (a *App) SessionHandoff(ctx context.Context, id, to string, confirmed bool)
 	}
 	seed := handoffSeed{Directory: source.WorkingDirectory, Brief: brief, Lineage: session.HandoffLineage{SourceSession: id, SourceProvider: source.PrimaryExecutor, DestinationProvider: to, ConfirmedAt: time.Now().UTC(), Reason: "explicit_operator_handoff"}}
 	ctx = context.WithValue(ctx, handoffSessionKey{}, seed)
-	if source.Mode == session.ModeAuto {
-		frontend := "opencode"
-		if to == "codex" {
-			frontend = "codex"
+	if destinationMode == session.ModeAuto {
+		if frontend == "" {
+			frontend = "opencode"
+			if to == "codex" {
+				frontend = "codex"
+			}
 		}
 		return a.OrchestratedWithKnowledge(ctx, frontend, to, nil, nil)
 	}
-	if source.Mode == session.ModeDirect {
-		return a.SessionStartWithKnowledge(ctx, to, session.ModeDirect, []string{handoffInput(seed.Brief)}, nil)
+	if destinationMode == session.ModeDirect {
+		args := []string{handoffInput(seed.Brief)}
+		if to == "opencode" {
+			args = append([]string{"--prompt"}, args...)
+		}
+		return a.SessionStartWithKnowledge(ctx, to, session.ModeDirect, args, nil)
 	}
 	return errors.New("HANDOFF_MODE_NOT_SUPPORTED")
 }

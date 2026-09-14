@@ -41,12 +41,62 @@ IVOAI-owned App Server and sanitized protocol requests, not on the TUI's resume
 flags. Removing the client-side duplicates does not weaken the Prompt Gate or
 server sandbox. Both 0.153.4 and 0.154.0 are covered by native protocol tests.
 
-Codex owns its native history in a private, persistent, project-scoped managed
-home. IVOAI does not copy personal Codex configuration or account authentication
-into that home. The official executor owns its own provider history and login;
-IVOAI stores opaque mappings and an account-identity fingerprint, not credentials.
+New portable Codex conversations use provider-owned native history with an
+isolated IVOAI configuration home. IVOAI resolves the official `sqlite_home`
+setting (which takes precedence over `CODEX_SQLITE_HOME`) and shares only the
+native conversation directories and writer locks. It does not copy the database,
+transcripts, personal configuration or account authentication. Existing legacy
+project-scoped managed histories remain readable in their original location;
+they are not silently copied into a different provider store. The official
+executor owns its provider history and login; IVOAI stores opaque mappings and
+an account-identity fingerprint, not credentials.
 Native previews are transient protocol traffic, not continuity-journal entries.
 The bridge never falls back to an unverified account mapping.
+
+Legacy paginated threads cannot be rehomed between independent Codex databases
+by merely passing a rollout path: Codex 0.154.0's resume path still requires the
+original paginated context/index. A focused attempt was rejected by the official
+App Server. IVOAI therefore preserves their original resume path and explicitly
+reports `NATIVE_SESSION_NOT_PORTABLE` for a mode change that would require
+moving that state. It does not copy a personal database or create a replacement
+conversation silently. This restriction does not apply to the new shared-state
+conversations or adoption from the user's eligible native provider store.
+
+### Explicit native adoption and mode selection
+
+Use **Session Control → Adopt native Codex conversation** to inspect up to 100
+eligible current-project threads and explicitly associate one. The equivalent CLI
+is:
+
+```sh
+ivoai session native --json
+ivoai session adopt <codex-thread-id> --confirm
+ivoai session resume <ivoai-session-id>
+ivoai session resume <ivoai-session-id> --mode direct --confirm
+ivoai session resume <ivoai-session-id> --mode orchestrated --confirm
+```
+
+Adoption records provider/thread identity, project provenance and confirmation;
+it never imports every personal thread or copies its transcript. Repeated adoption
+reuses an existing unambiguous mapping and preserves its mode. New adoption is
+orchestrated; explicitly changing mode changes admission for future turns only.
+Direct has no IVOAI Prompt Gate/DAG; orchestrated retains both. The native
+`/resume` picker lists managed conversations after adoption. Use the original
+project directory for discovery; exact thread IDs can be adopted even when they
+fall outside the bounded recent listing.
+
+| Transition | Meaning |
+| --- | --- |
+| Codex native/direct/orchestrated, same eligible provider store | `SAME_NATIVE`: same native thread; adoption/explicit mode choice where needed |
+| Codex frontend ↔ OpenCode frontend, same primary provider | `SAME_IVOAI_SESSION`: preserve logical identity and verified provider mapping |
+| External Codex conversation → IVOAI mapping | `EXPLICIT_ADOPTION`: associate exactly one native conversation |
+| OpenCode's own direct provider conversation ↔ orchestrated Codex/Claude primary | `EXPLICIT_HANDOFF`: new provider conversation and bounded lineage, not native-ID equality |
+
+For example, an existing bounded checkpoint can be handed off explicitly with
+`ivoai session handoff <id> --to codex --mode orchestrated --frontend opencode --confirm`,
+or to OpenCode's direct provider path with
+`ivoai session handoff <id> --to opencode --mode direct --confirm`.
+An unavailable checkpoint is reported rather than replaced with a copied transcript.
 
 New turns use current model/effort selection and re-evaluate knowledge routing.
 Previously discussed information remains part of the provider-native conversation;
@@ -73,8 +123,9 @@ automatically receive new queries or MCP grants.
 - **Handoff** explicitly transfers a bounded brief into a new destination
   provider conversation. `--confirm` authorizes that transfer; it is separate from
   execution-plan approval. Lineage records the source session/provider,
-  destination provider and confirmation time. Direct stays direct; orchestrated
-  stays orchestrated. No transcript, tool grant or provider credential is copied.
+  destination provider and confirmation time. Mode is preserved unless an explicit
+  destination `--mode` is selected. No transcript, tool grant or provider credential
+  is copied.
 
 Recovery refuses `AMBIGUOUS_PREVIOUS_EXECUTION` when a writer has no verified
 collected commit or a previously attempted external tool operation has uncertain

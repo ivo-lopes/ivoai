@@ -229,5 +229,20 @@ func TestLiveNativeTUI(t *testing.T) {
 	if runner.calls.Load() != 1 {
 		t.Fatal("native resume replayed completed turn")
 	}
+	if nativeState != nil {
+		for _, home := range []string{nativeState.Home, filepath.Join(root, "native-history")} {
+			for _, name := range []string{"auth.json", "config.toml", "hooks.json"} {
+				if _, err := os.Lstat(filepath.Join(home, name)); !os.IsNotExist(err) {
+					t.Fatal("portable native runtime persisted auth or personal configuration")
+				}
+			}
+		}
+		// Validate discovery of a newly created canonical-provider thread,
+		// not just a legacy IVOAI-provider rollout resumed through a new view.
+		threads, err := DiscoverNative(ctx, binary, root, filepath.Join(root, "discovery"), *nativeState, firstThread)
+		if err != nil || len(threads) != 1 || threads[0].ID != firstThread || threads[0].Provider != "openai" {
+			t.Fatal("portable TUI thread is not discoverable in canonical provider state", err)
+		}
+	}
 	t.Log(fmt.Sprintf("native composer gate=PASS approval=PASS synthesis=PASS worker_calls=%d", runner.calls.Load()))
 }

@@ -68,6 +68,7 @@ func (b *conversationBinding) Select(thread string) error {
 			WorkingDirectory: b.cwd, PrimaryModel: session.UnknownModel(), MaxWorkers: b.initial.MaxWorkers,
 			ContextStatus: "disabled", MemoryStatus: "disabled", ServerStatus: "not-connected"}
 		target.SwarmID, target.PrimaryLifecycleID = "native_"+id, "native_"+id+"_"+id
+		target.NativeStoreScope = b.initial.NativeStoreScope
 		target.Observability = nil
 		target.StartedAt, target.UpdatedAt = time.Now().UTC(), time.Now().UTC()
 		if err := b.store.Create(target); err != nil {

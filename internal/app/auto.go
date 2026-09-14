@@ -401,6 +401,13 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 		OptimizationStrategy: cfg.Orchestration.Auto.Optimization.Strategy,
 	}
 	pinCodex(&value, codexResolution)
+	if frontendName == "codex" && resumeID == "" && os.Getenv("IVOAI_TEST_MODE") != "1" {
+		native, err := codexfrontend.ResolveNativeState(os.Environ(), cwd)
+		if err != nil {
+			return err
+		}
+		value.NativeStoreScope = native.ScopeID()
+	}
 	if hasHandoff {
 		value.Lineage = &handoff.Lineage
 	}
@@ -1084,12 +1091,24 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 		}
 		projectHash := sha256.Sum256([]byte(cwd))
 		nativeHome := filepath.Join(nativeRoot, fmt.Sprintf("%x", projectHash[:16]))
+		var nativeState *codexfrontend.NativeState
+		if value.NativeStoreScope != "" {
+			native, err := codexfrontend.ResolveNativeState(os.Environ(), cwd)
+			if err != nil {
+				return err
+			}
+			if native.ScopeID() != value.NativeStoreScope {
+				return errors.New("NATIVE_SESSION_SCOPE_MISMATCH")
+			}
+			nativeState = &native
+			nativeHome = filepath.Join(nativeRoot, "shared-"+value.NativeStoreScope)
+		}
 		resumeThread := ""
 		if resumeID != "" {
 			resumeThread = value.FrontendSessionID
 		}
 		err, turnErr = a.runCodexFrontend(ctx, codexfrontend.Options{Binary: state.Components["codex"].Path, Directory: cwd, RuntimeDir: runtimeDir, SessionID: currentID(), Bridge: bridge, Environment: frontendEnvironment,
-			NativeHome: nativeHome, ResumeThreadID: resumeThread, InitialPrompt: initialPrompt, ThreadAvailable: binding.Available, ThreadSelected: binding.Select}, func(observation agents.Observation) {
+			NativeHome: nativeHome, NativeState: nativeState, ResumeThreadID: resumeThread, InitialPrompt: initialPrompt, ThreadAvailable: binding.Available, ThreadSelected: binding.Select}, func(observation agents.Observation) {
 			_, _ = store.Update(currentID(), func(s *session.Session) error {
 				s.FrontendPID, s.PrimaryPID = observation.PID, observation.PID
 				s.FrontendProcessStart, s.PrimaryProcessStart = session.ProcessStart(observation.PID), session.ProcessStart(observation.PID)
