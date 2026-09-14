@@ -18,7 +18,7 @@ func (s *menuSession) orchestrationPolicies() (bool, error) {
 			return false, err
 		}
 		actions := s.orchestrationPolicyActions(v)
-		id, err := s.choose("Orchestration Policies (effective next AUTO session)", actions, nil)
+		id, err := s.choose("Orchestration Policies (effective next orchestrated session)", actions, nil)
 		if err != nil || id == "" {
 			return false, err
 		}
@@ -35,6 +35,7 @@ func (s *menuSession) orchestrationPolicies() (bool, error) {
 
 func (s *menuSession) orchestrationPolicyActions(v app.MenuSnapshot) []menuAction {
 	return []menuAction{
+		{id: "policy.profile", label: "Automation profile: " + v.AutomationProfile, description: "economic / balanced / quality / custom; presets change existing policy for next session", run: s.policyChoice("Automation profile", "automation_profile", []string{"economic", "balanced", "quality", "custom"})},
 		{id: "policy.sources", label: "Knowledge routing: " + v.KnowledgeRouting, run: s.policyChoice("Knowledge routing", "knowledge_routing", []string{"purpose-auto", "all-enabled", "explicit-only"})},
 		{id: "policy.concurrency", label: "Concurrency: " + v.Concurrency, run: s.policyChoice("Concurrency", "concurrency", []string{"auto", "sequential"})},
 		{id: "policy.worker-cap", label: fmt.Sprintf("Worker cap: %d (0 = auto)", v.WorkerCap), run: s.policyInteger("Worker cap (0 = automatic, 1-12 = maximum)", "worker_cap", v.WorkerCap, 0, 12)},
@@ -55,7 +56,7 @@ func (s *menuSession) policyChoice(title, key string, choices []string) func() (
 				return s.app.ConfigSet("orchestration.auto."+key, choice)
 			})})
 		}
-		id, err := s.choose(title+" (effective next AUTO session)", actions, nil)
+		id, err := s.choose(title+" (effective next orchestrated session)", actions, nil)
 		if err != nil || id == "" {
 			return false, err
 		}

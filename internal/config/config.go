@@ -175,6 +175,7 @@ type OrchestrationConfig struct {
 	Auto              AutoConfig `toml:"auto"`
 }
 type AutoConfig struct {
+	AutomationProfile   string                 `toml:"automation_profile,omitempty"`
 	KnowledgeRouting    string                 `toml:"knowledge_routing,omitempty"`
 	Concurrency         string                 `toml:"concurrency,omitempty"`
 	WorkerCap           int                    `toml:"worker_cap"`
@@ -449,6 +450,11 @@ func (s *Store) Load() (Config, error) {
 }
 
 func ValidateOrchestration(value OrchestrationConfig) error {
+	switch value.Auto.ResolvedAutomationProfile() {
+	case "economic", "balanced", "quality", "custom":
+	default:
+		return errors.New("invalid automation profile")
+	}
 	if value.ProviderExecution {
 		return errors.New("orchestration provider execution must remain disabled")
 	}

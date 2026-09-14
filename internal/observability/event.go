@@ -15,23 +15,31 @@ import (
 type Category string
 
 const (
-	CategoryExecutor       Category = "executor"
-	CategoryCapability     Category = "capability"
-	CategoryFallback       Category = "fallback"
-	CategoryMemory         Category = "memory"
-	CategoryContext        Category = "context"
-	CategoryCompression    Category = "compression"
-	CategoryOrchestration  Category = "orchestration"
-	CategoryDAG            Category = "dag"
-	CategoryWorker         Category = "worker"
-	CategoryApproval       Category = "approval"
-	CategoryQuota          Category = "quota"
-	CategorySkillRegistry  Category = "skill_registry"
-	CategorySkillIndex     Category = "skill_index"
-	CategorySkillPolicy    Category = "skill_policy"
-	CategorySupplyChain    Category = "supply_chain"
-	CategoryWorkingContext Category = "working_context"
-	CategoryConnection     Category = "connection"
+	OperationSessionLifecycle  Operation = "session.lifecycle"
+	OperationFrontendSwitch    Operation = "frontend.switch"
+	OperationModelSelect       Operation = "model.select"
+	OperationPromptGate        Operation = "prompt.gate"
+	OperationWorktreeLifecycle Operation = "worktree.lifecycle"
+	OperationHookHealth        Operation = "hook.health"
+	OperationMCPGrant          Operation = "mcp.grant"
+	OperationHandoff           Operation = "session.handoff"
+	CategoryExecutor           Category  = "executor"
+	CategoryCapability         Category  = "capability"
+	CategoryFallback           Category  = "fallback"
+	CategoryMemory             Category  = "memory"
+	CategoryContext            Category  = "context"
+	CategoryCompression        Category  = "compression"
+	CategoryOrchestration      Category  = "orchestration"
+	CategoryDAG                Category  = "dag"
+	CategoryWorker             Category  = "worker"
+	CategoryApproval           Category  = "approval"
+	CategoryQuota              Category  = "quota"
+	CategorySkillRegistry      Category  = "skill_registry"
+	CategorySkillIndex         Category  = "skill_index"
+	CategorySkillPolicy        Category  = "skill_policy"
+	CategorySupplyChain        Category  = "supply_chain"
+	CategoryWorkingContext     Category  = "working_context"
+	CategoryConnection         Category  = "connection"
 )
 
 type Operation string
@@ -198,6 +206,14 @@ type Event struct {
 }
 
 var operationCategories = map[Operation]Category{
+	OperationSessionLifecycle:        CategoryOrchestration,
+	OperationFrontendSwitch:          CategoryOrchestration,
+	OperationModelSelect:             CategoryExecutor,
+	OperationPromptGate:              CategoryOrchestration,
+	OperationWorktreeLifecycle:       CategoryWorker,
+	OperationHookHealth:              CategoryMemory,
+	OperationMCPGrant:                CategoryConnection,
+	OperationHandoff:                 CategoryOrchestration,
 	OperationExecutorSelect:          CategoryExecutor,
 	OperationCapabilityResolve:       CategoryCapability,
 	OperationFallbackRoute:           CategoryFallback,

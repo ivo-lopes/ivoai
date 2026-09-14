@@ -90,32 +90,33 @@ type ModelInfo struct {
 }
 
 type Worker struct {
-	SelectedSkills    []string                   `json:"selected_skills,omitempty"`
-	WorktreePath      string                     `json:"worktree_path,omitempty"`
-	WorktreeBranch    string                     `json:"worktree_branch,omitempty"`
-	WorktreeBase      string                     `json:"worktree_base,omitempty"`
-	WorktreeCommit    string                     `json:"worktree_commit,omitempty"`
-	LifecycleID       string                     `json:"lifecycle_id,omitempty"`
-	ID                string                     `json:"id"`
-	Role              string                     `json:"role"`
-	Executor          string                     `json:"executor"`
-	Model             ModelInfo                  `json:"model"`
-	PID               int                        `json:"pid,omitempty"`
-	ProcessStart      string                     `json:"process_start,omitempty"`
-	State             State                      `json:"state"`
-	StartedAt         time.Time                  `json:"started_at"`
-	EndedAt           *time.Time                 `json:"ended_at,omitempty"`
-	ExitCode          *int                       `json:"exit_code,omitempty"`
-	RufloTaskID       string                     `json:"ruflo_task_id,omitempty"`
-	HeadroomUsed      bool                       `json:"headroom_used"`
-	RequestedExecutor string                     `json:"requested_executor,omitempty"`
-	FallbackReason    string                     `json:"fallback_reason,omitempty"`
-	TaskID            string                     `json:"task_id,omitempty"`
-	Tier              string                     `json:"tier,omitempty"`
-	CapabilityScore   int                        `json:"capability_score,omitempty"`
-	Effort            string                     `json:"effort,omitempty"`
-	EffortSource      string                     `json:"effort_source,omitempty"`
-	ResultRefs        []workingcontext.ResultRef `json:"result_refs,omitempty"`
+	WorktreeIntegrated bool                       `json:"worktree_integrated,omitempty"`
+	SelectedSkills     []string                   `json:"selected_skills,omitempty"`
+	WorktreePath       string                     `json:"worktree_path,omitempty"`
+	WorktreeBranch     string                     `json:"worktree_branch,omitempty"`
+	WorktreeBase       string                     `json:"worktree_base,omitempty"`
+	WorktreeCommit     string                     `json:"worktree_commit,omitempty"`
+	LifecycleID        string                     `json:"lifecycle_id,omitempty"`
+	ID                 string                     `json:"id"`
+	Role               string                     `json:"role"`
+	Executor           string                     `json:"executor"`
+	Model              ModelInfo                  `json:"model"`
+	PID                int                        `json:"pid,omitempty"`
+	ProcessStart       string                     `json:"process_start,omitempty"`
+	State              State                      `json:"state"`
+	StartedAt          time.Time                  `json:"started_at"`
+	EndedAt            *time.Time                 `json:"ended_at,omitempty"`
+	ExitCode           *int                       `json:"exit_code,omitempty"`
+	RufloTaskID        string                     `json:"ruflo_task_id,omitempty"`
+	HeadroomUsed       bool                       `json:"headroom_used"`
+	RequestedExecutor  string                     `json:"requested_executor,omitempty"`
+	FallbackReason     string                     `json:"fallback_reason,omitempty"`
+	TaskID             string                     `json:"task_id,omitempty"`
+	Tier               string                     `json:"tier,omitempty"`
+	CapabilityScore    int                        `json:"capability_score,omitempty"`
+	Effort             string                     `json:"effort,omitempty"`
+	EffortSource       string                     `json:"effort_source,omitempty"`
+	ResultRefs         []workingcontext.ResultRef `json:"result_refs,omitempty"`
 }
 
 type ExecutorSessionMapping struct {
@@ -219,6 +220,7 @@ type Session struct {
 	Tasks                 []TaskMetadata                         `json:"tasks,omitempty"`
 	EscalationCount       int                                    `json:"escalation_count,omitempty"`
 	Observability         []observability.Event                  `json:"observability,omitempty"`
+	ObservationSequence   uint64                                 `json:"observation_sequence,omitempty"`
 }
 
 const MaxObservabilityEvents = 128
@@ -231,6 +233,10 @@ func AppendObservation(value *Session, event observability.Event) error {
 	if err != nil {
 		return err
 	}
+	if value.ObservationSequence < uint64(len(value.Observability)) {
+		value.ObservationSequence = uint64(len(value.Observability))
+	}
+	value.ObservationSequence++
 	value.Observability = append(value.Observability, normalized)
 	if len(value.Observability) > MaxObservabilityEvents {
 		value.Observability = append([]observability.Event(nil), value.Observability[len(value.Observability)-MaxObservabilityEvents:]...)

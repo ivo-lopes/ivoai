@@ -234,11 +234,11 @@ func (s *Server) integrate(ctx context.Context, request *mcp.CallToolRequest) (*
 	if plan.integrated {
 		return toolResult(map[string]any{"plan_id": args.PlanID, "integrated": true})
 	}
+	workIDs := make([]string, 0, len(ids))
 	if len(ids) > 0 && plan.sequential == nil {
 		if plan.worktrees == nil {
 			return nil, errors.New("WORKTREE_FAILED: no collected implementation work")
 		}
-		workIDs := make([]string, 0, len(ids))
 		for _, id := range ids {
 			workIDs = append(workIDs, plan.workIDs[id])
 		}
@@ -264,7 +264,17 @@ func (s *Server) integrate(ctx context.Context, request *mcp.CallToolRequest) (*
 	}); err != nil {
 		return nil, err
 	}
-	_, err := s.Store.Update(s.SessionID, func(value *session.Session) error { value.CurrentPhase = "synthesizing"; return nil })
+	_, err := s.Store.Update(s.SessionID, func(value *session.Session) error {
+		value.CurrentPhase = "synthesizing"
+		for i := range value.Workers {
+			for _, id := range workIDs {
+				if value.Workers[i].ID == id && value.Workers[i].WorktreeCommit != "" {
+					value.Workers[i].WorktreeIntegrated = true
+				}
+			}
+		}
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}

@@ -81,6 +81,7 @@ const liveServiceProbeTimeout = 8 * time.Second
 // MenuSnapshot is a non-secret, read-only view used by the interactive UI.
 // It deliberately contains no endpoint credentials or raw configuration.
 type MenuSnapshot struct {
+	AutomationProfile     string
 	KnowledgeRouting      string
 	Concurrency           string
 	WorkerCap             int
@@ -144,6 +145,7 @@ func (a *App) MenuSnapshot() (MenuSnapshot, error) {
 		configured, enabled, connected = 1, 1, 1
 	}
 	return MenuSnapshot{
+		AutomationProfile:     cfg.Orchestration.Auto.ResolvedAutomationProfile(),
 		KnowledgeRouting:      cfg.Orchestration.Auto.ResolvedKnowledgeRouting(),
 		Concurrency:           cfg.Orchestration.Auto.ResolvedConcurrency(),
 		WorkerCap:             cfg.Orchestration.Auto.WorkerCap,
@@ -1155,6 +1157,10 @@ func (a *App) ConfigSet(key, value string) error {
 		return err
 	}
 	switch key {
+	case "orchestration.auto.automation_profile":
+		if err := c.Orchestration.Auto.ApplyAutomationProfile(value); err != nil {
+			return err
+		}
 	case "skills.ponytail":
 		c.Skills.Ponytail = strings.ToLower(strings.TrimSpace(value))
 	case "opencode.permission_mode":
@@ -1316,6 +1322,9 @@ func (a *App) ConfigSet(key, value string) error {
 		c.Orchestration.Auto.Quota.ShowModelScoped = parsed
 	default:
 		return fmt.Errorf("unsupported config key %q", key)
+	}
+	if strings.HasPrefix(key, "orchestration.auto.") && key != "orchestration.auto.automation_profile" && c.Orchestration.Auto.AutomationProfile != "" {
+		c.Orchestration.Auto.AutomationProfile = "custom"
 	}
 	return a.Store.Save(c)
 }

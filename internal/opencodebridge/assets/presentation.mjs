@@ -28,6 +28,18 @@ export function panel(status) {
     line(`mode=${clean(status.selection_mode, "auto")} · requested=${clean(status.requested_model, "automatic")} · model=${clean(status.effective_model, "UNKNOWN")} · reasoning=${clean(status.effective_effort, "UNKNOWN")}`),
     line("Executors", "heading")]
   const orchestration = []
+  if (status.automation_profile) orchestration.push(line(`Automation profile: ${clean(status.automation_profile)}`))
+  if (status.console) orchestration.push(line(`Model source: ${clean(status.configuration_source,"not yet resolved")} · no silent unavailable-model fallback`))
+  if (status.console?.schema === 1) {
+    orchestration.push(line(`Continuity: ${status.console.checkpoint ? "checkpoint available" : "no checkpoint"} · events=${Number.isSafeInteger(status.console.sequence) ? status.console.sequence : 0}`))
+    for (const task of (Array.isArray(status.console.tasks) ? status.console.tasks : []).slice(0, 128)) {
+      orchestration.push(line(`DAG ${clean(task.id)} · ${clean(task.state)} · after=${(Array.isArray(task.dependencies) ? task.dependencies : []).slice(0, 12).map(x => clean(x)).join(", ") || "none"}`))
+      orchestration.push(line(`  Worktree=${task.worktree ? (task.integrated ? "integrated" : "isolated") : "none"}`))
+      for (const [server, tools] of Object.entries(task.mcp_tools || {}).slice(0, 32)) orchestration.push(line(`  Grant ${clean(server)}: ${(Array.isArray(tools) ? tools : []).slice(0, 64).map(x => clean(x)).join(", ") || "none"}`))
+    }
+    for (const event of (Array.isArray(status.console.events) ? status.console.events : []).slice(-12)) orchestration.push(line(`Event ${Number.isSafeInteger(event.sequence) ? event.sequence : "?"}: ${clean(event.operation)} · ${clean(event.state)} · ${clean(event.task_id, "session")}`, "muted"))
+  }
+  for (const [agent, state] of Object.entries(status.hook_health || {}).slice(0, 2)) orchestration.push(line(`${state === "degraded" ? "! " : ""}Memory hooks ${clean(agent)}: ${clean(state)}`, state === "degraded" ? "warning" : "text"))
   if (status.prompt_readiness) {
     orchestration.push(line(`Prompt readiness: ${clean(status.prompt_readiness)}`))
     for (const field of (Array.isArray(status.prompt_missing) ? status.prompt_missing : []).slice(0, 5)) orchestration.push(line(`Missing: ${clean(field)}`, "warning"))

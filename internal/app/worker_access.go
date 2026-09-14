@@ -11,6 +11,7 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/config"
 	"github.com/ivo-lopes/ivoai/internal/connections"
 	"github.com/ivo-lopes/ivoai/internal/externalmcp"
+	"github.com/ivo-lopes/ivoai/internal/observability"
 	"github.com/ivo-lopes/ivoai/internal/orchestration"
 	"github.com/ivo-lopes/ivoai/internal/policy"
 	"github.com/ivo-lopes/ivoai/internal/routing"
@@ -229,6 +230,16 @@ func (a *App) prepareWorkerAccess(ctx context.Context, cfg config.Config, store 
 		return request, err
 	}
 	request.Release = release
+	if len(grants) > 0 {
+		observe := func(state observability.State) {
+			_, _ = store.Update(id, func(v *session.Session) error {
+				return session.AppendObservation(v, observability.Event{Category: observability.CategoryConnection, Operation: observability.OperationMCPGrant, State: state, TaskID: task.ID})
+			})
+		}
+		observe(observability.StateAllowed)
+		var observedRelease sync.Once
+		request.Release = func() { observedRelease.Do(func() { release(); observe(observability.StateCompleted) }) }
+	}
 	success = true
 	return request, nil
 }

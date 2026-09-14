@@ -28,13 +28,14 @@ func TestLiveManagedOpenCodeResizeKeyboard(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
 	defer cancel()
 	runner := &fakeRunner{result: ExecutorResult{ExecutorSessionID: "thread_keyboard"}}
+	consoleActions := make(chan string, 4)
 	responseText := "bridge ok"
 	if os.Getenv("IVOAI_LIVE_OPENCODE_COPY") == "multiline" {
 		responseText = "bridge ok\nsecond logical line\n\n```go\nfmt.Println(\"fixture\")\n```\n\n" + strings.TrimSpace(strings.Repeat("wrapped fixture ", 24))
 		runner.text = responseText
 	}
 	catalog := CatalogFromRegistry(routing.Registry{Providers: map[string]routing.ProviderCapability{"codex": {Provider: "codex", Authenticated: true, Models: []routing.ModelCapability{{Name: "fixture-model", DisplayName: "Fixture model", SupportedEfforts: []string{"low", "high"}, DefaultEffort: "high", Source: routing.SourceRuntimeVerified}}}}})
-	bridge, err := Start(Options{Runner: runner, Catalog: catalog, Select: func(context.Context, string) (string, error) { return "codex", nil }, Status: func() Status {
+	bridge, err := Start(Options{ConsoleAction: func(_ context.Context, action string) error { consoleActions <- action; return nil }, Runner: runner, Catalog: catalog, Select: func(context.Context, string) (string, error) { return "codex", nil }, Status: func() Status {
 		return Status{Frontend: "opencode", PermissionMode: "full", KnowledgeMode: "restricted", ConfiguredCount: 2, ConnectedCount: 1, Servers: []ServerView{{Alias: "source-A", Purpose: "fixture", Enabled: true, Selected: true, Health: "healthy"}, {Alias: "source-B", Enabled: true, Health: "down"}}, Memory: "ready", Context: "ready", CodexAuth: "authenticated", ClaudeAuth: "not-configured"}
 	}})
 	if err != nil {
@@ -182,6 +183,35 @@ func TestLiveManagedOpenCodeResizeKeyboard(t *testing.T) {
 		t.Logf("resize=%d panel visible; Escape returned", width)
 	}
 	start := mark()
+	send("/ivoai-profile-quality")
+	send("\r")
+	wait(start, "Apply quality")
+	send("\x1b")
+	select {
+	case <-consoleActions:
+		t.Fatal("cancel applied profile")
+	default:
+	}
+	start = mark()
+	send("/ivoai-profile-quality")
+	send("\r")
+	wait(start, "Apply quality")
+	send("\r")
+	select {
+	case action := <-consoleActions:
+		if action != "profile.quality" {
+			t.Fatal("wrong console action")
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("profile confirmation did not reach core")
+	}
+	wait(start, "Profile saved for the next session")
+	start = mark()
+	send("/ivoai-models")
+	send("\r")
+	wait(start, "source=runtime_verified")
+	send("\x1b")
+	start = mark()
 	send("/models")
 	send("\r")
 	wait(start, "Select model")

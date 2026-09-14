@@ -15,6 +15,46 @@ const tui = async (api: any, options: any) => {
     servers: [],
     knowledge_mode: "automatic",
   })
+  const [catalog, setCatalog] = createSignal<any[]>([])
+  const sessionControl = async () => {
+    try {
+      const response = await fetch(options.bridge+"/console/sessions",{headers:{Authorization:"Bearer "+options.token},signal:AbortSignal.timeout(2000)})
+      if (!response.ok) throw new Error("unavailable")
+      const sessions = await response.json()
+      api.ui.dialog.replace(() => <api.ui.DialogSelect title="IVOAI Session Control — current project" options={(Array.isArray(sessions)?sessions:[]).slice(0,128).map((s:any)=>({
+        title:`${clean(s.id).slice(0,17)} · ${clean(s.primary)} · ${clean(s.state)}`,value:s,
+        description:s.resumable ? "Resume same logical session / native OpenCode conversation" : "Use IVOAI Session Control for explicit mode switch or provider handoff", disabled:!s.resumable,
+      }))} onSelect={(option:any)=> {
+        const s=option.value
+        api.ui.dialog.replace(()=><api.ui.DialogConfirm title="Resume conversation" message="Switch to this existing IVOAI session? No previous turn is replayed; new input remains gated." onCancel={()=>api.ui.dialog.clear()} onConfirm={()=>{
+          void fetch(options.bridge+"/console/resume",{method:"POST",headers:{Authorization:"Bearer "+options.token,"Content-Type":"application/json"},body:JSON.stringify({id:s.id,confirm:true}),signal:AbortSignal.timeout(5000)})
+          .then(async r=>{if(!r.ok)throw new Error("unavailable");const body=await r.json();api.ui.dialog.clear();api.route.navigate("session",{sessionID:body.native_id})})
+          .catch(()=>api.ui.toast({title:"IVOAI",message:"Cannot resume while a turn is active or ownership is unavailable",variant:"error"}))
+        }}/>)
+      }}/>)
+    } catch { api.ui.toast({title:"IVOAI",message:"Session catalog unavailable",variant:"error"}) }
+  }
+  const loadCatalog = async () => {
+    try {
+      const response = await fetch(options.bridge + "/console/catalog", {headers:{Authorization:"Bearer " + options.token}, signal:AbortSignal.timeout(2000)})
+      if (!response.ok) throw new Error("unavailable")
+      const body = await response.json()
+      setCatalog(Array.isArray(body.models) ? body.models.slice(0,256) : [])
+      api.ui.dialog.setSize("large")
+      api.ui.dialog.replace(() => <scrollbox maxHeight={Math.max(8,api.renderer.height-8)}><Rows rows={catalog().flatMap((model:any) => [
+        {text:`${clean(model.name)} · provider=${clean(model.executor,"scheduler")} · source=${clean(model.model_source)}`,role:"text"},
+        {text:`  reasoning=${(Array.isArray(model.supported_efforts) ? model.supported_efforts : []).map((x:any)=>clean(x)).join(", ") || "not exposed"} · admission revalidates availability/quota`,role:"muted"},
+      ])}/></scrollbox>)
+    } catch { api.ui.toast({title:"IVOAI",message:"Model catalog unavailable",variant:"error"}) }
+  }
+  const confirmAction = (action:string, message:string) => {
+    api.ui.dialog.replace(() => <api.ui.DialogConfirm title="IVOAI control plane" message={message} onCancel={() => api.ui.dialog.clear()} onConfirm={() => {
+      api.ui.dialog.clear()
+      void fetch(options.bridge + "/console/action", {method:"POST",headers:{Authorization:"Bearer " + options.token,"Content-Type":"application/json"},body:JSON.stringify({action,confirm:true}),signal:AbortSignal.timeout(15000)})
+        .then(response => { if (!response.ok) throw new Error("failed"); api.ui.toast({title:"IVOAI",message:action.startsWith("profile.") ? "Profile saved for the next session" : "Owned hook wiring validated",variant:"success"}) })
+        .catch(() => api.ui.toast({title:"IVOAI",message:"Action failed; inspect IVOAI status",variant:"error"}))
+    }}/>)
+  }
   let stopped = false
   let timer: ReturnType<typeof setTimeout> | undefined
   let permissionDialog = false
@@ -55,7 +95,7 @@ const tui = async (api: any, options: any) => {
     } catch {
       setStatus((value: any) => ({ ...value, session_state: "stale" }))
     } finally {
-      if (!stopped) timer = setTimeout(refresh, 5000)
+      if (!stopped) timer = setTimeout(refresh, 1000)
     }
   }
   void refresh()
@@ -123,9 +163,11 @@ const tui = async (api: any, options: any) => {
   )
   const Servers = () => <Rows rows={servers(status())} />
   const Panel = () => (
+    <scrollbox maxHeight={Math.max(8, api.renderer.height - 8)}>
     <box flexDirection="column" gap={0} padding={1}>
       <Rows rows={panel(status())} />
     </box>
+    </scrollbox>
   )
 
   api.slots.register({
@@ -149,6 +191,17 @@ const tui = async (api: any, options: any) => {
       api.ui.dialog.setSize("large")
       api.ui.dialog.replace(() => <Panel />)
     },
+  }, {
+    title:"IVOAI Session Control",value:"ivoai.sessions",category:"IVOAI",slash:{name:"ivoai-sessions"},onSelect:sessionControl,
+  }, {
+    title:"IVOAI runtime model catalog",value:"ivoai.catalog",category:"IVOAI",slash:{name:"ivoai-models"},onSelect:loadCatalog,
+  }, ...["economic","balanced","quality","custom"].map(name => ({
+    title:`IVOAI automation profile: ${name}`,value:`ivoai.profile.${name}`,category:"IVOAI",slash:{name:`ivoai-profile-${name}`},
+    onSelect:()=>confirmAction(`profile.${name}`, name === "custom" ? "Keep current policies as custom? Edit individual policies from the IVOAI Orchestration Policies menu." : `Apply ${name} to the next session? Preserves explicit provider/model overrides and security gates; resets plan approval to required. Current workers are unchanged.`),
+  })), {
+    title:"IVOAI validate memory hooks",value:"ivoai.hooks.validate",category:"IVOAI",onSelect:()=>confirmAction("hooks.validate","Validate IVOAI-owned hook wiring without running lifecycle hooks?"),
+  }, {
+    title:"IVOAI repair owned memory hooks",value:"ivoai.hooks.repair",category:"IVOAI",onSelect:()=>confirmAction("hooks.repair","Repair only proven IVOAI-owned wiring? Personal hooks are preserved. No lifecycle hook will be executed."),
   }])
 }
 

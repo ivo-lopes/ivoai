@@ -15,6 +15,7 @@ import (
 	"fmt"
 	"github.com/ivo-lopes/ivoai/internal/promptgate"
 	"github.com/ivo-lopes/ivoai/internal/quota"
+	"github.com/ivo-lopes/ivoai/internal/session"
 	"io"
 	"net"
 	"net/http"
@@ -92,54 +93,57 @@ type ServerView struct {
 }
 
 type Status struct {
-	KnowledgePolicy       string       `json:"knowledge_policy,omitempty"`
-	ConcurrencyPolicy     string       `json:"concurrency_policy,omitempty"`
-	ConcurrencyLimit      int          `json:"concurrency_limit,omitempty"`
-	WorkerCap             int          `json:"worker_cap,omitempty"`
-	Workers               []WorkerView `json:"workers,omitempty"`
-	QuotaMode             string       `json:"quota_mode,omitempty"`
-	ParallelWriteDegraded bool         `json:"parallel_write_degraded,omitempty"`
-	PlanState             string       `json:"plan_state,omitempty"`
-	TaskCount             int          `json:"task_count,omitempty"`
-	WorkersActive         int          `json:"workers_active,omitempty"`
-	WorkersQueued         int          `json:"workers_queued,omitempty"`
-	WorkersDone           int          `json:"workers_done,omitempty"`
-	PromptReadiness       string       `json:"prompt_readiness,omitempty"`
-	PromptMissing         []string     `json:"prompt_missing,omitempty"`
-	ResumePolicy          string       `json:"resume_policy,omitempty"`
-	PermissionMode        string       `json:"permission_mode"`
-	Version               string       `json:"version"`
-	SessionID             string       `json:"session_id"`
-	Frontend              string       `json:"frontend"`
-	OrchestrationMode     string       `json:"orchestration_mode,omitempty"`
-	PrimaryProvider       string       `json:"primary_provider,omitempty"`
-	Primary               string       `json:"primary"`
-	SelectionMode         string       `json:"selection_mode,omitempty"`
-	RequestedExecutor     string       `json:"requested_executor,omitempty"`
-	RequestedEffort       string       `json:"requested_effort,omitempty"`
-	RequestedModel        string       `json:"requested_model,omitempty"`
-	EffectiveModel        string       `json:"effective_model,omitempty"`
-	EffectiveEffort       string       `json:"effective_effort,omitempty"`
-	ConfigurationSource   string       `json:"configuration_source,omitempty"`
-	Mode                  string       `json:"mode"`
-	SessionState          string       `json:"session_state"`
-	KnowledgeMode         string       `json:"knowledge_mode"`
-	ConfiguredCount       int          `json:"configured_count"`
-	EnabledCount          int          `json:"enabled_count"`
-	ConnectedCount        int          `json:"connected_count"`
-	SelectedCount         int          `json:"selected_count"`
-	Servers               []ServerView `json:"servers"`
-	CodexAuth             string       `json:"codex_auth"`
-	ClaudeAuth            string       `json:"claude_auth"`
-	CodexQuota            string       `json:"codex_quota"`
-	ClaudeQuota           string       `json:"claude_quota"`
-	OpenCodeAuth          string       `json:"opencode_auth"`
-	OpenCodeQuota         string       `json:"opencode_quota"`
-	Compression           string       `json:"compression"`
-	Memory                string       `json:"memory"`
-	Context               string       `json:"context"`
-	Skills                string       `json:"skills"`
-	UpdatedAt             time.Time    `json:"updated_at"`
+	Console               *session.ConsoleSnapshot `json:"console,omitempty"`
+	AutomationProfile     string                   `json:"automation_profile,omitempty"`
+	HookHealth            map[string]string        `json:"hook_health,omitempty"`
+	KnowledgePolicy       string                   `json:"knowledge_policy,omitempty"`
+	ConcurrencyPolicy     string                   `json:"concurrency_policy,omitempty"`
+	ConcurrencyLimit      int                      `json:"concurrency_limit,omitempty"`
+	WorkerCap             int                      `json:"worker_cap,omitempty"`
+	Workers               []WorkerView             `json:"workers,omitempty"`
+	QuotaMode             string                   `json:"quota_mode,omitempty"`
+	ParallelWriteDegraded bool                     `json:"parallel_write_degraded,omitempty"`
+	PlanState             string                   `json:"plan_state,omitempty"`
+	TaskCount             int                      `json:"task_count,omitempty"`
+	WorkersActive         int                      `json:"workers_active,omitempty"`
+	WorkersQueued         int                      `json:"workers_queued,omitempty"`
+	WorkersDone           int                      `json:"workers_done,omitempty"`
+	PromptReadiness       string                   `json:"prompt_readiness,omitempty"`
+	PromptMissing         []string                 `json:"prompt_missing,omitempty"`
+	ResumePolicy          string                   `json:"resume_policy,omitempty"`
+	PermissionMode        string                   `json:"permission_mode"`
+	Version               string                   `json:"version"`
+	SessionID             string                   `json:"session_id"`
+	Frontend              string                   `json:"frontend"`
+	OrchestrationMode     string                   `json:"orchestration_mode,omitempty"`
+	PrimaryProvider       string                   `json:"primary_provider,omitempty"`
+	Primary               string                   `json:"primary"`
+	SelectionMode         string                   `json:"selection_mode,omitempty"`
+	RequestedExecutor     string                   `json:"requested_executor,omitempty"`
+	RequestedEffort       string                   `json:"requested_effort,omitempty"`
+	RequestedModel        string                   `json:"requested_model,omitempty"`
+	EffectiveModel        string                   `json:"effective_model,omitempty"`
+	EffectiveEffort       string                   `json:"effective_effort,omitempty"`
+	ConfigurationSource   string                   `json:"configuration_source,omitempty"`
+	Mode                  string                   `json:"mode"`
+	SessionState          string                   `json:"session_state"`
+	KnowledgeMode         string                   `json:"knowledge_mode"`
+	ConfiguredCount       int                      `json:"configured_count"`
+	EnabledCount          int                      `json:"enabled_count"`
+	ConnectedCount        int                      `json:"connected_count"`
+	SelectedCount         int                      `json:"selected_count"`
+	Servers               []ServerView             `json:"servers"`
+	CodexAuth             string                   `json:"codex_auth"`
+	ClaudeAuth            string                   `json:"claude_auth"`
+	CodexQuota            string                   `json:"codex_quota"`
+	ClaudeQuota           string                   `json:"claude_quota"`
+	OpenCodeAuth          string                   `json:"opencode_auth"`
+	OpenCodeQuota         string                   `json:"opencode_quota"`
+	Compression           string                   `json:"compression"`
+	Memory                string                   `json:"memory"`
+	Context               string                   `json:"context"`
+	Skills                string                   `json:"skills"`
+	UpdatedAt             time.Time                `json:"updated_at"`
 }
 
 // WorkerView intentionally excludes task prompts, transcripts, result bodies,
@@ -158,8 +162,11 @@ type WorkerView struct {
 }
 
 type Options struct {
-	InitialModel  string
-	InitialEffort string
+	ObservePromptGate func(bool)
+	ConsoleSessions   func() []ConsoleSession
+	ConsoleAction     func(context.Context, string) error
+	InitialModel      string
+	InitialEffort     string
 	// Frontend is trusted session metadata, never inferred from the executor.
 	Frontend string
 	// RequirePromptGate is always enabled by AUTO. Direct executor sessions keep
@@ -190,6 +197,9 @@ type Options struct {
 }
 
 type Bridge struct {
+	observePromptGate     func(bool)
+	consoleSessions       func() []ConsoleSession
+	consoleAction         func(context.Context, string) error
 	initialModel          string
 	initialEffort         string
 	frontend              string
@@ -279,7 +289,14 @@ func Start(options Options) (*Bridge, error) {
 	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", bridge.authorize(bridge.health))
+	bridge.consoleAction = options.ConsoleAction
+	bridge.observePromptGate = options.ObservePromptGate
+	bridge.consoleSessions = options.ConsoleSessions
+	mux.HandleFunc("GET /console/sessions", bridge.authorize(bridge.consoleSessionList))
+	mux.HandleFunc("POST /console/resume", bridge.authorize(bridge.consoleResume))
 	mux.HandleFunc("GET /status", bridge.authorize(bridge.status))
+	mux.HandleFunc("GET /console/catalog", bridge.authorize(bridge.consoleCatalog))
+	mux.HandleFunc("POST /console/action", bridge.authorize(bridge.consoleAct))
 	mux.HandleFunc("GET /native-permissions", bridge.authorize(bridge.nativePermissionList))
 	mux.HandleFunc("POST /native-permissions/reply", bridge.authorize(bridge.nativePermissionReply))
 	mux.HandleFunc("GET /v1/models", bridge.authorize(bridge.models))
@@ -440,6 +457,9 @@ func (b *Bridge) chat(w http.ResponseWriter, r *http.Request) {
 	}
 	if b.requirePromptGate {
 		readiness := promptgate.Assess(prompt)
+		if b.observePromptGate != nil {
+			b.observePromptGate(readiness.Ready)
+		}
 		b.mu.Lock()
 		b.promptReadiness = readiness
 		b.mu.Unlock()

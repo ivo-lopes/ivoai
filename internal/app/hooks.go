@@ -2,6 +2,7 @@ package app
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -16,6 +17,9 @@ func (a *App) HookHealth(repair bool) ([]memory.HookHealth, error) {
 }
 
 func (a *App) hookHealth(repair bool, previous []string) ([]memory.HookHealth, error) {
+	if a.Store == nil {
+		return nil, errors.New("hook state unavailable")
+	}
 	state, err := a.Store.LoadState()
 	if err != nil {
 		return nil, err

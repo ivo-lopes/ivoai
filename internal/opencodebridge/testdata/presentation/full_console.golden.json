@@ -1,0 +1,178 @@
+{
+  "logo": [
+    "IVOAI",
+    "OpenCode frontend · IVOAI control plane"
+  ],
+  "panel": [
+    {
+      "text": "IVOAI",
+      "role": "identity"
+    },
+    {
+      "text": "Session",
+      "role": "heading"
+    },
+    {
+      "text": "Automation profile: quality",
+      "role": "muted"
+    },
+    {
+      "text": "Model source: not yet resolved · no silent unavailable-model fallback",
+      "role": "muted"
+    },
+    {
+      "text": "Continuity: checkpoint available · events=3",
+      "role": "muted"
+    },
+    {
+      "text": "DAG task-b · running · after=task-a",
+      "role": "muted"
+    },
+    {
+      "text": "  Worktree=isolated",
+      "role": "muted"
+    },
+    {
+      "text": "  Grant plane: read_tool",
+      "role": "muted"
+    },
+    {
+      "text": "Event 3: worker.lifecycle · running · task-b",
+      "role": "muted"
+    },
+    {
+      "text": "Memory hooks codex: healthy",
+      "role": "text"
+    },
+    {
+      "text": "! Memory hooks claude-code: degraded",
+      "role": "warning"
+    },
+    {
+      "text": "Permissions: interactive",
+      "role": "muted"
+    },
+    {
+      "text": "Resume: fresh native turn; identity unverified",
+      "role": "muted"
+    },
+    {
+      "text": "frontend=opencode · primary=codex · state=running",
+      "role": "muted"
+    },
+    {
+      "text": "mode=auto · requested=automatic · model=fixture-model · reasoning=high",
+      "role": "muted"
+    },
+    {
+      "text": "Executors",
+      "role": "heading"
+    },
+    {
+      "text": "✓ Codex authenticated · quota=available",
+      "role": "muted"
+    },
+    {
+      "text": "! Claude not configured · quota=N/A",
+      "role": "muted"
+    },
+    {
+      "text": "✓ OpenCode authenticated · quota=unknown",
+      "role": "muted"
+    },
+    {
+      "text": "IVOAI knowledge",
+      "role": "heading"
+    },
+    {
+      "text": "2 connected / 2 configured · federated",
+      "role": "muted"
+    },
+    {
+      "text": "✓ source-A",
+      "role": "text"
+    },
+    {
+      "text": "  purpose=source-A · enabled",
+      "role": "muted"
+    },
+    {
+      "text": "  healthy · session=selected",
+      "role": "muted"
+    },
+    {
+      "text": "  auth=authenticated",
+      "role": "muted"
+    },
+    {
+      "text": "✓ source-B",
+      "role": "text"
+    },
+    {
+      "text": "  purpose=source-B · enabled",
+      "role": "muted"
+    },
+    {
+      "text": "  healthy · session=selected",
+      "role": "muted"
+    },
+    {
+      "text": "  auth=authenticated",
+      "role": "muted"
+    },
+    {
+      "text": "Runtime",
+      "role": "heading"
+    },
+    {
+      "text": "compression=direct · memory=ready · context=ready",
+      "role": "muted"
+    },
+    {
+      "text": "skills=policy-gated · IVOAI fixture",
+      "role": "muted"
+    }
+  ],
+  "sidebar": [
+    {
+      "text": "IVOAI knowledge",
+      "role": "heading"
+    },
+    {
+      "text": "2 connected / 2 configured · federated",
+      "role": "muted"
+    },
+    {
+      "text": "✓ source-A",
+      "role": "text"
+    },
+    {
+      "text": "  purpose=source-A · enabled",
+      "role": "muted"
+    },
+    {
+      "text": "  healthy · session=selected",
+      "role": "muted"
+    },
+    {
+      "text": "  auth=authenticated",
+      "role": "muted"
+    },
+    {
+      "text": "✓ source-B",
+      "role": "text"
+    },
+    {
+      "text": "  purpose=source-B · enabled",
+      "role": "muted"
+    },
+    {
+      "text": "  healthy · session=selected",
+      "role": "muted"
+    },
+    {
+      "text": "  auth=authenticated",
+      "role": "muted"
+    }
+  ]
+}

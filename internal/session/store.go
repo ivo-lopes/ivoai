@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/ivo-lopes/ivoai/internal/externalmcp"
+	"github.com/ivo-lopes/ivoai/internal/observability"
 	"github.com/ivo-lopes/ivoai/internal/platform"
 	"github.com/ivo-lopes/ivoai/internal/quota"
 	"github.com/ivo-lopes/ivoai/internal/workingcontext"
@@ -53,6 +54,11 @@ func (s Store) Create(value Session) error {
 			return errors.New("session already exists")
 		} else if !errors.Is(err, fs.ErrNotExist) {
 			return err
+		}
+		if value.Lineage != nil {
+			if err := AppendObservation(&value, observability.Event{Category: observability.CategoryOrchestration, Operation: observability.OperationHandoff, State: observability.StateSelected}); err != nil {
+				return err
+			}
 		}
 		return s.write(value)
 	})
@@ -94,7 +100,15 @@ func (s Store) Update(id string, mutate func(*Session) error) (Session, error) {
 		if err != nil {
 			return err
 		}
+		previousState, previousFrontend, previousModel := value.State, value.Frontend, value.EffectiveModel
+		previousWorktrees, previousIntegrated := consoleWorktreeCounts(value)
 		if err := mutate(&value); err != nil {
+			return err
+		}
+		if err := appendConsoleTransitions(&value, previousState, previousFrontend, previousModel); err != nil {
+			return err
+		}
+		if err := appendWorktreeTransitions(&value, previousWorktrees, previousIntegrated); err != nil {
 			return err
 		}
 		value.UpdatedAt = time.Now().UTC()

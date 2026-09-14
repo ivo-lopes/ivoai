@@ -295,7 +295,19 @@ func (a *App) openCodeAutoStatus(store session.Store, id string, cfg config.Conf
 			doneWorkers++
 		}
 	}
+	console := value.ConsoleSnapshot()
+	hookStates := map[string]string{"codex": "not-configured", "claude-code": "not-configured"}
+	if hooks, err := a.HookHealth(false); err == nil {
+		for _, hook := range hooks {
+			if hookStates[hook.Agent] != "degraded" {
+				hookStates[hook.Agent] = hook.State
+			}
+		}
+	} else {
+		hookStates["codex"], hookStates["claude-code"] = "unknown", "unknown"
+	}
 	return opencodebridge.Status{
+		Console: &console, AutomationProfile: cfg.Orchestration.Auto.ResolvedAutomationProfile(), HookHealth: hookStates,
 		OrchestrationMode: "orchestrated", PrimaryProvider: value.PrimaryExecutor,
 		KnowledgePolicy: cfg.Orchestration.Auto.ResolvedKnowledgeRouting(), ConcurrencyPolicy: cfg.Orchestration.Auto.ResolvedConcurrency(), ConcurrencyLimit: value.ConcurrencyLimit, WorkerCap: cfg.Orchestration.Auto.WorkerCap, Workers: workerViews,
 		QuotaMode:             value.QuotaMode,
@@ -714,6 +726,60 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 		return runner.Run(turnCtx, request, emit)
 	})
 	bridge, err := opencodebridge.Start(opencodebridge.Options{
+		ObservePromptGate: func(ready bool) {
+			_, _ = store.Update(currentID(), func(v *session.Session) error {
+				state := observability.StateDenied
+				if ready {
+					state = observability.StateAllowed
+				}
+				return session.AppendObservation(v, observability.Event{Category: observability.CategoryOrchestration, Operation: observability.OperationPromptGate, State: state})
+			})
+		},
+		ConsoleSessions: func() []opencodebridge.ConsoleSession {
+			values, err := store.List()
+			if err != nil {
+				return nil
+			}
+			result := []opencodebridge.ConsoleSession{}
+			for _, v := range values {
+				if v.WorkingDirectory != cwd {
+					continue
+				}
+				nativeID := v.FrontendSessions[frontendName]
+				if v.Frontend == frontendName {
+					nativeID = v.FrontendSessionID
+				}
+				result = append(result, opencodebridge.ConsoleSession{ID: v.SessionID, NativeID: nativeID, Primary: v.PrimaryExecutor, Mode: string(v.Mode), State: string(v.State), Resumable: nativeID != "" && v.Mode == session.ModeAuto && v.Coordinator == "native" && v.PrimaryExecutor == current})
+			}
+			return result
+		},
+		ConsoleAction: func(_ context.Context, action string) error {
+			if strings.HasPrefix(action, "profile.") {
+				return a.ConfigSet("orchestration.auto.automation_profile", strings.TrimPrefix(action, "profile."))
+			}
+			if action == "hooks.validate" || action == "hooks.repair" {
+				hooks, err := a.HookHealth(action == "hooks.repair")
+				if err != nil {
+					return err
+				}
+				if len(hooks) == 0 {
+					return errors.New("owned hooks unavailable")
+				}
+				for _, hook := range hooks {
+					if hook.State != "healthy" {
+						_, _ = store.Update(currentID(), func(v *session.Session) error {
+							return session.AppendObservation(v, observability.Event{Category: observability.CategoryMemory, Operation: observability.OperationHookHealth, State: observability.StateDegraded})
+						})
+						return errors.New("owned hooks degraded")
+					}
+				}
+				_, _ = store.Update(currentID(), func(v *session.Session) error {
+					return session.AppendObservation(v, observability.Event{Category: observability.CategoryMemory, Operation: observability.OperationHookHealth, State: observability.StateCompleted})
+				})
+				return nil
+			}
+			return errors.New("unsupported console action")
+		},
 		SelectConversation: binding.Select,
 		Frontend:           frontendName, InitialModel: initialModel, InitialEffort: initialEffort,
 		RequirePromptGate: true,
