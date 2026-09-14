@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="generator" content="Docusaurus v3.10.2">
 <title data-rh="true">Frontends orquestrados | IVOAI</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="http://localhost:7780/pt-BR/docs/next/orchestrated-frontends"><meta data-rh="true" property="og:locale" content="pt_BR"><meta data-rh="true" property="og:locale:alternate" content="en_US"><meta data-rh="true" name="docusaurus_locale" content="pt-BR"><meta data-rh="true" name="docsearch:language" content="pt-BR"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="Frontends orquestrados | IVOAI"><meta data-rh="true" name="description" content="Comandos"><meta data-rh="true" property="og:description" content="Comandos"><link data-rh="true" rel="icon" href="/pt-BR/img/favicon.svg"><link data-rh="true" rel="canonical" href="http://localhost:7780/pt-BR/docs/next/orchestrated-frontends"><link data-rh="true" rel="alternate" href="http://localhost:7780/docs/next/orchestrated-frontends" hreflang="en-US"><link data-rh="true" rel="alternate" href="http://localhost:7780/pt-BR/docs/next/orchestrated-frontends" hreflang="pt-BR"><link data-rh="true" rel="alternate" href="http://localhost:7780/docs/next/orchestrated-frontends" hreflang="x-default"><link rel="stylesheet" href="/pt-BR/assets/css/styles.92d12545.css">
-<script src="/pt-BR/assets/js/runtime~main.14867957.js" defer="defer"></script>
-<script src="/pt-BR/assets/js/main.9bcac026.js" defer="defer"></script>
+<script src="/pt-BR/assets/js/runtime~main.ae431afc.js" defer="defer"></script>
+<script src="/pt-BR/assets/js/main.aeeae7b6.js" defer="defer"></script>
 </head>
 <body>
 <svg style="display: none;"><defs>
@@ -33,9 +33,10 @@ steering, escrita de configuração e métodos desconhecidos não contornam o ga
 Use <code>--direct</code> para essas operações upstream fora da orquestração.</p>
 <p>Codex 0.153.4 e 0.154.0 foram testados. O transporte App Server é experimental no
 upstream; a integração local é pinada e testada. O frontend usa um Codex home
-efêmero, sem copiar credenciais. Workers mantêm autenticação oficial. Navegação
-da conversa funciona durante a sessão; resume/fork persistentes e alterações de
-configuração global não são expostos pela façade. IVOAI guarda metadados
+privado e persistente por projeto, sem copiar credenciais. Workers mantêm
+autenticação oficial. O picker nativo <code>/resume</code> e <code>ivoai session resume</code> usam os
+mesmos mappings de <a class="" href="/pt-BR/docs/next/conversation-continuity">continuidade</a>. Alterações de
+configuração global não são expostas pela façade. IVOAI guarda metadados
 sanitizados, não um segundo store de transcripts.</p>
 <p>Prompt insuficiente não inicia worker nem execução substantiva. Critérios de aceite
 são obrigatórios nos dois frontends. Full não aprova planos. Immediate start

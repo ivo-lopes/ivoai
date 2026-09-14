@@ -35,6 +35,9 @@ Usage:
   ivoai auto [--planner codex|claude|opencode] [--knowledge-source <alias|purpose>] [-- agent arguments...]
   ivoai session start --executor <codex|claude|opencode> --mode <direct|orchestrated> [--knowledge-source <alias|purpose>] [-- agent arguments...]
   ivoai session list [--json] | show [--json] <id> | stop <id>
+  ivoai session resume <id> [--frontend codex|opencode]
+  ivoai session recover <id>
+  ivoai session handoff <id> --to codex|claude --confirm
   ivoai monitor [--watch] [--session <id>] [--json]
   ivoai memory [status|configure]
   ivoai skills list | show <source-id> | doctor

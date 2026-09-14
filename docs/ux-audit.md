@@ -94,6 +94,7 @@ launch.codex launch.claude launch.opencode
 memory.status memory.configure
 session.direct.codex session.direct.claude session.direct.opencode session.orchestrated.codex session.orchestrated.claude
 session.list session.monitor session.stop
+session.continuity
 project.status project.init
 config.show config.headroom config.memory config.ruflo config.auto config.auto-planner config.auto-failover config.auto-checkpoint
 config.auto-strategy config.auto-parallel config.auto-bootstrap config.auto-escalation config.session-mode config.primary config.reviewer config.workers

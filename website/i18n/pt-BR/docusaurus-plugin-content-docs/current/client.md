@@ -172,14 +172,18 @@ ivoai session start --executor codex --mode direct
 ivoai session start --executor claude --mode orchestrated
 ivoai session list --json
 ivoai session show --json <session-id>
+ivoai session resume <session-id>
+ivoai session recover <session-id>
+ivoai session handoff <session-id> --to claude --confirm
 ivoai session stop <session-id>
 ivoai monitor --watch
 ```
 
-Sessões Direct adicionam metadata e monitoramento, mas não inicializam Ruflo. Sessões orquestradas
-exigem profile seguro do Ruflo verificado, inicializam e verificam um swarm real, registram o primary
-e injetam o MCP `ivoai-orchestrator` local. O MCP delega tarefas limitadas aos modos não interativos
-oficiais Codex/Claude. O default são dois workers concorrentes e o máximo rígido são três.
+Sessões Direct adicionam metadata e monitoramento. `ivoai codex` e `ivoai opencode`
+usam o DAG nativo, approval e concorrência automática comuns. O modo legado Ruflo
+permanece separado. [Conversation Continuity](conversation-continuity.md) oferece
+`session resume`, `session recover` e `session handoff --to <provider> --confirm`,
+também disponíveis no Session Control da TUI, sem converter direct em orchestrated.
 
 O JSON da sessão é estado XDG privado e não contém prompt, response ou credencial. A saída do modelo
 é rotulada `runtime_verified`, `argument`, `configured` ou `unknown`; o último valor é usado

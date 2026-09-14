@@ -173,9 +173,10 @@ secret-free summary after materially completed work. It contains objective,
 decisions, completed work, changed file names, important checks, outstanding work,
 blockers, and next step. It never contains the complete prompt, response, transcript,
 credential, header, or provider auth response. Secret-shaped content and terminal
-control bytes are rejected. The private runtime checkpoint gives the supervisor an
-immediate failover boundary; normal ai-memory hooks provide durable operational
-continuity around the same official agent session.
+control bytes are rejected. The bounded private checkpoint survives runtime
+cleanup. [Conversation continuity](conversation-continuity.md) distinguishes native
+reopen, approved interrupted-DAG recovery and explicit cross-provider handoff.
+This journal does not replace Memory/Context or provider-owned native history.
 
 If the active provider reports a hard subscription limit, the supervisor:
 

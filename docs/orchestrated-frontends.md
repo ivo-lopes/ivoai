@@ -40,11 +40,12 @@ upstream operations outside orchestration.
 
 Codex 0.153.4 and 0.154.0 are tested. App Server transport is upstream-experimental;
 the supported local protocol is pinned and tested, not an invented TUI API.
-The frontend uses an ephemeral Codex home without copying account credentials.
-Worker authentication stays with the official executors. Native conversation
-navigation works within the session; persistent upstream resume/fork and global
-settings changes are not exposed by this façade. IVOAI keeps sanitized session
-and turn metadata, not a second transcript store.
+The frontend uses a private project-scoped Codex home without copying account
+credentials or personal configuration. Native `/resume` and the official picker
+share IVOAI's stable session mappings with `ivoai session resume`. Provider-owned
+history survives restart; IVOAI keeps a bounded continuity journal, not a second
+transcript store. Global configuration mutation and arbitrary thread import/fork
+remain outside this façade. See [Conversation continuity](conversation-continuity.md).
 
 Prompt rejection starts no worker and no substantive executor turn. Acceptance
 criteria are mandatory in both orchestrated frontends. Full OpenCode permissions

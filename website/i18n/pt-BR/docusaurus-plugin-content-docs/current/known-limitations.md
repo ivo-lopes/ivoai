@@ -11,6 +11,8 @@
 - OpenViking e NativeOrchestrator v2 são trabalhos futuros e não são os defaults.
 - O Ruflo permanece como orquestrador de ciclo de vida limitado nos modos orquestrados atuais.
 - O Headroom permanece disponível para compatibilidade e rollback.
-- Conversation Continuity e a TUI completa do monitor continuam planejadas.
+- [Conversation Continuity](conversation-continuity.md) oferece retomada nativa,
+  recovery limitado e handoff explícito. Históricos já apagados não são recriados.
+  A Full Console continua planejada para v0.10.4.
 - O MCP Web remoto exige uma origem HTTPS publicamente acessível ou o túnel seguro
   compatível da plataforma.
