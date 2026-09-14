@@ -237,6 +237,9 @@ func (a *App) Setup(ctx context.Context) error {
 		}
 	}
 	state.SetupCompletedAt = time.Now().UTC()
+	if cfg.Memory.Enabled {
+		a.preflightMemoryHooks()
+	}
 	if err := a.Store.SaveState(state); err != nil {
 		return err
 	}

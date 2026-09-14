@@ -48,6 +48,30 @@ func TestTransactionalUpdateCommitRollbackAndUpdateAgain(t *testing.T) {
 	}
 }
 
+func TestHookInstallerCredentialExcludedDuringUpdateRollbackReapply(t *testing.T) {
+	t.Setenv("AI_MEMORY_AUTH_TOKEN", "ambient-hook-canary")
+	a, _, executable := transactionUpdateFixture(t, false)
+	old, err := os.ReadFile(executable)
+	if err != nil {
+		t.Fatal(err)
+	}
+	old = bytes.Replace(old, []byte("*) exit 0;;"), []byte("setup) test -z \"$AI_MEMORY_AUTH_TOKEN\";; *) exit 0;;"), 1)
+	if err := os.WriteFile(executable, old, 0755); err != nil {
+		t.Fatal(err)
+	}
+	candidate := bytes.Replace(candidateScript("0.6.0", false), []byte("setup) exit 0 ;;"), []byte("setup) test -z \"$AI_MEMORY_AUTH_TOKEN\" ;;"), 1)
+	checker := checkerForCandidate(t, candidate)
+	if err := a.transactionalUpdate(context.Background(), checker); err != nil {
+		t.Fatal(err)
+	}
+	if err := a.transactionalRollback(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if err := a.transactionalUpdate(context.Background(), checker); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestTransactionalUpdateAutoRollsBackFailedDoctor(t *testing.T) {
 	a, checker, executable := transactionUpdateFixture(t, true)
 	original, _ := os.ReadFile(executable)

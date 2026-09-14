@@ -218,7 +218,7 @@ func (a *App) transactionalUpdateMode(ctx context.Context, checker update.Checke
 		return fail("record migrations", err)
 	}
 	setupArgs, doctorArgs := updateModeCommands(updateCtx.mode)
-	if _, err := a.Runner.Run(ctx, executable, setupArgs, platform.RunOptions{Stderr: a.Err, Timeout: 30 * time.Minute, ParentDeathSignal: true}); err != nil {
+	if _, err := a.Runner.Run(ctx, executable, setupArgs, platform.RunOptions{Env: []string{"AI_MEMORY_AUTH_TOKEN="}, Stderr: a.Err, Timeout: 30 * time.Minute, ParentDeathSignal: true}); err != nil {
 		return fail("candidate setup", err)
 	}
 	if err := tx.MarkVerifying(); err != nil {
@@ -285,7 +285,7 @@ func (a *App) reconcileRollbackRuntime(executable, mode string) error {
 	setupArgs, doctorArgs := updateModeCommands(mode)
 	ctx, cancel := context.WithTimeout(context.Background(), 31*time.Minute)
 	defer cancel()
-	if _, err := a.Runner.Run(ctx, executable, setupArgs, platform.RunOptions{Stderr: a.Err, Timeout: 30 * time.Minute, ParentDeathSignal: true}); err != nil {
+	if _, err := a.Runner.Run(ctx, executable, setupArgs, platform.RunOptions{Env: []string{"AI_MEMORY_AUTH_TOKEN="}, Stderr: a.Err, Timeout: 30 * time.Minute, ParentDeathSignal: true}); err != nil {
 		return fmt.Errorf("restore %s runtime: %w", mode, err)
 	}
 	if _, err := a.Runner.Run(ctx, executable, doctorArgs, platform.RunOptions{Stderr: a.Err, Timeout: time.Minute, ParentDeathSignal: true}); err != nil {
