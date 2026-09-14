@@ -454,6 +454,9 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 	defer binding.Close()
 	currentID := binding.ID
 	manager := a.automaticQuotaManager(cfg, state)
+	// Legacy or newly created picker conversations may not have a snapshot.
+	// Resume always probes current quota instead of restoring historical truth.
+	value.Quota = map[quota.Provider]quota.ProviderQuota{}
 	native := a.nativeOpenCode(cfg, state, cwd, filepath.Join(a.Store.Paths.CacheDir, "native-discovery", currentID()), nil, false)
 	if native != nil && manager.Probes[quota.ProviderOpenCode] == nil {
 		manager.Probes[quota.ProviderOpenCode] = native
