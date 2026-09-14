@@ -29,15 +29,32 @@ func TestLiveManagedOpenCodeResizeKeyboard(t *testing.T) {
 	defer cancel()
 	runner := &fakeRunner{result: ExecutorResult{ExecutorSessionID: "thread_keyboard"}}
 	consoleActions := make(chan string, 4)
+	consoleResumes := make(chan string, 4)
 	responseText := "bridge ok"
 	if os.Getenv("IVOAI_LIVE_OPENCODE_COPY") == "multiline" {
 		responseText = "bridge ok\nsecond logical line\n\n```go\nfmt.Println(\"fixture\")\n```\n\n" + strings.TrimSpace(strings.Repeat("wrapped fixture ", 24))
 		runner.text = responseText
 	}
 	catalog := CatalogFromRegistry(routing.Registry{Providers: map[string]routing.ProviderCapability{"codex": {Provider: "codex", Authenticated: true, Models: []routing.ModelCapability{{Name: "fixture-model", DisplayName: "Fixture model", SupportedEfforts: []string{"low", "high"}, DefaultEffort: "high", Source: routing.SourceRuntimeVerified}}}}})
-	bridge, err := Start(Options{ConsoleAction: func(_ context.Context, action string) error { consoleActions <- action; return nil }, Runner: runner, Catalog: catalog, Select: func(context.Context, string) (string, error) { return "codex", nil }, Status: func() Status {
-		return Status{Frontend: "opencode", PermissionMode: "full", KnowledgeMode: "restricted", ConfiguredCount: 2, ConnectedCount: 1, Servers: []ServerView{{Alias: "source-A", Purpose: "fixture", Enabled: true, Selected: true, Health: "healthy"}, {Alias: "source-B", Enabled: true, Health: "down"}}, Memory: "ready", Context: "ready", CodexAuth: "authenticated", ClaudeAuth: "not-configured"}
-	}})
+	bridge, err := Start(Options{
+		ConsoleSessions: func() []ConsoleSession {
+			runner.mu.Lock()
+			defer runner.mu.Unlock()
+			if len(runner.requests) == 0 {
+				return nil
+			}
+			return []ConsoleSession{{ID: "sess_console_fixture", NativeID: runner.requests[0].FrontendSessionID, Primary: "codex", Mode: "auto", State: "completed", Resumable: true}}
+		},
+		SelectConversation: func(id string) error {
+			select {
+			case consoleResumes <- id:
+			default:
+			}
+			return nil
+		},
+		ConsoleAction: func(_ context.Context, action string) error { consoleActions <- action; return nil }, Runner: runner, Catalog: catalog, Select: func(context.Context, string) (string, error) { return "codex", nil }, Status: func() Status {
+			return Status{Frontend: "opencode", PermissionMode: "full", KnowledgeMode: "restricted", ConfiguredCount: 2, ConnectedCount: 1, Servers: []ServerView{{Alias: "source-A", Purpose: "fixture", Enabled: true, Selected: true, Health: "healthy"}, {Alias: "source-B", Enabled: true, Health: "down"}}, Memory: "ready", Context: "ready", CodexAuth: "authenticated", ClaudeAuth: "not-configured"}
+		}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -249,6 +266,30 @@ func TestLiveManagedOpenCodeResizeKeyboard(t *testing.T) {
 			}
 			if request.Model != "fixture-model" || request.Effort != "high" {
 				t.Fatalf("selection not effective: %s", fmt.Sprint(request.Model, request.Effort))
+			}
+			if clipboardMode == "" {
+				wait(0, "bridge ok")
+				// Drain the normal turn binding; the next message must be the
+				// explicit console resume of the same real OpenCode session.
+				select {
+				case <-consoleResumes:
+				default:
+				}
+				from := mark()
+				send("/ivoai-sessions")
+				send("\r")
+				wait(from, "IVOAI Session Control")
+				send("\r")
+				wait(from, "Switch to this existing IVOAI session?")
+				send("\r")
+				select {
+				case native := <-consoleResumes:
+					if native != request.FrontendSessionID {
+						t.Fatal("console changed native session identity")
+					}
+				case <-time.After(5 * time.Second):
+					t.Fatal("console resume did not reach binding")
+				}
 			}
 			if clipboardMode != "" {
 				// The executor request can precede the rendered response, especially

@@ -68,6 +68,8 @@ are preserved. No model ID is invented or embedded in a preset. Quality changes
 routing emphasis, not acceptance criteria or a separate verification engine.
 Individual policy edits mark the selection custom; no second configuration
 stack or destructive migration is used.
+The custom menu includes verification routing weight (0–100); this changes
+routing emphasis only, never disables required validation or acceptance.
 
 ## Hooks and safety
 

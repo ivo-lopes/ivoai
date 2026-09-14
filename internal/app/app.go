@@ -81,6 +81,7 @@ const liveServiceProbeTimeout = 8 * time.Second
 // MenuSnapshot is a non-secret, read-only view used by the interactive UI.
 // It deliberately contains no endpoint credentials or raw configuration.
 type MenuSnapshot struct {
+	VerificationWeight    int
 	AutomationProfile     string
 	KnowledgeRouting      string
 	Concurrency           string
@@ -145,6 +146,7 @@ func (a *App) MenuSnapshot() (MenuSnapshot, error) {
 		configured, enabled, connected = 1, 1, 1
 	}
 	return MenuSnapshot{
+		VerificationWeight:    cfg.Orchestration.Auto.Optimization.Weights.VerificationNeed,
 		AutomationProfile:     cfg.Orchestration.Auto.ResolvedAutomationProfile(),
 		KnowledgeRouting:      cfg.Orchestration.Auto.ResolvedKnowledgeRouting(),
 		Concurrency:           cfg.Orchestration.Auto.ResolvedConcurrency(),
@@ -1161,6 +1163,12 @@ func (a *App) ConfigSet(key, value string) error {
 		if err := c.Orchestration.Auto.ApplyAutomationProfile(value); err != nil {
 			return err
 		}
+	case "orchestration.auto.optimization.verification_weight":
+		weight, err := strconv.Atoi(value)
+		if err != nil || weight < 0 || weight > 100 {
+			return errors.New("verification routing weight must be 0-100")
+		}
+		c.Orchestration.Auto.Optimization.Weights.VerificationNeed = weight
 	case "skills.ponytail":
 		c.Skills.Ponytail = strings.ToLower(strings.TrimSpace(value))
 	case "opencode.permission_mode":

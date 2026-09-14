@@ -59,6 +59,8 @@ mantêm threshold de quota 10%, telemetry de quota e aprovação de plano. Overr
 de provider/modelo/effort e knowledge são preservados. Nenhum model ID é inventado.
 Quality ajusta pesos de routing, não acceptance nem outro motor de verificação.
 Editar uma policy individual marca custom, sem segundo config stack.
+O menu custom inclui peso de verificação no routing (0–100), sem desativar
+validação obrigatória ou acceptance.
 
 ## Hooks e segurança
 

@@ -36,6 +36,7 @@ func (s *menuSession) orchestrationPolicies() (bool, error) {
 func (s *menuSession) orchestrationPolicyActions(v app.MenuSnapshot) []menuAction {
 	return []menuAction{
 		{id: "policy.profile", label: "Automation profile: " + v.AutomationProfile, description: "economic / balanced / quality / custom; presets change existing policy for next session", run: s.policyChoice("Automation profile", "automation_profile", []string{"economic", "balanced", "quality", "custom"})},
+		{id: "policy.verification", label: fmt.Sprintf("Verification routing weight: %d", v.VerificationWeight), description: "Routing emphasis only; acceptance and required validation are never disabled", run: s.policyInteger("Verification routing weight", "optimization.verification_weight", v.VerificationWeight, 0, 100)},
 		{id: "policy.sources", label: "Knowledge routing: " + v.KnowledgeRouting, run: s.policyChoice("Knowledge routing", "knowledge_routing", []string{"purpose-auto", "all-enabled", "explicit-only"})},
 		{id: "policy.concurrency", label: "Concurrency: " + v.Concurrency, run: s.policyChoice("Concurrency", "concurrency", []string{"auto", "sequential"})},
 		{id: "policy.worker-cap", label: fmt.Sprintf("Worker cap: %d (0 = auto)", v.WorkerCap), run: s.policyInteger("Worker cap (0 = automatic, 1-12 = maximum)", "worker_cap", v.WorkerCap, 0, 12)},
