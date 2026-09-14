@@ -12,8 +12,9 @@ import (
 
 type captureRunner struct {
 	calls []struct {
-		args []string
-		env  []string
+		args  []string
+		env   []string
+		clean bool
 	}
 	failContaining string
 }
@@ -38,9 +39,10 @@ func TestAIMemoryBackendAdaptsHealthAndConfiguration(t *testing.T) {
 func (r *captureRunner) LookPath(string) (string, error) { return "/bin/ai-memory", nil }
 func (r *captureRunner) Run(_ context.Context, _ string, args []string, o platform.RunOptions) (platform.Result, error) {
 	r.calls = append(r.calls, struct {
-		args []string
-		env  []string
-	}{append([]string{}, args...), append([]string{}, o.Env...)})
+		args  []string
+		env   []string
+		clean bool
+	}{append([]string{}, args...), append([]string{}, o.Env...), o.CleanEnv})
 	if r.failContaining != "" && strings.Contains(strings.Join(args, " "), r.failContaining) {
 		return platform.Result{}, errors.New("fixture failure")
 	}
@@ -57,6 +59,9 @@ func TestConfigureHooksUsesHookBaseWithoutInstallingMCP(t *testing.T) {
 		t.Fatalf("calls %d", len(r.calls))
 	}
 	for _, call := range r.calls {
+		if !call.clean {
+			t.Fatal("hook installer inherits ambient environment")
+		}
 		joined := strings.Join(call.args, " ")
 		if !strings.HasPrefix(joined, "install-hooks ") || strings.Contains(joined, "install-mcp") {
 			t.Fatalf("unexpected hook-only command %q", joined)

@@ -20,6 +20,7 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/connections"
 	"github.com/ivo-lopes/ivoai/internal/core"
 	"github.com/ivo-lopes/ivoai/internal/headroom"
+	"github.com/ivo-lopes/ivoai/internal/memory"
 	"github.com/ivo-lopes/ivoai/internal/orchestration"
 	"github.com/ivo-lopes/ivoai/internal/platform"
 	"github.com/ivo-lopes/ivoai/internal/policy"
@@ -134,6 +135,7 @@ type SkillControlPlane struct {
 	StagingRootHealth string `json:"staging_root_health"`
 }
 type Report struct {
+	Hooks                []memory.HookHealth       `json:"hooks"`
 	CodexResolution      *codexresolver.Resolution `json:"codex_resolution,omitempty"`
 	Overall              string                    `json:"overall"`
 	OS                   string                    `json:"os"`

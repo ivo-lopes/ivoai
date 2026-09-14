@@ -707,7 +707,21 @@ func quotaStatusDuration(provider quota.Provider, value quota.ProviderQuota, dur
 }
 
 func (a *App) Doctor(ctx context.Context) doctor.Report {
-	return (doctor.Doctor{Store: a.Store, Runner: a.Runner, Version: a.Version, QuotaManager: a.QuotaManager, HTTPClient: a.HTTPClient}).Run(ctx)
+	report := (doctor.Doctor{Store: a.Store, Runner: a.Runner, Version: a.Version, QuotaManager: a.QuotaManager, HTTPClient: a.HTTPClient}).Run(ctx)
+	health, err := a.HookHealth(false)
+	report.Hooks = health
+	if err != nil {
+		report.Issues = append(report.Issues, "memory hook configuration cannot be validated")
+		report.Overall = "DEGRADED"
+	}
+	for _, h := range health {
+		if h.State != "healthy" {
+			report.Overall = "DEGRADED"
+			report.Issues = append(report.Issues, "memory hook wiring degraded; run ivoai memory hooks validate")
+			break
+		}
+	}
+	return report
 }
 
 func (a *App) ConnectAgent(ctx context.Context, target string) error {
@@ -902,6 +916,7 @@ func (a *App) Launch(ctx context.Context, target string, args []string) error {
 }
 
 func (a *App) LaunchWithKnowledge(ctx context.Context, target string, args, selectors []string) error {
+	a.preflightMemoryHooks()
 	cfg, err := a.Store.Load()
 	if err != nil {
 		return err
@@ -1015,7 +1030,11 @@ func (a *App) ReconfigureMemory(ctx context.Context) error {
 		}
 		return nil
 	}
-	return mem.Configure(ctx, core.MemoryConfiguration{InstallHooks: true})
+	if err := mem.Configure(ctx, core.MemoryConfiguration{InstallHooks: true}); err != nil {
+		return err
+	}
+	_, err = a.HookHealth(true)
+	return err
 }
 
 func (a *App) memoryManager(state config.State) memory.AIMemoryBackend {

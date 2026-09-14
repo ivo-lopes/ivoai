@@ -75,13 +75,26 @@ func (m Manager) ConfigureWith(ctx context.Context, configuration Configuration)
 			// Hook configuration is persistent. Never let the installer bake a
 			// bearer into an agent settings command; ivoai supplies the token only
 			// in the launched agent's process environment.
-			env := memoryEnv(configuration.HooksBaseURL, "")
-			if _, err := m.Runner.Run(ctx, path, hookArgs, platform.RunOptions{Env: env, Stdout: m.Out, Stderr: m.Err, Timeout: 2 * time.Minute}); err != nil {
+			env := hookInstallEnv(configuration.HooksBaseURL)
+			if _, err := m.Runner.Run(ctx, path, hookArgs, platform.RunOptions{Env: env, CleanEnv: true, Stdout: m.Out, Stderr: m.Err, Timeout: 2 * time.Minute}); err != nil {
 				return fmt.Errorf("configure ai-memory hooks for %s: %w", agent, err)
 			}
 		}
 	}
 	return nil
+}
+
+// The installer writes persistent commands. Inheriting the parent environment
+// would let an ambient bearer become part of those commands even when Token is
+// empty. Preserve only location/runtime discovery, never authentication.
+func hookInstallEnv(serverURL string) []string {
+	env := memoryEnv(serverURL, "")
+	for _, key := range []string{"HOME", "PATH", "XDG_CONFIG_HOME", "XDG_DATA_HOME", "XDG_STATE_HOME", "XDG_CACHE_HOME", "CODEX_HOME", "CLAUDE_CONFIG_DIR", "TMPDIR"} {
+		if value, ok := os.LookupEnv(key); ok {
+			env = append(env, key+"="+value)
+		}
+	}
+	return env
 }
 
 func memoryEnv(serverURL, token string) []string {

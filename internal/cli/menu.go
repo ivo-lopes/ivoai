@@ -49,6 +49,7 @@ func PublicMenuActionIDs() []string {
 		"connect.list", "connect.chatgpt", "disconnect.chatgpt", "connect.claude", "disconnect.claude", "connect.server",
 		"servers.list", "servers.add", "servers.manage", "servers.test", "servers.toggle", "servers.edit", "servers.re-enroll", "servers.remove",
 		"mcp.list", "mcp.add", "mcp.remove", "mcp.auth", "mcp.auth.remove", "mcp.header", "mcp.test", "launch.codex", "launch.claude", "launch.opencode", "memory.status", "memory.configure",
+		"memory.hooks.status", "memory.hooks.validate", "memory.hooks.repair",
 		"mcp.tools", "mcp.enable", "mcp.policy", "mcp.direct-policy",
 		"session.direct.codex", "session.direct.claude", "session.direct.opencode", "session.orchestrated.codex", "session.orchestrated.claude", "session.list", "session.monitor", "session.stop",
 		"session.continuity",
@@ -191,8 +192,30 @@ func (s *menuSession) sessionStop() (bool, error) {
 func (s *menuSession) memory() (bool, error) {
 	return s.loop("Memory", []menuAction{
 		{id: "memory.status", label: "Memory Status", run: s.simple(func() error { return s.app.MemoryStatus(s.ctx) })},
+		{id: "memory.hooks.status", label: "Hooks — Status", run: s.simple(func() error { return s.app.MemoryHooks(false, false) })},
+		{id: "memory.hooks.validate", label: "Hooks — Validate", run: s.simple(func() error { return s.app.MemoryHooks(false, false) })},
+		{id: "memory.hooks.repair", label: "Hooks — Repair owned wiring", run: s.repairMemoryHooks},
 		{id: "memory.configure", label: "Reconfigure Memory", long: true, run: s.simple(func() error { return s.app.ReconfigureMemory(s.ctx) })},
 	})
+}
+
+func (s *menuSession) repairMemoryHooks() (bool, error) {
+	previous, err := s.promptValidated("Verified former IVOAI ai-memory executable (optional)", false, "", func(value string) error {
+		if value != "" && (!filepath.IsAbs(value) || filepath.Base(value) != "ai-memory") {
+			return errors.New("use an absolute ai-memory executable path")
+		}
+		return nil
+	})
+	if err != nil {
+		return false, err
+	}
+	if previous != "" {
+		if !s.confirm("OWNED") {
+			return false, nil
+		}
+		return false, s.app.MemoryHooks(true, false, previous)
+	}
+	return false, s.app.MemoryHooks(true, false)
 }
 
 func (s *menuSession) project() (bool, error) {

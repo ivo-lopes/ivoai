@@ -42,6 +42,7 @@ func (a *App) SessionStartWithKnowledge(ctx context.Context, executor string, mo
 	if mode == session.ModeOrchestrated && (executor == "codex" || executor == "opencode") {
 		return a.OrchestratedWithKnowledge(ctx, executor, "", args, selectors)
 	}
+	a.preflightMemoryHooks()
 	cfg, err := a.Store.Load()
 	if err != nil {
 		return err

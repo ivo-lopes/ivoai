@@ -52,6 +52,9 @@ func commandHeaderEnabled(args []string) bool {
 	if args[0] == "doctor" && contains(args, "--json") {
 		return false
 	}
+	if args[0] == "memory" && contains(args, "--json") {
+		return false
+	}
 	if (args[0] == "monitor" || args[0] == "session") && contains(args, "--json") {
 		return false
 	}
@@ -360,6 +363,9 @@ func runDoctor(ctx context.Context, a *app.App, args []string) error {
 	fmt.Fprintf(a.Out, "Headroom: installed=%s enabled=%s healthy=%s version=%s interactive-launch=%s\nCodex via Headroom: %s\nClaude Code via Headroom: %s\n", semanticBool(report.Headroom.Installed, color), semanticOptionalBool(report.Headroom.Enabled, color), semanticBool(report.Headroom.Healthy, color), report.Headroom.Version, report.Headroom.InteractiveLaunch, semanticOK(report.Headroom.CodexCompatible, color), semanticOK(report.Headroom.ClaudeCompatible, color))
 	fmt.Fprintf(a.Out, "Caveman: installed=%s managed=%s healthy=%s version=%s revision=%s license=%s trust=%s selected-provider=%s\n", semanticOptionalBool(report.Caveman.Installed, color), semanticOptionalBool(report.Caveman.Managed, color), semanticOptionalBool(report.Caveman.Healthy, color), report.Caveman.Version, report.Caveman.Revision, report.Caveman.License, report.Caveman.TrustLevel, report.CompressionProvider)
 	fmt.Fprintf(a.Out, "ai-memory: installed=%s version=%s hooks=%s server=%s\n", semanticBool(report.Memory.Installed, color), report.Memory.Version, semanticBool(report.Memory.Hooks, color), configured(report.Server.Configured))
+	for _, hook := range report.Hooks {
+		fmt.Fprintf(a.Out, "Hook %s/%s: %s owner=%s reason=%s\n", hook.Agent, hook.Event, hook.State, hook.Owner, hook.Reason)
+	}
 	if len(report.Servers) > 0 {
 		fmt.Fprintf(a.Out, "Knowledge: Memory read=%s Context read=%s hook destination=%s\n", report.Server.MemoryState, report.Server.ContextState, report.Server.HookDestination)
 	}
@@ -694,6 +700,26 @@ func runMCP(a *app.App, args []string) error {
 	}
 }
 func runMemory(ctx context.Context, a *app.App, args []string) error {
+	if len(args) > 0 && args[0] == "hooks" {
+		if len(args) < 2 || (args[1] != "status" && args[1] != "validate" && args[1] != "repair") {
+			return errors.New("usage: ivoai memory hooks <status|validate|repair> [--json]")
+		}
+		fs := flag.NewFlagSet("memory hooks", flag.ContinueOnError)
+		fs.SetOutput(a.Err)
+		jsonOutput := fs.Bool("json", false, "metadata only")
+		previous := fs.String("verified-previous-binary", "", "explicitly attest ownership of a diagnosed former ai-memory executable")
+		if err := fs.Parse(args[2:]); err != nil {
+			return err
+		}
+		if fs.NArg() != 0 || (*previous != "" && args[1] != "repair") {
+			return errors.New("invalid hooks arguments")
+		}
+		var paths []string
+		if *previous != "" {
+			paths = append(paths, *previous)
+		}
+		return a.MemoryHooks(args[1] == "repair", *jsonOutput, paths...)
+	}
 	if len(args) == 0 || args[0] == "status" {
 		return a.MemoryStatus(ctx)
 	}

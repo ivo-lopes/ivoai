@@ -92,6 +92,7 @@ mcp.list mcp.add mcp.remove mcp.auth mcp.auth.remove mcp.header mcp.test
 mcp.tools mcp.enable mcp.policy mcp.direct-policy
 launch.codex launch.claude launch.opencode
 memory.status memory.configure
+memory.hooks.status memory.hooks.validate memory.hooks.repair
 session.direct.codex session.direct.claude session.direct.opencode session.orchestrated.codex session.orchestrated.claude
 session.list session.monitor session.stop
 session.continuity

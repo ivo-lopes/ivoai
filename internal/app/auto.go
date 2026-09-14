@@ -322,6 +322,7 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 	if frontendName != "codex" && frontendName != "opencode" {
 		return errors.New("orchestrated frontend must be codex or opencode")
 	}
+	a.preflightMemoryHooks()
 	explicitPlanner := strings.TrimSpace(planner) != ""
 	if frontendName == "codex" && planner == "" {
 		// A preference can be changed only through the shared routing decision;
