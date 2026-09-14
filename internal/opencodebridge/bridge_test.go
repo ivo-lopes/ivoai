@@ -329,7 +329,7 @@ func TestNonStreamingPartialOutputNeverTriggersDuplicateFailover(t *testing.T) {
 	}
 }
 
-func TestExplicitModelChangeDoesNotResumeDifferentModelThread(t *testing.T) {
+func TestExplicitModelChangePreservesConversationAndAppliesNewModel(t *testing.T) {
 	runner := &fakeRunner{result: ExecutorResult{ExecutorSessionID: "thread_new"}}
 	catalog := newCatalog([]ModelSpec{{ID: "codex-a", Name: "Codex A", Mode: "explicit", Executor: "codex", UpstreamModel: "model-a"}, {ID: "codex-b", Name: "Codex B", Mode: "explicit", Executor: "codex", UpstreamModel: "model-b"}})
 	bridge, err := Start(Options{Runner: runner, Catalog: catalog, Select: func(context.Context, string) (string, error) { return "codex", nil }, Status: func() Status { return Status{} }, LookupMapping: func(frontend string) []Mapping {
@@ -348,8 +348,8 @@ func TestExplicitModelChangeDoesNotResumeDifferentModelThread(t *testing.T) {
 		t.Fatal(err)
 	}
 	_ = response.Body.Close()
-	if response.StatusCode != http.StatusOK || len(runner.requests) != 1 || runner.requests[0].ExecutorSessionID != "" {
-		t.Fatalf("model switch resumed stale thread: status=%d requests=%+v", response.StatusCode, runner.requests)
+	if response.StatusCode != http.StatusOK || len(runner.requests) != 1 || runner.requests[0].ExecutorSessionID != "thread_old" || runner.requests[0].Model != "model-b" {
+		t.Fatalf("model switch lost continuity or override: status=%d requests=%+v", response.StatusCode, runner.requests)
 	}
 }
 

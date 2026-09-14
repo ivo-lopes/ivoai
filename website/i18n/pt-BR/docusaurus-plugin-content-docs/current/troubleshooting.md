@@ -218,11 +218,23 @@ o AUTO gerenciado habilita apenas o provider IVOAI.
 
 ## O mapeamento de sessão não pode ser retomado
 
-**Sintoma:** uma conversa OpenCode abre, mas o IVOAI inicia nova conversa no executor
-oficial. O mapping é vinculado deliberadamente ao working directory e aos IDs estáveis
-das fontes de conhecimento selecionadas. Alterar o diretório ou escopo cria nova
-fronteira em vez de reutilizar estado potencialmente inseguro. Volte ao diretório e
-escopo originais ou continue em nova sessão; nunca edite manualmente o JSON da sessão.
+Use `ivoai session show --json <id>` para inspecionar mappings separados. Resume
+nativo exige projeto registrado e identidade compatível da conta. Mapping ausente
+ou ambíguo não é adivinhado. `session resume` reabre sem repetir o último turno;
+`session recover` reconcilia DAG interrompido aprovado. Não edite o JSON nem repita
+mutações `AMBIGUOUS_PREVIOUS_EXECUTION` cegamente. Veja
+[continuidade](conversation-continuity.md).
+
+## `/resume` nativo do Codex não conecta ou seleciona
+
+Na v0.10.2, `Failed to start TUI session picker: failed to connect to remote app
+server` resultava da recusa da segunda conexão autenticada do picker (HTTP 409).
+A v0.10.3 isola requests por origem e preserva o primary ao fechar o picker.
+No Codex 0.154.0 havia também `Permission overrides are not supported when resuming
+a remote task`: overrides duplicados de sandbox/approval no cliente. A proteção
+permanece no servidor IVOAI, sem esses flags de resume na TUI. Atualize e reinicie
+o frontend gerenciado, sem alterar configuração pessoal ou usar direct como
+workaround. Históricos já apagados por homes efêmeros antigos não são reconstruídos.
 
 ## O painel Knowledge está stale, vazio ou degraded
 

@@ -51,6 +51,16 @@ func TestLiveNativeAUTOArtifact(t *testing.T) {
 		t.Fatal(err)
 	}
 	root := t.TempDir()
+	if kept := os.Getenv("IVOAI_NATIVE_SMOKE_ROOT"); kept != "" {
+		if !filepath.IsAbs(kept) {
+			t.Fatal("smoke root must be absolute")
+		}
+		entries, err := os.ReadDir(kept)
+		if err != nil || len(entries) != 0 {
+			t.Fatal("smoke root must be an existing empty isolated directory")
+		}
+		root = kept
+	}
 	for _, kind := range []string{"CONFIG", "DATA", "STATE", "CACHE"} {
 		t.Setenv("XDG_"+kind+"_HOME", filepath.Join(root, kind))
 	}

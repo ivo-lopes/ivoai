@@ -4,7 +4,7 @@ const sidebars: SidebarsConfig = {
   product: [
     {type: 'category', label: 'Introduction', items: ['index', 'concepts', 'quickstart']},
     {type: 'category', label: 'Install and setup', items: ['installation', 'setup', 'client', 'server']},
-    {type: 'category', label: 'Usage', items: ['basic-usage', 'advanced-usage', 'cli-reference', 'cookbook']},
+    {type: 'category', label: 'Usage', items: ['basic-usage', 'advanced-usage', 'cli-reference', 'conversation-continuity', 'cookbook']},
     {type: 'category', label: 'Executors and AUTO', items: ['executors', 'auto-orchestration', 'auto-scheduler', 'quota-routing', 'orchestration', 'ux-audit']},
     {type: 'category', label: 'Knowledge', items: ['memory', 'context-guide', 'multi-server', 'connections', 'mcp-web']},
     {type: 'category', label: 'Control and fidelity', items: ['skill-control-plane', 'working-context', 'compression-provider', 'caveman-canary']},

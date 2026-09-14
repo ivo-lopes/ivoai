@@ -64,33 +64,112 @@ func (a *App) SessionStartWithKnowledge(ctx context.Context, executor string, mo
 	if err != nil {
 		return err
 	}
+	handoff, hasHandoff := ctx.Value(handoffSessionKey{}).(handoffSeed)
+	if hasHandoff {
+		cwd = handoff.Directory
+	}
 	id, err := session.NewID()
 	if err != nil {
 		return err
 	}
+	resumeID, _ := ctx.Value(resumeSessionKey{}).(string)
+	var resumed session.Session
+	if resumeID != "" {
+		resumed, err = (session.Store{Root: a.Store.Paths.SessionsDir}).Get(resumeID)
+		if err != nil {
+			return err
+		}
+		if resumed.Mode != mode || resumed.PrimaryExecutor != executor {
+			return errors.New("SESSION_MODE_MISMATCH")
+		}
+		cwd = resumed.WorkingDirectory
+		id = resumeID
+		if resumed.ExecutorSessionID == "" {
+			return errors.New("NATIVE_SESSION_MAPPING_UNAVAILABLE")
+		}
+		if executor == "codex" {
+			args = append([]string{"resume", resumed.ExecutorSessionID}, args...)
+		} else if executor == "opencode" {
+			args = append([]string{"--session", resumed.ExecutorSessionID}, args...)
+		} else {
+			args = append([]string{"--resume", resumed.ExecutorSessionID}, args...)
+		}
+	}
+	nativeID := ""
+	if mode == session.ModeDirect && executor == "codex" && resumeID == "" {
+		for i, arg := range args {
+			if arg == "resume" && i+1 < len(args) && session.ValidNativeUUID(args[i+1]) {
+				nativeID = args[i+1]
+			}
+		}
+	}
+	if mode == session.ModeDirect && executor == "claude" && resumeID == "" {
+		existing := false
+		for i, arg := range args {
+			if arg == "--session-id" || arg == "--resume" || arg == "-r" || arg == "--continue" || arg == "-c" || strings.HasPrefix(arg, "--resume=") {
+				existing = true
+			}
+			if (arg == "--session-id" || arg == "--resume" || arg == "-r") && i+1 < len(args) && session.ValidNativeUUID(args[i+1]) {
+				nativeID = args[i+1]
+			}
+		}
+		if !existing {
+			nativeID, err = session.NewNativeUUID()
+			if err != nil {
+				return err
+			}
+			args = append(args, "--session-id", nativeID)
+		}
+	}
 	now := time.Now().UTC()
 	value := session.Session{
-		SessionID: id, StartedAt: now, UpdatedAt: now, Mode: mode, PrimaryExecutor: executor,
+		ExecutorSessionID: nativeID,
+		SessionID:         id, StartedAt: now, UpdatedAt: now, Mode: mode, PrimaryExecutor: executor,
 		WorkingDirectory: cwd, PrimaryModel: session.ResolveModel("", session.ParseModelArgument(args), executor, agentModelConfig(executor)),
 		HeadroomRequested: cfg.Compression.Provider == "headroom" && cfg.Headroom.Enabled && executor != "opencode", CompressionProvider: cfg.Compression.Provider, CompressionRequested: cfg.Compression.Provider != "direct", RufloEnabled: mode == session.ModeOrchestrated,
 		ProviderExecution: false, Workers: []session.Worker{}, MaxWorkers: cfg.Orchestration.MaxWorkers,
 		ContextStatus: contextStatus(cfg), MemoryStatus: memoryStatus(cfg, state), ServerStatus: serverStatus(cfg), State: session.StateStarting,
 	}
 	pinCodex(&value, resolution)
+	if hasHandoff {
+		value.Lineage = &handoff.Lineage
+	}
 	store := session.Store{Root: a.Store.Paths.SessionsDir}
-	if err := store.Create(value); err != nil {
+	lease, err := store.Acquire(id)
+	if err != nil {
 		return err
+	}
+	defer lease.Close()
+	discardFailedStart := func() {
+		if resumeID == "" && !hasHandoff {
+			_ = store.Delete(id)
+		} else {
+			a.finishSession(store, id, session.StateFailed, 1)
+		}
+	}
+	if resumeID != "" {
+		value, err = store.Reopen(id, cwd, mode)
+	} else {
+		err = store.Create(value)
+	}
+	if err != nil {
+		return err
+	}
+	if hasHandoff {
+		if err := saveHandoffCheckpoint(store, id, handoff.Brief); err != nil {
+			return err
+		}
 	}
 	runtimeDir, err := store.RuntimeDir(id)
 	if err != nil {
-		_ = store.Delete(id)
+		discardFailedStart()
 		return err
 	}
 	knowledge, err := a.prepareSessionKnowledge(ctx, cfg, selectors, executor, runtimeDir, os.Environ(), func(event observability.Event) {
 		_, _ = store.Update(id, func(current *session.Session) error { return session.AppendObservation(current, event) })
 	})
 	if err != nil {
-		_ = store.Delete(id)
+		discardFailedStart()
 		return err
 	}
 	defer knowledge.close()
@@ -101,7 +180,7 @@ func (a *App) SessionStartWithKnowledge(ctx context.Context, executor string, mo
 	})
 	skillResult, err := a.evaluateSessionSkills(ctx, executor, cwd, args)
 	if err != nil {
-		_ = store.Delete(id)
+		discardFailedStart()
 		return err
 	}
 	value, err = store.Update(id, func(current *session.Session) error {
@@ -110,21 +189,21 @@ func (a *App) SessionStartWithKnowledge(ctx context.Context, executor string, mo
 		})
 	})
 	if err != nil {
-		_ = store.Delete(id)
+		discardFailedStart()
 		return err
 	}
 	args = append(knowledge.args, managedAgentArgs(executor, args, cfg, skillResult.Instructions)...)
 	var control core.Orchestrator
 	if mode == session.ModeOrchestrated {
 		if !cfg.Orchestration.Enabled {
-			_ = store.Delete(id)
+			discardFailedStart()
 			return errors.New("orchestration is disabled; enable it and run ivoai setup")
 		}
 		control = orchestration.RufloOrchestratorAdapter{Control: orchestration.ControlPlane{Manager: a.orchestrationManager(state), RuntimeDir: runtimeDir}, Managed: state.Components["ruflo"].Managed}
 		swarm, initErr := control.Initialize(ctx, cfg.Orchestration.MaxWorkers)
 		if initErr != nil {
 			_ = store.CleanupRuntime(id)
-			_ = store.Delete(id)
+			discardFailedStart()
 			return fmt.Errorf("orchestrated session refused: %w", initErr)
 		}
 		value, err = store.Update(id, func(current *session.Session) error {
@@ -168,13 +247,26 @@ func (a *App) SessionStartWithKnowledge(ctx context.Context, executor string, mo
 	if compressionPolicy.Bypassed {
 		compressionEnabled = false
 	}
-	runtime := agents.Runtime{Runner: a.Runner, In: a.In, Out: a.Out, Err: a.Err, AgentPath: state.Components[component].Path, HeadroomPath: state.Components["headroom"].Path, Compression: compressionProvider, Environment: environment, RuntimeDir: runtimeDir}
+	runtime := agents.Runtime{Runner: a.Runner, In: a.In, Out: a.Out, Err: a.Err, AgentPath: state.Components[component].Path, HeadroomPath: state.Components["headroom"].Path, Compression: compressionProvider, Environment: environment, RuntimeDir: runtimeDir, Directory: cwd}
 	implementation, err := agents.ExecutorFor(executor, runtime, state.Components[component].Version, state.Components[component].Managed)
 	if err != nil {
 		return err
 	}
 	if !compressionEnabled && compressionPolicy.Bypassed {
 		a.warn(sharedKnowledgeCompressionBypass(requestedCompression), nil)
+	}
+	var nativeBefore map[string]bool
+	inventory := func() (map[string]bool, error) {
+		if executor == "opencode" {
+			return agents.OpenCodeSessionInventory(ctx, state.Components[component].Path, cwd)
+		}
+		return agents.CodexThreadInventory(ctx, state.Components[component].Path, cwd)
+	}
+	if mode == session.ModeDirect && executor == "codex" && resumeID == "" && a.CodexResolution == nil {
+		nativeBefore, _ = inventory()
+	}
+	if mode == session.ModeDirect && executor == "opencode" && resumeID == "" && a.CodexResolution == nil {
+		nativeBefore, _ = inventory()
 	}
 	launchErr := implementation.StartSession(ctx, core.SessionRequest{Args: args, CompressionEnabled: compressionEnabled}, func(observation core.SessionObservation) {
 		_, _ = store.Update(id, func(current *session.Session) error {
@@ -188,6 +280,24 @@ func (a *App) SessionStartWithKnowledge(ctx context.Context, executor string, mo
 			return session.AppendObservation(current, compressionEvent)
 		})
 	})
+	if nativeBefore != nil {
+		after, inventoryErr := inventory()
+		if inventoryErr == nil {
+			fresh := ""
+			for nativeID := range after {
+				if !nativeBefore[nativeID] {
+					if fresh != "" {
+						fresh = ""
+						break
+					}
+					fresh = nativeID
+				}
+			}
+			if fresh != "" {
+				_, _ = store.Update(id, func(v *session.Session) error { v.ExecutorSessionID = fresh; return nil })
+			}
+		}
+	}
 	exitCode, finalState := 0, session.StateCompleted
 	if launchErr != nil {
 		finalState, exitCode = session.StateFailed, 1

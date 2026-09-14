@@ -237,9 +237,43 @@ func runCommand(ctx context.Context, a *app.App, args []string) error {
 
 func runSession(ctx context.Context, a *app.App, args []string) error {
 	if len(args) == 0 {
-		return errors.New("usage: ivoai session <start|list|show|stop>")
+		return errors.New("usage: ivoai session <start|list|show|resume|recover|handoff|stop>")
 	}
 	switch args[0] {
+	case "handoff":
+		if len(args) < 2 {
+			return errors.New("usage: ivoai session handoff <id> --to codex|claude [--confirm]")
+		}
+		fs := flag.NewFlagSet("session handoff", flag.ContinueOnError)
+		fs.SetOutput(a.Err)
+		to := fs.String("to", "", "destination provider")
+		confirmed := fs.Bool("confirm", false, "explicitly authorize cross-provider bounded context transfer")
+		if err := fs.Parse(args[2:]); err != nil || fs.NArg() != 0 {
+			return errors.New("invalid handoff arguments")
+		}
+		if !*confirmed {
+			return errors.New("HANDOFF_CONFIRMATION_REQUIRED: inspect the session, then repeat with --confirm to authorize transfer to the selected provider")
+		}
+		return a.SessionHandoff(ctx, args[1], *to, *confirmed)
+	case "recover":
+		if len(args) != 2 {
+			return errors.New("usage: ivoai session recover <session-id>")
+		}
+		return a.SessionRecover(ctx, args[1])
+	case "resume":
+		if len(args) < 2 {
+			return errors.New("usage: ivoai session resume <session-id> [--frontend codex|opencode]")
+		}
+		fs := flag.NewFlagSet("session resume", flag.ContinueOnError)
+		fs.SetOutput(a.Err)
+		frontend := fs.String("frontend", "", "presentation frontend (orchestrated only)")
+		if err := fs.Parse(args[2:]); err != nil || fs.NArg() != 0 {
+			return errors.New("invalid session resume arguments")
+		}
+		if *frontend != "" {
+			return a.SessionResumeFrontend(ctx, args[1], *frontend)
+		}
+		return a.SessionResume(ctx, args[1])
 	case "start":
 		rest, sources, err := extractKnowledgeSources(args[1:])
 		if err != nil {
@@ -764,6 +798,9 @@ Usage:
   ivoai auto [--planner codex|claude|opencode] [--knowledge-source <alias|purpose>] [-- agent arguments...]
   ivoai session start --executor <codex|claude|opencode> --mode <direct|orchestrated> [--knowledge-source <alias|purpose>] [-- agent arguments...]
   ivoai session list [--json] | show [--json] <id> | stop <id>
+  ivoai session resume <id> [--frontend codex|opencode]
+  ivoai session recover <id>
+  ivoai session handoff <id> --to codex|claude --confirm
   ivoai monitor [--watch] [--session <id>] [--json]
   ivoai memory [status|configure]
   ivoai skills list | show <source-id> | doctor

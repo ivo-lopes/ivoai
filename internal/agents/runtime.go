@@ -27,6 +27,7 @@ type Runtime struct {
 	Compression  core.CompressionProvider
 	Environment  []string
 	RuntimeDir   string
+	Directory    string
 }
 
 type Observation struct {
@@ -103,11 +104,11 @@ func (r Runtime) LaunchObserved(ctx context.Context, agent string, args []string
 	if lease != nil {
 		providerDone = lease.Done()
 	}
-	err = runInteractiveWithProvider(ctx, command, commandArgs, environment, r.In, r.Out, r.Err, func(pid int) {
+	err = runInteractiveInDirectory(ctx, command, commandArgs, environment, r.In, r.Out, r.Err, func(pid int) {
 		if observe != nil {
 			observe(Observation{PID: pid, HeadroomUsed: wrappedUsed && compressionProvider == "headroom", CompressionUsed: wrappedUsed, CompressionProvider: compressionProvider, CompressionFallback: compressionFallback, CompressionPreflightMilliseconds: compressionPreflight.Milliseconds()})
 		}
-	}, providerDone)
+	}, providerDone, r.Directory)
 	var startErr *StartError
 	if wrappedUsed && errors.As(err, &startErr) {
 		if r.Err != nil {
@@ -120,11 +121,11 @@ func (r Runtime) LaunchObserved(ctx context.Context, agent string, args []string
 			_ = lease.Close(context.Background())
 			lease = nil
 		}
-		return runInteractive(ctx, direct, args, environment, r.In, r.Out, r.Err, func(pid int) {
+		return runInteractiveInDirectory(ctx, direct, args, environment, r.In, r.Out, r.Err, func(pid int) {
 			if observe != nil {
 				observe(Observation{PID: pid, HeadroomUsed: false, CompressionUsed: false, CompressionFallback: true, CompressionPreflightMilliseconds: compressionPreflight.Milliseconds()})
 			}
-		})
+		}, nil, r.Directory)
 	}
 	return err
 }
@@ -134,6 +135,10 @@ func runInteractive(ctx context.Context, command string, args, environment []str
 }
 
 func runInteractiveWithProvider(ctx context.Context, command string, args, environment []string, in io.Reader, out, errOut io.Writer, observe func(int), providerDone <-chan error) error {
+	return runInteractiveInDirectory(ctx, command, args, environment, in, out, errOut, observe, providerDone, "")
+}
+
+func runInteractiveInDirectory(ctx context.Context, command string, args, environment []string, in io.Reader, out, errOut io.Writer, observe func(int), providerDone <-chan error, directory string) error {
 	if terminal, ok := in.(*os.File); ok && term.IsTerminal(int(terminal.Fd())) {
 		if state, stateErr := term.GetState(int(terminal.Fd())); stateErr == nil {
 			defer func() { _ = term.Restore(int(terminal.Fd()), state) }()
@@ -147,6 +152,7 @@ func runInteractiveWithProvider(ctx context.Context, command string, args, envir
 	// We intentionally use exec.Command instead of CommandContext so cancellation
 	// gets a bounded SIGTERM grace period before SIGKILL.
 	cmd := exec.Command(command, args...)
+	cmd.Dir = directory
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = in, out, errOut
 	if environment != nil {
 		cmd.Env = environment

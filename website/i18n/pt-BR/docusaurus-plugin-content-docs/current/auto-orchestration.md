@@ -138,10 +138,11 @@ Upgrade mantém ServerProfiles, secret refs, MCP registry, autenticação oficia
 permission mode. Não exige novo enrollment/login. Novos defaults de orquestração
 não alteram configurações pessoais dos executores.
 
-O DAG e seus prompts são transitórios. Resume de conversa nativa depende de
-continuidade de identidade comprovada; não há Conversation Continuity nova nesta
-release. A UI é operacional mínima, não a Full Console futura. Ponytail, OpenViking
-e novos packs de Skills não fazem parte desta entrega.
+Prompts expandidos de workers permanecem transitórios. O checkpoint privado
+preserva um DAG aprovado e limitado para recuperação segura, sem transcript.
+[Conversation Continuity](conversation-continuity.md) usa mappings nativos e
+identidade comprovada. Skills/Ponytail continuam disponíveis. A UI é operacional
+mínima; Full Console e OpenViking permanecem fora desta release.
 
 Veja [Scheduler automático](auto-scheduler.md), [Connections](connections.md) e
 [WorkingContext](working-context.md).

@@ -392,7 +392,12 @@ func (s *Server) checkpoint(_ context.Context, request *mcp.CallToolRequest) (*m
 	if err := json.Unmarshal(request.Params.Arguments, &checkpoint); err != nil {
 		return nil, errors.New("invalid checkpoint")
 	}
-	if err := s.Store.SaveCheckpoint(s.SessionID, checkpoint); err != nil {
+	if err := s.Store.UpdateCheckpoint(s.SessionID, func(saved *session.Checkpoint) error {
+		// External arguments cannot replace the host's approved recovery DAG.
+		checkpoint.Recovery = saved.Recovery
+		*saved = checkpoint
+		return nil
+	}); err != nil {
 		return nil, err
 	}
 	saved, err := s.Store.LoadCheckpoint(s.SessionID)

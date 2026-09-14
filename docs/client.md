@@ -185,15 +185,19 @@ ivoai session start --executor codex --mode direct
 ivoai session start --executor claude --mode orchestrated
 ivoai session list --json
 ivoai session show --json <session-id>
+ivoai session resume <session-id>
+ivoai session recover <session-id>
+ivoai session handoff <session-id> --to claude --confirm
 ivoai session stop <session-id>
 ivoai monitor --watch
 ```
 
-Direct sessions add metadata and monitoring but do not initialize Ruflo.
-Orchestrated sessions require a verified safe Ruflo profile, initialize and verify a
-real swarm, register the primary, and inject the local `ivoai-orchestrator` MCP. The
-MCP delegates bounded tasks to official Codex/Claude non-interactive modes. The
-default is two concurrent workers and the hard maximum is three.
+Direct sessions add metadata and monitoring without a DAG. Codex and OpenCode
+orchestrated sessions use the shared native DAG core, plan approval and host-aware
+worker concurrency. The explicit legacy Claude orchestrated mode retains Ruflo.
+Session Control also exposes native resume, recovery and confirmed handoff; see
+[Conversation continuity](conversation-continuity.md). Codex's native `/resume`
+picker and the IVOAI CLI use the same logical mappings.
 
 Session JSON is private XDG state and contains no prompt, response or credential.
 Model output is labelled `runtime_verified`, `argument`, `configured`, or `unknown`;

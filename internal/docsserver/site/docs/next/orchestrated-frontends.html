@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="generator" content="Docusaurus v3.10.2">
 <title data-rh="true">Orchestrated frontends | IVOAI</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="http://localhost:7780/docs/next/orchestrated-frontends"><meta data-rh="true" property="og:locale" content="en_US"><meta data-rh="true" property="og:locale:alternate" content="pt_BR"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="Orchestrated frontends | IVOAI"><meta data-rh="true" name="description" content="Commands"><meta data-rh="true" property="og:description" content="Commands"><link data-rh="true" rel="icon" href="/img/favicon.svg"><link data-rh="true" rel="canonical" href="http://localhost:7780/docs/next/orchestrated-frontends"><link data-rh="true" rel="alternate" href="http://localhost:7780/docs/next/orchestrated-frontends" hreflang="en-US"><link data-rh="true" rel="alternate" href="http://localhost:7780/pt-BR/docs/next/orchestrated-frontends" hreflang="pt-BR"><link data-rh="true" rel="alternate" href="http://localhost:7780/docs/next/orchestrated-frontends" hreflang="x-default"><link rel="stylesheet" href="/assets/css/styles.d8784d9c.css">
-<script src="/assets/js/runtime~main.94273a47.js" defer="defer"></script>
-<script src="/assets/js/main.57bfac1e.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.c9fb37d0.js" defer="defer"></script>
+<script src="/assets/js/main.534acd27.js" defer="defer"></script>
 </head>
 <body>
 <svg style="display: none;"><defs>
@@ -34,11 +34,12 @@ unknown execution methods cannot bypass admission. Use <code>--direct</code> for
 upstream operations outside orchestration.</p>
 <p>Codex 0.153.4 and 0.154.0 are tested. App Server transport is upstream-experimental;
 the supported local protocol is pinned and tested, not an invented TUI API.
-The frontend uses an ephemeral Codex home without copying account credentials.
-Worker authentication stays with the official executors. Native conversation
-navigation works within the session; persistent upstream resume/fork and global
-settings changes are not exposed by this façade. IVOAI keeps sanitized session
-and turn metadata, not a second transcript store.</p>
+The frontend uses a private project-scoped Codex home without copying account
+credentials or personal configuration. Native <code>/resume</code> and the official picker
+share IVOAI&#x27;s stable session mappings with <code>ivoai session resume</code>. Provider-owned
+history survives restart; IVOAI keeps a bounded continuity journal, not a second
+transcript store. Global configuration mutation and arbitrary thread import/fork
+remain outside this façade. See <a class="" href="/docs/next/conversation-continuity">Conversation continuity</a>.</p>
 <p>Prompt rejection starts no worker and no substantive executor turn. Acceptance
 criteria are mandatory in both orchestrated frontends. Full OpenCode permissions
 do not bypass plan approval. Immediate start remains an explicit shared policy.</p>

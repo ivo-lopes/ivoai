@@ -24,6 +24,9 @@ frontend = os.environ.get("IVOAI_NATIVE_SMOKE_FRONTEND", "opencode")
 assert frontend in {"codex", "opencode", "auto"}
 codex_frontend = frontend == "codex"
 ux_smoke = os.environ.get("IVOAI_NATIVE_SMOKE_UX") == "1"
+continuity_smoke = os.environ.get("IVOAI_NATIVE_SMOKE_CONTINUITY") == "1"
+assert not continuity_smoke or not complex_case
+target_session_id = None
 assert not ux_smoke or (not codex_frontend and not complex_case)
 repo = root / "fixture"
 repo.mkdir(mode=0o700)
@@ -126,7 +129,7 @@ def metadata():
     for path in (list(sessions.glob("*.json")) + list((sessions / ".native-opencode").glob("*.json"))
                  + list((sessions / ".orchestrated-frontends").glob("*.json"))):
         value = json.loads(path.read_text())
-        if value.get("working_directory") == str(repo):
+        if value.get("working_directory") == str(repo) and (target_session_id is None or value.get("session_id") == target_session_id):
             return value
     return {}
 
@@ -170,6 +173,9 @@ def wait_for(predicate, timeout, failure):
                       "task_states": [t.get("state") for t in value.get("tasks", [])],
                       "trust_screen": "Do you trust" in history,
                       "login_screen": "Sign in with ChatGPT" in history,
+                      "native_picker_empty": "No sessions found" in history,
+                      "native_errors": [code for code in ["NATIVE_THREAD_MAPPING_FAILED", "NATIVE_SESSION_NOT_MANAGED", "TURN_STILL_ACTIVE", "Failed to resume", "failed to connect to remote app server"] if code in history],
+                      "codex_version": value.get("codex_version"),
                       "turn_failure": (value.get("turn_attempts") or [{}])[-1].get("failure_class")}), flush=True)
     raise RuntimeError(failure)
 
@@ -265,6 +271,90 @@ try:
         assert clipboard_read() == b"fixture-1", "NATIVE_MOUSE_CLIPBOARD_MISMATCH"
         print("SHIFT_ENTER_NEWLINE=PASS ENTER_SUBMIT=PASS PUBLIC_NATIVE_MOUSE_COPY=PASS X11_READBACK=PASS", flush=True)
     print(f"PLAN_APPROVAL=PASS FINAL_SYNTHESIS=PASS FRONTEND={frontend}", flush=True)
+    if continuity_smoke:
+        original = metadata()
+        target_session_id = original["session_id"]
+        original_thread = original["frontend_session_id"]
+        original_provider = original["executor_session_id"]
+
+        def close_frontend():
+            send("/exit")
+            send("\r")
+            deadline = time.monotonic() + 12
+            while process.poll() is None and time.monotonic() < deadline:
+                pump(.2)
+            assert process.poll() is not None, "FRONTEND_DID_NOT_EXIT"
+            assert process.returncode == 0, "FRONTEND_EXIT_FAILED"
+            os.close(master)
+
+        def reopen(arguments):
+            global master, process, history
+            master, new_slave = pty.openpty()
+            fcntl.ioctl(new_slave, termios.TIOCSWINSZ, struct.pack("HHHH", 40, 120, 0, 0))
+            process = subprocess.Popen([str(binary), *arguments], cwd=repo, stdin=new_slave,
+                                       stdout=new_slave, stderr=new_slave, preexec_fn=owner)
+            os.close(new_slave)
+            history = ""
+            wait_for(lambda text, _: ("context left" in text or "? for shortcuts" in text) if codex_frontend else ("IVOAI control plane" in text or "IVOAI Automatic Orchestration" in text),
+                     120, "RESUMED_NATIVE_COMPOSER_NOT_READY")
+
+        close_frontend()
+        listing = subprocess.run([str(binary), "session", "list", "--json"], cwd=repo,
+                                 check=True, capture_output=True, text=True)
+        assert any(v["session_id"] == target_session_id for v in json.loads(listing.stdout)), "SESSION_LIST_MISSING"
+        shown = subprocess.run([str(binary), "session", "show", "--json", target_session_id],
+                               cwd=repo, check=True, capture_output=True, text=True)
+        assert json.loads(shown.stdout)[0]["frontend_session_id"] == original_thread, "SESSION_SHOW_MAPPING_MISSING"
+        if codex_frontend:
+            reopen(["codex"])
+            send("/resume")
+            send("\r")
+            wait_for(lambda text, _: "Resume a previous session" in text, 30, "NATIVE_PICKER_NOT_OPEN")
+            assert "failed to connect to remote app server" not in history.lower(), "PICKER_CONNECTION_FAILED"
+            send("\x1b")
+            pump(1)
+            assert process.poll() is None, "PICKER_CANCEL_KILLED_PRIMARY"
+            history = ""
+            send("/resume")
+            send("\r")
+            wait_for(lambda text, _: "Resume a previous session" in text, 30, "NATIVE_PICKER_REOPEN_FAILED")
+            # Search the fixture conversation, not the newest empty startup thread.
+            send("fixture")
+            pump(2)
+            send("\r")
+        else:
+            reopen(["session", "resume", target_session_id])
+        wait_for(lambda _, v: v.get("state") == "running" and v.get("frontend_pid", 0) > 0,
+                 30, "NATIVE_PICKER_SELECTION_FAILED")
+        assert metadata()["frontend_session_id"] == original_thread, "NATIVE_THREAD_MAPPING_CHANGED"
+        prior_attempts = len(metadata().get("turn_attempts", []))
+        history = ""
+        send("corrija isso")
+        send("\r")
+        wait_for(lambda text, _: "insufficient" in text.lower(), 30, "RESUMED_PROMPT_GATE_FAILED")
+        assert len(metadata().get("turn_attempts", [])) == prior_attempts, "REJECTED_RESUME_STARTED_EXECUTOR"
+        history = ""
+        send("Objective: report the exact version value you reported in the preceding turn, without reading files or tools for discovery. Deliverable: only that remembered value. Acceptance: return the previous value alone; do not invent a new value; create one primary-owned research task, approve its plan, complete and integrate before synthesis.")
+        send("\r")
+        wait_for(lambda text, v: any(d.get("kind") == "plan" and d.get("state") == "pending" for d in v.get("decisions", [])) and ("IVOAI plan approval" in text or codex_frontend and "Approve" in text),
+                 240, "RESUMED_PLAN_NOT_PRESENTED")
+        send("\r")
+        if codex_frontend:
+            pump(.5)
+            send("\r")
+        wait_for(lambda _, v: v.get("current_phase") == "synthesizing" and
+                 (v.get("executor_trace") or {}).get("final_response_present") and
+                 len(v.get("turn_attempts", [])) > prior_attempts, 240, "RESUMED_TURN_NOT_COMPLETED")
+        assert metadata()["executor_session_id"] == original_provider, "PROVIDER_NATIVE_RESUME_NOT_USED"
+        assert "fixture-1" in pump(1), "NATIVE_CONVERSATION_FACT_NOT_RECALLED"
+        close_frontend()
+        reopen(["session", "resume", target_session_id])
+        wait_for(lambda _, v: v.get("state") == "running" and v.get("frontend_pid", 0) > 0,
+                 30, "SESSION_CLI_RESUME_FAILED")
+        assert metadata()["frontend_session_id"] == original_thread, "CLI_AND_PICKER_DIVERGED"
+        if codex_frontend:
+            print("CODEX_SLASH_RESUME=PASS NATIVE_PICKER=PASS PICKER_CANCEL=PASS", flush=True)
+        print(f"FRONTEND={frontend} SESSION_LIST=PASS SESSION_SHOW=PASS SESSION_RESUME=PASS PROVIDER_NATIVE_RESUME=PASS NEW_TURN_GATE=PASS", flush=True)
 finally:
     if process.poll() is None:
         send("/exit")
@@ -277,7 +367,10 @@ finally:
         except subprocess.TimeoutExpired:
             os.killpg(process.pid, signal.SIGKILL)
             process.wait()
-    os.close(master)
+    try:
+        os.close(master)
+    except OSError:
+        pass  # A failed restart can leave the preceding owned PTY closed.
     if previous_clipboard is not None:
         # Do not overwrite a concurrent operator clipboard change.
         if clipboard_read() == b"fixture-1":

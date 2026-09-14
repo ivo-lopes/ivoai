@@ -82,7 +82,15 @@ func monitoredSession(a *app.App, id string) (session.Session, error) {
 
 func writeSessions(out io.Writer, values []session.Session, jsonOutput bool) error {
 	if jsonOutput {
-		body, err := json.MarshalIndent(values, "", "  ")
+		type listedSession struct {
+			session.Session
+			Resumable bool `json:"resumable"`
+		}
+		listed := make([]listedSession, 0, len(values))
+		for _, value := range values {
+			listed = append(listed, listedSession{value, value.Resumable()})
+		}
+		body, err := json.MarshalIndent(listed, "", "  ")
 		if err != nil {
 			return err
 		}
@@ -94,7 +102,7 @@ func writeSessions(out io.Writer, values []session.Session, jsonOutput bool) err
 		return nil
 	}
 	for _, value := range values {
-		fmt.Fprintf(out, "%s\t%s\t%s\t%s\t%s (%s)\n", clean(value.SessionID), strings.ToUpper(string(value.Mode)), strings.ToUpper(string(value.State)), clean(value.PrimaryExecutor), clean(value.PrimaryModel.Name), strings.ReplaceAll(string(value.PrimaryModel.Source), "_", " "))
+		fmt.Fprintf(out, "%s\t%s\tfrontend=%s\tprimary=%s\t%s\tupdated=%s\tresumable=%t\t%s (%s)\n", clean(value.SessionID), strings.ToUpper(string(value.Mode)), clean(value.Frontend), clean(value.PrimaryExecutor), strings.ToUpper(string(value.State)), value.UpdatedAt.UTC().Format(time.RFC3339), value.Resumable(), clean(value.PrimaryModel.Name), strings.ReplaceAll(string(value.PrimaryModel.Source), "_", " "))
 	}
 	return nil
 }

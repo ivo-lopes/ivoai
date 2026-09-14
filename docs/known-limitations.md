@@ -9,7 +9,9 @@
   provider-specific tool animation from the hidden executor CLI is not reproduced
   as a second nested TUI.
 - OpenViking and NativeOrchestrator v2 are future work and are not defaults.
-- Ruflo remains the bounded lifecycle orchestrator for current orchestrated modes.
+- Ruflo remains available for explicit legacy orchestration; Codex/OpenCode use the native DAG core.
 - Headroom remains available for compatibility and rollback.
-- Conversation Continuity and the complete monitor TUI remain planned.
+- Conversation Continuity is available; native histories deleted by older ephemeral
+  frontends cannot be reconstructed. Ambiguous writes require manual reconciliation.
+  See [continuity limits](conversation-continuity.md). OpenCode Full Console remains planned.
 - Remote Web MCP requires a publicly reachable HTTPS origin or the platform's supported secure tunnel.

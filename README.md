@@ -21,6 +21,10 @@ ChatGPT Web, and Claude Web.
 
 ## How it fits together
 
+Conversation continuity uses a stable IVOAI session ID. Inside `ivoai codex`,
+the native `/resume` picker and `ivoai session resume <id>` share the same
+mappings. See [continuity, recovery and explicit handoff](docs/conversation-continuity.md).
+
 ```text
 Desktop / notebook                         Private Linux servers
 

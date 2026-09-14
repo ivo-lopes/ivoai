@@ -216,11 +216,24 @@ managed AUTO has only the IVOAI provider enabled.
 
 ## Session mapping cannot be resumed
 
-**Symptom:** an OpenCode conversation opens but IVOAI starts a new official executor
-conversation. Mapping is deliberately bound to the working directory and the stable
-IDs of the selected knowledge sources. A changed directory or source scope creates a
-new boundary instead of reusing possibly unsafe state. Return to the original
-directory and scope, or continue as a new session; never hand-edit session JSON.
+Use `ivoai session show --json <id>` to inspect separate frontend/provider mappings.
+Native reuse requires the recorded project and a verified matching provider account.
+An absent or ambiguous mapping is not guessed. `session resume <id>` reopens the
+conversation without replaying its last turn; `session recover <id>` instead
+reconciles an approved interrupted DAG. Never hand-edit session JSON or retry an
+`AMBIGUOUS_PREVIOUS_EXECUTION` mutation blindly. See [continuity](conversation-continuity.md).
+
+## Codex native `/resume` cannot connect or select
+
+The v0.10.2 error `Failed to start TUI session picker: failed to connect to remote
+app server` came from rejecting the picker's second authenticated connection
+(HTTP 409). v0.10.3 routes requests by originating client and keeps the primary
+alive when the picker closes. On Codex 0.154.0, `Permission overrides are not
+supported when resuming a remote task` was a second blocker: duplicated client-side
+sandbox/approval overrides. These remain enforced on the owned server, not passed
+as TUI resume overrides. Update IVOAI and restart the managed frontend; do not
+disable the picker, change personal config or use direct mode as a workaround.
+Native histories already deleted by older ephemeral homes cannot be reconstructed.
 
 ## Knowledge panel is stale, empty, or degraded
 

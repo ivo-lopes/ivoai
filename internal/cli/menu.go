@@ -51,6 +51,7 @@ func PublicMenuActionIDs() []string {
 		"mcp.list", "mcp.add", "mcp.remove", "mcp.auth", "mcp.auth.remove", "mcp.header", "mcp.test", "launch.codex", "launch.claude", "launch.opencode", "memory.status", "memory.configure",
 		"mcp.tools", "mcp.enable", "mcp.policy", "mcp.direct-policy",
 		"session.direct.codex", "session.direct.claude", "session.direct.opencode", "session.orchestrated.codex", "session.orchestrated.claude", "session.list", "session.monitor", "session.stop",
+		"session.continuity",
 		"project.status", "project.init", "config.show", "config.headroom", "config.memory", "config.ruflo", "config.auto", "config.auto-planner", "config.auto-failover", "config.auto-checkpoint", "config.auto-strategy", "config.auto-parallel", "config.auto-bootstrap", "config.auto-escalation", "config.session-mode", "config.primary", "config.reviewer", "config.workers",
 		"server.setup", "server.status", "server.doctor", "server.start", "server.stop", "server.restart", "server.logs",
 		"server.enrollment.create", "server.enrollment.list", "server.enrollment.revoke",
@@ -74,7 +75,7 @@ func menu(ctx context.Context, a *app.App) error {
 			{id: "maintenance", label: "Setup & Maintenance", description: "Install, repair, update, rollback, or uninstall", run: session.maintenance},
 			{id: "connections", label: "Connections", description: "ChatGPT, Claude Code, ivoai server, and external MCPs", run: session.connections},
 			{id: "agents", label: "Agents", description: "Launch Codex, Claude Code, or OpenCode through the ivoai runtime", run: session.agents},
-			{id: "sessions", label: "Session Control", description: "Start observable direct or Ruflo-orchestrated sessions", run: session.sessions},
+			{id: "sessions", label: "Session Control", description: "Inspect, resume, recover or hand off native conversations; start and stop sessions", run: session.sessions},
 			{id: "memory", label: "Memory", description: "Inspect or reconfigure persistent operational memory", run: session.memory},
 			{id: "project", label: "Project", description: "Host identity and optional project override", run: session.project},
 			{id: "configuration", label: "Configuration", description: "Headroom, ai-memory, and Ruflo safe settings", run: session.configuration},
@@ -158,6 +159,7 @@ func (s *menuSession) launch() (bool, error) {
 func (s *menuSession) sessions() (bool, error) {
 	snapshot, _ := s.app.MenuSnapshot()
 	return s.loop("Session Control", []menuAction{
+		{id: "session.continuity", label: "Conversations — Inspect / Resume", description: "Choose an IVOAI session; preserve native conversation and execution mode", run: s.conversations},
 		{id: "auto", label: "IVOAI Automatic Session", description: "OpenCode frontend with prompt gate, approved native DAG and scoped workers", disabled: disabledUnless(snapshot.AutoEnabled, "automatic orchestration disabled"), run: func() (bool, error) { return true, s.app.Auto(s.ctx, "", nil) }},
 		{id: "session.direct.codex", label: "Direct Session — Codex", description: "Official Codex runtime with session observability; Ruflo is not started", run: func() (bool, error) { return true, s.app.SessionStart(s.ctx, "codex", "direct", nil) }},
 		{id: "session.direct.claude", label: "Direct Session — Claude Code", description: "Official Claude Code runtime with session observability; Ruflo is not started", run: func() (bool, error) { return true, s.app.SessionStart(s.ctx, "claude", "direct", nil) }},

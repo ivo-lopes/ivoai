@@ -51,6 +51,9 @@ func TestResumableOpenCodeSessionMatchesDirectoryAndKnowledgeScope(t *testing.T)
 		{SessionID: "sess_11111111111111111111111111111111", StartedAt: now.Add(-time.Minute), UpdatedAt: now.Add(-time.Minute), EndedAt: &now, Mode: session.ModeDirect, Frontend: "opencode", FrontendSessionID: "ses_wrong_scope", WorkingDirectory: root, KnowledgeScopeID: "ks_other", PrimaryExecutor: "opencode", PrimaryModel: session.UnknownModel(), Workers: []session.Worker{}, MaxWorkers: 1, ContextStatus: "disabled", MemoryStatus: "disabled", ServerStatus: "not-connected", State: session.StateCompleted},
 		{SessionID: "sess_22222222222222222222222222222222", StartedAt: now, UpdatedAt: now, EndedAt: &now, Mode: session.ModeDirect, Frontend: "opencode", FrontendSessionID: "ses_expected", WorkingDirectory: root, KnowledgeScopeID: "ks_fixture", PrimaryExecutor: "opencode", PrimaryModel: session.UnknownModel(), Workers: []session.Worker{}, MaxWorkers: 1, ContextStatus: "disabled", MemoryStatus: "disabled", ServerStatus: "not-connected", State: session.StateCompleted},
 	} {
+		value.Mode, value.Auto, value.Coordinator = session.ModeAuto, true, "native"
+		value.InitialPlanner, value.CurrentPrimary = "opencode", "opencode"
+		value.SwarmID = "native_" + value.SessionID
 		if err := store.Create(value); err != nil {
 			t.Fatal(err)
 		}
@@ -141,6 +144,7 @@ esac
 	claudeBody += complete
 	codexBody = strings.Replace(codexBody, "#!/bin/sh\n", "#!/bin/sh\nif [ \"$1 $2 $3\" = 'mcp list --json' ]; then printf '[]\\n'; exit 0; fi\n", 1)
 	a := sessionTestApp(t, root, appExecutable(t, root, "codex", codexBody), appExecutable(t, root, "claude", claudeBody), ruflo)
+	a.ProviderAccountReference = func(context.Context, string) (string, error) { return "", nil }
 	t.Setenv("IVOAI_TRANSPORT_FIXTURE_SESSIONS", a.Store.Paths.SessionsDir)
 	opencode := appExecutable(t, root, "opencode", "#!/bin/sh\nexit 0\n")
 	t.Setenv("IVOAI_TEST_MODE", "1")

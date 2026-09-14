@@ -39,9 +39,10 @@ Use `--direct` para essas operações upstream fora da orquestração.
 
 Codex 0.153.4 e 0.154.0 foram testados. O transporte App Server é experimental no
 upstream; a integração local é pinada e testada. O frontend usa um Codex home
-efêmero, sem copiar credenciais. Workers mantêm autenticação oficial. Navegação
-da conversa funciona durante a sessão; resume/fork persistentes e alterações de
-configuração global não são expostos pela façade. IVOAI guarda metadados
+privado e persistente por projeto, sem copiar credenciais. Workers mantêm
+autenticação oficial. O picker nativo `/resume` e `ivoai session resume` usam os
+mesmos mappings de [continuidade](conversation-continuity.md). Alterações de
+configuração global não são expostas pela façade. IVOAI guarda metadados
 sanitizados, não um segundo store de transcripts.
 
 Prompt insuficiente não inicia worker nem execução substantiva. Critérios de aceite
