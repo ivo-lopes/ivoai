@@ -34,6 +34,7 @@ type Options struct {
 	// NativeHome is provider-owned conversation state, separate from the
 	// bounded IVOAI journal and from the operator's personal Codex config.
 	NativeHome, ResumeThreadID string
+	NativeState                *NativeState
 	InitialPrompt              string
 	ThreadAvailable            func(string) bool
 	ThreadSelected             func(string) error
@@ -130,6 +131,12 @@ func Start(ctx context.Context, options Options) (*Facade, error) {
 		cancel()
 		return nil, err
 	}
+	if options.NativeState != nil {
+		if err := options.NativeState.PrepareView(f.home); err != nil {
+			f.Close()
+			return nil, err
+		}
+	}
 	f.model, f.effort = options.Bridge.InitialSelection()
 	if f.model == "" || f.model == "auto" {
 		primary, ok := options.Bridge.Catalog().StrongPrimary("codex")
@@ -147,6 +154,15 @@ func Start(ctx context.Context, options Options) (*Facade, error) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /", f.connect)
 	mux.HandleFunc("POST /v1/responses", f.responses)
+	mux.HandleFunc("GET /v1/responses", func(w http.ResponseWriter, r *http.Request) {
+		if !authorized(r, f.providerToken) {
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			return
+		}
+		// Official Codex uses 426 to negotiate HTTP fallback for Responses.
+		// This is not the remote TUI WebSocket, which has a different token.
+		http.Error(w, "use HTTP responses transport", http.StatusUpgradeRequired)
+	})
 	f.server = &http.Server{Handler: mux, ReadHeaderTimeout: 5 * time.Second, MaxHeaderBytes: 8192}
 	go func() { _ = f.server.Serve(f.listener) }()
 	args := append(f.configArgs(), "app-server", "--listen", "stdio://")
@@ -213,6 +229,12 @@ func (f *Facade) configArgs() []string {
 	}
 	if f.effort != "" {
 		settings = append(settings, `model_reasoning_effort=`+quote(f.effort))
+	}
+	if f.options.NativeState != nil {
+		// Use the native OpenAI provider identity for portable Codex threads;
+		// only this process's transport is mediated by the IVOAI control plane.
+		settings[0] = `model_provider="openai"`
+		settings = append(settings, "sqlite_home="+quote(f.options.NativeState.SQLiteHome), "openai_base_url="+quote("http://"+f.listener.Addr().String()+"/v1"), `cli_auth_credentials_store="ephemeral"`)
 	}
 	args := []string{}
 	for _, setting := range settings {
@@ -429,6 +451,7 @@ func (f *Facade) forward(message rpc) {
 }
 
 func (f *Facade) readUpstream(reader io.Reader) {
+	var initializeReply *rpc
 	scanner := bufio.NewScanner(reader)
 	scanner.Buffer(make([]byte, 4096), maxFrame)
 	for scanner.Scan() {
@@ -437,10 +460,36 @@ func (f *Facade) readUpstream(reader io.Reader) {
 			f.cancel()
 			return
 		}
+		if string(message.ID) == `"ivoai-native-auth"` && message.Method == "" {
+			if initializeReply == nil {
+				continue
+			}
+			if len(message.Error) != 0 {
+				f.reject(initializeReply.ID, "CODEX_LOCAL_GATEWAY_AUTH_FAILED")
+				f.mu.Lock()
+				f.lastTurnError = errors.New("CODEX_LOCAL_GATEWAY_AUTH_FAILED")
+				f.mu.Unlock()
+				f.cancel()
+				return
+			}
+			f.send(*initializeReply)
+			initializeReply = nil
+			continue
+		}
 		if message.Method == "" && len(message.Error) == 0 {
 			f.mu.Lock()
 			origin := f.pending[string(message.ID)]
 			f.mu.Unlock()
+			if origin.method == "initialize" && f.options.NativeState != nil {
+				// Authenticate only the private loopback model transport. The
+				// official ephemeral store never writes this key to auth.json.
+				copy := message
+				initializeReply = &copy
+				f.forward(rpc{Method: "initialized"})
+				params, _ := json.Marshal(map[string]string{"type": "apiKey", "apiKey": f.providerToken})
+				f.forward(rpc{ID: json.RawMessage(`"ivoai-native-auth"`), Method: "account/login/start", Params: params})
+				continue
+			}
 			if origin.method == "thread/resume" || origin.method == "thread/start" && f.options.ThreadSelected != nil {
 				var result struct {
 					Thread struct {
@@ -595,7 +644,11 @@ func (f *Facade) handle(message rpc) {
 		}
 		// Never accept provider, tools, hooks or policy configuration from the UI.
 		selection, _ := f.options.Bridge.Catalog().Resolve(f.model, f.effort)
-		clean := map[string]any{"cwd": f.options.Directory, "model": selection.Model, "modelProvider": "ivoai", "sandbox": "read-only", "approvalPolicy": "never", "ephemeral": f.options.NativeHome == ""}
+		provider := "ivoai"
+		if f.options.NativeState != nil {
+			provider = "openai"
+		}
+		clean := map[string]any{"cwd": f.options.Directory, "model": selection.Model, "modelProvider": provider, "sandbox": "read-only", "approvalPolicy": "never", "ephemeral": f.options.NativeHome == ""}
 		if message.Method == "thread/resume" {
 			thread, _ := p["threadId"].(string)
 			f.mu.Lock()

@@ -198,7 +198,7 @@ func TestLiveNativeAppServerAdmission(t *testing.T) {
 		t.Helper()
 		_, body, err := client.Read(ctx)
 		if err != nil {
-			t.Fatal("native event unavailable:", err)
+			t.Fatal("native event unavailable:", err, f.TurnError())
 		}
 		var event rpc
 		if json.Unmarshal(body, &event) != nil {
@@ -297,6 +297,20 @@ func TestLiveNativeAppServerAdmission(t *testing.T) {
 	}
 	_ = client.CloseNow()
 	f.Close()
+	// Reopen through an isolated configuration home, sharing only the
+	// provider-owned conversation store. No transcript or SQLite copy.
+	nativeState := NativeState{Home: options.NativeHome, SQLiteHome: options.NativeHome}
+	discovered, err := DiscoverNative(ctx, binary, root, root, nativeState, started.Thread.ID)
+	if err != nil || len(discovered) != 1 || discovered[0].ID != started.Thread.ID {
+		for _, name := range []string{".", "sessions", "archived_sessions", "thread-writer-locks"} {
+			if info, statErr := os.Lstat(filepath.Join(nativeState.Home, name)); statErr == nil {
+				t.Logf("synthetic native directory %s mode=%s", name, info.Mode())
+			}
+		}
+		t.Fatalf("native metadata discovery failed: %v", err)
+	}
+	options.NativeHome = filepath.Join(root, "isolated-portable-view")
+	options.NativeState = &nativeState
 	f, err = Start(ctx, options)
 	if err != nil {
 		t.Fatal(err)
@@ -324,6 +338,32 @@ func TestLiveNativeAppServerAdmission(t *testing.T) {
 	send(4, "turn/start", map[string]any{"threadId": started.Thread.ID, "input": []any{map[string]any{"type": "text", "text": "corrija isso"}}})
 	if event := waitID("4"); !bytes.Contains(event.Error, []byte("PROMPT_INSUFFICIENT")) {
 		t.Fatal("resume bypassed prompt gate")
+	}
+	send(5, "turn/start", map[string]any{"threadId": started.Thread.ID, "input": []any{map[string]any{"type": "text", "text": "Read VERSION and report the value. Acceptance: return only the version; do not modify files."}}})
+	if event := waitID("5"); len(event.Error) != 0 {
+		t.Fatal("portable turn rejected")
+	}
+	synthesis = false
+	for {
+		event := read()
+		if event.Method == "item/tool/requestUserInput" {
+			answer, _ := json.Marshal(map[string]any{"id": event.ID, "result": map[string]any{"answers": map[string]any{"decision": map[string]any{"answers": []string{"Approve"}}}}})
+			if client.Write(ctx, websocket.MessageText, answer) != nil {
+				t.Fatal("portable approval reply failed")
+			}
+		}
+		if event.Method == "item/completed" && strings.Contains(string(event.Params), "fixture synthesis") {
+			synthesis = true
+		}
+		if event.Method == "error" {
+			t.Fatalf("portable synthetic error: %.600s", event.Params)
+		}
+		if event.Method == "turn/completed" {
+			break
+		}
+	}
+	if !synthesis || runner.calls.Load() != 3 {
+		t.Fatal("portable conversation did not execute through the same core")
 	}
 	t.Log("native history persisted; restart/list/resume/gate PASS; no transcript copied into IVOAI metadata")
 }

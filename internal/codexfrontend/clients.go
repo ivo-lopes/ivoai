@@ -39,7 +39,7 @@ func (f *Facade) handleClient(client *websocket.Conn, primary bool, message rpc)
 		}
 		return
 	}
-	if !primary && message.Method == "initialized" {
+	if message.Method == "initialized" && (!primary || f.options.NativeState != nil) {
 		return
 	}
 	f.mu.Lock()

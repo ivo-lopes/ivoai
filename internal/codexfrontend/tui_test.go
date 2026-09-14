@@ -58,7 +58,12 @@ func TestLiveNativeTUI(t *testing.T) {
 	var historyMu sync.Mutex
 	history := map[string]int{}
 	var selectedThread string
-	f, err := Start(ctx, Options{Binary: binary, Directory: root, RuntimeDir: root, NativeHome: filepath.Join(root, "native-history"), SessionID: "native_tui_fixture", Bridge: bridge, Environment: os.Environ(),
+	var nativeState *NativeState
+	if os.Getenv("IVOAI_LIVE_CODEX_PORTABLE") == "1" {
+		providerHome := filepath.Join(root, "provider-owned-history")
+		nativeState = &NativeState{Home: providerHome, SQLiteHome: providerHome}
+	}
+	f, err := Start(ctx, Options{Binary: binary, Directory: root, RuntimeDir: root, NativeHome: filepath.Join(root, "native-history"), NativeState: nativeState, SessionID: "native_tui_fixture", Bridge: bridge, Environment: os.Environ(),
 		ThreadAvailable: func(id string) bool { historyMu.Lock(); defer historyMu.Unlock(); return history[id] > 0 },
 		ThreadSelected: func(id string) error {
 			historyMu.Lock()
