@@ -225,6 +225,34 @@ func TestMenuAvailabilityAdaptsToHostAndServerState(t *testing.T) {
 	}
 }
 
+func TestDoctorRepairHooksIsExplicitAndCannotMixWithInventory(t *testing.T) {
+	root := t.TempDir()
+	t.Setenv("HOME", root)
+	t.Setenv("XDG_CONFIG_HOME", filepath.Join(root, "config"))
+	t.Setenv("XDG_DATA_HOME", filepath.Join(root, "data"))
+	t.Setenv("XDG_STATE_HOME", filepath.Join(root, "state"))
+	t.Setenv("XDG_CACHE_HOME", filepath.Join(root, "cache"))
+	t.Setenv("IVOAI_TEST_MODE", "1")
+	var output bytes.Buffer
+	a, err := app.New("v0.1.0", strings.NewReader(""), &output, &output)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := a.Setup(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	output.Reset()
+	if err := Run(context.Background(), a, []string{"doctor", "--repair-hooks", "--json"}); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(output.String(), `"overall": "READY"`) {
+		t.Fatalf("repair doctor JSON: %s", output.String())
+	}
+	if err := Run(context.Background(), a, []string{"doctor", "--repair-hooks", "--inventory"}); err == nil || !strings.Contains(err.Error(), "cannot be combined") {
+		t.Fatalf("repair/inventory conflict not rejected: %v", err)
+	}
+}
+
 func TestDoctorJSONDoesNotEmitProgress(t *testing.T) {
 	root := t.TempDir()
 	t.Setenv("HOME", root)
