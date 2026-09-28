@@ -200,16 +200,76 @@ func TestAgentAuthDoesNotTrustSuccessfulNegativeStatus(t *testing.T) {
 	}
 }
 
+func writeHealthyHook(t *testing.T, root, agent string) string {
+	t.Helper()
+	dir := filepath.Join(root, agent)
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	path := filepath.Join(dir, "session-start.sh")
+	if err := os.WriteFile(path, []byte("#!/bin/sh\n"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	return path
+}
+
 func TestHooksInstalledRequiresMaterializedAssets(t *testing.T) {
 	dir := t.TempDir()
 	if hooksInstalled(dir) {
 		t.Fatal("empty hooks directory reported installed")
 	}
-	if err := os.WriteFile(filepath.Join(dir, "session-start.sh"), []byte("#!/bin/sh\n"), 0o700); err != nil {
+	writeHealthyHook(t, dir, "codex")
+	writeHealthyHook(t, dir, "claude-code")
+	if !hooksInstalled(dir) {
+		t.Fatal("managed hook assets were not detected")
+	}
+}
+
+func TestInspectHooksRequiresBothManagedAgents(t *testing.T) {
+	dir := t.TempDir()
+	writeHealthyHook(t, dir, "codex")
+	healthy, issues := inspectHooks(dir)
+	if healthy || !strings.Contains(strings.Join(issues, "\n"), "claude-code") {
+		t.Fatalf("healthy=%v issues=%v", healthy, issues)
+	}
+}
+
+func TestInspectHooksReportsNonExecutableManagedEntrypoint(t *testing.T) {
+	dir := t.TempDir()
+	codexHook := writeHealthyHook(t, dir, "codex")
+	writeHealthyHook(t, dir, "claude-code")
+	if err := os.Chmod(codexHook, 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if !hooksInstalled(dir) {
-		t.Fatal("hook asset was not detected")
+	healthy, issues := inspectHooks(dir)
+	if healthy || len(issues) == 0 || !strings.Contains(strings.Join(issues, "\n"), "not executable") {
+		t.Fatalf("healthy=%v issues=%v", healthy, issues)
+	}
+}
+
+func TestInspectHooksReportsMissingInterpreter(t *testing.T) {
+	dir := t.TempDir()
+	writeHealthyHook(t, dir, "codex")
+	claudeHook := writeHealthyHook(t, dir, "claude-code")
+	if err := os.WriteFile(claudeHook, []byte("#!/definitely/missing/ivoai-shell\n"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	healthy, issues := inspectHooks(dir)
+	if healthy || len(issues) == 0 || !strings.Contains(strings.Join(issues, "\n"), "interpreter is unavailable") {
+		t.Fatalf("healthy=%v issues=%v", healthy, issues)
+	}
+}
+
+func TestInspectHooksReportsEnvInterpreterMissingFromPATH(t *testing.T) {
+	dir := t.TempDir()
+	codexHook := writeHealthyHook(t, dir, "codex")
+	writeHealthyHook(t, dir, "claude-code")
+	if err := os.WriteFile(codexHook, []byte("#!/usr/bin/env definitely-missing-ivoai-shell\n"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	healthy, issues := inspectHooks(dir)
+	if healthy || len(issues) == 0 || !strings.Contains(strings.Join(issues, "\n"), "missing from PATH") {
+		t.Fatalf("healthy=%v issues=%v", healthy, issues)
 	}
 }
 

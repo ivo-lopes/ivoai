@@ -326,8 +326,17 @@ func runDoctor(ctx context.Context, a *app.App, args []string) error {
 	fs.SetOutput(a.Err)
 	jsonOutput := fs.Bool("json", false, "JSON output")
 	inventory := fs.Bool("inventory", false, "include sanitized compatibility inventory")
+	repairHooks := fs.Bool("repair-hooks", false, "repair IVOAI-managed ai-memory lifecycle hooks")
 	if err := fs.Parse(args); err != nil {
 		return err
+	}
+	if *repairHooks && *inventory {
+		return errors.New("doctor --repair-hooks cannot be combined with --inventory")
+	}
+	if *repairHooks {
+		if err := a.ReconfigureMemory(ctx); err != nil {
+			return fmt.Errorf("repair ai-memory hooks: %w", err)
+		}
 	}
 	if *inventory {
 		value := a.SupportInventory(ctx)
