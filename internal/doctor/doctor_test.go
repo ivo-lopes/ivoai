@@ -247,6 +247,21 @@ func TestInspectHooksReportsMissingInterpreter(t *testing.T) {
 	}
 }
 
+func TestInspectHooksReportsEnvInterpreterMissingFromPATH(t *testing.T) {
+	dir := t.TempDir()
+	codexDir := filepath.Join(dir, "codex")
+	if err := os.MkdirAll(codexDir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(codexDir, "session-start.sh"), []byte("#!/usr/bin/env definitely-missing-ivoai-shell\n"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	healthy, issues := inspectHooks(dir)
+	if healthy || len(issues) == 0 || !strings.Contains(strings.Join(issues, "\n"), "missing from PATH") {
+		t.Fatalf("healthy=%v issues=%v", healthy, issues)
+	}
+}
+
 func TestServerDoctorUsesLiveProtocolAndRefusesCrossOriginRedirect(t *testing.T) {
 	target := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		_, _ = w.Write([]byte(`{"protocol_version":1,"health_endpoint":"/health","ready_endpoint":"/ready"}`))
