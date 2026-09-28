@@ -9,7 +9,7 @@ Usage:
   ivoai help | version | uninstall
   ivoai status [--json]
   ivoai setup [--mode client|server]
-  ivoai doctor [--json] [--inventory] [--repair-hooks]
+  ivoai doctor [--json] [--inventory]
   ivoai update [--dry-run] | update --rollback [--force]
   ivoai update --codex [--rollback]
   ivoai connect [list|chatgpt|claude]
