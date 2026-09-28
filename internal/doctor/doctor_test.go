@@ -200,30 +200,45 @@ func TestAgentAuthDoesNotTrustSuccessfulNegativeStatus(t *testing.T) {
 	}
 }
 
+func writeHealthyHook(t *testing.T, root, agent string) string {
+	t.Helper()
+	dir := filepath.Join(root, agent)
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	path := filepath.Join(dir, "session-start.sh")
+	if err := os.WriteFile(path, []byte("#!/bin/sh\n"), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	return path
+}
+
 func TestHooksInstalledRequiresMaterializedAssets(t *testing.T) {
 	dir := t.TempDir()
 	if hooksInstalled(dir) {
 		t.Fatal("empty hooks directory reported installed")
 	}
-	codexDir := filepath.Join(dir, "codex")
-	if err := os.MkdirAll(codexDir, 0o700); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(codexDir, "session-start.sh"), []byte("#!/bin/sh\n"), 0o700); err != nil {
-		t.Fatal(err)
-	}
+	writeHealthyHook(t, dir, "codex")
+	writeHealthyHook(t, dir, "claude-code")
 	if !hooksInstalled(dir) {
-		t.Fatal("hook asset was not detected")
+		t.Fatal("managed hook assets were not detected")
+	}
+}
+
+func TestInspectHooksRequiresBothManagedAgents(t *testing.T) {
+	dir := t.TempDir()
+	writeHealthyHook(t, dir, "codex")
+	healthy, issues := inspectHooks(dir)
+	if healthy || !strings.Contains(strings.Join(issues, "\n"), "claude-code") {
+		t.Fatalf("healthy=%v issues=%v", healthy, issues)
 	}
 }
 
 func TestInspectHooksReportsNonExecutableManagedEntrypoint(t *testing.T) {
 	dir := t.TempDir()
-	codexDir := filepath.Join(dir, "codex")
-	if err := os.MkdirAll(codexDir, 0o700); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(codexDir, "session-start.sh"), []byte("#!/bin/sh\n"), 0o600); err != nil {
+	codexHook := writeHealthyHook(t, dir, "codex")
+	writeHealthyHook(t, dir, "claude-code")
+	if err := os.Chmod(codexHook, 0o600); err != nil {
 		t.Fatal(err)
 	}
 	healthy, issues := inspectHooks(dir)
@@ -234,11 +249,9 @@ func TestInspectHooksReportsNonExecutableManagedEntrypoint(t *testing.T) {
 
 func TestInspectHooksReportsMissingInterpreter(t *testing.T) {
 	dir := t.TempDir()
-	claudeDir := filepath.Join(dir, "claude-code")
-	if err := os.MkdirAll(claudeDir, 0o700); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(claudeDir, "session-start.sh"), []byte("#!/definitely/missing/ivoai-shell\n"), 0o700); err != nil {
+	writeHealthyHook(t, dir, "codex")
+	claudeHook := writeHealthyHook(t, dir, "claude-code")
+	if err := os.WriteFile(claudeHook, []byte("#!/definitely/missing/ivoai-shell\n"), 0o700); err != nil {
 		t.Fatal(err)
 	}
 	healthy, issues := inspectHooks(dir)
@@ -249,11 +262,9 @@ func TestInspectHooksReportsMissingInterpreter(t *testing.T) {
 
 func TestInspectHooksReportsEnvInterpreterMissingFromPATH(t *testing.T) {
 	dir := t.TempDir()
-	codexDir := filepath.Join(dir, "codex")
-	if err := os.MkdirAll(codexDir, 0o700); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(codexDir, "session-start.sh"), []byte("#!/usr/bin/env definitely-missing-ivoai-shell\n"), 0o700); err != nil {
+	codexHook := writeHealthyHook(t, dir, "codex")
+	writeHealthyHook(t, dir, "claude-code")
+	if err := os.WriteFile(codexHook, []byte("#!/usr/bin/env definitely-missing-ivoai-shell\n"), 0o700); err != nil {
 		t.Fatal(err)
 	}
 	healthy, issues := inspectHooks(dir)
