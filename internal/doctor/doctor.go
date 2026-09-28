@@ -9,6 +9,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"sort"
@@ -946,6 +947,16 @@ func inspectHooks(path string) (bool, []string) {
 		interpreterInfo, interpreterErr := os.Stat(interpreter[0])
 		if interpreterErr != nil || !interpreterInfo.Mode().IsRegular() || interpreterInfo.Mode()&0o111 == 0 {
 			issues = append(issues, fmt.Sprintf("ai-memory hook %s interpreter is unavailable: %s", rel, interpreter[0]))
+			return nil
+		}
+		if filepath.Base(interpreter[0]) == "env" {
+			if len(interpreter) < 2 || strings.HasPrefix(interpreter[1], "-") {
+				issues = append(issues, fmt.Sprintf("ai-memory hook %s has an invalid env interpreter", rel))
+				return nil
+			}
+			if _, lookupErr := exec.LookPath(interpreter[1]); lookupErr != nil {
+				issues = append(issues, fmt.Sprintf("ai-memory hook %s interpreter is missing from PATH: %s", rel, interpreter[1]))
+			}
 		}
 		return nil
 	})
