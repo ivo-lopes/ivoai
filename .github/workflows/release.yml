@@ -80,9 +80,15 @@ jobs:
         with:
           go-version-file: go.mod
           cache: true
+      - name: Install non-AVX CPU smoke dependency
+        if: matrix.goarch == 'amd64'
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends qemu-user
       - name: Build and verify patched managed frontend
         run: |
           scripts/build-managed-opencode.sh "$PWD/dist/release"
+          scripts/test-opencode-baseline.sh \
+            "$PWD/dist/release/ivoai-opencode_linux_${{ matrix.goarch }}.tar.gz" \
+            "$PWD/dist/release/managed-opencode-${{ matrix.goarch }}.json"
           scripts/test-patched-opencode.sh \
             "$PWD/dist/release/ivoai-opencode_linux_${{ matrix.goarch }}.tar.gz" \
             "$PWD/dist/release/managed-opencode-${{ matrix.goarch }}.json"

@@ -38,7 +38,7 @@ func managedOpenCodeSpec(original Spec, encoded, platform string) (Spec, error) 
 		return Spec{}, invalid
 	}
 	var metadata managedOpenCodeMetadata
-	if json.Unmarshal(body, &metadata) != nil || metadata.Version != "1.18.25-ivoai.1" || metadata.Platform != platform || (platform != "linux/amd64" && platform != "linux/arm64") {
+	if json.Unmarshal(body, &metadata) != nil || metadata.Version != "1.18.25-ivoai.2" || metadata.Platform != platform || (platform != "linux/amd64" && platform != "linux/arm64") {
 		return Spec{}, invalid
 	}
 	for _, value := range []string{metadata.Revision, metadata.SHA256, metadata.SourceSHA256, metadata.PatchSHA256} {
@@ -49,7 +49,9 @@ func managedOpenCodeSpec(original Spec, encoded, platform string) (Spec, error) 
 	if metadata.UpstreamRevision != "cb7d8b2f5e44876ef98b661dc10590c915af3a9f" {
 		return Spec{}, invalid
 	}
-	identity := sha256.Sum256([]byte(metadata.SourceSHA256 + "\n" + metadata.PatchSHA256 + "\n"))
+	// Bind the object to the compiled archive too: compiler/CPU target changes
+	// must never collide with an existing immutable source/patch object.
+	identity := sha256.Sum256([]byte(metadata.SourceSHA256 + "\n" + metadata.PatchSHA256 + "\n" + metadata.SHA256 + "\n"))
 	if metadata.Revision != hex.EncodeToString(identity[:]) {
 		return Spec{}, invalid
 	}

@@ -6,7 +6,7 @@ repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 readonly repo_root
 readonly upstream_revision=cb7d8b2f5e44876ef98b661dc10590c915af3a9f
 readonly source_sha=95cf680c4263ef71d54329df867d6165406e715f6c4368cdc697b61bd328ca0e
-readonly managed_version=1.18.25-ivoai.1
+readonly managed_version=1.18.25-ivoai.2
 readonly bun_version=1.3.14
 readonly output_dir="${1:?usage: build-managed-opencode.sh ABSOLUTE_OUTPUT_DIR}"
 [[ "$output_dir" = /* ]] || { echo 'output directory must be absolute' >&2; exit 1; }
@@ -39,8 +39,7 @@ tar -xzf source.tar.gz
 readonly source_root="$build_root/opencode-$upstream_revision"
 readonly clipboard_patch="$repo_root/patches/opencode/1.18.25-clipboard-errors.patch"
 patch_sha="$(sha256sum "$clipboard_patch" | cut -d ' ' -f1)"
-revision="$(printf '%s\n%s\n' "$source_sha" "$patch_sha" | sha256sum | cut -d ' ' -f1)"
-readonly patch_sha revision
+readonly patch_sha
 cd "$source_root"
 patch --dry-run --fuzz=0 -p1 < "$clipboard_patch"
 patch --fuzz=0 -p1 < "$clipboard_patch"
@@ -53,15 +52,25 @@ export XDG_CACHE_HOME="$build_root/cache"
 # explicitly after locked dependency resolution; its checks remain intact.
 bun install --frozen-lockfile --ignore-scripts
 cd packages/opencode
+build_args=(--single --skip-install)
+if [[ "$arch" = amd64 ]]; then
+  # Upstream --single selects the AVX2 binary even on a portable release.
+  # --baseline additionally builds the compatible x64 target; package that one.
+  build_args+=(--baseline)
+  binary_dir=dist/opencode-linux-x64-baseline/bin
+else
+  binary_dir=dist/opencode-linux-arm64/bin
+fi
 OPENCODE_VERSION="$managed_version" OPENCODE_CHANNEL=latest \
-  bun run script/build.ts --single --skip-install
-if [[ "$arch" = amd64 ]]; then binary_dir=dist/opencode-linux-x64/bin; else binary_dir=dist/opencode-linux-arm64/bin; fi
+  bun run script/build.ts "${build_args[@]}"
 [[ "$("$binary_dir/opencode" --version)" = "$managed_version" ]]
 archive="ivoai-opencode_linux_${arch}.tar.gz"
 install -m 0644 "$source_root/LICENSE" "$binary_dir/LICENSE"
 tar --sort=name --mtime=@0 --owner=0 --group=0 --numeric-owner \
   -C "$binary_dir" -czf "$output_dir/$archive" opencode LICENSE
 asset_sha="$(sha256sum "$output_dir/$archive" | cut -d ' ' -f1)"
+revision="$(printf '%s\n%s\n%s\n' "$source_sha" "$patch_sha" "$asset_sha" | sha256sum | cut -d ' ' -f1)"
+readonly revision
 jq -n --arg version "$managed_version" --arg platform "linux/$arch" \
   --arg revision "$revision" --arg sha256 "$asset_sha" --arg archive "$archive" \
   --arg upstream_revision "$upstream_revision" --arg source_sha256 "$source_sha" \

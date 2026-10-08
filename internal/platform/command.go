@@ -88,6 +88,9 @@ func (ExecRunner) Run(ctx context.Context, command string, args []string, o RunO
 	var exitErr *exec.ExitError
 	if errors.As(err, &exitErr) {
 		r.ExitCode = exitErr.ExitCode()
+		if status, ok := exitErr.Sys().(syscall.WaitStatus); ok && status.Signaled() {
+			return r, fmt.Errorf("%s terminated by signal: %s", command, status.Signal())
+		}
 		return r, fmt.Errorf("%s exited with status %d", command, r.ExitCode)
 	}
 	r.ExitCode = -1
