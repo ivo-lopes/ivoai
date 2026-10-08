@@ -9,6 +9,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"sort"
@@ -218,9 +219,14 @@ func (d Doctor) Run(ctx context.Context) Report {
 	r.Caveman = d.managedComponent("caveman", state.Components["caveman"])
 	r.CompressionEffective, r.CompressionReason = effectiveCompression(cfg, r.Headroom, r.Caveman)
 	r.Memory = componentFromState(state.Components["ai-memory"])
-	r.Memory.Hooks = hooksInstalled(d.Store.Paths.HooksDir)
+	hooksHealthy, hookIssues := inspectHooks(d.Store.Paths.HooksDir)
+	r.Memory.Hooks = hooksHealthy
 	if r.Memory.Fixture {
 		r.Memory.Hooks = true
+		hookIssues = nil
+	}
+	if cfg.Memory.Enabled && r.Memory.Installed {
+		r.Issues = append(r.Issues, hookIssues...)
 	}
 	r.Ruflo = (orchestration.Manager{Runner: d.Runner, Binary: state.Components["ruflo"].Path, ProfileDir: d.Store.Paths.DataDir}).Inspect(ctx)
 	if fixture := state.Components["ruflo"]; !r.Ruflo.Installed && strings.HasSuffix(fixture.Version, "-fixture") {
@@ -251,9 +257,6 @@ func (d Doctor) Run(ctx context.Context) Report {
 		if !component.Installed {
 			r.Issues = append(r.Issues, name+" is not installed")
 		}
-	}
-	if cfg.Memory.Enabled && r.Memory.Installed && !r.Memory.Hooks {
-		r.Issues = append(r.Issues, "ai-memory hooks are not installed")
 	}
 	if cfg.Orchestration.Enabled {
 		if !r.Ruflo.Installed {
@@ -891,9 +894,85 @@ func componentFromAuth(a Auth) Component {
 	return Component{Installed: a.Installed, Version: a.Version}
 }
 func hooksInstalled(path string) bool {
-	entries, err := os.ReadDir(path)
-	return err == nil && len(entries) > 0
+	healthy, _ := inspectHooks(path)
+	return healthy
 }
+
+func inspectHooks(path string) (bool, []string) {
+	if entries, err := os.ReadDir(path); err != nil || len(entries) == 0 {
+		return false, []string{"ai-memory hooks are not installed"}
+	}
+
+	issues := []string{}
+	totalEntrypoints := 0
+	for _, agent := range []string{"codex", "claude-code"} {
+		agentRoot := filepath.Join(path, agent)
+		agentEntrypoints := 0
+		err := filepath.WalkDir(agentRoot, func(full string, entry os.DirEntry, walkErr error) error {
+			if walkErr != nil {
+				issues = append(issues, fmt.Sprintf("ai-memory %s hook path is unreadable: %s", agent, filepath.Clean(full)))
+				return nil
+			}
+			if entry.IsDir() || filepath.Ext(entry.Name()) != ".sh" {
+				return nil
+			}
+			rel, relErr := filepath.Rel(path, full)
+			if relErr != nil {
+				rel = filepath.Join(agent, entry.Name())
+			}
+			agentEntrypoints++
+			totalEntrypoints++
+
+			info, statErr := entry.Info()
+			if statErr != nil || !info.Mode().IsRegular() {
+				issues = append(issues, fmt.Sprintf("ai-memory hook %s is not a regular file", rel))
+				return nil
+			}
+			if info.Mode()&0o111 == 0 {
+				issues = append(issues, fmt.Sprintf("ai-memory hook %s is not executable", rel))
+			}
+
+			raw, readErr := os.ReadFile(full)
+			if readErr != nil {
+				issues = append(issues, fmt.Sprintf("ai-memory hook %s is unreadable", rel))
+				return nil
+			}
+			first := strings.TrimSpace(strings.SplitN(string(raw), "\n", 2)[0])
+			if !strings.HasPrefix(first, "#!") {
+				issues = append(issues, fmt.Sprintf("ai-memory hook %s has no shebang", rel))
+				return nil
+			}
+			interpreter := strings.Fields(strings.TrimSpace(strings.TrimPrefix(first, "#!")))
+			if len(interpreter) == 0 || !filepath.IsAbs(interpreter[0]) {
+				issues = append(issues, fmt.Sprintf("ai-memory hook %s has an invalid interpreter", rel))
+				return nil
+			}
+			interpreterInfo, interpreterErr := os.Stat(interpreter[0])
+			if interpreterErr != nil || !interpreterInfo.Mode().IsRegular() || interpreterInfo.Mode()&0o111 == 0 {
+				issues = append(issues, fmt.Sprintf("ai-memory hook %s interpreter is unavailable: %s", rel, interpreter[0]))
+				return nil
+			}
+			if filepath.Base(interpreter[0]) == "env" {
+				if len(interpreter) < 2 || strings.HasPrefix(interpreter[1], "-") {
+					issues = append(issues, fmt.Sprintf("ai-memory hook %s has an invalid env interpreter", rel))
+					return nil
+				}
+				if _, lookupErr := exec.LookPath(interpreter[1]); lookupErr != nil {
+					issues = append(issues, fmt.Sprintf("ai-memory hook %s interpreter is missing from PATH: %s", rel, interpreter[1]))
+				}
+			}
+			return nil
+		})
+		if err != nil {
+			issues = append(issues, fmt.Sprintf("ai-memory %s hooks could not be inspected", agent))
+		}
+		if agentEntrypoints == 0 {
+			issues = append(issues, fmt.Sprintf("ai-memory %s hooks contain no executable entrypoint scripts", agent))
+		}
+	}
+	return totalEntrypoints > 0 && len(issues) == 0, issues
+}
+
 func permissions(path string) string {
 	info, err := os.Stat(path)
 	if os.IsNotExist(err) {
