@@ -25,16 +25,16 @@ func TestManagedOpenCodeReleaseMetadataPromotesThroughInstaller(t *testing.T) {
 	if runtime.GOOS != "linux" || (runtime.GOARCH != "amd64" && runtime.GOARCH != "arm64") {
 		t.Skip("managed release targets Linux amd64/arm64")
 	}
-	archive := testArchive(t, "opencode", []byte("#!/bin/sh\necho 1.18.25-ivoai.1\n"))
+	archive := testArchive(t, "opencode", []byte("#!/bin/sh\necho 1.18.25-ivoai.2\n"))
 	digest := sha256.Sum256(archive)
 	metadata := managedOpenCodeMetadata{
-		Version: "1.18.25-ivoai.1", Platform: runtime.GOOS + "/" + runtime.GOARCH,
+		Version: "1.18.25-ivoai.2", Platform: runtime.GOOS + "/" + runtime.GOARCH,
 		SHA256: hex.EncodeToString(digest[:]), SourceSHA256: strings.Repeat("b", 64), PatchSHA256: strings.Repeat("c", 64),
 		UpstreamRevision: "cb7d8b2f5e44876ef98b661dc10590c915af3a9f",
 		Archive:          "ivoai-opencode_linux_" + runtime.GOARCH + ".tar.gz",
 	}
 	metadata.URL = "https://github.com/ivo-lopes/ivoai/releases/download/v0.10.1/" + metadata.Archive
-	identity := sha256.Sum256([]byte(metadata.SourceSHA256 + "\n" + metadata.PatchSHA256 + "\n"))
+	identity := sha256.Sum256([]byte(metadata.SourceSHA256 + "\n" + metadata.PatchSHA256 + "\n" + metadata.SHA256 + "\n"))
 	metadata.Revision = hex.EncodeToString(identity[:])
 	body, err := json.Marshal(metadata)
 	if err != nil {
@@ -77,13 +77,13 @@ func TestManagedOpenCodeReleaseMetadataPromotesThroughInstaller(t *testing.T) {
 
 func TestManagedOpenCodeBuildIdentity(t *testing.T) {
 	metadata := managedOpenCodeMetadata{
-		Version: "1.18.25-ivoai.1", Platform: "linux/amd64",
+		Version: "1.18.25-ivoai.2", Platform: "linux/amd64",
 		SHA256: strings.Repeat("a", 64), SourceSHA256: strings.Repeat("b", 64), PatchSHA256: strings.Repeat("c", 64),
 		UpstreamRevision: "cb7d8b2f5e44876ef98b661dc10590c915af3a9f",
 		Archive:          "ivoai-opencode_linux_amd64.tar.gz",
 		URL:              "https://github.com/ivo-lopes/ivoai/releases/download/v0.10.1/ivoai-opencode_linux_amd64.tar.gz",
 	}
-	identity := sha256.Sum256([]byte(metadata.SourceSHA256 + "\n" + metadata.PatchSHA256 + "\n"))
+	identity := sha256.Sum256([]byte(metadata.SourceSHA256 + "\n" + metadata.PatchSHA256 + "\n" + metadata.SHA256 + "\n"))
 	metadata.Revision = hex.EncodeToString(identity[:])
 	encode := func(value managedOpenCodeMetadata) string {
 		body, err := json.Marshal(value)
@@ -115,6 +115,7 @@ func TestManagedOpenCodeBuildIdentity(t *testing.T) {
 		"different-platform": func(m *managedOpenCodeMetadata) { m.Platform = "linux/arm64" },
 		"different-upstream": func(m *managedOpenCodeMetadata) { m.UpstreamRevision = strings.Repeat("f", 40) },
 		"wrong-digest":       func(m *managedOpenCodeMetadata) { m.SHA256 = "invalid" },
+		"changed-artifact":   func(m *managedOpenCodeMetadata) { m.SHA256 = strings.Repeat("f", 64) },
 		"wrong-identity":     func(m *managedOpenCodeMetadata) { m.Revision = strings.Repeat("e", 64) },
 		"foreign-publisher":  func(m *managedOpenCodeMetadata) { m.URL = strings.Replace(m.URL, "ivo-lopes/ivoai", "other/repo", 1) },
 		"credentials-in-url": func(m *managedOpenCodeMetadata) {

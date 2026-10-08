@@ -18,7 +18,7 @@ It does not change selection, logical text extraction, mouse handling, provider
 configuration, or orchestration. It deliberately does not certify OSC52-only
 delivery as successful desktop copying. No upstream tag or binary is modified.
 
-Build identity: `1.18.25-ivoai.1`. The official workflow builds this patch on the
+Build identity: `1.18.25-ivoai.2`. The official workflow builds this patch on the
 pinned source with the pinned Bun compiler, without dependency installation
 hooks. Separate archives, build metadata and immutable checksums preserve its
 provenance. The IVOAI binary embeds the archive checksum and source/patch identity;
@@ -26,11 +26,20 @@ it never replaces the original immutable upstream object. Development builds
 without that build metadata retain the upstream catalog. No artifact is certified
 merely because this patch exists.
 
+The amd64 archive packages upstream's `x64-baseline` target so AVX/AVX2 is not
+required (including Xeon E5 v2 hosts). ARM64 keeps its native target. The immutable
+object revision hashes source, patch and archive SHA-256 values, each followed by
+a newline. This prevents rebuilt binaries from colliding with the older
+source/patch-only object. CI and release builds run the distributed amd64 binary
+under QEMU's Nehalem CPU model before publication, as well as native TUI checks.
+`scripts/test-opencode-baseline.sh ARCHIVE METADATA` requires `qemu-x86_64` and
+verifies the archive checksum and executable version with no AVX/AVX2 available.
+
 Focused real-TUI test (with the explicitly selected patched binary):
 
 ```sh
 IVOAI_LIVE_OPENCODE_PATH=/path/to/patched/opencode \
-IVOAI_LIVE_OPENCODE_VERSION=1.18.25-ivoai.1 \
+IVOAI_LIVE_OPENCODE_VERSION=1.18.25-ivoai.2 \
 IVOAI_LIVE_OPENCODE_TUI=1 \
 IVOAI_LIVE_OPENCODE_CLIPBOARD=failure \
 go test ./internal/opencodebridge -run '^TestLiveManagedOpenCodeResizeKeyboard$' -count=1
