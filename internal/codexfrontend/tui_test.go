@@ -142,7 +142,7 @@ func TestLiveNativeTUI(t *testing.T) {
 			mu.Lock()
 			text := controls.ReplaceAllString(output.String(), "")
 			mu.Unlock()
-			if strings.Contains(text, expected) {
+			if nativeTUITextContains(text, expected) {
 				return
 			}
 			time.Sleep(50 * time.Millisecond)
@@ -222,4 +222,30 @@ func TestLiveNativeTUI(t *testing.T) {
 		t.Fatal("native resume replayed completed turn")
 	}
 	t.Log(fmt.Sprintf("native composer gate=PASS approval=PASS synthesis=PASS worker_calls=%d", runner.calls.Load()))
+}
+
+// Native renderers may use cursor movement instead of literal whitespace.
+// Match visible labels independently of that choice; lifecycle and permission
+// assertions above still inspect the actual bridge state.
+func nativeTUITextContains(transcript, expected string) bool {
+	controls := regexp.MustCompile("\x1b\\[[0-?]*[ -/]*[@-~]")
+	compact := func(value string) string {
+		return strings.Join(strings.Fields(controls.ReplaceAllString(value, "")), "")
+	}
+	return strings.Contains(compact(transcript), compact(expected))
+}
+
+func TestNativeTUITextContains(t *testing.T) {
+	for _, transcript := range []string{
+		"Codex · Fixture strong default",
+		"Codex\x1b[1C·\x1b[1CFixture\x1b[1Cstrong default",
+		"\x1b[32mFixture\x1b[0mstrong",
+	} {
+		if !nativeTUITextContains(transcript, "Fixture strong") {
+			t.Fatalf("displayed model not recognized: %q", transcript)
+		}
+	}
+	if nativeTUITextContains("Fixture weak", "Fixture strong") {
+		t.Fatal("different model matched")
+	}
 }
