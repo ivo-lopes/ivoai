@@ -301,6 +301,7 @@ components:
         sha256: "170454fb022f5e9b5f6cc76c25fa32ef5100895be44eb04e92f9780591491bbf"
     notes:
       - "Private runtime for the pinned Ruflo installation; it does not modify the user's global Node.js setup."
+      - "Official Node 26 Linux binaries require the system libatomic runtime (libatomic1 on Debian/Ubuntu), glibc >=2.28 and libstdc++ >=6.0.25."
 
   - name: uv
     role: [client-runtime]

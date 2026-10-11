@@ -51,6 +51,9 @@ curl -fsSL https://raw.githubusercontent.com/ivo-lopes/ivoai/main/install.sh | s
 ivoai setup
 ```
 
+Minimal Debian/Ubuntu images also need `libatomic1` for the managed Node 26
+runtime (`sudo apt-get install curl ca-certificates libatomic1`).
+
 Then run `ivoai` to open the responsive interactive menu, or connect and launch from
 subcommands:
 

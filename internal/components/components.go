@@ -458,6 +458,13 @@ func (i *Installer) installNPMTool(ctx context.Context, spec Spec) (string, erro
 	if err != nil {
 		return "", err
 	}
+	probe, err := i.Runner.Run(ctx, node, []string{"--version"}, platform.RunOptions{CleanEnv: true, Env: []string{"PATH=" + filepath.Dir(node) + ":/usr/local/bin:/usr/bin:/bin"}, Timeout: 10 * time.Second})
+	if err != nil {
+		if strings.Contains(probe.Stderr, "libatomic.so.1") {
+			return "", errors.New("managed Node requires libatomic.so.1; on Debian/Ubuntu run sudo apt-get install libatomic1, then repeat ivoai setup")
+		}
+		return "", fmt.Errorf("managed Node runtime preflight: %w", err)
+	}
 	prefix := filepath.Join(i.Store.Paths.DataDir, "components", "ruflo")
 	if err := platform.EnsurePrivateDir(prefix); err != nil {
 		return "", err

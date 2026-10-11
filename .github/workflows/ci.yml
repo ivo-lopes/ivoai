@@ -177,7 +177,7 @@ jobs:
           DEBIAN_FRONTEND: noninteractive
         run: |
           apt-get update
-          apt-get install -y --no-install-recommends ca-certificates coreutils curl git gzip tar xz-utils
+          apt-get install -y --no-install-recommends ca-certificates coreutils curl git gzip tar xz-utils libatomic1
           useradd --create-home --shell /bin/sh ivoai-test
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:

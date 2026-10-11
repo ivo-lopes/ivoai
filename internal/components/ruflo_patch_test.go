@@ -2,6 +2,7 @@ package components
 
 import (
 	"context"
+	"errors"
 	"github.com/ivo-lopes/ivoai/internal/platform"
 	"os"
 	"path/filepath"
@@ -36,7 +37,8 @@ func TestRufloLocalPatchRequiresExactIntegrity(t *testing.T) {
 
 // npm resolves local file dependencies against its working directory even when
 // --prefix is provided. The installer must be independent of the caller's cwd.
-func TestRufloInstallUsesStagedWorkingDirectory(t *testing.T) {
+func newRufloRuntimeFixture(t *testing.T) managedInstallerFixture {
+	t.Helper()
 	fixture := newManagedInstallerFixture(t)
 	root := filepath.Join(fixture.store.Paths.DataDir, "components", "node-"+managedNodeVersion)
 	for _, rel := range []string{"bin/node", "lib/node_modules/npm/bin/npm-cli.js"} {
@@ -48,6 +50,11 @@ func TestRufloInstallUsesStagedWorkingDirectory(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
+	return fixture
+}
+
+func TestRufloInstallUsesStagedWorkingDirectory(t *testing.T) {
+	fixture := newRufloRuntimeFixture(t)
 	prefix := filepath.Join(fixture.store.Paths.DataDir, "components", "ruflo")
 	fixture.installer.Runner = rufloWorkingDirectoryRunner{t: t, prefix: prefix}
 	for _, spec := range DefaultCatalog() {
@@ -62,12 +69,19 @@ func TestRufloInstallUsesStagedWorkingDirectory(t *testing.T) {
 }
 
 type rufloWorkingDirectoryRunner struct {
-	t      *testing.T
-	prefix string
+	t                  *testing.T
+	prefix             string
+	missingNodeLibrary bool
 }
 
 func (r rufloWorkingDirectoryRunner) LookPath(string) (string, error) { return "", os.ErrNotExist }
-func (r rufloWorkingDirectoryRunner) Run(_ context.Context, _ string, _ []string, options platform.RunOptions) (platform.Result, error) {
+func (r rufloWorkingDirectoryRunner) Run(_ context.Context, _ string, args []string, options platform.RunOptions) (platform.Result, error) {
+	if r.missingNodeLibrary {
+		return platform.Result{ExitCode: 127, Stderr: "node: error while loading shared libraries: libatomic.so.1: cannot open shared object file"}, errors.New("node exited with status 127")
+	}
+	if len(args) == 1 && args[0] == "--version" {
+		return platform.Result{Stdout: "v" + managedNodeVersion + "\n"}, nil
+	}
 	if options.Dir != r.prefix {
 		r.t.Fatalf("npm cwd=%q, want staged prefix %q", options.Dir, r.prefix)
 	}
@@ -79,4 +93,19 @@ func (r rufloWorkingDirectoryRunner) Run(_ context.Context, _ string, _ []string
 		return platform.Result{}, err
 	}
 	return platform.Result{}, os.WriteFile(launcher, []byte("fixture"), 0700)
+}
+
+func TestRufloMissingNodeLibraryHasActionableDiagnostic(t *testing.T) {
+	fixture := newRufloRuntimeFixture(t)
+	fixture.installer.Runner = rufloWorkingDirectoryRunner{t: t, missingNodeLibrary: true}
+	for _, spec := range DefaultCatalog() {
+		if spec.Name == "ruflo" {
+			_, err := fixture.installer.installNPMTool(context.Background(), spec)
+			if err == nil || !strings.Contains(err.Error(), "libatomic1") || !strings.Contains(err.Error(), "apt-get install") {
+				t.Fatalf("missing runtime library diagnostic: %v", err)
+			}
+			return
+		}
+	}
+	t.Fatal("missing Ruflo spec")
 }

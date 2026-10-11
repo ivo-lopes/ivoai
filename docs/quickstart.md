@@ -2,6 +2,11 @@
 
 ## Client
 
+On minimal Debian/Ubuntu images, first install `curl`, `ca-certificates` and
+`libatomic1` with the system package manager. Ruflo's private Node 26 requires
+`libatomic.so.1`; IVOAI diagnoses its absence and does not run APT silently.
+For example: `sudo apt-get install curl ca-certificates libatomic1`.
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/ivo-lopes/ivoai/main/install.sh | sh
 ivoai setup
