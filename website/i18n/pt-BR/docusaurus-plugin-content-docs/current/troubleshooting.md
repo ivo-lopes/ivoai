@@ -32,7 +32,7 @@ de falha/entrega não confirmada em vez de um falso sucesso.
 
 Os assets da release incluem binários OpenCode gerenciados e metadados de
 proveniência com checksums separados. O build modificado se identifica como
-`1.18.25-ivoai.1`, não como o artefato upstream intacto. Os objetos imutáveis
+`1.19.0-ivoai.1`, não como o artefato upstream intacto. Os objetos imutáveis
 anteriores continuam disponíveis para rollback.
 
 ## Gestão de conexões multi-server
@@ -707,7 +707,7 @@ repositório Git principal como scope, evitando buckets diferentes por paths/lin
 worktrees. Context aceita apenas documentos ingeridos, não conversas.
 
 Se a tool encontra a página correta, mas o body termina antes da resposta, verifique
-launch antigo com compressão lossy. Headroom 0.36.0 pode comprimir frames
+launch antigo com compressão lossy. Headroom 0.40.0 pode comprimir frames
 `custom_tool_call_output`. Launches atuais ignoram compression quando Memory/Context
 autoritativo está ativo e imprimem o motivo; inicie nova sessão após atualizar.
 Processos existentes preservam sua policy inicial.

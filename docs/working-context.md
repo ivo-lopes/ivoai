@@ -85,8 +85,8 @@ execution, but never causes silent, unbounded injection.
 WorkingContext does not implement scheduling or replace evidence with compression.
 When Caveman is selected, the managed `caveman-mcp` component may project smaller
 representations only after ArtifactStore and without changing ResultRef/WorkerResult
-as the source of exact evidence. The helper is the local BSL-1.1 stdio asset
-`bin-v1.1.3`, pinned to the same runtime revision; it does not use `npx`, is not
+as the source of exact evidence. The helper is the local Apache-2.0 stdio asset
+`bin-v2.1.0`, pinned to the same runtime revision; it does not use `npx`, is not
 registered as a primary MCP, and operates with a private ephemeral recovery store.
 A helper failure, timeout, malformed/oversized response, or unavailability falls back
 to the bounded deterministic projector; large raw output never becomes a prompt

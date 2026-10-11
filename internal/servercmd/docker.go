@@ -25,7 +25,7 @@ import (
 const (
 	dockerEngineMinimumVersion  = "28.0.0"
 	dockerComposeMinimumVersion = "2.33.1"
-	pinnedDockerComposeVersion  = "5.5.0"
+	pinnedDockerComposeVersion  = "5.6.0"
 	dockerComposeInstallPath    = "/usr/local/lib/docker/cli-plugins/docker-compose"
 	maxComposeBinarySize        = 96 << 20
 	composeDownloadTimeout      = 30 * time.Minute
@@ -43,12 +43,12 @@ func dockerComposeAsset(architecture string) (composeAsset, error) {
 	case "amd64":
 		return composeAsset{
 			URL:    base + "docker-compose-linux-x86_64",
-			SHA256: "c57ab918abd5b05ca7e7d0f275875dd1330a695074f309dc9eab1b49efafcd4b",
+			SHA256: "40343e21ca777173e69cff5dbafeb37c6f81f3b0d57d9e597f036e95eb63e76a",
 		}, nil
 	case "arm64":
 		return composeAsset{
 			URL:    base + "docker-compose-linux-aarch64",
-			SHA256: "ff42489f5a9b879d5d117c5ffea6defc27390b3286da8ad52cbc9c6ab5df590e",
+			SHA256: "733ec76717ceb59052a9609b9dadfb523b2df8eab57a54212872d10a58078ea2",
 		}, nil
 	default:
 		return composeAsset{}, fmt.Errorf("Docker Compose does not have a reviewed linux/%s asset", architecture)

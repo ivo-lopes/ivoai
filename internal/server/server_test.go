@@ -342,7 +342,7 @@ func TestARMSetupUsesPinnedArchitectureImage(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(string(override), "sha256:2873ddd3029bf6eed09c0befe737d88123107a0b89274b1552d68d1e3bb2a047") || strings.Contains(string(override), "latest") || strings.Contains(string(override), "build:") {
+	if !strings.Contains(string(override), "sha256:798cd7615e060a72ccbdf19aa0ada52289c6a0147490195bafaece6ce04d70f1") || strings.Contains(string(override), "latest") || strings.Contains(string(override), "build:") {
 		t.Fatalf("invalid ARM pin: %s", override)
 	}
 	unit, _ := os.ReadFile(filepath.Join(layout.SystemdDir, "ivoai-dependencies.service"))

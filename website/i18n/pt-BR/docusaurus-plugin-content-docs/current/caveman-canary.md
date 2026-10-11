@@ -12,7 +12,7 @@ O canário commitado possui três camadas:
 1. Testes herméticos usam runners falsos, servidores MCP e fixtures determinísticas. Eles
    exercitam o ciclo de vida do executor, WorkingContext, roteamento de Memory/Context,
    cancelamento, fallback e observabilidade redigida sem acesso ao provider.
-2. Testes opt-in podem executar os assets revisados do proxy `bin-v1.1.3` e MCP depois que
+2. Testes opt-in podem executar os assets revisados do proxy `bin-v2.1.0` e MCP depois que
    seus valores SHA-256 pinados forem verificados. Os assets permanecem temporários e nenhum
    setup global, `npx`, hook, skill ou memória do Caveman é habilitado.
 3. O smoke do executor autenticado é explicitamente opt-in. Ele delega a autenticação a cada
@@ -57,7 +57,7 @@ exato.
 ## Evidência local de 2026-08-31
 
 O digest revisado do proxy amd64
-`d883b9ab4b559e0c1935335c0e24400deb5c61d5e247f1ca239c4149f57885b0`
+`44436d69705ad9968563c181cd11d396d6ae5eeccd8dbf228f6225d92dfadcb1`
 passou pelo probe estruturado `version --json` (que reporta verdadeiramente `dev`), readiness em
 loopback e cleanup para os formatos de adapter compatíveis do Codex e Claude. O digest MCP
 revisado

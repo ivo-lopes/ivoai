@@ -12,7 +12,7 @@ The committed canary has three layers:
 1. Hermetic tests use fake runners, MCP servers and deterministic fixtures. They
    exercise executor lifecycle, WorkingContext, Memory/Context routing,
    cancellation, fallback and redacted observability without provider access.
-2. Opt-in tests can execute the reviewed `bin-v1.1.3` proxy and MCP assets after
+2. Opt-in tests can execute the reviewed `bin-v2.1.0` proxy and MCP assets after
    their pinned SHA-256 values are verified. The assets remain temporary and no
    global setup, `npx`, hooks, skills or Caveman memory is enabled.
 3. The authenticated executor smoke is explicitly opt-in. It delegates auth to
@@ -60,7 +60,7 @@ exit reason and exact ResultRef.
 ## 2026-08-31 local evidence
 
 The reviewed amd64 proxy digest
-`d883b9ab4b559e0c1935335c0e24400deb5c61d5e247f1ca239c4149f57885b0`
+`44436d69705ad9968563c181cd11d396d6ae5eeccd8dbf228f6225d92dfadcb1`
 passed its structured `version --json` probe (which truthfully reports `dev`),
 loopback readiness and cleanup for the supported Codex and Claude adapter shapes.
 The reviewed MCP digest

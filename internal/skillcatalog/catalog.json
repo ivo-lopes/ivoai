@@ -107,11 +107,11 @@
       "upstream": {
         "repository": "https://github.com/JuliusBrussee/caveman",
         "default_branch": "main",
-        "license": "MIT for skills; mixed repository licensing",
-        "observed_skill_count": 24
+        "license": "Apache-2.0",
+        "observed_skill_count": 28
       },
       "provenance": {
-        "revision": "15581d14007fd01fb3f132016741962f34936ca2",
+        "revision": "2e08b9177c07bb7249a8a2d1a6758e5db281d002",
         "resolution_source": "github_api",
         "signature_status": "not_exposed",
         "attestation_status": "not_exposed",
@@ -159,7 +159,7 @@
         "observed_skill_count": 15
       },
       "provenance": {
-        "revision": "8b247a9feccbebd7970c81fcd47f5153a9700afd",
+        "revision": "825e7fd059a8047eef6fac6c814dce294d58fc18",
         "resolution_source": "github_api",
         "signature_status": "not_exposed",
         "attestation_status": "not_exposed",
@@ -170,7 +170,7 @@
           "path": "plugins/codex-security/skills/security-scan/SKILL.md",
           "name": "security-scan",
           "description": "Run a standard single-pass repository security audit through the official Codex Security workflow.",
-          "sha256": "5b8f5d7debeca14c6b37e8e7ba737671362b8eb4b7f49e693c99c6bd04bc8fa0"
+          "sha256": "5a565d8d0ba80d3048db75922b8b4f29e23c76690a5795b0d7dfbd24a233d3a0"
         }
       ],
       "classifications": [
@@ -257,7 +257,7 @@
         "observed_skill_count": 2
       },
       "provenance": {
-        "revision": "6f1f982d0a47c65899af3c5a7450b7098bc65325",
+        "revision": "1ecea1993b7fce257ffbd686c070948b5e07eda6",
         "resolution_source": "github_api",
         "signature_status": "not_exposed",
         "attestation_status": "not_exposed",
@@ -268,7 +268,7 @@
           "path": "skills/i-have-adhd/SKILL.md",
           "name": "i-have-adhd",
           "description": "Shape responses for an ADHD reader with action-first structure, explicit state, and fewer tangents.",
-          "sha256": "3170b16ace00aecb0dd7feb54c0b5aa642e7502acda06ecd24fd89a11c7127e9"
+          "sha256": "88955c019bbb1419ff4b49dbb1f80a867467de6233d7865af2e06a7d7b76c7d3"
         }
       ],
       "classifications": [
@@ -305,7 +305,7 @@
         "observed_skill_count": 24
       },
       "provenance": {
-        "revision": "cb56ed6c19a07329a9fa0cd4e657bee040156593",
+        "revision": "c63b8dd7dd5a5f3c32eaabe1af76d0694f863ed2",
         "resolution_source": "github_api",
         "signature_status": "not_exposed",
         "attestation_status": "not_exposed",
@@ -316,7 +316,7 @@
           "path": "plugin/skills/impeccable/SKILL.md",
           "name": "impeccable",
           "description": "Design, critique, audit, and polish production frontend interfaces with an opinionated visual method.",
-          "sha256": "01f542675572e1a54d968c128972aa629a5fe47df50d24a2edab639fffc00ea3"
+          "sha256": "3984708c4fec7cf5227e405c9f7086e681949b9bef009569f101fa60b660a40d"
         },
         {
           "path": "plugin/skills/impeccable/reference/craft-floor.md",
@@ -384,7 +384,7 @@
         "observed_skill_count": 50
       },
       "provenance": {
-        "revision": "5b2c0007766c6a1cf1d53fd8fc73e979e0821022",
+        "revision": "1efedbc5148b54b2f0f6c6c9fe0be62e151c7fff",
         "resolution_source": "github_api",
         "signature_status": "not_exposed",
         "attestation_status": "not_exposed",
@@ -395,7 +395,7 @@
           "path": "skills/content-strategy/SKILL.md",
           "name": "content-strategy",
           "description": "Plan content topics, pillars, roadmaps, and editorial strategy for marketing outcomes.",
-          "sha256": "0ad572d607884c561668810f77cd21bbe3e0508c64090f2997661a728360f946"
+          "sha256": "dce9f4027ae129691e92623541a360bee9356137a7eecf68afa95674af118e68"
         }
       ],
       "classifications": [
@@ -429,10 +429,10 @@
         "repository": "https://github.com/DietrichGebert/ponytail",
         "default_branch": "main",
         "license": "MIT",
-        "observed_skill_count": 13
+        "observed_skill_count": 12
       },
       "provenance": {
-        "revision": "356918eba965ee1eac64bd3a7f0dd02108350de5",
+        "revision": "9cc65d03aa2da1db7121b912d03596409ee340b8",
         "resolution_source": "github_api",
         "signature_status": "not_exposed",
         "attestation_status": "not_exposed",
@@ -443,7 +443,7 @@
           "path": "skills/ponytail/SKILL.md",
           "name": "ponytail",
           "description": "Prefer the smallest sufficient coding solution and challenge unnecessary scope or dependencies.",
-          "sha256": "1316a2f3f95741d2300b116fe0c2d81ce4a9568656ed0a62643f54aaf09957f2"
+          "sha256": "ba68ff26239c3c3b05b2a9a47ee0d9a6b93a69639a2555ec87a5d44bffaf2f0c"
         }
       ],
       "classifications": [
@@ -480,7 +480,7 @@
         "observed_skill_count": 89
       },
       "provenance": {
-        "revision": "7e2097fd90d25c2f976f6eba26d6c00aa88051df",
+        "revision": "cab634bd855fc287f6e420c1f36fd1a6b9245960",
         "resolution_source": "github_api",
         "signature_status": "not_exposed",
         "attestation_status": "not_exposed",
@@ -529,10 +529,10 @@
         "repository": "https://github.com/obra/superpowers",
         "default_branch": "main",
         "license": "MIT",
-        "observed_skill_count": 14
+        "observed_skill_count": 15
       },
       "provenance": {
-        "revision": "b36e0829c6d0140e93cfef2ca599b1b07d4a7797",
+        "revision": "bb92a77741419a4ab5f06e711a283343f1ada0c3",
         "resolution_source": "github_api",
         "signature_status": "not_exposed",
         "attestation_status": "not_exposed",
@@ -543,7 +543,7 @@
           "path": "skills/test-driven-development/SKILL.md",
           "name": "test-driven-development",
           "description": "Apply test-driven development to features and bug fixes with evidence that the regression test fails first.",
-          "sha256": "bf1b8216e523851a411e91d429a7c1c2a173e79d88957bc78e348218d50edd54"
+          "sha256": "64b03fce4aee5a97a93160cea8111f3ba13a17b7c001db4bd5836d67fd10705d"
         }
       ],
       "classifications": [
@@ -580,7 +580,7 @@
         "observed_skill_count": 13
       },
       "provenance": {
-        "revision": "ccbc15639c97057cbfcf32ecebc38ef716e4bb37",
+        "revision": "717446e07a78d4e6d7918b1fde1a263378eebac9",
         "resolution_source": "github_api",
         "signature_status": "not_exposed",
         "attestation_status": "not_exposed",
@@ -628,7 +628,7 @@
         "observed_skill_count": 13
       },
       "provenance": {
-        "revision": "7f69fed6a2717900085f1bc3b263721f8ba025e2",
+        "revision": "67803eac81607188194aea9842a723b89326d90d",
         "resolution_source": "github_api",
         "signature_status": "not_exposed",
         "attestation_status": "not_exposed",
@@ -704,10 +704,10 @@
         "repository": "https://github.com/mattpocock/skills",
         "default_branch": "main",
         "license": "MIT",
-        "observed_skill_count": 37
+        "observed_skill_count": 38
       },
       "provenance": {
-        "revision": "3cca18b368ae95cdbdebbff572ccafa662551015",
+        "revision": "49dd158d1076134a641b33efb035946536778336",
         "resolution_source": "github_api",
         "signature_status": "not_exposed",
         "attestation_status": "not_exposed",
@@ -718,7 +718,7 @@
           "path": "skills/engineering/domain-modeling/SKILL.md",
           "name": "domain-modeling",
           "description": "Domain terminology and bounded architecture decision records.",
-          "sha256": "327a2b50620e2fd70abc6893cd6965e76b20f8d0adb0dc2c8d5eb3845efb643e"
+          "sha256": "7b925d7b1e341a2eeae33ad68a8a8c0ab889a38ddd22a7598e4c240e5a7556a3"
         }
       ],
       "classifications": [
@@ -775,7 +775,7 @@
           "path": "Skills/active-directory/offensive-netexec/SKILL.md",
           "sha256": "cd462110388ff5dc360535e75a496a405391a68d6d1d32d4ac4205f299d47e19",
           "name": "offensive-netexec",
-          "description": "Use this skill whenever the user asks about NetExec (nxc) \u2014 a network exploitation and post-exploitation tool for Active Directory environments. Triggers include: any mention of 'nxc', 'netexec', 'crackmapexec' successor questions, AD enumeration, SMB/LDAP/WinRM/MSSQL/SSH/RDP/VNC/WMI/FTP/NFS protocol attacks, password spraying, credential dumping (SAM, NTDS, LSASS, DPAPI), Kerberoasting, ASREPRoasting, lateral movement, BloodHound collection, module usage, or any pentest workflow involving Windows domain environments. This skill covers ALL protocols, ALL modules, and ALL core features of NetExec. Always provide full command examples with correct flags and options."
+          "description": "Use this skill whenever the user asks about NetExec (nxc) — a network exploitation and post-exploitation tool for Active Directory environments. Triggers include: any mention of 'nxc', 'netexec', 'crackmapexec' successor questions, AD enumeration, SMB/LDAP/WinRM/MSSQL/SSH/RDP/VNC/WMI/FTP/NFS protocol attacks, password spraying, credential dumping (SAM, NTDS, LSASS, DPAPI), Kerberoasting, ASREPRoasting, lateral movement, BloodHound collection, module usage, or any pentest workflow involving Windows domain environments. This skill covers ALL protocols, ALL modules, and ALL core features of NetExec. Always provide full command examples with correct flags and options."
         },
         {
           "path": "Skills/api/offensive-api-abuse/SKILL.md",
@@ -793,7 +793,7 @@
           "path": "Skills/auth/offensive-jwt/SKILL.md",
           "sha256": "f4062ca66c1241fbeb772e1671d0d86d3683e27f33744fee6723b13a934a3fb9",
           "name": "offensive-jwt",
-          "description": "JWT attack methodology for penetration testers. Covers algorithm confusion (alg:none, RS256\u2192HS256), weak HMAC secret brute force, kid parameter injection (SQLi, path traversal), jku/x5u/jwk header injection, JWKS cache poisoning, JWS/JWE confusion, timing attacks, and mobile JWT storage extraction. Use when testing JWT-based authentication, hunting auth bypass via token manipulation, or evaluating JWT implementation security in web or mobile apps."
+          "description": "JWT attack methodology for penetration testers. Covers algorithm confusion (alg:none, RS256→HS256), weak HMAC secret brute force, kid parameter injection (SQLi, path traversal), jku/x5u/jwk header injection, JWKS cache poisoning, JWS/JWE confusion, timing attacks, and mobile JWT storage extraction. Use when testing JWT-based authentication, hunting auth bypass via token manipulation, or evaluating JWT implementation security in web or mobile apps."
         },
         {
           "path": "Skills/cicd/offensive-cicd-pipeline/SKILL.md",
@@ -991,43 +991,43 @@
           "path": "Skills/wireless/offensive-bluetooth-ble/SKILL.md",
           "sha256": "46b1d69a6e6e578af1ee5d43a273a97250142d35ec7e08b30efe2badd2835ed6",
           "name": "offensive-bluetooth-ble",
-          "description": "Bluetooth Low Energy (BLE) attack methodology \u2014 GATT enumeration, characteristic read/write without auth, pairing downgrade (Just Works forced), LE Secure Connections bypass, MITM via active relay, sniffing with Sniffle (TI CC1352) / Ubertooth / Frontline, encryption key extraction (LE Legacy Pairing crackable, LE Secure Connections strong), proximity authentication abuse (cars, locks), and companion-app trust analysis. Use for IoT BLE devices, smart locks, fitness trackers, medical devices, BLE beacons, or any device pairing over BLE."
+          "description": "Bluetooth Low Energy (BLE) attack methodology — GATT enumeration, characteristic read/write without auth, pairing downgrade (Just Works forced), LE Secure Connections bypass, MITM via active relay, sniffing with Sniffle (TI CC1352) / Ubertooth / Frontline, encryption key extraction (LE Legacy Pairing crackable, LE Secure Connections strong), proximity authentication abuse (cars, locks), and companion-app trust analysis. Use for IoT BLE devices, smart locks, fitness trackers, medical devices, BLE beacons, or any device pairing over BLE."
         },
         {
           "path": "Skills/wireless/offensive-bluetooth-classic/SKILL.md",
           "sha256": "0cb51a900fe75514531ad847ab7363a2c33a8cd47615087bc6c7b3290dc1da1a",
           "name": "offensive-bluetooth-classic",
-          "description": "Bluetooth Classic (BR/EDR) attack methodology \u2014 device discovery, service enumeration via SDP, LMP/L2CAP layer attacks, legacy PIN cracking (BlueBorne / KNOB), Bluetooth file-transfer abuse (BlueSnarfing legacy), unauthenticated profile abuse (HSP, HFP, OPP), and modern relevance against older industrial / automotive / accessory targets. Use when in-scope devices use Bluetooth Classic (Bluetooth \u2264 4.0 BR/EDR) \u2014 common in legacy car kits, industrial sensors, older medical devices, and audio accessories."
+          "description": "Bluetooth Classic (BR/EDR) attack methodology — device discovery, service enumeration via SDP, LMP/L2CAP layer attacks, legacy PIN cracking (BlueBorne / KNOB), Bluetooth file-transfer abuse (BlueSnarfing legacy), unauthenticated profile abuse (HSP, HFP, OPP), and modern relevance against older industrial / automotive / accessory targets. Use when in-scope devices use Bluetooth Classic (Bluetooth ≤ 4.0 BR/EDR) — common in legacy car kits, industrial sensors, older medical devices, and audio accessories."
         },
         {
           "path": "Skills/wireless/offensive-deauth-disassoc/SKILL.md",
           "sha256": "c29e7db48d4f646cdd3c9b79f16de80e6305147fde30e9e673da585617021f73",
           "name": "offensive-deauth-disassoc",
-          "description": "Deauthentication and disassociation attacks against 802.11 networks \u2014 targeted single-client deauth for handshake capture, broadcast deauth for DoS (with authorization), action-frame attacks bypassing 802.11w (PMF), beacon flooding, mdk4 / aireplay-ng tooling, and rate-limit / PMF-aware operation. Use to coerce client reconnection (handshake capture, evil-twin roaming), as targeted DoS, or to test PMF posture."
+          "description": "Deauthentication and disassociation attacks against 802.11 networks — targeted single-client deauth for handshake capture, broadcast deauth for DoS (with authorization), action-frame attacks bypassing 802.11w (PMF), beacon flooding, mdk4 / aireplay-ng tooling, and rate-limit / PMF-aware operation. Use to coerce client reconnection (handshake capture, evil-twin roaming), as targeted DoS, or to test PMF posture."
         },
         {
           "path": "Skills/wireless/offensive-evil-twin/SKILL.md",
           "sha256": "dec52fa1cc0b36eb9e322c93f8cb91093f68cc2ade8aaf3f8354ee4bf02f1974",
           "name": "offensive-evil-twin",
-          "description": "Evil Twin / KARMA / Mana access point methodology \u2014 rogue AP construction with hostapd-mana / wifiphisher / airgeddon, KARMA universal probe response, Mana selective probe response, captive portal phishing, deauth-driven client coercion to attacker AP, MAC randomization defeat via PNL leak analysis, post-association MITM (DNS, ARP, transparent proxy), credential capture for portal/web/SMB, and detection-evasion tactics. Use to coerce client devices onto an attacker-controlled AP, intercept their traffic, harvest credentials, or deliver payloads via captive portal."
+          "description": "Evil Twin / KARMA / Mana access point methodology — rogue AP construction with hostapd-mana / wifiphisher / airgeddon, KARMA universal probe response, Mana selective probe response, captive portal phishing, deauth-driven client coercion to attacker AP, MAC randomization defeat via PNL leak analysis, post-association MITM (DNS, ARP, transparent proxy), credential capture for portal/web/SMB, and detection-evasion tactics. Use to coerce client devices onto an attacker-controlled AP, intercept their traffic, harvest credentials, or deliver payloads via captive portal."
         },
         {
           "path": "Skills/wireless/offensive-krack-fragattacks/SKILL.md",
           "sha256": "12dea4e775fa3f28d89ab1223bb4810bce21a5ac13cf300dbe54583abbd28316",
           "name": "offensive-krack-fragattacks",
-          "description": "KRACK (CVE-2017-13077..082) and FragAttacks (CVE-2020-24586..588 + 26139-26147) \u2014 key reinstallation, fragmentation, and aggregation attacks against WPA2 supplicants. Covers Vanhoef's test scripts, viability against modern patched stacks (mostly mitigated post-2021), residual unpatched embedded devices and IoT vendors, and the practical limitations of these attacks in modern engagements. Use when assessing legacy supplicants, embedded clients, or vendors with poor patch cadence."
+          "description": "KRACK (CVE-2017-13077..082) and FragAttacks (CVE-2020-24586..588 + 26139-26147) — key reinstallation, fragmentation, and aggregation attacks against WPA2 supplicants. Covers Vanhoef's test scripts, viability against modern patched stacks (mostly mitigated post-2021), residual unpatched embedded devices and IoT vendors, and the practical limitations of these attacks in modern engagements. Use when assessing legacy supplicants, embedded clients, or vendors with poor patch cadence."
         },
         {
           "path": "Skills/wireless/offensive-lorawan-sub-ghz/SKILL.md",
           "sha256": "566cd87eb0b630e62988db82003f5a1894eaf3747901d9d912edbd9a50dbb244",
           "name": "offensive-lorawan-sub-ghz",
-          "description": "LoRaWAN and sub-GHz (433 / 868 / 915 MHz) attack methodology \u2014 LoRaWAN ABP/OTAA join attack, network/session key reuse, frame counter replay, downlink injection on TTN/Helium-style networks, sub-GHz protocol replay (KeeLoq garage doors, fixed-code remotes, TPMS spoofing, smart plug telemetry), HackRF / RTL-SDR / Flipper Zero workflows, signal analysis with Inspectrum / Universal Radio Hacker, and reconstruction of proprietary packet formats. Use for LoRaWAN deployments (smart cities, asset tracking, industrial telemetry), or any wireless device using the unlicensed 433/868/915 MHz bands (garage openers, doorbells, IoT sensors, RC equipment)."
+          "description": "LoRaWAN and sub-GHz (433 / 868 / 915 MHz) attack methodology — LoRaWAN ABP/OTAA join attack, network/session key reuse, frame counter replay, downlink injection on TTN/Helium-style networks, sub-GHz protocol replay (KeeLoq garage doors, fixed-code remotes, TPMS spoofing, smart plug telemetry), HackRF / RTL-SDR / Flipper Zero workflows, signal analysis with Inspectrum / Universal Radio Hacker, and reconstruction of proprietary packet formats. Use for LoRaWAN deployments (smart cities, asset tracking, industrial telemetry), or any wireless device using the unlicensed 433/868/915 MHz bands (garage openers, doorbells, IoT sensors, RC equipment)."
         },
         {
           "path": "Skills/wireless/offensive-wifi-recon/SKILL.md",
           "sha256": "e9504bac7e1479593ca36674ae4807e8983bb744ac300840c9e07c0c599e5408",
           "name": "offensive-wifi-recon",
-          "description": "Wi-Fi reconnaissance methodology \u2014 adapter selection, monitor mode and packet injection setup, regulatory domain handling, multi-band airspace mapping, hidden SSID discovery, BSSID/ESSID/channel/PMF/encryption fingerprinting, client probe analysis, vendor OUI lookup, war-driving with Kismet/airodump-ng/Wigle, and structured airspace data capture for downstream attacks. Use at the start of any wireless engagement to build the target map before active attacks; covers 2.4 GHz, 5 GHz, and 6 GHz (Wi-Fi 6E) bands and adapter compatibility for each."
+          "description": "Wi-Fi reconnaissance methodology — adapter selection, monitor mode and packet injection setup, regulatory domain handling, multi-band airspace mapping, hidden SSID discovery, BSSID/ESSID/channel/PMF/encryption fingerprinting, client probe analysis, vendor OUI lookup, war-driving with Kismet/airodump-ng/Wigle, and structured airspace data capture for downstream attacks. Use at the start of any wireless engagement to build the target map before active attacks; covers 2.4 GHz, 5 GHz, and 6 GHz (Wi-Fi 6E) bands and adapter compatibility for each."
         },
         {
           "path": "Skills/wireless/offensive-wifi/SKILL.md",
@@ -1039,37 +1039,37 @@
           "path": "Skills/wireless/offensive-wpa-enterprise/SKILL.md",
           "sha256": "a744c80d312a30fc7040f73e782cda3d171dce68767e74630ac8f1a8b3320dba",
           "name": "offensive-wpa-enterprise",
-          "description": "WPA/WPA2/WPA3-Enterprise (802.1X / EAP) attack methodology \u2014 EAP method identification (PEAP-MSCHAPv2, EAP-TTLS, EAP-TLS, EAP-GTC, EAP-PWD, EAP-FAST), evil-twin RADIUS attacks with eaphammer for credential capture, MSCHAPv2 challenge-response cracking, EAP-TLS client certificate theft paths (DPAPI, NDES, AD CS auto-enrollment), supplicant validation bypass (missing server cert validation, missing CN pinning, BYOD misconfigurations), and post-capture pivots into AD via cracked domain credentials. Use for corporate Wi-Fi engagements where the network is 802.1X authenticated."
+          "description": "WPA/WPA2/WPA3-Enterprise (802.1X / EAP) attack methodology — EAP method identification (PEAP-MSCHAPv2, EAP-TTLS, EAP-TLS, EAP-GTC, EAP-PWD, EAP-FAST), evil-twin RADIUS attacks with eaphammer for credential capture, MSCHAPv2 challenge-response cracking, EAP-TLS client certificate theft paths (DPAPI, NDES, AD CS auto-enrollment), supplicant validation bypass (missing server cert validation, missing CN pinning, BYOD misconfigurations), and post-capture pivots into AD via cracked domain credentials. Use for corporate Wi-Fi engagements where the network is 802.1X authenticated."
         },
         {
           "path": "Skills/wireless/offensive-wpa2-psk/SKILL.md",
           "sha256": "27fdd98164101ed4f46b7ef1b89ead36ab1b08a3b0ac1c5aa66f2b6fcb835c6d",
           "name": "offensive-wpa2-psk",
-          "description": "WPA/WPA2-PSK attack methodology \u2014 four-way handshake capture via targeted deauthentication, PMKID attacks (no client required), hcxdumptool / hcxpcapngtool conversion to hashcat hc22000 format, GPU-accelerated cracking with dictionary, mask, and rule-based attacks, vendor default-PSK generators (UPC, Sky, BT, etc.), 802.11r FT key cracking, opportunistic key cache analysis, and signal-level optimization. Use when the in-scope network is WPA/WPA2 Personal \u2014 the most common consumer/SMB encryption mode."
+          "description": "WPA/WPA2-PSK attack methodology — four-way handshake capture via targeted deauthentication, PMKID attacks (no client required), hcxdumptool / hcxpcapngtool conversion to hashcat hc22000 format, GPU-accelerated cracking with dictionary, mask, and rule-based attacks, vendor default-PSK generators (UPC, Sky, BT, etc.), 802.11r FT key cracking, opportunistic key cache analysis, and signal-level optimization. Use when the in-scope network is WPA/WPA2 Personal — the most common consumer/SMB encryption mode."
         },
         {
           "path": "Skills/wireless/offensive-wpa3-sae/SKILL.md",
           "sha256": "7c42c538cd6609fc8b9e431c9383346fad3e1539e1f58dd8f9f6fba14f42d4e7",
           "name": "offensive-wpa3-sae",
-          "description": "WPA3 / SAE (Simultaneous Authentication of Equals) attack methodology \u2014 transition-mode (mixed WPA2/WPA3) downgrade, Dragonblood side-channel attacks (CVE-2019-9494, 9495, 13377, 13456), SAE auth flooding for AP CPU exhaustion, Hash-to-Element (H2E) timing analysis, group downgrade, and 6 GHz / Wi-Fi 6E spec implications (PMF mandatory, no transition mode allowed). Use when target advertises WPA3-SAE or WPA3-Personal/Enterprise, or operates in 6 GHz where WPA3 + PMF are required by spec."
+          "description": "WPA3 / SAE (Simultaneous Authentication of Equals) attack methodology — transition-mode (mixed WPA2/WPA3) downgrade, Dragonblood side-channel attacks (CVE-2019-9494, 9495, 13377, 13456), SAE auth flooding for AP CPU exhaustion, Hash-to-Element (H2E) timing analysis, group downgrade, and 6 GHz / Wi-Fi 6E spec implications (PMF mandatory, no transition mode allowed). Use when target advertises WPA3-SAE or WPA3-Personal/Enterprise, or operates in 6 GHz where WPA3 + PMF are required by spec."
         },
         {
           "path": "Skills/wireless/offensive-wps/SKILL.md",
           "sha256": "4cc089a78b4793a15d9b5bcce4916840db48480dc8eb88c057d6ebd1555501dc",
           "name": "offensive-wps",
-          "description": "WPS (Wi-Fi Protected Setup) PIN attack methodology \u2014 Pixie Dust offline attack against vulnerable chipsets (Ralink, Realtek, Broadcom, MediaTek), online PIN brute-force with reaver/bully, lockout handling, time-of-day evasion, WPS push-button vulnerability windows, and PIN-to-PSK derivation. Use when a target SOHO router exposes WPS \u2014 common on consumer ISP gear, often left enabled by default even when WPS attacks have been known for over a decade."
+          "description": "WPS (Wi-Fi Protected Setup) PIN attack methodology — Pixie Dust offline attack against vulnerable chipsets (Ralink, Realtek, Broadcom, MediaTek), online PIN brute-force with reaver/bully, lockout handling, time-of-day evasion, WPS push-button vulnerability windows, and PIN-to-PSK derivation. Use when a target SOHO router exposes WPS — common on consumer ISP gear, often left enabled by default even when WPS attacks have been known for over a decade."
         },
         {
           "path": "Skills/wireless/offensive-z-wave/SKILL.md",
           "sha256": "e99dc89ed0345f87860355f47c731d9b0b292ef9829d774793e8e05c4d1fe0e1",
           "name": "offensive-z-wave",
-          "description": "Z-Wave attack methodology \u2014 sniffing with Z-Force / EZ-Wave / RTL-SDR + ZniffMobile, S0 (legacy) network-key derivation flaw and key reuse, S2 (modern) ECDH commissioning analysis, replay/injection on unauthenticated nodes, default-key brute-force on test deployments, and home-automation hub pivots. Use when targeting Z-Wave smart home devices (door locks, sensors, garage controllers) \u2014 common in mid-2010s smart home deployments still in production."
+          "description": "Z-Wave attack methodology — sniffing with Z-Force / EZ-Wave / RTL-SDR + ZniffMobile, S0 (legacy) network-key derivation flaw and key reuse, S2 (modern) ECDH commissioning analysis, replay/injection on unauthenticated nodes, default-key brute-force on test deployments, and home-automation hub pivots. Use when targeting Z-Wave smart home devices (door locks, sensors, garage controllers) — common in mid-2010s smart home deployments still in production."
         },
         {
           "path": "Skills/wireless/offensive-zigbee-thread-matter/SKILL.md",
           "sha256": "89809281dd4b1e86e619297e990a10fd5c0c153d88721b476f7c875d823607e2",
           "name": "offensive-zigbee-thread-matter",
-          "description": "Zigbee, Thread, and Matter mesh-protocol attack methodology \u2014 IEEE 802.15.4 sniffing with TI CC2531 / CC2540 / Sonoff Zigbee Dongle E, KillerBee toolkit, Touchlink commissioning abuse with the well-known transport key, replay/injection attacks, Zigbee Cluster Library command abuse for door locks and bulbs, Thread network credential theft, Matter commissioning chain analysis, and 6LoWPAN/IPv6 routing exploitation. Use when targeting smart-home or commercial mesh deployments, Zigbee-based door locks, lighting, or sensor networks."
+          "description": "Zigbee, Thread, and Matter mesh-protocol attack methodology — IEEE 802.15.4 sniffing with TI CC2531 / CC2540 / Sonoff Zigbee Dongle E, KillerBee toolkit, Touchlink commissioning abuse with the well-known transport key, replay/injection attacks, Zigbee Cluster Library command abuse for door locks and bulbs, Thread network credential theft, Matter commissioning chain analysis, and 6LoWPAN/IPv6 routing exploitation. Use when targeting smart-home or commercial mesh deployments, Zigbee-based door locks, lighting, or sensor networks."
         }
       ],
       "classifications": [
@@ -1769,8 +1769,8 @@
             "authorized security report",
             "penetration test report",
             "security reporting",
-            "relat\u00f3rio de seguran\u00e7a",
-            "relat\u00f3rio de pentest"
+            "relatório de segurança",
+            "relatório de pentest"
           ],
           "keywords": [
             "reporting",

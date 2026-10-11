@@ -3,6 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "ruflo": "3.38.12"
+    "ruflo": "3.56.5",
+    "braces": "file:braces-3.0.4-ivoai.1.tgz"
+  },
+  "overrides": {
+    "@opentelemetry/core": "2.12.0",
+    "@opentelemetry/propagator-jaeger": "2.12.0",
+    "protobufjs": "8.8.0",
+    "sharp": "0.35.5",
+    "toml": "5.0.0",
+    "braces": "$braces",
+    "@agntcy/slim-bindings": "2.2.0"
   }
 }

@@ -15,8 +15,10 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/ivo-lopes/ivoai/internal/platform"
 	"github.com/ivo-lopes/ivoai/internal/policy"
@@ -104,7 +106,36 @@ type PolicyDecision struct {
 	Result  policy.Result `json:"result"`
 }
 
+// Only the immutable embedded release catalog is cached. Installed overlays
+// still pass their own bounded decode and validation on every use.
+var releaseCatalog = sync.OnceValues(loadReleaseCatalog)
+
 func Load() (Catalog, error) {
+	catalog, err := releaseCatalog()
+	if err != nil {
+		return Catalog{}, err
+	}
+	catalog.Sources = slices.Clone(catalog.Sources)
+	for i := range catalog.Sources {
+		source := &catalog.Sources[i]
+		source.Skills = slices.Clone(source.Skills)
+		source.Rejected = slices.Clone(source.Rejected)
+		source.Classifications = slices.Clone(source.Classifications)
+		for j := range source.Classifications {
+			c := &source.Classifications[j]
+			c.Triggers = slices.Clone(c.Triggers)
+			c.Keywords = slices.Clone(c.Keywords)
+			c.Dependencies = slices.Clone(c.Dependencies)
+			c.OptionalDependencies = slices.Clone(c.OptionalDependencies)
+			c.Conflicts = slices.Clone(c.Conflicts)
+			c.RequestedCapabilities = slices.Clone(c.RequestedCapabilities)
+			c.Executors = slices.Clone(c.Executors)
+		}
+	}
+	return catalog, nil
+}
+
+func loadReleaseCatalog() (Catalog, error) {
 	data, err := catalogFS.ReadFile("catalog.json")
 	if err != nil {
 		return Catalog{}, err

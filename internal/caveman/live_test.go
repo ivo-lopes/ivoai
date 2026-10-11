@@ -16,7 +16,7 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/supplychain"
 )
 
-const cavemanProxyAMD64SHA256 = "d883b9ab4b559e0c1935335c0e24400deb5c61d5e247f1ca239c4149f57885b0"
+const cavemanProxyAMD64SHA256 = "44436d69705ad9968563c181cd11d396d6ae5eeccd8dbf228f6225d92dfadcb1"
 
 // TestPinnedCavemanProxyManualCanary is opt-in and never uses provider auth.
 // It validates the reviewed binary, structured probe, loopback readiness and
@@ -39,10 +39,10 @@ func TestPinnedCavemanProxyManualCanary(t *testing.T) {
 	}
 	provider := caveman.Provider{
 		Binary: binary, Managed: true, Runner: platform.ExecRunner{}, StartupTimeout: 5 * time.Second,
-		Expected: supplychain.ResolvedSource{ID: "caveman", LogicalVersion: "1.1.3"}, IntegrityCheck: validate,
+		Expected: supplychain.ResolvedSource{ID: "caveman", LogicalVersion: "2.1.0"}, IntegrityCheck: validate,
 	}
 	status := provider.Probe(context.Background())
-	if !status.Available || status.Health != core.HealthHealthy || status.Provenance.Version != "1.1.3" {
+	if !status.Available || status.Health != core.HealthHealthy || status.Provenance.Version != "bin-v2.1.0" {
 		t.Fatalf("structured proxy probe=%+v", status)
 	}
 	for _, executor := range []core.ComponentID{core.ComponentCodex, core.ComponentClaude} {

@@ -159,7 +159,7 @@ func TestLiveNativeTUI(t *testing.T) {
 		t.Fatalf("native TUI state unavailable: %s", expected)
 	}
 	send := func(text string) { write(text); time.Sleep(250 * time.Millisecond) }
-	wait("fixture-strong")
+	wait("Fixture strong")
 	send("/resume")
 	send("\r")
 	wait("Resume a previous session")
@@ -171,7 +171,7 @@ func TestLiveNativeTUI(t *testing.T) {
 	send("\r")
 	wait("Select Model and Effort")
 	send("\r")
-	wait("Level for fixture-strong")
+	wait("Level for Codex · Fixture strong")
 	send("\x1b[A")
 	send("\r")
 	send("corrija isso")

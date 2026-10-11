@@ -5,13 +5,13 @@ test_root="$(mktemp -d "${TMPDIR:-/tmp}/ivoai-native-codex-test.XXXXXXXX")"
 readonly test_root
 trap 'echo "Native Codex test workspace: $test_root" >&2' EXIT
 case "$(uname -m)" in
-  x86_64) target=x86_64-unknown-linux-musl; digest=f479424eca092484dc40d87ae28c44f4cc40234a60045d6131e493800d814a30 ;;
-  aarch64) target=aarch64-unknown-linux-musl; digest=5cda6182bd94c3a30f2eb63a495489ebf7f691fddb14d70f48c6c1a5071b6cde ;;
+  x86_64) target=x86_64-unknown-linux-musl; digest=86f268d81b898f3e144c5ecff2ad2fda2c5802e042d6195b72538fe0fa125057 ;;
+  aarch64) target=aarch64-unknown-linux-musl; digest=bf3ca2719f1143b1440fbd85c149379e696c782c50ad7991f8bfcec60b2600c1 ;;
   *) echo 'native Codex smoke requires Linux amd64 or arm64' >&2; exit 1 ;;
 esac
 readonly target digest
 curl --fail --location --silent --show-error \
-  "https://github.com/openai/codex/releases/download/rust-v0.153.4/codex-${target}.tar.gz" \
+  "https://github.com/openai/codex/releases/download/rust-v0.162.1/codex-${target}.tar.gz" \
   -o "$test_root/codex.tar.gz"
 printf '%s  %s\n' "$digest" "$test_root/codex.tar.gz" | sha256sum -c -
 tar -xzf "$test_root/codex.tar.gz" -C "$test_root"

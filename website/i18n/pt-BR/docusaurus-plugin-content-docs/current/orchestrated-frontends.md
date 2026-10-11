@@ -37,7 +37,7 @@ a síntese do core compartilhado, nunca tool calls nativos. Shell/exec, review,
 steering, escrita de configuração e métodos desconhecidos não contornam o gate.
 Use `--direct` para essas operações upstream fora da orquestração.
 
-Codex 0.153.4 e 0.154.0 foram testados. O transporte App Server é experimental no
+Codex 0.162.1 e 0.154.0 foram testados. O transporte App Server é experimental no
 upstream; a integração local é pinada e testada. O frontend usa um Codex home
 privado e persistente por projeto, sem copiar credenciais. Workers mantêm
 autenticação oficial. O picker nativo `/resume` e `ivoai session resume` usam os

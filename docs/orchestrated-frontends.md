@@ -38,7 +38,7 @@ returns native tool calls. Shell/exec, review, steering, configuration writes an
 unknown execution methods cannot bypass admission. Use `--direct` for those
 upstream operations outside orchestration.
 
-Codex 0.153.4 and 0.154.0 are tested. App Server transport is upstream-experimental;
+Codex 0.162.1 and 0.154.0 are tested. App Server transport is upstream-experimental;
 the supported local protocol is pinned and tested, not an invented TUI API.
 The frontend uses a private project-scoped Codex home without copying account
 credentials or personal configuration. Native `/resume` and the official picker

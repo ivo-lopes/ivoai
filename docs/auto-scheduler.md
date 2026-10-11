@@ -146,7 +146,7 @@ Headroom use, and escalation count. JSON contains only this metadata. Token and
 Headroom-saving metrics remain unavailable unless an official structured source
 provides them; ivoai does not estimate them.
 
-Headroom 0.36.0 is bypassed whenever authoritative shared-knowledge material is in
+Headroom 0.40.0 is bypassed whenever authoritative shared-knowledge material is in
 the primary or worker path because its tool-result protection is not proven safe for
 those exact responses. Direct agent modes, Web MCP, ai-memory, and Context remain
 independent of the automatic scheduler.

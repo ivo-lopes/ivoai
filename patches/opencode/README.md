@@ -1,7 +1,7 @@
 # Managed OpenCode clipboard patch
 
-Upstream baseline: `anomalyco/opencode` v1.18.25,
-`cb7d8b2f5e44876ef98b661dc10590c915af3a9f` (MIT).
+Upstream baseline: `anomalyco/opencode` v1.19.0,
+`733b2c627e5aec39cb33cc22373bdce33053ef2c` (MIT).
 
 The clipboard writer catches native backend failures and resolves its promise.
 The selection, message and dialog callers consequently display success even
@@ -10,7 +10,7 @@ Forwarding the minimal desktop environment fixes transport access, but cannot
 fix this error contract. The distributed plugin host does not expose the
 clipboard service; importing its source package breaks plugin loading.
 
-`1.18.25-clipboard-errors.patch` is a narrow, source-level patch: native failures
+`1.19.0-clipboard-errors.patch` is a narrow, source-level patch: native failures
 reject with a bounded message; write-only subprocesses do not retain stdout pipes
 through background clipboard owners; stdin errors and process timeouts are handled.
 OSC52 remains a best-effort fallback, never proof of desktop delivery.
@@ -18,7 +18,7 @@ It does not change selection, logical text extraction, mouse handling, provider
 configuration, or orchestration. It deliberately does not certify OSC52-only
 delivery as successful desktop copying. No upstream tag or binary is modified.
 
-Build identity: `1.18.25-ivoai.2`. The official workflow builds this patch on the
+Build identity: `1.19.0-ivoai.1`. The official workflow builds this patch on the
 pinned source with the pinned Bun compiler, without dependency installation
 hooks. Separate archives, build metadata and immutable checksums preserve its
 provenance. The IVOAI binary embeds the archive checksum and source/patch identity;
@@ -39,7 +39,7 @@ Focused real-TUI test (with the explicitly selected patched binary):
 
 ```sh
 IVOAI_LIVE_OPENCODE_PATH=/path/to/patched/opencode \
-IVOAI_LIVE_OPENCODE_VERSION=1.18.25-ivoai.2 \
+IVOAI_LIVE_OPENCODE_VERSION=1.19.0-ivoai.1 \
 IVOAI_LIVE_OPENCODE_TUI=1 \
 IVOAI_LIVE_OPENCODE_CLIPBOARD=failure \
 go test ./internal/opencodebridge -run '^TestLiveManagedOpenCodeResizeKeyboard$' -count=1

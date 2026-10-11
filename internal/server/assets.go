@@ -2,7 +2,7 @@ package server
 
 const ComposeYAML = `services:
   qdrant:
-    image: qdrant/qdrant@sha256:a0e04fe623cb064502cd869cefc1dc7ce359d8edd481063b5bd351c0a0a2c91e
+    image: qdrant/qdrant@sha256:b7b0444c4c351c970b98e90a6f89c2ee4287c65b44e52b4cb503fa5b2aa927ad
     restart: unless-stopped
     user: "1000:1000"
     env_file: [/etc/ivoai/secrets/qdrant.env]
@@ -24,7 +24,7 @@ const ComposeYAML = `services:
 
   embeddings:
     container_name: ivoai-embeddings
-    image: ghcr.io/huggingface/text-embeddings-inference@sha256:ad950d30878eceb72aaf32024d26fa2b1d04a75304fa0b4776b49aa1941fea07
+    image: ghcr.io/huggingface/text-embeddings-inference@sha256:2538ea1c9640d3763b15af668039d24172d063b42337b0c27796fc2be180c78d
     restart: unless-stopped
     user: "1000:1000"
     env_file: [/etc/ivoai/secrets/embeddings.env]
@@ -51,7 +51,7 @@ const ComposeYAML = `services:
         gw_priority: 1
 
   ai-memory:
-    image: akitaonrails/ai-memory@sha256:1d8a2ca7d7bc2349ba964d2d97dafb683632676460c1e373083f919a18c60d37
+    image: akitaonrails/ai-memory@sha256:15178d3fc5bd67439a5b9780b2cf58af476943abea2487514a4c5d6ec18291ee
     restart: unless-stopped
     command: ["serve", "--transport", "http", "--bind", "0.0.0.0:49374"]
     user: "1000:1000"
@@ -89,7 +89,7 @@ networks:
 // v1.9.3 tree does not contain the Dockerfile-arm64 previously referenced.
 const ARM64ComposeOverride = `services:
   embeddings:
-    image: ghcr.io/huggingface/text-embeddings-inference@sha256:2873ddd3029bf6eed09c0befe737d88123107a0b89274b1552d68d1e3bb2a047
+    image: ghcr.io/huggingface/text-embeddings-inference@sha256:798cd7615e060a72ccbdf19aa0ada52289c6a0147490195bafaece6ce04d70f1
 `
 
 const GatewayUnit = `[Unit]

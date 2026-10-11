@@ -1,0 +1,86 @@
+--- a/lib/compile.js
++++ b/lib/compile.js
+@@ -4,6 +4,7 @@
+ const utils = require('./utils');
+ 
+ const compile = (ast, options = {}) => {
++  require('./safety').validate(ast);
+   const walk = (node, parent = {}) => {
+     const invalidBlock = utils.isInvalidBrace(parent);
+     const invalidNode = node.invalid === true && options.escapeInvalid === true;
+--- a/lib/expand.js
++++ b/lib/expand.js
+@@ -31,6 +31,7 @@
+ };
+ 
+ const expand = (ast, options = {}) => {
++  require('./safety').validate(ast);
+   const rangeLimit = options.rangeLimit === undefined ? 1000 : options.rangeLimit;
+ 
+   const walk = (node, parent = {}) => {
+--- a/lib/parse.js
++++ b/lib/parse.js
+@@ -144,6 +144,7 @@
+ 
+     if (value === CHAR_LEFT_PARENTHESES) {
+       block = push({ type: 'paren', nodes: [] });
++      if (stack.length >= 256) require('./safety').fail();
+       stack.push(block);
+       push({ type: 'text', value });
+       continue;
+@@ -210,6 +211,7 @@
+       };
+ 
+       block = push(brace);
++      if (stack.length >= 256) require('./safety').fail();
+       stack.push(block);
+       push({ type: 'open', value });
+       continue;
+--- /dev/null
++++ b/lib/safety.js
+@@ -0,0 +1,24 @@
++'use strict';
++
++// IVOAI patch for CVE-2026-93687. Limits cannot be disabled by options.
++const fail = () => { throw new SyntaxError('braces safety limit exceeded'); };
++const validate = ast => {
++  const pending = [[ast, 0]];
++  let count = 0;
++  while (pending.length) {
++    const [node, depth] = pending.pop();
++    if (depth > 256 || ++count > 65536) fail();
++    if (node.value !== undefined && typeof node.value !== 'string') fail();
++    let parent = node.parent;
++    let hops = 0;
++    while (parent) {
++      if (++hops > 256) fail();
++      parent = parent.parent;
++    }
++    if (node.nodes) {
++      if (node.nodes.length + pending.length + count > 65536) fail();
++      for (const child of node.nodes) pending.push([child, depth + 1]);
++    }
++  }
++};
++module.exports = { validate, fail };
+--- a/lib/stringify.js
++++ b/lib/stringify.js
+@@ -3,6 +3,7 @@
+ const utils = require('./utils');
+ 
+ module.exports = (ast, options = {}) => {
++  require('./safety').validate(ast);
+   const stringify = (node, parent = {}) => {
+     const invalidBlock = options.escapeInvalid && utils.isInvalidBrace(parent);
+     const invalidNode = node.invalid === true && options.escapeInvalid === true;
+--- a/package.json
++++ b/package.json
+@@ -1,7 +1,7 @@
+ {
+   "name": "braces",
+   "description": "Bash-like brace expansion, implemented in JavaScript. Safer than other brace expansion libs, with complete support for the Bash 4.3 braces specification, without sacrificing speed.",
+-  "version": "3.0.3",
++  "version": "3.0.4-ivoai.1",
+   "homepage": "https://github.com/micromatch/braces",
+   "author": "Jon Schlinkert (https://github.com/jonschlinkert)",
+   "contributors": [

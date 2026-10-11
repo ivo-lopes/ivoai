@@ -25,12 +25,12 @@ func TestManagedOpenCodeReleaseMetadataPromotesThroughInstaller(t *testing.T) {
 	if runtime.GOOS != "linux" || (runtime.GOARCH != "amd64" && runtime.GOARCH != "arm64") {
 		t.Skip("managed release targets Linux amd64/arm64")
 	}
-	archive := testArchive(t, "opencode", []byte("#!/bin/sh\necho 1.18.25-ivoai.2\n"))
+	archive := testArchive(t, "opencode", []byte("#!/bin/sh\necho 1.19.0-ivoai.1\n"))
 	digest := sha256.Sum256(archive)
 	metadata := managedOpenCodeMetadata{
-		Version: "1.18.25-ivoai.2", Platform: runtime.GOOS + "/" + runtime.GOARCH,
+		Version: "1.19.0-ivoai.1", Platform: runtime.GOOS + "/" + runtime.GOARCH,
 		SHA256: hex.EncodeToString(digest[:]), SourceSHA256: strings.Repeat("b", 64), PatchSHA256: strings.Repeat("c", 64),
-		UpstreamRevision: "cb7d8b2f5e44876ef98b661dc10590c915af3a9f",
+		UpstreamRevision: "733b2c627e5aec39cb33cc22373bdce33053ef2c",
 		Archive:          "ivoai-opencode_linux_" + runtime.GOARCH + ".tar.gz",
 	}
 	metadata.URL = "https://github.com/ivo-lopes/ivoai/releases/download/v0.10.1/" + metadata.Archive
@@ -77,9 +77,9 @@ func TestManagedOpenCodeReleaseMetadataPromotesThroughInstaller(t *testing.T) {
 
 func TestManagedOpenCodeBuildIdentity(t *testing.T) {
 	metadata := managedOpenCodeMetadata{
-		Version: "1.18.25-ivoai.2", Platform: "linux/amd64",
+		Version: "1.19.0-ivoai.1", Platform: "linux/amd64",
 		SHA256: strings.Repeat("a", 64), SourceSHA256: strings.Repeat("b", 64), PatchSHA256: strings.Repeat("c", 64),
-		UpstreamRevision: "cb7d8b2f5e44876ef98b661dc10590c915af3a9f",
+		UpstreamRevision: "733b2c627e5aec39cb33cc22373bdce33053ef2c",
 		Archive:          "ivoai-opencode_linux_amd64.tar.gz",
 		URL:              "https://github.com/ivo-lopes/ivoai/releases/download/v0.10.1/ivoai-opencode_linux_amd64.tar.gz",
 	}
@@ -92,7 +92,7 @@ func TestManagedOpenCodeBuildIdentity(t *testing.T) {
 		}
 		return base64.StdEncoding.EncodeToString(body)
 	}
-	original := Spec{Name: "opencode", Version: "1.18.25", Revision: metadata.UpstreamRevision,
+	original := Spec{Name: "opencode", Version: "1.19.0", Revision: metadata.UpstreamRevision,
 		Strategy: StrategySupplyChain, PayloadPath: "opencode", License: "MIT",
 		Assets: map[string]Asset{"linux/amd64": {URL: "https://example.invalid/upstream", SHA256: strings.Repeat("d", 64)}},
 	}
@@ -103,7 +103,7 @@ func TestManagedOpenCodeBuildIdentity(t *testing.T) {
 	if projected.Version != metadata.Version || projected.Revision == original.Revision || projected.Assets["linux/amd64"].SHA256 != metadata.SHA256 || projected.Strategy != StrategySupplyChain || projected.PayloadPath != "opencode" {
 		t.Fatal("patched build did not retain isolated, verified supply-chain identity")
 	}
-	if original.Version != "1.18.25" || original.Assets["linux/amd64"].URL != "https://example.invalid/upstream" {
+	if original.Version != "1.19.0" || original.Assets["linux/amd64"].URL != "https://example.invalid/upstream" {
 		t.Fatal("upstream catalog was mutated")
 	}
 	preview := metadata

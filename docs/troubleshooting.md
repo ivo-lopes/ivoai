@@ -30,7 +30,7 @@ alone does not certify delivery, particularly over SSH. An unavailable backend
 produces failed/unconfirmed feedback instead of a false success toast.
 
 Release archives include separately checksummed managed OpenCode binaries and
-provenance metadata. The patched build is identified as `1.18.25-ivoai.1`, not as
+provenance metadata. The patched build is identified as `1.19.0-ivoai.1`, not as
 the untouched upstream artifact. Existing immutable objects remain available for
 rollback.
 
@@ -758,7 +758,7 @@ through configured connectors.
 
 If the memory tool visibly finds the correct page but its body ends before the
 answer, inspect whether an older IvoAI launch used lossy compression. Headroom
-0.36.0 can compress Codex Code Mode `custom_tool_call_output` frames and omit exact
+0.40.0 can compress Codex Code Mode `custom_tool_call_output` frames and omit exact
 trailing text. Current IvoAI launches bypass any compression provider whenever
 authoritative `ivoai-memory` or `ivoai-context` is active and print the reason; start a new `ivoai codex`,
 `ivoai claude`, session, or automatic run after updating. Existing processes keep

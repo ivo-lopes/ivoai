@@ -84,9 +84,8 @@ func (p Provider) Probe(ctx context.Context) core.ComponentStatus {
 		status.Compatibility = core.Compatibility{State: core.CompatibilityIncompatible, Reason: "structured version probe is incompatible"}
 		return status
 	}
-	// The reviewed bin-v1.1.3 assets report "dev". Immutable supply-chain
-	// revision and digest remain authoritative; never relabel this as a runtime-
-	// verified semantic version.
+	// Older assets report "dev"; keep immutable supply-chain provenance in
+	// that case. Newer assets expose their explicit runtime bundle version.
 	if strings.TrimSpace(document.Version) != "" && document.Version != "dev" {
 		status.Provenance.Version = document.Version
 	}
