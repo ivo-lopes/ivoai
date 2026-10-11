@@ -42,6 +42,8 @@ jobs:
         run: npm audit --omit=dev --audit-level=high --prefix internal/components/assets
       - name: Patched braces regression fixtures
         run: bash scripts/test-braces.sh
+      - name: Non-executing intake and documentation comparison fixtures
+        run: python3 -m unittest discover -s scripts -p 'test_*.py'
       - name: Generated CLI reference is current
         run: scripts/generate-cli-reference.sh --check
       - name: Tests, race, and vet

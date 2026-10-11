@@ -102,7 +102,14 @@ func extractNodeArchive(archive, destination string) error {
 				return err
 			}
 		case tar.TypeReg, tar.TypeRegA:
-			if h.Size < 0 || h.Size > 128<<20 {
+			// Node 26's reviewed executable exceeds 128 MiB. Keep the
+			// larger allowance exclusive to its canonical archive path;
+			// auxiliary files and the aggregate extraction budget stay bounded.
+			entryLimit := int64(128 << 20)
+			if rel == filepath.Join("bin", "node") {
+				entryLimit = 256 << 20
+			}
+			if h.Size < 0 || h.Size > entryLimit {
 				return errors.New("invalid Node archive entry size")
 			}
 			total += h.Size

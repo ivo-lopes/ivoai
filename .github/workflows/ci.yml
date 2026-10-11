@@ -58,8 +58,8 @@ jobs:
             printf '::error title=Unit test failure::%s\n' "$annotation"
           fi
           exit "$status"
-      - name: Non-executing Claude Red intake fixtures
-        run: python3 -m unittest discover -s scripts -p test_claude_red_intake.py
+      - name: Non-executing intake and documentation comparison fixtures
+        run: python3 -m unittest discover -s scripts -p 'test_*.py'
       - name: Managed OpenCode HTTP and attach integration
         run: scripts/test-managed-opencode.sh
       - name: Native Codex TUI and fail-closed App Server admission

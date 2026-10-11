@@ -46,35 +46,7 @@ if [[ "$mode" == "--check" ]]; then
   # normalizing only JS asset hash references in rendered HTML. The full
   # production build still runs above, while the deterministic input marker
   # binds the embedded site to the exact documentation/config/lockfile inputs.
-  python3 - "$repo_root/website/build" "$site_dir" <<'PY'
-import pathlib
-import re
-import sys
-
-generated = pathlib.Path(sys.argv[1])
-embedded = pathlib.Path(sys.argv[2])
-
-def files(root):
-    return {
-        path.relative_to(root).as_posix(): path
-        for path in root.rglob("*")
-        if path.is_file() and not path.relative_to(root).as_posix().startswith("assets/js/")
-    }
-
-left, right = files(generated), files(embedded)
-if left.keys() != right.keys():
-    print("generated only:", ", ".join(sorted(left.keys() - right.keys())), file=sys.stderr)
-    print("embedded only:", ", ".join(sorted(right.keys() - left.keys())), file=sys.stderr)
-    raise SystemExit("embedded documentation file set is stale")
-
-asset_hash = re.compile(rb"(?<=\.)([0-9a-f]{8})(?=\.js)")
-for name in sorted(left):
-    a, b = left[name].read_bytes(), right[name].read_bytes()
-    if name.endswith(".html"):
-        a, b = asset_hash.sub(b"HASHHASH", a), asset_hash.sub(b"HASHHASH", b)
-    if a != b:
-        raise SystemExit(f"embedded documentation differs: {name}")
-PY
+  python3 "$repo_root/scripts/check-embedded-docs.py" "$repo_root/website/build" "$site_dir"
 elif [[ "$mode" == "write" ]]; then
   rm -rf "$site_dir"
   mkdir -p "$(dirname "$site_dir")"
