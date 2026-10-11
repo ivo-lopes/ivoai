@@ -3,11 +3,11 @@
 ## Pack nativo (v0.9.9)
 
 Instalação, setup e update do client materializam um subconjunto declarativo de
-treze fontes curadas no registry privado e no supply-chain existentes. Codex e
+quatorze fontes curadas no registry privado e no supply-chain existentes. Codex e
 Claude compartilham esse registry; nenhuma Skill é copiada para suas configurações
 pessoais. Sessões AUTO e seleção de workers não dependem de downloads upstream.
 
-Fontes: Anthropic Cybersecurity Skills (mantida pela comunidade), Caveman, Codex
+Fontes: Anthropic Cybersecurity Skills (mantida pela comunidade), Caveman, Claude Red, Codex
 Security, Hallmark, i-have-adhd, Impeccable, MarketingSkills, Ponytail, reverse-skill,
 Superpowers, Taste Skill, UI UX Pro Max e Matt Pocock Skills. O intake histórico
 `awesome-gpt-image-2` não integra o pack. O subconjunto inicial de Matt Pocock é
@@ -95,6 +95,67 @@ estreitas. Metadados ricos de skills ficam em `internal/skills`; a policy fica e
 Metadados e bodies de skills externas são dados não confiáveis. Eles não podem
 substituir o orquestrador IVOAI, conceder capabilities, alterar sandboxing nem
 modificar policy.
+
+## Claude Red — IVOAI-188
+
+A revisão aprovada de [SnailSploit/Claude-Red](https://github.com/SnailSploit/Claude-Red/tree/739512a8588b28ff3b554e669391c22508602878) é `739512a8588b28ff3b554e669391c22508602878`, licença MIT.
+A descoberta da árvore encontrou 79 arquivos; 51 têm frontmatter válido e foram
+preservados sem alteração, e 28 foram rejeitados por `missing_frontmatter`.
+O manifesto upstream lista 78 e omite `offensive-netexec`. Caminho, SHA-256 e
+motivo das rejeições ficam no catálogo e na inspeção, sem instalar seus corpos.
+
+```sh
+ivoai skills update claude-red
+ivoai skills show claude-red
+ivoai skills doctor claude-red
+ivoai skills enable claude-red
+ivoai skills disable claude-red
+ivoai skills pin claude-red
+ivoai skills unpin claude-red
+ivoai skills rollback claude-red
+```
+
+Use **Skills & Capabilities → Claude Red** para instalar, inspecionar,
+habilitar/desabilitar, fixar ou reverter. Os comandos existentes
+`ivoai skills list`, `show claude-red`, `doctor claude-red`, `update claude-red`,
+`enable claude-red`, `disable claude-red`, `pin claude-red`, `unpin claude-red`
+e `rollback claude-red` usam o mesmo serviço. O contrato atual controla a fonte;
+a elegibilidade individual é decidida pelo Gate e pela política.
+
+Somente `claude-red-offensive-reporting` é elegível por padrão, para organizar
+evidências fornecidas e sanitizadas em um worker consultivo. Das demais, 30 são
+de alto risco e 20 de risco crítico: a política bloqueia suas capacidades antes
+de carregar os documentos. Instalar ou habilitar não autoriza avaliação ativa.
+Não há concessão de shell, privilégios, rede ou exclusão de evidências. Avaliações
+ativas exigiriam escopo, autorização e aprovação explícita, além de isolamento;
+essa capacidade permanece indisponível na política atual.
+
+`ivoai codex` e `ivoai opencode --planner codex|claude` selecionam por worker.
+O planner não fixa o executor de todos os workers. `ivoai claude` é direto;
+use `ivoai opencode --planner claude` para seleção do pacote nativo. Modos
+`--direct` excluem o pacote da injeção no primário por contrato. A sessão Claude
+legada `session start --executor claude --mode orchestrated` continua disponível,
+mas o fluxo gerenciado recomendado é OpenCode. Nenhuma instalação pessoal recebe
+cópias de Skills. Codex usa `developer_instructions`; Claude usa
+`--append-system-prompt`, mantendo as permissões dos adapters existentes.
+Contratos oficiais: [Codex Skills](https://developers.openai.com/codex/skills) e
+[Claude Code Skills](https://code.claude.com/docs/en/skills).
+
+Exemplo: solicite um relatório de segurança autorizado sobre achados sintéticos
+fornecidos, sem ferramentas ou rede, incluindo escopo, limitações, remediação e
+reteste proposto. Não declarar execução de testes inexistentes.
+
+Update usa apenas a revisão embutida aprovada, sem rede, com staging, SHA-256,
+promoção atômica e retenção anterior. Pin preserva a versão ativa. Rollback exige
+uma revisão anterior; na primeira instalação, desabilite a fonte se necessário.
+Desabilitar afeta seleções futuras, não revoga instruções já entregues. Checksum
+não equivale a assinatura independente. Doctor diagnostica integridade; inspeção
+mostra rejeições e bloqueios. Não edite os objetos imutáveis.
+
+O smoke autenticado comprovou o uso de uma única Skill no Codex 0.162.1.
+Claude Code 2.1.222 foi bloqueado por OAuth expirado; o usuário confirmou ausência
+de acesso. A prova real Claude permanece pendente e a IVOAI-188 não está Done.
+Os testes usam fixtures sem alvos externos e ambientes temporários isolados.
 
 ## Registry versionado
 
@@ -296,7 +357,7 @@ policy ou autoridade de orchestration.
 
 ## Overlay de upstreams curados
 
-`internal/skillcatalog/catalog.json` registra 14 fontes: as 13 fontes nativas e
+`internal/skillcatalog/catalog.json` registra 15 fontes: as 14 fontes nativas e
 o intake histórico de imagens, excluído do pack nativo. Ele mantém três camadas separadas:
 
 1. nome e descrição fornecidos pelo upstream;

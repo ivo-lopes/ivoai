@@ -43,13 +43,13 @@ func TestFrontendArtifactDirectModes(t *testing.T) {
 		t.Fatal(err)
 	}
 	state := config.State{Schema: config.StateSchemaVersion, Components: map[string]config.ComponentState{}}
-	for _, name := range []string{"codex", "codex-code-mode-host", "opencode"} {
+	for _, name := range []string{"codex", "codex-code-mode-host", "claude", "opencode"} {
 		state.Components[name] = installed.Components[name]
 	}
 	if err := store.SaveState(state); err != nil {
 		t.Fatal(err)
 	}
-	for _, args := range [][]string{{"codex", "--direct", "--", "--version"}, {"opencode", "--direct", "--", "--version"}, {"session", "start", "--executor", "codex", "--mode", "direct", "--", "--version"}} {
+	for _, args := range [][]string{{"codex", "--direct", "--", "--version"}, {"claude", "--", "--version"}, {"opencode", "--direct", "--", "--version"}, {"session", "start", "--executor", "codex", "--mode", "direct", "--", "--version"}} {
 		ctx, cancel := context.WithTimeout(context.Background(), 45*time.Second)
 		cmd := exec.CommandContext(ctx, binary, args...)
 		cmd.Dir = root
@@ -59,6 +59,7 @@ func TestFrontendArtifactDirectModes(t *testing.T) {
 			t.Fatalf("official direct surface failed: %s: %v", args[0], err)
 		}
 	}
+	// The legacy `ivoai claude` launcher does not create a SessionStore record.
 	values, err := (session.Store{Root: paths.SessionsDir}).List()
 	if err != nil || len(values) != 3 {
 		t.Fatal("direct session metadata missing", err)
@@ -68,5 +69,5 @@ func TestFrontendArtifactDirectModes(t *testing.T) {
 			t.Fatal("direct session entered orchestration")
 		}
 	}
-	t.Log("CODEX_DIRECT=PASS OPENCODE_DIRECT=PASS PROVIDER_NEUTRAL_DIRECT=PASS NO_GATE_NO_DAG=true")
+	t.Log("CODEX_DIRECT=PASS CLAUDE_DIRECT=PASS OPENCODE_DIRECT=PASS PROVIDER_NEUTRAL_DIRECT=PASS NO_GATE_NO_DAG=true")
 }

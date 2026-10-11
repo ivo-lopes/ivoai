@@ -260,6 +260,24 @@ func (a *App) PrintNativeCapabilities(ctx context.Context, id string) error {
 		fmt.Fprintf(a.Out, "%s (%s): %s | type=%s | auto-select=%s | risk=%s | executors=%s | policy=%s | pinned=%t | update=%t\n", row.Name, row.ID, row.Status, row.Type, row.AutoSelect, row.Risk, strings.Join(row.Compatibility, ","), row.SelectionPolicy, row.Pinned, row.UpdateAvailable)
 		if id != "" {
 			fmt.Fprintf(a.Out, "Revision: %s\nAvailable: %s\nSkills: %s\nProvenance: immutable commit + local SHA-256 (not an independent signature)\n", row.Revision, row.AvailableRevision, strings.Join(row.Skills, ", "))
+			catalog, err := skillcatalog.Load()
+			if err != nil {
+				return err
+			}
+			source, _ := catalog.Source(id)
+			fmt.Fprintf(a.Out, "Repository: %s\nLicense: %s\n", source.Upstream.Repository, source.Upstream.License)
+			for _, c := range source.Classifications {
+				decision := policy.DefaultEngine().Evaluate(policy.Request{SubjectID: c.CanonicalID, SubjectKind: policy.SubjectSkill, DeclaredCapabilities: c.RequestedCapabilities, RequestedCapabilities: c.RequestedCapabilities, Risk: c.Risk, Scope: "skill_catalog", MetadataValid: true, ConflictResolved: true})
+				fmt.Fprintf(a.Out, "%s: category=%s | phase=%s | risk=%s | executors=%s | capabilities=%s | policy=%s | reason=%s\n", c.CanonicalID, c.Domain, c.Phase, c.Risk, strings.Join(c.Executors, ","), strings.Join(c.RequestedCapabilities, ","), decision.Decision, decision.Reason)
+				for _, item := range source.Skills {
+					if item.Path == c.Path {
+						fmt.Fprintf(a.Out, "  Purpose: %s\n  Path: %s | SHA-256: %s\n", item.Description, item.Path, item.SHA256)
+					}
+				}
+			}
+			for _, rejected := range source.Rejected {
+				fmt.Fprintf(a.Out, "Rejected: %s | reason=%s | SHA-256=%s | executors=none\n", rejected.Path, rejected.Reason, rejected.SHA256)
+			}
 			return nil
 		}
 	}

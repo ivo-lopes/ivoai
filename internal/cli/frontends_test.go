@@ -43,6 +43,12 @@ func TestOrchestratedEntrypointsAndDeprecatedAlias(t *testing.T) {
 		}
 	}
 	for _, command := range []string{"codex", "opencode"} {
+		for _, planner := range []string{"codex", "claude"} {
+			err := runCommand(context.Background(), a, []string{command, "--planner", planner})
+			if err == nil || err.Error() != "automatic orchestration is disabled" {
+				t.Fatalf("%s planner %s bypassed core: %v", command, planner, err)
+			}
+		}
 		err := runCommand(context.Background(), a, []string{command, "--direct", "--", "--version"})
 		if err != nil && strings.Contains(err.Error(), "orchestration is disabled") {
 			t.Fatal("direct entered orchestration")

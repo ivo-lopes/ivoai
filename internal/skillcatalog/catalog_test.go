@@ -19,7 +19,7 @@ func TestCuratedCatalogSeparatesUpstreamProvenanceAndPolicy(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(catalog.Sources) != 14 {
+	if len(catalog.Sources) != 15 {
 		t.Fatalf("sources=%d", len(catalog.Sources))
 	}
 	for index, source := range catalog.Sources {

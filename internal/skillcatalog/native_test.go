@@ -73,7 +73,7 @@ func TestNativeHeterogeneousWorkerLazySelection(t *testing.T) {
 
 func TestNativePackMaterializesOfflineThroughExistingSupplyChain(t *testing.T) {
 	root := t.TempDir()
-	if len(NativeIDs()) != 13 {
+	if len(NativeIDs()) != 14 {
 		t.Fatal("approved source count changed")
 	}
 	for _, id := range NativeIDs() {

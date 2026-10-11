@@ -49,6 +49,15 @@ type Source struct {
 	Provenance      Provenance       `json:"provenance"`
 	Skills          []UpstreamSkill  `json:"skills"`
 	Classifications []Classification `json:"classifications"`
+	Rejected        []RejectedSkill  `json:"rejected,omitempty"`
+}
+
+// RejectedSkill is metadata-only evidence. Rejected upstream bodies are never
+// embedded, materialized or eligible for selection.
+type RejectedSkill struct {
+	Path   string `json:"path"`
+	SHA256 string `json:"sha256"`
+	Reason string `json:"reason"`
 }
 
 type Upstream struct {
@@ -139,6 +148,16 @@ func (c *Catalog) Validate() error {
 				return fmt.Errorf("source %q has invalid upstream skill metadata", source.ID)
 			}
 			upstream[item.Path] = item
+		}
+		seenRejected := map[string]bool{}
+		if len(source.Rejected) > maxSkillsPerSource || len(source.Rejected)+len(source.Skills) > source.Upstream.ObservedCount {
+			return fmt.Errorf("source %q has invalid rejected inventory", source.ID)
+		}
+		for _, item := range source.Rejected {
+			if !safeRelativePath(item.Path) || !sha256Digest(item.SHA256) || !safeID(item.Reason) || upstream[item.Path].Path != "" || seenRejected[item.Path] {
+				return fmt.Errorf("source %q has invalid rejection metadata", source.ID)
+			}
+			seenRejected[item.Path] = true
 		}
 		for _, classification := range source.Classifications {
 			item, ok := upstream[classification.Path]

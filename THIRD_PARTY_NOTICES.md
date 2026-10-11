@@ -41,3 +41,13 @@ whose ICNS/JXL/HEIF parsers have two upstream advisories without a patched
 release. IVOAI does not process those formats, ships only the generated static
 site, and enforces this boundary in `scripts/audit-docs-dependencies.sh`; no
 other high-severity dependency finding is allowlisted.
+
+## Claude Red
+
+The native Skill catalog includes 51 unmodified declarative `SKILL.md` files
+from [SnailSploit/Claude-Red](https://github.com/SnailSploit/Claude-Red), revision
+`739512a8588b28ff3b554e669391c22508602878`, under the MIT License.
+Copyright (c) 2024-2025 SnailSploit / Kai Aizen. The full notice is preserved in
+`internal/skillcatalog/native/claude-red/LICENSE`. The remaining 28 documents
+without required frontmatter are recorded as rejected metadata, not bundled.
+Upstream installers, converters, hooks and build tools are not included or run.
