@@ -1,6 +1,6 @@
 schema_version: 1
-validated_at: "2026-08-25"
-transitive_dependency_cutoff: "2026-08-21T00:00:00Z"
+validated_at: "2026-10-11"
+transitive_dependency_cutoff: "2026-10-12T00:00:00Z"
 policy:
   allow_latest_tags: false
   update_command: "ivoai update"
@@ -14,10 +14,10 @@ policy:
 components:
   - name: mcp-go-sdk
     role: [server]
-    validated_version: "1.7.0"
-    minimum_version: "1.7.0"
+    validated_version: "1.8.0"
+    minimum_version: "1.8.0"
     license: "Apache-2.0 / MIT (file-specific)"
-    source: "https://github.com/modelcontextprotocol/go-sdk/releases/tag/v1.7.0"
+    source: "https://github.com/modelcontextprotocol/go-sdk/releases/tag/v1.8.0"
     architectures: [linux/amd64, linux/arm64]
     install_strategy: statically_linked_go_module
     checksum_strategy: go_sum
@@ -26,7 +26,7 @@ components:
 
   - name: ivoai
     role: [client, server]
-    validated_version: "0.5.0"
+    validated_version: "0.11.0"
     minimum_version: "0.1.0"
     license: MIT
     source: "https://github.com/ivo-lopes/ivoai"
@@ -36,8 +36,8 @@ components:
 
   - name: go-toolchain
     role: [development-bootstrap]
-    validated_version: "1.27.0"
-    minimum_version: "1.27.0"
+    validated_version: "1.27.2"
+    minimum_version: "1.27.2"
     license: BSD-3-Clause
     source: "https://go.dev/dl/"
     architectures: [linux/amd64, linux/arm64]
@@ -45,32 +45,32 @@ components:
     checksum_strategy: official_archive_sha256
     assets:
       linux/amd64:
-        url: "https://go.dev/dl/go1.27.0.linux-amd64.tar.gz"
-        sha256: "675c26c449cbb18fc24b74650de1eabbae6e16f64326fd85a283fb3b58280685"
+        url: "https://go.dev/dl/go1.27.2.linux-amd64.tar.gz"
+        sha256: "ecbadb99091a3f46e31f5f934b068b1864eafa7995211b39eaddf76996045fe5"
       linux/arm64:
-        url: "https://go.dev/dl/go1.27.0.linux-arm64.tar.gz"
-        sha256: "51798d2c42d0e1c6ed7fd9f48728b4193abac9e8aad6dbac2fe96a81f5909bda"
+        url: "https://go.dev/dl/go1.27.2.linux-arm64.tar.gz"
+        sha256: "94f3e30b8e374bc285e7dadc11e0865726b9bc6e85b841ccceaabc0214c6b7c8"
     notes:
       - "Used only when installing from a source checkout without a compatible system Go; extracted under the installer temporary directory and removed after the build."
 
   - name: codex
     role: [client]
     package: "@openai/codex"
-    validated_version: "0.153.4"
+    validated_version: "0.162.1"
     minimum_version: "0.148.0"
     license: Apache-2.0
-    source: "https://github.com/openai/codex/releases/tag/rust-v0.153.4"
+    source: "https://github.com/openai/codex/releases/tag/rust-v0.162.1"
     documentation: "https://learn.chatgpt.com/docs/codex/cli"
     architectures: [linux/amd64, linux/arm64]
     install_strategy: github_release_asset
     checksum_strategy: reviewed_release_asset_sha256
     assets:
       linux/amd64:
-        url: "https://github.com/openai/codex/releases/download/rust-v0.153.4/codex-x86_64-unknown-linux-musl.tar.gz"
-        sha256: "f479424eca092484dc40d87ae28c44f4cc40234a60045d6131e493800d814a30"
+        url: "https://github.com/openai/codex/releases/download/rust-v0.162.1/codex-x86_64-unknown-linux-musl.tar.gz"
+        sha256: "86f268d81b898f3e144c5ecff2ad2fda2c5802e042d6195b72538fe0fa125057"
       linux/arm64:
-        url: "https://github.com/openai/codex/releases/download/rust-v0.153.4/codex-aarch64-unknown-linux-musl.tar.gz"
-        sha256: "5cda6182bd94c3a30f2eb63a495489ebf7f691fddb14d70f48c6c1a5071b6cde"
+        url: "https://github.com/openai/codex/releases/download/rust-v0.162.1/codex-aarch64-unknown-linux-musl.tar.gz"
+        sha256: "bf3ca2719f1143b1440fbd85c149379e696c782c50ad7991f8bfcec60b2600c1"
     auth:
       default: "codex login"
       status: "codex login status"
@@ -80,11 +80,11 @@ components:
   - name: claude-code
     role: [client]
     package: "@anthropic-ai/claude-code"
-    validated_version: "2.1.228"
-    observed_latest_version: "2.1.237"
-    minimum_version: "2.1.228"
+    validated_version: "2.1.296"
+    observed_latest_version: "2.1.296"
+    minimum_version: "2.1.296"
     license: Proprietary-Anthropic-Terms
-    source: "https://github.com/anthropics/claude-code/releases/tag/v2.1.228"
+    source: "https://github.com/anthropics/claude-code/releases/tag/v2.1.296"
     documentation: "https://code.claude.com/docs/en/getting-started"
     architectures: [linux/amd64, linux/arm64]
     install_strategy: github_release_asset
@@ -92,36 +92,36 @@ components:
     signing_key_fingerprint: "31DD DE24 DDFA B679 F42D 7BD2 BAA9 29FF 1A7E CACE"
     assets:
       linux/amd64:
-        url: "https://github.com/anthropics/claude-code/releases/download/v2.1.228/claude-linux-x64.tar.gz"
-        sha256: "9050d667bcc3940b7ceee65e3e5c4439d2b7161a71d940fdf60192302243f960"
+        url: "https://github.com/anthropics/claude-code/releases/download/v2.1.296/claude-linux-x64.tar.gz"
+        sha256: "45fe2b33f5cbdd114309618970bcd90b8b163e34252d66cf100d7e068d9b831d"
       linux/arm64:
-        url: "https://github.com/anthropics/claude-code/releases/download/v2.1.228/claude-linux-arm64.tar.gz"
-        sha256: "877d423c35e6d059752f86399352837df5bf1af2a9dbcda5753d898629a439f4"
+        url: "https://github.com/anthropics/claude-code/releases/download/v2.1.296/claude-linux-arm64.tar.gz"
+        sha256: "c644ad3e5ca3367e75d198194189d13180f33c491304c2d19557f7c1e8d5e0a6"
     auth:
       default: "claude auth login"
       subscription_supported: true
       payg_key_required: false
     notes:
-      - "Pinned to Anthropic's stable channel; 2.1.237 was the latest channel on the validation date."
+      - "Pinned to the reviewed official v2.1.296 release."
       - "ivoai must disable Claude's silent auto-update for a managed install and update only through ivoai update."
 
   - name: codex-code-mode-host
     role: [client]
     package: "@openai/codex companion"
-    validated_version: "0.153.4"
+    validated_version: "0.162.1"
     minimum_version: "0.148.0"
     license: Apache-2.0
-    source: "https://github.com/openai/codex/releases/tag/rust-v0.153.4"
+    source: "https://github.com/openai/codex/releases/tag/rust-v0.162.1"
     architectures: [linux/amd64, linux/arm64]
     install_strategy: github_release_asset_when_codex_is_managed
     checksum_strategy: github_release_asset_digest_sha256
     assets:
       linux/amd64:
-        url: "https://github.com/openai/codex/releases/download/rust-v0.153.4/codex-code-mode-host-x86_64-unknown-linux-musl.tar.gz"
-        sha256: "f95830a869590957664bbfc67bccb08773806b693670baf15908176f89b4cd31"
+        url: "https://github.com/openai/codex/releases/download/rust-v0.162.1/codex-code-mode-host-x86_64-unknown-linux-musl.tar.gz"
+        sha256: "458239ea45c1fc508d89695f180ab352f2834709a8a46929a4466f4f04399ada"
       linux/arm64:
-        url: "https://github.com/openai/codex/releases/download/rust-v0.153.4/codex-code-mode-host-aarch64-unknown-linux-musl.tar.gz"
-        sha256: "d8047b8d33370d6090e729d27eb76de60a2686baa1c143c138c9b05dc70d813b"
+        url: "https://github.com/openai/codex/releases/download/rust-v0.162.1/codex-code-mode-host-aarch64-unknown-linux-musl.tar.gz"
+        sha256: "1395ce9367f8acd280674dff083edf25bf221d908b8351d5bd4f3fdde9181e9a"
     notes:
       - "Installed beside managed Codex because the stable Code Mode tool router fails closed when the companion is absent."
       - "The companion has no --version endpoint; compatibility is pinned to the exact Codex release and verified by the reviewed archive digest."
@@ -129,10 +129,10 @@ components:
   - name: headroom
     role: [client]
     package: "headroom-ai[proxy]"
-    validated_version: "0.36.0"
-    minimum_version: "0.36.0"
+    validated_version: "0.40.0"
+    minimum_version: "0.40.0"
     license: Apache-2.0
-    source: "https://github.com/headroomlabs-ai/headroom/releases/tag/v0.36.0"
+    source: "https://github.com/headroomlabs-ai/headroom/releases/tag/v0.40.0"
     documentation: "https://headroomlabs-ai.github.io/headroom/cli/"
     architectures: [linux/amd64, linux/arm64]
     install_strategy: isolated_python_tool
@@ -140,85 +140,85 @@ components:
     checksum_strategy: pypi_sha256
     assets:
       linux/amd64:
-        filename: "headroom_ai-0.36.0-cp310-abi3-manylinux_2_28_x86_64.whl"
-        url: "https://github.com/headroomlabs-ai/headroom/releases/download/v0.36.0/headroom_ai-0.36.0-cp310-abi3-manylinux_2_28_x86_64.whl"
-        sha256: "fab6af014363c5a9a6bb41913a84df6f1daaecb56edf005925940e4501937f42"
+        filename: "headroom_ai-0.40.0-cp310-abi3-manylinux_2_28_x86_64.whl"
+        url: "https://github.com/headroomlabs-ai/headroom/releases/download/v0.40.0/headroom_ai-0.40.0-cp310-abi3-manylinux_2_28_x86_64.whl"
+        sha256: "49b6d8a01c8eceb5b9e9a675720ed5e4cb24e467282642653aac7f2fd8faf47f"
       linux/arm64:
-        filename: "headroom_ai-0.36.0-cp310-abi3-manylinux_2_28_aarch64.whl"
-        url: "https://github.com/headroomlabs-ai/headroom/releases/download/v0.36.0/headroom_ai-0.36.0-cp310-abi3-manylinux_2_28_aarch64.whl"
-        sha256: "a00f3d7a705e15bc52a529c1476a775badb8d0e2e3fb72ec96f952814121697c"
+        filename: "headroom_ai-0.40.0-cp310-abi3-manylinux_2_28_aarch64.whl"
+        url: "https://github.com/headroomlabs-ai/headroom/releases/download/v0.40.0/headroom_ai-0.40.0-cp310-abi3-manylinux_2_28_aarch64.whl"
+        sha256: "140811066bfb7afe888f471be4a587375779af9de8dd76bb9a8126b52b8e930f"
     notes:
       - "Use headroom wrap codex/claude only after a local compatibility probe; direct-agent fallback is mandatory."
-      - "Architecture-specific transitive constraints and hashes are embedded; uv installs wheels against exact CPython 3.13.15."
+      - "Architecture-specific transitive constraints and hashes are embedded; uv installs wheels against exact CPython 3.14.8."
 
   - name: caveman
     role: [client]
-    validated_version: "1.1.3"
-    product_release: "v2.3.1"
-    product_revision: "b5ec6351396b643a17cbbec4a6eee8b3fb9dd782"
-    runtime_revision: "0d2f052babfd613ec9b4186c86ec6f133cdfd4d7"
-    minimum_version: "1.1.3"
-    license: BSL-1.1
-    source: "https://github.com/JuliusBrussee/caveman/releases/tag/bin-v1.1.3"
-    documentation: "https://github.com/JuliusBrussee/caveman/blob/v2.3.1/README.md"
+    validated_version: "2.1.0"
+    product_release: "v3.2.0"
+    product_revision: "e20f07e8152a0c0360f58c09e79d30ac94329991"
+    runtime_revision: "e20f07e8152a0c0360f58c09e79d30ac94329991"
+    minimum_version: "2.1.0"
+    license: Apache-2.0
+    source: "https://github.com/JuliusBrussee/caveman/releases/tag/bin-v2.1.0"
+    documentation: "https://github.com/JuliusBrussee/caveman/blob/v3.2.0/README.md"
     architectures: [linux/amd64, linux/arm64]
     install_strategy: managed_supply_chain_raw_binary
     checksum_strategy: upstream_checksums_asset_sha256
     assets:
       linux/amd64:
-        url: "https://github.com/JuliusBrussee/caveman/releases/download/bin-v1.1.3/caveman-proxy_linux_amd64"
-        sha256: "d883b9ab4b559e0c1935335c0e24400deb5c61d5e247f1ca239c4149f57885b0"
+        url: "https://github.com/JuliusBrussee/caveman/releases/download/bin-v2.1.0/caveman-proxy_linux_amd64"
+        sha256: "44436d69705ad9968563c181cd11d396d6ae5eeccd8dbf228f6225d92dfadcb1"
       linux/arm64:
-        url: "https://github.com/JuliusBrussee/caveman/releases/download/bin-v1.1.3/caveman-proxy_linux_arm64"
-        sha256: "2d6c1950bbce1a70c910a03bde88883817a8380f03f5ec25dd80186fed434ce7"
+        url: "https://github.com/JuliusBrussee/caveman/releases/download/bin-v2.1.0/caveman-proxy_linux_arm64"
+        sha256: "5a881979934d51822ccf9ea13c519769fea18c52c061e14e6bd0d9f950ce760f"
     notes:
-      - "Only the BSL-1.1 proxy/runtime is managed; the MIT CLI and skills are not installed by IVOAI in this phase."
+      - "Only the proxy/runtime pair is managed; other upstream executables are not installed."
       - "The upstream checksums.txt.keysig is recorded as published but is not claimed as independently verified."
-      - "The BSL Additional Use Grant observed at v2.3.1 permits internal, CI and first-party self-hosted use; third-party managed service use requires commercial licensing."
+      - "Caveman 3.x and runtime bin-v2.1.0 use Apache-2.0; preserve upstream NOTICE and historical MIT attribution."
       - "No Caveman memory, MCP, browse, learn, pixel, hooks, statusline or global setup is enabled."
 
   - name: caveman-mcp
     role: [client]
-    validated_version: "1.1.3"
-    runtime_revision: "0d2f052babfd613ec9b4186c86ec6f133cdfd4d7"
-    minimum_version: "1.1.3"
-    license: BSL-1.1
-    source: "https://github.com/JuliusBrussee/caveman/releases/tag/bin-v1.1.3"
-    documentation: "https://github.com/JuliusBrussee/caveman/blob/v2.3.1/README.md"
+    validated_version: "2.1.0"
+    runtime_revision: "e20f07e8152a0c0360f58c09e79d30ac94329991"
+    minimum_version: "2.1.0"
+    license: Apache-2.0
+    source: "https://github.com/JuliusBrussee/caveman/releases/tag/bin-v2.1.0"
+    documentation: "https://github.com/JuliusBrussee/caveman/blob/v3.2.0/README.md"
     architectures: [linux/amd64, linux/arm64]
     install_strategy: managed_supply_chain_raw_binary
     checksum_strategy: upstream_checksums_asset_sha256
     requires_managed: caveman
     assets:
       linux/amd64:
-        url: "https://github.com/JuliusBrussee/caveman/releases/download/bin-v1.1.3/caveman-mcp_linux_amd64"
-        sha256: "c5c9a850f388570e2b822ac86ac35ad0e9f2c8ec0162b966f5536013042c058d"
+        url: "https://github.com/JuliusBrussee/caveman/releases/download/bin-v2.1.0/caveman-mcp_linux_amd64"
+        sha256: "24339e645da66fb3580e3d9410743499845748238f01d0dc8097330fcb0f9bde"
       linux/arm64:
-        url: "https://github.com/JuliusBrussee/caveman/releases/download/bin-v1.1.3/caveman-mcp_linux_arm64"
-        sha256: "433b16942095ef0a615ba474c398c3a4f46c589dc447d4505025953c934f13e0"
+        url: "https://github.com/JuliusBrussee/caveman/releases/download/bin-v2.1.0/caveman-mcp_linux_arm64"
+        sha256: "fb49b996eee5a297a674a067979931d9a28d59cbe735be2b9104e7519ef7042a"
     notes:
       - "Local-only stdio helper used internally by WorkingContext; it is never registered automatically with the primary."
       - "No npx, global install, durable memory, browse, learn, pixel or external service is used."
 
   - name: opencode
     role: [client]
-    validated_version: "1.18.25"
-    minimum_version: "1.18.25"
-    revision: "cb7d8b2f5e44876ef98b661dc10590c915af3a9f"
+    validated_version: "1.19.0"
+    minimum_version: "1.19.0"
+    revision: "733b2c627e5aec39cb33cc22373bdce33053ef2c"
     default_branch: dev
     license: MIT
-    source: "https://github.com/anomalyco/opencode/releases/tag/v1.18.25"
+    source: "https://github.com/anomalyco/opencode/releases/tag/v1.19.0"
     documentation: "https://opencode.ai/docs/"
     architectures: [linux/amd64, linux/arm64]
     install_strategy: managed_supply_chain_release_archive
     checksum_strategy: github_release_asset_digest_sha256
     assets:
       linux/amd64:
-        url: "https://github.com/anomalyco/opencode/releases/download/v1.18.25/opencode-linux-x64.tar.gz"
-        sha256: "58a3729a6f3432dd6d2917fcc4a949788891a035818646ad480e12c947f56e78"
+        url: "https://github.com/anomalyco/opencode/releases/download/v1.19.0/opencode-linux-x64.tar.gz"
+        sha256: "7bb9e61ad6feacf2e89c10a6a2c1840e3de4220bb50ba1fc7110f31806076aec"
       linux/arm64:
-        url: "https://github.com/anomalyco/opencode/releases/download/v1.18.25/opencode-linux-arm64.tar.gz"
-        sha256: "35ef77897425e41b5183a2c21ac4fb1d4d944d82a94e3c920f57b5490af11ac5"
+        url: "https://github.com/anomalyco/opencode/releases/download/v1.19.0/opencode-linux-arm64.tar.gz"
+        sha256: "e9841d43d3e1a8f36ed2691592d3b8b4fb097e606c8b559a277a1b845840e26b"
     auth:
       default: "opencode auth login"
       subscription_or_provider_owned: true
@@ -229,42 +229,42 @@ components:
 
   - name: ai-memory
     role: [client, server]
-    validated_version: "1.29.0"
-    minimum_version: "1.29.0"
+    validated_version: "2.6.3"
+    minimum_version: "2.6.3"
     license: MIT
-    source: "https://github.com/akitaonrails/ai-memory/releases/tag/v1.29.0"
-    changelog: "https://github.com/akitaonrails/ai-memory/blob/v1.29.0/CHANGELOG.md"
+    source: "https://github.com/akitaonrails/ai-memory/releases/tag/v2.6.3"
+    changelog: "https://github.com/akitaonrails/ai-memory/blob/v2.6.3/CHANGELOG.md"
     architectures: [linux/amd64, linux/arm64]
     install_strategy: github_release_asset
     checksum_strategy: adjacent_upstream_sha256
     assets:
       linux/amd64:
-        url: "https://github.com/akitaonrails/ai-memory/releases/download/v1.29.0/ai-memory-linux-x86_64.tar.gz"
-        sha256: "c666fa4ec778673ae995cd8aa4489b6184c7a3dc220a2c4e1c18792eda1321f1"
+        url: "https://github.com/akitaonrails/ai-memory/releases/download/v2.6.3/ai-memory-linux-x86_64.tar.gz"
+        sha256: "933be9bb8fe6930336933f0b8adf0695007e644f945898f9f030fd312326f0f3"
       linux/arm64:
-        url: "https://github.com/akitaonrails/ai-memory/releases/download/v1.29.0/ai-memory-linux-aarch64.tar.gz"
-        sha256: "828cb63f697f8b773d4e6c41c38d0d850310afed04f37479bb48e3a11969d689"
+        url: "https://github.com/akitaonrails/ai-memory/releases/download/v2.6.3/ai-memory-linux-aarch64.tar.gz"
+        sha256: "e4e01409fe80148a4d561aef98ac5d526c488c4a621faa759f9d0b3ed2606088"
     server_image:
-      reference: "akitaonrails/ai-memory@sha256:1d8a2ca7d7bc2349ba964d2d97dafb683632676460c1e373083f919a18c60d37"
-      tag_for_humans: "1.29.0"
+      reference: "akitaonrails/ai-memory@sha256:15178d3fc5bd67439a5b9780b2cf58af476943abea2487514a4c5d6ec18291ee"
+      tag_for_humans: "2.6.3"
     notes:
-      - "1.29.0 supersedes the prompt's 1.28.1 floor and publishes per-architecture checksums."
+      - "Client and server are pinned to the reviewed 2.6.3 release; back up server data before migration."
       - "Hooks must spool/best-effort and always allow the primary agent to continue when the server is offline."
 
   - name: ruflo
     role: [client]
     package: ruflo
-    validated_version: "3.38.12"
-    minimum_version: "3.38.12"
+    validated_version: "3.56.5"
+    minimum_version: "3.56.5"
     license: MIT
-    source: "https://www.npmjs.com/package/ruflo/v/3.38.12"
+    source: "https://www.npmjs.com/package/ruflo/v/3.56.5"
     upstream_repository: "https://github.com/ruvnet/ruflo"
     architectures: [linux/amd64, linux/arm64]
     install_strategy: isolated_npm_prefix
     runtime_requirement: "Node.js >=20"
     checksum_strategy: npm_registry_integrity
-    integrity: "sha512-NOQnhI/fKok9aM0c+NR/6r6K81LJIO9ZwX7UZUJqIZFU/jg8edMX2qvQVaJfh+wdGCWP7oCdZyxjnNn/5MVr0Q=="
-    package_url: "https://registry.npmjs.org/ruflo/-/ruflo-3.38.12.tgz"
+    integrity: "sha512-t80LC6aqtdRLDgv0wSrsV4VjBeYsnvKNUy8rH9tMxBZTVM83IDh3uKNgg5jA3hBixWz8k+3Eq6eUHO15MslMNQ=="
+    package_url: "https://registry.npmjs.org/ruflo/-/ruflo-3.56.5.tgz"
     safe_default_features:
       - coordination
       - hierarchical_swarm_lifecycle
@@ -285,39 +285,40 @@ components:
 
   - name: nodejs
     role: [client-runtime]
-    validated_version: "22.18.0"
-    minimum_version: "22.18.0"
+    validated_version: "26.11.1"
+    minimum_version: "26.11.1"
     license: MIT
-    source: "https://nodejs.org/download/release/v22.18.0/"
+    source: "https://nodejs.org/download/release/v26.11.1/"
     architectures: [linux/amd64, linux/arm64]
     install_strategy: verified_isolated_archive
     checksum_strategy: upstream_sha256
     assets:
       linux/amd64:
-        url: "https://nodejs.org/dist/v22.18.0/node-v22.18.0-linux-x64.tar.gz"
-        sha256: "a2e703725d8683be86bb5da967bf8272f4518bdaf10f21389e2b2c9eaeae8c8a"
+        url: "https://nodejs.org/dist/v26.11.1/node-v26.11.1-linux-x64.tar.gz"
+        sha256: "15fc043a51a5783f2f4b634561091658f5a7f0e3db03f997dca3a8033a33e45b"
       linux/arm64:
-        url: "https://nodejs.org/dist/v22.18.0/node-v22.18.0-linux-arm64.tar.gz"
-        sha256: "d415eeea90a2fdb60c66dd386b258acbfc4d1fa4720a8df5dea7369fbdbcddee"
+        url: "https://nodejs.org/dist/v26.11.1/node-v26.11.1-linux-arm64.tar.gz"
+        sha256: "170454fb022f5e9b5f6cc76c25fa32ef5100895be44eb04e92f9780591491bbf"
     notes:
       - "Private runtime for the pinned Ruflo installation; it does not modify the user's global Node.js setup."
+      - "Official Node 26 Linux binaries require the system libatomic runtime (libatomic1 on Debian/Ubuntu), glibc >=2.28 and libstdc++ >=6.0.25."
 
   - name: uv
     role: [client-runtime]
-    validated_version: "0.12.5"
-    minimum_version: "0.12.5"
+    validated_version: "0.13.0"
+    minimum_version: "0.13.0"
     license: Apache-2.0-or-MIT
-    source: "https://github.com/astral-sh/uv/releases/tag/0.12.5"
+    source: "https://github.com/astral-sh/uv/releases/tag/0.13.0"
     architectures: [linux/amd64, linux/arm64]
     install_strategy: verified_isolated_archive
     checksum_strategy: upstream_sha256
     assets:
       linux/amd64:
-        url: "https://github.com/astral-sh/uv/releases/download/0.12.5/uv-x86_64-unknown-linux-gnu.tar.gz"
-        sha256: "68a509da24b06b4223a1c0175fb5eb5bc79342b76cbeff0cfe51ac3f5b17b6b2"
+        url: "https://github.com/astral-sh/uv/releases/download/0.13.0/uv-x86_64-unknown-linux-gnu.tar.gz"
+        sha256: "1468ebd5a5541121837c5a2817b9972ba6090fa6caa3d142620850a47fb75154"
       linux/arm64:
-        url: "https://github.com/astral-sh/uv/releases/download/0.12.5/uv-aarch64-unknown-linux-gnu.tar.gz"
-        sha256: "9bf43b4d1a07665bf64d4c4e710930b382321a785e0eb10aac07f46471f86a31"
+        url: "https://github.com/astral-sh/uv/releases/download/0.13.0/uv-aarch64-unknown-linux-gnu.tar.gz"
+        sha256: "3ccfb6af6e242433eb552f7d9676abd5412c6595c497e990d9c8cb7b5bd4d2c3"
     notes:
       - "Private runtime for Headroom; it does not modify the user's global Python tooling."
       - "Headroom's architecture-specific hashed constraints are generated with this pinned uv and the manifest cutoff."
@@ -325,29 +326,29 @@ components:
   - name: python-runtime
     role: [client-runtime]
     project: CPython
-    validated_version: "3.13.15"
-    minimum_version: "3.13.15"
+    validated_version: "3.14.8"
+    minimum_version: "3.14.8"
     license: PSF-2.0
-    source: "https://www.python.org/downloads/release/python-31315/"
+    source: "https://www.python.org/downloads/release/python-3148/"
     architectures: [linux/amd64, linux/arm64]
     install_strategy: uv_managed_python
     checksum_strategy: uv_managed_runtime_metadata
     notes:
-      - "ivoai requests exactly 3.13.15 through the pinned uv runtime and keeps it below the ivoai data root."
+      - "ivoai requests exactly 3.14.8 through the pinned uv runtime and keeps it below the ivoai data root."
       - "The platform-specific managed Python artifact is selected and verified by pinned uv and is not bundled in ivoai release archives."
 
   - name: qdrant
     role: [server]
-    validated_version: "1.19.0"
-    minimum_version: "1.19.0"
+    validated_version: "1.19.2"
+    minimum_version: "1.19.2"
     license: Apache-2.0
-    source: "https://github.com/qdrant/qdrant/releases/tag/v1.19.0"
+    source: "https://github.com/qdrant/qdrant/releases/tag/v1.19.2"
     architectures: [linux/amd64, linux/arm64]
     install_strategy: docker_compose_internal_network
     checksum_strategy: oci_digest
     image:
-      reference: "qdrant/qdrant@sha256:a0e04fe623cb064502cd869cefc1dc7ce359d8edd481063b5bd351c0a0a2c91e"
-      tag_for_humans: "v1.19.0"
+      reference: "qdrant/qdrant@sha256:b7b0444c4c351c970b98e90a6f89c2ee4287c65b44e52b4cb503fa5b2aa927ad"
+      tag_for_humans: "v1.19.2"
     exposure: internal_only
 
   - name: docker-engine
@@ -368,44 +369,43 @@ components:
   - name: docker-compose
     role: [server-runtime]
     project: Docker Compose
-    validated_version: "5.5.0"
-    minimum_version: "5.5.0"
+    validated_version: "5.6.0"
+    minimum_version: "5.6.0"
     license: Apache-2.0
-    source: "https://github.com/docker/compose/releases/tag/v5.5.0"
+    source: "https://github.com/docker/compose/releases/tag/v5.6.0"
     architectures: [linux/amd64, linux/arm64]
     install_strategy: verified_system_cli_plugin_fallback
     checksum_strategy: upstream_sha256
     assets:
       linux/amd64:
-        url: "https://github.com/docker/compose/releases/download/v5.5.0/docker-compose-linux-x86_64"
-        sha256: "c57ab918abd5b05ca7e7d0f275875dd1330a695074f309dc9eab1b49efafcd4b"
+        url: "https://github.com/docker/compose/releases/download/v5.6.0/docker-compose-linux-x86_64"
+        sha256: "40343e21ca777173e69cff5dbafeb37c6f81f3b0d57d9e597f036e95eb63e76a"
       linux/arm64:
-        url: "https://github.com/docker/compose/releases/download/v5.5.0/docker-compose-linux-aarch64"
-        sha256: "ff42489f5a9b879d5d117c5ffea6defc27390b3286da8ad52cbc9c6ab5df590e"
+        url: "https://github.com/docker/compose/releases/download/v5.6.0/docker-compose-linux-aarch64"
+        sha256: "733ec76717ceb59052a9609b9dadfb523b2df8eab57a54212872d10a58078ea2"
     notes:
       - "An existing compatible Compose installation is preserved. When Compose is absent or older than 2.33.1, setup installs this verified official binary under /usr/local/lib/docker/cli-plugins."
 
   - name: embedding-runtime
     role: [server]
     project: text-embeddings-inference
-    validated_version: "1.9.3"
-    minimum_version: "1.9.3"
+    validated_version: "1.9.4"
+    minimum_version: "1.9.4"
     license: Apache-2.0
-    source: "https://github.com/huggingface/text-embeddings-inference/releases/tag/v1.9.3"
+    source: "https://github.com/huggingface/text-embeddings-inference/releases/tag/v1.9.4"
     architectures: [linux/amd64, linux/arm64]
     install_strategy: docker_compose_internal_network
     checksum_strategy: per_architecture_oci_digest
     images:
       linux/amd64:
-        reference: "ghcr.io/huggingface/text-embeddings-inference@sha256:ad950d30878eceb72aaf32024d26fa2b1d04a75304fa0b4776b49aa1941fea07"
-        source_revision: "06670157fb6c1523482219bdb2d1660277d38088"
+        reference: "ghcr.io/huggingface/text-embeddings-inference@sha256:2538ea1c9640d3763b15af668039d24172d063b42337b0c27796fc2be180c78d"
+        upstream_tag: "cpu-1.9.4"
       linux/arm64:
-        reference: "ghcr.io/huggingface/text-embeddings-inference@sha256:2873ddd3029bf6eed09c0befe737d88123107a0b89274b1552d68d1e3bb2a047"
-        upstream_tag: "cpu-arm64-sha-30507cb"
-        platform_manifest_digest: "sha256:bf03cea"
+        reference: "ghcr.io/huggingface/text-embeddings-inference@sha256:798cd7615e060a72ccbdf19aa0ada52289c6a0147490195bafaece6ce04d70f1"
+        upstream_tag: "cpu-arm64-1.9.4"
     exposure: internal_only
     notes:
-      - "The arm64 OCI index digest was reviewed from upstream tag cpu-arm64-sha-30507cb; the shortened platform manifest digest is informational and the full index digest is the install pin."
+      - "Both CPU tags were resolved to immutable OCI indexes and their target platforms verified."
 
   - name: embedding-model
     role: [server]

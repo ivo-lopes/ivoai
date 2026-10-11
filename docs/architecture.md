@@ -233,9 +233,7 @@ reads or stores the returned credential. Source: [ChatGPT authentication](https:
 documents Pro, Max, Team, and Enterprise subscription access without an API key.
 Source: [Claude Code authentication](https://code.claude.com/docs/en/authentication).
 
-The exact managed Claude pin is 2.1.228 because Anthropic's `stable` registry channel
-pointed there on the validation date while `latest` was 2.1.237. Anthropic describes
-stable as delayed and regression-filtered. ivoai installs this reviewed asset and
+The exact managed Claude pin is the reviewed official release 2.1.296. IVOAI
 changes its managed pin only during an explicit setup or update. Behavior implemented
 inside the upstream Claude executable remains governed by Anthropic.
 
@@ -269,24 +267,24 @@ requested agent
                 direct or failed preflight -> official agent [argv...]
 ```
 
-Headroom 0.36.0 is deprecated but retained during the Caveman observation window.
+Headroom 0.40.0 is deprecated but retained during the Caveman observation window.
 It officially supplies `wrap codex` and `wrap claude` and is installed
-into an isolated tool environment using uv 0.12.5 and the exact managed CPython
-3.13.15 runtime below the ivoai data root. An unavailable, unhealthy, or incompatible
+into an isolated tool environment using uv 0.13.0 and the exact managed CPython
+3.14.8 runtime below the ivoai data root. An unavailable, unhealthy, or incompatible
 preflight selects the direct agent. After a compatible wrapper process has started,
 ivoai propagates its exit status; it does not silently retry a failed interactive
 session. ivoai does not rewrite the user's aliases or replace third-party launchers.
-Headroom 0.36.0 can apply lossy compression to Codex Code Mode
+Headroom 0.40.0 can apply lossy compression to Codex Code Mode
 `custom_tool_call_output` items without reliably associating them with the originating
 MCP tool name. IvoAI therefore bypasses any lossy compression provider whenever
 authoritative shared knowledge is active for the session. This provider-neutral
 policy preserves exact Memory and Context results; session telemetry records the
 requested provider, effective Direct path and bounded reason.
 Sources: [Headroom CLI](https://headroomlabs-ai.github.io/headroom/cli/),
-[Headroom v0.36.0](https://github.com/headroomlabs-ai/headroom/releases/tag/v0.36.0),
+[Headroom v0.40.0](https://github.com/headroomlabs-ai/headroom/releases/tag/v0.40.0),
 [Headroom issue 940](https://github.com/headroomlabs-ai/headroom/issues/940),
-[uv 0.12.5](https://github.com/astral-sh/uv/releases/tag/0.12.5), and
-[Python 3.13.15](https://www.python.org/downloads/release/python-31315/).
+[uv 0.13.0](https://github.com/astral-sh/uv/releases/tag/0.13.0), and
+[Python 3.14.8](https://www.python.org/downloads/release/python-3148/).
 
 ### Session control plane
 
@@ -331,21 +329,22 @@ workers are sandboxed read-only and disable inherited MCPs except managed Memory
 read tools. Claude workers use strict process-scoped MCP configuration and plan
 permission mode with mutation tools disabled. The primary alone applies changes.
 
-ai-memory 1.29.0 is the durable operational memory layer. Its versioned native
+ai-memory 2.6.3 is the durable operational memory layer. Its versioned native
 binaries and hook bundle support Codex and Claude Code and publish per-platform
 checksums. Hooks enqueue with bounded latency and treat network, authentication, and
 service failures as non-fatal; hook failure results in the allow/zero-exit path
 appropriate to the host. Connecting a server rewrites only ivoai-owned memory
 endpoint metadata. The authoritative upstream release is
-[ai-memory v1.29.0](https://github.com/akitaonrails/ai-memory/releases/tag/v1.29.0); its changelog was
-reviewed because this is newer than the 1.28.1 floor in the product requirements.
+[ai-memory v2.6.3](https://github.com/akitaonrails/ai-memory/releases/tag/v2.6.3); its changelog was
+reviewed together with its immutable server image. Back up persistent server data
+before upgrading from 1.x; binary rollback does not reverse database migrations.
 IvoAI installs lifecycle hooks with ai-memory's `repo-root` project strategy. Project
 resolution therefore uses the main Git repository name across Linux/WSL path aliases,
 subdirectories and linked worktrees instead of splitting observations by the client
 process's spelling of the current directory. Explicit MCP queries still include the
 global scope according to ai-memory's normal query semantics.
 
-Ruflo 3.38.12 is installed for workflows, coordination, and skills. ivoai registers a
+Ruflo 3.56.5 is installed for workflows, coordination, and skills. ivoai registers a
 least-privilege MCP profile containing only coordination tools, process-local
 temporary memory, and a wrapper that strips supported PAYG-provider credential
 variables before Ruflo starts. Provider execution and durable Ruflo memory remain
@@ -412,7 +411,7 @@ systemd executables and require no private ivoai image. Setup requires Docker En
 28.0.0 or newer because deterministic gateway priority is part of the backend egress
 boundary; it validates the daemon before writing server assets and does not replace
 the operator's Engine installation. Where compatible Compose is not packaged, ivoai
-installs the reviewed Docker Compose 5.5.0 CLI plugin for amd64 or arm64 from its
+installs the reviewed Docker Compose 5.6.0 CLI plugin for amd64 or arm64 from its
 official release, verifies the manifest SHA-256, and never selects a floating `latest`
 artifact. Direct-TLS certificate and key
 copies are service-owned `0600` files under `/etc/ivoai/secrets/tls`. After systemd
@@ -581,7 +580,7 @@ prefers newline or word boundaries. Re-ingestion is deterministic, but Qdrant
 currently deletes a document's old points before uploading its replacement. A failed
 upload therefore requires another ingestion run.
 
-The Qdrant collection is `ivoai-context-v1-d384`; Qdrant 1.19.0 uses the pinned
+The Qdrant collection is `ivoai-context-v1-d384`; Qdrant 1.19.2 uses the pinned
 upstream unprivileged multi-architecture image digest. Its host mapping is
 loopback-only (`127.0.0.1:6333`) and requires a generated API key. Embeddings and
 ai-memory use separate generated credentials. Docker uses a transient publication
@@ -606,12 +605,12 @@ configuration, or authorization decisions.
 
 ### Local embedding decision
 
-Text Embeddings Inference (TEI) 1.9.3 was chosen over a cloud API because it is
+Text Embeddings Inference (TEI) 1.9.4 was chosen over a cloud API because it is
 Apache-2.0, maintained by Hugging Face, exposes a small HTTP API, supports CPU
 containers, and documents both x86_64 and aarch64. The amd64 image and the upstream
-`cpu-arm64-sha-30507cb` arm64 image are each pinned by immutable OCI index digest;
+`cpu-arm64-1.9.4` arm64 image are each pinned by immutable OCI index digest;
 neither architecture uses a mutable tag at runtime. Sources:
-[TEI v1.9.3](https://github.com/huggingface/text-embeddings-inference/releases/tag/v1.9.3) and
+[TEI v1.9.4](https://github.com/huggingface/text-embeddings-inference/releases/tag/v1.9.4) and
 [TEI](https://github.com/huggingface/text-embeddings-inference).
 
 The default model is `intfloat/multilingual-e5-small` at immutable revision
@@ -677,14 +676,14 @@ registry and no external skill can assume orchestrator authority.
 
 | Component | Pin | Decision and uncertainty on 2026-08-23 |
 |---|---:|---|
-| Codex CLI + code-mode host | 0.153.4 | Official same-release assets; `codex login` supports ChatGPT subscriptions and the separately checksummed host preserves the managed tool/MCP surface. |
-| Claude Code | 2.1.228 | Official stable channel; latest was 2.1.237. Proprietary external binary subject to Anthropic terms. |
-| Headroom | 0.36.0 | Current PyPI/GitHub release with amd64/arm64 wheels; fast-moving integration requires a setup smoke probe and direct fallback. |
-| uv / CPython | 0.12.5 / 3.13.15 | Exact private installer/runtime pair for Headroom with embedded architecture-specific hashed constraints. |
-| ai-memory | 1.29.0 | Newly released on the validation date, with changelog and per-arch hashes reviewed. Limited burn-in is mitigated by exact pin, hook timeout and failure isolation. |
-| Ruflo | 3.38.12 | Exact npm integrity pin. Direct inference/provider routing remains unsuitable for the no-PAYG default and is disabled. Package/repository naming has moved historically, so updates require provenance review. |
-| Qdrant | 1.19.0 | Current Apache-2.0 release and multi-arch OCI digest; internal only. |
-| TEI | 1.9.3 | Mature CPU HTTP service; amd64 and arm64 upstream images are pinned independently by OCI index digest. |
+| Codex CLI + code-mode host | 0.162.1 | Official same-release assets; `codex login` supports ChatGPT subscriptions and the separately checksummed host preserves the managed tool/MCP surface. |
+| Claude Code | 2.1.296 | Reviewed official release. Proprietary external binary subject to Anthropic terms. |
+| Headroom | 0.40.0 | Current PyPI/GitHub release with amd64/arm64 wheels; fast-moving integration requires a setup smoke probe and direct fallback. |
+| uv / CPython | 0.13.0 / 3.14.8 | Exact private installer/runtime pair for Headroom with embedded architecture-specific hashed constraints. |
+| ai-memory | 2.6.3 | Newly released on the validation date, with changelog and per-arch hashes reviewed. Limited burn-in is mitigated by exact pin, hook timeout and failure isolation. |
+| Ruflo | 3.56.5 | Exact npm integrity pin. Direct inference/provider routing remains unsuitable for the no-PAYG default and is disabled. Package/repository naming has moved historically, so updates require provenance review. |
+| Qdrant | 1.19.2 | Current Apache-2.0 release and multi-arch OCI digest; internal only. |
+| TEI | 1.9.4 | Mature CPU HTTP service; amd64 and arm64 upstream images are pinned independently by OCI index digest. |
 | multilingual-e5-small | `614241f…` | Immutable MIT model revision; 384 dimensions/94 languages. Retrieval quality must be measured on the user's corpus before changing models. |
 
 No external account, private server, or real owner credential was used during this
@@ -700,4 +699,4 @@ Before launch, IVOAI selects the newest healthy, authenticated, compatible stabl
 
 OpenCode's native model picker uses fresh official client capability discovery. Explicit executor/model/effort selections are constraints; unavailable selections return `EXPLICIT_MODEL_UNAVAILABLE`. Requested values and observed configuration are separate. Codex evidence comes from official thread configuration, which is not per-turn inference telemetry. Claude model evidence comes from its init event; where native effort telemetry is absent, the source identifies validated CLI configuration.
 
-All Codex configuration overrides are grouped before the subcommand. In Codex 0.153.4, combining root MCP overrides with an `exec -c` reasoning override loses the root configuration. Grouping preserves Memory/Context and developer instructions for explicit selections. The bridge requires a final response and completion event, retains bounded operational traces, and excludes prompts, tool payloads and arbitrary stderr from session diagnostics.
+All Codex configuration overrides are grouped before the subcommand. In Codex 0.162.1, combining root MCP overrides with an `exec -c` reasoning override loses the root configuration. Grouping preserves Memory/Context and developer instructions for explicit selections. The bridge requires a final response and completion event, retains bounded operational traces, and excludes prompts, tool payloads and arbitrary stderr from session diagnostics.

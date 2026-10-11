@@ -3,12 +3,12 @@
 ## Native pack (v0.9.9)
 
 Installation and client setup/update materialize a release-pinned, declarative
-subset from thirteen curated sources into the **existing** private registry and
+subset from fourteen curated sources into the **existing** private registry and
 immutable supply-chain store. Normal AUTO sessions and worker selection need no
 upstream network access. Codex and Claude share this registry; no files are copied
 to their personal/global skill directories.
 
-Sources: Anthropic Cybersecurity Skills (community-maintained), Caveman,
+Sources: Anthropic Cybersecurity Skills (community-maintained), Caveman, Claude Red,
 Codex Security, Hallmark, i-have-adhd, Impeccable, MarketingSkills, Ponytail,
 reverse-skill, Superpowers, Taste Skill, UI UX Pro Max, and Matt Pocock Skills.
 The historical `awesome-gpt-image-2` intake remains catalogued but is **not** part
@@ -98,6 +98,117 @@ IVOAI-16, IVOAI-48, and IVOAI-49, plus safe pack updates, the managed-session
 Skill Gate, and the IVOAI-owned curated-source overlay. Existing `ivoai auto`,
 `ivoai codex`, and `ivoai claude` sessions continue to operate when the
 registry is absent or empty.
+
+## Claude Red (IVOAI-188)
+
+The reviewed source is [SnailSploit/Claude-Red](https://github.com/SnailSploit/Claude-Red/tree/739512a8588b28ff3b554e669391c22508602878),
+MIT, immutable revision `739512a8588b28ff3b554e669391c22508602878` (revalidated
+2026-10-11). Dynamic tree discovery found 79 `Skills/**/SKILL.md` paths;
+the upstream 0.3.0 manifest lists 78 and omits `offensive-netexec`.
+`scripts/claude_red_intake.py` inventories an inert local snapshot without network
+or upstream execution. It emits review candidates, never activates a revision.
+
+51 documents have valid bounded `name`/`description` frontmatter and are embedded
+byte-for-byte with their MIT notice. Their category, triggers, risk, capabilities,
+exclusive role and executor compatibility come from the IVOAI-owned overlay.
+28 legacy Markdown documents lack required frontmatter: they are **rejected**,
+not installed or selected. Their paths, original SHA-256 and
+`missing_frontmatter` diagnoses are retained in `catalog.json` and shown by
+inspection. Some legacy documents also reference absent local documents; this
+integration does not invent those dependencies or silently repair their format.
+Accepted documents have no required local auxiliary files. Links to online
+references and example paths are not grants or automatic downloads.
+
+### Enable and inspect
+
+Open **Skills & Capabilities → Claude Red → update / Inspect metadata**. The same
+operations are available through:
+
+```sh
+ivoai skills update claude-red
+ivoai skills show claude-red
+ivoai skills doctor claude-red
+ivoai skills enable claude-red
+ivoai skills disable claude-red
+ivoai skills pin claude-red
+ivoai skills unpin claude-red
+ivoai skills rollback claude-red
+```
+
+Enabling controls source eligibility for future workers; it does not grant
+operational authorization. There is no per-skill enable preference in the current
+public contract. Individual skills are filtered by metadata and policy. Inspection
+shows individual purpose, phase, risk, executor, required capabilities, policy
+reason, source path and digest, as well as all rejected documents.
+
+### Compatibility and safety
+
+| Path | Claude Red behavior |
+| --- | --- |
+| `ivoai codex` | Orchestrated; eligible skills selected lazily for approved workers |
+| `ivoai opencode --planner codex` | Same shared worker Gate and Codex adapter |
+| `ivoai opencode --planner claude` | Same shared worker Gate; Claude adapter for Claude workers |
+| `ivoai claude` | Direct frontend; native pack deliberately excluded from primary injection |
+| `ivoai codex --direct`, `ivoai opencode --direct` | Direct; native pack excluded |
+| `ivoai session start --executor claude --mode orchestrated` | Legacy controlled Claude session; use OpenCode planner Claude for the current managed experience |
+
+The planner flag chooses the planner, not a blanket executor assignment to every
+worker. Native skills remain per-worker and are not duplicated into the primary.
+For Claude use the managed OpenCode path to get native-pack selection. No copies
+are installed in personal `~/.claude/skills` or `~/.agents/skills`.
+
+Both adapters receive the selected original `SKILL.md` through existing controlled
+instruction injection: Codex `developer_instructions`, Claude
+`--append-system-prompt`. Accepted files do not require Claude-only tool mappings;
+no tools, permissions or native plugin semantics are translated by assumption.
+Official contracts: [Codex skills](https://developers.openai.com/codex/skills) and
+[Claude Code skills](https://code.claude.com/docs/en/skills).
+
+Only `claude-red-offensive-reporting` is eligible under the default policy
+(`moderate`, `filesystem.read`). Use it to organize supplied, redacted findings in
+an advisory worker. It cannot authorize collection, exploitation, evidence deletion,
+external publication or running the export-tool examples in the document.
+The other 50 valid skills are restricted: 30 high and 20 critical. Their required
+shell/tool capabilities (and explicit privilege/delete capabilities where
+applicable) are denied by the existing policy **before body loading**. Operational
+assessment remains unavailable: enabling the source, selecting full permission
+mode, or claiming authorization in a prompt does not bypass this boundary.
+A future active-assessment integration would need explicit target scope,
+authorization and sensitive-action approval plus executor isolation; this change
+does not implement or circumvent those missing permissions.
+
+Example managed request: “Prepare an authorized security report from these
+synthetic redacted findings for repository fixture-188. No network, tools, tests,
+retests or attacks are authorized. Include scope, limitations, remediation and a
+proposed retest; do not claim execution.” Ask for a security or documentation
+worker and approve the bounded plan in the existing frontend.
+
+### Update, rollback and diagnosis
+
+`update` installs only the reviewed baseline embedded in this binary, offline.
+It never follows upstream `main`. A later revision requires a reviewed inventory,
+policy overlay, digest refresh and release. Staging, integrity manifests, atomic
+promotion, previous retention and rollback use `skillupdate`/`supplychain`.
+Pins preserve the active revision. The first installation has no prior revision,
+so rollback correctly fails until a previous revision exists. Disable the source
+to stop future selection immediately; no personal skill or provider config is
+removed. In-flight instructions are not retroactively revoked by source disable.
+
+SHA-256 establishes local integrity, not an independent signature. An integrity
+failure blocks selection; inspect Doctor and reapply the approved baseline rather
+than editing immutable objects. Rejected metadata is an intake diagnosis, not a
+failure of an otherwise healthy installed pack. A denied operational skill is an
+expected policy result. Unknown executor, missing capabilities, dependencies or
+exclusive-role conflicts fail closed using the existing resolver.
+
+Validation uses synthetic fixtures, the real shared updater/Gate, and an opt-in
+`IVOAI_CLAUDE_RED_LIVE=1 go test ./internal/skillcatalog -run TestClaudeRedLiveSelectedSkill -v`.
+The authenticated smoke isolates mutable provider homes, uses private temporary
+auth copies, disables imported hooks/MCPs and checks personal credential hashes.
+Codex 0.162.1 produced a structured report using exactly one selected skill.
+Claude Code 2.1.222 accepted the interface but its authenticated run was blocked
+by expired OAuth. The user confirmed access was unavailable: real Claude inference
+remains pending, and IVOAI-188 must remain In Progress until that evidence exists.
 
 ## Boundaries
 
@@ -310,7 +421,7 @@ orchestration authority.
 
 ## Curated upstream overlay
 
-`internal/skillcatalog/catalog.json` records 14 sources: the 13 native sources
+`internal/skillcatalog/catalog.json` records 15 sources: the 14 native sources
 and historical image-generation intake excluded from the native pack. It keeps three layers separate:
 
 1. upstream-provided name and description;

@@ -31,7 +31,7 @@ func TestNativeCapabilityTUIUsesPersistentClientDomain(t *testing.T) {
 		t.Fatal("TUI did not persist Ponytail mode", err)
 	}
 	rows, err := a.NativeCapabilities(context.Background())
-	if err != nil || len(rows) != 13 {
+	if err != nil || len(rows) != 14 {
 		t.Fatal("native TUI pack unavailable", err)
 	}
 	for _, row := range rows {
@@ -46,5 +46,33 @@ func TestNativeCapabilityTUIUsesPersistentClientDomain(t *testing.T) {
 	}
 	if strings.Contains(output.String(), "# Ponytail") {
 		t.Fatal("TUI printed skill body")
+	}
+}
+
+func TestClaudeRedTUIInspectInstallDisablePin(t *testing.T) {
+	root := t.TempDir()
+	for _, key := range []string{"XDG_CONFIG_HOME", "XDG_DATA_HOME", "XDG_STATE_HOME", "XDG_CACHE_HOME"} {
+		t.Setenv(key, filepath.Join(root, key))
+	}
+	t.Setenv("NO_COLOR", "1")
+	var output bytes.Buffer
+	a, err := app.New("fixture", strings.NewReader("12\n5\n4\n1\n2\n3\n0\n0\n0\n"), &output, &output)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := Run(context.Background(), a, nil); err != nil {
+		t.Fatal(err)
+	}
+	cfg, err := a.Store.Load()
+	if err != nil || !cfg.Skills.Sources["claude-red"].Disabled || !cfg.Skills.Sources["claude-red"].Pinned {
+		t.Fatal("TUI did not preserve source choices", err)
+	}
+	for _, want := range []string{"Claude Red", "claude-red-offensive-reporting", "executors=codex,claude", "missing_frontmatter", "policy=DENY", "policy=ALLOW"} {
+		if !strings.Contains(output.String(), want) {
+			t.Fatalf("TUI diagnostic missing %q", want)
+		}
+	}
+	if strings.Contains(output.String(), "# Penetration Test Reporting") {
+		t.Fatal("TUI leaked body")
 	}
 }

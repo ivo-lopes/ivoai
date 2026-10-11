@@ -86,7 +86,7 @@ WorkingContext não implementa scheduling nem substitui a evidência por compres
 Quando Caveman é selecionado, o componente managed `caveman-mcp` pode projetar
 representações menores somente depois do ArtifactStore e sem alterar
 ResultRef/WorkerResult como fonte da evidência exata. O helper é o asset local
-stdio BSL-1.1 `bin-v1.1.3`, pinado na mesma revisão do runtime; não usa `npx`, não
+stdio Apache-2.0 `bin-v2.1.0`, pinado na mesma revisão do runtime; não usa `npx`, não
 é registrado como MCP do primary e opera com recovery store efêmero privado.
 Falha, timeout, resposta malformed/oversized ou indisponibilidade do helper retorna
 ao projector determinístico bounded; output bruto grande nunca vira fallback de

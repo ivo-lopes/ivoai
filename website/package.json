@@ -16,31 +16,20 @@
     "@docusaurus/preset-classic": "3.10.2",
     "@docusaurus/theme-mermaid": "3.10.2",
     "@easyops-cn/docusaurus-search-local": "0.55.3",
-    "@fontsource/bpmf-huninn": "5.3.0",
+    "@fontsource/bpmf-huninn": "5.3.1",
     "@mdx-js/react": "3.1.1",
-    "@mermaid-js/layout-elk": "0.1.9",
+    "@mermaid-js/layout-elk": "1.0.1",
     "clsx": "2.1.1",
     "prism-react-renderer": "2.4.1",
-    "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.13.0",
     "@docusaurus/module-type-aliases": "3.10.2",
     "@docusaurus/tsconfig": "3.10.2",
-    "@playwright/test": "1.62.1",
-    "typescript": "5.9.3"
+    "@playwright/test": "1.64.0",
+    "typescript": "7.0.2"
   },
-  "pnpm": {
-    "overrides": {
-      "serialize-javascript": "7.0.3"
-    },
-    "auditConfig": {
-      "ignoreCves": [
-        "GHSA-w3rx-r6r6-pgpr",
-        "GHSA-5p2g-fcmc-qvqq"
-      ]
-    }
-  },
-  "packageManager": "pnpm@10.17.1"
+  "packageManager": "pnpm@12.11.2"
 }

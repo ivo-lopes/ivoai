@@ -80,12 +80,8 @@ Como o IVOAI não aceita chaves PAYG nem compartilha credenciais entre executore
 OpenCode falha no preflight Caveman antes do proxy e executa Direct exatamente uma
 vez. Nenhum arquivo global ou de projeto é alterado.
 
-No Caveman v2.3.1, a CLI e skills são MIT, enquanto o runtime/proxy usado para
-compressão é BSL-1.1. O Additional Use Grant observado permite avaliação interna,
-desenvolvimento local, CI, integração e tráfego first-party self-hosted, inclusive
-produção; serviço hospedado/gerenciado para terceiros exige licença comercial.
-O IVOAI registra essa classificação por artefato e não descreve o proxy como MIT.
-Isto é registro técnico do upstream, não parecer jurídico.
+O produto Caveman v3.2.0 e o runtime bin-v2.1.0 usam Apache-2.0. O IVOAI
+preserva LICENSE, NOTICE e a atribuição MIT histórica no pacote nativo.
 
 ## Non-goals desta fase
 
@@ -97,18 +93,17 @@ e associações de chamadas de forma comprovável.
 
 ## Provenance validada
 
-- Produto Caveman: `v2.3.1`, commit imutável
-  `b5ec6351396b643a17cbbec4a6eee8b3fb9dd782`.
-- Runtime bundle: `bin-v1.1.3`, commit imutável
-  `0d2f052babfd613ec9b4186c86ec6f133cdfd4d7`.
+- Produto Caveman: `v3.2.0`, commit imutável
+  `e20f07e8152a0c0360f58c09e79d30ac94329991`.
+- Runtime bundle: `bin-v2.1.0`, commit imutável
+  `e20f07e8152a0c0360f58c09e79d30ac94329991`.
 - Proxy Linux amd64: SHA-256
-  `d883b9ab4b559e0c1935335c0e24400deb5c61d5e247f1ca239c4149f57885b0`.
+  `44436d69705ad9968563c181cd11d396d6ae5eeccd8dbf228f6225d92dfadcb1`.
 - Fonte oficial: [Caveman](https://github.com/JuliusBrussee/caveman).
-- Licenciamento: `LICENSING.md` da revisão do produto acima.
+- Licenciamento: `LICENSE` e `NOTICE` da revisão do produto acima.
 
-O asset pinado responde ao probe estruturado, mas informa `version: "dev"`.
-Portanto o IVOAI não o apresenta como versão semântica verificada em runtime: a
-revisão imutável e o digest do supply chain permanecem a autoridade.
+O asset pinado informa `version: "bin-v2.1.0"` no probe estruturado.
+A revisão imutável e o digest permanecem a autoridade de integridade.
 
 ## Telemetria segura
 

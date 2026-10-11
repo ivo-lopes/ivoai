@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -21,6 +22,7 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/platform"
 	"github.com/ivo-lopes/ivoai/internal/quota"
 	"github.com/ivo-lopes/ivoai/internal/secrets"
+	"github.com/ivo-lopes/ivoai/internal/skillcatalog"
 	"github.com/ivo-lopes/ivoai/internal/terminalui"
 )
 
@@ -111,13 +113,25 @@ func TestSetupIsIdempotentAndReadyWithoutConnections(t *testing.T) {
 		t.Fatal(err)
 	}
 	status := out.String()
-	for _, expected := range []string{"Overall: READY", "Codex", "installed / not connected", "Ruflo", "provider execution disabled", "Skill registry", "ready / active=15 staged=0 quarantined=0", "default caveman / effective caveman"} {
+	catalog, err := skillcatalog.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	count := 0
+	for _, id := range skillcatalog.NativeIDs() {
+		source, ok := catalog.Source(id)
+		if !ok {
+			t.Fatal("native source missing")
+		}
+		count += len(source.Classifications)
+	}
+	for _, expected := range []string{"Overall: READY", "Codex", "installed / not connected", "Ruflo", "provider execution disabled", "Skill registry", fmt.Sprintf("ready / active=%d staged=0 quarantined=0", count), "default caveman / effective caveman"} {
 		if !strings.Contains(status, expected) {
 			t.Fatalf("missing %q in:\n%s", expected, status)
 		}
 	}
 	pack, err := a.NativeCapabilities(context.Background())
-	if err != nil || len(pack) != 13 {
+	if err != nil || len(pack) != len(skillcatalog.NativeIDs()) {
 		t.Fatal("setup did not materialize the approved native pack", err)
 	}
 	for _, source := range pack {
@@ -508,7 +522,7 @@ func (r *setupRunner) Run(_ context.Context, command string, args []string, opti
 	}
 	if len(args) == 1 && args[0] == "--version" {
 		if filepath.Base(command) == "opencode" {
-			return platform.Result{Stdout: "1.18.25\n"}, nil
+			return platform.Result{Stdout: "1.19.0\n"}, nil
 		}
 		return platform.Result{Stdout: "fixture version"}, nil
 	}

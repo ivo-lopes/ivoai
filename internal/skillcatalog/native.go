@@ -21,7 +21,7 @@ var nativeFS embed.FS
 // NativeIDs is the release-approved pack, deliberately excluding historical
 // intake such as awesome-gpt-image-2. Availability never implies authorization.
 func NativeIDs() []string {
-	return []string{"anthropic-cybersecurity-skills", "caveman-skills", "codex-security-skills", "hallmark", "i-have-adhd", "impeccable", "marketing-skills", "mattpocock-skills", "ponytail", "reverse-skill", "superpowers", "taste-skill", "ui-ux-pro-max"}
+	return []string{"anthropic-cybersecurity-skills", "caveman-skills", "claude-red", "codex-security-skills", "hallmark", "i-have-adhd", "impeccable", "marketing-skills", "mattpocock-skills", "ponytail", "reverse-skill", "superpowers", "taste-skill", "ui-ux-pro-max"}
 }
 
 // NativeQuarantine records only reviewed metadata, never failed content or a

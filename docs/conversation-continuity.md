@@ -39,7 +39,7 @@ On Codex 0.154.0, passing sandbox/approval overrides to the remote TUI also
 prevented selecting a conversation. Those enforcement settings now stay on the
 IVOAI-owned App Server and sanitized protocol requests, not on the TUI's resume
 flags. Removing the client-side duplicates does not weaken the Prompt Gate or
-server sandbox. Both 0.153.4 and 0.154.0 are covered by native protocol tests.
+server sandbox. Both 0.162.1 and 0.154.0 are covered by native protocol tests.
 
 Codex owns its native history in a private, persistent, project-scoped managed
 home. IVOAI does not copy personal Codex configuration or account authentication

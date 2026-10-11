@@ -4,9 +4,9 @@ set -euo pipefail
 
 repo_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 readonly repo_root
-readonly upstream_revision=cb7d8b2f5e44876ef98b661dc10590c915af3a9f
-readonly source_sha=95cf680c4263ef71d54329df867d6165406e715f6c4368cdc697b61bd328ca0e
-readonly managed_version=1.18.25-ivoai.2
+readonly upstream_revision=733b2c627e5aec39cb33cc22373bdce33053ef2c
+readonly source_sha=ab433f7a5fc9e54c90da18bd3457298009f426424805f043aa32c03543b4a192
+readonly managed_version=1.19.0-ivoai.1
 readonly bun_version=1.3.14
 readonly output_dir="${1:?usage: build-managed-opencode.sh ABSOLUTE_OUTPUT_DIR}"
 [[ "$output_dir" = /* ]] || { echo 'output directory must be absolute' >&2; exit 1; }
@@ -37,7 +37,7 @@ curl --fail --location --silent --show-error \
 printf '%s  %s\n' "$source_sha" source.tar.gz | sha256sum -c -
 tar -xzf source.tar.gz
 readonly source_root="$build_root/opencode-$upstream_revision"
-readonly clipboard_patch="$repo_root/patches/opencode/1.18.25-clipboard-errors.patch"
+readonly clipboard_patch="$repo_root/patches/opencode/1.19.0-clipboard-errors.patch"
 patch_sha="$(sha256sum "$clipboard_patch" | cut -d ' ' -f1)"
 readonly patch_sha
 cd "$source_root"

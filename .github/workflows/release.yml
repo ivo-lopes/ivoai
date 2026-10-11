@@ -10,12 +10,12 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
-      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: go.mod
           cache: true
@@ -24,22 +24,32 @@ jobs:
           [[ "$GITHUB_REF_NAME" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z]+([.-][0-9A-Za-z]+)*)?$ ]]
       - name: Formatting
         run: test -z "$(gofmt -l .)"
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "26.11.1"
       - name: Docusaurus production build and embedded-site consistency
         run: |
+          npm install --global corepack@0.36.0
           corepack enable
-          corepack prepare pnpm@10.17.1 --activate
+          corepack prepare pnpm@12.11.2 --activate
           scripts/build-docs.sh --check
           scripts/audit-docs-dependencies.sh
       - name: Docusaurus accessibility and responsive audit
         run: |
           corepack pnpm --dir website exec playwright install --with-deps chromium
           corepack pnpm --dir website test:a11y
+      - name: Runtime dependency audit
+        run: npm audit --omit=dev --audit-level=high --prefix internal/components/assets
+      - name: Patched braces regression fixtures
+        run: bash scripts/test-braces.sh
+      - name: Non-executing intake and documentation comparison fixtures
+        run: python3 -m unittest discover -s scripts -p 'test_*.py'
       - name: Generated CLI reference is current
         run: scripts/generate-cli-reference.sh --check
       - name: Tests, race, and vet
         run: |
           go test ./...
-          go test -race ./...
+          go test -race -timeout 20m ./...
           go vet ./...
       - name: Managed OpenCode HTTP and attach integration
         run: |
@@ -75,8 +85,8 @@ jobs:
             goarch: arm64
             runner: ubuntu-24.04-arm
     steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
-      - uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: go.mod
           cache: true
@@ -106,7 +116,7 @@ jobs:
           go build -trimpath -ldflags "-s -w -X main.version=${VERSION#v} -X github.com/ivo-lopes/ivoai/internal/components.managedOpenCodeBuild=${managed_build}" -o dist/ivoai ./cmd/ivoai
           go version -m dist/ivoai | grep -F 'vcs.modified=false'
           tar -C dist -czf "dist/release/ivoai_${GOOS}_${GOARCH}.tar.gz" ivoai
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ivoai-${{ matrix.goos }}-${{ matrix.goarch }}
           path: dist/release/*
@@ -116,12 +126,12 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Package Web skill
         run: scripts/package-skill.sh ./ivoai-memory-context.zip
       - name: Validate skill archive
         run: unzip -t ivoai-memory-context.zip
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ivoai-memory-context-skill
           path: ivoai-memory-context.zip
@@ -133,8 +143,8 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
-      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           pattern: ivoai-*
           merge-multiple: true

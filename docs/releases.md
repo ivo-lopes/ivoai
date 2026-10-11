@@ -1,5 +1,14 @@
 # Releases
 
+## v0.11.0
+
+Updates ai-memory to 2.6.3, Ponytail to 5.1.0, managed executors and reviewed locks;
+fixes known Go/npm vulnerabilities and adds the governed Claude Red catalog.
+Real Claude validation remains pending account access. Back up ai-memory 1.x data
+with writes stopped before migration; binary rollback does not reverse database
+migrations. See versions, compatibility limits, security and recovery in the
+[complete notes](https://github.com/ivo-lopes/ivoai/blob/v0.11.0/release-notes/v0.11.0.md).
+
 ## v0.9.2
 
 The `v0.9.2` stable patch keeps the OpenCode-first architecture while restoring

@@ -36,7 +36,7 @@ func TestNativeCapabilitiesPersistentSelectiveManagement(t *testing.T) {
 		t.Fatal(err)
 	}
 	rows, err := a.NativeCapabilities(ctx)
-	if err != nil || len(rows) != 13 {
+	if err != nil || len(rows) != 14 {
 		t.Fatal("pack unavailable", err)
 	}
 	for _, row := range rows {

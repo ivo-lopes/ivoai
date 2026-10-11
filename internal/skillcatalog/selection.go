@@ -17,6 +17,7 @@ func WorkerCandidates(registry skills.Registry, role, intent, executor, ponytail
 	roles := map[string][]string{
 		"anthropic-cybersecurity-skills": {"security"},
 		"caveman-skills":                 {"implementation"},
+		"claude-red":                     {"security", "documentation"},
 		"codex-security-skills":          {"security"},
 		"hallmark":                       {"implementation"},
 		"impeccable":                     {"implementation"},

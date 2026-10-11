@@ -22,9 +22,9 @@ func (i *Installer) ensureNode(ctx context.Context) (string, string, error) {
 	if regular(node) && regular(npmCLI) {
 		return node, npmCLI, nil
 	}
-	arch, checksum := "x64", "a2e703725d8683be86bb5da967bf8272f4518bdaf10f21389e2b2c9eaeae8c8a"
+	arch, checksum := "x64", "15fc043a51a5783f2f4b634561091658f5a7f0e3db03f997dca3a8033a33e45b"
 	if runtime.GOARCH == "arm64" {
-		arch, checksum = "arm64", "d415eeea90a2fdb60c66dd386b258acbfc4d1fa4720a8df5dea7369fbdbcddee"
+		arch, checksum = "arm64", "170454fb022f5e9b5f6cc76c25fa32ef5100895be44eb04e92f9780591491bbf"
 	}
 	asset := Asset{URL: "https://nodejs.org/dist/v" + managedNodeVersion + "/node-v" + managedNodeVersion + "-linux-" + arch + ".tar.gz", SHA256: checksum}
 	archive, err := i.downloadVerified(ctx, asset)
@@ -102,7 +102,14 @@ func extractNodeArchive(archive, destination string) error {
 				return err
 			}
 		case tar.TypeReg, tar.TypeRegA:
-			if h.Size < 0 || h.Size > 128<<20 {
+			// Node 26's reviewed executable exceeds 128 MiB. Keep the
+			// larger allowance exclusive to its canonical archive path;
+			// auxiliary files and the aggregate extraction budget stay bounded.
+			entryLimit := int64(128 << 20)
+			if rel == filepath.Join("bin", "node") {
+				entryLimit = 256 << 20
+			}
+			if h.Size < 0 || h.Size > entryLimit {
 				return errors.New("invalid Node archive entry size")
 			}
 			total += h.Size

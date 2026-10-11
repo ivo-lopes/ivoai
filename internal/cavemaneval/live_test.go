@@ -14,7 +14,7 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/cavemaneval"
 )
 
-const cavemanMCPAMD64SHA256 = "c5c9a850f388570e2b822ac86ac35ad0e9f2c8ec0162b966f5536013042c058d"
+const cavemanMCPAMD64SHA256 = "24339e645da66fb3580e3d9410743499845748238f01d0dc8097330fcb0f9bde"
 
 // TestPinnedCavemanMCPManualCanary is an opt-in maintenance test. Normal CI is
 // hermetic and skips it; a reviewer may supply the already downloaded pinned

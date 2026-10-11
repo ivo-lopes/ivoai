@@ -51,6 +51,9 @@ curl -fsSL https://raw.githubusercontent.com/ivo-lopes/ivoai/main/install.sh | s
 ivoai setup
 ```
 
+Minimal Debian/Ubuntu images also need `libatomic1` for the managed Node 26
+runtime (`sudo apt-get install curl ca-certificates libatomic1`).
+
 Then run `ivoai` to open the responsive interactive menu, or connect and launch from
 subcommands:
 
@@ -70,8 +73,8 @@ ivoai claude
 ivoai opencode                 # managed OpenCode frontend; IVOAI-routed executors
 ```
 
-OpenCode is installed from a pinned official release through IVOAI's private,
-rollback-safe supply chain. In managed mode it is the interactive frontend; IVOAI
+Release builds install IVOAI's patched OpenCode artifact from pinned upstream
+source through the private, rollback-safe supply chain. In managed mode it is the interactive frontend; IVOAI
 routes work to the official Codex or Claude Code CLI using each client's existing
 subscription login. No provider token is copied into OpenCode. Direct `opencode`
 outside IVOAI remains unchanged, and a standalone OpenCode-owned provider session is

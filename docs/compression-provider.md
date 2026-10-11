@@ -76,12 +76,8 @@ subscription logins owned by the Codex/Claude CLIs. Because IVOAI does not accep
 PAYG keys or share credentials between executors, OpenCode fails Caveman preflight
 before the proxy and runs Direct exactly once. No global or project file is changed.
 
-In Caveman v2.3.1, the CLI and skills are MIT, while the runtime/proxy used for
-compression is BSL-1.1. The observed Additional Use Grant permits internal
-evaluation, local development, CI, integration, and first-party self-hosted traffic,
-including production; a hosted/managed service for third parties requires a
-commercial license. IVOAI records this classification per artifact and does not
-describe the proxy as MIT. This is an upstream technical record, not legal advice.
+Caveman product v3.2.0 and runtime bin-v2.1.0 use Apache-2.0. IVOAI preserves
+LICENSE, NOTICE and the historical MIT attribution in the native skill package.
 
 ## Non-goals for this phase
 
@@ -93,18 +89,17 @@ and call associations.
 
 ## Validated provenance
 
-- Caveman product: `v2.3.1`, immutable commit
-  `b5ec6351396b643a17cbbec4a6eee8b3fb9dd782`.
-- Runtime bundle: `bin-v1.1.3`, immutable commit
-  `0d2f052babfd613ec9b4186c86ec6f133cdfd4d7`.
+- Caveman product: `v3.2.0`, immutable commit
+  `e20f07e8152a0c0360f58c09e79d30ac94329991`.
+- Runtime bundle: `bin-v2.1.0`, immutable commit
+  `e20f07e8152a0c0360f58c09e79d30ac94329991`.
 - Linux amd64 proxy: SHA-256
-  `d883b9ab4b559e0c1935335c0e24400deb5c61d5e247f1ca239c4149f57885b0`.
+  `44436d69705ad9968563c181cd11d396d6ae5eeccd8dbf228f6225d92dfadcb1`.
 - Official source: [Caveman](https://github.com/JuliusBrussee/caveman).
-- Licensing: `LICENSING.md` from the product revision above.
+- Licensing: `LICENSE` and `NOTICE` from the product revision above.
 
-The pinned asset responds to the structured probe but reports `version: "dev"`.
-IVOAI therefore does not present it as a runtime-verified semantic version: the
-immutable revision and supply-chain digest remain authoritative.
+The pinned asset reports `version: "bin-v2.1.0"` in its structured probe.
+The immutable revision and supply-chain digest remain the integrity authority.
 
 ## Safe telemetry
 

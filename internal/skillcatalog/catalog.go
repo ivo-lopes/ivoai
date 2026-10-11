@@ -15,8 +15,10 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/ivo-lopes/ivoai/internal/platform"
 	"github.com/ivo-lopes/ivoai/internal/policy"
@@ -49,6 +51,15 @@ type Source struct {
 	Provenance      Provenance       `json:"provenance"`
 	Skills          []UpstreamSkill  `json:"skills"`
 	Classifications []Classification `json:"classifications"`
+	Rejected        []RejectedSkill  `json:"rejected,omitempty"`
+}
+
+// RejectedSkill is metadata-only evidence. Rejected upstream bodies are never
+// embedded, materialized or eligible for selection.
+type RejectedSkill struct {
+	Path   string `json:"path"`
+	SHA256 string `json:"sha256"`
+	Reason string `json:"reason"`
 }
 
 type Upstream struct {
@@ -95,7 +106,36 @@ type PolicyDecision struct {
 	Result  policy.Result `json:"result"`
 }
 
+// Only the immutable embedded release catalog is cached. Installed overlays
+// still pass their own bounded decode and validation on every use.
+var releaseCatalog = sync.OnceValues(loadReleaseCatalog)
+
 func Load() (Catalog, error) {
+	catalog, err := releaseCatalog()
+	if err != nil {
+		return Catalog{}, err
+	}
+	catalog.Sources = slices.Clone(catalog.Sources)
+	for i := range catalog.Sources {
+		source := &catalog.Sources[i]
+		source.Skills = slices.Clone(source.Skills)
+		source.Rejected = slices.Clone(source.Rejected)
+		source.Classifications = slices.Clone(source.Classifications)
+		for j := range source.Classifications {
+			c := &source.Classifications[j]
+			c.Triggers = slices.Clone(c.Triggers)
+			c.Keywords = slices.Clone(c.Keywords)
+			c.Dependencies = slices.Clone(c.Dependencies)
+			c.OptionalDependencies = slices.Clone(c.OptionalDependencies)
+			c.Conflicts = slices.Clone(c.Conflicts)
+			c.RequestedCapabilities = slices.Clone(c.RequestedCapabilities)
+			c.Executors = slices.Clone(c.Executors)
+		}
+	}
+	return catalog, nil
+}
+
+func loadReleaseCatalog() (Catalog, error) {
 	data, err := catalogFS.ReadFile("catalog.json")
 	if err != nil {
 		return Catalog{}, err
@@ -139,6 +179,16 @@ func (c *Catalog) Validate() error {
 				return fmt.Errorf("source %q has invalid upstream skill metadata", source.ID)
 			}
 			upstream[item.Path] = item
+		}
+		seenRejected := map[string]bool{}
+		if len(source.Rejected) > maxSkillsPerSource || len(source.Rejected)+len(source.Skills) > source.Upstream.ObservedCount {
+			return fmt.Errorf("source %q has invalid rejected inventory", source.ID)
+		}
+		for _, item := range source.Rejected {
+			if !safeRelativePath(item.Path) || !sha256Digest(item.SHA256) || !safeID(item.Reason) || upstream[item.Path].Path != "" || seenRejected[item.Path] {
+				return fmt.Errorf("source %q has invalid rejection metadata", source.ID)
+			}
+			seenRejected[item.Path] = true
 		}
 		for _, classification := range source.Classifications {
 			item, ok := upstream[classification.Path]

@@ -31,7 +31,7 @@ func TestNativeCapabilityPublishedArtifact(t *testing.T) {
 		t.Fatal("invalid TUI metadata")
 	}
 	rows, err := a.NativeCapabilities(context.Background())
-	if err != nil || len(rows) != 13 {
+	if err != nil || len(rows) != 14 {
 		t.Fatal("artifact pack unavailable", err)
 	}
 	for _, row := range rows {
@@ -76,5 +76,5 @@ func TestNativeCapabilityPublishedArtifact(t *testing.T) {
 	if err != nil || info.Mode().Perm() != 0600 {
 		t.Fatal("private registry permissions changed", err)
 	}
-	t.Log("ARTIFACT_TUI=PASS NATIVE_SOURCES=13 PERSONAL_SKILL_PRESERVED=true PONYTAIL_POLICY=PASS")
+	t.Log("ARTIFACT_TUI=PASS NATIVE_SOURCES=14 PERSONAL_SKILL_PRESERVED=true PONYTAIL_POLICY=PASS")
 }
