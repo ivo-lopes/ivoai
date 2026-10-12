@@ -11,6 +11,8 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
+
+	"golang.org/x/sys/unix"
 )
 
 const MaxFileBytes = 1_000_000
@@ -69,18 +71,9 @@ func Snapshot(root string, files []string) (SourceSnapshot, error) {
 			return SourceSnapshot{}, errors.New("invalid code source path")
 		}
 		previous = name
-		info, err := dir.Lstat(name)
-		if err != nil || !info.Mode().IsRegular() || info.Size() > MaxFileBytes {
-			return SourceSnapshot{}, errors.New("code source is not a bounded regular file")
-		}
-		file, err := dir.Open(name)
+		file, err := openSource(dir, name)
 		if err != nil {
-			return SourceSnapshot{}, errors.New("code source escaped scope or disappeared")
-		}
-		actual, statErr := file.Stat()
-		if statErr != nil || !actual.Mode().IsRegular() {
-			file.Close()
-			return SourceSnapshot{}, errors.New("code source changed type")
+			return SourceSnapshot{}, err
 		}
 		body, readErr := io.ReadAll(io.LimitReader(file, MaxFileBytes+1))
 		file.Close()
@@ -99,4 +92,29 @@ func Snapshot(root string, files []string) (SourceSnapshot, error) {
 	}
 	result.Digest = hex.EncodeToString(hash.Sum(nil))
 	return result, nil
+}
+
+// Check the opened descriptor, never a prior pathname observation. O_NONBLOCK
+// prevents a concurrent regular-file-to-FIFO swap from blocking the host before
+// f.Stat can reject it. O_NOFOLLOW rejects final symlinks; os.Root confines all
+// intermediate components, including concurrently replaced directories.
+func openSource(root *os.Root, name string) (*os.File, error) {
+	// os.Root resolves symlinks internally even with O_NOFOLLOW. Pin the
+	// contained parent descriptor, then let openat enforce final no-follow.
+	parent, err := root.OpenFile(filepath.Dir(name), os.O_RDONLY|unix.O_DIRECTORY|unix.O_NONBLOCK, 0)
+	if err != nil {
+		return nil, errors.New("code source escaped scope or disappeared")
+	}
+	defer parent.Close()
+	fd, err := unix.Openat(int(parent.Fd()), filepath.Base(name), unix.O_RDONLY|unix.O_NONBLOCK|unix.O_NOFOLLOW|unix.O_CLOEXEC, 0)
+	if err != nil {
+		return nil, errors.New("code source escaped scope or disappeared")
+	}
+	file := os.NewFile(uintptr(fd), name)
+	info, err := file.Stat()
+	if err != nil || !info.Mode().IsRegular() || info.Size() > MaxFileBytes {
+		file.Close()
+		return nil, errors.New("code source is not a bounded regular file")
+	}
+	return file, nil
 }

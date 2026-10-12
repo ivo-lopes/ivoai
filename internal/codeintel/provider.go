@@ -252,7 +252,7 @@ func syncSnapshot(root string, snap SourceSnapshot) error {
 }
 func digest(body []byte) string { h := sha256.Sum256(body); return hex.EncodeToString(h[:]) }
 func readBounded(path string, max int64) ([]byte, error) {
-	fd, err := unix.Open(path, unix.O_RDONLY|unix.O_CLOEXEC|unix.O_NOFOLLOW, 0)
+	fd, err := unix.Open(path, unix.O_RDONLY|unix.O_CLOEXEC|unix.O_NOFOLLOW|unix.O_NONBLOCK, 0)
 	if err != nil {
 		return nil, err
 	}
