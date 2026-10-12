@@ -7,7 +7,7 @@ import shutil
 import sys
 
 # This is a closed reviewed dependency graph, not a general JS dependency solver.
-FORBIDDEN = re.compile(r'''(?:require\s*\(\s*|from\s*|import\s*\(\s*)["'](?:argparse|sprintf-js)(?:/[^"']*)?["']''')
+FORBIDDEN = re.compile(r'''["'](?:argparse|sprintf-js)(?:/[^"']*)?["']''')
 
 def prune(root):
     root = pathlib.Path(root)
@@ -24,7 +24,7 @@ def prune(root):
             if '.bin' in path.parts:
                 continue
             raise ValueError('unexpected dependency symlink')
-        if path.suffix not in {'.js', '.mjs', '.cjs'} or not path.is_file():
+        if path.suffix not in {'.js', '.mjs', '.cjs', '.ts', '.mts', '.cts'} or not path.is_file():
             continue
         if path.is_relative_to(allowed) or path.is_relative_to(cli):
             continue

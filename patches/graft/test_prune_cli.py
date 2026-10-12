@@ -25,11 +25,16 @@ class PruneCLI(unittest.TestCase):
         self.assertEqual(list(lock['packages']),['node_modules/js-yaml'])
         self.assertEqual(lock['packages']['node_modules/js-yaml']['dependencies'],{'esprima':'^4.0.0'})
     def test_new_imports_fail_before_mutation(self):
-        for statement in ["require('argparse')",'import x from "sprintf-js"',"import('argparse/index.js')"]:
+        for statement in ["require('argparse')",'import x from "sprintf-js"',"import('argparse/index.js')", "import 'argparse'", "require.resolve('sprintf-js')"]:
             with self.subTest(statement=statement):
                 (self.modules/'gray-matter/index.js').write_text(statement)
                 with self.assertRaisesRegex(ValueError,'new runtime dependency'):module.prune(self.root)
                 self.assertTrue((self.modules/'argparse').exists())
+    def test_source_typescript_dependency_fails_before_mutation(self):
+        (self.root/'src').mkdir()
+        (self.root/'src/new.ts').write_text("import 'argparse'")
+        with self.assertRaisesRegex(ValueError,'new runtime dependency'):module.prune(self.root)
+        self.assertTrue((self.modules/'argparse').exists())
     def test_changed_yaml_version_requires_review(self):
         path=self.modules/'js-yaml/package.json';data=json.loads(path.read_text());data['version']='4.0.0';path.write_text(json.dumps(data))
         with self.assertRaisesRegex(ValueError,'requires review'):module.prune(self.root)
