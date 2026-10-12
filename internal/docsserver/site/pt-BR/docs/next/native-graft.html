@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="generator" content="Docusaurus v3.10.2">
 <title data-rh="true">Inteligência de código com Graft nativo | IVOAI</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="http://localhost:7780/pt-BR/docs/next/native-graft"><meta data-rh="true" property="og:locale" content="pt_BR"><meta data-rh="true" property="og:locale:alternate" content="en_US"><meta data-rh="true" name="docusaurus_locale" content="pt-BR"><meta data-rh="true" name="docsearch:language" content="pt-BR"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="Inteligência de código com Graft nativo | IVOAI"><meta data-rh="true" name="description" content="O IVOAI controla a inspeção local de código, sua autorização e seu orçamento de"><meta data-rh="true" property="og:description" content="O IVOAI controla a inspeção local de código, sua autorização e seu orçamento de"><link data-rh="true" rel="icon" href="/pt-BR/img/favicon.svg"><link data-rh="true" rel="canonical" href="http://localhost:7780/pt-BR/docs/next/native-graft"><link data-rh="true" rel="alternate" href="http://localhost:7780/docs/next/native-graft" hreflang="en-US"><link data-rh="true" rel="alternate" href="http://localhost:7780/pt-BR/docs/next/native-graft" hreflang="pt-BR"><link data-rh="true" rel="alternate" href="http://localhost:7780/docs/next/native-graft" hreflang="x-default"><script data-rh="true" type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Inteligência de código com Graft nativo","item":"http://localhost:7780/pt-BR/docs/next/native-graft"}]}</script><link rel="stylesheet" href="/pt-BR/assets/css/styles.ef9ae034.css">
-<script src="/pt-BR/assets/js/runtime~main.ec64d886.js" defer="defer"></script>
+<script src="/pt-BR/assets/js/runtime~main.d70c5a1f.js" defer="defer"></script>
 <script src="/pt-BR/assets/js/main.fa89afd0.js" defer="defer"></script>
 </head>
 <body>
@@ -70,8 +70,12 @@ permissões.</p>
 <p>A inspeção automática pode responder diretamente a uma busca literal. Na inspeção
 da API de um arquivo pequeno identificado, pode retornar o arquivo completo quando
 ele couber em metade do orçamento de resultado solicitado. Relações e questões
-estruturais maiores usam Graft. Uma declaração exata e inequívoca também pode
-usar um trecho direto curto antes de existir índice. As verificações de
+estruturais maiores usam Graft. Uma declaração Go inequívoca, verificada pelo
+parser padrão da linguagem, também pode usar um trecho direto curto. Um grafo já
+construído não obriga a iniciar outro processo Node; um resultado da consulta exata
+em cache é revalidado antes da reutilização. Os aliases MCP de implementação e API
+usam a mesma seleção; a pesquisa agrupada preserva o agrupamento estrutural. Cada
+alias anuncia apenas os parâmetros de sua operação. As verificações de
 elegibilidade precedem a comparação de custos. Medições locais limitadas
 atualizam estimativas de latência e tamanho por operação; CPU, memória e tokens
 não medidos permanecem desconhecidos. Bytes divididos por quatro são uma
@@ -79,7 +83,17 @@ estimativa explícita, nunca contabilização do provedor. O histórico mantém 
 máximo 18 linhas agregadas por identidade de repositório, worktree, organização
 e permissões, sem consultas nem conteúdo das fontes. Um classificador conservador de tarefas
 pode antecipar evidência limitada de código; ele não concede capabilities nem
-substitui a pesquisa institucional em Memory/Context.</p>
+substitui a pesquisa institucional em Memory/Context.
+Workers recebem apenas sua evidência delimitada, após admissão pelo Skill Gate.
+Para uma tarefa pronta e pertencente ao principal, a resposta do plano aprovado
+ou de uma espera posterior pode entregar automaticamente a mesma evidência exata,
+com referência ao ArtifactStore. Cada tarefa recebe essa entrega no máximo uma vez
+por processo da ponte; a evidência dos workers não é copiada ao principal.
+O envelope agregado do principal tem limite de 4.096 bytes e a recuperação,
+20 segundos por resposta. Revogação descarta evidência pendente. Falhas retornam
+um indicador sanitizado de degradação, permitindo inspeção alternativa autorizada.
+Restrições explícitas de ferramentas e negações de skills obrigatórias também
+limitam a antecipação. Planos, checkpoints e eventos não persistem a evidência bruta.</p>
 <p>Enriquecimento <code>deep</code>/LLM e subprocessos LSP ficam desabilitados até existir uma
 integração segura e revisada pelos clientes oficiais. O adaptador gera somente o
 grafo, sem integração cloud, hooks do repositório, carregamento de configuração de
@@ -105,7 +119,7 @@ extração estrutural.</p>
 <p>O host lê bytes exatos e limitados através de <code>os.Root</code>, verifica caminhos e tipos
 de arquivo e copia os bytes para um snapshot privado. O Graft recebe esse snapshot,
 sem permissão de escrita no repositório original. Digests das fontes, identidade
-do adaptador e versão gerenciada controlam atualização e reutilização de
+do adaptador e identidade do objeto gerenciado imutável controlam atualização e reutilização de
 resultados. Recibos também validam toda a árvore do índice, inclusive o cache de extração, antes de
 reutilizar um índice; evidência inválida de cache provoca reconstrução. O cache
 mantém no máximo 64 resultados por geração de fontes. Texto do repositório e
