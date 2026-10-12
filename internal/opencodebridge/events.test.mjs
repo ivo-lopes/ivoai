@@ -55,3 +55,8 @@ test('initial snapshot rejects unauthorized and oversized responses',async()=>{
   await assert.rejects(initialOperationalStatus('http://127.0.0.1:1','fixture',new AbortController().signal,async()=>response))
  }
 })
+
+test('structural observations show measured values and preserve unknown resources',()=>{
+ const text=panel({activity:[{operation:'code.inspect',component:'code_intelligence',provider:'graft',state:'completed',cache_hit:true,index_fresh:true,index_files:19,source_files:20,duration_ms:12}]}).map(x=>x.text).join('\n')
+ assert.match(text,/cache=hit/);assert.match(text,/19\/20/);assert.match(text,/12ms/);assert.match(text,/memory=unknown/);assert.match(text,/fresh/)
+})

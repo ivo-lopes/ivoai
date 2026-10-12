@@ -49,6 +49,12 @@ export function panel(status) {
   const activity = (Array.isArray(status.activity) ? status.activity : []).slice(-8)
   if (activity.length) orchestration.push(line("Recent activity", "heading"))
   for (const event of activity) orchestration.push(line(`${clean(event.operation)}${event.phase ? " · " + clean(event.phase) : ""} · ${clean(event.task_id || event.worker_id || event.component, "session")} · ${clean(event.state)}${event.routing_reason ? " · " + clean(event.routing_reason) : ""}${event.fallback_reason ? " · fallback=" + clean(event.fallback_reason) : ""}`, ["failed", "blocked", "denied"].includes(event.state) ? "warning" : "muted"))
+  const code = activity.filter(event => event.operation === "code.inspect").at(-1)
+  if (code) {
+    const metric = (value, suffix = "") => Number.isFinite(value) && value >= 0 ? value + suffix : "unknown"
+    orchestration.push(line(`Code: ${clean(code.provider)} · cache=${typeof code.cache_hit === "boolean" ? code.cache_hit ? "hit" : "miss" : "unknown"} · index=${typeof code.index_fresh === "boolean" ? code.index_fresh ? "fresh" : "stale" : "unknown"}`),
+      line(`  coverage=${metric(code.index_files)}/${metric(code.source_files)} files · latency=${metric(code.duration_ms, "ms")} · memory=${code.peak_memory_bytes == null ? "unknown" : metric(Math.round(code.peak_memory_bytes / 1048576), "MiB")} · cpu=${metric(code.cpu_ms, "ms")}`))
+  }
   result.splice(2, 0, ...orchestration)
   for (const [id, name] of [["codex", "Codex"], ["claude", "Claude"], ["opencode", "OpenCode"]]) {
     const auth = clean(status[id + "_auth"])
