@@ -288,7 +288,12 @@ func (a Adapter) isolateMCPs(ctx context.Context, executable, executor string, a
 		if a.Runner == nil {
 			return nil, errors.New("isolate Codex worker MCPs: runner is unavailable")
 		}
-		result, err := a.Runner.Run(ctx, executable, []string{"mcp", "list", "--json"}, platform.RunOptions{Timeout: 15 * time.Second})
+		// Inventory and execution must use the same feature restrictions. Plugin
+		// MCPs disappear when plugins are disabled; overriding those stale names
+		// would create transport-less MCP tables that Codex rejects at startup.
+		restrictions := []string{"-c", "features.apps=false", "-c", "features.hooks=false", "-c", "features.multi_agent=false", "-c", "features.plugins=false", "-c", "features.remote_plugin=false"}
+		inventoryArgs := append([]string{"mcp", "list", "--json"}, restrictions...)
+		result, err := a.Runner.Run(ctx, executable, inventoryArgs, platform.RunOptions{Timeout: 15 * time.Second})
 		if err != nil {
 			return nil, fmt.Errorf("isolate Codex worker MCPs: inspect configured servers: %w", err)
 		}
@@ -308,7 +313,6 @@ func (a Adapter) isolateMCPs(ctx context.Context, executable, executor string, a
 		}
 		// Provider-side apps, hooks and native sub-agents cannot create another
 		// tool path outside the IVOAI task grant. These are process-local flags.
-		restrictions := []string{"-c", "features.apps=false", "-c", "features.hooks=false", "-c", "features.multi_agent=false", "-c", "features.plugins=false", "-c", "features.remote_plugin=false"}
 		seen := map[string]bool{}
 		for _, server := range servers {
 			if !codexServerIdentifier.MatchString(server.Name) || seen[server.Name] {

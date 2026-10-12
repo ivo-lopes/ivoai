@@ -133,6 +133,39 @@ func TestCodexMCPIsolationFailsClosedOnUnstructuredInventory(t *testing.T) {
 	}
 }
 
+func TestCodexMCPInventoryMatchesRuntimePluginRestrictions(t *testing.T) {
+	root := t.TempDir()
+	// Plugin inventory disappears when plugins are disabled. An enabled=false
+	// override for the disappeared entry instead creates a transport-less table.
+	codex := executable(t, root, "codex", `#!/bin/sh
+if [ "$1" = "mcp" ]; then
+  case " $* " in
+    *" features.plugins=false "*) printf '%s' '[{"name":"personal"}]' ;;
+    *) printf '%s' '[{"name":"personal"},{"name":"plugin_fixture"}]' ;;
+  esac
+  exit 0
+fi
+case " $* " in
+  *"mcp_servers.plugin_fixture.enabled=false"*) exit 72 ;;
+esac
+exit 0
+`)
+	adapter := Adapter{Runner: platform.ExecRunner{}}
+	args, err := adapter.IsolateCodexMCPs(context.Background(), codex, []string{"--sandbox", "read-only"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	joined := strings.Join(args, " ")
+	for _, restriction := range []string{"features.apps=false", "features.hooks=false", "features.multi_agent=false", "features.plugins=false", "features.remote_plugin=false", "mcp_servers.personal.enabled=false", "--sandbox read-only"} {
+		if !strings.Contains(joined, restriction) {
+			t.Fatalf("runtime restriction missing: %s", restriction)
+		}
+	}
+	if _, err := adapter.Runner.Run(context.Background(), codex, append(args, "exec"), platform.RunOptions{}); err != nil {
+		t.Fatalf("inventory generated an invalid runtime MCP table: %v", err)
+	}
+}
+
 func TestAuthoritativeWorkerKnowledgeBypassesHeadroom(t *testing.T) {
 	root := t.TempDir()
 	headroomMarker := filepath.Join(root, "headroom-invoked")
