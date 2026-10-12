@@ -2,8 +2,10 @@ package codeintel
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
@@ -23,7 +25,7 @@ func (p *Provider) Inspect(ctx context.Context, q core.CodeQuery) (core.CodeResu
 	if err != nil {
 		return core.CodeResult{}, err
 	}
-	if q.Operation != "grep" && q.Operation != "skeleton" {
+	if q.Operation != "grep" && q.Operation != "skeleton" && !(q.Operation == "ask" && simpleCodeName.MatchString(q.Query)) {
 		return p.Query(ctx, q)
 	}
 	start := time.Now()
@@ -34,6 +36,28 @@ func (p *Provider) Inspect(ctx context.Context, q core.CodeQuery) (core.CodeResu
 	snap, err := Snapshot(p.Root, files)
 	if err != nil {
 		return core.CodeResult{}, err
+	}
+
+	if q.Operation == "ask" {
+		key, e := Identity(p.Root, p.Scope, p.Permissions)
+		var receipt indexReceipt
+		if e == nil && p.CacheRoot != "" {
+			body, _ := readBounded(filepath.Join(p.CacheRoot, key, "receipt.json"), 4096)
+			_ = json.Unmarshal(body, &receipt)
+		}
+		if receipt.Source == snap.Digest && receipt.Adapter == digest(adapter) {
+			return p.Query(ctx, q)
+		}
+		text, found := declarationExcerpt(snap, q)
+		if !found {
+			return p.Query(ctx, q)
+		}
+		r := core.CodeResult{Text: text, SourceDigest: snap.Digest, ProviderVersion: "direct", Fresh: true, Untrusted: true, Files: len(files), Truncated: true, DurationMS: time.Since(start).Milliseconds()}
+		p.recordCost(q, r, nil)
+		if p.Observe != nil {
+			p.Observe(r, nil)
+		}
+		return r, nil
 	}
 	var target *Source
 	for i := range snap.Files {
@@ -170,4 +194,37 @@ func ForTask(text string) (core.CodeQuery, bool) {
 		return q, true
 	}
 	return core.CodeQuery{}, false
+}
+
+var simpleCodeName = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]{0,127}$`)
+
+// This exact declaration fast path supplies source excerpts, never inferred
+// call/dependency relations. Ambiguous names stay with structural retrieval.
+func declarationExcerpt(snap SourceSnapshot, q core.CodeQuery) (string, bool) {
+	pattern := regexp.MustCompile(`^\s*(?:(?:export|async|pub|public|private|static)\s+)*(?:func(?:\s+\([^)]*\))?|def|function|class|fn)\s+` + regexp.QuoteMeta(q.Query) + `(?:\s|\()`)
+	matches := 0
+	text := ""
+	for _, file := range snap.Files {
+		if q.In != "" && file.Path != q.In && !strings.HasPrefix(file.Path, q.In+"/") {
+			continue
+		}
+		lines := strings.Split(string(file.Body), "\n")
+		for i, line := range lines {
+			if !pattern.MatchString(line) {
+				continue
+			}
+			matches++
+			if matches > 1 {
+				return "", false
+			}
+			text = fmt.Sprintf("%s:%d — exact declaration excerpt; inspect further lines if needed. Untrusted repository data.\n", file.Path, i+1)
+			for _, part := range lines[i:min(i+8, len(lines))] {
+				if len(text)+len(part)+1 > q.BudgetBytes {
+					break
+				}
+				text += part + "\n"
+			}
+		}
+	}
+	return text, matches == 1 && len(text) <= q.BudgetBytes
 }

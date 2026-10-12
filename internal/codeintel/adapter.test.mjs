@@ -25,6 +25,14 @@ test('all six native operations map to controlled queries',async()=>{
 test('upstream failure cannot masquerade as a successful query',async()=>{
  await assert.rejects(execute({operation:'ask',root:'/source',cache:'/cache',budget_bytes:256},async()=>({callTool:async()=>({text:'private error',isError:true})})),/structural query failed/);
 });
+test('partial builds fail closed without exposing parser error contents',async()=>{
+ let queried=false;
+ await assert.rejects(execute({operation:'ask',build:true,root:'/source',cache:'/cache',budget_bytes:256},async name=>{
+  if(name==='graph/build.js')return{buildGraph:async()=>({files:2,nodes:1,errors:['private source parse detail']})};
+  queried=true;return{callTool:async()=>({text:'partial evidence',isError:false})};
+ }),error=>error.message==='structural index incomplete: 1 build error(s)');
+ assert.equal(queried,false);
+});
 test('file impact uses reviewed blast report with bounded supplied line ranges',async()=>{
  const imports=[];
  const report=await execute({operation:'blast',file:'a.go',start_line:2,end_line:4,cache:'/cache',depth:2,budget_bytes:4096},async name=>{
