@@ -18,6 +18,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ivo-lopes/ivoai/internal/codexresolver"
 	"github.com/ivo-lopes/ivoai/internal/core"
 	"github.com/ivo-lopes/ivoai/internal/externalmcp"
 )
@@ -153,6 +154,9 @@ func TestExtendedLiveCodexBenchmark(t *testing.T) {
 					sandbox = "workspace-write"
 				}
 				args := []string{"exec", "--ignore-user-config", "--ephemeral", "--sandbox", sandbox, "--skip-git-repo-check", "--json", "--color", "never", "-m", r.Model, "-c", `model_reasoning_effort="low"`, "-C", p.Root}
+				// Reuse the managed executor's explicit untrusted override. Codex
+				// otherwise persists inferred trust for workspace-write exec.
+				args = append(args, codexresolver.ProjectTrustArgs(p.Root)...)
 				env := os.Environ()
 				if arm == "B" {
 					args = append(args, "-c", "mcp_servers.ivoai-code.url="+strconv.Quote(gateway.URL(0)), "-c", `mcp_servers.ivoai-code.bearer_token_env_var="IVOAI_TEST_CODE_TOKEN"`, "-c", `mcp_servers.ivoai-code.default_tools_approval_mode="approve"`)
