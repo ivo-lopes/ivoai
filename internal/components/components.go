@@ -131,6 +131,13 @@ func DefaultCatalog() []Spec {
 			catalog[index] = projected
 		}
 	}
+	if ManagedGraftAvailable() {
+		spec, err := managedGraftSpec(managedGraftBuild, runtime.GOOS+"/"+runtime.GOARCH)
+		if err != nil {
+			panic("invalid release-managed Graft build metadata")
+		}
+		catalog = append(catalog, spec)
+	}
 	return catalog
 }
 
@@ -151,6 +158,9 @@ func (i *Installer) Setup(ctx context.Context) error {
 	}
 	if len(i.Catalog) == 0 {
 		i.Catalog = DefaultCatalog()
+		if !ManagedGraftAvailable() && i.Out != nil {
+			fmt.Fprintln(i.Out, "Graft unavailable: this build has no reviewed managed runtime metadata.")
+		}
 	}
 	state, err := i.Store.LoadState()
 	if err != nil {
@@ -232,10 +242,17 @@ func (i *Installer) ensureSupplyChain(ctx context.Context, spec Spec, previous c
 	if err != nil {
 		return config.ComponentState{}, err
 	}
+	runner := i.Runner
+	if spec.Name == "graft" {
+		if _, _, err := i.ensureNode(ctx); err != nil {
+			return config.ComponentState{}, fmt.Errorf("prepare managed Graft Node runtime: %w", err)
+		}
+		runner = managedGraftRunner{Runner: runner}
+	}
 	manager := componentupdate.Manager{
 		Supply:     supplychain.Manager{Root: filepath.Join(i.Store.Paths.DataDir, "supply-chain"), Limits: componentSupplyChainLimits()},
 		Discoverer: componentupdate.StaticDiscoverer{Source: source}, Fetcher: componentupdate.HTTPFetcher{Client: i.Client},
-		Store: i.Store, Runner: i.Runner, Executable: spec.Executable, VersionArg: []string{"--version"}, NoVersionProbe: spec.NoVersionProbe,
+		Store: i.Store, Runner: runner, Executable: spec.Executable, VersionArg: []string{"--version"}, NoVersionProbe: spec.NoVersionProbe,
 	}
 	result, err := manager.Update(ctx, supplychain.Reference{ID: spec.Name, Kind: supplychain.KindComponent, Source: source.Source, Version: spec.Version})
 	return result.State, err
