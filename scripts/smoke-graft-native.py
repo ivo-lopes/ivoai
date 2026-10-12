@@ -254,6 +254,7 @@ def live(binary_argument, root_argument):
         assert value.get("tasks") and all(t.get("state") == "completed" for t in value["tasks"]), "TASK_INCOMPLETE"
         assert checkpoint(value)["recovery"]["integrated"] is True, "PLAN_NOT_INTEGRATED"
         assert native_evidence(value), "REAL_GRAFT_TOOL_CALL_NOT_PROVEN"
+        print("GRAFT_NATIVE_TASK_INTEGRATED=PASS OFFICIAL_CODEX_NATIVE_TOOL=PASS GRAFT_STRUCTURAL_EVIDENCE=PASS", flush=True)
         # Session persistence can precede final SSE/TUI rendering. Wait for the
         # native renderer rather than treating persisted completion as visible.
         wait_for(lambda text, _: "GraftNativeCaller" in text, 30, "STRUCTURAL_ANSWER_NOT_VISIBLE")
