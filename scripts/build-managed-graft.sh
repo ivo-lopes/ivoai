@@ -5,6 +5,8 @@ umask 022
 export PYTHONDONTWRITEBYTECODE=1
 repo_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 helper="$repo_root/patches/graft"
+python3 "$helper/test_prepare_grammars.py"
+python3 "$helper/test_prune_cli.py"
 revision=fe30ead39d5e6f0c921018d364da2bdbc9d4b3ad
 source_sha=ab27f9123eeb59b3987a342a24b7e357ad3412f41c556fde3a76ca9e250d2db1
 lock_sha=c05064ea18ed1b538e27cc788f1d6ea2cae00b2c00c79ef552fc1bb4c54fd5f5

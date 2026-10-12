@@ -44,6 +44,8 @@ jobs:
         run: |
           python3 scripts/test-build-managed-graft.py
           python3 scripts/test-graft-abi.py
+          python3 patches/graft/test_prepare_grammars.py
+          python3 patches/graft/test_prune_cli.py
       - name: Generated CLI reference is current
         run: scripts/generate-cli-reference.sh --check
       - name: Managed TUI semantic goldens (read-only comparison)
