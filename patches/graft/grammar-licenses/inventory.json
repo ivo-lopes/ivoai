@@ -1,0 +1,265 @@
+{
+  "bundle": {
+    "builderRevision": "10ceafc2240651aa51ca87627d3befc4813a2811",
+    "integrity": "sha512-jn/q9cOBIcTOA8QqtrPXNbibislSDuVChO4ws//aFy+DKjrUs9wzE4R6QXFx6yunEAYaxaVvpMW4+yX/ijQ7BQ==",
+    "name": "tree-sitter-wasm",
+    "verification": "Pinned npm SRI and WASM hashes; builder revision read from bundled certificate metadata, not independently signature-verified.",
+    "version": "1.1.6"
+  },
+  "grammars": [
+    {
+      "language": "rust",
+      "license": "MIT",
+      "licenseFile": "rust.LICENSE",
+      "licenseReference": "tree-sitter-rust@0.24.0",
+      "licenseSHA256": "31d5b6f4243d5c7c6e1c4ebbbb9f6407bd1457a08bcc4f706521710341acba36",
+      "licenseURL": "https://registry.npmjs.org/tree-sitter-rust/-/tree-sitter-rust-0.24.0.tgz#package/LICENSE",
+      "package": "tree-sitter-rust",
+      "referencePackageIntegrity": "sha512-NWemUDf629Tfc90Y0Z55zuwPCAHkLxWnMf2RznYu4iBkkrQl2o/CHGB7Cr52TyN5F1DAx8FmUnDtCy9iUkXZEQ==",
+      "sourceDeclared": "^0.24.0",
+      "sourceRepository": {
+        "type": "git",
+        "url": "git+https://github.com/tree-sitter/tree-sitter-rust.git"
+      },
+      "sourceRevisionAttested": false,
+      "wasmSHA256": "d677eb7681451def98039d32495d075f51f32bbd4b332231b6812c36a405f20e"
+    },
+    {
+      "language": "java",
+      "license": "MIT",
+      "licenseFile": "java.LICENSE",
+      "licenseReference": "tree-sitter-java@0.23.5",
+      "licenseSHA256": "52ed137b039cd9c46409bc22e89938af911c95b157feae2d040b51e6084369a7",
+      "licenseURL": "https://registry.npmjs.org/tree-sitter-java/-/tree-sitter-java-0.23.5.tgz#package/LICENSE",
+      "package": "tree-sitter-java",
+      "referencePackageIntegrity": "sha512-Yju7oQ0Xx7GcUT01mUglPP+bYfvqjNCGdxqigTnew9nLGoII42PNVP3bHrYeMxswiCRM0yubWmN5qk+zsg0zMA==",
+      "sourceDeclared": "^0.23.5",
+      "sourceRepository": {
+        "type": "git",
+        "url": "git+https://github.com/tree-sitter/tree-sitter-java.git"
+      },
+      "sourceRevisionAttested": false,
+      "wasmSHA256": "9f9ee1cca02ba2966a71447cb3b73f4e0d4264506d8e51db59cd75d4f1aafbe1"
+    },
+    {
+      "language": "c",
+      "license": "MIT",
+      "licenseFile": "c.LICENSE",
+      "licenseReference": "tree-sitter-c@0.24.1",
+      "licenseSHA256": "2e0110e07abef7c2548b26ec9d6969775617ca539a0dc8dbeeb14d6452c711d1",
+      "licenseURL": "https://registry.npmjs.org/tree-sitter-c/-/tree-sitter-c-0.24.1.tgz#package/LICENSE",
+      "package": "tree-sitter-c",
+      "referencePackageIntegrity": "sha512-lkYwWN3SRecpvaeqmFKkuPNR3ZbtnvHU+4XAEEkJdrp3JfSp2pBrhXOtvfsENUneye76g889Y0ddF2DM0gEDpA==",
+      "sourceDeclared": "^0.24.1",
+      "sourceRepository": {
+        "type": "git",
+        "url": "git+https://github.com/tree-sitter/tree-sitter-c.git"
+      },
+      "sourceRevisionAttested": false,
+      "wasmSHA256": "f973cfc555fcedc0681826b6cf2546919aad4ee464c69874796b20b2ea42839a"
+    },
+    {
+      "language": "cpp",
+      "license": "MIT",
+      "licenseFile": "cpp.LICENSE",
+      "licenseReference": "tree-sitter-cpp@0.23.4",
+      "licenseSHA256": "2e0110e07abef7c2548b26ec9d6969775617ca539a0dc8dbeeb14d6452c711d1",
+      "licenseURL": "https://registry.npmjs.org/tree-sitter-cpp/-/tree-sitter-cpp-0.23.4.tgz#package/LICENSE",
+      "package": "tree-sitter-cpp",
+      "referencePackageIntegrity": "sha512-qR5qUDyhZ5jJ6V8/umiBxokRbe89bCGmcq/dk94wI4kN86qfdV8k0GHIUEKaqWgcu42wKal5E97LKpLeVW8sKw==",
+      "sourceDeclared": "^0.23.4",
+      "sourceRepository": {
+        "type": "git",
+        "url": "git+https://github.com/tree-sitter/tree-sitter-cpp.git"
+      },
+      "sourceRevisionAttested": false,
+      "wasmSHA256": "dfd7e00ac6dd9cd6036d6b09570b089b97b680ed417942f62ae17e5c79550916"
+    },
+    {
+      "language": "ruby",
+      "license": "MIT",
+      "licenseFile": "ruby.LICENSE",
+      "licenseReference": "tree-sitter-ruby@0.23.1",
+      "licenseSHA256": "ee006f02a3d856df282e409be2a86e24a65bb573a98b9c28343771141351bb6b",
+      "licenseURL": "https://registry.npmjs.org/tree-sitter-ruby/-/tree-sitter-ruby-0.23.1.tgz#package/LICENSE",
+      "package": "tree-sitter-ruby",
+      "referencePackageIntegrity": "sha512-d9/RXgWjR6HanN7wTYhS5bpBQLz1VkH048Vm3CodPGyJVnamXMGb8oEhDypVCBq4QnHui9sTXuJBBP3WtCw5RA==",
+      "sourceDeclared": "^0.23.1",
+      "sourceRepository": {
+        "type": "git",
+        "url": "git+https://github.com/tree-sitter/tree-sitter-ruby.git"
+      },
+      "sourceRevisionAttested": false,
+      "wasmSHA256": "385fe22a8a98e0423ae2cecc7867fe2ba61d975b9713dc7940eab941e02e947e"
+    },
+    {
+      "language": "c_sharp",
+      "license": "MIT",
+      "licenseFile": "c_sharp.LICENSE",
+      "licenseReference": "tree-sitter-c-sharp@0.23.5",
+      "licenseSHA256": "778fb7d63b8c1844da315648c02f325c4713a6f4a5d19644fd413421422776d3",
+      "licenseURL": "https://registry.npmjs.org/tree-sitter-c-sharp/-/tree-sitter-c-sharp-0.23.5.tgz#package/LICENSE",
+      "package": "tree-sitter-c-sharp",
+      "referencePackageIntegrity": "sha512-xJGOeXPMmld0nES5+080N/06yY6LQi+KWGWV4LfZaZe6srJPtUtfhIbRSN7EZN6IaauzW28v6W4QHFwmeUW6HQ==",
+      "sourceDeclared": "^0.23.5",
+      "sourceRepository": {
+        "type": "git",
+        "url": "git+https://github.com/tree-sitter/tree-sitter-c-sharp.git"
+      },
+      "sourceRevisionAttested": false,
+      "wasmSHA256": "900d526a2b4abb59799bb2740b6d42b6dc97df9b55f051a7bef47571562fdcad"
+    },
+    {
+      "language": "scala",
+      "license": "MIT",
+      "licenseFile": "scala.LICENSE",
+      "licenseReference": "tree-sitter-scala@0.24.0",
+      "licenseSHA256": "1f95ed26e1f4074074c9c7083e61c0a9e4c3b9f435745044995f3beb4ed28575",
+      "licenseURL": "https://registry.npmjs.org/tree-sitter-scala/-/tree-sitter-scala-0.24.0.tgz#package/LICENSE",
+      "package": "tree-sitter-scala",
+      "referencePackageIntegrity": "sha512-vkMuAUrBZ1zZz2XcGDQk18Kz73JkpgaeXzbNVobPke0G35sd9jH32aUxG6OLRKM7et0TbsfqkWf4DeJoGk4K1g==",
+      "sourceDeclared": "^0.24.0",
+      "sourceRepository": {
+        "type": "git",
+        "url": "git+https://github.com/tree-sitter/tree-sitter-scala.git"
+      },
+      "sourceRevisionAttested": false,
+      "wasmSHA256": "735c379303984afa5d3af3aa2dfa851f774f1113d7da06d888c4c7dbc4ebd556"
+    },
+    {
+      "language": "elixir",
+      "license": "Apache-2.0",
+      "licenseFile": "elixir.LICENSE",
+      "licenseReference": "tree-sitter-elixir@0.3.5",
+      "licenseSHA256": "a6cba85bc92e0cff7a450b1d873c0eaa2e9fc96bf472df0247a26bec77bf3ff9",
+      "licenseURL": "https://registry.npmjs.org/tree-sitter-elixir/-/tree-sitter-elixir-0.3.5.tgz#package/LICENSE",
+      "package": "tree-sitter-elixir",
+      "referencePackageIntegrity": "sha512-xozQMvYK0aSolcQZAx2d84Xe/YMWFuRPYFlLVxO01bM2GITh5jyiIp0TqPCQa8754UzRAI7A83hZmfiYub5TZQ==",
+      "sourceDeclared": "^0.3.5",
+      "sourceRepository": {
+        "type": "git",
+        "url": "git+https://github.com/elixir-lang/tree-sitter-elixir.git"
+      },
+      "sourceRevisionAttested": false,
+      "wasmSHA256": "ee888f00f0fac05f40083fc0babfc579713ac2a7ab0ff8282ced1a73e5470c81"
+    },
+    {
+      "language": "solidity",
+      "license": "MIT",
+      "licenseFile": "solidity.LICENSE",
+      "licenseReference": "tree-sitter-solidity@1.2.13",
+      "licenseSHA256": "8844f0cc9b76b9c8a9d0251904eb7536b6bb9976e0ec577e8f27ab96d42523ef",
+      "licenseURL": "https://registry.npmjs.org/tree-sitter-solidity/-/tree-sitter-solidity-1.2.13.tgz#package/LICENSE",
+      "package": "tree-sitter-solidity",
+      "referencePackageIntegrity": "sha512-nO2AbcAuz2Qba8JnPNe/3FVjRRvGY3ApxSJ8UPIzfynJm4PYCMbBoXxxbprvMgjCbGYR/ZrHGIPKzXV7zBa+lQ==",
+      "sourceDeclared": "^1.2.13",
+      "sourceRepository": null,
+      "sourceRevisionAttested": false,
+      "wasmSHA256": "788ecf20533555e9c40e569df50c0418863c3b67e0f8ca20e0e4ec9a9da74bf8"
+    },
+    {
+      "declaredSourceRevision": "b40028552b03e291ac43b59b51908d56effa597b",
+      "language": "ocaml",
+      "license": "MIT",
+      "licenseFile": "ocaml.LICENSE",
+      "licenseReference": "b40028552b03e291ac43b59b51908d56effa597b",
+      "licenseSHA256": "f977a20805dd6e275f14bc090a5f8e638401dad4df366841c1060f12c75b74ae",
+      "licenseURL": "https://raw.githubusercontent.com/tree-sitter/tree-sitter-ocaml/b40028552b03e291ac43b59b51908d56effa597b/LICENSE",
+      "package": "tree-sitter-ocaml",
+      "sourceDeclared": "git+https://github.com/tree-sitter/tree-sitter-ocaml.git#b40028552b03e291ac43b59b51908d56effa597b",
+      "sourceRepository": "https://github.com/tree-sitter/tree-sitter-ocaml",
+      "sourceRevisionAttested": false,
+      "wasmSHA256": "2b4fe60c0951cedca6c0af4fdef141ef58ebf3fac69ce14138a8c90382d13da4"
+    },
+    {
+      "language": "zig",
+      "license": "MIT",
+      "licenseFile": "zig.LICENSE",
+      "licenseReference": "@tree-sitter-grammars/tree-sitter-zig@1.1.2",
+      "licenseSHA256": "0eea8dc45e89deeb03c7799bbbc7b4688f365fb274562f4540ecfebdea82e727",
+      "licenseURL": "https://registry.npmjs.org/@tree-sitter-grammars/tree-sitter-zig/-/tree-sitter-zig-1.1.2.tgz#package/LICENSE",
+      "package": "@tree-sitter-grammars/tree-sitter-zig",
+      "referencePackageIntegrity": "sha512-J0L31HZ2isy3F5zb2g5QWQOv2r/pbruQNL9ADhuQv2pn5BQOzxt80WcEJaYXBeuJ8GHxVT42slpCna8k1c8LOw==",
+      "sourceDeclared": "^1.1.2",
+      "sourceRepository": {
+        "type": "git",
+        "url": "git+https://github.com/tree-sitter-grammars/tree-sitter-zig.git"
+      },
+      "sourceRevisionAttested": false,
+      "wasmSHA256": "384f58134170b1493074e51d97174140edc671b209d56628fd1a1a081cbd66c4"
+    },
+    {
+      "declaredSourceRevision": "be07cf7118d3dba06236a3f19541685a68209934",
+      "language": "dart",
+      "license": "MIT",
+      "licenseFile": "dart.LICENSE",
+      "licenseReference": "be07cf7118d3dba06236a3f19541685a68209934",
+      "licenseSHA256": "d270cb3a4985d75033bd77d875ccebff1d66e32788a3f727891e28d76132dd46",
+      "licenseURL": "https://raw.githubusercontent.com/UserNobody14/tree-sitter-dart/be07cf7118d3dba06236a3f19541685a68209934/LICENSE",
+      "package": "tree-sitter-dart",
+      "sourceDeclared": "git+https://github.com/UserNobody14/tree-sitter-dart.git#be07cf7118d3dba06236a3f19541685a68209934",
+      "sourceRepository": "https://github.com/UserNobody14/tree-sitter-dart",
+      "sourceRevisionAttested": false,
+      "wasmSHA256": "29d8f2cb50a359ca7d70a30482d10499c4c7015431d0afd544712b07683c9ffc"
+    },
+    {
+      "declaredSourceRevision": "e43eff80d17cf34852dcd92ca5e6986d23a7040f",
+      "language": "clojure",
+      "license": "CC0-1.0",
+      "licenseFile": "clojure.LICENSE",
+      "licenseReference": "e43eff80d17cf34852dcd92ca5e6986d23a7040f",
+      "licenseSHA256": "a2010f343487d3f7618affe54f789f5487602331c0a8d03f49e9a7c547cf0499",
+      "licenseURL": "https://raw.githubusercontent.com/sogaiu/tree-sitter-clojure/e43eff80d17cf34852dcd92ca5e6986d23a7040f/COPYING.txt",
+      "package": "tree-sitter-clojure",
+      "sourceDeclared": "git+https://github.com/sogaiu/tree-sitter-clojure.git#e43eff80d17cf34852dcd92ca5e6986d23a7040f",
+      "sourceRepository": "https://github.com/sogaiu/tree-sitter-clojure",
+      "sourceRevisionAttested": false,
+      "wasmSHA256": "141a6f67f5688e3bfa4d521999e60c7f9df7a39ee55bdeaa37021f53295853fa"
+    },
+    {
+      "declaredSourceRevision": "3d0173d903e630b6e14d17f1cf79488791379ded",
+      "language": "nix",
+      "license": "MIT",
+      "licenseFile": "nix.LICENSE",
+      "licenseReference": "3d0173d903e630b6e14d17f1cf79488791379ded",
+      "licenseSHA256": "c1b72e50266464ec5118d26200e17bf1f472d142e62ab637e1ffc23986657a78",
+      "licenseURL": "https://raw.githubusercontent.com/nix-community/tree-sitter-nix/3d0173d903e630b6e14d17f1cf79488791379ded/LICENSE",
+      "package": "tree-sitter-nix",
+      "sourceDeclared": "git+https://github.com/nix-community/tree-sitter-nix.git#3d0173d903e630b6e14d17f1cf79488791379ded",
+      "sourceRepository": "https://github.com/nix-community/tree-sitter-nix",
+      "sourceRevisionAttested": false,
+      "wasmSHA256": "cfa2744c4d0cd946024a26ef15e062c91d207c4910f7f1960ca1438e0bbe4ade"
+    },
+    {
+      "language": "lua",
+      "license": "MIT",
+      "licenseFile": "lua.LICENSE",
+      "licenseReference": "@tree-sitter-grammars/tree-sitter-lua@0.4.1",
+      "licenseSHA256": "9a32b02e4c917b1ce6b5e79d8ea81e25cefd7f27d89c7235f2afb262c06cf32e",
+      "licenseURL": "https://registry.npmjs.org/@tree-sitter-grammars/tree-sitter-lua/-/tree-sitter-lua-0.4.1.tgz#package/LICENSE.md",
+      "package": "@tree-sitter-grammars/tree-sitter-lua",
+      "referencePackageIntegrity": "sha512-EwagFaU6ZveVk18/Y8qUhZkkiBKnQ7dSCHbm//TUroLVKy3i1rOYGy/cNHtSkAb1eDvS1HhCLybH2S541Cya/g==",
+      "sourceDeclared": "^0.4.1",
+      "sourceRepository": {
+        "type": "git",
+        "url": "git+https://github.com/tree-sitter-grammars/tree-sitter-lua.git"
+      },
+      "sourceRevisionAttested": false,
+      "wasmSHA256": "699a461097fcee15c6ab0520a7d1e0c3a946f1a038f54c6ac05071f34580a753"
+    },
+    {
+      "declaredSourceRevision": "ce8011a414fdf8091f4e4071752efc376f4afb08",
+      "language": "vue",
+      "license": "MIT",
+      "licenseFile": "vue.LICENSE",
+      "licenseReference": "ce8011a414fdf8091f4e4071752efc376f4afb08",
+      "licenseSHA256": "91ebb180e4e2e34628c45e405584d0faac6863660b69e8139da96290e58c14dd",
+      "licenseURL": "https://raw.githubusercontent.com/tree-sitter-grammars/tree-sitter-vue/ce8011a414fdf8091f4e4071752efc376f4afb08/LICENSE",
+      "package": "tree-sitter-vue",
+      "sourceDeclared": "git+https://github.com/tree-sitter-grammars/tree-sitter-vue.git#ce8011a414fdf8091f4e4071752efc376f4afb08",
+      "sourceRepository": "https://github.com/tree-sitter-grammars/tree-sitter-vue",
+      "sourceRevisionAttested": false,
+      "wasmSHA256": "340222d4678e495bfdbcb50aa0fdb66441f65f71cfdc3ba99cf60ff803b50b22"
+    }
+  ]
+}
