@@ -1286,8 +1286,12 @@ func quotaObservations(provider quota.Provider, value quota.ProviderQuota) []obs
 		} else if window.Authoritative && window.RemainingPercent <= 0 {
 			state, reason = observability.StateBlocked, observability.ReasonQuotaExhausted
 		}
-		remaining := window.RemainingPercent
-		events = append(events, observability.Event{Category: observability.CategoryQuota, Operation: observability.OperationQuotaProbe, State: state, Provider: string(provider), Component: providerComponent(string(provider)), RoutingReason: reason, WindowKind: string(window.Kind), WindowDurationMinutes: window.DurationMinutes, TelemetryState: string(window.TelemetryState()), RemainingPercent: &remaining, ResetsAt: window.ResetsAt})
+		var remaining *float64
+		if window.Available {
+			observed := window.RemainingPercent
+			remaining = &observed
+		}
+		events = append(events, observability.Event{Category: observability.CategoryQuota, Operation: observability.OperationQuotaProbe, State: state, Provider: string(provider), Component: providerComponent(string(provider)), RoutingReason: reason, WindowKind: string(window.Kind), WindowDurationMinutes: window.DurationMinutes, TelemetryState: string(window.TelemetryState()), RemainingPercent: remaining, ResetsAt: window.ResetsAt})
 	}
 	return events
 }
