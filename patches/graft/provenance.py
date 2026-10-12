@@ -7,7 +7,7 @@ import subprocess
 import sys
 payload, repo = map(pathlib.Path, sys.argv[1:3])
 arch, node_sha, flags = sys.argv[3:]
-files = ['scripts/build-managed-graft.sh', 'patches/graft/build.py', 'patches/graft/provenance.py', 'patches/graft/check-runtime.mjs', 'patches/graft/tree-sitter-node26.patch', 'patches/graft/metadata.py', 'patches/graft/graft-runtime']
+files = ['scripts/build-managed-graft.sh', 'patches/graft/build.py', 'patches/graft/provenance.py', 'patches/graft/check-runtime.mjs', 'patches/graft/tree-sitter-node26.patch', 'patches/graft/metadata.py', 'patches/graft/graft-runtime', 'patches/graft/check-abi.py']
 provenance = {
     'managedVersion': '0.21.1-ivoai.1', 'upstreamVersion': '0.21.1',
     'revision': 'fe30ead39d5e6f0c921018d364da2bdbc9d4b3ad',

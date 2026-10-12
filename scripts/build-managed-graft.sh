@@ -14,7 +14,7 @@ case $(uname -m) in
   aarch64) arch=arm64; node_arch=arm64; node_sha=170454fb022f5e9b5f6cc76c25fa32ef5100895be44eb04e92f9780591491bbf; cpu_flags='-march=armv8-a' ;;
   *) echo 'Only native Linux amd64/arm64 builds are supported' >&2; exit 1 ;;
 esac
-for command in bwrap python3 curl tar sha256sum make g++ patch; do command -v "$command" >/dev/null; done
+for command in bwrap python3 curl tar sha256sum make g++ patch readelf; do command -v "$command" >/dev/null; done
 output=${1:-"$repo_root/dist/graft"}
 mkdir -p -- "$output"
 output=$(cd -- "$output" && pwd)
@@ -81,6 +81,7 @@ from build import clean_native_payload
 clean_native_payload(sys.argv[2])
 PY
 "${sandbox[@]}" --ro-bind "$work/payload" /build /node/bin/node /review/check-runtime.mjs
+python3 "$helper/check-abi.py" "$work/payload"
 archive="$output/ivoai-graft_linux_${arch}.tar.gz"
 python3 "$helper/build.py" package "$work/payload" "$archive"
 python3 "$helper/metadata.py" "$work/payload" "$archive"

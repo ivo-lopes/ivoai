@@ -9,7 +9,8 @@ the npm lock SHA-256 is
 The managed artifact identity is `0.21.1-ivoai.1`. No upstream tag is moved.
 
 Run `scripts/build-managed-graft.sh OUTPUT_DIRECTORY` on Linux amd64 or arm64.
-It requires bubblewrap, Python 3, curl, GNU tar/patch, make and a C++20 compiler.
+It requires bubblewrap, Python 3, curl, GNU tar/patch, binutils, make and a C++20 compiler.
+Release builds use the native Debian 12/GCC 12 compatibility toolchain.
 The pinned Node 26.11.1 distribution provides both the runtime and build headers.
 The runtime is an external managed component; it is not duplicated in this tar.
 An amd64 build uses `-march=x86-64 -mtune=generic -mno-avx -mno-avx2`;
@@ -53,7 +54,7 @@ sandbox, and compilation and runtime smoke have no network namespace access.
 
 The tar contains the IVOAI `graft-runtime` version-only executable and `dist/` (including viewer assets and `.scm` queries), runtime
 `node_modules/`, upstream `package.json`, the pruned `package-lock.json`, LICENSE,
-`dependencies.json`, `provenance.json` and `files.json`. Dependency inventory
+`dependencies.json`, `provenance.json`, `abi.json` and `files.json`. Dependency inventory
 includes all locked build/runtime/optional packages and their original SRI and
 license declarations; actual payload files have individual SHA-256 hashes.
 Package license files and grammar node-types JSON remain in their packages.
@@ -63,8 +64,15 @@ archive and dependency SRI values. Tar order, ownership, modes,
 timestamps and gzip header are canonicalized; host compiler and build-script
 hashes are recorded. Repeatability applies to the same recorded toolchain and
 architecture, not arbitrary Linux distributions. libc/libstdc++ compatibility
-must be validated on release targets.
+must be validated on release targets. `check-abi.py` blocks packaging if any
+addon requires GLIBC newer than 2.35, GLIBCXX newer than 3.4.30, CXXABI newer
+than 1.3.13, or a private/non-numeric ABI version. These limits are unconditional;
+a newer host compiler may compile successfully and still fail this release gate.
+The local GCC 14 experiment demonstrated that failure (GLIBCXX 3.4.31 and
+CXXABI 1.3.15). Use Debian 12/GCC 12 on each native architecture for release;
+the build does not silently fall back to incompatible host artifacts.
 
+`python3 scripts/test-graft-abi.py` checks compatibility version boundaries.
 `python3 scripts/test-build-managed-graft.py` tests archive boundaries and
 reproducibility without installing or executing upstream software. The build
 smoke imports the graph library, parses with every native grammar, requires all
