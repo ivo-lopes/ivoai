@@ -133,20 +133,36 @@ func (a *App) prefetchWorkerCode(ctx context.Context, provider *codeintel.Provid
 			return request, errors.New("invalid worker context envelope")
 		}
 	}
-	result, err := provider.Inspect(ctx, query)
+	evidence, err := a.prefetchCodeEvidence(ctx, provider, id, task.ID, request.WorkerID, query)
 	if err != nil {
 		return request, err
 	}
+	envelope["code_evidence"] = evidence
+	body, err := json.Marshal(envelope)
+	if err != nil || len(body) > 32<<10 {
+		return request, errors.New("code prefetch exceeds worker context budget")
+	}
+	request.SharedContextBrief = string(body)
+	return request, nil
+}
+
+// prefetchCodeEvidence is shared by primary and workers, preserving exact
+// restricted artifacts without creating executor grants or loading skills.
+func (a *App) prefetchCodeEvidence(ctx context.Context, provider *codeintel.Provider, id, taskID, workerID string, query core.CodeQuery) (json.RawMessage, error) {
+	result, err := provider.Inspect(ctx, query)
+	if err != nil {
+		return nil, err
+	}
 	if len(result.Text) > 4096 {
-		return request, errors.New("code prefetch exceeded evidence budget")
+		return nil, errors.New("code prefetch exceeded evidence budget")
 	}
 	store, err := workingcontext.NewLocalStore(filepath.Join(a.Store.Paths.CacheDir, "working-context"), workingcontext.LocalOptions{})
 	if err != nil {
-		return request, err
+		return nil, err
 	}
-	ref, err := store.Put(ctx, workingcontext.PutRequest{Kind: workingcontext.ArtifactStdout, MediaType: "text/plain; charset=utf-8", Owner: workingcontext.Ownership{SessionID: id, TaskID: task.ID, WorkerID: request.WorkerID}, Sensitivity: workingcontext.SensitivityRestricted, Truncated: result.Truncated}, strings.NewReader(result.Text))
+	ref, err := store.Put(ctx, workingcontext.PutRequest{Kind: workingcontext.ArtifactStdout, MediaType: "text/plain; charset=utf-8", Owner: workingcontext.Ownership{SessionID: id, TaskID: taskID, WorkerID: workerID}, Sensitivity: workingcontext.SensitivityRestricted, Truncated: result.Truncated}, strings.NewReader(result.Text))
 	if err != nil {
-		return request, err
+		return nil, err
 	}
 	evidence := struct {
 		Text      string                     `json:"text"`
@@ -154,14 +170,5 @@ func (a *App) prefetchWorkerCode(ctx context.Context, provider *codeintel.Provid
 		Fidelity  core.CompressionFidelity   `json:"fidelity"`
 		Untrusted bool                       `json:"untrusted"`
 	}{result.Text, ref, core.CompressionExactRequired, true}
-	envelope["code_evidence"], err = json.Marshal(evidence)
-	if err != nil {
-		return request, err
-	}
-	body, err := json.Marshal(envelope)
-	if err != nil || len(body) > 32<<10 {
-		return request, errors.New("code prefetch exceeds worker context budget")
-	}
-	request.SharedContextBrief = string(body)
-	return request, nil
+	return json.Marshal(evidence)
 }

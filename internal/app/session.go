@@ -423,6 +423,9 @@ func (a *App) OrchestratorServe(ctx context.Context, id string) error {
 		Compressor:            a.workingContextCompressor(cfg, state, runtimeDir),
 	}
 	if value.Coordinator == "native" {
+		server.PreparePrimaryEvidence = func(ctx context.Context, task routing.Task, budget int) (json.RawMessage, error) {
+			return a.preparePrimaryCodeEvidence(ctx, store, id, task, budget, a.CodeIntelligenceProvider)
+		}
 		server.CheckMCPGrants = func(ctx context.Context, tasks []routing.TaskInput) (bool, error) {
 			return a.checkMCPPlan(ctx, cfg, tasks)
 		}
