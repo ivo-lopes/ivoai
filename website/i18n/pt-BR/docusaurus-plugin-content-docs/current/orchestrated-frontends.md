@@ -76,3 +76,38 @@ O aviso do alias aparece uma vez em stderr, nunca em stdout. Se OpenCode falhar,
 o IVOAI não abre uma TUI direta sem gate. Use `ivoai codex` para orquestração
 controlada ou escolha `--direct` explicitamente. Sandbox, Skill Gate, MCP
 deny-by-default e isolamento de purpose permanecem vigentes.
+
+## Eventos operacionais e perfis de automação
+
+O painel OpenCode gerenciado assina o endpoint SSE local autenticado `/events`.
+As observações da versão 1 incluem sequência monotônica por sessão e, quando
+aplicável, identificadores de plano, tarefa, turno e tentativa. São retidos apenas
+metadados sanitizados: 128 observações por sessão. A reconexão retoma pelo cursor;
+lacunas de histórico ou troca de sessão reiniciam explicitamente a visualização.
+Consumidores lentos são limitados e desconectados. Heartbeat e reconexão indicam
+estado real, sem progresso inventado. Notificações do sistema de arquivos observam
+escritas de outros processos IVOAI. A leitura de status utiliza observações de
+quota em cache, sem autenticar provedores em nome do painel. Informações ausentes,
+desatualizadas e com erro permanecem distinguíveis.
+
+Configuração → **Automation Profiles** oferece `economic`, `balanced`, `intensive`,
+`review`, `development`, `research` e `diagnostic`. Cada perfil mostra os valores
+atuais e propostos antes da confirmação. Equivalentes na CLI:
+
+```sh
+ivoai config profile list
+ivoai config profile show
+ivoai config profile preview economic
+ivoai config profile apply economic
+ivoai config profile restore
+```
+
+Os perfis afetam sessões futuras e alteram apenas concorrência, limite de workers,
+escritas paralelas/otimização e pesos de roteamento. Preferências de provedor e
+modelo, permissões, aprovações, autenticação e servidores permanecem intactos.
+São limites máximos: host, quota e DAG aprovado continuam determinando a
+concorrência útil. A regra existente de modelo forte para o primary é preservada.
+Um recibo privado e atômico guarda os valores anteriores permitidos. Reaplicar é
+idempotente; restaurar recusa sobrescrever personalizações posteriores. `show`
+distingue perfis, herança e personalização. Esse rollback restaura configuração,
+não histórico do provedor ou bancos de dados dos servidores.

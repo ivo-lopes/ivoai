@@ -117,3 +117,38 @@ publica uma release no GitHub. O script de empacotamento grava metadados ZIP fix
 para que uma entrada idêntica da skill produza um arquivo idêntico. Não crie uma tag
 em um commit antes que verificações unitárias, de race, vet, cross-build,
 idempotência de instalação, implantação e segurança sejam aprovadas.
+
+## Custo e origem das evidências de validação P1/P2
+
+No backlog de 2026-10-12, use `GOMAXPROCS=2`, `go test -p 1` e `TMPDIR` em disco
+em hosts limitados. Não execute várias suítes completas ou builds do frontend
+simultaneamente. As camadas têm finalidades distintas:
+
+| Camada | Escopo e custo | Acesso a provedores |
+| --- | --- | --- |
+| Go focado | Perfis, propriedade/reparo de hooks, continuidade, replay e status; segundos a dezenas de segundos | Somente fixtures |
+| Node e Python | Streaming limitado, reconexão, teclado e saída consumida; segundos | Nenhum |
+| Go completo / race / vet | Configuração, sessões e ciclo de vida compartilhados; minutos, maior RAM com race | Fixtures; testes reais são opt-in |
+| Scripts OpenCode/Codex | Binários revisados reais e contratos HTTP/TUI; minutos | Provedor local simulado, sem login |
+| `TestLiveNativeAUTOArtifact` | Inferência Codex e continuidade no terminal; minutos e quota da conta | Somente Codex; estado isolado sem componente Claude |
+| Instalação e atualização | HOME/XDG sintéticos, componentes e recuperação de estado | Fixtures locais, sem migração de produção |
+
+O smoke real aceita `IVOAI_NATIVE_SMOKE_CONTINUITY=1` e, com
+`IVOAI_NATIVE_SMOKE_FRONTEND=codex`, `IVOAI_NATIVE_SMOKE_SWITCH=1`. Esta última opção
+verifica interrupção e reabertura do frontend ocioso e troca para OpenCode sem
+mudar o provedor. Isso **não** comprova recuperação de DAG aprovado interrompido.
+Utilize apenas artefatos revisados e verificados por checksum nos overrides
+`IVOAI_NATIVE_SMOKE_CODEX_PATH`/`IVOAI_NATIVE_SMOKE_OPENCODE_PATH`.
+Credenciais e configurações pessoais não são copiadas. Um digest antes/depois
+protege a configuração pessoal do Codex.
+
+A homologação relaciona-se à IVOAI-136 existente; o aceite de capacidades públicas
+segue IVOAI-135/146. Fixtures não substituem homologação com provedor, e rollback
+de executáveis não equivale a rollback de migração de banco.
+
+`IVOAI_NATIVE_SMOKE_RECOVERY=1` habilita separadamente o smoke real de interrupção e
+recuperação de execução aprovada somente leitura. Aguarda checkpoint do host com
+uma tarefa concluída e outra pendente, interrompe apenas o frontend próprio com
+PID verificado, executa `session recover`, exige nova aprovação e verifica integração,
+preservação das tarefas, repositório inalterado e identidade do provedor. Exige Linux
+com pidfd e janela real de interrupção; ausência de evidência falha sem editar checkpoints.

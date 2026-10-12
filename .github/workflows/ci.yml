@@ -43,7 +43,7 @@ jobs:
       - name: Generated CLI reference is current
         run: scripts/generate-cli-reference.sh --check
       - name: Managed TUI semantic goldens (read-only comparison)
-        run: node --test internal/opencodebridge/presentation.test.mjs internal/opencodebridge/keyboard.test.mjs
+        run: node --test internal/opencodebridge/presentation.test.mjs internal/opencodebridge/keyboard.test.mjs internal/opencodebridge/events.test.mjs
       - name: Unit tests
         shell: bash
         run: |
@@ -59,7 +59,9 @@ jobs:
           fi
           exit "$status"
       - name: Non-executing intake and documentation comparison fixtures
-        run: python3 -m unittest discover -s scripts -p 'test_*.py'
+        run: |
+          python3 -m unittest discover -s scripts -p 'test_*.py'
+          python3 scripts/test-smoke-native-auto.py
       - name: Managed OpenCode HTTP and attach integration
         run: scripts/test-managed-opencode.sh
       - name: Native Codex TUI and fail-closed App Server admission

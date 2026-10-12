@@ -12,7 +12,9 @@ ivoai session list --json
 ivoai session show --json <id>
 ivoai session resume <id>
 ivoai session resume <id> --frontend opencode
+ivoai session resume <id> --knowledge-source voicecorp
 ivoai session recover <id>
+ivoai session recover <id> --knowledge-source voicecorp
 ivoai session handoff <id> --to claude --confirm
 ```
 
@@ -22,10 +24,67 @@ open **Session Control → Conversations — Inspect / Resume**. The same domain
 provides inspect, native resume, interrupted-turn recovery, frontend selection,
 explicit provider handoff and safe stop. No native ID needs to be copied manually.
 
+## Organization scope and retained history
+
+Orchestrated conversations carry a versioned organization-scope identity. It
+includes the project directory, enabled configured server identities and
+endpoints, and any explicit `--knowledge-source` restriction. Enabled legacy
+Memory/Context registrations also contribute. An idle composer with no selected
+purpose does not mean the conversation has an empty organization scope. Temporary
+server unavailability does not change that identity; changing configured sources
+or their endpoints can change it.
+
+Resume, frontend switching, native picker discovery and provider mapping lookup
+require the same scope. Supply the original `--knowledge-source` restrictions
+when resuming or recovering a restricted conversation. The conversation menu
+also accepts those selectors. A different scope returns
+`SESSION_KNOWLEDGE_SCOPE_MISMATCH` before reopening the conversation. Historical
+records without a verified scope return `SESSION_KNOWLEDGE_SCOPE_UNVERIFIED`;
+their metadata and native history remain in place.
+
+To retain an existing managed conversation under a reviewed source selection,
+first preview the proposed adoption:
+
+```sh
+ivoai session adopt-scope <id> --knowledge-source voicecorp
+ivoai session adopt-scope <id> --knowledge-source voicecorp --confirm
+```
+
+Omitting the selector uses the enabled configured sources. `--json` exposes the
+same preview or result. **Adoption preserves existing provider-native history,
+including information from the previous organization scope.** It does not erase,
+redact or segregate that history. Start a separate conversation when the previous
+information must not enter the new context.
+
+Applying adoption requires an inactive orchestrated conversation, an existing
+provider-session mapping and a matching identity fingerprint reported by the
+official provider client. Missing, divergent or unavailable account proof blocks
+the change. Preview does not launch the provider or change the binding. The
+conversation menu offers the same preview and requires typing `ADOPT SCOPE` to
+apply it.
+
+Before changing the scope, IVOAI writes a private, immutable metadata backup under
+`sessions/scope-backups/`. The returned path can be used to preview and restore
+the previous binding:
+
+```sh
+ivoai session restore-scope <id> --backup /absolute/path/from-adoption.json
+ivoai session restore-scope <id> --backup /absolute/path/from-adoption.json --confirm
+```
+
+Restoration verifies the backup's location, file type, permissions, digest,
+session identity and current account proof. It saves the current metadata first
+and restores only the scope field: process state, tool grants, provider mappings
+and completed work are not rolled back. Restoring an unverified historical scope
+also restores its resume restriction. The menu requires typing `RESTORE SCOPE`.
+Neither operation copies transcripts or credentials, reconstructs missing native
+history, or imports an unmanaged provider conversation.
+
 ## Native Codex `/resume`
 
 Inside `ivoai codex`, use the official `/resume` picker. It can list, search,
-preview, cancel and select managed conversations in the current project. Selecting
+preview, cancel and select managed conversations in the current project and
+organization scope. Selecting
 a conversation switches the logical IVOAI binding; it does not launch a second
 orchestrator. Unmanaged Codex threads are not silently imported.
 
@@ -47,6 +106,11 @@ into that home. The official executor owns its own provider history and login;
 IVOAI stores opaque mappings and an account-identity fingerprint, not credentials.
 Native previews are transient protocol traffic, not continuity-journal entries.
 The bridge never falls back to an unverified account mapping.
+
+The native frontend receives an isolated `CODEX_HOME`; `SQLITE_HOME` is not
+forwarded from the operator environment. Existing native history directories are
+retained, while managed discovery and resume enforce scope checks. This does not
+establish a cause for historical first-run resets: that diagnosis remains unknown.
 
 New turns use current model/effort selection and re-evaluate knowledge routing.
 Previously discussed information remains part of the provider-native conversation;
@@ -105,6 +169,9 @@ and promoted without resetting configuration; existing profiles, auth ownership,
 MCP registry, Skills/Ponytail and policies are unchanged. Rollback binaries ignore
 the additive private checkpoint directory. They cannot provide new continuity
 operations, but reapplying v0.10.3 restores access to retained state.
+Versioned organization-scope validation is additive. Older readers can still read
+the session metadata; a legacy scope may require explicit verified adoption
+before it can be resumed by a version enforcing the newer boundary.
 
 ## Limits and troubleshooting
 

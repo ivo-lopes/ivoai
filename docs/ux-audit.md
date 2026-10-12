@@ -94,7 +94,7 @@ launch.codex launch.claude launch.opencode
 memory.status memory.configure
 session.direct.codex session.direct.claude session.direct.opencode session.orchestrated.codex session.orchestrated.claude
 session.list session.monitor session.stop
-session.continuity
+session.continuity session.scope.adopt session.scope.restore
 project.status project.init
 config.show config.headroom config.memory config.ruflo config.auto config.auto-planner config.auto-failover config.auto-checkpoint
 config.auto-strategy config.auto-parallel config.auto-bootstrap config.auto-escalation config.session-mode config.primary config.reviewer config.workers
@@ -116,3 +116,31 @@ accent. Semantic success, warning and error colors have textual markers. Light a
 dark palettes are authored independently with high-contrast text, borders and diff
 colors. IVOAI lettering uses the official `home_logo` slot; the upstream OpenCode
 binary, license, notices and provenance are not patched or hidden.
+
+## Backlog P1/P2 capability acceptance (2026-10-12)
+
+Every changed public capability must reuse its runtime contract, expose a useful
+managed interface, and record its validation. `TestUXAuditCoversEveryPublicMenuAction`
+checks the menu inventory in CI; canonical help is checked against CLI structure.
+The pull request template requires evidence and a justification for exceptions.
+
+| Action / capability | Managed interface | Shared authority / boundaries |
+| --- | --- | --- |
+| `config.auto-profiles`, `profile.show`, `profile.restore` | Configuration → Automation Profiles; preview, exact APPLY/RESTORE | Config Store allowlisted atomic change and rollback receipt; effective inherited/custom settings shown; affects future sessions |
+| `doctor.repair-hooks` | Dashboard diagnostics, explicit repair | Memory receipt ownership; diagnostic preview through doctor; foreign hooks never adopted by name |
+| Operational telemetry | OpenCode `/ivoai`, activity panel, live status | Versioned session observations and authenticated SSE; bounded replay, reconnect gap and stale feedback; no provider probes per event |
+| Session scope adoption/restoration | Session Control → conversation actions | Account-verified explicit metadata transition with private backup; retained native history remains visible to the resumed provider |
+| Raw telemetry transport and scope backup paths | CLI/bridge administrative interface | Not a second event editor or arbitrary state import; TUI uses the same session service |
+
+### Codex experience parity
+
+| Capability | Existing behavior | P1/P2 delivery / validation boundary |
+| --- | --- | --- |
+| Model and reasoning | Native model picker and capability-discovered variants | Preserved; display requested/effective values from session ledger |
+| History and resume | Native picker and IVOAI mappings | Scope-aware lookup; explicit adoption of legacy scope with backup; synthetic and opt-in live continuity tests |
+| Diffs, clipboard, keyboard navigation | Managed OpenCode native controls | Preserved; existing semantic/keyboard and native integration tests remain required |
+| Approvals and cancellation | IVOAI approval contract and native cancel | Observed task/approval lifecycle events; policy remains in IVOAI |
+| Tools and workers | Existing task ledger and tool streaming | Correlated events, DAG dependencies and real duration, bounded activity display |
+| Context and quota | Provider observations; partial availability | Cached observations only in UI reads; unavailable/stale data never interpreted as zero |
+| Profiles | Manual advanced settings | Seven allowlisted presets; preview, explicit TUI confirmation, restore and customization detection |
+| Claude inference | Existing supported adapter | Contract fixtures only in this round; real validation requires an available subscription |

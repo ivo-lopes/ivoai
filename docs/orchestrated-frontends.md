@@ -82,3 +82,37 @@ OpenCode frontend cannot start, IVOAI fails clearly instead of launching an unga
 direct TUI. Choose `ivoai codex` for controlled orchestration, or `--direct`
 explicitly when orchestration is not wanted. Existing executor sandbox, Skill Gate,
 MCP deny-by-default and purpose isolation still apply in orchestrated mode.
+
+## Operational events and automation profiles
+
+The managed OpenCode panel subscribes to the authenticated local `/events` SSE
+endpoint. Version 1 observations carry a session-local monotonic sequence and,
+when applicable, plan, task, turn and attempt identifiers. Only sanitized metadata
+is retained (128 observations per session). Reconnect resumes from a cursor;
+a history gap or session switch explicitly resets the view. Slow consumers are
+bounded and disconnected, with heartbeat/reconnect feedback instead of invented
+progress. Filesystem notifications observe writes from other IVOAI processes.
+Status reads cached quota observations; they never authenticate a provider on
+behalf of the panel. Missing, stale and failed observations remain distinguishable.
+
+Configuration → **Automation Profiles** exposes `economic`, `balanced`, `intensive`,
+`review`, `development`, `research` and `diagnostic`. Each shows current and proposed
+settings before confirmation. CLI equivalents:
+
+```sh
+ivoai config profile list
+ivoai config profile show
+ivoai config profile preview economic
+ivoai config profile apply economic
+ivoai config profile restore
+```
+
+Presets affect future sessions and change only concurrency, worker cap, parallel
+writes/optimization and routing weights. Provider/model preferences, permissions,
+approvals, authentication and server selection remain unchanged. They set upper
+bounds: host/quota checks and the approved DAG still determine useful concurrency.
+The primary's existing strong-model rule is preserved. An atomic, private receipt
+stores the previous allowlisted values. Reapplying is idempotent; restoration
+refuses to overwrite later customization. `show` distinguishes preset values from
+inherited or customized settings. This rollback concerns configuration only, not
+provider history or server databases.
