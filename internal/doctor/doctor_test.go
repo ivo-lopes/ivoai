@@ -208,8 +208,8 @@ func TestHooksInstalledRequiresMaterializedAssets(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(dir, "session-start.sh"), []byte("#!/bin/sh\n"), 0o700); err != nil {
 		t.Fatal(err)
 	}
-	if !hooksInstalled(dir) {
-		t.Fatal("hook asset was not detected")
+	if hooksInstalled(dir) {
+		t.Fatal("unregistered asset was incorrectly reported as healthy")
 	}
 }
 
