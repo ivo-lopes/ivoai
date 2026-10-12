@@ -36,7 +36,7 @@ func TestLiveP0MCPReference(t *testing.T) {
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 90*time.Second)
 	defer cancel()
-	knowledge, err := a.prepareSessionKnowledge(ctx, cfg, nil, "codex", t.TempDir(), os.Environ(), nil)
+	knowledge, err := a.prepareSessionKnowledge(ctx, cfg, nil, "codex", t.TempDir(), t.TempDir(), os.Environ(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}

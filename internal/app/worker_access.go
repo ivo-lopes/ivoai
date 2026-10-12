@@ -8,8 +8,10 @@ import (
 	"sort"
 	"sync"
 
+	"github.com/ivo-lopes/ivoai/internal/codeintel"
 	"github.com/ivo-lopes/ivoai/internal/config"
 	"github.com/ivo-lopes/ivoai/internal/connections"
+	"github.com/ivo-lopes/ivoai/internal/core"
 	"github.com/ivo-lopes/ivoai/internal/externalmcp"
 	"github.com/ivo-lopes/ivoai/internal/orchestration"
 	"github.com/ivo-lopes/ivoai/internal/policy"
@@ -101,6 +103,14 @@ func (a *App) prepareWorkerAccess(ctx context.Context, cfg config.Config, store 
 			return request, errors.New("MCP_DENIED: duplicate worker MCP")
 		}
 		seen[name] = true
+		if name == nativeCodeMCP {
+			for _, tool := range task.AllowedMCPTools[name] {
+				if !nativeCodeTool(tool) {
+					return request, errors.New("MCP_DENIED: unknown native code tool")
+				}
+			}
+			continue // Native filesystem capability is projected only after SkillGate.
+		}
 		target := externalmcp.Target{Name: name, Restricted: true}
 		if name == "ivoai-memory" || name == "ivoai-context" {
 			if len(selection.Groups) == 0 {
@@ -212,6 +222,35 @@ func (a *App) prepareWorkerAccess(ctx context.Context, cfg config.Config, store 
 	}
 	request.SkillInstructions = skillResult.Instructions
 	request.SelectedSkills = append([]string(nil), skillResult.Selected...)
+	observeCode := func(result core.CodeResult, inspectErr error) {
+		event := codeintel.Observation(result, inspectErr)
+		event.SessionID, event.TaskID, event.WorkerID = id, task.ID, request.WorkerID
+		_, saveErr := store.Update(id, func(value *session.Session) error { return session.AppendObservation(value, event) })
+		if saveErr != nil {
+			a.warn("code intelligence observation unavailable", saveErr)
+		}
+	}
+	// The caller has admitted this task; use its exact worktree and retained
+	// organization identity, never task-authored paths or scopes.
+	provider, providerErr := a.CodeIntelligenceProvider(ctx, request.Directory, current.KnowledgeScopeID)
+	if providerErr == nil {
+		provider.Observe = observeCode
+		allowed := codeintel.ToolNames()
+		if exact, ok := task.AllowedMCPTools[nativeCodeMCP]; ok {
+			allowed = append([]string(nil), exact...)
+		}
+		targets = append(targets, externalmcp.Target{Name: nativeCodeMCP, Local: provider.Handler(), Restricted: true, AllowedTools: allowed})
+		if prefetched, prefetchErr := a.prefetchWorkerCode(ctx, provider, id, task, request); prefetchErr == nil {
+			request = prefetched
+		} else {
+			observeCode(core.CodeResult{}, prefetchErr)
+		}
+	} else {
+		observeCode(core.CodeResult{}, providerErr)
+		if seen[nativeCodeMCP] {
+			return request, errors.New("MCP_DENIED: managed code runtime unavailable")
+		}
+	}
 	grants := []workers.MCPGrant{}
 	if len(targets) > 0 {
 		// An approved plan grants only these exact tools. Full permission never

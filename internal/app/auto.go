@@ -589,7 +589,7 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 	originalConfig := cfg
 	intakeConfig := cfg
 	intakeConfig.Orchestration.Auto.KnowledgeRouting = "explicit-only"
-	knowledge, err := a.prepareAutoPromptKnowledge(ctx, intakeConfig, nil, "", current, runtimeDir, func(event observability.Event) {
+	knowledge, err := a.prepareAutoPromptKnowledge(ctx, intakeConfig, nil, "", current, runtimeDir, cwd, func(event observability.Event) {
 		_, _ = store.Update(currentID(), func(current *session.Session) error { return session.AppendObservation(current, event) })
 	})
 	if err != nil {

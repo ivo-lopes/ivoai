@@ -165,7 +165,7 @@ func (a *App) SessionStartWithKnowledge(ctx context.Context, executor string, mo
 		discardFailedStart()
 		return err
 	}
-	knowledge, err := a.prepareSessionKnowledge(ctx, cfg, selectors, executor, runtimeDir, os.Environ(), func(event observability.Event) {
+	knowledge, err := a.prepareSessionKnowledge(ctx, cfg, selectors, executor, runtimeDir, cwd, os.Environ(), func(event observability.Event) {
 		_, _ = store.Update(id, func(current *session.Session) error { return session.AppendObservation(current, event) })
 	})
 	if err != nil {

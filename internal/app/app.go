@@ -941,7 +941,7 @@ func (a *App) LaunchWithKnowledge(ctx context.Context, target string, args, sele
 		return err
 	}
 	defer os.RemoveAll(runtimeDir)
-	knowledge, err := a.prepareSessionKnowledge(ctx, cfg, selectors, target, runtimeDir, os.Environ(), nil)
+	knowledge, err := a.prepareSessionKnowledge(ctx, cfg, selectors, target, runtimeDir, cwd, os.Environ(), nil)
 	if err != nil {
 		return err
 	}

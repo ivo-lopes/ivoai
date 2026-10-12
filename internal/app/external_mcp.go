@@ -11,8 +11,10 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/ivo-lopes/ivoai/internal/codeintel"
 	"github.com/ivo-lopes/ivoai/internal/config"
 	"github.com/ivo-lopes/ivoai/internal/connections"
+	"github.com/ivo-lopes/ivoai/internal/core"
 	"github.com/ivo-lopes/ivoai/internal/externalmcp"
 	"github.com/ivo-lopes/ivoai/internal/observability"
 	"github.com/ivo-lopes/ivoai/internal/platform"
@@ -21,15 +23,28 @@ import (
 
 const externalMCPTokenEnvironment = "IVOAI_EXTERNAL_MCP_SESSION_TOKEN"
 
-func (a *App) prepareSessionKnowledge(ctx context.Context, cfg config.Config, selectors []string, executor, runtimeDir string, environment []string, observe func(observability.Event)) (sessionKnowledge, error) {
-	return a.prepareSessionKnowledgeWithApprovals(ctx, cfg, selectors, executor, runtimeDir, environment, observe, false)
+func (a *App) prepareSessionKnowledge(ctx context.Context, cfg config.Config, selectors []string, executor, runtimeDir, cwd string, environment []string, observe func(observability.Event)) (sessionKnowledge, error) {
+	return a.prepareSessionKnowledgeWithApprovals(ctx, cfg, selectors, executor, runtimeDir, cwd, environment, observe, false)
 }
 
-func (a *App) prepareSessionKnowledgeWithApprovals(ctx context.Context, cfg config.Config, selectors []string, executor, runtimeDir string, environment []string, observe func(observability.Event), managed bool) (sessionKnowledge, error) {
-	return a.prepareSessionKnowledgeSelection(ctx, cfg, selectors, nil, executor, runtimeDir, environment, observe, managed)
+func (a *App) prepareSessionKnowledgeWithApprovals(ctx context.Context, cfg config.Config, selectors []string, executor, runtimeDir, cwd string, environment []string, observe func(observability.Event), managed bool) (sessionKnowledge, error) {
+	scope, err := conversationScopeID(cwd, cfg, selectors)
+	if err != nil {
+		return sessionKnowledge{}, err
+	}
+	return a.prepareSessionKnowledgeSelection(ctx, cfg, selectors, nil, executor, runtimeDir, cwd, scope, environment, observe, managed)
 }
 
-func (a *App) prepareSessionKnowledgeSelection(ctx context.Context, cfg config.Config, selectors []string, selection *serverpool.Selection, executor, runtimeDir string, environment []string, observe func(observability.Event), managed bool) (sessionKnowledge, error) {
+func (a *App) prepareSessionKnowledgeSelection(ctx context.Context, cfg config.Config, selectors []string, selection *serverpool.Selection, executor, runtimeDir, cwd, scope string, environment []string, observe func(observability.Event), managed bool) (sessionKnowledge, error) {
+	// Never inherit an endpoint under the native name from persisted or previous
+	// process configuration. Only the verified provider below may project it.
+	serversWithoutNative := make(map[string]config.MCPServer, len(cfg.MCP.Servers))
+	for name, entry := range cfg.MCP.Servers {
+		if name != nativeCodeMCP || entry.Kind == "external" {
+			serversWithoutNative[name] = entry
+		}
+	}
+	cfg.MCP.Servers = serversWithoutNative
 	var result sessionKnowledge
 	var err error
 	if selection == nil {
@@ -41,9 +56,7 @@ func (a *App) prepareSessionKnowledgeSelection(ctx context.Context, cfg config.C
 		return result, err
 	}
 	names := externalMCPNames(cfg)
-	if len(names) == 0 {
-		return result, nil
-	}
+
 	registry := connections.Registry{Store: a.Store}
 	targets := []externalmcp.Target{}
 	for _, name := range names {
@@ -75,6 +88,18 @@ func (a *App) prepareSessionKnowledgeSelection(ctx context.Context, cfg config.C
 		}
 		targets = append(targets, target)
 	}
+	// Capture configured organization scope before projecting ephemeral endpoints.
+	if provider, providerErr := a.CodeIntelligenceProvider(ctx, cwd, scope); providerErr == nil {
+		if observe != nil {
+			provider.Observe = func(result core.CodeResult, err error) { observe(codeintel.Observation(result, err)) }
+		}
+		targets = append(targets, externalmcp.Target{Name: nativeCodeMCP, Local: provider.Handler(), Restricted: true, AllowedTools: codeintel.ToolNames()})
+	} else if observe != nil {
+		observe(codeintel.Observation(core.CodeResult{}, providerErr))
+	}
+	if len(targets) == 0 {
+		return result, nil
+	}
 	mode := cfg.OpenCode.ResolvedPermissionMode()
 	if !managed {
 		mode = "full"
@@ -95,17 +120,28 @@ func (a *App) prepareSessionKnowledgeSelection(ctx context.Context, cfg config.C
 		servers[name] = entry
 	}
 	result.config.MCP.Servers = servers
-	for i, name := range names {
+	for i, target := range targets {
+		name := target.Name
 		entry := cfg.MCP.Servers[name]
+		if name == nativeCodeMCP {
+			entry = config.MCPServer{Enabled: true, Kind: "native"}
+		}
 		entry.URL = gateway.URL(i)
 		entry.HeaderEnv = map[string]string{"Authorization": externalMCPTokenEnvironment}
-		entry.SessionApproved = managed || cfg.OpenCode.ResolvedPermissionMode() == "full"
+		entry.SessionApproved = managed || name == nativeCodeMCP || cfg.OpenCode.ResolvedPermissionMode() == "full"
 		result.config.MCP.Servers[name] = entry
 	}
 	args, err := processLocalExternalMCPArgs(executor, runtimeDir, result.config)
 	if err != nil {
 		result.close()
 		return sessionKnowledge{}, err
+	}
+	if executor == "opencode" {
+		result.environment, err = nativeCodeEnvironment(result.environment, result.config)
+		if err != nil {
+			result.close()
+			return sessionKnowledge{}, err
+		}
 	}
 	result.args = append(result.args, args...)
 	return result, nil
@@ -126,7 +162,7 @@ func processLocalExternalMCPArgs(executor, runtimeDir string, cfg config.Config)
 	args := []string{}
 	claude := map[string]any{}
 	codexNames := map[string]bool{}
-	for _, name := range externalMCPNames(cfg) {
+	for _, name := range processLocalMCPNames(cfg) {
 		entry := cfg.MCP.Servers[name]
 		if entry.HeaderEnv["Authorization"] != externalMCPTokenEnvironment {
 			continue

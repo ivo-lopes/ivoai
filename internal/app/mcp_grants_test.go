@@ -111,7 +111,7 @@ func TestDirectRegistryProjectionDeniesWriteAndUnknownEvenInFull(t *testing.T) {
 	cfg, _ := a.Store.Load()
 	cfg.OpenCode.PermissionMode = "full"
 	for _, executor := range []string{"codex", "claude", "opencode"} {
-		k, err := a.prepareSessionKnowledge(context.Background(), cfg, nil, executor, t.TempDir(), nil, nil)
+		k, err := a.prepareSessionKnowledge(context.Background(), cfg, nil, executor, t.TempDir(), t.TempDir(), nil, nil)
 		if err != nil {
 			t.Fatal(err)
 		}

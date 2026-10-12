@@ -108,7 +108,7 @@ func validMCPName(name string) bool {
 
 func IsManagedMCPName(name string) bool {
 	switch name {
-	case "ivoai-memory", "ivoai-context", "ivoai-orchestrator":
+	case "ivoai-memory", "ivoai-context", "ivoai-orchestrator", "ivoai-code":
 		return true
 	}
 	return false

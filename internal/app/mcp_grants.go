@@ -31,6 +31,13 @@ func (a *App) checkMCPPlan(ctx context.Context, cfg config.Config, tasks []routi
 		}
 		for name, tools := range task.AllowedMCPTools {
 			if connections.IsManagedMCPName(name) {
+				if name == nativeCodeMCP {
+					for _, tool := range tools {
+						if !nativeCodeTool(tool) {
+							return false, errors.New("MCP_DENIED: unknown native code tool")
+						}
+					}
+				}
 				if name == "ivoai-orchestrator" {
 					return false, errors.New("MCP_DENIED: workers cannot receive orchestration authority")
 				}
@@ -107,6 +114,9 @@ func primaryMCPGrant(value session.Session, cfg config.Config, server, tool stri
 		}
 		if !ready {
 			continue
+		}
+		if server == nativeCodeMCP && nativeCodeTool(tool) {
+			return true, approved
 		}
 		for _, allowed := range task.AllowedMCPTools[server] {
 			if allowed == tool {

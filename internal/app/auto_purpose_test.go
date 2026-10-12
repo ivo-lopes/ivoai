@@ -55,7 +55,7 @@ func TestAutoPurposeRoutingDoesNotQueryIrrelevantInstitution(t *testing.T) {
 		for _, count := range counts {
 			count.Store(0)
 		}
-		k, err := a.prepareAutoPromptKnowledge(context.Background(), cfg, tc.explicit, tc.prompt, "codex", t.TempDir(), nil)
+		k, err := a.prepareAutoPromptKnowledge(context.Background(), cfg, tc.explicit, tc.prompt, "codex", t.TempDir(), t.TempDir(), nil)
 		if err != nil {
 			t.Fatal(err)
 		}

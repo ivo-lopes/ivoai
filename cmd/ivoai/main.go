@@ -11,6 +11,7 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/agents"
 	"github.com/ivo-lopes/ivoai/internal/app"
 	"github.com/ivo-lopes/ivoai/internal/cli"
+	"github.com/ivo-lopes/ivoai/internal/codeintel"
 	"github.com/ivo-lopes/ivoai/internal/servercmd"
 	"github.com/ivo-lopes/ivoai/internal/terminalui"
 )
@@ -18,6 +19,13 @@ import (
 var version = "dev"
 
 func main() {
+	if len(os.Args) > 1 && os.Args[1] == "_code-sandbox" {
+		if err := codeintel.SandboxHelper(os.Args[2:]); err != nil {
+			fmt.Fprintln(os.Stderr, "ivoai: code sandbox unavailable")
+			os.Exit(1)
+		}
+		return
+	}
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	cli.RegisterServerRunner(servercmd.New(version))
