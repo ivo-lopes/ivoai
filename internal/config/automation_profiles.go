@@ -95,39 +95,35 @@ func (s *Store) ApplyAutomationProfile(id string, expected *AutomationValues) er
 	if err != nil {
 		return err
 	}
-	c, err := s.Load()
-	if err != nil {
-		return err
-	}
-	a := &c.Orchestration.Auto
-	current := AutomationValuesOf(*a)
-	if expected != nil && !reflect.DeepEqual(current, *expected) {
-		return errors.New("automation settings changed after preview; preview again")
-	}
-	if a.AutomationProfile.Name == id && reflect.DeepEqual(current, p.Values) {
+	return s.updateAutomationConfig(func(c *Config) error {
+		a := &c.Orchestration.Auto
+		current := AutomationValuesOf(*a)
+		if expected != nil && !reflect.DeepEqual(current, *expected) {
+			return errors.New("automation settings changed after preview; preview again")
+		}
+		if a.AutomationProfile.Name == id && reflect.DeepEqual(current, p.Values) {
+			return nil
+		}
+		a.AutomationProfile = AutomationProfileState{Name: id, PreviousName: a.AutomationProfile.Name, Previous: &current, Applied: &p.Values}
+		p.Values.apply(a)
 		return nil
-	}
-	a.AutomationProfile = AutomationProfileState{Name: id, PreviousName: a.AutomationProfile.Name, Previous: &current, Applied: &p.Values}
-	p.Values.apply(a)
-	return s.Save(c)
+	})
 }
 
 func (s *Store) RestoreAutomationProfile() error {
-	c, err := s.Load()
-	if err != nil {
-		return err
-	}
-	a := &c.Orchestration.Auto
-	state := a.AutomationProfile
-	if state.Previous == nil {
+	return s.updateAutomationConfig(func(c *Config) error {
+		a := &c.Orchestration.Auto
+		state := a.AutomationProfile
+		if state.Previous == nil {
+			return nil
+		}
+		if state.Applied == nil || !reflect.DeepEqual(AutomationValuesOf(*a), *state.Applied) {
+			return errors.New("automation settings changed since apply; preserve custom values and review configuration")
+		}
+		state.Previous.apply(a)
+		a.AutomationProfile = AutomationProfileState{Name: state.PreviousName}
 		return nil
-	}
-	if state.Applied == nil || !reflect.DeepEqual(AutomationValuesOf(*a), *state.Applied) {
-		return errors.New("automation settings changed since apply; preserve custom values and review configuration")
-	}
-	state.Previous.apply(a)
-	a.AutomationProfile = AutomationProfileState{Name: state.PreviousName}
-	return s.Save(c)
+	})
 }
 
 func validateAutomationProfile(value OrchestrationConfig) error {

@@ -1,11 +1,85 @@
 package config
 
 import (
+	"bytes"
 	"os"
 	"reflect"
 	"strings"
 	"testing"
 )
+
+func TestAutomationProfileRejectsConcurrentExternalConfigurationEdit(t *testing.T) {
+	store := NewStore(testPaths(t.TempDir()))
+	if err := store.Save(Default()); err != nil {
+		t.Fatal(err)
+	}
+	var external []byte
+	err := store.updateAutomationConfig(func(c *Config) error {
+		// An editor outside IVOAI changes policy while a profile is prepared.
+		body, err := os.ReadFile(store.Paths.Config)
+		if err != nil {
+			return err
+		}
+		external = bytes.Replace(body, []byte("provider_preference = 'auto'"), []byte("provider_preference = 'claude'"), 1)
+		if bytes.Equal(body, external) {
+			t.Fatal("fixture did not edit provider")
+		}
+		if err := os.WriteFile(store.Paths.Config, external, 0600); err != nil {
+			return err
+		}
+		profile, _ := FindAutomationProfile("economic")
+		profile.Values.apply(&c.Orchestration.Auto)
+		return nil
+	})
+	if err == nil {
+		t.Fatal("concurrent edit overwritten by automation profile")
+	}
+	got, err := os.ReadFile(store.Paths.Config)
+	if err != nil || !bytes.Equal(got, external) {
+		t.Fatal("external configuration not preserved", err)
+	}
+}
+
+func TestAutomationProfileRestoreWithoutReceiptDoesNotCreateConfiguration(t *testing.T) {
+	store := NewStore(testPaths(t.TempDir()))
+	if err := store.RestoreAutomationProfile(); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(store.Paths.Config); !os.IsNotExist(err) {
+		t.Fatal("empty rollback created configuration", err)
+	}
+}
+
+func TestAutomationProfileSerializesManagedWrites(t *testing.T) {
+	store := NewStore(testPaths(t.TempDir()))
+	if err := store.Save(Default()); err != nil {
+		t.Fatal(err)
+	}
+	err := store.updateAutomationConfig(func(c *Config) error {
+		other := NewStore(store.Paths)
+		external := Default()
+		external.Orchestration.Auto.ProviderPreference = "claude"
+		if err := other.Save(external); err == nil {
+			t.Fatal("concurrent managed write not excluded")
+		}
+		if err := other.ApplyAutomationProfile("balanced", nil); err == nil {
+			t.Fatal("concurrent profile not excluded")
+		}
+		profile, _ := FindAutomationProfile("economic")
+		profile.Values.apply(&c.Orchestration.Auto)
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := store.Load()
+	if err != nil || got.Orchestration.Auto.ProviderPreference != "auto" {
+		t.Fatal("unexpected provider change", err)
+	}
+	if err := store.Save(got); err != nil {
+		t.Fatal("lock not released", err)
+	}
+}
 
 func TestAutomationProfilesPreservePolicyAndValidateRollback(t *testing.T) {
 	for _, p := range AutomationProfiles() {

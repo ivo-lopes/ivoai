@@ -596,6 +596,15 @@ func defaultAutoConfig() AutoConfig {
 }
 
 func (s *Store) Save(c Config) error {
+	unlock, err := s.lockConfig()
+	if err != nil {
+		return err
+	}
+	defer unlock()
+	return s.saveConfig(c, nil)
+}
+
+func (s *Store) saveConfig(c Config, checkUnchanged func() error) error {
 	if err := ValidateSkills(c.Skills); err != nil {
 		return err
 	}
@@ -629,6 +638,11 @@ func (s *Store) Save(c Config) error {
 	}
 	if len(b) > 4<<20 {
 		return errors.New("configuration exceeds the bounded storage limit")
+	}
+	if checkUnchanged != nil {
+		if err := checkUnchanged(); err != nil {
+			return err
+		}
 	}
 	return platform.AtomicWritePrivate(b, s.Paths.Config)
 }
