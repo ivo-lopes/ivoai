@@ -164,6 +164,22 @@ func TestWorkingContextPreservesFailedAndCancelledWorkerEvidence(t *testing.T) {
 			if err != nil || len(updated.Workers) != 1 || len(updated.Workers[0].ResultRefs) != 1 {
 				t.Fatalf("updated=%+v err=%v", updated, err)
 			}
+			expectedEvent := "failed"
+			if fixture.name == "cancelled" {
+				expectedEvent = "cancelled"
+			}
+			foundEvent := false
+			for _, event := range updated.Observability {
+				if event.WorkerID == updated.Workers[0].ID && string(event.Operation) == "worker.lifecycle" {
+					foundEvent = true
+					if string(event.State) != expectedEvent {
+						t.Fatalf("worker outcome event=%s want=%s", event.State, expectedEvent)
+					}
+				}
+			}
+			if !foundEvent {
+				t.Fatal("missing worker lifecycle event")
+			}
 			server.mu.Lock()
 			projected := server.results[updated.Workers[0].ID].Result
 			server.mu.Unlock()

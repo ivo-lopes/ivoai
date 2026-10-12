@@ -5,6 +5,7 @@ import "time"
 // TurnAttempt is bounded metadata, independent of the frontend process exit
 // and of whether the executor managed to create a native thread.
 type TurnAttempt struct {
+	TurnID            string          `json:"turn_id,omitempty"`
 	ID                string          `json:"attempt_id"`
 	SessionID         string          `json:"ivoai_session_id,omitempty"`
 	Frontend          string          `json:"frontend"`

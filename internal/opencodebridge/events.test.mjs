@@ -1,0 +1,41 @@
+import {test} from 'node:test'
+import assert from 'node:assert/strict'
+import {readOperationalStream,mergeActivity,createStreamWatchdog} from './assets/events.mjs'
+import {panel} from './assets/presentation.mjs'
+
+test('fragmented replay stream resumes without duplicates and resets across sessions',async()=>{
+ const frame={replay:{schema_version:1,session_id:'s',latest_sequence:2,gap:false,events:[{sequence:1,operation:'worker.lifecycle',state:'running'},{sequence:2,operation:'worker.lifecycle',state:'completed'}]},status:{session_id:'s'}}
+ const bytes=new TextEncoder().encode('id: 2\nevent: operational\ndata: '+JSON.stringify(frame)+'\n\n')
+ const stream=new ReadableStream({start(c){for(let i=0;i<bytes.length;i+=7)c.enqueue(bytes.slice(i,i+7));c.close()}})
+ const frames=[];await readOperationalStream(stream,f=>frames.push(f));assert.equal(frames.length,1)
+ let state=mergeActivity({},frames[0]);state=mergeActivity(state,frames[0]);assert.equal(state.activity.length,2)
+ state=mergeActivity(state,{replay:{...frame.replay,session_id:'new',events:[],gap:true},status:{session_id:'new'}})
+ assert.equal(state.activity.length,0);assert.equal(state.activity_gap,true)
+})
+test('oversized and unknown-version streams fail boundedly',async()=>{
+ for(const raw of ['x'.repeat(600000), 'event: operational\ndata: '+JSON.stringify({replay:{schema_version:9},status:{}})+'\n\n']){
+  const stream=new ReadableStream({start(c){c.enqueue(new TextEncoder().encode(raw));c.close()}})
+  await assert.rejects(readOperationalStream(stream,()=>{}))
+ }
+})
+test('console presents actual dependency, duration and canonical recent activity',()=>{
+ const rows=panel({workers:[{id:'w',task_id:'t',dependencies:['prepare'],duration_ms:1500}],activity_gap:true,activity:[{sequence:2,operation:'worker.lifecycle',state:'failed',task_id:'t',routing_reason:'validation_failed'}]})
+ const text=rows.map(r=>r.text).join('\n');assert.match(text,/prepare/);assert.match(text,/1.5s/);assert.match(text,/validation_failed/);assert.match(text,/history.*gap/i)
+})
+
+test('phase progress distinguishes integration and synthesis without payload text',()=>{
+ const text=panel({activity:[{sequence:1,operation:'orchestration.phase',phase:'integration',state:'running'}]}).map(x=>x.text).join('\n')
+ assert.match(text,/integration/)
+})
+
+
+test('heartbeat watchdog bounds initial connection and stalled streams with injected clock',()=>{
+ let now=0, next=0, failures=0;const timers=new Map()
+ const clock={setTimeout(fn,delay){const id=++next;timers.set(id,{fn,at:now+delay});return id},clearTimeout(id){timers.delete(id)}}
+ const advance=ms=>{now+=ms;for(const [id,timer] of [...timers])if(timer.at<=now){timers.delete(id);timer.fn()}}
+ const initial=createStreamWatchdog(()=>failures++,clock)
+ advance(4999);assert.equal(failures,0);advance(1);assert.equal(failures,1);initial.dispose()
+ const active=createStreamWatchdog(()=>failures++,clock);active.touch()
+ advance(44000);assert.equal(failures,1);active.touch();advance(44000);assert.equal(failures,1);advance(1000);assert.equal(failures,2)
+ const disposed=createStreamWatchdog(()=>failures++,clock);disposed.dispose();advance(60000);assert.equal(failures,2)
+})

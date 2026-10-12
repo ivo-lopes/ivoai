@@ -33,6 +33,9 @@ var tuiPlugin []byte
 //go:embed assets/presentation.mjs
 var tuiPresentation []byte
 
+//go:embed assets/events.mjs
+var tuiEvents []byte
+
 //go:embed assets/keyboard.mjs
 var tuiKeyboard []byte
 
@@ -283,7 +286,7 @@ func writeManagedAssets(options ManagedOptions) (managedPaths, error) {
 	serverPath := filepath.Join(assets, "server-plugin.mjs")
 	tuiPath := filepath.Join(assets, "tui-plugin.tsx")
 	instructionsPath := filepath.Join(assets, "instructions.md")
-	for path, body := range map[string][]byte{serverPath: serverPlugin, tuiPath: tuiPlugin, filepath.Join(assets, "presentation.mjs"): tuiPresentation, filepath.Join(assets, "keyboard.mjs"): tuiKeyboard, paths.theme: ivoaiTheme, instructionsPath: []byte(options.Instructions)} {
+	for path, body := range map[string][]byte{serverPath: serverPlugin, tuiPath: tuiPlugin, filepath.Join(assets, "presentation.mjs"): tuiPresentation, filepath.Join(assets, "events.mjs"): tuiEvents, filepath.Join(assets, "keyboard.mjs"): tuiKeyboard, paths.theme: ivoaiTheme, instructionsPath: []byte(options.Instructions)} {
 		if err := platform.AtomicWritePrivate(body, path); err != nil {
 			return managedPaths{}, err
 		}

@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/ivo-lopes/ivoai/internal/observability"
 	"github.com/ivo-lopes/ivoai/internal/orchestration"
 	"github.com/ivo-lopes/ivoai/internal/platform"
 	"github.com/ivo-lopes/ivoai/internal/routing"
@@ -234,6 +235,15 @@ func (s *Server) integrate(ctx context.Context, request *mcp.CallToolRequest) (*
 	if plan.integrated {
 		return toolResult(map[string]any{"plan_id": args.PlanID, "integrated": true})
 	}
+	s.observePhase(args.PlanID, "acceptance", observability.StateCompleted)
+	s.observePhase(args.PlanID, "integration", observability.StateRunning)
+	succeeded := false
+	defer func() {
+		if !succeeded {
+			s.observePhase(args.PlanID, "integration", observability.StateFailed)
+		}
+	}()
+
 	if len(ids) > 0 && plan.sequential == nil {
 		if plan.worktrees == nil {
 			return nil, errors.New("WORKTREE_FAILED: no collected implementation work")
@@ -268,5 +278,16 @@ func (s *Server) integrate(ctx context.Context, request *mcp.CallToolRequest) (*
 	if err != nil {
 		return nil, err
 	}
+
+	succeeded = true
+	s.observePhase(args.PlanID, "integration", observability.StateCompleted)
+	s.observePhase(args.PlanID, "synthesizing", observability.StateRunning)
 	return toolResult(map[string]any{"plan_id": args.PlanID, "integrated": true, "task_count": len(plan.Plan.Tasks)})
+}
+
+// Operational telemetry cannot change an integration outcome.
+func (s *Server) observePhase(planID, phase string, state observability.State) {
+	_, _ = s.Store.Update(s.SessionID, func(value *session.Session) error {
+		return session.AppendObservation(value, observability.Event{Category: observability.CategoryOrchestration, Operation: observability.OperationOrchestrationPhase, State: state, PlanID: planID, Phase: phase, Component: "orchestration"})
+	})
 }

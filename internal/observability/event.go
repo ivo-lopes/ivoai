@@ -5,12 +5,16 @@ package observability
 import (
 	"errors"
 	"fmt"
+	"math"
 	"strings"
 	"time"
+	"unicode"
 
 	"github.com/ivo-lopes/ivoai/internal/core"
 	"github.com/ivo-lopes/ivoai/internal/platform"
 )
+
+const MaxSequence uint64 = 1<<53 - 1
 
 type Category string
 
@@ -38,6 +42,7 @@ type Operation string
 
 const (
 	OperationExecutorSelect          Operation = "executor.select"
+	OperationExecutorTurn            Operation = "executor.turn"
 	OperationCapabilityResolve       Operation = "capability.resolve"
 	OperationFallbackRoute           Operation = "fallback.route"
 	OperationMemoryBootstrap         Operation = "memory.bootstrap"
@@ -46,6 +51,9 @@ const (
 	OperationCompressionResult       Operation = "compression.result"
 	OperationOrchestrationInitialize Operation = "orchestration.initialize"
 	OperationDAGPlan                 Operation = "dag.plan"
+	OperationTaskLifecycle           Operation = "task.lifecycle"
+	OperationTaskEscalate            Operation = "task.escalate"
+	OperationOrchestrationPhase      Operation = "orchestration.phase"
 	OperationWorkerLifecycle         Operation = "worker.lifecycle"
 	OperationApprovalPolicy          Operation = "approval.policy"
 	OperationQuotaProbe              Operation = "quota.probe"
@@ -76,6 +84,7 @@ type State string
 
 const (
 	StatePending          State = "pending"
+	StateCancelled        State = "cancelled"
 	StateSelected         State = "selected"
 	StateRunning          State = "running"
 	StateCompleted        State = "completed"
@@ -143,6 +152,12 @@ const (
 // It cannot represent prompts, responses, artifacts, headers, environments,
 // credentials, cookies, provider auth records, or private knowledge content.
 type Event struct {
+	Phase                  string           `json:"phase,omitempty"`
+	SchemaVersion          int              `json:"schema_version,omitempty"`
+	Sequence               uint64           `json:"sequence,omitempty"`
+	TurnID                 string           `json:"turn_id,omitempty"`
+	PlanID                 string           `json:"plan_id,omitempty"`
+	AttemptID              string           `json:"attempt_id,omitempty"`
 	ObservedAt             time.Time        `json:"observed_at"`
 	Category               Category         `json:"category"`
 	Operation              Operation        `json:"operation"`
@@ -199,6 +214,7 @@ type Event struct {
 
 var operationCategories = map[Operation]Category{
 	OperationExecutorSelect:          CategoryExecutor,
+	OperationExecutorTurn:            CategoryExecutor,
 	OperationCapabilityResolve:       CategoryCapability,
 	OperationFallbackRoute:           CategoryFallback,
 	OperationMemoryBootstrap:         CategoryMemory,
@@ -207,6 +223,9 @@ var operationCategories = map[Operation]Category{
 	OperationCompressionResult:       CategoryCompression,
 	OperationOrchestrationInitialize: CategoryOrchestration,
 	OperationDAGPlan:                 CategoryDAG,
+	OperationTaskLifecycle:           CategoryDAG,
+	OperationTaskEscalate:            CategoryDAG,
+	OperationOrchestrationPhase:      CategoryOrchestration,
 	OperationWorkerLifecycle:         CategoryWorker,
 	OperationApprovalPolicy:          CategoryApproval,
 	OperationQuotaProbe:              CategoryQuota,
@@ -251,6 +270,15 @@ func Normalize(value Event) (Event, error) {
 }
 
 func (e Event) Validate() error {
+	if !oneOf(e.Phase, "", "planning", "task_analysis", "parallel_dispatch", "integration", "acceptance", "synthesizing", "completed", "failed") {
+		return errors.New("invalid phase")
+	}
+	if e.Sequence > MaxSequence || e.SchemaVersion < 0 || e.SchemaVersion > 1 || !safeCanonicalID(e.TurnID, 128) || !safeCanonicalID(e.PlanID, 128) || !safeCanonicalID(e.AttemptID, 128) {
+		return errors.New("invalid event envelope")
+	}
+	if math.IsNaN(e.CompressionRatio) || math.IsInf(e.CompressionRatio, 0) || e.RemainingPercent != nil && (math.IsNaN(*e.RemainingPercent) || math.IsInf(*e.RemainingPercent, 0)) {
+		return errors.New("nonfinite event metric")
+	}
 	if e.ObservedAt.IsZero() {
 		return errors.New("observability event requires a timestamp")
 	}
@@ -259,11 +287,11 @@ func (e Event) Validate() error {
 		return errors.New("invalid observability category or operation")
 	}
 	switch e.State {
-	case StatePending, StateSelected, StateRunning, StateCompleted, StateDegraded, StateUnavailable, StateFailed, StateBlocked, StateAllowed, StateDenied, StateQuarantined, StateStaged, StatePromoted, StateRolledBack, StateApprovalRequired:
+	case StateCancelled, StatePending, StateSelected, StateRunning, StateCompleted, StateDegraded, StateUnavailable, StateFailed, StateBlocked, StateAllowed, StateDenied, StateQuarantined, StateStaged, StatePromoted, StateRolledBack, StateApprovalRequired:
 	default:
 		return errors.New("invalid observability state")
 	}
-	if e.SessionID != "" && (len(e.SessionID) != 37 || !strings.HasPrefix(e.SessionID, "sess_")) {
+	if e.SessionID != "" && (len(e.SessionID) != 37 || !strings.HasPrefix(e.SessionID, "sess_") || !safeCanonicalID(e.SessionID, 37)) {
 		return errors.New("invalid observability session ID")
 	}
 	if !safeLabel(e.TaskID, 64) || !safeWorker(e.WorkerID) || !oneOf(e.Provider, "", "codex", "claude", "opencode", "caveman", "headroom", "direct") || !oneOf(e.RequestedProvider, "", "caveman", "headroom", "direct") || !oneOf(e.ProviderSource, "", "default", "explicit", "migration") || !oneOf(e.Executor, "", "codex", "claude", "opencode") {
@@ -318,6 +346,11 @@ func safeLabel(value string, limit int) bool {
 	}
 	if len(value) > limit || strings.ContainsAny(value, "\x00\x1b\r\n\t /\\") {
 		return false
+	}
+	for _, char := range value {
+		if unicode.IsControl(char) || unicode.In(char, unicode.Cf) {
+			return false
+		}
 	}
 	return platform.Redact(value) == value
 }
@@ -398,4 +431,14 @@ func (e Event) Summary() string {
 		return fmt.Sprintf("%s %s", e.Operation, e.State)
 	}
 	return fmt.Sprintf("%s %s %s", e.Operation, correlation, e.State)
+}
+
+// Page is the bounded replay envelope shared by console transports.
+type Page struct {
+	SchemaVersion  int     `json:"schema_version"`
+	SessionID      string  `json:"session_id"`
+	OldestSequence uint64  `json:"oldest_sequence"`
+	LatestSequence uint64  `json:"latest_sequence"`
+	Gap            bool    `json:"gap"`
+	Events         []Event `json:"events"`
 }

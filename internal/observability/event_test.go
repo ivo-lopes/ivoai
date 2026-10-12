@@ -166,3 +166,34 @@ func TestKnowledgeRouteTelemetryIsBoundedMetadataOnly(t *testing.T) {
 }
 
 func floatp(value float64) *float64 { return &value }
+
+func TestEventEnvelopeRejectsUnsafeCorrelation(t *testing.T) {
+	base := Event{Category: CategoryWorker, Operation: OperationWorkerLifecycle, State: StateRunning}
+	for _, field := range []string{"turn", "plan", "attempt", "session"} {
+		event := base
+		switch field {
+		case "turn":
+			event.TurnID = "Authorization: Bearer private"
+		case "plan":
+			event.PlanID = "../outside"
+		case "attempt":
+			event.AttemptID = "\x1b[31m"
+		case "session":
+			event.SessionID = "sess_0123456789abcdef0123456789abc\x1bdef"
+		}
+		if _, err := Normalize(event); err == nil {
+			t.Fatalf("unsafe %s accepted", field)
+		}
+	}
+}
+
+func TestEventRejectsUnsafeControlAndUnrepresentableCursor(t *testing.T) {
+	for _, event := range []Event{
+		{Category: CategoryWorker, Operation: OperationWorkerLifecycle, State: StateRunning, TaskID: "task\x07"},
+		{Category: CategoryWorker, Operation: OperationWorkerLifecycle, State: StateRunning, Sequence: 1 << 63},
+	} {
+		if _, err := Normalize(event); err == nil {
+			t.Fatal("unsafe envelope accepted")
+		}
+	}
+}

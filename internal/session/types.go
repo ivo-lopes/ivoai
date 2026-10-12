@@ -3,6 +3,7 @@ package session
 
 import (
 	"encoding/json"
+	"errors"
 	"time"
 
 	"github.com/ivo-lopes/ivoai/internal/observability"
@@ -215,6 +216,9 @@ type Session struct {
 	PlanID                string                                 `json:"plan_id,omitempty"`
 	Tasks                 []TaskMetadata                         `json:"tasks,omitempty"`
 	EscalationCount       int                                    `json:"escalation_count,omitempty"`
+	ObservationTurnID     string                                 `json:"observation_turn_id,omitempty"`
+	ObservationAttemptID  string                                 `json:"observation_attempt_id,omitempty"`
+	ObservationSequence   uint64                                 `json:"observation_sequence,omitempty"`
 	Observability         []observability.Event                  `json:"observability,omitempty"`
 }
 
@@ -224,10 +228,26 @@ const MaxObservabilityEvents = 128
 // event metadata persisted with a session.
 func AppendObservation(value *Session, event observability.Event) error {
 	event.SessionID = value.SessionID
+	if event.TurnID == "" {
+		event.TurnID = value.ObservationTurnID
+	}
+	if event.AttemptID == "" {
+		event.AttemptID = value.ObservationAttemptID
+	}
+	if event.PlanID == "" && (event.TurnID == "" || event.TurnID == value.ObservationTurnID) {
+		event.PlanID = value.PlanID
+	}
 	normalized, err := observability.Normalize(event)
 	if err != nil {
 		return err
 	}
+	normalizeObservationHistory(value)
+	if value.ObservationSequence >= observability.MaxSequence {
+		return errors.New("observation sequence exhausted")
+	}
+	value.ObservationSequence++
+	normalized.SchemaVersion = 1
+	normalized.Sequence = value.ObservationSequence
 	value.Observability = append(value.Observability, normalized)
 	if len(value.Observability) > MaxObservabilityEvents {
 		value.Observability = append([]observability.Event(nil), value.Observability[len(value.Observability)-MaxObservabilityEvents:]...)

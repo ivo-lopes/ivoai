@@ -494,14 +494,14 @@ func (s *Server) finish(id string, state session.State, exitCode int, result wor
 		if worker := findWorker(value, id); worker != nil {
 			worker.State, worker.EndedAt, worker.ExitCode = state, &now, &exitCode
 			worker.ResultRefs = append([]workingcontext.ResultRef(nil), result.Evidence...)
-			eventState := observability.StateCompleted
-			if state == session.StateFailed {
-				eventState = observability.StateFailed
+			eventState := observability.StateFailed
+			if state == session.StateCompleted {
+				eventState = observability.StateCompleted
 			}
-			component := core.ComponentCodex
-			if worker.Executor == "claude" {
-				component = core.ComponentClaude
+			if result.Status == workingcontext.ResultCancelled {
+				eventState = observability.StateCancelled
 			}
+			component := providerCoreComponent(worker.Executor)
 			return session.AppendObservation(value, observability.Event{Category: observability.CategoryWorker, Operation: observability.OperationWorkerLifecycle, State: eventState, TaskID: worker.TaskID, WorkerID: id, Provider: worker.Executor, Executor: worker.Executor, Component: component, DurationMilliseconds: now.Sub(worker.StartedAt).Milliseconds()})
 		}
 		return nil
