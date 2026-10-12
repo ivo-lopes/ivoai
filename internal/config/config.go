@@ -175,6 +175,7 @@ type OrchestrationConfig struct {
 	Auto              AutoConfig `toml:"auto"`
 }
 type AutoConfig struct {
+	AutomationProfile   AutomationProfileState `toml:"automation_profile,omitempty"`
 	KnowledgeRouting    string                 `toml:"knowledge_routing,omitempty"`
 	Concurrency         string                 `toml:"concurrency,omitempty"`
 	WorkerCap           int                    `toml:"worker_cap"`
@@ -449,6 +450,9 @@ func (s *Store) Load() (Config, error) {
 }
 
 func ValidateOrchestration(value OrchestrationConfig) error {
+	if err := validateAutomationProfile(value); err != nil {
+		return err
+	}
 	if value.ProviderExecution {
 		return errors.New("orchestration provider execution must remain disabled")
 	}
@@ -609,7 +613,8 @@ func (s *Store) Save(c Config) error {
 	if err := s.Ensure(); err != nil {
 		return err
 	}
-	b, err := s.marshalPreservingUnknown(s.Paths.Config, c, []string{"mcp.servers", "connections.servers"}, []string{
+	b, err := s.marshalPreservingUnknown(s.Paths.Config, c, []string{"mcp.servers", "connections.servers", "orchestration.auto.automation_profile"}, []string{
+		"orchestration.auto.automation_profile",
 		"connections.servers",
 		"connections.chatgpt.url", "connections.chatgpt.protocol",
 		"connections.claude.url", "connections.claude.protocol",
