@@ -28,7 +28,7 @@ func TestExternalMCPProjectionKeepsPATOnlyInIVOAI(t *testing.T) {
 	for _, executor := range []string{"codex", "claude", "opencode"} {
 		t.Run(executor, func(t *testing.T) {
 			runtime := t.TempDir()
-			knowledge, err := a.prepareSessionKnowledgeWithApprovals(context.Background(), cfg, nil, executor, runtime, nil, nil, true)
+			knowledge, err := a.prepareSessionKnowledgeWithApprovals(context.Background(), cfg, nil, executor, runtime, t.TempDir(), nil, nil, true)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -80,7 +80,7 @@ func TestExternalMCPDirectInteractiveRetainsNativeApproval(t *testing.T) {
 	}
 	cfg, _ := a.Store.Load()
 	cfg.OpenCode.PermissionMode = "interactive"
-	knowledge, err := a.prepareSessionKnowledge(context.Background(), cfg, nil, "codex", t.TempDir(), nil, nil)
+	knowledge, err := a.prepareSessionKnowledge(context.Background(), cfg, nil, "codex", t.TempDir(), t.TempDir(), nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/ivo-lopes/ivoai/internal/codexresolver"
+	"github.com/ivo-lopes/ivoai/internal/components"
 	"github.com/ivo-lopes/ivoai/internal/config"
 	"github.com/ivo-lopes/ivoai/internal/connections"
 	"github.com/ivo-lopes/ivoai/internal/core"
@@ -135,6 +136,8 @@ type SkillControlPlane struct {
 	StagingRootHealth string `json:"staging_root_health"`
 }
 type Report struct {
+	Graft                ManagedComponent          `json:"graft"`
+	CodeIntelligence     CodeIntelligence          `json:"code_intelligence"`
 	CodexResolution      *codexresolver.Resolution `json:"codex_resolution,omitempty"`
 	Overall              string                    `json:"overall"`
 	OS                   string                    `json:"os"`
@@ -216,6 +219,7 @@ func (d Doctor) Run(ctx context.Context) Report {
 	if fixture := state.Components["headroom"]; !r.Headroom.Installed && strings.HasSuffix(fixture.Version, "-fixture") {
 		r.Headroom.Installed, r.Headroom.Healthy, r.Headroom.CodexCompatible, r.Headroom.ClaudeCompatible, r.Headroom.Version, r.Headroom.InteractiveLaunch = true, true, true, true, fixture.Version, "fixture"
 	}
+	r.Graft, r.CodeIntelligence = d.codeIntelligence(ctx, state, components.DefaultCatalog(), codeSandboxPrerequisites())
 	r.Caveman = d.managedComponent("caveman", state.Components["caveman"])
 	r.CompressionEffective, r.CompressionReason = effectiveCompression(cfg, r.Headroom, r.Caveman)
 	r.Memory = componentFromState(state.Components["ai-memory"])
@@ -630,6 +634,9 @@ func componentMatrix(cfg config.Config, state config.State, report Report) core.
 		},
 		Compatibility: compatibility(contextAvailable, "compatible remote Context MCP is unavailable"),
 	})
+	if report.CodeIntelligence.Component.ID != "" {
+		values = append(values, report.CodeIntelligence.Component)
+	}
 	matrix, err := core.NewMatrix(values...)
 	if err != nil {
 		return core.Matrix{}

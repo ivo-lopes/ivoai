@@ -16,8 +16,8 @@ import (
 )
 
 func (i *Installer) ensureNode(ctx context.Context) (string, string, error) {
-	root := filepath.Join(i.Store.Paths.DataDir, "components", "node-"+managedNodeVersion)
-	node := filepath.Join(root, "bin", "node")
+	node := ManagedNodePath(i.Store.Paths.DataDir)
+	root := filepath.Dir(filepath.Dir(node))
 	npmCLI := filepath.Join(root, "lib", "node_modules", "npm", "bin", "npm-cli.js")
 	if regular(node) && regular(npmCLI) {
 		return node, npmCLI, nil
@@ -142,4 +142,10 @@ func extractNodeArchive(archive, destination string) error {
 func regular(path string) bool {
 	info, err := os.Stat(path)
 	return err == nil && info.Mode().IsRegular()
+}
+
+// ManagedNodePath resolves the pinned private Node executable used by managed runtimes.
+// Callers must still check runtime availability before execution.
+func ManagedNodePath(dataDir string) string {
+	return filepath.Join(dataDir, "components", "node-"+managedNodeVersion, "bin", "node")
 }

@@ -165,7 +165,7 @@ func (a *App) SessionStartWithKnowledge(ctx context.Context, executor string, mo
 		discardFailedStart()
 		return err
 	}
-	knowledge, err := a.prepareSessionKnowledge(ctx, cfg, selectors, executor, runtimeDir, os.Environ(), func(event observability.Event) {
+	knowledge, err := a.prepareSessionKnowledge(ctx, cfg, selectors, executor, runtimeDir, cwd, os.Environ(), func(event observability.Event) {
 		_, _ = store.Update(id, func(current *session.Session) error { return session.AppendObservation(current, event) })
 	})
 	if err != nil {
@@ -423,6 +423,9 @@ func (a *App) OrchestratorServe(ctx context.Context, id string) error {
 		Compressor:            a.workingContextCompressor(cfg, state, runtimeDir),
 	}
 	if value.Coordinator == "native" {
+		server.PreparePrimaryEvidence = func(ctx context.Context, task routing.Task, budget int) (json.RawMessage, error) {
+			return a.preparePrimaryCodeEvidence(ctx, store, id, task, budget, a.CodeIntelligenceProvider)
+		}
 		server.CheckMCPGrants = func(ctx context.Context, tasks []routing.TaskInput) (bool, error) {
 			return a.checkMCPPlan(ctx, cfg, tasks)
 		}

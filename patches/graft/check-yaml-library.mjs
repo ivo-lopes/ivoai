@@ -1,0 +1,14 @@
+import assert from 'node:assert/strict';
+import {createRequire} from 'node:module';
+import {join,resolve} from 'node:path';
+const root=resolve(process.argv[2]);
+const require=createRequire(join(root,'package.json'));
+const matter=require('gray-matter');
+const yaml=require('js-yaml');
+assert.deepEqual(matter('---\ntitle: Example\ntags:\n - code\n - docs\n---\nBody').data,{title:'Example',tags:['code','docs']});
+assert.equal(matter('---\ntitle: Example\n---\nBody').content,'Body');
+assert.deepEqual(yaml.safeLoad('enabled: true\ncount: 3'),{enabled:true,count:3});
+assert.throws(()=>yaml.safeLoad('!!js/function "function () { return 42; }"'));
+assert.throws(()=>require.resolve('argparse'),{code:'MODULE_NOT_FOUND'});
+assert.throws(()=>require.resolve('sprintf-js'),{code:'MODULE_NOT_FOUND'});
+console.log('retained YAML library and absent vulnerable CLI packages passed');

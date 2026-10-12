@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="pt-BR" dir="ltr" class="docs-wrapper plugin-docs plugin-id-default docs-version-current docs-doc-page docs-doc-id-native-graft" data-has-hydrated="false">
+<head>
+<meta charset="UTF-8">
+<meta name="generator" content="Docusaurus v3.10.2">
+<title data-rh="true">Inteligência de código com Graft nativo | IVOAI</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="http://localhost:7780/pt-BR/docs/next/native-graft"><meta data-rh="true" property="og:locale" content="pt_BR"><meta data-rh="true" property="og:locale:alternate" content="en_US"><meta data-rh="true" name="docusaurus_locale" content="pt-BR"><meta data-rh="true" name="docsearch:language" content="pt-BR"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="Inteligência de código com Graft nativo | IVOAI"><meta data-rh="true" name="description" content="O IVOAI controla a inspeção local de código, sua autorização e seu orçamento de"><meta data-rh="true" property="og:description" content="O IVOAI controla a inspeção local de código, sua autorização e seu orçamento de"><link data-rh="true" rel="icon" href="/pt-BR/img/favicon.svg"><link data-rh="true" rel="canonical" href="http://localhost:7780/pt-BR/docs/next/native-graft"><link data-rh="true" rel="alternate" href="http://localhost:7780/docs/next/native-graft" hreflang="en-US"><link data-rh="true" rel="alternate" href="http://localhost:7780/pt-BR/docs/next/native-graft" hreflang="pt-BR"><link data-rh="true" rel="alternate" href="http://localhost:7780/docs/next/native-graft" hreflang="x-default"><script data-rh="true" type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Inteligência de código com Graft nativo","item":"http://localhost:7780/pt-BR/docs/next/native-graft"}]}</script><link rel="stylesheet" href="/pt-BR/assets/css/styles.ef9ae034.css">
+<script src="/pt-BR/assets/js/runtime~main.1d88220a.js" defer="defer"></script>
+<script src="/pt-BR/assets/js/main.fa89afd0.js" defer="defer"></script>
+</head>
+<body>
+<svg style="display: none;"><defs>
+<symbol id="theme-svg-external-link" viewBox="0 0 24 24"><path fill="currentColor" d="M21 13v10h-21v-19h12v2h-10v15h17v-8h2zm3-12h-10.988l4.035 4-6.977 7.07 2.828 2.828 6.977-7.07 4.125 4.172v-11z"/></symbol>
+</defs></svg>
+<script>!function(){var t=function(){try{return new URLSearchParams(window.location.search).get("docusaurus-theme")}catch(t){}}()||function(){try{return window.localStorage.getItem("theme")}catch(t){}}();document.documentElement.setAttribute("data-theme",t||"light"),document.documentElement.setAttribute("data-theme-choice",t||"light")}(),function(){try{const c=new URLSearchParams(window.location.search).entries();for(var[t,e]of c)if(t.startsWith("docusaurus-data-")){var a=t.replace("docusaurus-data-","data-");document.documentElement.setAttribute(a,e)}}catch(t){}}()</script><div id="__docusaurus"><div role="region" aria-label="Pular para o conteúdo principal"><a class="skipToContent_F6Hx" href="#__docusaurus_skipToContent_fallback">Pular para o conteúdo principal</a></div><nav aria-label="Navegação principal" class="theme-layout-navbar navbar navbar--fixed-top"><div class="navbar__inner"><div class="theme-layout-navbar-left navbar__items"><button aria-label="Alternar painel de navegação" aria-expanded="false" class="navbar__toggle clean-btn" type="button"><svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><path stroke="currentColor" stroke-linecap="round" stroke-miterlimit="10" stroke-width="2" d="M4 7h22M4 15h22M4 23h22"></path></svg></button><a class="navbar__brand" aria-label="IVOAI home" href="/pt-BR/"><span class="ivoai-wordmark navbar__title" aria-hidden="true"><span>I</span><span>V</span><span>O</span><svg class="ivoai-wordmark__lambda" viewBox="0 0 20 24" focusable="false" aria-hidden="true"><path d="M2 22 L10 2 L18 22"></path></svg><span>I</span></span></a><a class="navbar__item navbar__link" href="/pt-BR/docs/quickstart">Guia rápido</a><a class="navbar__item navbar__link" href="/pt-BR/docs/cli-reference">CLI</a><a class="navbar__item navbar__link" href="/pt-BR/docs/server">Servidor</a><a class="navbar__item navbar__link" href="/pt-BR/docs/mcp-web">MCP Web</a></div><div class="theme-layout-navbar-right navbar__items navbar__items--right"><div class="navbar__item dropdown dropdown--hoverable dropdown--right"><a aria-current="page" class="navbar__link active" aria-haspopup="true" aria-expanded="false" role="button" href="/pt-BR/docs/next/native-graft">Atual</a><ul class="dropdown__menu"><li><a aria-current="page" class="dropdown__link dropdown__link--active" href="/pt-BR/docs/next/native-graft">Atual</a></li><li><a class="dropdown__link" href="/pt-BR/docs">0.9.2</a></li><li><a class="dropdown__link" href="/pt-BR/docs/0.9.1">0.9.1</a></li><li><a class="dropdown__link" href="/pt-BR/docs/0.9.0">0.9.0</a></li><li><a class="dropdown__link" href="/pt-BR/docs/0.8.0">0.8.0</a></li></ul></div><div class="navbar__item dropdown dropdown--hoverable dropdown--right"><a href="#" aria-haspopup="true" aria-expanded="false" role="button" class="navbar__link"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" class="iconLanguage_H70V"><path fill="currentColor" d="M12.87 15.07l-2.54-2.51.03-.03c1.74-1.94 2.98-4.17 3.71-6.53H17V4h-7V2H8v2H1v1.99h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"></path></svg>Português (Brasil)</a><ul class="dropdown__menu"><li><a href="/docs/next/native-graft" target="_self" rel="noopener noreferrer" class="dropdown__link" lang="en-US">English</a></li><li><a href="/pt-BR/docs/next/native-graft" target="_self" rel="noopener noreferrer" class="dropdown__link dropdown__link--active" lang="pt-BR">Português (Brasil)</a></li></ul></div><a href="https://github.com/ivo-lopes/ivoai" target="_blank" rel="noopener noreferrer" class="navbar__item navbar__link">GitHub<svg width="13.5" height="13.5" aria-label="(abre em nova aba)" class="iconExternalLink_QhQQ"><use href="#theme-svg-external-link"></use></svg></a><div class="toggle_ptLi colorModeToggle_drV6"><button class="clean-btn toggleButton_pj6l toggleButtonDisabled_rmeX" type="button" disabled="" title="modo do sistema" aria-label="Mudar entre modo claro e escuro (modo do sistema está ativo)"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_yhwg lightToggleIcon_NDPT"><path fill="currentColor" d="M12,9c1.65,0,3,1.35,3,3s-1.35,3-3,3s-3-1.35-3-3S10.35,9,12,9 M12,7c-2.76,0-5,2.24-5,5s2.24,5,5,5s5-2.24,5-5 S14.76,7,12,7L12,7z M2,13l2,0c0.55,0,1-0.45,1-1s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S1.45,13,2,13z M20,13l2,0c0.55,0,1-0.45,1-1 s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S19.45,13,20,13z M11,2v2c0,0.55,0.45,1,1,1s1-0.45,1-1V2c0-0.55-0.45-1-1-1S11,1.45,11,2z M11,20v2c0,0.55,0.45,1,1,1s1-0.45,1-1v-2c0-0.55-0.45-1-1-1C11.45,19,11,19.45,11,20z M5.99,4.58c-0.39-0.39-1.03-0.39-1.41,0 c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0s0.39-1.03,0-1.41L5.99,4.58z M18.36,16.95 c-0.39-0.39-1.03-0.39-1.41,0c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0c0.39-0.39,0.39-1.03,0-1.41 L18.36,16.95z M19.42,5.99c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06c-0.39,0.39-0.39,1.03,0,1.41 s1.03,0.39,1.41,0L19.42,5.99z M7.05,18.36c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06 c-0.39,0.39-0.39,1.03,0,1.41s1.03,0.39,1.41,0L7.05,18.36z"></path></svg><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_yhwg darkToggleIcon_gaiZ"><path fill="currentColor" d="M9.37,5.51C9.19,6.15,9.1,6.82,9.1,7.5c0,4.08,3.32,7.4,7.4,7.4c0.68,0,1.35-0.09,1.99-0.27C17.45,17.19,14.93,19,12,19 c-3.86,0-7-3.14-7-7C5,9.07,6.81,6.55,9.37,5.51z M12,3c-4.97,0-9,4.03-9,9s4.03,9,9,9s9-4.03,9-9c0-0.46-0.04-0.92-0.1-1.36 c-0.98,1.37-2.58,2.26-4.4,2.26c-2.98,0-5.4-2.42-5.4-5.4c0-1.81,0.89-3.42,2.26-4.4C12.92,3.04,12.46,3,12,3L12,3z"></path></svg><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true" class="toggleIcon_yhwg systemToggleIcon_Mx9i"><path fill="currentColor" d="m12 21c4.971 0 9-4.029 9-9s-4.029-9-9-9-9 4.029-9 9 4.029 9 9 9zm4.95-13.95c1.313 1.313 2.05 3.093 2.05 4.95s-0.738 3.637-2.05 4.95c-1.313 1.313-3.093 2.05-4.95 2.05v-14c1.857 0 3.637 0.737 4.95 2.05z"></path></svg></button></div><div class="navbarSearchContainer_P4qW"><div class="navbar__search searchBarContainer_RBqW" dir="ltr"><svg aria-hidden="true" class="searchIcon_PArg" focusable="false" viewBox="0 0 16 16"><path fill="currentColor" d="M6.02945 10.20327a4.17382 4.17382 0 1 1 4.17382-4.17382 4.15609 4.15609 0 0 1-4.17382 4.17382Zm9.69195 4.2199-4.8225-4.82338A5.88021 5.88021 0 0 0 12.058 6.02856 6.00467 6.00467 0 1 0 9.59979 10.8989l4.82338 4.82338a.89729.89729 0 0 0 1.29912 0 .89749.89749 0 0 0-.00087-1.29909Z"></path></svg><input placeholder="Buscar" aria-label="Search" class="navbar__search-input searchInput_CB0F" value=""><div class="loadingRing_BBKc searchBarLoadingRing_uE95"><div></div><div></div><div></div><div></div></div></div></div></div></div><div role="presentation" class="navbar-sidebar__backdrop"></div></nav><div id="__docusaurus_skipToContent_fallback" class="theme-layout-main main-wrapper mainWrapper_NEp_"><div class="docsWrapper_QTdM"><button aria-label="Voltar para o topo" class="clean-btn theme-back-to-top-button backToTopButton_Ggrk" type="button"></button><div class="docRoot_LZ8t"><aside class="theme-doc-sidebar-container docSidebarContainer_mCJT"><div class="sidebarViewport_kLjY"><div class="sidebar_B_EO"><nav aria-label="Painel lateral de documentos" class="menu thin-scrollbar menu_hiQQ"><ul class="theme-doc-sidebar-menu menu__list"><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_wDc3 menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/pt-BR/docs/next"><span class="categoryLinkLabel_ckUz">Introdução</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_wDc3 menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/pt-BR/docs/next/installation"><span class="categoryLinkLabel_ckUz">Instalação e configuração</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_wDc3 menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/pt-BR/docs/next/basic-usage"><span class="categoryLinkLabel_ckUz">Uso</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_wDc3 menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/pt-BR/docs/next/executors"><span class="categoryLinkLabel_ckUz">Executores e AUTO</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_wDc3 menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/pt-BR/docs/next/memory"><span class="categoryLinkLabel_ckUz">Conhecimento</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item"><div class="menu__list-item-collapsible"><a class="categoryLink_wDc3 menu__link menu__link--sublist menu__link--sublist-caret menu__link--active" role="button" aria-expanded="true" href="/pt-BR/docs/next/native-graft"><span class="categoryLinkLabel_ckUz">Controle e fidelidade</span></a></div><ul class="menu__list"><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link menu__link--active" aria-current="page" tabindex="0" href="/pt-BR/docs/next/native-graft"><span class="linkLabel_WEPY">Inteligência de código com Graft nativo</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/pt-BR/docs/next/skill-control-plane"><span class="linkLabel_WEPY">Skills nativas e Capability Control Plane</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/pt-BR/docs/next/working-context"><span class="linkLabel_WEPY">WorkingContext transitório</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/pt-BR/docs/next/compression-provider"><span class="linkLabel_WEPY">CompressionProvider: Caveman, Headroom e bypass direto</span></a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-2 menu__list-item"><a class="menu__link" tabindex="0" href="/pt-BR/docs/next/caveman-canary"><span class="linkLabel_WEPY">Canário do Caveman e avaliação de fidelidade</span></a></li></ul></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_wDc3 menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/pt-BR/docs/next/operations"><span class="categoryLinkLabel_ckUz">Operações</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_wDc3 menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/pt-BR/docs/next/security"><span class="categoryLinkLabel_ckUz">Segurança e suporte</span></a></div></li><li class="theme-doc-sidebar-item-category theme-doc-sidebar-item-category-level-1 menu__list-item menu__list-item--collapsed"><div class="menu__list-item-collapsible"><a class="categoryLink_wDc3 menu__link menu__link--sublist menu__link--sublist-caret" role="button" aria-expanded="false" href="/pt-BR/docs/next/architecture"><span class="categoryLinkLabel_ckUz">Arquitetura e projeto</span></a></div></li></ul></nav></div></div></aside><main class="docMainContainer_CiTD"><div class="container padding-top--md padding-bottom--lg"><div class="row"><div class="col docItemCol_YeFp"><div class="theme-doc-version-banner alert alert--warning margin-bottom--md" role="alert"><div>Esta é uma documentação não lançada da versão <b>Atual</b> para <!-- -->IVOAI<!-- -->.</div><div class="margin-top--md">Para a documentação atualizada, consulte a <b><a href="/pt-BR/docs">versão mais recente</a></b> (<!-- -->0.9.2<!-- -->).</div></div><div class="docItemContainer_aFqt"><article><nav class="theme-doc-breadcrumbs breadcrumbsContainer_qlaG" aria-label="Trilha"><ul class="breadcrumbs"><li class="breadcrumbs__item"><a aria-label="Página Inicial" class="breadcrumbs__link" href="/pt-BR/"><svg viewBox="0 0 24 24" class="breadcrumbHomeIcon__4WH"><path d="M10 19v-5h4v5c0 .55.45 1 1 1h3c.55 0 1-.45 1-1v-7h1.7c.46 0 .68-.57.33-.87L12.67 3.6c-.38-.34-.96-.34-1.34 0l-8.36 7.53c-.34.3-.13.87.33.87H5v7c0 .55.45 1 1 1h3c.55 0 1-.45 1-1z" fill="currentColor"></path></svg></a></li><li class="breadcrumbs__item"><span class="breadcrumbs__link">Controle e fidelidade</span></li><li class="breadcrumbs__item breadcrumbs__item--active"><span class="breadcrumbs__link">Inteligência de código com Graft nativo</span></li></ul></nav><span class="theme-doc-version-badge badge badge--secondary">Versão: Atual</span><div class="tocCollapsible_yh5T theme-doc-toc-mobile tocMobile_ZRWO"><button type="button" class="clean-btn tocCollapsibleButton_mn3M">Nesta página</button></div><div class="theme-doc-markdown markdown"><header><h1>Inteligência de código com Graft nativo</h1></header>
+<p>O IVOAI controla a inspeção local de código, sua autorização e seu orçamento de
+recursos. O Graft é uma biblioteca estrutural substituível atrás de
+<code>CodeIntelligenceProvider</code>; ele não controla a sessão, escolhe executores nem se
+torna outro servidor de conhecimento. A ordem das fontes institucionais permanece
+<strong>Memory → Context</strong>. Resultados de compiladores e testes continuam sendo a
+evidência de comportamento executável.</p>
+<p>Esta página descreve o contrato implementado de provedor, sandbox, gateway e build.
+As sessões projetam a capacidade pelo gateway autenticado existente. Resultados
+medidos e gates restantes de aceite pertencem ao relatório de validação da release;
+uma única amostra com provedor não comprova economia geral.
+A validação real com Claude continua pendente no IVOAI-188 e não é comprovada por
+fixtures locais nem por testes com Codex.</p>
+<h2 class="anchor anchorTargetStickyNavbar_J2Vv" id="implementação-gerenciada-e-ciclo-de-vida">Implementação gerenciada e ciclo de vida<a href="#implementação-gerenciada-e-ciclo-de-vida" class="hash-link" aria-label="Link direto para Implementação gerenciada e ciclo de vida" title="Link direto para Implementação gerenciada e ciclo de vida" translate="no">​</a></h2>
+<p>O upstream revisado é <code>trailhq/Graft</code>, versão <strong>0.21.1</strong>, commit
+<code>fe30ead39d5e6f0c921018d364da2bdbc9d4b3ad</code>, sob licença MIT. A identidade gerenciada
+pelo IVOAI é <strong>0.21.1-ivoai.1</strong>. O SHA-256 do tar de origem é
+<code>ab27f9123eeb59b3987a342a24b7e357ad3412f41c556fde3a76ca9e250d2db1</code>;
+o SHA-256 do lock npm é
+<code>c05064ea18ed1b538e27cc788f1d6ea2cae00b2c00c79ef552fc1bb4c54fd5f5</code>.</p>
+<p>O build de release instala as dependências fixadas com scripts de ciclo de vida
+desabilitados, compila explicitamente os dez bindings nativos com os headers do
+Node gerenciado <strong>26.11.1</strong> e gera o viewer e as queries das gramáticas. O patch de
+compatibilidade nativa altera duas flags C++17 do <code>tree-sitter@0.21.1</code> para C++20,
+exigido por esses headers. A compilação usa bubblewrap sem rede; o isolamento de
+runtime usa o sandbox Go descrito abaixo. O CI seleciona GCC 12 em runners nativos
+Linux amd64 e arm64. As flags amd64 excluem AVX/AVX2; o QEMU Nehalem exercita o Node
+e a biblioteca reais, incluindo as gramáticas nativas e WASM.</p>
+<p>O empacotamento rejeita bindings que exijam versões superiores a <strong>GLIBC 2.35</strong>,
+<strong>GLIBCXX 3.4.30</strong> ou <strong>CXXABI 1.3.13</strong>. Selecionar o compilador não comprova, por
+si só, compatibilidade. O arquivo contém a biblioteca compilada, dependências de
+runtime, assets do viewer e queries, licenças, inventário de integridade das
+dependências, SHA-256 por arquivo, evidência de ABI e proveniência do build. Os
+metadados de release vinculam origem, entradas revisadas do build e digest do
+arquivo final à identidade imutável do componente. Os gates de arquitetura nativa,
+ABI e execução sem AVX precisam passar no CI; o experimento local com GCC 14 foi
+corretamente rejeitado pelo gate de ABI.</p>
+<p>O fluxo gerenciado da aplicação não exige ativação separada do Graft,
+instalação do CLI upstream nem inicialização manual do projeto. Uma release que
+contenha os metadados revisados participa dos fluxos normais de <code>ivoai setup</code>,
+<code>ivoai update</code> e promoção/rollback de componentes gerenciados. Consulte
+<a class="" href="/pt-BR/docs/next/update-rollback">Atualização e rollback</a>. Builds de desenvolvimento sem esses
+metadados informam Graft indisponível, em vez de instalar um substituto não revisado.
+Um executável <code>graft</code> encontrado no ambiente não é adotado. O <code>graft-runtime</code>
+empacotado pelo IVOAI aceita somente <code>--version</code>; as operações usam o adaptador
+privado controlado pelo Go. Configurações pessoais de provedores e credenciais
+não são modificadas nem importadas.</p>
+<h2 class="anchor anchorTargetStickyNavbar_J2Vv" id="escolha-da-menor-inspeção-suficiente">Escolha da menor inspeção suficiente<a href="#escolha-da-menor-inspeção-suficiente" class="hash-link" aria-label="Link direto para Escolha da menor inspeção suficiente" title="Link direto para Escolha da menor inspeção suficiente" translate="no">​</a></h2>
+<p>A capability do host é <code>code_inspect</code>. Ela oferece busca limitada de símbolos,
+ocorrências literais, inspeção da API de arquivos, chamadores, mapas do repositório,
+análise de impacto, verificação de atualização, builds explícitos e exportações
+privadas de visualização. Os aliases nativos <code>graft_find_code</code>, <code>graft_find_all</code>,
+<code>graft_trace_calls</code>, <code>graft_file_api</code>, <code>graft_repo_map</code> e
+<code>graft_check_freshness</code> preservam o escopo do mesmo gateway. Eles não expõem um
+servidor MCP upstream nem permitem escolher outra raiz, organização ou escopo de
+permissões.</p>
+<p>A inspeção automática pode responder diretamente a uma busca literal. Na inspeção
+da API de um arquivo pequeno identificado, pode retornar o arquivo completo quando
+ele couber em metade do orçamento de resultado solicitado. Relações e questões
+estruturais maiores usam Graft. Uma declaração Go inequívoca, verificada pelo
+parser padrão da linguagem, também pode usar um trecho direto curto. Um grafo já
+construído não obriga a iniciar outro processo Node; um resultado da consulta exata
+em cache é revalidado antes da reutilização. Os aliases MCP de implementação e API
+usam a mesma seleção; a pesquisa agrupada preserva o agrupamento estrutural. Cada
+alias anuncia apenas os parâmetros de sua operação. As verificações de
+elegibilidade precedem a comparação de custos. Medições locais limitadas
+atualizam estimativas de latência e tamanho por operação; CPU, memória e tokens
+não medidos permanecem desconhecidos. Bytes divididos por quatro são uma
+estimativa explícita, nunca contabilização do provedor. O histórico mantém no
+máximo 18 linhas agregadas por identidade de repositório, worktree, organização
+e permissões, sem consultas nem conteúdo das fontes. Um classificador conservador de tarefas
+pode antecipar evidência limitada de código; ele não concede capabilities nem
+substitui a pesquisa institucional em Memory/Context.
+Workers recebem apenas sua evidência delimitada, após admissão pelo Skill Gate.
+Para uma tarefa pronta e pertencente ao principal, a resposta do plano aprovado
+ou de uma espera posterior pode entregar automaticamente a mesma evidência exata,
+com referência ao ArtifactStore. Cada tarefa recebe essa entrega no máximo uma vez
+por processo da ponte; a evidência dos workers não é copiada ao principal.
+O envelope agregado do principal tem limite de 4.096 bytes e a recuperação,
+20 segundos por resposta. Revogação descarta evidência pendente. Falhas retornam
+um indicador sanitizado de degradação, permitindo inspeção alternativa autorizada.
+Restrições explícitas de ferramentas e negações de skills obrigatórias também
+limitam a antecipação. Planos, checkpoints e eventos não persistem a evidência bruta.</p>
+<p>Enriquecimento <code>deep</code>/LLM e subprocessos LSP ficam desabilitados até existir uma
+integração segura e revisada pelos clientes oficiais. O adaptador gera somente o
+grafo, sem integração cloud, hooks do repositório, carregamento de configuração de
+provedores ou inicialização do CLI upstream. Evidência estrutural ausente continua
+ausente; uma ocorrência literal não comprova uma relação de chamada nem uma análise
+de impacto completa.</p>
+<h2 class="anchor anchorTargetStickyNavbar_J2Vv" id="escopo-snapshots-e-cobertura">Escopo, snapshots e cobertura<a href="#escopo-snapshots-e-cobertura" class="hash-link" aria-label="Link direto para Escopo, snapshots e cobertura" title="Link direto para Escopo, snapshots e cobertura" translate="no">​</a></h2>
+<p>O host fornece a raiz canônica da worktree, o escopo de organização/conhecimento e
+a identidade de permissões. Os três compõem a chave do cache privado; a ausência de
+escopo confiável causa rejeição. Texto do repositório, argumentos de ferramentas e
+nomes de diretórios parecidos com organizações não concedem autoridade. Worktrees
+ou escopos de permissões distintos não compartilham um índice apenas por conterem
+a mesma revisão Git.</p>
+<p>O inventário usa arquivos rastreados e arquivos não rastreados que não sejam
+ignorados pelo Git, com hooks e fsmonitor desabilitados e sem configuração Git
+global ou de sistema. Repositórios aninhados permanecem separados. Somente
+extensões de fonte admitidas e manifestos de projeto reconhecidos entram no inventário; caminhos ocultos,
+dependências, diretórios de build/saída, bundles JavaScript gerados com hash ou
+minificados, arquivos não regulares e arquivos grandes demais ficam excluídos.
+Linguagens não suportadas, fontes geradas excluídas e arquivos grandes estão fora
+da cobertura. Contar arquivos no inventário não comprova que todos receberam
+extração estrutural.</p>
+<p>O host lê bytes exatos e limitados através de <code>os.Root</code>, verifica caminhos e tipos
+de arquivo e copia os bytes para um snapshot privado. O Graft recebe esse snapshot,
+sem permissão de escrita no repositório original. Digests das fontes, identidade
+do adaptador e identidade do objeto gerenciado imutável controlam atualização e reutilização de
+resultados. Recibos também validam toda a árvore do índice, inclusive o cache de extração, antes de
+reutilizar um índice; evidência inválida de cache provoca reconstrução. O cache
+mantém no máximo 64 resultados por geração de fontes. Texto do repositório e
+resultados em cache continuam sendo dados não confiáveis, não instruções ou
+autorização.</p>
+<h2 class="anchor anchorTargetStickyNavbar_J2Vv" id="limites-de-runtime-e-comportamento-em-falhas">Limites de runtime e comportamento em falhas<a href="#limites-de-runtime-e-comportamento-em-falhas" class="hash-link" aria-label="Link direto para Limites de runtime e comportamento em falhas" title="Link direto para Limites de runtime e comportamento em falhas" translate="no">​</a></h2>
+<div class="ivoai-table-region" role="region" aria-label="Tabela rolável" tabindex="0"><table><thead><tr><th>Limite</th><th>Valor aplicado</th></tr></thead><tbody><tr><td>Inventário de fontes</td><td>20.000 arquivos</td></tr><tr><td>Fonte individual</td><td>1.000.000 bytes</td></tr><tr><td>Snapshot total de fontes</td><td>128 MiB</td></tr><tr><td>Texto do resultado</td><td>Até 32 KiB; a requisição pode definir um orçamento menor</td></tr><tr><td>Heap old-space do V8</td><td>256 MiB</td></tr><tr><td>RSS do processo</td><td>Limiar de 512 MiB, monitorado a cada 20 ms</td></tr><tr><td>Requisição estrutural</td><td>90 segundos, incluindo a espera após admissão</td></tr><tr><td>Processos estruturais</td><td>Um processo ativo por raiz de cache compartilhada</td></tr><tr><td>Fila de admissão</td><td>Oito requisições admitidas no total, incluindo a ativa</td></tr></tbody></table></div>
+<p>O limiar de RSS aciona cancelamento monitorado; não promete um teto de memória
+exato aplicado pelo kernel. Timeout, cancelamento, excesso de memória e saturação
+da fila geram falhas limitadas. Builds com erros de parsing ou indexação são
+rejeitados, em vez de apresentar um grafo parcial como evidência completa. Métricas ausentes não são substituídas por zero ou
+valores inventados.</p>
+<p>O helper descartável aplica Landlock e seccomp antes de iniciar o Node. Ele permite
+leitura da distribuição gerenciada, snapshot de fontes e bibliotecas compartilhadas
+necessárias, e escrita somente no diretório privado do índice. Rede e novos
+processos filhos são negados; as threads necessárias ao Node continuam permitidas.
+O filho recebe um ambiente mínimo, sem acesso ao HOME/configurações pessoais,
+credenciais de provedores ou sockets conectados herdados. Plataformas não
+suportadas ou ausência das proteções do kernel causam falha segura; o adaptador
+não tenta novamente sem isolamento. O runtime exige Linux amd64/arm64 e Landlock
+ABI 1 ou superior. As ABIs 1/2 recebem restrições adicionais de truncamento
+via seccomp; não existe fallback sem sandbox.</p>
+<p>O gateway autenticado existente controla a admissão da sessão e as permissões de
+ferramentas. A indisponibilidade do provedor pode selecionar uma inspeção direta
+permitida quando ela responde à pergunta, ou um resultado explícito de
+indisponibilidade. Ela nunca amplia o escopo de arquivos ou de autorização.</p>
+<h2 class="anchor anchorTargetStickyNavbar_J2Vv" id="fidelidade-e-evidência-operacional">Fidelidade e evidência operacional<a href="#fidelidade-e-evidência-operacional" class="hash-link" aria-label="Link direto para Fidelidade e evidência operacional" title="Link direto para Fidelidade e evidência operacional" translate="no">​</a></h2>
+<p>As observações de código usam a classe de fidelidade <strong><code>exact_required</code></strong>. Elas
+registram somente fatos operacionais, como provedor/motivo do roteamento, duração,
+bytes do resultado, truncamento, uso de cache, atualização do índice, contagens de
+fontes/arquivos indexados e CPU/pico de RSS medidos quando disponíveis. Acertos de
+cache não herdam medições de CPU/RSS de um processo anterior. Consultas, nomes de
+arquivos, texto das fontes, hashes das fontes, erros arbitrários e conteúdo de
+artefatos exportados ficam fora dos eventos de observação.</p>
+<p>Uso e economia de tokens permanecem indisponíveis sem evidência real. O adaptador
+remove as anotações teóricas de economia de tokens do upstream; contagens de bytes
+não são medições de tokens. Os diagnósticos do console preservam os estados
+desconhecido/indisponível. Uma visualização privada é um artefato inspecionável,
+não prova de cobertura completa do código ou de correção executável.</p>
+<p>As fixtures implementadas cobrem identidade de escopo, snapshots limitados,
+atualização, tratamento de corrupção, roteamento, chamadas do adaptador,
+observações e negações do sandbox. Builds de release também exigem smoke das
+gramáticas nativas/viewer, verificações de ABI e o gate sem AVX. A integração
+completa, o aceite dos benchmarks e os resultados com clientes reais devem ser
+registrados no relatório final de validação do candidato; esta descrição de
+arquitetura não transforma trabalho pendente em concluído.</p>
+<h2 class="anchor anchorTargetStickyNavbar_J2Vv" id="eficiência-medida">Eficiência medida<a href="#eficiência-medida" class="hash-link" aria-label="Link direto para Eficiência medida" title="Link direto para Eficiência medida" translate="no">​</a></h2>
+<p>Duas comparações reais com Codex, cada uma com 12 cenários pareados, passaram nos
+critérios de correção, mas aumentaram tokens e tempo agregados ao expor ferramentas
+MCP estruturais. A rodada posterior mediu 879.174 versus 1.203.629 tokens de entrada
+e 202.007 versus 278.003 ms. Disponibilizar ferramentas não garante economia.</p>
+<p>Um teste separado de recuperação automática pelo App passou nos três casos B;
+duas respostas da linha de base A falharam nos critérios estritos, portanto o
+benchmark completo terminou com código 1. Somente o par de API com correção
+equivalente sustenta a comparação: 48.163 → 16.129 tokens de entrada e
+13.178 → 8.149 ms, com duas → zero chamadas de ferramentas pelo modelo.
+Essa amostra sintética isolada não demonstra economia geral.</p>
+<p>Com 121 arquivos, dez consultas estruturais usaram cache, com p95 de 9 ms para
+uma meta de 100 ms. O build inicial levou 4.241 ms; atualizações por edição,
+renomeação e remoção levaram 628/767/744 ms, com pico de RSS observado de
+109.203.456 bytes. O <a href="https://github.com/ivo-lopes/ivoai/blob/v0.12.0/release-notes/graft-native-validation.md" target="_blank" rel="noopener noreferrer" class="">relatório e os dados brutos</a>
+registram revisões, escopo e limitações. Resultados desfavoráveis são preservados.</p></div><footer class="theme-doc-footer docusaurus-mt-lg"><div class="row margin-top--sm theme-doc-footer-edit-meta-row"><div class="col noPrint_YsbI"><a href="https://github.com/ivo-lopes/ivoai/edit/main/i18n/pt-BR/docusaurus-plugin-content-docs/current/native-graft.md" target="_blank" rel="noopener noreferrer" class="theme-edit-this-page"><svg fill="currentColor" height="20" width="20" viewBox="0 0 40 40" class="iconEdit_YRSR" aria-hidden="true"><g><path d="m34.5 11.7l-3 3.1-6.3-6.3 3.1-3q0.5-0.5 1.2-0.5t1.1 0.5l3.9 3.9q0.5 0.4 0.5 1.1t-0.5 1.2z m-29.5 17.1l18.4-18.5 6.3 6.3-18.4 18.4h-6.3v-6.2z"></path></g></svg>Editar esta página</a></div><div class="col lastUpdated_zUO7"></div></div></footer></article><nav class="docusaurus-mt-lg pagination-nav" aria-label="Páginas de documento"><a class="pagination-nav__link pagination-nav__link--prev" href="/pt-BR/docs/next/mcp-web"><div class="pagination-nav__sublabel">Anterior</div><div class="pagination-nav__label">MCP remoto para ChatGPT e Claude</div></a><a class="pagination-nav__link pagination-nav__link--next" href="/pt-BR/docs/next/skill-control-plane"><div class="pagination-nav__sublabel">Próxima</div><div class="pagination-nav__label">Skills nativas e Capability Control Plane</div></a></nav></div></div><div class="col col--3"><div class="tableOfContents_Vpyg thin-scrollbar theme-doc-toc-desktop"><ul class="table-of-contents table-of-contents__left-border"><li><a href="#implementação-gerenciada-e-ciclo-de-vida" class="table-of-contents__link toc-highlight">Implementação gerenciada e ciclo de vida</a></li><li><a href="#escolha-da-menor-inspeção-suficiente" class="table-of-contents__link toc-highlight">Escolha da menor inspeção suficiente</a></li><li><a href="#escopo-snapshots-e-cobertura" class="table-of-contents__link toc-highlight">Escopo, snapshots e cobertura</a></li><li><a href="#limites-de-runtime-e-comportamento-em-falhas" class="table-of-contents__link toc-highlight">Limites de runtime e comportamento em falhas</a></li><li><a href="#fidelidade-e-evidência-operacional" class="table-of-contents__link toc-highlight">Fidelidade e evidência operacional</a></li><li><a href="#eficiência-medida" class="table-of-contents__link toc-highlight">Eficiência medida</a></li></ul></div></div></div></div></main></div></div></div><footer class="theme-layout-footer footer footer--dark"><div class="container container-fluid"><div class="row footer__links"><div class="theme-layout-footer-column col footer__col"><div class="footer__title">Operar</div><ul class="footer__items clean-list"><li class="footer__item"><a class="footer__link-item" href="/pt-BR/docs/installation">Instalação</a></li><li class="footer__item"><a class="footer__link-item" href="/pt-BR/docs/troubleshooting">Solução de problemas</a></li></ul></div><div class="theme-layout-footer-column col footer__col"><div class="footer__title">Desenvolver</div><ul class="footer__items clean-list"><li class="footer__item"><a class="footer__link-item" href="/pt-BR/docs/architecture">Arquitetura</a></li><li class="footer__item"><a class="footer__link-item" href="/pt-BR/docs/development">Desenvolvimento</a></li></ul></div></div><div class="footer__bottom text--center"><div class="footer__copyright">Copyright © 2026 IVOAI. Licenciado sob MIT.</div></div></div></footer></div>
+</body>
+</html>

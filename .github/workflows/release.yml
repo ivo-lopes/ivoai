@@ -44,6 +44,10 @@ jobs:
         run: bash scripts/test-braces.sh
       - name: Non-executing intake and documentation comparison fixtures
         run: python3 -m unittest discover -s scripts -p 'test_*.py'
+      - name: Reviewed Graft build and ABI fixtures
+        run: |
+          python3 scripts/test-build-managed-graft.py
+          python3 scripts/test-graft-abi.py
       - name: Generated CLI reference is current
         run: scripts/generate-cli-reference.sh --check
       - name: Tests, race, and vet
@@ -102,6 +106,23 @@ jobs:
           scripts/test-patched-opencode.sh \
             "$PWD/dist/release/ivoai-opencode_linux_${{ matrix.goarch }}.tar.gz" \
             "$PWD/dist/release/managed-opencode-${{ matrix.goarch }}.json"
+      - name: Install reviewed Graft build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends bubblewrap apparmor binutils gcc-12 g++-12 make python3 patch
+      - name: Admit only the CI sandbox launcher to user namespaces
+        run: scripts/setup-ci-graft-sandbox.sh
+      - name: Build compatible managed Graft and verify baseline CPU
+        env:
+          GRAFT_GCC_MAJOR: "12"
+        run: |
+          scripts/build-managed-graft.sh "$PWD/dist/release"
+          scripts/test-graft-baseline.sh \
+            "$PWD/dist/release/ivoai-graft_linux_${{ matrix.goarch }}.tar.gz" \
+            "$PWD/dist/release/managed-graft-${{ matrix.goarch }}.json"
+          scripts/test-managed-graft.sh \
+            "$PWD/dist/release/ivoai-graft_linux_${{ matrix.goarch }}.tar.gz" \
+            "$PWD/dist/release/managed-graft-${{ matrix.goarch }}.json"
       - name: Build archive
         env:
           CGO_ENABLED: "0"
@@ -113,7 +134,10 @@ jobs:
           metadata="dist/release/managed-opencode-${GOARCH}.json"
           url="https://github.com/ivo-lopes/ivoai/releases/download/${VERSION}/ivoai-opencode_${GOOS}_${GOARCH}.tar.gz"
           managed_build="$(jq -c --arg url "$url" '. + {url:$url}' "$metadata" | base64 -w0)"
-          go build -trimpath -ldflags "-s -w -X main.version=${VERSION#v} -X github.com/ivo-lopes/ivoai/internal/components.managedOpenCodeBuild=${managed_build}" -o dist/ivoai ./cmd/ivoai
+          graft_metadata="dist/release/managed-graft-${GOARCH}.json"
+          graft_url="https://github.com/ivo-lopes/ivoai/releases/download/${VERSION}/ivoai-graft_${GOOS}_${GOARCH}.tar.gz"
+          graft_build="$(jq -c --arg url "$graft_url" '. + {url:$url}' "$graft_metadata" | base64 -w0)"
+          go build -trimpath -ldflags "-s -w -X main.version=${VERSION#v} -X github.com/ivo-lopes/ivoai/internal/components.managedOpenCodeBuild=${managed_build} -X github.com/ivo-lopes/ivoai/internal/components.managedGraftBuild=${graft_build}" -o dist/ivoai ./cmd/ivoai
           go version -m dist/ivoai | grep -F 'vcs.modified=false'
           tar -C dist -czf "dist/release/ivoai_${GOOS}_${GOARCH}.tar.gz" ivoai
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -149,7 +173,7 @@ jobs:
           pattern: ivoai-*
           merge-multiple: true
       - name: Generate checksums
-        run: sha256sum ivoai_*.tar.gz ivoai-opencode_*.tar.gz managed-opencode-*.json ivoai-memory-context.zip > checksums.txt
+        run: sha256sum ivoai_*.tar.gz ivoai-opencode_*.tar.gz managed-opencode-*.json ivoai-graft_*.tar.gz managed-graft-*.json ivoai-memory-context.zip > checksums.txt
       - name: Publish GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -166,9 +190,9 @@ jobs:
           fi
           # Upload into a draft first. A failed upload must never leave a
           # partially populated public release under an immutable tag.
-          gh release create "${GITHUB_REF_NAME}" ivoai_*.tar.gz ivoai-opencode_*.tar.gz managed-opencode-*.json ivoai-memory-context.zip checksums.txt --verify-tag --draft --notes-file "$notes_file" "${release_flags[@]}"
+          gh release create "${GITHUB_REF_NAME}" ivoai_*.tar.gz ivoai-opencode_*.tar.gz managed-opencode-*.json ivoai-graft_*.tar.gz managed-graft-*.json ivoai-memory-context.zip checksums.txt --verify-tag --draft --notes-file "$notes_file" "${release_flags[@]}"
           mapfile -t actual_assets < <(gh release view "${GITHUB_REF_NAME}" --json assets --jq '.assets[].name' | sort)
-          mapfile -t expected_assets < <(printf '%s\n' checksums.txt ivoai-memory-context.zip ivoai_linux_amd64.tar.gz ivoai_linux_arm64.tar.gz ivoai-opencode_linux_amd64.tar.gz ivoai-opencode_linux_arm64.tar.gz managed-opencode-amd64.json managed-opencode-arm64.json | sort)
+          mapfile -t expected_assets < <(printf '%s\n' checksums.txt ivoai-memory-context.zip ivoai_linux_amd64.tar.gz ivoai_linux_arm64.tar.gz ivoai-opencode_linux_amd64.tar.gz ivoai-opencode_linux_arm64.tar.gz managed-opencode-amd64.json managed-opencode-arm64.json ivoai-graft_linux_amd64.tar.gz ivoai-graft_linux_arm64.tar.gz managed-graft-amd64.json managed-graft-arm64.json | sort)
           if [[ "${actual_assets[*]}" != "${expected_assets[*]}" ]]; then
             echo "draft release asset set is incomplete; leaving draft unpublished" >&2
             printf 'expected: %s\nactual: %s\n' "${expected_assets[*]}" "${actual_assets[*]}" >&2

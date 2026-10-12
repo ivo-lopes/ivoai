@@ -1,4 +1,4 @@
-# Managed OpenCode clipboard patch
+# Managed OpenCode patches
 
 Upstream baseline: `anomalyco/opencode` v1.19.0,
 `733b2c627e5aec39cb33cc22373bdce33053ef2c` (MIT).
@@ -18,7 +18,13 @@ It does not change selection, logical text extraction, mouse handling, provider
 configuration, or orchestration. It deliberately does not certify OSC52-only
 delivery as successful desktop copying. No upstream tag or binary is modified.
 
-Build identity: `1.19.0-ivoai.1`. The official workflow builds this patch on the
+`1.19.0-plugin-sdk-version.patch` keeps the plugin SDK dependency at the public
+upstream version `1.19.0`. The private executable version is not a published npm
+SDK version. Both configuration and TUI dependency preparation use this pin;
+npm lifecycle scripts remain disabled. The build verifies both call sites with
+`scripts/test-opencode-plugin-version.py`.
+
+Build identity: `1.19.0-ivoai.2`. The official workflow builds these patches on the
 pinned source with the pinned Bun compiler, without dependency installation
 hooks. Separate archives, build metadata and immutable checksums preserve its
 provenance. The IVOAI binary embeds the archive checksum and source/patch identity;
@@ -39,7 +45,7 @@ Focused real-TUI test (with the explicitly selected patched binary):
 
 ```sh
 IVOAI_LIVE_OPENCODE_PATH=/path/to/patched/opencode \
-IVOAI_LIVE_OPENCODE_VERSION=1.19.0-ivoai.1 \
+IVOAI_LIVE_OPENCODE_VERSION=1.19.0-ivoai.2 \
 IVOAI_LIVE_OPENCODE_TUI=1 \
 IVOAI_LIVE_OPENCODE_CLIPBOARD=failure \
 go test ./internal/opencodebridge -run '^TestLiveManagedOpenCodeResizeKeyboard$' -count=1

@@ -1,5 +1,6 @@
 /** @jsxImportSource @opentui/solid */
 import { For, Show, createSignal, onCleanup } from "solid-js"
+import { useTerminalDimensions } from "@opentui/solid"
 import { clean, logo, panel, servers, fitRows } from "./presentation.mjs"
 import { readOperationalStream, mergeActivity, createStreamWatchdog, initialOperationalStatus } from "./events.mjs"
 import { installKeyboardProtocol } from "./keyboard.mjs"
@@ -149,17 +150,20 @@ const tui = async (api: any, options: any) => {
   )
   const Rows = (props: any) => (
     <box flexDirection="column" gap={0}>
-      <For each={fitRows(props.rows, Math.max(12, api.renderer.width - 8))}>
+      <For each={fitRows(props.rows, props.columns ?? Math.max(12, api.renderer.width - 8))}>
         {(row: any) => <text wrapMode="word" fg={row.role === "identity" ? theme().primary : row.role === "warning" ? theme().warning : row.role === "muted" ? theme().textMuted : theme().text}>{row.text}</text>}
       </For>
     </box>
   )
   const Servers = () => <Rows rows={servers(status())} />
-  const Panel = () => (
-    <box flexDirection="column" gap={0} padding={1}>
-      <Rows rows={panel(status())} />
-    </box>
-  )
+  const Panel = () => {
+    const dimensions = useTerminalDimensions()
+    return (
+      <scrollbox focused scrollX={false} maxHeight={Math.max(4, Math.floor(dimensions().height / 2))} padding={1}>
+        <Rows rows={panel(status())} columns={Math.max(12, Math.min(80, dimensions().width - 12))} />
+      </scrollbox>
+    )
+  }
 
   api.slots.register({
     order: 20,

@@ -111,7 +111,7 @@ func TestDirectRegistryProjectionDeniesWriteAndUnknownEvenInFull(t *testing.T) {
 	cfg, _ := a.Store.Load()
 	cfg.OpenCode.PermissionMode = "full"
 	for _, executor := range []string{"codex", "claude", "opencode"} {
-		k, err := a.prepareSessionKnowledge(context.Background(), cfg, nil, executor, t.TempDir(), nil, nil)
+		k, err := a.prepareSessionKnowledge(context.Background(), cfg, nil, executor, t.TempDir(), t.TempDir(), nil, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -159,5 +159,58 @@ func TestPrimaryCannotInheritWorkerToolsOrCompletedTaskGrants(t *testing.T) {
 	v.Tasks[0].State = session.StateCompleted
 	if allowed, _ := primaryMCPGrant(v, cfg, "plane", "read_tool"); allowed {
 		t.Fatal("completed grant remains")
+	}
+}
+
+func TestPrimaryNativeGrantHonorsExplicitRestrictions(t *testing.T) {
+	cfg := config.Default()
+	for _, tc := range []struct {
+		name    string
+		grants  map[string][]string
+		tool    string
+		allowed bool
+	}{
+		{"implicit", nil, "code_inspect", true},
+		{"unrelated entry", map[string][]string{"plane": {"read_tool"}}, "code_inspect", true},
+		{"empty denies", map[string][]string{nativeCodeMCP: {}}, "code_inspect", false},
+		{"listed only", map[string][]string{nativeCodeMCP: {"graft_repo_map"}}, "graft_repo_map", true},
+		{"unlisted denied", map[string][]string{nativeCodeMCP: {"graft_repo_map"}}, "code_inspect", false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			v := session.Session{State: session.StateRunning, PlanID: "plan_" + strings.Repeat("a", 32), Tasks: []session.TaskMetadata{{ID: "primary", ExecutionMode: "primary", State: session.StatePrimary, AllowedMCPTools: tc.grants}}}
+			v.Decisions = []session.Decision{{ID: v.PlanID, Kind: "plan", State: "approved"}}
+			if allowed, _ := primaryMCPGrant(v, cfg, nativeCodeMCP, tc.tool); allowed != tc.allowed {
+				t.Fatalf("allowed=%v want=%v", allowed, tc.allowed)
+			}
+		})
+	}
+}
+
+func TestPrimaryNativeGrantAggregatesOnlyReadyPrimaryTasks(t *testing.T) {
+	cfg := config.Default()
+	v := session.Session{State: session.StateRunning, PlanID: "plan_" + strings.Repeat("a", 32), Tasks: []session.TaskMetadata{
+		{ID: "restricted", ExecutionMode: "primary", State: session.StatePrimary, AllowedMCPTools: map[string][]string{nativeCodeMCP: {}}},
+		{ID: "other", ExecutionMode: "primary", State: session.StatePrimary, AllowedMCPTools: map[string][]string{nativeCodeMCP: {"code_inspect"}}},
+	}}
+	v.Decisions = []session.Decision{{ID: v.PlanID, Kind: "plan", State: "approved"}}
+	if allowed, _ := primaryMCPGrant(v, cfg, nativeCodeMCP, "code_inspect"); !allowed {
+		t.Fatal("other ready primary grant lost")
+	}
+	for _, state := range []session.State{session.StateCompleted, session.StateFailed, session.StateBlocked} {
+		v.Tasks[1].State = state
+		if allowed, _ := primaryMCPGrant(v, cfg, nativeCodeMCP, "code_inspect"); allowed {
+			t.Fatalf("inactive task grants inherited: %s", state)
+		}
+	}
+	v.Tasks[1].State = session.StateRunning
+	v.Tasks[1].ExecutionMode = "worker"
+	if allowed, _ := primaryMCPGrant(v, cfg, nativeCodeMCP, "code_inspect"); allowed {
+		t.Fatal("worker grant inherited")
+	}
+	v.Tasks[1].State = session.StatePrimary
+	v.Tasks[1].ExecutionMode = "primary"
+	v.Tasks[1].Dependencies = []string{"unfinished"}
+	if allowed, _ := primaryMCPGrant(v, cfg, nativeCodeMCP, "code_inspect"); allowed {
+		t.Fatal("dependent task granted before readiness")
 	}
 }

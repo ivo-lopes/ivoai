@@ -105,6 +105,14 @@ official probes so future selection and fallback can explain which implementatio
 active and why. The matrix is never written to session/config persistence and does not
 require a migration.
 
+## Local code intelligence
+
+[Native Graft code intelligence](native-graft.md) describes the scoped, offline
+structural provider, private snapshots, automatic direct/structural routing,
+resource limits and managed build contract. Memory → Context remains the
+institutional source order; benchmark and final client acceptance evidence are
+tracked separately from the implementation.
+
 ## System view
 
 ```text

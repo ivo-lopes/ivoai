@@ -143,7 +143,7 @@ func TestExternalMCPAuthenticationRejectsUnsafeInput(t *testing.T) {
 	if registry.SetBearer("missing", "fixture") == nil {
 		t.Fatal("created phantom entry")
 	}
-	for _, name := range []string{"ivoai-memory", "ivoai-context", "ivoai-orchestrator"} {
+	for _, name := range []string{"ivoai-memory", "ivoai-context", "ivoai-orchestrator", "ivoai-code"} {
 		if registry.Add(name, config.MCPServer{URL: "https://example.invalid/mcp", Kind: "external"}) == nil {
 			t.Fatal("external MCP shadowed control plane")
 		}

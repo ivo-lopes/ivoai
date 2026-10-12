@@ -25,6 +25,8 @@ import (
 )
 
 type Target struct {
+	// Local is a host-owned native handler; it cannot be configured by an MCP client.
+	Local     http.Handler
 	Name, URL string
 	Headers   http.Header
 	// Restricted is used for task-local worker projections. Empty AllowedTools
@@ -109,7 +111,18 @@ func Start(targets []Target, mode string) (*Gateway, error) {
 			}
 			allowedTools[name] = true
 		}
-		endpoint, err := url.Parse(target.URL)
+		targetURL := target.URL
+		var targetTransport http.RoundTripper = transport
+		if target.Local != nil {
+			if target.URL != "" || len(target.Headers) != 0 || !target.Restricted {
+				listener.Close()
+				cancel()
+				return nil, errors.New("native capability requires a restricted local-only target")
+			}
+			targetURL = "http://127.0.0.1/native"
+			targetTransport = localTransport{handler: target.Local}
+		}
+		endpoint, err := url.Parse(targetURL)
 		if err != nil || endpoint.User != nil || endpoint.RawQuery != "" || endpoint.Fragment != "" || endpoint.Host == "" || (endpoint.Scheme != "https" && !(endpoint.Scheme == "http" && (endpoint.Hostname() == "127.0.0.1" || endpoint.Hostname() == "localhost"))) {
 			listener.Close()
 			cancel()
@@ -130,7 +143,7 @@ func Start(targets []Target, mode string) (*Gateway, error) {
 				for name, values := range headers {
 					request.Out.Header[name] = append([]string(nil), values...)
 				}
-			}, Transport: transport, FlushInterval: -1, ErrorLog: log.New(io.Discard, "", 0),
+			}, Transport: targetTransport, FlushInterval: -1, ErrorLog: log.New(io.Discard, "", 0),
 			ErrorHandler: func(w http.ResponseWriter, _ *http.Request, _ error) {
 				http.Error(w, "external MCP transport failed", http.StatusBadGateway)
 			},

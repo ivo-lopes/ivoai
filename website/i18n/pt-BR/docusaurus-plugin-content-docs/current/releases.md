@@ -1,5 +1,16 @@
 # Releases
 
+## v0.12.0
+
+Consolida as mudanças P1/P2 de sessões, recuperação de hooks, telemetria e perfis
+de automação com a [inteligência de código Graft nativa](native-graft.md). O runtime
+seleciona inspeção direta ou estrutural limitada, preserva o roteamento institucional
+Memory/Context e confina a indexação a snapshots privados, sem rede nem execução
+de scripts do projeto. Claude mantém suporte por testes contratuais; a validação
+real da IVOAI-188 continua adiada. Consulte as
+[notas completas](https://github.com/ivo-lopes/ivoai/blob/v0.12.0/release-notes/v0.12.0.md)
+para compatibilidade, evidências medidas e limites de recuperação.
+
 ## v0.11.0
 
 Atualiza ai-memory para 2.6.3, Ponytail para 5.1.0, os executores e os locks

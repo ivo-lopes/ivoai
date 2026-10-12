@@ -92,7 +92,11 @@ func (r autoTurnRunner) Run(ctx context.Context, request opencodebridge.Executor
 	return result, emit(final.String())
 }
 
-func (a *App) prepareAutoPromptKnowledge(ctx context.Context, cfg config.Config, selectors []string, prompt, executor, runtimeDir string, observe func(observability.Event)) (sessionKnowledge, error) {
+func (a *App) prepareAutoPromptKnowledge(ctx context.Context, cfg config.Config, selectors []string, prompt, executor, runtimeDir, cwd string, observe func(observability.Event)) (sessionKnowledge, error) {
+	scope, err := conversationScopeID(cwd, cfg, selectors)
+	if err != nil {
+		return sessionKnowledge{}, err
+	}
 	pool, err := serverpool.New(cfg.Connections.Servers)
 	if err != nil {
 		return sessionKnowledge{}, err
@@ -113,12 +117,12 @@ func (a *App) prepareAutoPromptKnowledge(ctx context.Context, cfg config.Config,
 		}
 		cfg.MCP.Servers = servers
 	}
-	return a.prepareSessionKnowledgeSelection(ctx, cfg, nil, &selection, executor, runtimeDir, os.Environ(), observe, true)
+	return a.prepareSessionKnowledgeSelection(ctx, cfg, selectors, &selection, executor, runtimeDir, cwd, scope, os.Environ(), observe, true)
 }
 
 func (a *App) scopeAutoRunner(base opencodebridge.ExecutorRunner, original config.Config, state config.State, store session.Store, id, cwd, runtimeDir, instructionsPath string, agentArgs, selectors []string, current *autoTurnState, catalog opencodebridge.ModelCatalog) opencodebridge.ExecutorRunner {
 	wrapped := autoTurnRunner{prepare: func(ctx context.Context, request opencodebridge.ExecutorRequest) (opencodebridge.ExecutorRunner, func(), error) {
-		k, err := a.prepareAutoPromptKnowledge(ctx, original, selectors, request.Prompt, request.Executor, runtimeDir, func(event observability.Event) {
+		k, err := a.prepareAutoPromptKnowledge(ctx, original, selectors, request.Prompt, request.Executor, runtimeDir, cwd, func(event observability.Event) {
 			_, _ = store.Update(id, func(value *session.Session) error { return session.AppendObservation(value, event) })
 		})
 		if err != nil {

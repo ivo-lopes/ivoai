@@ -56,7 +56,7 @@ func (a *App) nativeOpenCode(cfg config.Config, state config.State, directory, r
 		}
 	}
 	if !worker {
-		for _, name := range externalMCPNames(cfg) {
+		for _, name := range processLocalMCPNames(cfg) {
 			entry := cfg.MCP.Servers[name]
 			if entry.HeaderEnv["Authorization"] != externalMCPTokenEnvironment {
 				continue

@@ -7,7 +7,7 @@ const sidebars: SidebarsConfig = {
     {type: 'category', label: 'Usage', items: ['basic-usage', 'advanced-usage', 'cli-reference', 'conversation-continuity', 'cookbook']},
     {type: 'category', label: 'Executors and AUTO', items: ['executors', 'auto-orchestration', 'auto-scheduler', 'quota-routing', 'orchestration', 'ux-audit']},
     {type: 'category', label: 'Knowledge', items: ['memory', 'context-guide', 'multi-server', 'connections', 'mcp-web']},
-    {type: 'category', label: 'Control and fidelity', items: ['skill-control-plane', 'working-context', 'compression-provider', 'caveman-canary']},
+    {type: 'category', label: 'Control and fidelity', items: ['native-graft', 'skill-control-plane', 'working-context', 'compression-provider', 'caveman-canary']},
     {type: 'category', label: 'Operations', items: ['operations', 'update-rollback', 'backup-restore', 'production-compatibility', 'production-inventory', 'canary-rollout']},
     {type: 'category', label: 'Security and support', items: ['security', 'skill-control-plane-threat-model', 'troubleshooting', 'faq', 'known-limitations']},
     {type: 'category', label: 'Architecture and project', items: ['architecture', 'adrs', 'development', 'contributing', 'releases']},

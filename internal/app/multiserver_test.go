@@ -102,7 +102,7 @@ func TestImplicitKnowledgeSelectionUsesEveryEnabledServer(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	knowledge, err := a.prepareSessionKnowledge(context.Background(), cfg, nil, "opencode", t.TempDir(), nil, nil)
+	knowledge, err := a.prepareSessionKnowledge(context.Background(), cfg, nil, "opencode", t.TempDir(), t.TempDir(), nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -174,7 +174,7 @@ func TestDisabledMemoryIsNotReenabledInSessionEnvironment(t *testing.T) {
 	if err := (secrets.Store{Path: a.Store.Paths.Secrets}).Set(profile.ID, secrets.ClientCredential{Token: "never-forwarded"}); err != nil {
 		t.Fatal(err)
 	}
-	knowledge, err := a.prepareSessionKnowledge(context.Background(), cfg, []string{profile.Alias}, "codex", t.TempDir(), []string{
+	knowledge, err := a.prepareSessionKnowledge(context.Background(), cfg, []string{profile.Alias}, "codex", t.TempDir(), t.TempDir(), []string{
 		"AI_MEMORY_SERVER_URL=https://stale.invalid",
 		"AI_MEMORY_AUTH_TOKEN=stale-token",
 		"IVOAI_MEMORY_MCP_URL=https://stale.invalid/mcp",
@@ -224,7 +224,7 @@ func TestCompressionPolicyUsesOnlySessionSelectedSources(t *testing.T) {
 	}
 	check := func(selectors []string, wantActive, wantBypass bool, wantCount int) {
 		t.Helper()
-		knowledge, err := a.prepareSessionKnowledge(context.Background(), cfg, selectors, "codex", t.TempDir(), nil, nil)
+		knowledge, err := a.prepareSessionKnowledge(context.Background(), cfg, selectors, "codex", t.TempDir(), t.TempDir(), nil, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -274,7 +274,7 @@ func TestParallelSessionsKeepIndependentCompressionPolicy(t *testing.T) {
 		group.Add(1)
 		go func(selector string) {
 			defer group.Done()
-			knowledge, err := a.prepareSessionKnowledge(context.Background(), cfg, []string{selector}, "codex", filepath.Join(root, "runtime", selector), nil, nil)
+			knowledge, err := a.prepareSessionKnowledge(context.Background(), cfg, []string{selector}, "codex", filepath.Join(root, "runtime", selector), root, nil, nil)
 			if err != nil {
 				results <- outcome{selector: selector, err: err}
 				return

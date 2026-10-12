@@ -84,7 +84,7 @@ func TestLiveNativeAUTOArtifact(t *testing.T) {
 	if path := os.Getenv("IVOAI_NATIVE_SMOKE_OPENCODE_PATH"); path != "" {
 		// Public artifact tests can select the matching downloaded frontend;
 		// only isolated component metadata changes, never operator installation.
-		state.Components["opencode"] = config.ComponentState{Installed: true, Managed: true, Version: "1.19.0-ivoai.1", Path: path}
+		state.Components["opencode"] = config.ComponentState{Installed: true, Managed: true, Version: "1.19.0-ivoai.2", Path: path}
 	}
 	if path := os.Getenv("IVOAI_NATIVE_SMOKE_CODEX_PATH"); path != "" {
 		// The caller supplies the checksum-verified reviewed artifact. No

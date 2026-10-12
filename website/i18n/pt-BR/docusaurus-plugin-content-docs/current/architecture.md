@@ -105,6 +105,14 @@ sondagens oficiais, para que futuras seleções e fallbacks possam explicar qual
 ativa e por quê. A matriz nunca é gravada na persistência de sessão/configuração e não
 exige migração.
 
+## Inteligência local de código
+
+[Inteligência de código com Graft nativo](native-graft.md) descreve o provedor
+estrutural offline e com escopo, snapshots privados, roteamento automático entre
+inspeção direta e estrutural, limites de recursos e contrato do build gerenciado.
+Memory → Context permanece a ordem das fontes institucionais; evidências de
+benchmark e aceite final dos clientes são acompanhadas separadamente da implementação.
+
 ## Visão do sistema
 
 ```text

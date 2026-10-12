@@ -201,3 +201,25 @@ func TestManagedCompanionRequired(t *testing.T) {
 		t.Fatalf("%+v %v", got, err)
 	}
 }
+
+func TestManagedPATHAliasUsesRegisteredCompanion(t *testing.T) {
+	root := t.TempDir()
+	managed := binary(t, root, "managed/codex")
+	host := binary(t, root, "managed/codex-code-mode-host")
+	alias := filepath.Join(root, "codex")
+	if err := os.Symlink(managed, alias); err != nil {
+		t.Fatal(err)
+	}
+	run := &runner{direct: alias, clients: map[string]client{managed: {version: "0.162.1"}}}
+	resolver := Resolver{Runner: run, PATH: root, Managed: config.ComponentState{Path: managed, Installed: true, Managed: true, Version: "0.162.1"}, Host: config.ComponentState{Path: host, Installed: true, Managed: true, Version: "0.162.1"}}
+	got, err := resolver.Resolve(context.Background())
+	if err != nil || got.Effective.RealPath != managed || got.Effective.Ownership != "managed" || len(got.Candidates) != 1 {
+		t.Fatalf("paired managed alias rejected: %+v %v", got, err)
+	}
+	// An executable next to the alias cannot replace the registered companion.
+	rogue := binary(t, root, "codex-code-mode-host")
+	resolver.Host.Path = rogue
+	if _, err := resolver.Resolve(context.Background()); err == nil {
+		t.Fatal("unregistered companion beside PATH alias accepted")
+	}
+}

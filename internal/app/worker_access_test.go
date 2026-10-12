@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/ivo-lopes/ivoai/internal/config"
+	"github.com/ivo-lopes/ivoai/internal/observability"
 	"github.com/ivo-lopes/ivoai/internal/routing"
 	"github.com/ivo-lopes/ivoai/internal/secrets"
 	"github.com/ivo-lopes/ivoai/internal/session"
@@ -55,11 +56,18 @@ func TestNativeWorkerProjectionHasIndependentSourceAndSkillScope(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			task := routing.Task{TaskInput: routing.TaskInput{ID: "fixture", Role: "research", KnowledgeSources: tc.sources, AllowedMCPs: tc.mcps, Skills: tc.skills}}
+			before, _ := store.Get(id)
 			got, err := a.prepareWorkerAccess(context.Background(), cfg, store, id, task, request)
 			if (err != nil) != tc.denied {
 				t.Fatalf("denied=%v error=%v", tc.denied, err)
 			}
 			if tc.denied {
+				after, _ := store.Get(id)
+				for _, event := range after.Observability {
+					if event.Sequence > before.ObservationSequence && event.Operation == observability.OperationCodeInspect {
+						t.Fatal("code runtime reached before task/skill admission")
+					}
+				}
 				return
 			}
 			if got.Release == nil || got.Access == nil {

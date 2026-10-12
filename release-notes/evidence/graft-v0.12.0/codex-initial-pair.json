@@ -1,0 +1,18 @@
+[
+  {
+    "Arm": "A",
+    "DurationMS": 20005,
+    "InputTokens": 94435,
+    "OutputTokens": 322,
+    "Calls": 0,
+    "Correct": true
+  },
+  {
+    "Arm": "B",
+    "DurationMS": 18955,
+    "InputTokens": 67571,
+    "OutputTokens": 289,
+    "Calls": 1,
+    "Correct": true
+  }
+]

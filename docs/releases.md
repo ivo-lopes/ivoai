@@ -1,5 +1,16 @@
 # Releases
 
+## v0.12.0
+
+Consolidates the P1/P2 session, hook-recovery, telemetry and automation-profile
+changes with managed [native Graft code intelligence](native-graft.md). The
+runtime selects bounded direct or structural inspection, preserves institutional
+Memory/Context routing, and confines indexing to private snapshots without network
+or project-script execution. Claude remains supported by contract tests; real
+Claude validation under IVOAI-188 is still deferred. See the
+[complete notes](https://github.com/ivo-lopes/ivoai/blob/v0.12.0/release-notes/v0.12.0.md)
+for compatibility, measured evidence and recovery limits.
+
 ## v0.11.0
 
 Updates ai-memory to 2.6.3, Ponytail to 5.1.0, managed executors and reviewed locks;

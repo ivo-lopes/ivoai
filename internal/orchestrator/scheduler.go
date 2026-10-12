@@ -36,6 +36,8 @@ type runtimePlan struct {
 }
 
 type runtimeTask struct {
+	PrimaryEvidenceAttempted, PrimaryEvidencePending bool
+
 	RoutePending bool
 	Task         routing.Task
 	WorkerID     string
@@ -338,7 +340,7 @@ func (s *Server) plan(ctx context.Context, request *mcp.CallToolRequest) (*mcp.C
 	if s.AutomaticDispatch {
 		s.queueAutomatic(planID)
 	}
-	return toolResult(planMetadata(resolved))
+	return toolResult(s.primaryEvidence(ctx, planID, planMetadata(resolved)))
 }
 
 func (s *Server) queueAutomatic(planID string) {
@@ -795,19 +797,19 @@ func (s *Server) wait(ctx context.Context, request *mcp.CallToolRequest) (*mcp.C
 			return nil, err
 		}
 		if ready {
-			return toolResult(s.planStatus(args.PlanID))
+			return toolResult(s.primaryEvidence(ctx, args.PlanID, s.planStatus(args.PlanID)))
 		}
 		if len(primaryRequired) > 0 {
 			// The caller is the primary, so blocking here cannot make its own
 			// runnable work finish. Preserve incomplete state and return the
 			// explicit next action instead of waiting until the timeout.
-			return toolResult(map[string]any{"waiting_for_primary": true, "primary_task_ids": primaryRequired, "required_action": "Perform and verify each primary-owned task, then call orchestration_primary_complete. Wait only on delegated workers; integrate all completed tasks before final synthesis.", "plan": s.planStatus(args.PlanID)})
+			return toolResult(s.primaryEvidence(ctx, args.PlanID, map[string]any{"waiting_for_primary": true, "primary_task_ids": primaryRequired, "required_action": "Perform and verify each primary-owned task, then call orchestration_primary_complete. Wait only on delegated workers; integrate all completed tasks before final synthesis.", "plan": s.planStatus(args.PlanID)}))
 		}
 		select {
 		case <-ctx.Done():
 			return nil, ctx.Err()
 		case <-timer.C:
-			return toolResult(map[string]any{"timed_out": true, "plan": s.planStatus(args.PlanID)})
+			return toolResult(s.primaryEvidence(ctx, args.PlanID, map[string]any{"timed_out": true, "plan": s.planStatus(args.PlanID)}))
 		case <-notify:
 		}
 	}
