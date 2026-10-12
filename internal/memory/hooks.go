@@ -24,6 +24,10 @@ type hookFile struct {
 	Path string `json:"path"`
 	Body []byte `json:"body"`
 	Mode uint32 `json:"mode"`
+	// Transient comparison base; never serialized into ownership receipts.
+	Before        []byte      `json:"-"`
+	BeforeMode    os.FileMode `json:"-"`
+	CompareBefore bool        `json:"-"`
 }
 type hookRegistration struct {
 	Path  string          `json:"path"`
@@ -219,10 +223,12 @@ func applyHookConfiguration(root, binary string, plans map[string][]byte) error 
 					rel := filepath.Join(".ivoai-managed", id+".sh")
 					body := hookWrapper(command, id, root)
 					file := hookFile{Path: rel, Body: body, Mode: 0700}
-					if current, _, e := hookBody(filepath.Join(root, rel)); e != nil {
+					if current, currentMode, e := hookBody(filepath.Join(root, rel)); e != nil {
 						return e
 					} else if current != nil && !knownHookFile(old.Files, rel, current) && !bytes.Equal(current, body) {
 						return errors.New("hook wrapper was modified; refusing replacement")
+					} else {
+						file.Before, file.BeforeMode, file.CompareBefore = current, currentMode, true
 					}
 					receipt.Files = append(receipt.Files, file)
 					files[filepath.Join(root, rel)] = file
@@ -315,10 +321,11 @@ func planHookRegistrations(root string, next, old hookReceipt, files *map[string
 		}
 		doc["hooks"], _ = json.Marshal(events)
 		out, _ := json.MarshalIndent(doc, "", "  ")
+		beforeMode := mode
 		if mode == 0 {
 			mode = 0600
 		}
-		(*files)[path] = hookFile{Body: out, Mode: uint32(mode)}
+		(*files)[path] = hookFile{Body: out, Mode: uint32(mode), Before: body, BeforeMode: beforeMode, CompareBefore: true}
 	}
 	return nil
 }
@@ -353,13 +360,14 @@ func repairHooks(root, expectedBinary string) error {
 	files := map[string]hookFile{}
 	for _, file := range receipt.Files {
 		path := filepath.Join(root, file.Path)
-		body, _, err := hookBody(path)
+		body, mode, err := hookBody(path)
 		if err != nil {
 			return err
 		}
 		if body != nil && !bytes.Equal(body, file.Body) {
 			return errors.New("hook content was modified; refusing repair")
 		}
+		file.Before, file.BeforeMode, file.CompareBefore = body, mode, true
 		files[path] = file
 	}
 	if err := planHookAssetRepair(root, files); err != nil {
@@ -398,6 +406,9 @@ func commitHookFilesUsing(root string, files map[string]hookFile, write func([]b
 			return err
 		}
 		file := files[path]
+		if file.CompareBefore && (!bytes.Equal(body, file.Before) || mode != file.BeforeMode) {
+			return errors.New("hook configuration changed after planning; retry without overwriting external edits")
+		}
 		if bytes.Equal(body, file.Body) && mode == os.FileMode(file.Mode) {
 			continue
 		}
@@ -449,6 +460,19 @@ func commitHookFilesUsing(root string, files map[string]hookFile, write func([]b
 			var rollback error
 			for j := rollbackFrom; j >= 0; j-- {
 				previous := snapshots[j]
+				current, currentMode, readErr := hookBody(previous.path)
+				if readErr != nil {
+					rollback = errors.Join(rollback, readErr)
+					continue
+				}
+				if bytes.Equal(current, previous.body) && currentMode == previous.mode {
+					continue
+				}
+				written := files[previous.path]
+				if !bytes.Equal(current, written.Body) || currentMode != os.FileMode(written.Mode) {
+					rollback = errors.Join(rollback, errors.New("hook rollback preserved a concurrent external edit"))
+					continue
+				}
 				var e error
 				if previous.body == nil {
 					e = os.Remove(previous.path)
@@ -570,7 +594,7 @@ func disableOwnedHooks(root string) error {
 		}
 		doc["hooks"], _ = json.Marshal(events)
 		updated, _ := json.MarshalIndent(doc, "", "  ")
-		files[path] = hookFile{Body: updated, Mode: uint32(mode)}
+		files[path] = hookFile{Body: updated, Mode: uint32(mode), Before: body, BeforeMode: mode, CompareBefore: true}
 	}
 	receipt.Disabled = true
 	body, _ := json.MarshalIndent(receipt, "", "  ")

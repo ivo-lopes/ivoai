@@ -192,14 +192,14 @@ func InstallHookAssets(source, root string) error {
 			return errors.New("invalid verified hook asset path")
 		}
 		destination := filepath.Join(root, rel)
-		current, _, err := hookBody(destination)
+		current, currentMode, err := hookBody(destination)
 		if err != nil {
 			return err
 		}
 		if current != nil && !bytes.Equal(current, body) && !knownHookFile(old, rel, current) {
 			return errors.New("existing hook asset has unknown ownership; refusing replacement")
 		}
-		asset := hookFile{Path: rel, Body: body, Mode: uint32(mode)}
+		asset := hookFile{Path: rel, Body: body, Mode: uint32(mode), Before: current, BeforeMode: currentMode, CompareBefore: true}
 		assets = append(assets, asset)
 		files[destination] = asset
 		return nil
@@ -229,13 +229,14 @@ func planHookAssetRepair(root string, files map[string]hookFile) error {
 			return errors.New("invalid hook asset path")
 		}
 		path := filepath.Join(root, asset.Path)
-		current, _, err := hookBody(path)
+		current, mode, err := hookBody(path)
 		if err != nil {
 			return err
 		}
 		if current != nil && !bytes.Equal(current, asset.Body) {
 			return fmt.Errorf("hook source asset was modified; refusing repair")
 		}
+		asset.Before, asset.BeforeMode, asset.CompareBefore = current, mode, true
 		files[path] = asset
 	}
 	return nil

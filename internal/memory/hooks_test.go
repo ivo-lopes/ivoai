@@ -363,3 +363,57 @@ func TestVerifiedHookAssetsDoNotAdoptForeignFiles(t *testing.T) {
 		t.Fatal("foreign content changed")
 	}
 }
+
+func TestHookRegistrationCommitRejectsForeignEditAfterPlanning(t *testing.T) {
+	root, _, path := hookFixture(t)
+	if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, []byte(`{"model":"original","hooks":{}}`), 0600); err != nil {
+		t.Fatal(err)
+	}
+	next := hookReceipt{Registrations: []hookRegistration{{Path: path, Event: "SessionStart", Entry: json.RawMessage(`{"hooks":[{"command":"fixture"}]}`)}}}
+	files := map[string]hookFile{}
+	if err := planHookRegistrations(root, next, hookReceipt{}, &files); err != nil {
+		t.Fatal(err)
+	}
+	foreign := []byte(`{"model":"concurrent-foreign","hooks":{}}`)
+	if err := os.WriteFile(path, foreign, 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := commitHookFiles(root, files); err == nil {
+		t.Fatal("stale planned merge overwrote foreign edit")
+	}
+	body, _ := os.ReadFile(path)
+	if !bytes.Equal(body, foreign) {
+		t.Fatal("foreign settings were not preserved")
+	}
+}
+
+func TestHookRollbackPreservesForeignEditAfterOurWrite(t *testing.T) {
+	root, _, _ := hookFixture(t)
+	first := filepath.Join(root, "a")
+	second := filepath.Join(root, "b")
+	if err := os.WriteFile(first, []byte("original"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	calls := 0
+	writer := func(body []byte, path string, mode os.FileMode) error {
+		calls++
+		if calls == 2 {
+			if err := os.WriteFile(first, []byte("concurrent-foreign"), 0600); err != nil {
+				return err
+			}
+			return errors.New("fixture second-write failure")
+		}
+		return platform.AtomicWriteFile(body, path, mode)
+	}
+	err := commitHookFilesUsing(root, map[string]hookFile{first: {Body: []byte("ours"), Mode: 0600}, second: {Body: []byte("second"), Mode: 0600}}, writer)
+	if err == nil {
+		t.Fatal("expected transaction failure")
+	}
+	body, _ := os.ReadFile(first)
+	if string(body) != "concurrent-foreign" {
+		t.Fatalf("rollback erased concurrent edit: %q", body)
+	}
+}
