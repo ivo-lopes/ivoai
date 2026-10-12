@@ -7,10 +7,13 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"strings"
 	"time"
 )
+
+var generatedBundle = regexp.MustCompile(`(?i)(?:\.[a-f0-9]{8,64}|\.min)\.(?:mjs|cjs|js)$`)
 
 var sourceExtensions = strings.Fields(".go .py .pyi .js .jsx .ts .tsx .mjs .cjs .java .kt .kts .php .r .swift .rs .c .h .cpp .cc .cxx .hpp .hh .rb .cs .scala .ex .exs .sol .ml .mli .zig .dart .clj .cljs .cljc .bb .nix .lua .vue .svelte .astro")
 
@@ -38,6 +41,9 @@ func Inventory(ctx context.Context, root string) ([]string, error) {
 		if name == "" || !filepath.IsLocal(name) || filepath.Clean(name) != name {
 			continue
 		}
+		if generatedBundle.MatchString(filepath.Base(name)) {
+			continue
+		}
 		if !slices.Contains(sourceExtensions, strings.ToLower(filepath.Ext(name))) && name != "go.mod" {
 			continue
 		}
@@ -59,7 +65,7 @@ func Inventory(ctx context.Context, root string) ([]string, error) {
 			continue
 		}
 		st, err := dir.Lstat(name)
-		if err != nil || !st.Mode().IsRegular() {
+		if err != nil || !st.Mode().IsRegular() || st.Size() > MaxFileBytes {
 			continue
 		}
 		files = append(files, name)

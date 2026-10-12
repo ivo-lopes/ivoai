@@ -31,3 +31,41 @@ func TestInventoryPreservesGitScopeAndExcludesSecrets(t *testing.T) {
 		}
 	}
 }
+
+func TestInventorySkipsOversizedGeneratedSources(t *testing.T) {
+	p, _ := testProvider(t)
+	file, err := os.Create(filepath.Join(p.Root, "large.js"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = file.Truncate(MaxFileBytes + 1); err != nil {
+		t.Fatal(err)
+	}
+	file.Close()
+	files, err := Inventory(context.Background(), p.Root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range files {
+		if name == "large.js" {
+			t.Fatal("oversized source admitted")
+		}
+	}
+	if _, err = Snapshot(p.Root, files); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestInventoryExcludesGeneratedBundlesButKeepsSource(t *testing.T) {
+	p, _ := testProvider(t)
+	for _, name := range []string{"main.a3bcaeff.js", "1253.929985a4.js", "vendor.min.js", "source.js"} {
+		os.WriteFile(filepath.Join(p.Root, name), []byte("export function validSource(){}"), 0600)
+	}
+	files, err := Inventory(context.Background(), p.Root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(files) != 2 {
+		t.Fatalf("generated bundles admitted: %v", files)
+	}
+}

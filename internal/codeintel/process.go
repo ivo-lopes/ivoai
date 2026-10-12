@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"syscall"
@@ -41,7 +42,7 @@ func SandboxHelper(args []string) error {
 			read = append(read, path)
 		}
 	}
-	return codesandbox.Exec(node, []string{"--openssl-config=/dev/null", "--max-old-space-size=256", entry}, read, []string{cache})
+	return codesandbox.Exec(node, []string{"--openssl-config=/dev/null", "--max-old-space-size=256", "--expose-gc", entry}, read, []string{cache})
 }
 
 func (p *Provider) runProcess(ctx context.Context, r adapterRequest) (adapterResponse, error) {
@@ -89,7 +90,7 @@ func (p *Provider) runProcess(ctx context.Context, r adapterRequest) (adapterRes
 		select {
 		case err = <-done:
 			if exceeded {
-				return response, errors.New("structural process exceeded memory budget")
+				return response, fmt.Errorf("structural process exceeded memory budget (%s)", processStage(stderr.String()))
 			}
 			if ctx.Err() != nil {
 				return response, ctx.Err()
@@ -137,4 +138,15 @@ func processRSS(pid int) int64 {
 		}
 	}
 	return 0
+}
+
+var processStagePattern = regexp.MustCompile(`(?m)^ivoai-stage (parse|query) ([0-9]{1,6})$`)
+
+func processStage(body string) string {
+	matches := processStagePattern.FindAllStringSubmatch(body, -1)
+	if len(matches) == 0 {
+		return "stage unavailable"
+	}
+	last := matches[len(matches)-1]
+	return last[1] + " " + last[2]
 }

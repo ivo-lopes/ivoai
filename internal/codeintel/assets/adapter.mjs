@@ -9,8 +9,9 @@ export async function execute(request, load = name => import(pathToFileURL(join(
  let built;
  if(request.build) {
   const {buildGraph}=await load('graph/build.js');
-  built=await buildGraph(request.root,{contextDir:request.cache,graphOnly:true,reuse:true,lsp:false});
+  built=await buildGraph(request.root,{contextDir:request.cache,graphOnly:true,reuse:true,lsp:false,onProgress:info=>{if(info.phase==='parse'&&info.index%128===0)process.stderr.write('ivoai-stage parse '+info.index+'\n');if(info.phase==='parse'&&info.index>0&&info.index%32===0&&typeof globalThis.gc==='function')globalThis.gc();}});
  }
+ if(request.build)process.stderr.write('ivoai-stage query 0\n');
  let text;
  if(request.operation==='build') text=JSON.stringify({files:built?.files,nodes:built?.nodes,parsed:built?.parsed,reused:built?.reused});
  else if(request.operation==='blast' && request.file) {

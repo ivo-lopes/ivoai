@@ -1,0 +1,53 @@
+--- a/src/graph/build.ts
++++ b/src/graph/build.ts
+@@ -202,7 +202,9 @@
+     new Set(files.map((f) => containerLangOf(f.abs)?.name).filter((n): n is string => !!n)),
+   );
+ 
+-  files.forEach((f, i) => {
++  for (const [i, f] of files.entries()) {
++    // IVOAI: allow native syntax-tree finalizers to run between bounded batches.
++    if (i > 0 && i % 32 === 0) await new Promise<void>((resolve) => setImmediate(resolve));
+     const rel = f.rel;
+     opts.onProgress?.({ phase: "parse", index: i, total: files.length, file: rel });
+     // Depth tier (hand-written, native grammar) if a language claims the file;
+@@ -234,13 +236,13 @@
+       // Record it anyway (with the stat we do have) so the freshness probe's
+       // fast path doesn't report this file as new on every single query.
+       entries[rel] = { size: f.size, mtimeMs: f.mtimeMs, hash: "", nodes: [], rawEdges: [], error: message };
+-      return;
++      continue;
+     }
+     if (source === null) {
+       // Unsupported encoding (UTF-16BE) — a skip, never an error: recorded with
+       // an empty entry so the freshness probe doesn't treat it as new every run.
+       entries[rel] = { size: f.size, mtimeMs: f.mtimeMs, hash: "", nodes: [], rawEdges: [] };
+-      return;
++      continue;
+     }
+ 
+     const hash = contentHash(source);
+@@ -250,12 +252,12 @@
+       reused++;
+       if (cached.error) {
+         errors.push(cached.error); // this file failed to parse last time too
+-        return;
++        continue;
+       }
+       nodes.push(...cached.nodes);
+       rawEdges.push(...cached.rawEdges);
+       langs.add(label);
+-      return;
++      continue;
+     }
+ 
+     parsed++;
+@@ -275,7 +277,7 @@
+       errors.push(message);
+       entries[rel] = { size: f.size, mtimeMs: f.mtimeMs, hash, nodes: [], rawEdges: [], error: message };
+     }
+-  });
++  }
+ 
+   // Persist the memo BEFORE enrichment, because `enrichGraph` mutates these very
+   // node objects (summary/crux/summary_state) and the cache must only ever hold

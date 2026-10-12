@@ -35,3 +35,10 @@ test('file impact uses reviewed blast report with bounded supplied line ranges',
  });
  assert.deepEqual(imports,['graph/load.js','blast/blast.js']);assert.match(report.text,/unindexed/);
 });
+test('native finalizer collection is bounded to parser batches',async()=>{
+ const previous=globalThis.gc;let collected=0;globalThis.gc=()=>collected++;
+ try{
+  await execute({operation:'build',build:true,root:'/source',cache:'/cache',budget_bytes:256},async()=>({buildGraph:async(root,options)=>{for(let index=0;index<96;index++)options.onProgress({phase:'parse',index,total:96});return{files:96,nodes:96}}}));
+  assert.equal(collected,2);
+ }finally{globalThis.gc=previous}
+});
