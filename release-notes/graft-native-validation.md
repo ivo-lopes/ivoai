@@ -87,6 +87,15 @@ host validation limit causal inference. The initial smaller pair favored B, but
 does not override this broader result. These measurements motivated routing and
 tool-contract refinements, which require separate follow-up evidence.
 
+The follow-up MCP-projection benchmark at `e0fcf46c` also passed all 24
+correctness checks and preserved the personal Codex configuration byte-for-byte.
+It did **not** demonstrate aggregate savings: A used 879,174 input tokens and
+202,007 ms; B used 1,203,629 input tokens and 278,003 ms (approximately +36.9%
+and +37.6%). Tool calls were 24 versus 40. This harness measures optional MCP
+availability, not the App's automatic admitted-primary prefetch. Its raw results
+are preserved in `codex-after-routing-refinement.json`; no unfavorable cases are
+excluded. The automatic host-context path is evaluated separately.
+
 Tool-layer measurements separately showed useful relationships unavailable from
 the bounded textual baseline, smaller API/declaration responses and cached
 structural queries around 8–12 ms. Cold indexing of IVOAI under concurrent load
