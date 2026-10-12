@@ -12,6 +12,10 @@ commit; it preserves the P1/P2 changes described in
 [the previous validation record](backlog-p1-p2-validation.md). The previous stable
 release is v0.11.0. PR [#29](https://github.com/ivo-lopes/ivoai/pull/29) contains
 the Graft work.
+Draft PR [#25](https://github.com/ivo-lopes/ivoai/pull/25) was closed as superseded,
+with [the reconciliation rationale](https://github.com/ivo-lopes/ivoai/pull/25#issuecomment-6133662904):
+PR #28 supplies receipt-owned hook diagnostics and transactional repair without
+merging the older broad reconfiguration path. This is not a Plane Done update.
 
 | Input | Immutable identity |
 | --- | --- |
