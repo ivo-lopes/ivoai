@@ -1,0 +1,146 @@
+{
+  "Samples": [
+    {
+      "Phase": "cold",
+      "WallMS": 4241,
+      "Bytes": 76,
+      "CacheHit": false,
+      "CPUTimeMS": 919,
+      "PeakMemoryBytes": 108929024,
+      "Correct": true
+    },
+    {
+      "Phase": "warm",
+      "WallMS": 7,
+      "Bytes": 76,
+      "CacheHit": true,
+      "CPUTimeMS": null,
+      "PeakMemoryBytes": null,
+      "Correct": true
+    },
+    {
+      "Phase": "warm",
+      "WallMS": 5,
+      "Bytes": 76,
+      "CacheHit": true,
+      "CPUTimeMS": null,
+      "PeakMemoryBytes": null,
+      "Correct": true
+    },
+    {
+      "Phase": "warm",
+      "WallMS": 4,
+      "Bytes": 76,
+      "CacheHit": true,
+      "CPUTimeMS": null,
+      "PeakMemoryBytes": null,
+      "Correct": true
+    },
+    {
+      "Phase": "warm",
+      "WallMS": 6,
+      "Bytes": 76,
+      "CacheHit": true,
+      "CPUTimeMS": null,
+      "PeakMemoryBytes": null,
+      "Correct": true
+    },
+    {
+      "Phase": "warm",
+      "WallMS": 5,
+      "Bytes": 76,
+      "CacheHit": true,
+      "CPUTimeMS": null,
+      "PeakMemoryBytes": null,
+      "Correct": true
+    },
+    {
+      "Phase": "warm",
+      "WallMS": 9,
+      "Bytes": 76,
+      "CacheHit": true,
+      "CPUTimeMS": null,
+      "PeakMemoryBytes": null,
+      "Correct": true
+    },
+    {
+      "Phase": "warm",
+      "WallMS": 6,
+      "Bytes": 76,
+      "CacheHit": true,
+      "CPUTimeMS": null,
+      "PeakMemoryBytes": null,
+      "Correct": true
+    },
+    {
+      "Phase": "warm",
+      "WallMS": 6,
+      "Bytes": 76,
+      "CacheHit": true,
+      "CPUTimeMS": null,
+      "PeakMemoryBytes": null,
+      "Correct": true
+    },
+    {
+      "Phase": "warm",
+      "WallMS": 6,
+      "Bytes": 76,
+      "CacheHit": true,
+      "CPUTimeMS": null,
+      "PeakMemoryBytes": null,
+      "Correct": true
+    },
+    {
+      "Phase": "warm",
+      "WallMS": 6,
+      "Bytes": 76,
+      "CacheHit": true,
+      "CPUTimeMS": null,
+      "PeakMemoryBytes": null,
+      "Correct": true
+    },
+    {
+      "Phase": "incremental",
+      "WallMS": 628,
+      "Bytes": 147,
+      "CacheHit": false,
+      "CPUTimeMS": 627,
+      "PeakMemoryBytes": 109203456,
+      "Correct": true
+    },
+    {
+      "Phase": "incremental-warm",
+      "WallMS": 5,
+      "Bytes": 147,
+      "CacheHit": true,
+      "CPUTimeMS": null,
+      "PeakMemoryBytes": null,
+      "Correct": true
+    },
+    {
+      "Phase": "rename",
+      "WallMS": 767,
+      "Bytes": 150,
+      "CacheHit": false,
+      "CPUTimeMS": 824,
+      "PeakMemoryBytes": 107655168,
+      "Correct": true
+    },
+    {
+      "Phase": "delete",
+      "WallMS": 744,
+      "Bytes": 150,
+      "CacheHit": false,
+      "CPUTimeMS": 816,
+      "PeakMemoryBytes": 106655744,
+      "Correct": true
+    }
+  ],
+  "WarmP95MS": 9,
+  "WarmTargetMS": 100,
+  "WarmTargetMet": true,
+  "ColdTargetMS": 90000,
+  "ResultBudgetBytes": 4096,
+  "MonitoredRSSBudgetBytes": 536870912,
+  "ProviderTokens": null
+}
