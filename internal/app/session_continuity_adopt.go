@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 
 	"github.com/ivo-lopes/ivoai/internal/platform"
@@ -28,7 +29,16 @@ type ScopeAdoption struct {
 	Applied          bool     `json:"applied"`
 }
 
-func (a *App) SessionAdoptScope(ctx context.Context, id string, selectors []string, confirmed bool) (ScopeAdoption, error) {
+// A nil expected value authorizes the current selection (CLI --confirm).
+// Interactive callers must supply the exact preview shown before confirmation.
+func (result ScopeAdoption) matchesPreview(expected *ScopeAdoption) bool {
+	return expected == nil || result.SessionID == expected.SessionID &&
+		result.PreviousScope == expected.PreviousScope && result.ProposedScope == expected.ProposedScope &&
+		result.Provider == expected.Provider && result.WorkingDirectory == expected.WorkingDirectory &&
+		slices.Equal(result.SelectedSources, expected.SelectedSources)
+}
+
+func (a *App) SessionAdoptScope(ctx context.Context, id string, selectors []string, confirmed bool, expected *ScopeAdoption) (ScopeAdoption, error) {
 	store := session.Store{Root: a.Store.Paths.SessionsDir}
 	lease, err := store.Acquire(id)
 	if err != nil {
@@ -69,6 +79,9 @@ func (a *App) SessionAdoptScope(ctx context.Context, id string, selectors []stri
 
 	if !confirmed {
 		return result, nil
+	}
+	if !result.matchesPreview(expected) {
+		return result, errors.New("SCOPE_ADOPTION_PREVIEW_CHANGED")
 	}
 	if err := a.verifyScopeAccount(ctx, v); err != nil {
 		return result, err
@@ -170,7 +183,7 @@ func (a *App) verifyScopeAccount(ctx context.Context, v session.Session) error {
 
 // SessionRestoreScope restores only the organization binding from an immutable
 // private backup, never old process IDs, grants, decisions or provider state.
-func (a *App) SessionRestoreScope(ctx context.Context, id, backup string, confirmed bool) (ScopeAdoption, error) {
+func (a *App) SessionRestoreScope(ctx context.Context, id, backup string, confirmed bool, expected *ScopeAdoption) (ScopeAdoption, error) {
 	store := session.Store{Root: a.Store.Paths.SessionsDir}
 	lease, err := store.Acquire(id)
 	if err != nil {
@@ -213,6 +226,9 @@ func (a *App) SessionRestoreScope(ctx context.Context, id, backup string, confir
 	result := ScopeAdoption{SessionID: id, PreviousScope: v.KnowledgeScopeID, ProposedScope: previous.KnowledgeScopeID, Provider: v.PrimaryExecutor, WorkingDirectory: v.WorkingDirectory}
 	if !confirmed {
 		return result, nil
+	}
+	if !result.matchesPreview(expected) {
+		return result, errors.New("SCOPE_ADOPTION_PREVIEW_CHANGED")
 	}
 	if err := a.verifyScopeAccount(ctx, v); err != nil {
 		return result, err

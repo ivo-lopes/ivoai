@@ -261,12 +261,12 @@ func runSession(ctx context.Context, a *app.App, args []string) error {
 			if *backup == "" || len(selectors) > 0 {
 				return errors.New("restore-scope requires --backup and does not accept source selectors")
 			}
-			result, err = a.SessionRestoreScope(ctx, args[1], *backup, *confirmed)
+			result, err = a.SessionRestoreScope(ctx, args[1], *backup, *confirmed, nil)
 		} else {
 			if *backup != "" {
 				return errors.New("adopt-scope does not accept --backup")
 			}
-			result, err = a.SessionAdoptScope(ctx, args[1], selectors, *confirmed)
+			result, err = a.SessionAdoptScope(ctx, args[1], selectors, *confirmed, nil)
 		}
 		if err != nil {
 			return err

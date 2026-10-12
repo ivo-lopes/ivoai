@@ -128,13 +128,13 @@ func (s *menuSession) changeConversationScope(id string, restore bool) (bool, er
 		if err != nil {
 			return false, err
 		}
-		preview, err = s.app.SessionRestoreScope(s.ctx, id, backup, false)
+		preview, err = s.app.SessionRestoreScope(s.ctx, id, backup, false, nil)
 	} else {
 		selectors, err = s.conversationSources()
 		if err != nil {
 			return false, err
 		}
-		preview, err = s.app.SessionAdoptScope(s.ctx, id, selectors, false)
+		preview, err = s.app.SessionAdoptScope(s.ctx, id, selectors, false, nil)
 	}
 	if err != nil {
 		return false, err
@@ -150,9 +150,9 @@ func (s *menuSession) changeConversationScope(id string, restore bool) (bool, er
 		return false, nil
 	}
 	if restore {
-		preview, err = s.app.SessionRestoreScope(s.ctx, id, backup, true)
+		preview, err = s.app.SessionRestoreScope(s.ctx, id, backup, true, &preview)
 	} else {
-		preview, err = s.app.SessionAdoptScope(s.ctx, id, selectors, true)
+		preview, err = s.app.SessionAdoptScope(s.ctx, id, selectors, true, &preview)
 	}
 	if err != nil {
 		return false, err
