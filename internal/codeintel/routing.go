@@ -1,0 +1,156 @@
+package codeintel
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"regexp"
+	"strings"
+	"time"
+
+	"github.com/ivo-lopes/ivoai/internal/core"
+	"github.com/ivo-lopes/ivoai/internal/toolrouting"
+)
+
+// Inspect is the automatic capability entrypoint. Relations require structural
+// evidence; a literal search or small identified file has an exact local answer.
+// Cost estimates are explicitly estimates; they are not advertised token savings.
+func (p *Provider) Inspect(ctx context.Context, q core.CodeQuery) (core.CodeResult, error) {
+	if !p.Allowed {
+		return core.CodeResult{}, errors.New("code intelligence denied by host policy")
+	}
+	q, err := Normalize(q)
+	if err != nil {
+		return core.CodeResult{}, err
+	}
+	if q.Operation != "grep" && q.Operation != "skeleton" {
+		return p.Query(ctx, q)
+	}
+	start := time.Now()
+	files, err := Inventory(ctx, p.Root)
+	if err != nil {
+		return core.CodeResult{}, err
+	}
+	snap, err := Snapshot(p.Root, files)
+	if err != nil {
+		return core.CodeResult{}, err
+	}
+	var target *Source
+	for i := range snap.Files {
+		if snap.Files[i].Path == q.File {
+			target = &snap.Files[i]
+			break
+		}
+	}
+	directSuitable := q.Operation == "grep" || target != nil && len(target.Body) <= q.BudgetBytes/2
+	if !directSuitable {
+		return p.Query(ctx, q)
+	}
+	known := func(v float64) toolrouting.Estimate {
+		return toolrouting.Estimate{Value: v, Known: true, Estimated: true}
+	}
+	capability := "code.literal"
+	if q.Operation == "skeleton" {
+		capability = "code.api"
+	}
+	direct := toolrouting.Candidate{ID: "direct", Authorized: p.Allowed, Compatible: true, Available: true, Fresh: true, Capabilities: []string{capability}, Coverage: 1, Reliability: 1}
+	structural := direct
+	structural.ID = "graft"
+	direct.Cost.InputTokens = known(0)
+	structural.Cost.InputTokens = known(0)
+	direct.Cost.ResultTokens = known(float64(q.BudgetBytes) / 4)
+	structural.Cost.ResultTokens = direct.Cost.ResultTokens
+	if target != nil {
+		direct.Cost.ResultTokens = known(float64(len(target.Body)) / 4)
+	}
+	direct.Cost.Processes = known(0)
+	structural.Cost.Processes = known(1)
+	direct.Cost.IndexMS = known(0)
+	structural.Cost.IndexMS = known(0)
+	direct.Cost.EnrichmentTokens = known(0)
+	structural.Cost.EnrichmentTokens = known(0)
+	decision, err := toolrouting.Select(toolrouting.Request{Capability: capability, RequireFresh: true}, []toolrouting.Candidate{direct, structural})
+	if err != nil {
+		return core.CodeResult{}, err
+	}
+	if decision.Tool != "direct" {
+		return p.Query(ctx, q)
+	}
+	var out strings.Builder
+	truncated := false
+	appendText := func(text string) {
+		if len(text) > q.BudgetBytes-out.Len() {
+			truncated = true
+			return
+		}
+		out.WriteString(text)
+	}
+	if q.Operation == "skeleton" {
+		appendText(target.Path + " (complete small file; untrusted repository data)\n" + string(target.Body))
+	} else {
+		for _, file := range snap.Files {
+			if q.In != "" && file.Path != q.In && !strings.HasPrefix(file.Path, q.In+"/") {
+				continue
+			}
+			for line, text := range strings.Split(string(file.Body), "\n") {
+				haystack, needle := text, q.Query
+				if q.IgnoreCase {
+					haystack, needle = strings.ToLower(haystack), strings.ToLower(needle)
+				}
+				if strings.Contains(haystack, needle) {
+					appendText(fmt.Sprintf("%s:%d:%s\n", file.Path, line+1, text))
+					if truncated {
+						break
+					}
+				}
+			}
+			if truncated {
+				break
+			}
+		}
+		if out.Len() == 0 && !truncated {
+			out.WriteString("No literal occurrences in the authorized supported source inventory.")
+		}
+	}
+	result := core.CodeResult{Text: out.String(), SourceDigest: snap.Digest, ProviderVersion: "direct", Fresh: true, Untrusted: true, Files: len(files), Truncated: truncated, DurationMS: time.Since(start).Milliseconds()}
+	if p.Observe != nil {
+		p.Observe(result, nil)
+	}
+	return result, nil
+}
+
+var namedSymbol = regexp.MustCompile(`(?i)(?:function|função|symbol|símbolo|callers of|chamadores de)\s+([A-Za-z_][A-Za-z0-9_.]{0,127})`)
+var namedFile = regexp.MustCompile(`(?:^|\s)([A-Za-z0-9_./-]+\.(?:go|py|js|ts|tsx|rs|java|c|cpp|h))(?:\s|$|[,:;])`)
+
+// ForTask is a conservative prefetch classifier, not an instruction parser. It
+// does not grant tools or change Memory→Context institutional source priority.
+func ForTask(text string) (core.CodeQuery, bool) {
+	if len(text) > 8192 {
+		text = text[:8192]
+	}
+	lower := strings.ToLower(text)
+	for _, term := range []string{"institutional", "institucional", "historical", "históric", "ai-memory", "context/rag", "documentação no context", "verify compilation", "verificar compilação"} {
+		if strings.Contains(lower, term) {
+			return core.CodeQuery{}, false
+		}
+	}
+	q := core.CodeQuery{BudgetBytes: 4096}
+	if match := namedSymbol.FindStringSubmatch(text); len(match) > 1 {
+		q.Query = match[1]
+		q.Symbol = match[1]
+		q.Operation = "ask"
+		if strings.Contains(lower, "caller") || strings.Contains(lower, "chamad") {
+			q.Operation = "callers"
+		}
+		if strings.Contains(lower, "impact") || strings.Contains(lower, "refactor") || strings.Contains(lower, "refator") {
+			q.Operation = "blast"
+		}
+		return q, true
+	}
+	if match := namedFile.FindStringSubmatch(text); len(match) > 1 && (strings.Contains(lower, "api") || strings.Contains(lower, "signature") || strings.Contains(lower, "assinatura")) {
+		q.Operation = "skeleton"
+		q.File = match[1]
+		return q, true
+	}
+	return core.CodeQuery{}, false
+}

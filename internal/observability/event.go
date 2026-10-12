@@ -78,6 +78,7 @@ const (
 	OperationWorkingContextBudget    Operation = "working_context.budget"
 	OperationWorkingContextDegraded  Operation = "working_context.degraded"
 	OperationKnowledgeRoute          Operation = "knowledge.route"
+	OperationCodeInspect             Operation = "code.inspect"
 )
 
 type State string
@@ -152,6 +153,12 @@ const (
 // It cannot represent prompts, responses, artifacts, headers, environments,
 // credentials, cookies, provider auth records, or private knowledge content.
 type Event struct {
+	CacheHit               *bool            `json:"cache_hit,omitempty"`
+	IndexFresh             *bool            `json:"index_fresh,omitempty"`
+	IndexFiles             *int             `json:"index_files,omitempty"`
+	SourceFiles            *int             `json:"source_files,omitempty"`
+	PeakMemoryBytes        *int64           `json:"peak_memory_bytes,omitempty"`
+	CPUMilliseconds        *int64           `json:"cpu_ms,omitempty"`
 	Phase                  string           `json:"phase,omitempty"`
 	SchemaVersion          int              `json:"schema_version,omitempty"`
 	Sequence               uint64           `json:"sequence,omitempty"`
@@ -250,6 +257,7 @@ var operationCategories = map[Operation]Category{
 	OperationWorkingContextBudget:    CategoryWorkingContext,
 	OperationWorkingContextDegraded:  CategoryWorkingContext,
 	OperationKnowledgeRoute:          CategoryConnection,
+	OperationCodeInspect:             CategoryCapability,
 }
 
 // Normalize redacts the only free-text fields and validates every persisted
@@ -270,6 +278,15 @@ func Normalize(value Event) (Event, error) {
 }
 
 func (e Event) Validate() error {
+	for _, v := range []*int{e.IndexFiles, e.SourceFiles} {
+		if v != nil && (*v < 0 || *v > 20000) {
+			return errors.New("invalid code coverage metric")
+		}
+	}
+	if e.PeakMemoryBytes != nil && (*e.PeakMemoryBytes < 0 || *e.PeakMemoryBytes > 1<<40) || e.CPUMilliseconds != nil && (*e.CPUMilliseconds < 0 || *e.CPUMilliseconds > 86400000) {
+		return errors.New("invalid code resource metric")
+	}
+
 	if !oneOf(e.Phase, "", "planning", "task_analysis", "parallel_dispatch", "integration", "acceptance", "synthesizing", "completed", "failed") {
 		return errors.New("invalid phase")
 	}
@@ -294,13 +311,13 @@ func (e Event) Validate() error {
 	if e.SessionID != "" && (len(e.SessionID) != 37 || !strings.HasPrefix(e.SessionID, "sess_") || !safeCanonicalID(e.SessionID, 37)) {
 		return errors.New("invalid observability session ID")
 	}
-	if !safeLabel(e.TaskID, 64) || !safeWorker(e.WorkerID) || !oneOf(e.Provider, "", "codex", "claude", "opencode", "caveman", "headroom", "direct") || !oneOf(e.RequestedProvider, "", "caveman", "headroom", "direct") || !oneOf(e.ProviderSource, "", "default", "explicit", "migration") || !oneOf(e.Executor, "", "codex", "claude", "opencode") {
+	if !safeLabel(e.TaskID, 64) || !safeWorker(e.WorkerID) || !oneOf(e.Provider, "", "codex", "claude", "opencode", "caveman", "headroom", "direct", "graft") || !oneOf(e.RequestedProvider, "", "caveman", "headroom", "direct") || !oneOf(e.ProviderSource, "", "default", "explicit", "migration") || !oneOf(e.Executor, "", "codex", "claude", "opencode") {
 		return errors.New("invalid observability correlation metadata")
 	}
 	if !safeLabel(e.SourceID, 128) || !safeLabel(e.SourceAlias, 64) || !safeLabel(e.Purpose, 64) || e.SelectedSourceCount < 0 || e.SelectedSourceCount > 8 {
 		return errors.New("invalid knowledge source observability metadata")
 	}
-	if e.Component != "" && !oneOf(string(e.Component), "codex", "claude", "opencode", "memory", "context", "compression", "orchestration", "working_context", "skills", "tools") {
+	if e.Component != "" && !oneOf(string(e.Component), "codex", "claude", "opencode", "memory", "context", "compression", "orchestration", "working_context", "skills", "tools", "code_intelligence") {
 		return errors.New("invalid observability component")
 	}
 	if e.Capability != "" && !safeLabel(string(e.Capability), 96) {
@@ -408,6 +425,26 @@ func oneOf(value string, allowed ...string) bool {
 }
 
 func (e Event) Summary() string {
+	if e.Operation == OperationCodeInspect {
+		cache, fresh, coverage := "unknown", "unknown", "unknown"
+		if e.CacheHit != nil {
+			cache = "miss"
+			if *e.CacheHit {
+				cache = "hit"
+			}
+		}
+		if e.IndexFresh != nil {
+			fresh = "stale"
+			if *e.IndexFresh {
+				fresh = "fresh"
+			}
+		}
+		if e.IndexFiles != nil && e.SourceFiles != nil {
+			coverage = fmt.Sprintf("%d/%d", *e.IndexFiles, *e.SourceFiles)
+		}
+		return fmt.Sprintf("code.inspect %s %s cache=%s index=%s coverage=%s latency=%dms", e.Provider, e.State, cache, fresh, coverage, e.DurationMilliseconds)
+	}
+
 	correlation := e.Executor
 	if correlation == "" {
 		correlation = e.Provider
