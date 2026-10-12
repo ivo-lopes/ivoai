@@ -51,8 +51,8 @@ type Provider struct {
 }
 
 type indexReceipt struct {
-	Source, Index, Adapter string
-	Files, Nodes           int
+	Source, Index, Adapter, Runtime string
+	Files, Nodes                    int
 }
 type cachedResult struct {
 	Version string
@@ -120,7 +120,8 @@ func (p *Provider) Query(ctx context.Context, q core.CodeQuery) (result core.Cod
 	_ = json.Unmarshal(data, &receipt)
 	currentHash, hashErr := indexDigest(index)
 	adapterHash := digest(adapter)
-	validIndex := hashErr == nil && currentHash == receipt.Index && receipt.Adapter == adapterHash
+	runtimeHash := p.runtimeIdentity()
+	validIndex := hashErr == nil && currentHash == receipt.Index && receipt.Adapter == adapterHash && receipt.Runtime == runtimeHash
 	if !validIndex {
 		if err = os.RemoveAll(index); err != nil {
 			return result, err
@@ -128,7 +129,7 @@ func (p *Provider) Query(ctx context.Context, q core.CodeQuery) (result core.Cod
 		receipt = indexReceipt{}
 	}
 	queryJSON, _ := json.Marshal(q)
-	cacheKey := digest(append([]byte(snap.Digest+adapterHash+Version), queryJSON...))
+	cacheKey := digest(append([]byte(snap.Digest+adapterHash+runtimeHash), queryJSON...))
 	resultPath := filepath.Join(dir, "results", cacheKey+".json")
 	if validIndex && receipt.Source == snap.Digest && q.Operation != "build" && q.Operation != "viz" {
 		if data, e := readBounded(resultPath, MaxResultBytes+8192); e == nil {
@@ -180,6 +181,7 @@ func (p *Provider) Query(ctx context.Context, q core.CodeQuery) (result core.Cod
 	receipt.Source = snap.Digest
 	receipt.Index = indexHash
 	receipt.Adapter = adapterHash
+	receipt.Runtime = runtimeHash
 	body, _ := json.Marshal(receipt)
 	if err = platform.AtomicWritePrivate(body, receiptPath); err != nil {
 		return result, err
@@ -206,6 +208,13 @@ func (p *Provider) Query(ctx context.Context, q core.CodeQuery) (result core.Cod
 		}
 	}
 	return result, nil
+}
+
+// App preflight verifies this immutable supply-chain object path and its full
+// inventory. Binding the path also invalidates indices across reviewed rebuilds
+// of the same upstream version and across rollback, not just adapter changes.
+func (p *Provider) runtimeIdentity() string {
+	return digest([]byte(Version + "\n" + p.Distribution))
 }
 
 func syncSnapshot(root string, snap SourceSnapshot) error {

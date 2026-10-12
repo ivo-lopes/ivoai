@@ -56,6 +56,26 @@ func TestProviderDeduplicatesAndInvalidatesContent(t *testing.T) {
 		t.Fatalf("stale cached response %+v %v", r, e)
 	}
 }
+func TestProviderInvalidatesIndexAfterManagedObjectChange(t *testing.T) {
+	p, calls := testProvider(t)
+	p.Distribution = "/managed/objects/graft/revision-one"
+	q := core.CodeQuery{Operation: "map"}
+	if _, err := p.Query(context.Background(), q); err != nil {
+		t.Fatal(err)
+	}
+	run := p.run
+	p.run = func(ctx context.Context, r adapterRequest) (adapterResponse, error) {
+		if !r.Build {
+			t.Error("new managed object reused the old structural index")
+		}
+		return run(ctx, r)
+	}
+	p.Distribution = "/managed/objects/graft/revision-two"
+	r, err := p.Query(context.Background(), q)
+	if err != nil || r.CacheHit || calls.Load() != 2 {
+		t.Fatalf("managed revision failed to invalidate cache: %+v %v", r, err)
+	}
+}
 func TestProviderRejectsPolicyAndCorruptCache(t *testing.T) {
 	p, calls := testProvider(t)
 	p.Allowed = false

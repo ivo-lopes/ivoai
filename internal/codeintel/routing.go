@@ -48,7 +48,7 @@ func (p *Provider) Inspect(ctx context.Context, q core.CodeQuery) (core.CodeResu
 			body, _ := readBounded(filepath.Join(p.CacheRoot, key, "receipt.json"), 4096)
 			_ = json.Unmarshal(body, &receipt)
 		}
-		if receipt.Source == snap.Digest && receipt.Adapter == digest(adapter) {
+		if receipt.Source == snap.Digest && receipt.Adapter == digest(adapter) && receipt.Runtime == p.runtimeIdentity() {
 			return p.Query(ctx, q)
 		}
 		text, found := declarationExcerpt(snap, q)
