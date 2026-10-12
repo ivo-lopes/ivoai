@@ -96,6 +96,29 @@ availability, not the App's automatic admitted-primary prefetch. Its raw results
 are preserved in `codex-after-routing-refinement.json`; no unfavorable cases are
 excluded. The automatic host-context path is evaluated separately.
 
+The separate production-host prefetch benchmark at `bfdbf346` used actual
+`App.preparePrimaryCodeEvidence`, Skill Gate and exact ArtifactStore evidence,
+with no MCP tools exposed in either arm. All three B responses passed strict
+JSON/fact checks; A passed API inspection but failed the implementation and
+caller checks. The overall opt-in test therefore **exited 1**, not PASS. Raw
+answers were intentionally not retained, so those A failures cannot be assigned
+to a particular mismatched fact retrospectively. They are not silently discarded
+or represented as proven semantic errors. Personal configuration remained intact.
+
+| Host prefetch case | A input tokens / ms / calls | B input tokens / ms / calls | Strict quality A / B |
+| --- | ---: | ---: | --- |
+| API inspection | 48,163 / 13,178 / 2 | 16,129 / 8,149 / 0 | pass / pass |
+| Implementation | 48,147 / 12,017 / 2 | 16,127 / 11,094 / 0 | fail / pass |
+| Direct callers | 48,321 / 13,770 / 3 | 16,137 / 8,604 / 0 | fail / pass |
+
+Only the API pair supports a correctness-matched efficiency comparison: observed
+input tokens fell 66.5% and elapsed time 38.2% in this single synthetic sample.
+This is evidence of a useful bounded host-context path, **not** a general savings
+claim or a replacement for the broader negative MCP-availability measurements.
+B used direct inspection for API/implementation and actual sandboxed Graft for
+callers. The host contract benchmark does not replace frontend lifecycle testing.
+See `codex-primary-prefetch.json` for exact measurements and unknown fields.
+
 Tool-layer measurements separately showed useful relationships unavailable from
 the bounded textual baseline, smaller API/declaration responses and cached
 structural queries around 8–12 ms. Cold indexing of IVOAI under concurrent load
