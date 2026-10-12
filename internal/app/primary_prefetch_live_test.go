@@ -245,7 +245,7 @@ func prefetchLiveSourceHash(t *testing.T, root string) string {
 	return hex.EncodeToString(digest[:])
 }
 func prefetchLiveEvents(body []byte, row *prefetchLiveRow) string {
-	var answer strings.Builder
+	var answer string
 	for _, line := range bytes.Split(body, []byte("\n")) {
 		var event struct {
 			Type string `json:"type"`
@@ -270,10 +270,12 @@ func prefetchLiveEvents(body []byte, row *prefetchLiveRow) string {
 			row.ToolResultBytes += len(item.AggregatedOutput)
 		}
 		if event.Type == "item.completed" && item.Type == "agent_message" {
-			answer.WriteString(item.Text)
+			// Codex output-schema governs the final response, not earlier
+			// commentary. Keep the last completed message, matching exec -o.
+			answer = item.Text
 		}
 	}
-	return answer.String()
+	return answer
 }
 
 type prefetchLiveBuffer struct {
@@ -326,6 +328,34 @@ func guardPrefetchCodexConfig(t *testing.T) {
 		}
 	})
 }
+func TestPrimaryPrefetchLiveFinalMessage(t *testing.T) {
+	final := `{"symbol":"Scale","file":"mathpkg/scale.go","input":3,"result":6}`
+	var stream bytes.Buffer
+	for _, event := range []map[string]any{
+		{"type": "item.completed", "item": map[string]any{"type": "agent_message", "text": "I will inspect the implementation."}},
+		{"type": "item.completed", "item": map[string]any{"type": "command_execution", "aggregated_output": "source"}},
+		{"type": "item.completed", "item": map[string]any{"type": "agent_message", "text": final}},
+		{"type": "item.updated", "item": map[string]any{"type": "agent_message", "text": "incomplete"}},
+		{"type": "turn.completed", "usage": map[string]any{"input_tokens": 20, "cached_input_tokens": 12, "output_tokens": 3}},
+	} {
+		if err := json.NewEncoder(&stream).Encode(event); err != nil {
+			t.Fatal(err)
+		}
+	}
+	var row prefetchLiveRow
+	answer := prefetchLiveEvents(stream.Bytes(), &row)
+	if answer != final {
+		t.Fatal("intermediate messages contaminated the final response")
+	}
+	decoded, correct := prefetchLiveCorrect("implementation", answer)
+	if !decoded || !correct {
+		t.Fatal("exact final response failed correctness validation")
+	}
+	if row.ToolCalls != 1 || row.ToolResultBytes != 6 || row.InputTokens != float64(20) || row.OutputTokens != float64(3) {
+		t.Fatal("selecting the final response lost measured metrics")
+	}
+}
+
 func TestPrimaryPrefetchLiveMeasurementContract(t *testing.T) {
 	var row prefetchLiveRow
 	answer := prefetchLiveEvents([]byte("{\"type\":\"item.completed\",\"item\":{\"type\":\"command_execution\",\"aggregated_output\":\"abc\"}}\n{\"type\":\"item.completed\",\"item\":{\"type\":\"agent_message\",\"text\":\"Scale\"}}\n{\"type\":\"turn.completed\",\"usage\":{\"input_tokens\":20,\"cached_input_tokens\":12,\"output_tokens\":3}}"), &row)
