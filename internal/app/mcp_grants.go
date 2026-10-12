@@ -116,7 +116,12 @@ func primaryMCPGrant(value session.Session, cfg config.Config, server, tool stri
 			continue
 		}
 		if server == nativeCodeMCP && nativeCodeTool(tool) {
-			return true, approved
+			// Native read capabilities are implicit only when the task has not
+			// supplied a restriction. A present empty list deliberately denies
+			// all tools; an explicit list follows the same exact grants below.
+			if _, restricted := task.AllowedMCPTools[server]; !restricted {
+				return true, approved
+			}
 		}
 		for _, allowed := range task.AllowedMCPTools[server] {
 			if allowed == tool {
