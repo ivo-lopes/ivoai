@@ -8,15 +8,32 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 	"testing"
 	"time"
+
+	"github.com/pelletier/go-toml/v2"
 
 	"github.com/ivo-lopes/ivoai/internal/codexresolver"
 	"github.com/ivo-lopes/ivoai/internal/components"
 	"github.com/ivo-lopes/ivoai/internal/config"
 	"github.com/ivo-lopes/ivoai/internal/platform"
+	"github.com/ivo-lopes/ivoai/internal/promptgate"
 	"github.com/ivo-lopes/ivoai/internal/supplychain"
 )
+
+func TestGraftNativePromptContract(t *testing.T) {
+	if _, err := exec.LookPath("python3"); err != nil {
+		t.Skip("Python required for native frontend fixture")
+	}
+	prompt, err := exec.Command("python3", "../../scripts/smoke-graft-native.py", "--fixture-prompt").Output()
+	if err != nil {
+		t.Fatal("cannot load native smoke fixture prompt")
+	}
+	if result := promptgate.Assess(string(prompt)); !result.Ready {
+		t.Fatalf("native smoke fixture violates Prompt Gate: %v", result.Missing)
+	}
+}
 
 // TestLiveGraftManagedOpenCode is explicitly provider-consuming. It requires
 // IVOAI_GRAFT_NATIVE_LIVE=1 and absolute IVOAI_GRAFT_SMOKE_{BINARY,ARCHIVE,METADATA,
@@ -26,6 +43,10 @@ import (
 func TestLiveGraftManagedOpenCode(t *testing.T) {
 	if os.Getenv("IVOAI_GRAFT_NATIVE_LIVE") != "1" {
 		t.Skip("explicit opt-in required for real managed frontend/provider smoke")
+	}
+	prompt, err := exec.Command("python3", "../../scripts/smoke-graft-native.py", "--fixture-prompt").Output()
+	if err != nil || !promptgate.Assess(string(prompt)).Ready {
+		t.Fatal("native smoke fixture must satisfy the unmodified Prompt Gate")
 	}
 	input := map[string]string{}
 	for _, key := range []string{"BINARY", "ARCHIVE", "METADATA", "NODE", "CODEX", "OPENCODE"} {
@@ -79,6 +100,14 @@ func TestLiveGraftManagedOpenCode(t *testing.T) {
 	t.Cleanup(func() {
 		after, afterErr := os.ReadFile(personal)
 		if (beforeErr == nil) != (afterErr == nil) || sha256.Sum256(after) != fingerprint {
+			var oldSections, newSections map[string]any
+			if toml.Unmarshal(before, &oldSections) == nil && toml.Unmarshal(after, &newSections) == nil {
+				for _, key := range []string{"approvals_reviewer", "desktop", "features", "hooks", "marketplaces", "mcp_servers", "model", "model_reasoning_effort", "notice", "plugins", "projects", "service_tier", "shell_environment_policy", "tui"} {
+					if !reflect.DeepEqual(oldSections[key], newSections[key]) {
+						t.Log("PERSONAL_CODEX_CHANGED_SECTION=" + key)
+					}
+				}
+			}
 			t.Error("PERSONAL_CODEX_CONFIG_MUTATIONS detected")
 		} else {
 			t.Log("PERSONAL_CODEX_CONFIG_MUTATIONS=0")
@@ -153,7 +182,7 @@ func TestLiveGraftManagedOpenCode(t *testing.T) {
 	state := config.State{Schema: config.StateSchemaVersion, Components: map[string]config.ComponentState{
 		"graft":                {Installed: true, Managed: true, Version: spec.Version, Path: filepath.Join(distribution, spec.PayloadPath)},
 		"codex":                {Installed: true, Managed: true, Version: "0.162.1", Path: input["CODEX"]},
-		"opencode":             {Installed: true, Managed: true, Version: "1.19.0-ivoai.1", Path: input["OPENCODE"]},
+		"opencode":             {Installed: true, Managed: true, Version: "1.19.0-ivoai.2", Path: input["OPENCODE"]},
 		"codex-code-mode-host": {Installed: true, Managed: true, Version: "0.162.1", Path: host},
 	}}
 	if err := store.SaveState(state); err != nil {

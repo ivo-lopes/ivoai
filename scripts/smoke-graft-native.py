@@ -9,6 +9,13 @@ Use --self-test to test admission/evidence checks without processes or providers
 import json
 import sys
 
+FIXTURE_PROMPT = ("Objective: analyze target.ts and caller.ts to locate the direct caller of function GraftNativeTarget. "
+          "Deliverable: a report containing the caller function name. Constraints: one primary-owned research task, no workers, "
+          "no edits, no external knowledge and no shell or alternate file-discovery tools. "
+          "After native plan approval use ivoai-code graft_trace_calls with symbol GraftNativeTarget "
+          "to obtain actual structural evidence; then complete and integrate the task before synthesis. "
+          "Acceptance: the native code tool must return structural evidence and the final report must contain only the direct caller name.")
+
 
 def admissible_plan(value, checkpoint, directory):
     recovery = checkpoint.get("recovery") or {}
@@ -118,6 +125,55 @@ def live(binary_argument, root_argument):
 
     def send(text):
         os.write(master, text.encode())
+        # Drain native renderer output between paste and Enter, as in the
+        # established native smoke driver; a full PTY output buffer stalls UI.
+        deadline = time.monotonic() + .3
+        while time.monotonic() < deadline:
+            pump()
+
+    def native_composer(value, prompt):
+        # The distributed official SDK exposes these TUI operations. Resolve
+        # only this fixture's attached child and keep its ephemeral password in
+        # memory; never read personal credentials or print process environment.
+        import base64
+        import urllib.parse
+        import urllib.request
+        pid = value.get("frontend_pid")
+        assert isinstance(pid, int) and pid > 0, "NATIVE_FRONTEND_PID_MISSING"
+        proc = Path("/proc") / str(pid)
+        stat = (proc / "stat").read_text().rsplit(")", 1)[1].split()
+        assert int(stat[1]) == process.pid, "NATIVE_FRONTEND_NOT_OWNED_CHILD"
+        assert stat[19] == str(value.get("frontend_process_start")), "NATIVE_FRONTEND_IDENTITY_CHANGED"
+        assert os.path.samefile(proc / "exe", os.environ["IVOAI_GRAFT_SMOKE_OPENCODE"]), "NATIVE_FRONTEND_EXECUTABLE_MISMATCH"
+        args = (proc / "cmdline").read_bytes().split(b"\0")
+        endpoint = args[args.index(b"attach") + 1].decode()
+        parsed = urllib.parse.urlsplit(endpoint)
+        assert parsed.scheme == "http" and parsed.hostname == "127.0.0.1" and parsed.port and not parsed.username and parsed.path in ("", "/") and not parsed.query and not parsed.fragment, "NONLOCAL_NATIVE_BACKEND"
+        environment = dict(part.split(b"=", 1) for part in (proc / "environ").read_bytes().split(b"\0") if b"=" in part)
+        password = environment[b"OPENCODE_SERVER_PASSWORD"]
+        del environment
+        authorization = "Basic " + base64.b64encode(b"ivoai:" + password).decode()
+        del password
+        class NoRedirect(urllib.request.HTTPRedirectHandler):
+            def redirect_request(self, *args, **kwargs):
+                raise RuntimeError("NATIVE_BACKEND_REDIRECT_FORBIDDEN")
+        client = urllib.request.build_opener(urllib.request.ProxyHandler({}), NoRedirect())
+        query = "?directory=" + urllib.parse.quote(str(repo), safe="")
+        def request(method, path, body=None):
+            data = json.dumps(body).encode() if body is not None else None
+            req = urllib.request.Request(endpoint.rstrip("/") + path, data=data, method=method,
+                                         headers={"Authorization": authorization, "Content-Type": "application/json"})
+            with client.open(req, timeout=10) as response:
+                content = response.read((4 << 20) + 1)
+                assert len(content) <= 4 << 20, "OVERSIZED_NATIVE_CONTRACT"
+                return content
+        schema = json.loads(request("GET", "/doc"))
+        for path in ("/tui/append-prompt", "/tui/submit-prompt"):
+            assert "post" in schema.get("paths", {}).get(path, {}), "OFFICIAL_TUI_CONTRACT_UNAVAILABLE"
+        request("POST", "/tui/append-prompt" + query, {"text": prompt})
+        wait_for(lambda text, _: "GraftNativeTarget" in text, 15, "FIXTURE_PROMPT_NOT_RENDERED")
+        request("POST", "/tui/submit-prompt" + query)
+        print("GRAFT_NATIVE_COMPOSER_API=PASS", flush=True)
 
     def metadata():
         matches = []
@@ -155,6 +211,8 @@ def live(binary_argument, root_argument):
         print(json.dumps({"failure": failure, "phase": value.get("current_phase"),
                           "tasks": len(value.get("tasks", [])), "events": trace.get("stdout_events"),
                           "failure_class": trace.get("failure_class"),
+                          "terminal_bytes": len(history),
+                          "terminal_landmarks": [x for x in ("IVOAI", "OpenCode", "opencode", "Error", "error", "Connecting", "connect") if x in history],
                           "native_evidence": native_evidence(value),
                           "quota": {name: {key: q.get(key) for key in
                                     ("authenticated", "eligible", "hard_limit_reached", "telemetry_unknown")}
@@ -162,23 +220,32 @@ def live(binary_argument, root_argument):
         raise RuntimeError(failure)
 
     try:
-        wait_for(lambda text, _: "IVOAI control plane" in text or "IVOAI Automatic Orchestration" in text,
+        wait_for(lambda text, _: not (termios.tcgetattr(master)[3] & termios.ICANON) and
+                 ("IVOAI control plane" in text or "IVOAI Automatic Orchestration" in text),
                  120, "MANAGED_FRONTEND_PANEL_NOT_READY")
-        prompt = ("Objective: identify the direct caller of function GraftNativeTarget in this synthetic repository. "
-                  "Deliverable: the caller function name. Constraints: one primary-owned research task, no workers, "
-                  "no edits, no external knowledge and no shell or alternate file-discovery tools. "
-                  "After native plan approval use ivoai-code graft_trace_calls with symbol GraftNativeTarget "
-                  "to obtain actual structural evidence; then complete and integrate the task before synthesis. "
-                  "Acceptance: the native code tool succeeds and the final response gives only the direct caller name.")
-        send(prompt)
-        time.sleep(.2)
-        send("\r")
+        prompt = FIXTURE_PROMPT
+        native_composer(metadata(), prompt)
         value = wait_for(lambda text, v: "IVOAI plan approval" in text and
                          any(d.get("kind") == "plan" and d.get("state") == "pending"
                              for d in v.get("decisions", [])), 240, "PLAN_NOT_PRESENTED")
         assert not any(e.get("operation") == "code.inspect" and e.get("state") == "completed"
                        for e in value.get("observability", [])), "CODE_EXECUTED_BEFORE_APPROVAL"
-        assert admissible_plan(value, checkpoint(value), str(repo)), "PLAN_EXCEEDS_FIXTURE_AUTHORIZATION"
+        saved = checkpoint(value)
+        if not admissible_plan(value, saved, str(repo)):
+            recovery = saved.get("recovery") or {}
+            plan = recovery.get("plan") or {}
+            print(json.dumps({"failure": "PLAN_EXCEEDS_FIXTURE_AUTHORIZATION",
+                "directory_matches": recovery.get("directory") == str(repo),
+                "approved": recovery.get("approved"), "plan_matches": plan.get("id") == value.get("plan_id"),
+                "tasks": [{"role": t.get("role"), "mode": t.get("execution_mode"),
+                    "knowledge_count": len(t.get("knowledge_sources") or []),
+                    "write_count": len(t.get("write_paths") or []),
+                    "dependency_count": len(t.get("dependencies") or []),
+                    "only_code_mcp": set(t.get("allowed_mcps") or []) <= {"ivoai-code"},
+                    "exact_trace_grant": t.get("allowed_mcp_tools") == {"ivoai-code": ["graft_trace_calls"]}}
+                    for t in plan.get("tasks", [])],
+                "metadata_ids_match": [t.get("id") for t in value.get("tasks", [])] == [t.get("id") for t in plan.get("tasks", [])]}), flush=True)
+            raise RuntimeError("PLAN_EXCEEDS_FIXTURE_AUTHORIZATION")
         send("\r")
         print("GRAFT_NATIVE_PLAN_APPROVED=PASS", flush=True)
         value = wait_for(lambda _, v: v.get("current_phase") == "synthesizing" and
@@ -213,6 +280,9 @@ def live(binary_argument, root_argument):
 
 
 if __name__ == "__main__":
+    if sys.argv[1:] == ["--fixture-prompt"]:
+        print(FIXTURE_PROMPT)
+        raise SystemExit(0)
     if sys.argv[1:] == ["--self-test"]:
         self_test()
     else:
