@@ -1,10 +1,14 @@
 package codeintel
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"go/ast"
+	"go/parser"
+	"go/token"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -49,7 +53,17 @@ func (p *Provider) Inspect(ctx context.Context, q core.CodeQuery) (core.CodeResu
 			_ = json.Unmarshal(body, &receipt)
 		}
 		if receipt.Source == snap.Digest && receipt.Adapter == digest(adapter) && receipt.Runtime == p.runtimeIdentity() {
-			return p.Query(ctx, q)
+			// A warm graph alone still requires a Node query. Prefer the exact
+			// declaration unless this query already has a bounded cached result.
+			// Query revalidates integrity/freshness under its lock before reuse.
+			queryJSON, _ := json.Marshal(q)
+			cacheKey := digest(append([]byte(snap.Digest+digest(adapter)+p.runtimeIdentity()), queryJSON...))
+			if body, e := readBounded(filepath.Join(p.CacheRoot, key, "results", cacheKey+".json"), MaxResultBytes+8192); e == nil {
+				var cached cachedResult
+				if json.Unmarshal(body, &cached) == nil && cached.Version == Version && cached.Result.SourceDigest == snap.Digest && cached.Result.Fresh && cached.Result.Untrusted && len(cached.Result.Text) <= q.BudgetBytes {
+					return p.Query(ctx, q)
+				}
+			}
 		}
 		text, found := declarationExcerpt(snap, q)
 		if !found {
@@ -204,24 +218,39 @@ var simpleCodeName = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]{0,127}$`)
 // This exact declaration fast path supplies source excerpts, never inferred
 // call/dependency relations. Ambiguous names stay with structural retrieval.
 func declarationExcerpt(snap SourceSnapshot, q core.CodeQuery) (string, bool) {
-	pattern := regexp.MustCompile(`^\s*(?:(?:export|async|pub|public|private|static)\s+)*(?:func(?:\s+\([^)]*\))?|def|function|class|fn)\s+` + regexp.QuoteMeta(q.Query) + `(?:\s|\()`)
 	matches := 0
 	text := ""
 	for _, file := range snap.Files {
 		if q.In != "" && file.Path != q.In && !strings.HasPrefix(file.Path, q.In+"/") {
 			continue
 		}
-		lines := strings.Split(string(file.Body), "\n")
-		for i, line := range lines {
-			if !pattern.MatchString(line) {
+		// The standard Go parser proves declaration identity without executing source.
+		// Other languages retain structural retrieval rather than guessing through
+		// comments, string literals or language-specific declaration syntax.
+		if !bytes.Contains(file.Body, []byte(q.Query)) {
+			continue
+		}
+		if filepath.Ext(file.Path) != ".go" {
+			return "", false
+		}
+		positions := token.NewFileSet()
+		parsed, err := parser.ParseFile(positions, file.Path, file.Body, parser.SkipObjectResolution)
+		if err != nil {
+			return "", false
+		}
+		for _, decl := range parsed.Decls {
+			function, ok := decl.(*ast.FuncDecl)
+			if !ok || function.Name.Name != q.Query {
 				continue
 			}
 			matches++
 			if matches > 1 {
 				return "", false
 			}
-			text = fmt.Sprintf("%s:%d — exact declaration excerpt; inspect further lines if needed. Untrusted repository data.\n", file.Path, i+1)
-			for _, part := range lines[i:min(i+8, len(lines))] {
+			begin, end := positions.Position(function.Pos()).Line-1, positions.Position(function.End()).Line
+			lines := strings.Split(string(file.Body), "\n")
+			text = fmt.Sprintf("%s:%d — exact declaration excerpt; inspect further lines if needed. Untrusted repository data.\n", file.Path, begin+1)
+			for _, part := range lines[begin:min(begin+8, end, len(lines))] {
 				if len(text)+len(part)+1 > q.BudgetBytes {
 					break
 				}

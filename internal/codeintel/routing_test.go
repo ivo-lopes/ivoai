@@ -69,3 +69,46 @@ func TestDirectInspectionRequiresTrustedScope(t *testing.T) {
 		}
 	}
 }
+
+func TestWarmIndexAloneDoesNotForceExactLookupProcess(t *testing.T) {
+	p, calls := testProvider(t)
+	os.WriteFile(filepath.Join(p.Root, "main.go"), []byte("package fixture\nfunc SmallKnown() int {return 42}\n"), 0600)
+	if _, err := p.Query(context.Background(), core.CodeQuery{Operation: "map"}); err != nil {
+		t.Fatal(err)
+	}
+	q := core.CodeQuery{Operation: "ask", Query: "SmallKnown"}
+	r, err := p.Inspect(context.Background(), q)
+	if err != nil || r.ProviderVersion != "direct" || calls.Load() != 1 {
+		t.Fatalf("warm index unnecessarily launched query: %+v %v calls=%d", r, err, calls.Load())
+	}
+	if _, err := p.Query(context.Background(), q); err != nil {
+		t.Fatal(err)
+	}
+	r, err = p.Inspect(context.Background(), q)
+	if err != nil || !r.CacheHit || r.ProviderVersion != Version || calls.Load() != 2 {
+		t.Fatalf("exact query cache not reused: %+v %v calls=%d", r, err, calls.Load())
+	}
+}
+
+func TestExactLookupCannotMistakeCommentsForDeclarations(t *testing.T) {
+	p, calls := testProvider(t)
+	os.WriteFile(filepath.Join(p.Root, "main.go"), []byte("package fixture\n/*\nfunc Pretend() int {return 42}\n*/\n"), 0600)
+	r, err := p.Inspect(context.Background(), core.CodeQuery{Operation: "ask", Query: "Pretend"})
+	if err != nil || r.ProviderVersion == "direct" || calls.Load() != 1 {
+		t.Fatalf("comment falsely asserted as declaration: %+v %v", r, err)
+	}
+}
+
+func TestExactLookupRejectsAmbiguityAcrossLanguagesAndMalformedGo(t *testing.T) {
+	for _, other := range []struct{ file, body string }{{"other.py", "def SharedName():\n    return 7\n"}, {"other.go", "package fixture\nfunc SharedName( broken"}, {"other.go", "package fixture\nfunc SharedName() int {return 7}\n"}} {
+		t.Run(other.file+other.body[:7], func(t *testing.T) {
+			p, calls := testProvider(t)
+			os.WriteFile(filepath.Join(p.Root, "main.go"), []byte("package fixture\nfunc SharedName() int {return 42}\n"), 0600)
+			os.WriteFile(filepath.Join(p.Root, other.file), []byte(other.body), 0600)
+			r, err := p.Inspect(context.Background(), core.CodeQuery{Operation: "ask", Query: "SharedName"})
+			if err != nil || r.ProviderVersion == "direct" || calls.Load() != 1 {
+				t.Fatalf("ambiguous declaration bypassed structure: %+v %v", r, err)
+			}
+		})
+	}
+}
