@@ -66,9 +66,25 @@ func (p *Provider) Inspect(ctx context.Context, q core.CodeQuery) (core.CodeResu
 	direct.Cost.Processes = known(0)
 	structural.Cost.Processes = known(1)
 	direct.Cost.IndexMS = known(0)
-	structural.Cost.IndexMS = known(0)
+	// Index construction cost is unknown until a validated source receipt exists.
+	structural.Cost.IndexMS = toolrouting.Estimate{}
 	direct.Cost.EnrichmentTokens = known(0)
 	structural.Cost.EnrichmentTokens = known(0)
+	history := p.costHistory()
+	// Compare measurements on common dimensions. Resource measurements remain in
+	// telemetry/history; direct in-process CPU/RSS cannot be attributed per query.
+	for _, candidate := range []*toolrouting.Candidate{&direct, &structural} {
+		if measured, ok := history.Cost(q.Operation, candidate.ID); ok {
+			candidate.Cost.LatencyMS = measured.LatencyMS
+			candidate.Cost.ResultTokens = measured.ResultTokens
+		}
+	}
+	if !direct.Cost.LatencyMS.Known {
+		direct.Cost.LatencyMS = known(5)
+	}
+	if !structural.Cost.LatencyMS.Known {
+		structural.Cost.LatencyMS = known(250)
+	}
 	decision, err := toolrouting.Select(toolrouting.Request{Capability: capability, RequireFresh: true}, []toolrouting.Candidate{direct, structural})
 	if err != nil {
 		return core.CodeResult{}, err
@@ -113,6 +129,7 @@ func (p *Provider) Inspect(ctx context.Context, q core.CodeQuery) (core.CodeResu
 		}
 	}
 	result := core.CodeResult{Text: out.String(), SourceDigest: snap.Digest, ProviderVersion: "direct", Fresh: true, Untrusted: true, Files: len(files), Truncated: truncated, DurationMS: time.Since(start).Milliseconds()}
+	p.recordCost(q, result, nil)
 	if p.Observe != nil {
 		p.Observe(result, nil)
 	}
