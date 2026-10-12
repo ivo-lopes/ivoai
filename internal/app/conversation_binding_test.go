@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ivo-lopes/ivoai/internal/opencodebridge"
 	"github.com/ivo-lopes/ivoai/internal/quota"
 	"github.com/ivo-lopes/ivoai/internal/session"
 )
@@ -22,13 +23,56 @@ func TestConversationFrontendSwitchReusesVerifiedProviderThread(t *testing.T) {
 		quota.ProviderClaude: probeFunc(func(context.Context) (quota.ProviderQuota, error) { return exhausted(quota.ProviderClaude), nil }),
 	}}
 	store := session.Store{Root: a.Store.Paths.SessionsDir}
+	cfg, err := a.Store.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	scope, err := conversationScopeID(root, cfg, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 	id, _ := session.NewID()
 	now := time.Now().UTC()
 	v := session.Session{SessionID: id, StartedAt: now, UpdatedAt: now, Mode: session.ModeAuto, Auto: true, Coordinator: "native", Frontend: "codex", FrontendSessionID: "thread_presentation", ExecutorSessionID: "thread_fixture", PrimaryExecutor: "codex", InitialPlanner: "codex", CurrentPrimary: "codex", WorkingDirectory: root, PrimaryModel: session.UnknownModel(), MaxWorkers: 2, State: session.StateCompleted, ContextStatus: "disabled", MemoryStatus: "disabled", ServerStatus: "not-connected", SwarmID: "native_" + id,
 		ExecutorSessions: map[string]session.ExecutorSessionMapping{"codex:thread_presentation": {Executor: "codex", ExecutorSessionID: "thread_fixture", AuthReference: "account_fixture", UpdatedAt: now}},
 	}
+	v.KnowledgeScopeID = scope
 	if err := store.Create(v); err != nil {
 		t.Fatal(err)
+	}
+	if _, err := store.Update(id, func(current *session.Session) error { current.KnowledgeScopeID = "ks_legacy"; return nil }); err != nil {
+		t.Fatal(err)
+	}
+	if err := a.SessionResumeFrontend(context.Background(), id, "opencode"); err == nil {
+		t.Fatal("unverified scope reopened")
+	}
+	unchanged, err := store.Get(id)
+	if err != nil || unchanged.State != session.StateCompleted || unchanged.Frontend != "codex" || unchanged.KnowledgeScopeID != "ks_legacy" {
+		t.Fatal("rejected scope mutated saved session", err)
+	}
+	if _, err := store.Update(id, func(current *session.Session) error { current.KnowledgeScopeID = scope; return nil }); err != nil {
+		t.Fatal(err)
+	}
+	// A completed prompt can select no sources, but must retain the configured
+	// conversation boundary so the next frontend can resume the same history.
+	base := turnRunnerFunc(func(_ context.Context, _ opencodebridge.ExecutorRequest, emit func(string) error) (opencodebridge.ExecutorResult, error) {
+		return opencodebridge.ExecutorResult{}, emit("fixture result")
+	})
+	previousRunner := a.OpenCodeBridgeRunner
+	a.OpenCodeBridgeRunner = base
+	state, err := a.Store.LoadState()
+	if err != nil {
+		t.Fatal(err)
+	}
+	turn := a.scopeAutoRunner(base, cfg, state, store, id, root, t.TempDir(), "", nil, nil, &autoTurnState{}, opencodebridge.ModelCatalog{})
+	_, err = turn.Run(context.Background(), opencodebridge.ExecutorRequest{Executor: "codex", Prompt: "Read VERSION in the fixture. Deliverable: the exact version value. Acceptance: return the value without edits."}, func(string) error { return nil })
+	a.OpenCodeBridgeRunner = previousRunner
+	if err != nil {
+		t.Fatal(err)
+	}
+	afterTurn, err := store.Get(id)
+	if err != nil || afterTurn.KnowledgeScopeID != scope {
+		t.Fatal("prompt-local routing replaced authoritative conversation scope", err)
 	}
 	if err := a.SessionResumeFrontend(context.Background(), id, "opencode"); err != nil {
 		t.Fatal(err)

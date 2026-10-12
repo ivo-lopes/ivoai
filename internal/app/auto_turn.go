@@ -126,7 +126,8 @@ func (a *App) scopeAutoRunner(base opencodebridge.ExecutorRunner, original confi
 		}
 		_, err = store.Update(id, func(value *session.Session) error {
 			value.KnowledgeSources = k.aliases()
-			value.KnowledgeScopeID = knowledgeScopeID(cwd, k)
+			// Prompt-local purpose routing changes active sources, never the
+			// configured organization boundary used to reopen native history.
 			value.CurrentPhase = "planning"
 			if !value.RecoveryRequested {
 				value.Tasks = nil
@@ -193,7 +194,7 @@ func (a *App) scopeAutoRunner(base opencodebridge.ExecutorRunner, original confi
 						return nil, nil, err
 					}
 				}
-				spec.Args, spec.Env = args, executorBridgeEnvironment(k.environment)
+				spec.Args, spec.Env = args, inheritHookSessionEnvironment(executorBridgeEnvironment(k.environment), spec.Env)
 				spec.ObserveProgress = func(trace opencodebridge.ExecutionTrace) {
 					encoded, err := json.Marshal(trace)
 					if err == nil {

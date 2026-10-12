@@ -230,6 +230,9 @@ func (a *App) openCodeAutoStatus(store session.Store, id string, cfg config.Conf
 	}
 	value, _ := store.Get(id)
 	auth := func(provider quota.Provider) string {
+		if errors.Is(probeErrors[provider], errOperationalQuotaUnavailable) {
+			return "unavailable / not verified"
+		}
 		if probeErrors[provider] != nil {
 			return "stale / not verified"
 		}
@@ -239,6 +242,12 @@ func (a *App) openCodeAutoStatus(store session.Store, id string, cfg config.Conf
 		return "authentication required"
 	}
 	quotaState := func(provider quota.Provider) string {
+		if errors.Is(probeErrors[provider], errOperationalQuotaStale) {
+			return "stale"
+		}
+		if errors.Is(probeErrors[provider], errOperationalQuotaUnavailable) {
+			return "unavailable"
+		}
 		if probeErrors[provider] != nil {
 			return "N/A"
 		}
@@ -279,12 +288,27 @@ func (a *App) openCodeAutoStatus(store session.Store, id string, cfg config.Conf
 				}
 			}
 			selectedSkills := []string{}
+			workerID, duration, blocked := task.ID, task.DurationMilliseconds, ""
+			for _, dependency := range task.Dependencies {
+				for _, prior := range value.Tasks {
+					if prior.ID == dependency && prior.State != session.StateCompleted {
+						blocked = "dependency_pending"
+					}
+				}
+			}
+			if task.State == session.StateBlocked && blocked == "" {
+				blocked = "blocked"
+			}
 			for _, worker := range value.Workers {
 				if worker.TaskID == task.ID {
+					workerID = worker.ID
+					if worker.State == session.StateRunning && !worker.StartedAt.IsZero() {
+						duration = max(0, time.Since(worker.StartedAt).Milliseconds())
+					}
 					selectedSkills = append([]string(nil), worker.SelectedSkills...)
 				}
 			}
-			workerViews = append(workerViews, opencodebridge.WorkerView{ID: task.ID, Role: task.Role, Executor: task.Executor, Tier: task.Tier, Model: task.Model.Name, Effort: task.Effort, State: string(task.State), Purposes: purposes, MCPs: append([]string(nil), task.AllowedMCPs...), Skills: selectedSkills})
+			workerViews = append(workerViews, opencodebridge.WorkerView{ID: workerID, TaskID: task.ID, Dependencies: append([]string(nil), task.Dependencies...), DurationMilliseconds: duration, BlockedReason: blocked, Role: task.Role, Executor: task.Executor, Tier: task.Tier, Model: task.Model.Name, Effort: task.Effort, State: string(task.State), Purposes: purposes, MCPs: append([]string(nil), task.AllowedMCPs...), Skills: selectedSkills})
 		}
 		switch task.State {
 		case session.StateRunning, session.StateStarting:
@@ -372,6 +396,10 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 	if hasHandoff {
 		cwd = handoff.Directory
 	}
+	scopeID, err := conversationScopeID(cwd, cfg, selectors)
+	if err != nil {
+		return err
+	}
 	id, err := session.NewID()
 	if err != nil {
 		return err
@@ -379,6 +407,13 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 	resumeID, _ := ctx.Value(resumeSessionKey{}).(string)
 	if resumeID != "" {
 		id = resumeID
+		previous, loadErr := (session.Store{Root: a.Store.Paths.SessionsDir}).Get(id)
+		if loadErr != nil {
+			return loadErr
+		}
+		if err := verifyConversationScope(previous.KnowledgeScopeID, scopeID); err != nil {
+			return err
+		}
 	}
 	now := time.Now().UTC()
 	// AUTO has no prompt yet. Configuration metadata is sufficient here; live
@@ -392,7 +427,7 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 		Coordinator: "native",
 		SessionID:   id, StartedAt: now, UpdatedAt: now, Mode: session.ModeAuto, Auto: true,
 		InitialPlanner: planner, CurrentPrimary: planner, PrimaryExecutor: planner, Frontend: frontendName,
-		WorkingDirectory: cwd, PrimaryModel: session.ResolveModel("", session.ParseModelArgument(agentArgs), planner, agentModelConfig(planner)),
+		WorkingDirectory: cwd, KnowledgeScopeID: scopeID, PrimaryModel: session.ResolveModel("", session.ParseModelArgument(agentArgs), planner, agentModelConfig(planner)),
 		HeadroomRequested: cfg.Compression.Provider == "headroom" && cfg.Headroom.Enabled, CompressionProvider: cfg.Compression.Provider, CompressionRequested: cfg.Compression.Provider != "direct", ProviderExecution: false,
 		Workers: []session.Worker{}, MaxWorkers: workerCap,
 		ContextStatus: contextState, MemoryStatus: memoryState, ServerStatus: serverState,
@@ -417,6 +452,15 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 		return err
 	}
 	if resumeID != "" {
+		previous, loadErr := store.Get(id)
+		if loadErr != nil {
+			_ = lease.Close()
+			return loadErr
+		}
+		if err := verifyConversationScope(previous.KnowledgeScopeID, scopeID); err != nil {
+			_ = lease.Close()
+			return err
+		}
 		value, err = store.Reopen(id, cwd, session.ModeAuto)
 		if err == nil && value.Frontend != frontendName {
 			value, err = store.Update(id, func(v *session.Session) error {
@@ -539,7 +583,6 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 		return err
 	}
 	defer knowledge.close()
-	scopeID := knowledgeScopeID(cwd, knowledge)
 	resumeFrontendID, err := resumableOpenCodeSession(store, currentID(), cwd, scopeID)
 	if err != nil {
 		return err
@@ -550,10 +593,6 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 	if hasHandoff {
 		resumeFrontendID = ""
 	}
-	_, _ = store.Update(currentID(), func(currentSession *session.Session) error {
-		currentSession.KnowledgeScopeID = scopeID
-		return nil
-	})
 	cfg = knowledge.config
 	a.printAutoPreflight(value.Quota, visiblePrimary, value, originalConfig)
 	value, _ = store.Update(currentID(), func(current *session.Session) error {
@@ -601,6 +640,9 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 	if err := platform.AtomicWritePrivate([]byte(instructions), instructionsPath); err != nil {
 		return err
 	}
+	hookEnv, cleanupHooks := a.prepareMemoryHooks()
+	defer cleanupHooks()
+	knowledge.environment = inheritHookSessionEnvironment(knowledge.environment, hookEnv)
 	environment := executorBridgeEnvironment(knowledge.environment)
 	frontendEnvironment := managedFrontendEnvironment(knowledge.environment)
 	compressionPolicy := sharedKnowledgeCompressionPolicyFor(originalConfig, len(knowledge.aliases()))
@@ -706,6 +748,14 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 		return runner.Run(turnCtx, request, emit)
 	})
 	bridge, err := opencodebridge.Start(opencodebridge.Options{
+		EventSnapshot: func(after uint64) (observability.Page, error) {
+			value, err := store.Get(currentID())
+			if err != nil {
+				return observability.Page{}, err
+			}
+			return session.ReplayObservations(value, after), nil
+		},
+		EventSubscribe:     func(watchCtx context.Context) (<-chan struct{}, error) { return store.Watch(watchCtx, currentID()) },
 		SelectConversation: binding.Select,
 		Frontend:           frontendName, InitialModel: initialModel, InitialEffort: initialEffort,
 		RequirePromptGate: true,
@@ -897,13 +947,7 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 		},
 		Status: func() opencodebridge.Status {
 			knowledge, _ := turnState.snapshot()
-			currentQuotas := map[quota.Provider]quota.ProviderQuota{}
-			probeErrors := map[quota.Provider]error{}
-			for _, provider := range quota.Providers() {
-				current, probeErr := manager.Probe(context.Background(), provider, false)
-				currentQuotas[provider] = current
-				probeErrors[provider] = probeErr
-			}
+			currentQuotas, probeErrors := operationalQuotas(manager.Store, manager.TTL, time.Now().UTC())
 			return a.openCodeAutoStatus(store, currentID(), originalConfig, knowledge, true, currentQuotas, compressionPolicy, probeErrors)
 		},
 		Attempt: func(attempt opencodebridge.TurnAttempt) error {
@@ -914,12 +958,14 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 					return err
 				}
 				replaced := false
+				previousState := ""
 				for i, raw := range current.TurnAttempts {
 					var previous opencodebridge.TurnAttempt
 					if json.Unmarshal(raw, &previous) != nil {
 						continue
 					}
 					if previous.ID == attempt.ID {
+						previousState = previous.State
 						current.TurnAttempts[i], replaced = body, true
 					} else if previous.Trace != nil {
 						// Keep bounded attempt metadata; only the latest attempt
@@ -937,6 +983,9 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 				current.TurnState, current.ExecutorExitCode = attempt.State, attempt.ExitCode
 				if attempt.Trace != nil {
 					current.ExecutorTrace, _ = json.Marshal(attempt.Trace)
+				}
+				if previousState != attempt.State {
+					return appendTurnObservation(current, attempt)
 				}
 				return nil
 			})
@@ -985,7 +1034,7 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 				return nil
 			}
 			for _, candidate := range values {
-				if candidate.Frontend != frontendName || candidate.WorkingDirectory != cwd {
+				if candidate.Frontend != frontendName || candidate.WorkingDirectory != cwd || candidate.KnowledgeScopeID != scopeID {
 					continue
 				}
 				mappings := make([]session.ExecutorSessionMapping, 0, 2)

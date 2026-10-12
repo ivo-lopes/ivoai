@@ -33,7 +33,7 @@ func (b *conversationBinding) ID() string { return b.active.Load().(string) }
 
 func (b *conversationBinding) Available(thread string) bool {
 	v, err := b.store.FindFrontend(b.frontend, thread, b.cwd)
-	return err == nil && v.Mode == session.ModeAuto && v.Coordinator == "native"
+	return err == nil && v.Mode == session.ModeAuto && v.Coordinator == "native" && v.KnowledgeScopeID == b.initial.KnowledgeScopeID
 }
 
 func (b *conversationBinding) Select(thread string) error {
@@ -65,7 +65,7 @@ func (b *conversationBinding) Select(thread string) error {
 		target = session.Session{SessionID: id, Frontend: b.frontend, FrontendSessionID: thread,
 			Mode: session.ModeAuto, Auto: true, Coordinator: "native", State: session.StateStarting,
 			PrimaryExecutor: b.initial.PrimaryExecutor, InitialPlanner: b.initial.InitialPlanner, CurrentPrimary: b.initial.CurrentPrimary,
-			WorkingDirectory: b.cwd, PrimaryModel: session.UnknownModel(), MaxWorkers: b.initial.MaxWorkers,
+			WorkingDirectory: b.cwd, KnowledgeScopeID: b.initial.KnowledgeScopeID, PrimaryModel: session.UnknownModel(), MaxWorkers: b.initial.MaxWorkers,
 			ContextStatus: "disabled", MemoryStatus: "disabled", ServerStatus: "not-connected"}
 		target.SwarmID, target.PrimaryLifecycleID = "native_"+id, "native_"+id+"_"+id
 		target.Observability = nil
@@ -73,6 +73,9 @@ func (b *conversationBinding) Select(thread string) error {
 		if err := b.store.Create(target); err != nil {
 			return err
 		}
+	}
+	if target.KnowledgeScopeID != b.initial.KnowledgeScopeID {
+		return errors.New("SESSION_KNOWLEDGE_SCOPE_MISMATCH")
 	}
 	if len(b.visited) >= 128 {
 		return errors.New("SESSION_SWITCH_LIMIT")
