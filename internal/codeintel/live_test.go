@@ -46,11 +46,11 @@ func TestLiveCodexStructuralCapability(t *testing.T) {
 	}
 	defer gateway.Close()
 	type evidence struct {
-		Arm                       string
-		DurationMS                int64
-		InputTokens, OutputTokens any
-		Calls                     int32
-		Correct                   bool
+		Arm                                          string
+		DurationMS                                   int64
+		InputTokens, CachedInputTokens, OutputTokens any
+		Calls                                        int32
+		Correct                                      bool
 	}
 	rows := []evidence{}
 	for _, arm := range []string{"A", "B"} {
@@ -86,6 +86,7 @@ func TestLiveCodexStructuralCapability(t *testing.T) {
 			}
 			if event.Type == "turn.completed" {
 				row.InputTokens = event.Usage["input_tokens"]
+				row.CachedInputTokens = event.Usage["cached_input_tokens"]
 				row.OutputTokens = event.Usage["output_tokens"]
 			}
 			if event.Item.Type == "agent_message" {

@@ -120,6 +120,9 @@ jobs:
           scripts/test-graft-baseline.sh \
             "$PWD/dist/release/ivoai-graft_linux_${{ matrix.goarch }}.tar.gz" \
             "$PWD/dist/release/managed-graft-${{ matrix.goarch }}.json"
+          scripts/test-managed-graft.sh \
+            "$PWD/dist/release/ivoai-graft_linux_${{ matrix.goarch }}.tar.gz" \
+            "$PWD/dist/release/managed-graft-${{ matrix.goarch }}.json"
       - name: Build archive
         env:
           CGO_ENABLED: "0"

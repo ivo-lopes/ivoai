@@ -86,6 +86,12 @@ func TestEfficiencyEvidence(t *testing.T) {
 			needle = c.needle
 		}
 		for _, f := range snap.Files {
+			if q.Operation == "skeleton" && q.File != "" {
+				if f.Path == q.File {
+					out.Write(f.Body[:min(len(f.Body), q.BudgetBytes)])
+				}
+				continue
+			}
 			for i, line := range strings.Split(string(f.Body), "\n") {
 				if strings.Contains(line, needle) && out.Len()+len(line)+len(f.Path)+20 <= 4096 {
 					fmt.Fprintf(&out, "%s:%d:%s\n", f.Path, i+1, line)
@@ -94,7 +100,7 @@ func TestEfficiencyEvidence(t *testing.T) {
 		}
 		exact := q.Operation != "callers" && q.Operation != "blast" && q.Operation != "map"
 		rows = append(rows, evidence{Scenario: c.name, Arm: "A", Tool: "bounded_text", WallMS: time.Since(start).Milliseconds(), Bytes: out.Len(), Useful: exact && strings.Contains(out.String(), c.needle)})
-		for _, arm := range []string{"B-cold-query", "B-repeat"} {
+		for _, arm := range []string{"B-first-query", "B-repeat"} {
 			start = time.Now()
 			r, e := p.Inspect(context.Background(), q)
 			if e != nil {
@@ -121,6 +127,14 @@ func TestEfficiencyEvidence(t *testing.T) {
 		rows = append(rows, row)
 		if e != nil {
 			t.Errorf("real IVOAI: %v", e)
+		}
+		// Unlike the exact declaration lookup, this explicitly measures a cold
+		// structural build over the real repository, including parser memory.
+		start = time.Now()
+		r, e = p.Query(context.Background(), core.CodeQuery{Operation: "map", Limit: 10, BudgetBytes: 4096})
+		rows = append(rows, evidence{Scenario: "ivoai_structural_map", Arm: "B", Tool: r.ProviderVersion, WallMS: time.Since(start).Milliseconds(), Bytes: len(r.Text), Useful: e == nil && r.Nodes > 0, Cache: r.CacheHit, CPU: r.CPUMS, RSS: r.PeakMemoryBytes})
+		if e != nil {
+			t.Errorf("real IVOAI structural map: %v", e)
 		}
 	}
 	body, _ := json.MarshalIndent(rows, "", "  ")

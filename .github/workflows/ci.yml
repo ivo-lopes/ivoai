@@ -131,6 +131,10 @@ jobs:
             runner: ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache: true
       - name: Install reviewed build dependencies
         run: |
           sudo apt-get update
@@ -147,6 +151,11 @@ jobs:
       - name: Exercise distributed library without AVX
         run: |
           scripts/test-graft-baseline.sh \
+            "$PWD/dist/managed-graft/ivoai-graft_linux_${{ matrix.arch }}.tar.gz" \
+            "$PWD/dist/managed-graft/managed-graft-${{ matrix.arch }}.json"
+      - name: Native sandbox and structural contracts on distributed bytes
+        run: |
+          scripts/test-managed-graft.sh \
             "$PWD/dist/managed-graft/ivoai-graft_linux_${{ matrix.arch }}.tar.gz" \
             "$PWD/dist/managed-graft/managed-graft-${{ matrix.arch }}.json"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

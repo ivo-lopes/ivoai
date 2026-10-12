@@ -63,10 +63,16 @@ func TestReviewedGraftOperationsAndIncremental(t *testing.T) {
 	p.Executable = os.Args[0]
 	p.run = p.runProcess
 	os.WriteFile(filepath.Join(p.Root, "main.go"), []byte("package main\nfunc Multiply(a, b int) int { return a*b }\nfunc Caller() int { return Multiply(2,3) }\n"), 0600)
-	for _, q := range []core.CodeQuery{{Operation: "build"}, {Operation: "skeleton", File: "main.go"}, {Operation: "callers", Symbol: "Multiply"}, {Operation: "grep", Query: "Multiply"}, {Operation: "map"}, {Operation: "blast", Symbol: "Multiply"}, {Operation: "blast", File: "main.go", StartLine: 2, EndLine: 2}, {Operation: "check"}} {
+	for _, q := range []core.CodeQuery{{Operation: "build"}, {Operation: "skeleton", File: "main.go"}, {Operation: "callers", Symbol: "Multiply"}, {Operation: "grep", Query: "Multiply"}, {Operation: "map"}, {Operation: "blast", Symbol: "Multiply"}, {Operation: "blast", File: "main.go", StartLine: 2, EndLine: 2}, {Operation: "check"}, {Operation: "viz"}} {
 		r, e := p.Query(context.Background(), q)
 		if e != nil || r.Text == "" {
 			t.Fatalf("%s: %+v %v", q.Operation, r, e)
+		}
+		if q.Operation == "viz" {
+			body, err := os.ReadFile(r.ArtifactPath)
+			if err != nil || !strings.Contains(string(body), "<html") || !strings.HasPrefix(r.ArtifactPath, p.CacheRoot+string(os.PathSeparator)) {
+				t.Fatal("private static viewer artifact missing", err)
+			}
 		}
 	}
 	os.WriteFile(filepath.Join(p.Root, "new.py"), []byte("def new_symbol():\n    return 42\n"), 0600)
