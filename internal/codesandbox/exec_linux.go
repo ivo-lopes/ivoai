@@ -26,6 +26,12 @@ import (
 // are allowed; Node threads are allowed. This does not impose CPU/memory limits,
 // hide metadata, or protect against kernel vulnerabilities.
 func Exec(node string, args []string, readPaths []string, writePaths []string) error {
+	return execWithABICeiling(node, args, readPaths, writePaths, 0)
+}
+
+// A nonzero ceiling exercises an older ABI's rights on a newer kernel in tests.
+// It can only lower the detected version, never invent kernel capabilities.
+func execWithABICeiling(node string, args []string, readPaths []string, writePaths []string, ceiling uintptr) error {
 	runtime.LockOSThread() // Never unlock: restrictions are irreversible and thread-local.
 	if os.Geteuid() == 0 {
 		return fmt.Errorf("sandbox requires an unprivileged helper")
@@ -39,12 +45,23 @@ func Exec(node string, args []string, readPaths []string, writePaths []string) e
 		return fmt.Errorf("sandbox executable must be absolute")
 	}
 	abi, _, errno := unix.Syscall(unix.SYS_LANDLOCK_CREATE_RULESET, 0, 0, unix.LANDLOCK_CREATE_RULESET_VERSION)
-	if errno != 0 || abi < 3 {
-		return fmt.Errorf("sandbox requires Landlock ABI >= 3 (ABI %d, errno %v)", abi, errno)
+	if ceiling != 0 && abi > ceiling {
+		abi = ceiling
 	}
-	// ABI 3 handles every filesystem access bit through TRUNCATE. Deny device
-	// ioctls as well on kernels which support that restriction.
-	handled := uint64((1 << 15) - 1)
+	if errno != 0 || abi < 1 {
+		return fmt.Errorf("sandbox requires Landlock ABI >= 1 (ABI %d, errno %v)", abi, errno)
+	}
+	// ABI 1 has basic path access. ABI 2 adds REFER; ABI 3 adds TRUNCATE.
+	// Seccomp compensates for truncation on every ABI, so an old kernel never
+	// silently receives a weaker boundary. ABI 1 denies cross-directory rename.
+	// Device ioctls are additionally restricted when the kernel supports it.
+	handled := uint64((1 << 13) - 1)
+	if abi >= 2 {
+		handled |= unix.LANDLOCK_ACCESS_FS_REFER
+	}
+	if abi >= 3 {
+		handled |= unix.LANDLOCK_ACCESS_FS_TRUNCATE
+	}
 	if abi >= 5 {
 		handled |= unix.LANDLOCK_ACCESS_FS_IOCTL_DEV
 	}
@@ -70,7 +87,7 @@ func Exec(node string, args []string, readPaths []string, writePaths []string) e
 		if st.Mode&unix.S_IFMT != unix.S_IFDIR {
 			access &= unix.LANDLOCK_ACCESS_FS_READ_FILE | unix.LANDLOCK_ACCESS_FS_WRITE_FILE | unix.LANDLOCK_ACCESS_FS_EXECUTE | unix.LANDLOCK_ACCESS_FS_TRUNCATE
 		}
-		rule := unix.LandlockPathBeneathAttr{Allowed_access: access, Parent_fd: int32(p)}
+		rule := unix.LandlockPathBeneathAttr{Allowed_access: access & handled, Parent_fd: int32(p)}
 		_, _, e2 := unix.Syscall6(unix.SYS_LANDLOCK_ADD_RULE, fd, unix.LANDLOCK_RULE_PATH_BENEATH, uintptr(unsafe.Pointer(&rule)), 0, 0, 0)
 		if e2 != 0 {
 			return fmt.Errorf("add Landlock rule: %w", e2)
@@ -147,10 +164,26 @@ func restrictSyscalls() error {
 		f = append(f, unix.SockFilter{Code: unix.BPF_JMP | unix.BPF_JSET | unix.BPF_K, K: 0x40000000, Jf: 1}, ret(unix.SECCOMP_RET_KILL_PROCESS))
 	}
 	f = append(f, eq(unix.SYS_CLONE3, 0, 1), ret(unix.SECCOMP_RET_ERRNO|uint32(unix.ENOSYS)))
+	// openat2 puts flags behind a userspace pointer that classic BPF cannot
+	// inspect safely. Return ENOSYS so callers can use filtered open/openat.
+	f = append(f, eq(unix.SYS_OPENAT2, 0, 1), ret(unix.SECCOMP_RET_ERRNO|uint32(unix.ENOSYS)))
+	// WRITE_FILE is checked before truncation for writable opens even on ABI 1.
+	// O_RDONLY|O_TRUNC (and the special access mode 3) bypass that write check,
+	// so reject both. Deny standalone truncate/ftruncate below on every ABI.
+	filterOpen := func(nr, flagsOffset uint32) {
+		f = append(f, eq(nr, 0, 5), ld(flagsOffset), unix.SockFilter{Code: unix.BPF_ALU | unix.BPF_AND | unix.BPF_K, K: unix.O_TRUNC | unix.O_ACCMODE}, eq(unix.O_TRUNC, 1, 0), eq(unix.O_TRUNC|unix.O_ACCMODE, 0, 1), ret(deny), ld(0))
+	}
+	filterOpen(unix.SYS_OPENAT, 32)
+	if runtime.GOARCH == "amd64" {
+		filterOpen(2, 24)
+	} // open(path, flags, mode)
+	// pthread_kill needs tgkill for its own thread group; signaling unrelated
+	// same-user processes must not be allowed on kernels before Landlock scoping.
+	f = append(f, eq(unix.SYS_TGKILL, 0, 3), ld(16), eq(uint32(os.Getpid()), 1, 0), ret(deny), ld(0))
 	// clone is permitted only for actual same-address-space, same-signal-handler
 	// threads, with no namespace creation or process exit signal.
 	f = append(f, eq(unix.SYS_CLONE, 0, 5), ld(16), unix.SockFilter{Code: unix.BPF_ALU | unix.BPF_AND | unix.BPF_K, K: uint32(unix.CLONE_THREAD|unix.CLONE_VM|unix.CLONE_SIGHAND) | 0xff | 0x7e020000}, eq(uint32(unix.CLONE_THREAD|unix.CLONE_VM|unix.CLONE_SIGHAND), 1, 0), ret(deny), ret(unix.SECCOMP_RET_ALLOW), ld(0))
-	blocked := []uint32{unix.SYS_SOCKET, unix.SYS_SOCKETPAIR, unix.SYS_CONNECT, unix.SYS_BIND, unix.SYS_LISTEN, unix.SYS_ACCEPT, unix.SYS_ACCEPT4, unix.SYS_SENDTO, unix.SYS_SENDMSG, unix.SYS_SENDMMSG, unix.SYS_RECVFROM, unix.SYS_RECVMSG, unix.SYS_RECVMMSG, unix.SYS_IO_URING_SETUP, unix.SYS_IO_URING_ENTER, unix.SYS_IO_URING_REGISTER, unix.SYS_PTRACE, unix.SYS_PROCESS_VM_READV, unix.SYS_PROCESS_VM_WRITEV, unix.SYS_PIDFD_GETFD, unix.SYS_UNSHARE, unix.SYS_SETNS, unix.SYS_MOUNT, unix.SYS_UMOUNT2, unix.SYS_PIVOT_ROOT, unix.SYS_CHROOT, unix.SYS_OPEN_BY_HANDLE_AT, unix.SYS_BPF, unix.SYS_USERFAULTFD, unix.SYS_KILL, unix.SYS_PIDFD_SEND_SIGNAL, unix.SYS_UTIMENSAT, unix.SYS_FCHMOD, unix.SYS_FCHMODAT, unix.SYS_FCHMODAT2, unix.SYS_FCHOWN, unix.SYS_FCHOWNAT, unix.SYS_SETXATTR, unix.SYS_LSETXATTR, unix.SYS_FSETXATTR, unix.SYS_REMOVEXATTR, unix.SYS_LREMOVEXATTR, unix.SYS_FREMOVEXATTR}
+	blocked := []uint32{unix.SYS_TRUNCATE, unix.SYS_FTRUNCATE, unix.SYS_TKILL, unix.SYS_RT_SIGQUEUEINFO, unix.SYS_RT_TGSIGQUEUEINFO, unix.SYS_SOCKET, unix.SYS_SOCKETPAIR, unix.SYS_CONNECT, unix.SYS_BIND, unix.SYS_LISTEN, unix.SYS_ACCEPT, unix.SYS_ACCEPT4, unix.SYS_SENDTO, unix.SYS_SENDMSG, unix.SYS_SENDMMSG, unix.SYS_RECVFROM, unix.SYS_RECVMSG, unix.SYS_RECVMMSG, unix.SYS_IO_URING_SETUP, unix.SYS_IO_URING_ENTER, unix.SYS_IO_URING_REGISTER, unix.SYS_PTRACE, unix.SYS_PROCESS_VM_READV, unix.SYS_PROCESS_VM_WRITEV, unix.SYS_PIDFD_GETFD, unix.SYS_UNSHARE, unix.SYS_SETNS, unix.SYS_MOUNT, unix.SYS_UMOUNT2, unix.SYS_PIVOT_ROOT, unix.SYS_CHROOT, unix.SYS_OPEN_BY_HANDLE_AT, unix.SYS_BPF, unix.SYS_USERFAULTFD, unix.SYS_KILL, unix.SYS_PIDFD_SEND_SIGNAL, unix.SYS_UTIMENSAT, unix.SYS_FCHMOD, unix.SYS_FCHMODAT, unix.SYS_FCHMODAT2, unix.SYS_FCHOWN, unix.SYS_FCHOWNAT, unix.SYS_SETXATTR, unix.SYS_LSETXATTR, unix.SYS_FSETXATTR, unix.SYS_REMOVEXATTR, unix.SYS_LREMOVEXATTR, unix.SYS_FREMOVEXATTR}
 	if runtime.GOARCH == "amd64" {
 		blocked = append(blocked, 57, 58, 90, 92, 94, 132, 235, 261)
 	} // fork, vfork, chmod, chown, lchown, utime, utimes, futimesat

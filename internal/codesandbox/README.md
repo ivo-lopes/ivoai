@@ -5,7 +5,7 @@ helper subprocess. It replaces that process; on any returned error the helper
 must exit immediately. Never call it in the main application or from an untrusted
 plugin. No shell command is involved. Arguments exclude `argv[0]`.
 
-The Linux amd64/arm64 implementation requires Landlock ABI 3 or later, seccomp,
+The Linux amd64/arm64 implementation requires Landlock ABI 1 or later, seccomp,
 `no_new_privs`, and `close_range`. Missing support fails closed. It locks the
 calling OS thread, drops its capabilities, restricts filesystem access, marks
 all descriptors above stderr close-on-exec, filters syscalls and execs Node.
@@ -15,7 +15,9 @@ unprivileged helper. Other architectures/platforms fail closed.
 The caller authorizes existing absolute paths. Read grants include directory
 listing and file reading; write grants additionally allow regular files,
 directories, symlinks, removal, rename/link within authorized scope and
-truncation. Only Node and the exact ELF interpreter embedded in that executable
+truncation through writable opens. Standalone truncate/ftruncate calls are denied
+on every ABI. ABI 1 additionally denies cross-directory renames/links (same-directory
+atomic replacement works). Only Node and the exact ELF interpreter embedded in that executable
 receive execute grants. Runtime libraries must be explicitly readable. Device
 creation is never granted; on ABI 5+ device ioctl access is also restricted.
 
@@ -62,3 +64,26 @@ read/write denial, a symlink escape, child-process denial, TCP/UDP denial and a
 successful worker thread. The unavailable-kernel test installs a helper-local
 filter that makes Landlock return ENOSYS and verifies refusal. ARM64 compilation
 is checked separately; compilation alone is not runtime validation on ARM64.
+
+## Older kernels
+
+ABI 1/2 support uses the same seccomp compensation on all kernel versions:
+`truncate`/`ftruncate` are denied, and `open`/`openat` reject `O_TRUNC` unless
+access mode is exactly WRONLY or RDWR. Landlock checks WRITE_FILE before a
+writable open truncates an existing file. `openat2` returns ENOSYS because its
+flags live behind a userspace pointer, which classic seccomp cannot inspect
+safely. Normal Node writes and same-directory atomic cache replacement work.
+The runtime also blocks tkill and queued-signal syscalls, and permits tgkill
+only for its own process, preserving pthread signaling without access to other
+same-user processes.
+
+Sources: [kernel Landlock documentation](https://docs.kernel.org/userspace-api/landlock.html#truncating-files),
+[Linux 5.15 Landlock file-open hook](https://github.com/torvalds/linux/blob/v5.15/security/landlock/fs.c),
+and [Linux 5.15 open-before-truncate ordering](https://github.com/torvalds/linux/blob/v5.15/fs/namei.c).
+Landlock was introduced in Linux 5.13, but kernels must enable it at build and
+boot time; a distribution/version label alone does not establish availability.
+
+Tests lower the rights mask to ABI 1 and 2 on the running kernel and execute the
+real Node fixture. A seccomp-only helper independently proves truncation/open
+and foreign-signal blocking, preventing newer Landlock from hiding filter bugs.
+This is not a claim of runtime validation on Linux 5.15 or ARM64 hardware.

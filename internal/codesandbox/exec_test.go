@@ -5,14 +5,17 @@ package codesandbox
 import (
 	"context"
 	"fmt"
-	"golang.org/x/sys/unix"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
 	"unsafe"
+
+	"golang.org/x/sys/unix"
 )
 
 func TestHelper(t *testing.T) {
@@ -35,14 +38,82 @@ func TestHelper(t *testing.T) {
 		fmt.Println("FAIL_CLOSED")
 		return
 	}
+	if os.Getenv("CODESANDBOX_SYSCALLS") == "1" {
+		runtime.LockOSThread()
+		if e := unix.Prctl(unix.PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0); e != nil {
+			t.Fatal(e)
+		}
+		if e := restrictSyscalls(); e != nil {
+			t.Fatal(e)
+		}
+		root := os.Getenv("CODESANDBOX_ROOT")
+		if e := unix.Truncate(root, 0); e != unix.EPERM {
+			t.Fatalf("truncate expected EPERM, got %v", e)
+		}
+		fd, e := unix.Open(root, unix.O_RDONLY|unix.O_TRUNC, 0)
+		if fd >= 0 {
+			unix.Close(fd)
+		}
+		if e != unix.EPERM {
+			t.Fatalf("read-only O_TRUNC expected EPERM, got %v", e)
+		}
+		fd, e = unix.Open(root, unix.O_WRONLY, 0)
+		if e != nil {
+			t.Fatal(e)
+		}
+		if e = unix.Ftruncate(fd, 0); e != unix.EPERM {
+			t.Fatalf("ftruncate: %v", e)
+		}
+		unix.Close(fd)
+		for _, flags := range []int{unix.O_TRUNC | unix.O_ACCMODE, unix.O_TRUNC} {
+			fd, e = unix.Openat(unix.AT_FDCWD, root, flags, 0)
+			if fd >= 0 {
+				unix.Close(fd)
+			}
+			if e != unix.EPERM {
+				t.Fatalf("openat flags %x: %v", flags, e)
+			}
+		}
+		fd, e = unix.Openat2(unix.AT_FDCWD, root, &unix.OpenHow{Flags: unix.O_RDONLY})
+		if fd >= 0 {
+			unix.Close(fd)
+		}
+		if e != unix.ENOSYS {
+			t.Fatalf("openat2: %v", e)
+		}
+		if runtime.GOARCH == "amd64" {
+			path, e := unix.BytePtrFromString(root)
+			if e != nil {
+				t.Fatal(e)
+			}
+			_, _, errno := unix.Syscall(2, uintptr(unsafe.Pointer(path)), unix.O_TRUNC, 0)
+			if errno != unix.EPERM {
+				t.Fatalf("legacy open: %v", errno)
+			}
+		}
+		if e := unix.Tgkill(os.Getppid(), os.Getppid(), 0); e != unix.EPERM {
+			t.Fatalf("foreign tgkill expected EPERM, got %v", e)
+		}
+		if e := unix.Tgkill(os.Getpid(), unix.Gettid(), 0); e != nil {
+			t.Fatal(e)
+		}
+		fmt.Println("SYSCALLS_CONFINED")
+		return
+	}
 	root := os.Getenv("CODESANDBOX_ROOT")
-	err := Exec(os.Getenv("CODESANDBOX_NODE"), []string{"--openssl-config=/dev/null", "-e", os.Getenv("CODESANDBOX_SCRIPT")}, []string{filepath.Join(root, "read"), "/lib", "/lib64", "/usr/lib", "/dev/null", "/dev/urandom"}, []string{filepath.Join(root, "write")})
+	ceiling, _ := strconv.ParseUint(os.Getenv("CODESANDBOX_ABI"), 10, 64)
+	err := execWithABICeiling(os.Getenv("CODESANDBOX_NODE"), []string{"--openssl-config=/dev/null", "-e", os.Getenv("CODESANDBOX_SCRIPT")}, []string{filepath.Join(root, "read"), "/lib", "/lib64", "/usr/lib", "/dev/null", "/dev/urandom"}, []string{filepath.Join(root, "write")}, uintptr(ceiling))
 	if err != nil {
 		t.Fatal(err)
 	}
 }
 
 func TestNodeConfinement(t *testing.T) {
+	for _, abi := range []string{"0", "1", "2"} {
+		t.Run("ABI"+abi, func(t *testing.T) { testNodeConfinement(t, abi) })
+	}
+}
+func testNodeConfinement(t *testing.T, abi string) {
 	node := os.Getenv("CODESANDBOX_TEST_NODE")
 	if node == "" {
 		t.Skip("set CODESANDBOX_TEST_NODE to the reviewed Node executable")
@@ -62,7 +133,10 @@ func TestNodeConfinement(t *testing.T) {
 		t.Fatal(err)
 	}
 	script := `const fs=require('fs'), assert=require('assert');const r=process.env.CODESANDBOX_ROOT;
- assert.equal(fs.readFileSync(r+'/read/secret','utf8'),'fixture');fs.writeFileSync(r+'/write/result','ok');
+ assert.equal(fs.readFileSync(r+'/read/secret','utf8'),'fixture');fs.writeFileSync(r+'/write/result','old-content');fs.writeFileSync(r+'/write/result','ok');assert.equal(fs.readFileSync(r+'/write/result','utf8'),'ok');
+ fs.writeFileSync(r+'/write/atomic.tmp','renamed');fs.renameSync(r+'/write/atomic.tmp',r+'/write/atomic');
+ assert.throws(()=>fs.openSync(r+'/read/secret',fs.constants.O_RDONLY|fs.constants.O_TRUNC),e=>e.code==='EPERM');
+ assert.equal(fs.readFileSync(r+'/read/secret','utf8'),'fixture');
  for(const p of [r+'/outside/secret',r+'/read/escape']) assert.throws(()=>fs.readFileSync(p),e=>e.code==='EACCES');
  for(const p of [r+'/read/secret',r+'/outside/new']) assert.throws(()=>fs.writeFileSync(p,'bad'),e=>e.code==='EACCES');
  const {Worker}=require('worker_threads');const worker=new Worker('require("worker_threads").parentPort.postMessage(42)',{eval:true});worker.on('message',n=>assert.equal(n,42));
@@ -72,7 +146,7 @@ func TestNodeConfinement(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 	cmd := exec.CommandContext(ctx, os.Args[0], "-test.run=^TestHelper$")
-	cmd.Env = append(os.Environ(), "CODESANDBOX_HELPER=1", "CODESANDBOX_ROOT="+root, "CODESANDBOX_NODE="+node, "CODESANDBOX_SCRIPT="+script)
+	cmd.Env = append(os.Environ(), "CODESANDBOX_HELPER=1", "CODESANDBOX_ROOT="+root, "CODESANDBOX_NODE="+node, "CODESANDBOX_SCRIPT="+script, "CODESANDBOX_ABI="+abi)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		t.Fatalf("sandbox failed: %v: %s", err, out)
@@ -96,5 +170,27 @@ func TestUnavailableFailsClosed(t *testing.T) {
 	}
 	if string(out) != "FAIL_CLOSED\nPASS\n" {
 		t.Fatalf("unexpected output: %s", out)
+	}
+}
+
+func TestCompensatingSyscalls(t *testing.T) {
+	root := filepath.Join(t.TempDir(), "secret")
+	if err := os.WriteFile(root, []byte("retained"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, os.Args[0], "-test.run=^TestHelper$")
+	cmd.Env = append(os.Environ(), "CODESANDBOX_HELPER=1", "CODESANDBOX_SYSCALLS=1", "CODESANDBOX_ROOT="+root)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("helper: %v %s", err, out)
+	}
+	if string(out) != "SYSCALLS_CONFINED\nPASS\n" {
+		t.Fatalf("unexpected output: %s", out)
+	}
+	data, err := os.ReadFile(root)
+	if err != nil || string(data) != "retained" {
+		t.Fatalf("fixture modified: %v", err)
 	}
 }
