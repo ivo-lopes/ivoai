@@ -60,3 +60,18 @@ test('structural observations show measured values and preserve unknown resource
  const text=panel({activity:[{operation:'code.inspect',component:'code_intelligence',provider:'graft',state:'completed',cache_hit:true,index_fresh:true,index_files:19,source_files:20,duration_ms:12}]}).map(x=>x.text).join('\n')
  assert.match(text,/cache=hit/);assert.match(text,/19\/20/);assert.match(text,/12ms/);assert.match(text,/memory=unknown/);assert.match(text,/fresh/)
 })
+
+test('last observed code summary survives eight newer lifecycle rows without inventing freshness',()=>{
+ const observed='2026-10-12T22:00:00Z'
+ const events=[{sequence:1,operation:'code.inspect',provider:'graft',state:'completed',observed_at:observed,index_fresh:true,cache_hit:false,index_files:2,source_files:2},
+  ...Array.from({length:12},(_,i)=>({sequence:i+2,operation:'task.lifecycle',state:'completed',task_id:'fixture'}))]
+ const state=mergeActivity({}, {replay:{session_id:'fixture',events,gap:false},status:{session_id:'fixture'}})
+ const rows=panel(state).map(row=>row.text)
+ assert.equal(rows.filter(text=>text.startsWith('task.lifecycle')).length,8)
+ assert.ok(!rows.some(text=>text.startsWith('code.inspect')))
+ assert.match(rows.join('\n'),/Code \(last observed\): graft/)
+ assert.match(rows.join('\n'),/observed=2026-10-12T22:00:00Z/)
+ assert.match(rows.join('\n'),/index=fresh/)
+ const other=mergeActivity(state,{replay:{session_id:'other',events:[],gap:false},status:{session_id:'other'}})
+ assert.doesNotMatch(panel(other).map(row=>row.text).join('\n'),/Code \(last observed\)/)
+})
