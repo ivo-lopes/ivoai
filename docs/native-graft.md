@@ -171,3 +171,22 @@ Release builds additionally require native grammar/viewer smoke, ABI checks and
 the no-AVX gate. Full integration, benchmark acceptance and real-client results
 must be recorded by the candidate's final validation report; pending work must not
 be inferred as complete from this architecture description.
+
+## Measured efficiency
+
+Two real Codex comparisons, each covering 12 paired scenarios, passed their
+correctness checks but increased aggregate tokens and elapsed time when exposing
+structural MCP tools. The follow-up measured 879,174 versus 1,203,629 input tokens
+and 202,007 versus 278,003 ms. Tool availability alone is not a savings mechanism.
+
+A separate test of automatic App prefetch passed all three B cases; two A
+baseline responses failed strict checks, so the overall benchmark exited 1.
+Only the correctness-matched API pair supports an efficiency comparison:
+48,163 → 16,129 input tokens and 13,178 → 8,149 ms, with two → zero model tool
+calls. This single synthetic sample does not establish general savings.
+
+For 121 source files, ten warm structural queries hit cache with p95 9 ms against
+a 100-ms target. Cold build took 4,241 ms; edit/rename/delete updates took
+628/767/744 ms, with peak observed RSS 109,203,456 bytes. See the
+[validation record and raw measurements](https://github.com/ivo-lopes/ivoai/blob/v0.12.0/release-notes/graft-native-validation.md)
+for test revisions, scope and limitations. No unfavorable sample is omitted.

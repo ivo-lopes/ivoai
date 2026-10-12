@@ -187,3 +187,23 @@ gramáticas nativas/viewer, verificações de ABI e o gate sem AVX. A integraç�
 completa, o aceite dos benchmarks e os resultados com clientes reais devem ser
 registrados no relatório final de validação do candidato; esta descrição de
 arquitetura não transforma trabalho pendente em concluído.
+
+## Eficiência medida
+
+Duas comparações reais com Codex, cada uma com 12 cenários pareados, passaram nos
+critérios de correção, mas aumentaram tokens e tempo agregados ao expor ferramentas
+MCP estruturais. A rodada posterior mediu 879.174 versus 1.203.629 tokens de entrada
+e 202.007 versus 278.003 ms. Disponibilizar ferramentas não garante economia.
+
+Um teste separado de recuperação automática pelo App passou nos três casos B;
+duas respostas da linha de base A falharam nos critérios estritos, portanto o
+benchmark completo terminou com código 1. Somente o par de API com correção
+equivalente sustenta a comparação: 48.163 → 16.129 tokens de entrada e
+13.178 → 8.149 ms, com duas → zero chamadas de ferramentas pelo modelo.
+Essa amostra sintética isolada não demonstra economia geral.
+
+Com 121 arquivos, dez consultas estruturais usaram cache, com p95 de 9 ms para
+uma meta de 100 ms. O build inicial levou 4.241 ms; atualizações por edição,
+renomeação e remoção levaram 628/767/744 ms, com pico de RSS observado de
+109.203.456 bytes. O [relatório e os dados brutos](https://github.com/ivo-lopes/ivoai/blob/v0.12.0/release-notes/graft-native-validation.md)
+registram revisões, escopo e limitações. Resultados desfavoráveis são preservados.
