@@ -1,5 +1,5 @@
 schema_version: 1
-validated_at: "2026-10-11"
+validated_at: "2026-10-12"
 transitive_dependency_cutoff: "2026-10-12T00:00:00Z"
 policy:
   allow_latest_tags: false
@@ -26,7 +26,7 @@ components:
 
   - name: ivoai
     role: [client, server]
-    validated_version: "0.11.0"
+    validated_version: "0.12.0"
     minimum_version: "0.1.0"
     license: MIT
     source: "https://github.com/ivo-lopes/ivoai"
@@ -268,6 +268,7 @@ components:
     trust_level: checksum_only
     signature_status: not_exposed
     attestation_status: not_exposed
+    transitive_license_inventory: "patches/graft/grammar-licenses/inventory.json"
     managed_archive_pattern: "ivoai-graft_linux_<arch>.tar.gz"
     managed_payload_path: graft-runtime
     health_probe: "graft-runtime --version"
