@@ -9,6 +9,8 @@ import pathlib
 import tarfile
 import tempfile
 import unittest
+import sys
+sys.dont_write_bytecode = True
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 

@@ -3,6 +3,8 @@
 import importlib.util
 import pathlib
 import unittest
+import sys
+sys.dont_write_bytecode = True
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 
 class ABITests(unittest.TestCase):

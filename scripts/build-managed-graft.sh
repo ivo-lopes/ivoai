@@ -2,19 +2,25 @@
 # Build only pinned Graft library artifacts; never start its CLI, MCP or init.
 set -euo pipefail
 umask 022
+export PYTHONDONTWRITEBYTECODE=1
 repo_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 helper="$repo_root/patches/graft"
 revision=fe30ead39d5e6f0c921018d364da2bdbc9d4b3ad
 source_sha=ab27f9123eeb59b3987a342a24b7e357ad3412f41c556fde3a76ca9e250d2db1
 lock_sha=c05064ea18ed1b538e27cc788f1d6ea2cae00b2c00c79ef552fc1bb4c54fd5f5
 node_version=26.11.1
+case ${GRAFT_GCC_MAJOR:-} in
+  "") cc=/usr/bin/gcc; cxx=/usr/bin/g++ ;;
+  12) cc=/usr/bin/gcc-12; cxx=/usr/bin/g++-12 ;;
+  *) echo "Unsupported reviewed compiler selection" >&2; exit 1 ;;
+esac
+[[ -x $cc && -x $cxx ]] || { echo "Selected compiler is missing" >&2; exit 1; }
 [[ $(uname -s) == Linux ]] || { echo 'Linux native build required' >&2; exit 1; }
 case $(uname -m) in
   x86_64) arch=amd64; node_arch=x64; node_sha=15fc043a51a5783f2f4b634561091658f5a7f0e3db03f997dca3a8033a33e45b; cpu_flags='-march=x86-64 -mtune=generic -mno-avx -mno-avx2' ;;
   aarch64) arch=arm64; node_arch=arm64; node_sha=170454fb022f5e9b5f6cc76c25fa32ef5100895be44eb04e92f9780591491bbf; cpu_flags='-march=armv8-a' ;;
   *) echo 'Only native Linux amd64/arm64 builds are supported' >&2; exit 1 ;;
 esac
-for command in bwrap python3 curl tar sha256sum make g++ patch readelf; do command -v "$command" >/dev/null; done
 output=${1:-"$repo_root/dist/graft"}
 mkdir -p -- "$output"
 output=$(cd -- "$output" && pwd)
@@ -27,6 +33,7 @@ fetch() {
   printf '%s  %s\n' "$digest" "$destination" | sha256sum --check --status || { echo 'Pinned archive checksum mismatch' >&2; exit 1; }
 }
 fetch "${GRAFT_SOURCE_ARCHIVE:-}" "https://codeload.github.com/trailhq/Graft/tar.gz/$revision" "$source_sha" "$work/source.tgz"
+for command in bwrap python3 curl tar sha256sum make patch readelf; do command -v "$command" >/dev/null; done
 fetch "${GRAFT_NODE_ARCHIVE:-}" "https://nodejs.org/dist/v$node_version/node-v$node_version-linux-$node_arch.tar.gz" "$node_sha" "$work/node.tgz"
 python3 "$helper/build.py" extract "$work/source.tgz" "$work/build"
 tar --extract --gzip --file "$work/node.tgz" --directory "$work/node" --strip-components=1 --no-same-owner
@@ -48,6 +55,7 @@ sandbox=(bwrap --die-with-parent --new-session --unshare-all --clearenv
   --setenv SOURCE_DATE_EPOCH 0 --setenv PYTHONHASHSEED 0
   --setenv npm_config_userconfig /home/build/npm-user-config --setenv npm_config_globalconfig /home/build/npm-global-config
   --setenv npm_config_cache /cache --setenv npm_config_update_notifier false
+  --setenv CC "$cc" --setenv CXX "$cxx"
   --setenv CFLAGS "$cpu_flags -ffile-prefix-map=/build=. -fdebug-prefix-map=/build=."
   --setenv CXXFLAGS "$cpu_flags -ffile-prefix-map=/build=. -fdebug-prefix-map=/build=."
   --chdir /build)
@@ -72,7 +80,7 @@ done
 mv "$work/build/dist" "$work/build/node_modules" "$work/build/package.json" "$work/build/package-lock.json" "$work/build/LICENSE" "$work/payload/"
 install -m 0755 "$helper/graft-runtime" "$work/payload/graft-runtime"
 cp "$work/dependencies.json" "$work/payload/dependencies.json"
-python3 "$helper/provenance.py" "$work/payload" "$repo_root" "$arch" "$node_sha" "$cpu_flags"
+python3 "$helper/provenance.py" "$work/payload" "$repo_root" "$arch" "$node_sha" "$cpu_flags" "$cxx"
 # Smoke the exact cleaned payload, not the source tree or its development deps.
 python3 - "$helper" "$work/payload" <<'PY'
 import sys

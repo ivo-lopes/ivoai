@@ -6,7 +6,7 @@ import pathlib
 import subprocess
 import sys
 payload, repo = map(pathlib.Path, sys.argv[1:3])
-arch, node_sha, flags = sys.argv[3:]
+arch, node_sha, flags, compiler = sys.argv[3:]
 files = ['scripts/build-managed-graft.sh', 'patches/graft/build.py', 'patches/graft/provenance.py', 'patches/graft/check-runtime.mjs', 'patches/graft/tree-sitter-node26.patch', 'patches/graft/metadata.py', 'patches/graft/graft-runtime', 'patches/graft/check-abi.py']
 provenance = {
     'managedVersion': '0.21.1-ivoai.1', 'upstreamVersion': '0.21.1',
@@ -17,7 +17,7 @@ provenance = {
     'nodeVersion': '26.11.1', 'nodeArchiveSHA256': node_sha,
     'platform': 'linux', 'architecture': arch, 'nativeCPUFlags': flags,
     'license': 'MIT', 'npmLifecycleScripts': False,
-    'compiler': subprocess.check_output(['g++', '--version'], text=True).splitlines()[0],
+    'compiler': subprocess.check_output([compiler, '--version'], text=True).splitlines()[0],
     'python': sys.version.split()[0],
     'buildFilesSHA256': {name: hashlib.sha256((repo/name).read_bytes()).hexdigest() for name in files},
 }

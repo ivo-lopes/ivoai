@@ -10,7 +10,8 @@ The managed artifact identity is `0.21.1-ivoai.1`. No upstream tag is moved.
 
 Run `scripts/build-managed-graft.sh OUTPUT_DIRECTORY` on Linux amd64 or arm64.
 It requires bubblewrap, Python 3, curl, GNU tar/patch, binutils, make and a C++20 compiler.
-Release builds use the native Debian 12/GCC 12 compatibility toolchain.
+Release and CI builds select the native GCC 12 toolchain with
+`GRAFT_GCC_MAJOR=12`, installed only in ephemeral runners.
 The pinned Node 26.11.1 distribution provides both the runtime and build headers.
 The runtime is an external managed component; it is not duplicated in this tar.
 An amd64 build uses `-march=x86-64 -mtune=generic -mno-avx -mno-avx2`;
@@ -69,7 +70,7 @@ addon requires GLIBC newer than 2.35, GLIBCXX newer than 3.4.30, CXXABI newer
 than 1.3.13, or a private/non-numeric ABI version. These limits are unconditional;
 a newer host compiler may compile successfully and still fail this release gate.
 The local GCC 14 experiment demonstrated that failure (GLIBCXX 3.4.31 and
-CXXABI 1.3.15). Use Debian 12/GCC 12 on each native architecture for release;
+CXXABI 1.3.15). Use GCC 12 on each native architecture and require the ABI gate for release;
 the build does not silently fall back to incompatible host artifacts.
 
 `python3 scripts/test-graft-abi.py` checks compatibility version boundaries.
@@ -77,8 +78,11 @@ the build does not silently fall back to incompatible host artifacts.
 reproducibility without installing or executing upstream software. The build
 smoke imports the graph library, parses with every native grammar, requires all
 registered WASM and container grammars to warm, and checks viewer/query assets.
-Native arm64 and a real no-AVX amd64/QEMU execution gate require those respective
-runners; compiler flags alone do not certify the entire Node/runtime platform.
+`scripts/test-graft-baseline.sh ARCHIVE METADATA` exercises the exact pinned
+managed Node and all native/WASM grammars under QEMU Nehalem, in the isolated
+no-network sandbox. CI and release run it on amd64 and build natively on arm64;
+the local environment did not have QEMU or GCC 12 available for these gates.
+Native arm64 and real no-AVX execution require their respective runners; compiler flags alone do not certify the entire Node/runtime platform.
 The version probe accepts only `--version`; every other invocation exits 2.
 The archive is `ivoai-graft_linux_ARCH.tar.gz`, with SHA-256 sidecar and
 `managed-graft-ARCH.json` containing the supply-chain object identity. Its
