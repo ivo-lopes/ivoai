@@ -186,8 +186,6 @@ func TestLivePrimaryCodePrefetchBenchmark(t *testing.T) {
 					row.Error = "provider_or_correctness_check_failed"
 					t.Error(row.Error)
 				}
-				rows = append(rows, row)
-				persist()
 			})
 		}
 	}
