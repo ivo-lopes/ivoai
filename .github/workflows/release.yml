@@ -109,7 +109,9 @@ jobs:
       - name: Install reviewed Graft build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends bubblewrap binutils gcc-12 g++-12 make python3 patch
+          sudo apt-get install -y --no-install-recommends bubblewrap apparmor binutils gcc-12 g++-12 make python3 patch
+      - name: Admit only the CI sandbox launcher to user namespaces
+        run: scripts/setup-ci-graft-sandbox.sh
       - name: Build compatible managed Graft and verify baseline CPU
         env:
           GRAFT_GCC_MAJOR: "12"

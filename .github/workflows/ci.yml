@@ -134,10 +134,12 @@ jobs:
       - name: Install reviewed build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends bubblewrap binutils gcc-12 g++-12 make python3 patch
+          sudo apt-get install -y --no-install-recommends bubblewrap apparmor binutils gcc-12 g++-12 make python3 patch
       - name: Install non-AVX CPU smoke dependency
         if: matrix.arch == 'amd64'
         run: sudo apt-get install -y --no-install-recommends qemu-user
+      - name: Admit only the CI sandbox launcher to user namespaces
+        run: scripts/setup-ci-graft-sandbox.sh
       - name: Build locked library and enforce ABI baseline
         env:
           GRAFT_GCC_MAJOR: "12"
