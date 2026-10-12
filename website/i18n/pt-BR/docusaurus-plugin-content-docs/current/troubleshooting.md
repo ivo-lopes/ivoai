@@ -32,7 +32,7 @@ de falha/entrega não confirmada em vez de um falso sucesso.
 
 Os assets da release incluem binários OpenCode gerenciados e metadados de
 proveniência com checksums separados. O build modificado se identifica como
-`1.19.0-ivoai.1`, não como o artefato upstream intacto. Os objetos imutáveis
+`1.19.0-ivoai.2`, não como o artefato upstream intacto. Os objetos imutáveis
 anteriores continuam disponíveis para rollback.
 
 ## Gestão de conexões multi-server

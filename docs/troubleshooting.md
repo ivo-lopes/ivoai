@@ -30,7 +30,7 @@ alone does not certify delivery, particularly over SSH. An unavailable backend
 produces failed/unconfirmed feedback instead of a false success toast.
 
 Release archives include separately checksummed managed OpenCode binaries and
-provenance metadata. The patched build is identified as `1.19.0-ivoai.1`, not as
+provenance metadata. The patched build is identified as `1.19.0-ivoai.2`, not as
 the untouched upstream artifact. Existing immutable objects remain available for
 rollback.
 
