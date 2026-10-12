@@ -1,7 +1,7 @@
 /** @jsxImportSource @opentui/solid */
 import { For, Show, createSignal, onCleanup } from "solid-js"
 import { clean, logo, panel, servers, fitRows } from "./presentation.mjs"
-import { readOperationalStream, mergeActivity, createStreamWatchdog } from "./events.mjs"
+import { readOperationalStream, mergeActivity, createStreamWatchdog, initialOperationalStatus } from "./events.mjs"
 import { installKeyboardProtocol } from "./keyboard.mjs"
 
 const tui = async (api: any, options: any) => {
@@ -78,7 +78,21 @@ const tui = async (api: any, options: any) => {
       if (!stopped) timer = setTimeout(refresh, 3000)
     }
   }
-  void refresh()
+  const initialize = async () => {
+    streamAbort = new AbortController()
+    const controller = streamAbort
+    const timeout = setTimeout(() => controller.abort(), 5000)
+    try {
+      const snapshot = await initialOperationalStatus(options.bridge, options.token, controller.signal)
+      if (!stopped) setStatus(snapshot)
+    } catch {
+      if (!stopped) setStatus((value: any) => ({ ...value, session_state: "stale" }))
+    } finally {
+      clearTimeout(timeout)
+      if (!stopped) void refresh()
+    }
+  }
+  void initialize()
   const dispose = () => {
     stopped = true
     streamAbort?.abort()

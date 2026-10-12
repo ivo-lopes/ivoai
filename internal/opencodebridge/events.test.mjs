@@ -1,6 +1,6 @@
 import {test} from 'node:test'
 import assert from 'node:assert/strict'
-import {readOperationalStream,mergeActivity,createStreamWatchdog} from './assets/events.mjs'
+import {readOperationalStream,mergeActivity,createStreamWatchdog,initialOperationalStatus} from './assets/events.mjs'
 import {panel} from './assets/presentation.mjs'
 
 test('fragmented replay stream resumes without duplicates and resets across sessions',async()=>{
@@ -38,4 +38,20 @@ test('heartbeat watchdog bounds initial connection and stalled streams with inje
  const active=createStreamWatchdog(()=>failures++,clock);active.touch()
  advance(44000);assert.equal(failures,1);active.touch();advance(44000);assert.equal(failures,1);advance(1000);assert.equal(failures,2)
  const disposed=createStreamWatchdog(()=>failures++,clock);disposed.dispose();advance(60000);assert.equal(failures,2)
+})
+
+
+test('status-only bridge supplies useful initial panel before unavailable events',async()=>{
+ const calls=[]
+ const fetcher=async(url,options)=>{calls.push(url);assert.equal(options.headers.Authorization,'Bearer fixture');return new Response(JSON.stringify({session_id:'s',permission_mode:'full',knowledge_mode:'restricted',servers:[{alias:'source-A'},{alias:'source-B'}]}),{status:200,headers:{'Content-Type':'application/json'}})}
+ const status=await initialOperationalStatus('http://127.0.0.1:1234','fixture',new AbortController().signal,fetcher)
+ const stale={...status,session_state:'stale'}
+ const text=panel(stale).map(row=>row.text).join('\n')
+ assert.match(text,/Permissions: full/);assert.match(text,/source-A/);assert.match(text,/source-B/);assert.match(text,/restricted/)
+ assert.deepEqual(calls,['http://127.0.0.1:1234/status'])
+})
+test('initial snapshot rejects unauthorized and oversized responses',async()=>{
+ for(const response of [new Response('denied',{status:401}),new Response('x'.repeat(524289)),new Response('[]')]){
+  await assert.rejects(initialOperationalStatus('http://127.0.0.1:1','fixture',new AbortController().signal,async()=>response))
+ }
 })
