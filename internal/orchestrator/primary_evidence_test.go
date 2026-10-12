@@ -205,3 +205,38 @@ func TestPrimaryEvidenceConcurrentWaitIsDeduplicatedAndRevocationDiscards(t *tes
 		t.Fatal("revoked evidence returned")
 	}
 }
+
+func TestPrimaryEvidenceWaitRequiresQuotaAdmissionCheckpoint(t *testing.T) {
+	s := primaryEvidenceServer(t)
+	if _, err := s.plan(context.Background(), toolRequest(map[string]any{"tasks": []any{primaryEvidenceTask("a", nil)}})); err != nil {
+		t.Fatal(err)
+	}
+	value, _ := s.Store.Get(s.SessionID)
+	// Reproduce the window after plan policy acceptance but before native quota
+	// acknowledgement marks the current checkpoint admitted.
+	if err := s.Store.UpdateCheckpoint(s.SessionID, func(c *session.Checkpoint) error { c.Recovery.Approved = false; return nil }); err != nil {
+		t.Fatal(err)
+	}
+	calls := 0
+	s.PreparePrimaryEvidence = func(context.Context, routing.Task, int) (json.RawMessage, error) {
+		calls++
+		return json.RawMessage(`{"text":"fixture"}`), nil
+	}
+	result, err := s.wait(context.Background(), toolRequest(map[string]any{"plan_id": value.PlanID, "task_ids": []string{"a"}, "mode": "all"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if calls != 0 || strings.Contains(resultText(t, result), `"primary_code_evidence"`) {
+		t.Fatal("wait prefetched before native quota admission")
+	}
+	if err := s.Store.UpdateCheckpoint(s.SessionID, func(c *session.Checkpoint) error { c.Recovery.Approved = true; return nil }); err != nil {
+		t.Fatal(err)
+	}
+	result, err = s.wait(context.Background(), toolRequest(map[string]any{"plan_id": value.PlanID, "task_ids": []string{"a"}, "mode": "all"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if calls != 1 || !strings.Contains(resultText(t, result), `"primary_code_evidence"`) {
+		t.Fatal("admitted primary evidence missing")
+	}
+}

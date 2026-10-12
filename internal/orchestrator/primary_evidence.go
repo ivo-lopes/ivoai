@@ -74,8 +74,14 @@ func (s *Server) primaryEvidenceAdmitted(planID string) bool {
 	if s.requireApprovedPlan(planID) != nil {
 		return false
 	}
+	// Plan decisions precede quota acknowledgement. A concurrent wait must
+	// observe the current admitted checkpoint, not merely the plan decision.
+	checkpoint, err := s.Store.LoadCheckpoint(s.SessionID)
+	if err != nil || checkpoint.Recovery == nil || checkpoint.Recovery.Plan.ID != planID || !checkpoint.Recovery.Approved {
+		return false
+	}
 	value, err := s.Store.Get(s.SessionID)
-	if err != nil || !value.Active() || value.PlanID != planID {
+	if err != nil || !value.Active() || value.PlanID != planID || value.RecoveryRequested {
 		return false
 	}
 	for _, decision := range value.Decisions {
