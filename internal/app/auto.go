@@ -804,20 +804,20 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 			return native.ReplyPermission(ctx, permissionID, allow)
 		},
 		AuthReference: func(probeCtx context.Context, executor string) (string, error) {
-			// Reprobe live eligibility, then ask the official client for an
-			// identity fingerprint. Never read/copy provider authentication files.
-			observed, probeErr := manager.Probe(probeCtx, quota.Provider(executor), true)
-			if probeErr != nil || !observed.Authenticated {
-				return "", errors.New("executor authentication unavailable")
+			probe := func() (quota.ProviderQuota, error) {
+				return manager.Probe(probeCtx, quota.Provider(executor), true)
 			}
-			if a.OpenCodeBridgeRunner != nil {
-				return "", nil
+			var reference func() (string, error)
+			if a.OpenCodeBridgeRunner == nil {
+				reference = func() (string, error) {
+					if a.ProviderAccountReference != nil {
+						return a.ProviderAccountReference(probeCtx, executor)
+					}
+					component := providerComponent(executor)
+					return quota.AccountReference(probeCtx, state.Components[string(component)].Path, executor)
+				}
 			}
-			if a.ProviderAccountReference != nil {
-				return a.ProviderAccountReference(probeCtx, executor)
-			}
-			component := providerComponent(executor)
-			return quota.AccountReference(probeCtx, state.Components[string(component)].Path, executor)
+			return conversationAccountReference(probe, reference)
 		},
 		PreferredExecutor: current,
 		Runner:            bridgeRunner,
