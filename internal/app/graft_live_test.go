@@ -86,9 +86,9 @@ func TestLiveGraftManagedOpenCode(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	installed, err := config.NewStore(paths).LoadState()
-	if err != nil {
-		t.Fatal(err)
+	host := filepath.Join(filepath.Dir(input["CODEX"]), "codex-code-mode-host")
+	if info, err := os.Stat(host); err != nil || !info.Mode().IsRegular() || info.Mode()&0111 == 0 {
+		t.Fatal("official Codex artifact requires its matching code-mode-host companion")
 	}
 	root := t.TempDir()
 	for _, kind := range []string{"CONFIG", "DATA", "STATE", "CACHE"} {
@@ -152,7 +152,7 @@ func TestLiveGraftManagedOpenCode(t *testing.T) {
 		"graft":                {Installed: true, Managed: true, Version: spec.Version, Path: filepath.Join(distribution, spec.PayloadPath)},
 		"codex":                {Installed: true, Managed: true, Version: "0.162.1", Path: input["CODEX"]},
 		"opencode":             {Installed: true, Managed: true, Version: "1.19.0-ivoai.1", Path: input["OPENCODE"]},
-		"codex-code-mode-host": installed.Components["codex-code-mode-host"],
+		"codex-code-mode-host": {Installed: true, Managed: true, Version: "0.162.1", Path: host},
 	}}
 	if err := store.SaveState(state); err != nil {
 		t.Fatal(err)

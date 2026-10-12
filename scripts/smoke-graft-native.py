@@ -155,7 +155,10 @@ def live(binary_argument, root_argument):
         print(json.dumps({"failure": failure, "phase": value.get("current_phase"),
                           "tasks": len(value.get("tasks", [])), "events": trace.get("stdout_events"),
                           "failure_class": trace.get("failure_class"),
-                          "native_evidence": native_evidence(value)}), flush=True)
+                          "native_evidence": native_evidence(value),
+                          "quota": {name: {key: q.get(key) for key in
+                                    ("authenticated", "eligible", "hard_limit_reached", "telemetry_unknown")}
+                                    for name, q in (value.get("quota") or {}).items()}}), flush=True)
         raise RuntimeError(failure)
 
     try:
