@@ -7,9 +7,9 @@ institutional source order remains **Memory → Context**. Compiler and test res
 remain the evidence for executable behavior.
 
 This page describes the implemented provider, sandbox, gateway and build contract.
-Application launch integration and the final native-client acceptance matrix are
-still being finalized in this candidate. Benchmark results are pending; this page
-makes no measured latency, memory or token-saving claim. Real Claude validation
+Application sessions project the capability through the existing authenticated
+gateway. Measured results and remaining acceptance gates belong to the release
+validation report; a single provider sample does not establish general savings. Real Claude validation
 remains pending under IVOAI-188 and is not implied by local fixtures or Codex tests.
 
 ## Managed implementation and lifecycle
@@ -39,7 +39,7 @@ source, reviewed build inputs and the resulting archive digest to the immutable
 component identity. Native architecture, ABI and no-AVX gates must pass in CI;
 the local GCC 14 experiment was correctly rejected by the ABI gate.
 
-The intended finished application path requires no separate Graft activation,
+The managed application path requires no separate Graft activation,
 upstream CLI installation or manual project initialization. A release carrying the
 reviewed metadata participates in normal `ivoai setup`, `ivoai update` and managed
 component promotion/rollback. See [Update and rollback](update-rollback.md).
@@ -62,8 +62,14 @@ organization or permissions scope.
 Automatic inspection can answer a literal search directly. For API inspection of
 an identified small file, it can return the complete file when it fits within half
 the requested result budget. Relations and larger structural questions use Graft.
-This routing avoids a structural subprocess when exact local evidence is already
-sufficient. Cost inputs used for that choice are estimates, not observed savings.
+An unambiguous exact declaration can also use a short direct excerpt before an
+index exists. This routing avoids a structural subprocess when exact local
+evidence is already sufficient. Eligibility checks precede cost ranking. Bounded
+local measurements update latency and result-size estimates by operation; missing
+CPU, memory or token measurements remain unknown. Bytes divided by four is an
+explicit token estimate, never provider accounting. At most 18 aggregate rows are
+stored per repository/worktree/organization/permission identity; queries and
+source content are not stored in this cost history.
 A conservative task classifier can prefetch bounded code evidence; it neither
 grants capabilities nor replaces institutional Memory/Context research.
 
@@ -83,7 +89,7 @@ index merely because they contain the same Git revision.
 
 Inventory uses Git's tracked and non-ignored untracked files, with hooks and
 fsmonitor disabled and no global/system Git configuration. Nested repositories
-remain separate. Only admitted source extensions and `go.mod` enter the inventory;
+remain separate. Only admitted source extensions and recognized project manifests enter the inventory;
 hidden paths, dependencies, build/output directories, generated hashed/minified
 JavaScript bundles, non-regular files and oversized files are excluded. Unsupported
 languages, excluded generated sources and large files are outside coverage. An
@@ -93,7 +99,7 @@ The host reads bounded exact bytes through `os.Root`, checks paths and file type
 and copies those bytes into a private snapshot. Graft receives that snapshot,
 never a write grant to the original repository. Source digests, adapter identity
 and managed version govern freshness and result reuse. Receipts also validate the
-graph sidecars before reusing an index; invalid cache evidence causes rebuilding.
+complete index tree, including extraction-cache sidecars, before reusing an index; invalid cache evidence causes rebuilding.
 Query results are bounded to 64 cached entries per source generation. Repository
 text and cached results remain untrusted data, not instructions or authorization.
 
@@ -113,7 +119,8 @@ text and cached results remain untrusted data, not instructions or authorization
 
 The RSS threshold is monitored cancellation, not a promise of a byte-exact kernel
 memory ceiling. Timeout, cancellation, memory excess and queue saturation produce
-bounded failures. Missing metrics are not replaced with zero or invented values.
+bounded failures. A build reporting parser or index errors is rejected rather
+than presenting a partial graph as complete evidence. Missing metrics are not replaced with zero or invented values.
 
 The disposable runtime helper applies Landlock and seccomp before Node starts.
 It permits reads of the managed distribution, source snapshot and necessary shared
@@ -122,7 +129,8 @@ child processes are denied; Node's required threads remain permitted. The child
 has a minimal environment, no personal HOME/configuration grants, no provider
 credentials and no inherited connected sockets. Unsupported platforms or missing
 kernel protections fail closed; the adapter does not retry without isolation.
-The runtime requires Linux amd64/arm64 and Landlock ABI 3 or newer.
+The runtime requires Linux amd64/arm64 and Landlock ABI 1 or newer. ABI 1/2
+receive additional seccomp truncation restrictions; there is no unsandboxed fallback.
 
 The existing authenticated capability gateway owns session admission and tool
 grants. Provider unavailability can select permitted direct inspection when it

@@ -52,3 +52,22 @@ Copyright (c) 2024-2025 SnailSploit / Kai Aizen. The full notice is preserved in
 `internal/skillcatalog/native/claude-red/LICENSE`. The remaining 28 documents
 without required frontmatter are recorded as rejected metadata, not bundled.
 Upstream installers, converters, hooks and build tools are not included or run.
+
+## Managed Graft
+
+Graft 0.21.1, revision `fe30ead39d5e6f0c921018d364da2bdbc9d4b3ad`,
+is incorporated as the MIT-licensed managed library `0.21.1-ivoai.1`.
+Its archive preserves upstream LICENSE, per-package notices, dependency integrity
+inventories, build inputs and reviewed patches. The whole archive is not uniformly
+MIT: its 16 retained WASM grammars include MIT, Apache-2.0 and CC0-1.0 components.
+Their full notices and exact binary hashes are in
+[the grammar inventory](patches/graft/grammar-licenses/README.md) and in the payload's
+`node_modules/tree-sitter-wasm/THIRD_PARTY_LICENSES` directory.
+
+Prebuilt WASM inputs are pinned by npm SRI and individual SHA-256. The upstream
+bundle does not fully attest the source revisions used to compile them; IVOAI
+makes no source-reproducibility or independently verified signature claim for
+those binaries. Native bindings are built from locked npm sources using reviewed,
+network-isolated compilation. Unused grammars/editor queries and the unused
+`js-yaml` CLI with its vulnerable `argparse`/`sprintf-js` chain are excluded.
+The preserved build lock and the shipped runtime inventory remain distinct.

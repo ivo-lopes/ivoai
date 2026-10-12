@@ -8,9 +8,9 @@ torna outro servidor de conhecimento. A ordem das fontes institucionais permanec
 evidência de comportamento executável.
 
 Esta página descreve o contrato implementado de provedor, sandbox, gateway e build.
-A integração com o lançamento da aplicação e a matriz final de aceite dos clientes
-nativos ainda estão sendo concluídas neste candidato. Resultados de benchmark estão
-pendentes; esta página não afirma ganhos medidos de latência, memória ou tokens.
+As sessões projetam a capacidade pelo gateway autenticado existente. Resultados
+medidos e gates restantes de aceite pertencem ao relatório de validação da release;
+uma única amostra com provedor não comprova economia geral.
 A validação real com Claude continua pendente no IVOAI-188 e não é comprovada por
 fixtures locais nem por testes com Codex.
 
@@ -42,7 +42,7 @@ arquivo final à identidade imutável do componente. Os gates de arquitetura nat
 ABI e execução sem AVX precisam passar no CI; o experimento local com GCC 14 foi
 corretamente rejeitado pelo gate de ABI.
 
-O fluxo final previsto da aplicação não exige ativação separada do Graft,
+O fluxo gerenciado da aplicação não exige ativação separada do Graft,
 instalação do CLI upstream nem inicialização manual do projeto. Uma release que
 contenha os metadados revisados participa dos fluxos normais de `ivoai setup`,
 `ivoai update` e promoção/rollback de componentes gerenciados. Consulte
@@ -67,9 +67,14 @@ permissões.
 A inspeção automática pode responder diretamente a uma busca literal. Na inspeção
 da API de um arquivo pequeno identificado, pode retornar o arquivo completo quando
 ele couber em metade do orçamento de resultado solicitado. Relações e questões
-estruturais maiores usam Graft. Esse roteamento evita um subprocesso estrutural
-quando a evidência local exata já basta. Os custos usados nessa escolha são
-estimativas, não economias observadas. Um classificador conservador de tarefas
+estruturais maiores usam Graft. Uma declaração exata e inequívoca também pode
+usar um trecho direto curto antes de existir índice. As verificações de
+elegibilidade precedem a comparação de custos. Medições locais limitadas
+atualizam estimativas de latência e tamanho por operação; CPU, memória e tokens
+não medidos permanecem desconhecidos. Bytes divididos por quatro são uma
+estimativa explícita, nunca contabilização do provedor. O histórico mantém no
+máximo 18 linhas agregadas por identidade de repositório, worktree, organização
+e permissões, sem consultas nem conteúdo das fontes. Um classificador conservador de tarefas
 pode antecipar evidência limitada de código; ele não concede capabilities nem
 substitui a pesquisa institucional em Memory/Context.
 
@@ -92,7 +97,7 @@ a mesma revisão Git.
 O inventário usa arquivos rastreados e arquivos não rastreados que não sejam
 ignorados pelo Git, com hooks e fsmonitor desabilitados e sem configuração Git
 global ou de sistema. Repositórios aninhados permanecem separados. Somente
-extensões de fonte admitidas e `go.mod` entram no inventário; caminhos ocultos,
+extensões de fonte admitidas e manifestos de projeto reconhecidos entram no inventário; caminhos ocultos,
 dependências, diretórios de build/saída, bundles JavaScript gerados com hash ou
 minificados, arquivos não regulares e arquivos grandes demais ficam excluídos.
 Linguagens não suportadas, fontes geradas excluídas e arquivos grandes estão fora
@@ -103,7 +108,7 @@ O host lê bytes exatos e limitados através de `os.Root`, verifica caminhos e t
 de arquivo e copia os bytes para um snapshot privado. O Graft recebe esse snapshot,
 sem permissão de escrita no repositório original. Digests das fontes, identidade
 do adaptador e versão gerenciada controlam atualização e reutilização de
-resultados. Recibos também validam os arquivos auxiliares do grafo antes de
+resultados. Recibos também validam toda a árvore do índice, inclusive o cache de extração, antes de
 reutilizar um índice; evidência inválida de cache provoca reconstrução. O cache
 mantém no máximo 64 resultados por geração de fontes. Texto do repositório e
 resultados em cache continuam sendo dados não confiáveis, não instruções ou
@@ -125,7 +130,8 @@ autorização.
 
 O limiar de RSS aciona cancelamento monitorado; não promete um teto de memória
 exato aplicado pelo kernel. Timeout, cancelamento, excesso de memória e saturação
-da fila geram falhas limitadas. Métricas ausentes não são substituídas por zero ou
+da fila geram falhas limitadas. Builds com erros de parsing ou indexação são
+rejeitados, em vez de apresentar um grafo parcial como evidência completa. Métricas ausentes não são substituídas por zero ou
 valores inventados.
 
 O helper descartável aplica Landlock e seccomp antes de iniciar o Node. Ele permite
@@ -136,7 +142,8 @@ O filho recebe um ambiente mínimo, sem acesso ao HOME/configurações pessoais,
 credenciais de provedores ou sockets conectados herdados. Plataformas não
 suportadas ou ausência das proteções do kernel causam falha segura; o adaptador
 não tenta novamente sem isolamento. O runtime exige Linux amd64/arm64 e Landlock
-ABI 3 ou superior.
+ABI 1 ou superior. As ABIs 1/2 recebem restrições adicionais de truncamento
+via seccomp; não existe fallback sem sandbox.
 
 O gateway autenticado existente controla a admissão da sessão e as permissões de
 ferramentas. A indisponibilidade do provedor pode selecionar uma inspeção direta
