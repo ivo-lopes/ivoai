@@ -69,6 +69,10 @@ else
 fi
 "${sandbox[@]}" "${network_args[@]}" /node/bin/node /node/lib/node_modules/npm/bin/npm-cli.js "${npm_args[@]}"
 patch --directory "$work/build" --strip=1 --fuzz=0 < "$helper/tree-sitter-node26.patch"
+patch --directory "$work/build" --strip=1 --fuzz=0 < "$helper/bounded-parse-lifecycle.patch"
+patch --directory "$work/build" --strip=1 --fuzz=0 < "$helper/viewer-escaping.patch"
+"${sandbox[@]}" /usr/bin/python3 /review/test_viewer_escaping.py /build /node/bin/node
+"${sandbox[@]}" /node/bin/node /review/check-parse-lifecycle.mjs /build
 # These are the only reviewed package build actions. No npm run/prepare/install.
 "${sandbox[@]}" /node/bin/node node_modules/typescript/bin/tsc -p tsconfig.json
 "${sandbox[@]}" /node/bin/node node_modules/typescript/bin/tsc -p viewer/tsconfig.json

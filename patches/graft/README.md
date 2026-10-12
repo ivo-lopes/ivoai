@@ -49,7 +49,15 @@ Reviewed execution is limited to:
 `tree-sitter-node26.patch` changes only two Linux C++ standard flags in
 `tree-sitter@0.21.1` from C++17 to C++20, required by Node 26's headers. It does
 not change parser behavior. The patch applies with zero fuzz and is hashed in
-provenance. No upstream CLI, `init`, MCP, telemetry stamping, package prepare or
+provenance. `bounded-parse-lifecycle.patch` yields to the event loop every 32
+source files so native syntax-tree finalizers can run between batches; the four
+per-file early returns become loop continues. A TypeScript AST regression gate
+checks those semantics before compilation, without executing Graft.
+`viewer-escaping.patch` encodes repository-controlled identifiers in HTML
+attributes and legend text; its fixture parses adversarial attribute payloads
+and verifies that they remain a single inert attribute. Both source patches and
+their regression fixtures are included in the build provenance digest.
+No upstream CLI, `init`, MCP, telemetry stamping, package prepare or
 postinstall entry point is executed. The host system is read-only in the build
 sandbox, and compilation and runtime smoke have no network namespace access.
 
