@@ -115,8 +115,12 @@ not represented as a configuration-preservation pass.
 
 - Unit/full Go tests passed before the final refinements. The initial full local
   race run was invalidated by concurrent source/document generation: compilation
-  reported missing imports and embedded assets. It was not a successful race run;
-  validation was restarted in an immutable checkout.
+  reported missing imports and embedded assets. It was not a successful race run.
+  The repeated `go test -race -p 1 -timeout 20m ./...` in an immutable checkout of
+  `330b7baf` **passed all 53 tested packages**, exit 0. App took 441.393 s,
+  Caveman evaluation 354.377 s and orchestrator 106.483 s. Later primary-admission,
+  explicit-grant, economic-MCP and Prompt Gate changes received focused race
+  regressions; final-head full-suite CI remains a separate gate.
 - Targeted race tests for code intelligence, component management and Codex
   resolution passed. `go vet`, `govulncheck` (no vulnerabilities found), shellcheck,
   adapter tests and documentation builds passed on the tested candidate.
@@ -127,6 +131,12 @@ not represented as a configuration-preservation pass.
   without AVX/AVX2. Cross-compilation alone is not used as native runtime evidence.
 - Claude validation is contractual/simulated. No Claude authentication or paid
   fallback was attempted. IVOAI-188 remains deferred for real Claude validation.
+
+Review refinements include exact native tool allowlists (an explicit empty list
+denies access), completed native quota/checkpoint admission before prefetch,
+standard-parser validation of exact Go declarations, and unknown index state for
+direct reads. Tests reproduced the old failure before each fix. The public plugin
+SDK version is pinned separately from OpenCode's managed executable version.
 
 ## Residual constraints and task governance
 
