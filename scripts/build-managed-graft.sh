@@ -71,6 +71,7 @@ fi
 patch --directory "$work/build" --strip=1 --fuzz=0 < "$helper/tree-sitter-node26.patch"
 patch --directory "$work/build" --strip=1 --fuzz=0 < "$helper/bounded-parse-lifecycle.patch"
 patch --directory "$work/build" --strip=1 --fuzz=0 < "$helper/viewer-escaping.patch"
+patch --directory "$work/build" --strip=1 --fuzz=0 < "$helper/go-package-calls.patch"
 "${sandbox[@]}" /usr/bin/python3 /review/test_viewer_escaping.py /build /node/bin/node
 "${sandbox[@]}" /node/bin/node /review/check-parse-lifecycle.mjs /build
 # These are the only reviewed package build actions. No npm run/prepare/install.
@@ -79,6 +80,7 @@ patch --directory "$work/build" --strip=1 --fuzz=0 < "$helper/viewer-escaping.pa
 for package in tree-sitter tree-sitter-typescript tree-sitter-javascript tree-sitter-python tree-sitter-go tree-sitter-r tree-sitter-java tree-sitter-kotlin tree-sitter-swift tree-sitter-php; do
   "${sandbox[@]}" --chdir "/build/node_modules/$package" /node/bin/node /build/node_modules/node-gyp/bin/node-gyp.js rebuild --nodedir=/node --jobs=2 --napi_build_version=8
 done
+"${sandbox[@]}" /node/bin/node /review/check-go-package-calls.mjs /build
 "${sandbox[@]}" /node/bin/node scripts/build-viewer.mjs
 "${sandbox[@]}" /node/bin/node /node/lib/node_modules/npm/bin/npm-cli.js prune --omit=dev --ignore-scripts --offline --no-audit --no-fund
 mv "$work/build/dist" "$work/build/node_modules" "$work/build/package.json" "$work/build/package-lock.json" "$work/build/LICENSE" "$work/payload/"

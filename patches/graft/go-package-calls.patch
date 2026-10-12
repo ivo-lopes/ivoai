@@ -1,0 +1,167 @@
+--- a/src/graph/extract.ts
++++ b/src/graph/extract.ts
+@@ -7,6 +7,7 @@
+  * resolved against the whole-repo node index later, in build.ts.
+  */
+ import Parser from "tree-sitter";
++import {collectGoPackages, goPackageCall, type GoPackageCall} from "./go-package.js";
+ import TypeScript from "tree-sitter-typescript";
+ import Python from "tree-sitter-python";
+ import Go from "tree-sitter-go";
+@@ -88,6 +89,7 @@
+  * matching `name`/`specifier` against the repo-wide node index.
+  */
+ export interface RawEdge {
++  goPackageCall?: GoPackageCall;
+   source: string; // resolved node id
+   relation: Relation;
+   file: string; // the file this edge originates in (scopes name resolution)
+@@ -324,6 +326,7 @@
+ };
+ 
+ export interface WalkCtx {
++  goPackages?: ReturnType<typeof collectGoPackages>;
+   rel: string;
+   source: string;
+   lang: Language;
+@@ -393,6 +396,7 @@
+ 
+   const nodes: NodeV1[] = [
+     {
++      ...(lang === "go" ? {goPackage: root.namedChildren.find(n => n.type === "package_clause")?.namedChildren[0]?.text} : {}),
+       id: rel,
+       name: basename(rel),
+       kind: "file",
+@@ -422,6 +426,7 @@
+     enclosingClass: null,
+     goReceiverVar: null,
+     importedSymbols,
++    ...(lang === "go" ? {goPackages: collectGoPackages(root)} : {}),
+     rR6Access: null,
+     rGenerics,
+     rSuperClass: null,
+@@ -730,6 +735,8 @@
+         file: ctx.rel,
+         ...(callee.kinds ? { kinds: callee.kinds } : {}),
+       };
++      if (ctx.goPackages && callee.viaMember && callee.receiver)
++        callEdge.goPackageCall = goPackageCall(node, callee.receiver, ctx.goPackages);
+       // Overloading languages: the call site's argument count, to pick the right
+       // overload (see RawEdge.argCount).
+       const argCount =
+--- a/src/graph/types.ts
++++ b/src/graph/types.ts
+@@ -50,6 +50,8 @@
+ }
+ 
+ export interface NodeV1 {
++  /** Declared package, on Go file nodes only; directory names need not match. */
++  goPackage?: string;
+   // identity
+   id: string; // path-scoped: "src/cache.ts#Cache.get"
+   name: string; // the symbol's own name: "get"
+--- a/src/graph/resolve.ts
++++ b/src/graph/resolve.ts
+@@ -268,6 +268,31 @@
+         if (hit && hit.id !== e.source) add(e.source, hit.id, "references", hit.confidence);
+       }
+     } else if (e.relation === "calls") {
++      if (e.goPackageCall) {
++        const {qualifier, imports} = e.goPackageCall;
++        const candidates = new Set<string>();
++        let matchedImports = 0;
++        for (const imp of imports) {
++          const representative = resolveGoImport(imp.specifier, opts.goModules ?? [], goFilesByDir);
++          if (!byId.has(representative)) continue; // external or missing source
++          const dir = posix.dirname(representative);
++          const files = goFilesByDir.get(dir) ?? [];
++          const packages = new Set(files.map(id => byId.get(id)?.goPackage).filter(Boolean));
++          // External-test packages share a directory; do not combine them.
++          const packageNames = [...packages].filter(name => !name!.endsWith("_test"));
++          if (packageNames.length !== 1 || (imp.alias ?? packageNames[0]) !== qualifier) continue;
++          matchedImports++;
++          for (const file of files) {
++            if (byId.get(file)?.goPackage !== packageNames[0]) continue;
++            for (const n of perFileName.get(file)?.get(e.name!) ?? [])
++              if (n.kind === "function" && n.exported) candidates.add(n.id);
++          }
++        }
++        if (matchedImports === 1 && candidates.size === 1)
++          add(e.source, [...candidates][0], "calls", "inferred");
++        if (matchedImports > 0) continue; // Never guess beyond a matched package.
++        // An unrelated default import must not suppress a typed local method.
++      }
+       if (e.viaMember) {
+         if (!e.recvType) continue;
+         const hit = resolveTypedMember(e.recvType, e.name!, e.file, ownerMethod, classParents, classTraits, e.argCount);
+--- /dev/null
++++ b/src/graph/go-package.ts
+@@ -0,0 +1,68 @@
++/** Import-qualified Go calls only. No global-name or directory-name guessing. */
++import type Parser from "tree-sitter";
++type Node = Parser.SyntaxNode;
++export interface GoPackageCall {
++  qualifier: string;
++  imports: Array<{ specifier: string; alias: string | null }>;
++}
++const SCOPES = new Set(["source_file", "block", "if_statement", "for_statement",
++  "expression_switch_statement", "type_switch_statement", "expression_case", "type_case",
++  "communication_case", "function_declaration", "method_declaration", "func_literal"]);
++const FUNCS = new Set(["function_declaration", "method_declaration", "func_literal"]);
++export function collectGoPackages(root: Node) {
++  const imports: GoPackageCall["imports"] = [];
++  const bindings = new Map<string, Array<{ scope: number; begins: number }>>();
++  function bind(name: Node, decl: Node, parameter = false) {
++    let scope = decl.parent;
++    while (scope && !(parameter ? FUNCS : SCOPES).has(scope.type)) {
++      // Function-type argument names do not declare enclosing local variables.
++      if (parameter && scope.type === "function_type") return;
++      scope = scope.parent;
++    }
++    if (!scope) return;
++    const list = bindings.get(name.text) ?? [];
++    list.push({scope: scope.id, begins: parameter ? scope.startIndex : decl.endIndex});
++    bindings.set(name.text, list);
++  }
++  function visit(n: Node) {
++    if (n.type === "import_spec") {
++      const path = n.childForFieldName("path");
++      const alias = n.childForFieldName("name")?.text ?? null;
++      if (path && alias !== "." && alias !== "_") {
++        // Only literal import paths, never source evaluation. Reject escaped
++        // paths instead of trying to implement the Go string-literal grammar.
++        const specifier = path.text.slice(1, -1);
++        if (!specifier.includes("\\")) imports.push({specifier, alias});
++      }
++      return;
++    }
++    const parameter = n.type === "parameter_declaration" || n.type === "variadic_parameter_declaration";
++    if (parameter || ["var_spec", "const_spec", "type_spec"].includes(n.type)) {
++      n.children.forEach((child, i) => { if (n.fieldNameForChild(i) === "name") bind(child, n, parameter); });
++    }
++    if (["short_var_declaration", "range_clause", "receive_statement"].includes(n.type)
++        && n.children.some(c => c.text === ":=")) {
++      const left = n.childForFieldName("left");
++      if (left) for (const name of left.type === "identifier" ? [left] : left.namedChildren)
++        if (name.type === "identifier") bind(name, n);
++    }
++    if (n.type === "type_switch_statement") {
++      const alias = n.childForFieldName("alias");
++      for (const name of alias?.namedChildren ?? []) {
++        const list = bindings.get(name.text) ?? [];
++        list.push({scope: n.id, begins: n.childForFieldName("value")?.endIndex ?? n.startIndex});
++        bindings.set(name.text, list);
++      }
++    }
++    for (const child of n.namedChildren) visit(child);
++  }
++  if (!root.hasError) visit(root);
++  return { imports, bindings };
++}
++export function goPackageCall(node: Node, qualifier: string, state: ReturnType<typeof collectGoPackages>): GoPackageCall | undefined {
++  const scopes = new Set<number>();
++  for (let n: Node | null = node; n; n = n.parent) scopes.add(n.id);
++  if (state.bindings.get(qualifier)?.some(b => scopes.has(b.scope) && b.begins <= node.startIndex)) return;
++  const imports = state.imports.filter(i => i.alias === null || i.alias === qualifier);
++  return imports.length ? {qualifier, imports} : undefined;
++}
