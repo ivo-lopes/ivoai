@@ -3,6 +3,7 @@ package session
 import (
 	"context"
 	"errors"
+	"github.com/ivo-lopes/ivoai/internal/observability"
 	"regexp"
 	"time"
 )
@@ -74,7 +75,7 @@ func (s Store) RequestDecisionSummary(sessionID, id, kind, summary string) error
 			return errors.New("session decision limit reached")
 		}
 		v.Decisions = append(v.Decisions, Decision{ID: id, Kind: kind, Summary: summary, State: "pending", CreatedAt: time.Now().UTC()})
-		return nil
+		return appendDecisionObservation(v, id, kind, observability.StateApprovalRequired)
 	})
 	return err
 }
@@ -103,7 +104,14 @@ func (s Store) finishDecision(sessionID, id, state string) error {
 				now := time.Now().UTC()
 				d.ResolvedAt = &now
 				d.State = state
-				return nil
+				eventState := observability.StateDenied
+				if state == "approved" {
+					eventState = observability.StateAllowed
+				}
+				if state == "cancelled" {
+					eventState = observability.StateCancelled
+				}
+				return appendDecisionObservation(v, id, d.Kind, eventState)
 			}
 		}
 		return errors.New("decision does not belong to this session")
@@ -155,4 +163,12 @@ func (s Store) WaitDecision(ctx context.Context, sessionID, id string) error {
 		case <-ticker.C:
 		}
 	}
+}
+
+func appendDecisionObservation(value *Session, id, kind string, state observability.State) error {
+	event := observability.Event{Category: observability.CategoryApproval, Operation: observability.OperationApprovalPolicy, State: state, Component: "orchestration", SubjectID: id}
+	if kind == "plan" {
+		event.PlanID = id
+	}
+	return AppendObservation(value, event)
 }

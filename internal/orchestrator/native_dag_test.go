@@ -150,6 +150,20 @@ func testNativeDAGWorktrees(t *testing.T, automatic bool) {
 	if _, err := s.integrate(ctx, toolRequest(map[string]any{"plan_id": planID})); err != nil {
 		t.Fatal(err)
 	}
+	observed, err := s.Store.Get(s.SessionID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	phases := map[string]bool{}
+	for _, event := range observed.Observability {
+		if string(event.Operation) == "orchestration.phase" && event.PlanID == planID {
+			phases[event.Phase] = true
+		}
+	}
+	if !phases["integration"] || !phases["synthesizing"] {
+		t.Fatalf("missing integration progress: %v", phases)
+	}
+
 	for _, file := range []string{"a.txt", "b.txt", "protected.txt"} {
 		if _, err := os.Stat(filepath.Join(repo, file)); err != nil {
 			t.Fatal(err)

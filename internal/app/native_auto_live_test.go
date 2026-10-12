@@ -84,7 +84,15 @@ func TestLiveNativeAUTOArtifact(t *testing.T) {
 	if path := os.Getenv("IVOAI_NATIVE_SMOKE_OPENCODE_PATH"); path != "" {
 		// Public artifact tests can select the matching downloaded frontend;
 		// only isolated component metadata changes, never operator installation.
-		state.Components["opencode"] = config.ComponentState{Installed: true, Managed: true, Version: "1.18.25-ivoai.1", Path: path}
+		state.Components["opencode"] = config.ComponentState{Installed: true, Managed: true, Version: "1.19.0-ivoai.1", Path: path}
+	}
+	if path := os.Getenv("IVOAI_NATIVE_SMOKE_CODEX_PATH"); path != "" {
+		// The caller supplies the checksum-verified reviewed artifact. No
+		// installed binary, account store or operator metadata is changed.
+		if !filepath.IsAbs(path) || filepath.Base(path) != "codex" {
+			t.Fatal("Codex override requires an absolute path named codex")
+		}
+		state.Components["codex"] = config.ComponentState{Installed: true, Managed: true, Version: "0.162.1", Path: path}
 	}
 	if err := store.SaveState(state); err != nil {
 		t.Fatal(err)

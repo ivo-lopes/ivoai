@@ -95,7 +95,7 @@ launch.codex launch.claude launch.opencode
 memory.status memory.configure
 session.direct.codex session.direct.claude session.direct.opencode session.orchestrated.codex session.orchestrated.claude
 session.list session.monitor session.stop
-session.continuity
+session.continuity session.scope.adopt session.scope.restore
 project.status project.init
 config.show config.headroom config.memory config.ruflo config.auto config.auto-planner config.auto-failover config.auto-checkpoint
 config.auto-strategy config.auto-parallel config.auto-bootstrap config.auto-escalation config.session-mode config.primary config.reviewer config.workers
@@ -118,3 +118,32 @@ As paletas clara e escura são criadas independentemente, com texto, bordas e co
 diff em alto contraste. O lettering IVOAI usa o slot oficial `home_logo`; o binário,
 a licença, os notices e a proveniência do OpenCode upstream não são alterados nem
 ocultados.
+
+## Aceite de capacidades P1/P2 (2026-10-12)
+
+Toda capacidade pública alterada deve reutilizar o contrato de runtime, oferecer
+uma interface gerenciada útil e registrar sua validação.
+`TestUXAuditCoversEveryPublicMenuAction` verifica o inventário na CI; o help canônico
+é comparado à estrutura da CLI. O modelo de PR exige evidências e justificativa
+para exceções administrativas.
+
+| Ação / capacidade | Interface gerenciada | Autoridade compartilhada e limites |
+| --- | --- | --- |
+| `config.auto-profiles`, `profile.show`, `profile.restore` | Configuração → Automation Profiles, prévia e APPLY/RESTORE exatos | Config Store, alteração atômica permitida e recibo de rollback; exibe herança/personalização; somente sessões futuras |
+| `doctor.repair-hooks` | Diagnósticos do Dashboard, reparo explícito | Propriedade pelo recibo de Memory; doctor mostra diagnóstico; hooks externos não são adotados por nome |
+| Telemetria operacional | OpenCode `/ivoai`, atividade e status | Observações versionadas e SSE autenticado; replay limitado, reconexão e indicação de lacunas/desatualização; sem probes por evento |
+| `session.scope.adopt`, `session.scope.restore` | Session Control → ações da conversa | Transição explícita de metadados com conta verificada e backup privado; o provedor retomado continua vendo o histórico nativo |
+| Transporte bruto e caminhos de backup | CLI/bridge administrativo | Não é editor alternativo de eventos nem importação arbitrária; TUI utiliza o mesmo serviço |
+
+### Paridade da experiência Codex
+
+| Capacidade | Situação anterior | Entrega P1/P2 e limite da validação |
+| --- | --- | --- |
+| Modelo e raciocínio | Seletor nativo e variantes descobertas | Preservados; valores pedidos/efetivos vêm do estado da sessão |
+| Histórico e retomada | Seletor nativo e mapeamentos IVOAI | Busca por escopo; adoção explícita de legado com backup; testes sintéticos e reais opt-in |
+| Diffs, clipboard e navegação | Controles nativos OpenCode | Preservados; testes semânticos, teclado e integração continuam obrigatórios |
+| Aprovação e cancelamento | Contrato IVOAI e cancelamento nativo | Eventos reais de tarefas/aprovações; política continua no IVOAI |
+| Ferramentas e workers | Registro de tarefas e streaming | Correlação, dependências DAG, duração real e atividade limitada |
+| Contexto e quota | Observações parciais dos provedores | Leitura em cache; ausência ou desatualização nunca equivale a zero |
+| Perfis | Configuração avançada manual | Sete perfis permitidos; prévia, confirmação, restauração e personalização |
+| Inferência Claude | Adaptador suportado | Somente fixtures nesta rodada; validação real depende de assinatura disponível |

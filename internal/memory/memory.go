@@ -56,6 +56,12 @@ func (m Manager) ConfigureWith(ctx context.Context, configuration Configuration)
 	if !configuration.InstallMCP && !configuration.InstallHooks {
 		return nil
 	}
+	if configuration.InstallHooks && m.HooksDir != "" {
+		if err := m.configureOwnedHooks(ctx, path, configuration); err != nil {
+			return err
+		}
+		configuration.InstallHooks = false
+	}
 	for _, agent := range []string{"codex", "claude-code"} {
 		if configuration.InstallMCP {
 			env := memoryEnv(configuration.MCPEndpoint, configuration.Token)
@@ -116,6 +122,9 @@ func (m Manager) Disable(ctx context.Context) error {
 func (m Manager) DisableHooks(ctx context.Context) error {
 	if os.Getenv("IVOAI_TEST_MODE") == "1" {
 		return nil
+	}
+	if m.HooksDir != "" {
+		return disableOwnedHooks(m.HooksDir)
 	}
 	path, err := m.binary()
 	if err != nil {

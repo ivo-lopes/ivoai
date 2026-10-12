@@ -35,8 +35,10 @@ Usage:
   ivoai auto [--planner codex|claude|opencode] [--knowledge-source <alias|purpose>] [-- agent arguments...]
   ivoai session start --executor <codex|claude|opencode> --mode <direct|orchestrated> [--knowledge-source <alias|purpose>] [-- agent arguments...]
   ivoai session list [--json] | show [--json] <id> | stop <id>
-  ivoai session resume <id> [--frontend codex|opencode]
-  ivoai session recover <id>
+  ivoai session resume <id> [--frontend codex|opencode] [--knowledge-source alias]
+  ivoai session recover <id> [--knowledge-source alias]
+  ivoai session adopt-scope <id> [--knowledge-source alias] [--confirm] [--json]
+  ivoai session restore-scope <id> --backup PATH [--confirm] [--json]
   ivoai session handoff <id> --to codex|claude --confirm
   ivoai monitor [--watch] [--session <id>] [--json]
   ivoai memory [status|configure]
@@ -44,6 +46,7 @@ Usage:
   ivoai skills update [source-id]
   ivoai skills enable <source-id> | disable <source-id> | pin <source-id> | unpin <source-id> | rollback <source-id>
   ivoai config [show|set <key> <value>]
+  ivoai config profile <list|show|preview ID|apply ID|restore>
   ivoai project [init|status]
   ivoai server setup | status | doctor | start | stop | restart
   ivoai server logs [service]

@@ -684,7 +684,11 @@ func (s *Server) executeTask(planID, taskID, workerID string) {
 		s.mu.Unlock()
 		_, _ = s.Store.Update(s.SessionID, func(current *session.Session) error {
 			if worker := findWorker(current, workerID); worker != nil {
+				wasRunning := worker.State == session.StateRunning
 				worker.PID, worker.ProcessStart, worker.HeadroomUsed, worker.State = observation.PID, observation.ProcessStart, observation.HeadroomUsed, session.StateRunning
+				if !wasRunning {
+					return session.AppendObservation(current, observability.Event{Category: observability.CategoryWorker, Operation: observability.OperationWorkerLifecycle, State: observability.StateRunning, PlanID: planID, TaskID: taskID, WorkerID: workerID, Executor: worker.Executor, Provider: worker.Executor, Component: providerCoreComponent(worker.Executor)})
+				}
 			}
 			return nil
 		})
@@ -865,7 +869,10 @@ func (s *Server) escalate(ctx context.Context, request *mcp.CallToolRequest) (*m
 	task.WorkerID, task.Result, task.Settled = "", workerResult{}, false
 	s.signalLocked()
 	s.mu.Unlock()
-	_, _ = s.Store.Update(s.SessionID, func(value *session.Session) error { value.EscalationCount++; return nil })
+	_, _ = s.Store.Update(s.SessionID, func(value *session.Session) error {
+		value.EscalationCount++
+		return session.AppendObservation(value, observability.Event{Category: observability.CategoryDAG, Operation: observability.OperationTaskEscalate, State: observability.StateSelected, PlanID: args.PlanID, TaskID: args.TaskID, Executor: profile.Provider, Provider: profile.Provider, Component: core.ComponentOrchestration, RoutingReason: observability.ReasonPolicyAllowed})
+	})
 	s.persistRuntimePlan(args.PlanID)
 	return toolResult(map[string]any{"task_id": args.TaskID, "tier": next, "profile": profile, "state": "planned", "reason": args.Reason})
 }
@@ -982,7 +989,7 @@ func (s *Server) appendWorker(task routing.Task, workerID string) error {
 	started := time.Now().UTC()
 	_, err := s.Store.Update(s.SessionID, func(value *session.Session) error {
 		value.Workers = append(value.Workers, session.Worker{ID: workerID, TaskID: task.ID, Role: task.Role, RequestedExecutor: task.PreferredExecutor, Executor: task.Profile.Provider, Model: session.ModelInfo{Name: displayModel(task.Profile.Model), Source: session.ModelSource(task.Profile.ModelSource)}, State: session.StateStarting, StartedAt: started, Tier: string(task.Tier), CapabilityScore: task.CapabilityScore, Effort: task.Profile.Effort, EffortSource: string(task.Profile.EffortSource)})
-		return session.AppendObservation(value, observability.Event{Category: observability.CategoryWorker, Operation: observability.OperationWorkerLifecycle, State: observability.StateRunning, TaskID: task.ID, WorkerID: workerID, Provider: task.Profile.Provider, Executor: task.Profile.Provider, Component: providerCoreComponent(task.Profile.Provider), RoutingReason: observability.ReasonCapabilityMatch})
+		return session.AppendObservation(value, observability.Event{Category: observability.CategoryWorker, Operation: observability.OperationWorkerLifecycle, State: observability.StatePending, TaskID: task.ID, WorkerID: workerID, Provider: task.Profile.Provider, Executor: task.Profile.Provider, Component: providerCoreComponent(task.Profile.Provider), RoutingReason: observability.ReasonCapabilityMatch})
 	})
 	return err
 }
@@ -1001,6 +1008,18 @@ func (s *Server) persistPlan(plan routing.Plan) error {
 	}
 	_, err := s.Store.Update(s.SessionID, func(value *session.Session) error {
 		newPlan := value.PlanID != plan.ID
+		previous := map[string]session.TaskMetadata{}
+		for _, task := range value.Tasks {
+			previous[task.ID] = task
+		}
+		for _, task := range metadata {
+			prior, exists := previous[task.ID]
+			if newPlan || !exists || prior.State != task.State {
+				if err := session.AppendObservation(value, observability.Event{Category: observability.CategoryDAG, Operation: observability.OperationTaskLifecycle, State: taskEventState(task.State), PlanID: plan.ID, TaskID: task.ID, Executor: task.Executor, Provider: task.Executor, Component: core.ComponentOrchestration}); err != nil {
+					return err
+				}
+			}
+		}
 		value.PlanID, value.OptimizationStrategy, value.Tasks, value.CurrentPhase = plan.ID, plan.Strategy, metadata, "parallel_dispatch"
 		if !newPlan {
 			return nil
@@ -1051,6 +1070,9 @@ func (s *Server) persistPlan(plan routing.Plan) error {
 }
 
 func providerCoreComponent(provider string) core.ComponentID {
+	if provider == "opencode" {
+		return core.ComponentOpenCode
+	}
 	if provider == "claude" {
 		return core.ComponentClaude
 	}
@@ -1151,4 +1173,21 @@ func strictArguments(request *mcp.CallToolRequest, target any) error {
 		return err
 	}
 	return nil
+}
+
+func taskEventState(state session.State) observability.State {
+	switch state {
+	case session.StateRunning:
+		return observability.StateRunning
+	case session.StateCompleted:
+		return observability.StateCompleted
+	case session.StateFailed:
+		return observability.StateFailed
+	case session.StateBlocked:
+		return observability.StateBlocked
+	case session.StateDegraded:
+		return observability.StateDegraded
+	default:
+		return observability.StatePending
+	}
 }

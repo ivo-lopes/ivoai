@@ -144,7 +144,9 @@ esac
 	claudeBody += complete
 	codexBody = strings.Replace(codexBody, "#!/bin/sh\n", "#!/bin/sh\nif [ \"$1 $2 $3\" = 'mcp list --json' ]; then printf '[]\\n'; exit 0; fi\n", 1)
 	a := sessionTestApp(t, root, appExecutable(t, root, "codex", codexBody), appExecutable(t, root, "claude", claudeBody), ruflo)
-	a.ProviderAccountReference = func(context.Context, string) (string, error) { return "", nil }
+	a.ProviderAccountReference = func(_ context.Context, provider string) (string, error) {
+		return "account_fixture_" + provider, nil
+	}
 	t.Setenv("IVOAI_TRANSPORT_FIXTURE_SESSIONS", a.Store.Paths.SessionsDir)
 	opencode := appExecutable(t, root, "opencode", "#!/bin/sh\nexit 0\n")
 	t.Setenv("IVOAI_TEST_MODE", "1")

@@ -1,6 +1,7 @@
 /** @jsxImportSource @opentui/solid */
 import { For, Show, createSignal, onCleanup } from "solid-js"
 import { clean, logo, panel, servers, fitRows } from "./presentation.mjs"
+import { readOperationalStream, mergeActivity, createStreamWatchdog, initialOperationalStatus } from "./events.mjs"
 import { installKeyboardProtocol } from "./keyboard.mjs"
 
 const tui = async (api: any, options: any) => {
@@ -43,30 +44,62 @@ const tui = async (api: any, options: any) => {
     api.ui.dialog.replace(() => <api.ui.DialogConfirm title={title} message={clean(permission.description, "Permission details unavailable", 2048)} onConfirm={() => reply(true)} onCancel={() => reply(false)} />, () => reply(false))
   }
 
+  let streamAbort: AbortController | undefined
+  let cursor = 0
+  let eventSession = ""
   const refresh = async () => {
     if (stopped) return
+    streamAbort = new AbortController()
+    const controller = streamAbort
+    const watchdog = createStreamWatchdog(() => {
+      if (!stopped) setStatus((value: any) => ({ ...value, session_state: "stale" }))
+      controller.abort()
+    })
     try {
-      const response = await fetch(options.bridge + "/status", {
-        headers: { Authorization: "Bearer " + options.token },
-        signal: AbortSignal.timeout(2000),
+      const response = await fetch(options.bridge + "/events?session_id=" + encodeURIComponent(eventSession), {
+        headers: { Authorization: "Bearer " + options.token, "Last-Event-ID": String(cursor) },
+        signal: streamAbort.signal,
       })
-      if (response.ok) setStatus(await response.json())
-      await refreshPermissions()
+      if (!response.ok || !response.body) throw new Error("operational stream unavailable")
+      await readOperationalStream(response.body, async (frame: any) => {
+        if (stopped) return
+        watchdog.touch()
+        cursor = frame.replay.latest_sequence
+        eventSession = frame.replay.session_id
+        setStatus((value: any) => mergeActivity(value, frame))
+        await refreshPermissions()
+      })
+      if (!stopped) throw new Error("operational stream closed")
     } catch {
-      setStatus((value: any) => ({ ...value, session_state: "stale" }))
+      if (!stopped) setStatus((value: any) => ({ ...value, session_state: "stale" }))
     } finally {
-      if (!stopped) timer = setTimeout(refresh, 5000)
+      watchdog.dispose()
+      // Only reconnect after transport closure; healthy sessions have one stream.
+      if (!stopped) timer = setTimeout(refresh, 3000)
     }
   }
-  void refresh()
-  onCleanup(() => {
+  const initialize = async () => {
+    streamAbort = new AbortController()
+    const controller = streamAbort
+    const timeout = setTimeout(() => controller.abort(), 5000)
+    try {
+      const snapshot = await initialOperationalStatus(options.bridge, options.token, controller.signal)
+      if (!stopped) setStatus(snapshot)
+    } catch {
+      if (!stopped) setStatus((value: any) => ({ ...value, session_state: "stale" }))
+    } finally {
+      clearTimeout(timeout)
+      if (!stopped) void refresh()
+    }
+  }
+  void initialize()
+  const dispose = () => {
     stopped = true
+    streamAbort?.abort()
     if (timer) clearTimeout(timer)
-  })
-  api.lifecycle.onDispose(() => {
-    stopped = true
-    if (timer) clearTimeout(timer)
-  })
+  }
+  onCleanup(dispose)
+  api.lifecycle.onDispose(dispose)
   await api.theme.install(options.theme)
   api.theme.set("ivoai")
 

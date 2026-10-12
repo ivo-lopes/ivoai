@@ -948,7 +948,9 @@ func (a *App) LaunchWithKnowledge(ctx context.Context, target string, args, sele
 	defer knowledge.close()
 	cfg = knowledge.config
 	args = append(knowledge.args, managedAgentArgs(target, args, cfg, skillResult.Instructions)...)
-	environment := knowledge.environment
+	hookEnv, cleanupHooks := a.prepareMemoryHooks()
+	defer cleanupHooks()
+	environment := inheritHookSessionEnvironment(knowledge.environment, hookEnv)
 	cleanup := func() {}
 	if target == "opencode" {
 		environment, cleanup, err = openCodeInstructionEnvironment(environment, a.Store.Paths.StateDir, managedInstructions(skillResult.Instructions))

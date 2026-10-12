@@ -113,3 +113,38 @@ the ZIP, generates `checksums.txt` for every artifact, and publishes a GitHub re
 The package script writes fixed ZIP metadata so identical skill input produces an
 identical archive. Do not tag a commit until unit, race, vet, cross-build,
 install-idempotency, deployment, and security checks pass.
+
+## P1/P2 validation cost and source of evidence
+
+For the 2026-10-12 backlog, use `GOMAXPROCS=2` and `go test -p 1` on a constrained
+host, with `TMPDIR` on disk. Do not launch several full suites or rebuild the
+managed frontend concurrently. The test layers are intentionally different:
+
+| Layer | Scope / cost | Provider access |
+| --- | --- | --- |
+| Focused Go tests | Profiles, hook ownership/repair, scope continuity, event replay and status; seconds to tens of seconds | Fixtures only |
+| Node presentation/events and Python harness tests | Bounded stream, reconnect, keyboard and consumed-output assertions; seconds | None |
+| Full Go / race / vet | Shared configuration, session store and lifecycle changes; minutes, higher RAM for race | Fixtures; opt-in live tests skipped |
+| Managed OpenCode / native Codex scripts | Reviewed real binaries, HTTP/TUI contracts; minutes | Local simulated provider, no login |
+| `TestLiveNativeAUTOArtifact` | Opt-in real Codex inference and terminal continuity; minutes, consumes account quota | Codex only; no Claude component in isolated state |
+| Install/upgrade smoke | Synthetic private HOME/XDG, component and persistent-state recovery | Local fixtures, no production migration |
+
+The live artifact smoke accepts `IVOAI_NATIVE_SMOKE_CONTINUITY=1` and, with
+`IVOAI_NATIVE_SMOKE_FRONTEND=codex`, `IVOAI_NATIVE_SMOKE_SWITCH=1`. The latter
+verifies idle frontend interruption/reopening and switching to managed OpenCode
+without changing the provider. It does **not** prove recovery of an interrupted
+approved DAG. Use only checksum-verified reviewed artifacts for optional
+`IVOAI_NATIVE_SMOKE_CODEX_PATH`/`IVOAI_NATIVE_SMOKE_OPENCODE_PATH` overrides.
+No credentials or personal configuration are copied. The personal Codex config
+is guarded by a before/after digest.
+
+Release-train evidence belongs with existing IVOAI-136; public capability
+acceptance follows IVOAI-135/146. Never mark provider acceptance complete from a
+fixture test, nor treat executable rollback as database migration rollback.
+
+`IVOAI_NATIVE_SMOKE_RECOVERY=1` adds a separately opt-in real approved readonly
+interruption/recovery smoke. It waits for a two-task host checkpoint with completed
+and pending work, interrupts only the verified owned frontend, runs `session
+recover`, requires fresh plan approval, then checks integration, task preservation,
+unchanged repository and provider identity. Linux pidfd support and an actual
+interruption window are required; missing evidence fails without editing checkpoints.

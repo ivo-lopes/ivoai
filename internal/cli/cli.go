@@ -237,9 +237,41 @@ func runCommand(ctx context.Context, a *app.App, args []string) error {
 
 func runSession(ctx context.Context, a *app.App, args []string) error {
 	if len(args) == 0 {
-		return errors.New("usage: ivoai session <start|list|show|resume|recover|handoff|stop>")
+		return errors.New("usage: ivoai session <start|list|show|resume|recover|adopt-scope|restore-scope|handoff|stop>")
 	}
 	switch args[0] {
+	case "adopt-scope", "restore-scope":
+		if len(args) < 2 {
+			return errors.New("usage: ivoai session adopt-scope <id> [--knowledge-source alias] [--confirm] [--json] | restore-scope <id> --backup PATH [--confirm] [--json]")
+		}
+		rest, selectors, err := extractKnowledgeSources(args[2:])
+		if err != nil {
+			return err
+		}
+		fs := flag.NewFlagSet("session "+args[0], flag.ContinueOnError)
+		fs.SetOutput(a.Err)
+		confirmed := fs.Bool("confirm", false, "authorize changing the retained native history scope")
+		jsonOutput := fs.Bool("json", false, "JSON output")
+		backup := fs.String("backup", "", "private scope backup to restore")
+		if err := fs.Parse(rest); err != nil || fs.NArg() != 0 {
+			return errors.New("invalid scope arguments")
+		}
+		var result app.ScopeAdoption
+		if args[0] == "restore-scope" {
+			if *backup == "" || len(selectors) > 0 {
+				return errors.New("restore-scope requires --backup and does not accept source selectors")
+			}
+			result, err = a.SessionRestoreScope(ctx, args[1], *backup, *confirmed, nil)
+		} else {
+			if *backup != "" {
+				return errors.New("adopt-scope does not accept --backup")
+			}
+			result, err = a.SessionAdoptScope(ctx, args[1], selectors, *confirmed, nil)
+		}
+		if err != nil {
+			return err
+		}
+		return writeScopeAdoption(a.Out, result, *jsonOutput)
 	case "handoff":
 		if len(args) < 2 {
 			return errors.New("usage: ivoai session handoff <id> --to codex|claude [--confirm]")
@@ -256,10 +288,17 @@ func runSession(ctx context.Context, a *app.App, args []string) error {
 		}
 		return a.SessionHandoff(ctx, args[1], *to, *confirmed)
 	case "recover":
-		if len(args) != 2 {
-			return errors.New("usage: ivoai session recover <session-id>")
+		if len(args) < 2 {
+			return errors.New("usage: ivoai session recover <session-id> [--knowledge-source alias]")
 		}
-		return a.SessionRecover(ctx, args[1])
+		rest, selectors, err := extractKnowledgeSources(args[2:])
+		if err != nil {
+			return err
+		}
+		if len(rest) != 0 {
+			return errors.New("invalid session recover arguments")
+		}
+		return a.SessionRecoverWithKnowledge(ctx, args[1], selectors)
 	case "resume":
 		if len(args) < 2 {
 			return errors.New("usage: ivoai session resume <session-id> [--frontend codex|opencode]")
@@ -267,13 +306,14 @@ func runSession(ctx context.Context, a *app.App, args []string) error {
 		fs := flag.NewFlagSet("session resume", flag.ContinueOnError)
 		fs.SetOutput(a.Err)
 		frontend := fs.String("frontend", "", "presentation frontend (orchestrated only)")
-		if err := fs.Parse(args[2:]); err != nil || fs.NArg() != 0 {
+		rest, selectors, err := extractKnowledgeSources(args[2:])
+		if err != nil {
+			return err
+		}
+		if err := fs.Parse(rest); err != nil || fs.NArg() != 0 {
 			return errors.New("invalid session resume arguments")
 		}
-		if *frontend != "" {
-			return a.SessionResumeFrontend(ctx, args[1], *frontend)
-		}
-		return a.SessionResume(ctx, args[1])
+		return a.SessionResumeWithKnowledge(ctx, args[1], *frontend, selectors)
 	case "start":
 		rest, sources, err := extractKnowledgeSources(args[1:])
 		if err != nil {
@@ -326,8 +366,17 @@ func runDoctor(ctx context.Context, a *app.App, args []string) error {
 	fs.SetOutput(a.Err)
 	jsonOutput := fs.Bool("json", false, "JSON output")
 	inventory := fs.Bool("inventory", false, "include sanitized compatibility inventory")
+	repairHooks := fs.Bool("repair-hooks", false, "repair receipt-owned memory hooks without changing unrelated configuration")
 	if err := fs.Parse(args); err != nil {
 		return err
+	}
+	if *repairHooks && *inventory {
+		return errors.New("doctor --repair-hooks cannot be combined with --inventory")
+	}
+	if *repairHooks {
+		if err := a.RepairMemoryHooks(ctx); err != nil {
+			return fmt.Errorf("repair ai-memory hooks: %w", err)
+		}
 	}
 	if *inventory {
 		value := a.SupportInventory(ctx)
@@ -703,6 +752,9 @@ func runMemory(ctx context.Context, a *app.App, args []string) error {
 	return fmt.Errorf("unknown memory action %q", args[0])
 }
 func runConfig(a *app.App, args []string) error {
+	if len(args) > 0 && args[0] == "profile" {
+		return runAutomationProfile(a, args[1:])
+	}
 	if len(args) == 0 || args[0] == "show" {
 		return a.ConfigShow()
 	}
@@ -798,8 +850,10 @@ Usage:
   ivoai auto [--planner codex|claude|opencode] [--knowledge-source <alias|purpose>] [-- agent arguments...]
   ivoai session start --executor <codex|claude|opencode> --mode <direct|orchestrated> [--knowledge-source <alias|purpose>] [-- agent arguments...]
   ivoai session list [--json] | show [--json] <id> | stop <id>
-  ivoai session resume <id> [--frontend codex|opencode]
-  ivoai session recover <id>
+  ivoai session resume <id> [--frontend codex|opencode] [--knowledge-source alias]
+  ivoai session recover <id> [--knowledge-source alias]
+  ivoai session adopt-scope <id> [--knowledge-source alias] [--confirm] [--json]
+  ivoai session restore-scope <id> --backup PATH [--confirm] [--json]
   ivoai session handoff <id> --to codex|claude --confirm
   ivoai monitor [--watch] [--session <id>] [--json]
   ivoai memory [status|configure]
@@ -807,6 +861,7 @@ Usage:
   ivoai skills update [source-id]
   ivoai skills enable <source-id> | disable <source-id> | pin <source-id> | unpin <source-id> | rollback <source-id>
   ivoai config [show|set <key> <value>]
+  ivoai config profile <list|show|preview ID|apply ID|restore>
   ivoai project [init|status]
   ivoai server setup | status | doctor | start | stop | restart
   ivoai server logs [service]

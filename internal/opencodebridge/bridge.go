@@ -13,6 +13,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/ivo-lopes/ivoai/internal/observability"
 	"github.com/ivo-lopes/ivoai/internal/promptgate"
 	"github.com/ivo-lopes/ivoai/internal/quota"
 	"io"
@@ -145,21 +146,27 @@ type Status struct {
 // WorkerView intentionally excludes task prompts, transcripts, result bodies,
 // filesystem paths and credentials. Only operational metadata reaches the TUI.
 type WorkerView struct {
-	Skills   []string `json:"skills,omitempty"`
-	ID       string   `json:"id"`
-	Role     string   `json:"role"`
-	Executor string   `json:"executor"`
-	Tier     string   `json:"tier"`
-	Model    string   `json:"model"`
-	Effort   string   `json:"effort"`
-	State    string   `json:"state"`
-	Purposes []string `json:"purposes"`
-	MCPs     []string `json:"mcps"`
+	TaskID               string   `json:"task_id,omitempty"`
+	Dependencies         []string `json:"dependencies,omitempty"`
+	DurationMilliseconds int64    `json:"duration_ms,omitempty"`
+	BlockedReason        string   `json:"blocked_reason,omitempty"`
+	Skills               []string `json:"skills,omitempty"`
+	ID                   string   `json:"id"`
+	Role                 string   `json:"role"`
+	Executor             string   `json:"executor"`
+	Tier                 string   `json:"tier"`
+	Model                string   `json:"model"`
+	Effort               string   `json:"effort"`
+	State                string   `json:"state"`
+	Purposes             []string `json:"purposes"`
+	MCPs                 []string `json:"mcps"`
 }
 
 type Options struct {
-	InitialModel  string
-	InitialEffort string
+	EventSnapshot  func(uint64) (observability.Page, error)
+	EventSubscribe func(context.Context) (<-chan struct{}, error)
+	InitialModel   string
+	InitialEffort  string
 	// Frontend is trusted session metadata, never inferred from the executor.
 	Frontend string
 	// RequirePromptGate is always enabled by AUTO. Direct executor sessions keep
@@ -190,6 +197,11 @@ type Options struct {
 }
 
 type Bridge struct {
+	eventSnapshot         func(uint64) (observability.Page, error)
+	eventSubscribe        func(context.Context) (<-chan struct{}, error)
+	eventSlots            chan struct{}
+	eventStop             chan struct{}
+	eventStopOnce         sync.Once
 	initialModel          string
 	initialEffort         string
 	frontend              string
@@ -260,6 +272,7 @@ func Start(options Options) (*Bridge, error) {
 		return nil, fmt.Errorf("listen for OpenCode bridge: %w", err)
 	}
 	bridge := &Bridge{
+		eventSnapshot: options.EventSnapshot, eventSubscribe: options.EventSubscribe, eventSlots: make(chan struct{}, 8), eventStop: make(chan struct{}),
 		frontend: options.Frontend, initialModel: options.InitialModel, initialEffort: options.InitialEffort,
 		requirePromptGate: options.RequirePromptGate,
 		nativePermissions: options.NativePermissions, replyNativePermission: options.ReplyNativePermission,
@@ -280,6 +293,7 @@ func Start(options Options) (*Bridge, error) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", bridge.authorize(bridge.health))
 	mux.HandleFunc("GET /status", bridge.authorize(bridge.status))
+	mux.HandleFunc("GET /events", bridge.authorize(bridge.operationalEvents))
 	mux.HandleFunc("GET /native-permissions", bridge.authorize(bridge.nativePermissionList))
 	mux.HandleFunc("POST /native-permissions/reply", bridge.authorize(bridge.nativePermissionReply))
 	mux.HandleFunc("GET /v1/models", bridge.authorize(bridge.models))
@@ -304,6 +318,7 @@ func (b *Bridge) URL() string   { return b.url }
 func (b *Bridge) Token() string { return b.token }
 
 func (b *Bridge) Close(ctx context.Context) error {
+	b.eventStopOnce.Do(func() { close(b.eventStop) })
 	b.mu.Lock()
 	for _, execution := range b.active {
 		execution.cancel()
@@ -611,6 +626,7 @@ func (b *Bridge) chat(w http.ResponseWriter, r *http.Request) {
 		b.active[frontendID] = activeExecution{id: runID, cancel: cancel}
 		b.mu.Unlock()
 	}
+	turnCorrelation := fmt.Sprintf("turn_%d_%d", time.Now().UnixNano(), runID)
 	for attempt := 0; ; attempt++ {
 		if attempt > 0 && b.authReference != nil {
 			authReference, err = b.authReference(executionCtx, executor)
@@ -629,7 +645,7 @@ func (b *Bridge) chat(w http.ResponseWriter, r *http.Request) {
 			err   error
 		}
 		finished := make(chan executionResult, 1)
-		turn := TurnAttempt{ID: fmt.Sprintf("%d_%d_%d", time.Now().UnixNano(), runID, attempt), Frontend: b.frontend, FrontendSessionID: frontendID, RequestedExecutor: selection.Executor, EffectiveExecutor: executor, RequestedModel: selection.Model, RequestedEffort: selection.Effort, StartedAt: time.Now().UTC(), State: "running"}
+		turn := TurnAttempt{TurnID: turnCorrelation, ID: fmt.Sprintf("%d_%d_%d", time.Now().UnixNano(), runID, attempt), Frontend: b.frontend, FrontendSessionID: frontendID, RequestedExecutor: selection.Executor, EffectiveExecutor: executor, RequestedModel: selection.Model, RequestedEffort: selection.Effort, StartedAt: time.Now().UTC(), State: "running"}
 		if b.attempt != nil {
 			if err := b.attempt(turn); err != nil {
 				if stream {
@@ -657,6 +673,9 @@ func (b *Bridge) chat(w http.ResponseWriter, r *http.Request) {
 			}
 			if runErr != nil {
 				turn.State, turn.Failure = "failed", FailureClass(runErr)
+				if errors.Is(runErr, context.Canceled) {
+					turn.State = "cancelled"
+				}
 			}
 			if b.attempt != nil {
 				if err := b.attempt(turn); err != nil {

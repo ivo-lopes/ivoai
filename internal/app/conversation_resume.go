@@ -11,6 +11,17 @@ import (
 
 type recoverySessionKey struct{}
 type resumeFrontendKey struct{}
+type resumeKnowledgeKey struct{}
+
+// SessionResumeWithKnowledge retains an explicit restrictive source selection
+// across CLI resume without guessing it from the conversation's digest.
+func (a *App) SessionResumeWithKnowledge(ctx context.Context, id, frontend string, selectors []string) error {
+	ctx = context.WithValue(ctx, resumeKnowledgeKey{}, append([]string(nil), selectors...))
+	if frontend != "" {
+		return a.SessionResumeFrontend(ctx, id, frontend)
+	}
+	return a.SessionResume(ctx, id)
+}
 
 func (a *App) SessionResumeFrontend(ctx context.Context, id, frontend string) error {
 	if frontend != "codex" && frontend != "opencode" {
@@ -21,6 +32,10 @@ func (a *App) SessionResumeFrontend(ctx context.Context, id, frontend string) er
 
 // This public control message contains no original prompt or checkpoint body.
 const recoveryPrompt = "Objective: Analyze and resume the interrupted IVOAI task graph using orchestration_recover, not orchestration_plan. Deliverable: finish only remaining approved tasks, integrate their changes and synthesize the result. Constraints: do not repeat completed tasks or uncertain mutations; retain the saved scope and acceptance criteria. Acceptance: the result must preserve completed tasks, checkpoint reconciliation must succeed, new plan approval must be obtained, all remaining local acceptance criteria must pass, and unresolved blockers must be reported honestly."
+
+func (a *App) SessionRecoverWithKnowledge(ctx context.Context, id string, selectors []string) error {
+	return a.SessionRecover(context.WithValue(ctx, resumeKnowledgeKey{}, append([]string(nil), selectors...)), id)
+}
 
 func (a *App) SessionRecover(ctx context.Context, id string) error {
 	store := session.Store{Root: a.Store.Paths.SessionsDir}
@@ -40,6 +55,7 @@ func (a *App) SessionRecover(ctx context.Context, id string) error {
 // SessionResume reopens a conversation, not its last turn. Provider-native
 // input remains in the official frontend and every new turn is admitted anew.
 func (a *App) SessionResume(ctx context.Context, id string) error {
+	selectors, _ := ctx.Value(resumeKnowledgeKey{}).([]string)
 	value, err := a.SessionShow(id)
 	if err != nil {
 		return err
@@ -59,13 +75,13 @@ func (a *App) SessionResume(ctx context.Context, id string) error {
 		if value.FrontendSessionID == "" && frontend == value.Frontend {
 			return errors.New("NATIVE_SESSION_MAPPING_UNAVAILABLE")
 		}
-		return a.OrchestratedWithKnowledge(context.WithValue(ctx, resumeSessionKey{}, id), frontend, value.PrimaryExecutor, nil, nil)
+		return a.OrchestratedWithKnowledge(context.WithValue(ctx, resumeSessionKey{}, id), frontend, value.PrimaryExecutor, nil, selectors)
 	}
 	if override, _ := ctx.Value(resumeFrontendKey{}).(string); override != "" {
 		return errors.New("DIRECT_SESSION_FRONTEND_SWITCH_NOT_SUPPORTED")
 	}
 	if value.Mode == session.ModeDirect && (value.PrimaryExecutor == "codex" || value.PrimaryExecutor == "claude" || value.PrimaryExecutor == "opencode") {
-		return a.SessionStartWithKnowledge(context.WithValue(ctx, resumeSessionKey{}, id), value.PrimaryExecutor, value.Mode, nil, nil)
+		return a.SessionStartWithKnowledge(context.WithValue(ctx, resumeSessionKey{}, id), value.PrimaryExecutor, value.Mode, nil, selectors)
 	}
 	return errors.New("NATIVE_RESUME_NOT_SUPPORTED_FOR_SESSION")
 }

@@ -44,14 +44,14 @@ func PublicMenuActionIDs() []string {
 	return []string{
 		"auto",
 		"capabilities.update", "capabilities.ponytail", "capability.inspect", "capability.enable", "capability.disable", "capability.pin", "capability.unpin", "capability.update", "capability.rollback",
-		"config.auto-gate", "config.auto-plan", "config.auto-policy", "policy.sources", "policy.concurrency", "policy.worker-cap", "policy.writes", "policy.provider", "policy.low-quota", "policy.primary", "policy.mcp", "policy.confirmation",
-		"status", "doctor", "doctor.inventory", "version", "setup", "update.dry-run", "update", "rollback", "uninstall",
+		"config.auto-profiles", "profile.show", "profile.restore", "config.auto-gate", "config.auto-plan", "config.auto-policy", "policy.sources", "policy.concurrency", "policy.worker-cap", "policy.writes", "policy.provider", "policy.low-quota", "policy.primary", "policy.mcp", "policy.confirmation",
+		"status", "doctor", "doctor.inventory", "doctor.repair-hooks", "version", "setup", "update.dry-run", "update", "rollback", "uninstall",
 		"connect.list", "connect.chatgpt", "disconnect.chatgpt", "connect.claude", "disconnect.claude", "connect.server",
 		"servers.list", "servers.add", "servers.manage", "servers.test", "servers.toggle", "servers.edit", "servers.re-enroll", "servers.remove",
 		"mcp.list", "mcp.add", "mcp.remove", "mcp.auth", "mcp.auth.remove", "mcp.header", "mcp.test", "launch.codex", "launch.claude", "launch.opencode", "memory.status", "memory.configure",
 		"mcp.tools", "mcp.enable", "mcp.policy", "mcp.direct-policy",
 		"session.direct.codex", "session.direct.claude", "session.direct.opencode", "session.orchestrated.codex", "session.orchestrated.claude", "session.list", "session.monitor", "session.stop",
-		"session.continuity",
+		"session.continuity", "session.scope.adopt", "session.scope.restore",
 		"project.status", "project.init", "config.show", "config.headroom", "config.memory", "config.ruflo", "config.auto", "config.auto-planner", "config.auto-failover", "config.auto-checkpoint", "config.auto-strategy", "config.auto-parallel", "config.auto-bootstrap", "config.auto-escalation", "config.session-mode", "config.primary", "config.reviewer", "config.workers",
 		"server.setup", "server.status", "server.doctor", "server.start", "server.stop", "server.restart", "server.logs",
 		"server.enrollment.create", "server.enrollment.list", "server.enrollment.revoke",
@@ -111,6 +111,7 @@ func (s *menuSession) dashboard() (bool, error) {
 		{id: "status", label: "Status", description: "Show component and connection readiness", run: s.simple(func() error { return s.app.Status(s.ctx) })},
 		{id: "doctor", label: "Doctor", description: "Run live diagnostics", long: true, run: s.simple(func() error { return runDoctor(s.ctx, s.app, nil) })},
 		{id: "doctor.inventory", label: "Compatibility Inventory", description: "Collect read-only, secret-free upgrade evidence", run: s.simple(func() error { return runDoctor(s.ctx, s.app, []string{"--inventory"}) })},
+		{id: "doctor.repair-hooks", label: "Repair Memory Hooks", description: "Repair only receipt-owned hooks; preserve foreign configuration", long: true, run: s.simple(func() error { return runDoctor(s.ctx, s.app, []string{"--repair-hooks"}) })},
 		{id: "version", label: "Version", description: "Print the installed ivoai version", run: s.simple(func() error { fmt.Fprintln(s.app.Out, s.app.Version); return nil })},
 	})
 }
@@ -210,6 +211,7 @@ func (s *menuSession) configuration() (bool, error) {
 		{id: "config.memory", label: toggleLabel("ai-memory", snapshot.MemoryEnabled), run: s.simple(func() error { return s.app.ConfigSet("memory.enabled", opposite(snapshot.MemoryEnabled)) })},
 		{id: "config.ruflo", label: toggleLabel("Ruflo", snapshot.RufloEnabled), run: s.simple(func() error { return s.app.ConfigSet("orchestration.enabled", opposite(snapshot.RufloEnabled)) })},
 		{id: "config.auto", label: toggleLabel("Automatic Orchestration", snapshot.AutoEnabled), run: s.simple(func() error { return s.app.ConfigSet("orchestration.auto.enabled", opposite(snapshot.AutoEnabled)) })},
+		{id: "config.auto-profiles", label: "Automation Profiles", description: "Preview, apply and restore bounded execution settings", run: s.automationProfiles},
 		{id: "config.auto-policy", label: "Orchestration Policies", description: "Sources, worker capacity, write isolation and quota conservation", run: s.orchestrationPolicies},
 		{id: "config.auto-gate", label: "AUTO Prompt Gate: Acceptance Required", disabled: "Refine insufficient prompts; direct commands keep their own contract"},
 		{id: "config.auto-plan", label: "Plan Execution: " + snapshot.PlanExecution, description: "Plan approval is separate from tool permissions and quota routing approval", run: s.simple(func() error {

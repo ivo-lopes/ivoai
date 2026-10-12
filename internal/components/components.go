@@ -25,6 +25,7 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/codexresolver"
 	"github.com/ivo-lopes/ivoai/internal/componentupdate"
 	"github.com/ivo-lopes/ivoai/internal/config"
+	"github.com/ivo-lopes/ivoai/internal/memory"
 	"github.com/ivo-lopes/ivoai/internal/platform"
 	"github.com/ivo-lopes/ivoai/internal/supplychain"
 )
@@ -351,10 +352,19 @@ func (i *Installer) installBinary(ctx context.Context, spec Spec) (string, error
 	}
 	defer os.Remove(binary)
 	if spec.Name == "ai-memory" {
-		if err := extractArchivePrefix(archive, "hooks", i.Store.Paths.HooksDir); err != nil {
+		stagedHooks, err := os.MkdirTemp("", "ivoai-verified-hooks-")
+		if err != nil {
+			return "", err
+		}
+		defer os.RemoveAll(stagedHooks)
+		if err := extractArchivePrefix(archive, "hooks", stagedHooks); err != nil {
+			return "", fmt.Errorf("stage ai-memory hook assets: %w", err)
+		}
+		if err := memory.InstallHookAssets(stagedHooks, i.Store.Paths.HooksDir); err != nil {
 			return "", fmt.Errorf("install ai-memory hook assets: %w", err)
 		}
 	}
+
 	return i.installManagedExecutable(binary, spec.Executable)
 }
 

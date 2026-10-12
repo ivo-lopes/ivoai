@@ -228,7 +228,9 @@ func (a *App) SessionStartWithKnowledge(ctx context.Context, executor string, mo
 		}
 	}
 	a.printSessionSummary(value, mode == session.ModeOrchestrated)
-	environment := knowledge.environment
+	hookEnv, cleanupHooks := a.prepareMemoryHooks()
+	defer cleanupHooks()
+	environment := inheritHookSessionEnvironment(knowledge.environment, hookEnv)
 	cleanupInstructions := func() {}
 	if executor == "opencode" {
 		environment, cleanupInstructions, err = openCodeInstructionEnvironment(environment, a.Store.Paths.StateDir, managedInstructions(skillResult.Instructions))

@@ -11,7 +11,9 @@ ivoai session list --json
 ivoai session show --json <id>
 ivoai session resume <id>
 ivoai session resume <id> --frontend opencode
+ivoai session resume <id> --knowledge-source voicecorp
 ivoai session recover <id>
+ivoai session recover <id> --knowledge-source voicecorp
 ivoai session handoff <id> --to claude --confirm
 ```
 
@@ -21,10 +23,67 @@ retomada. Em `ivoai`, abra **Session Control → Conversations — Inspect / Res
 para inspecionar, retomar, recuperar turno, escolher frontend, confirmar handoff
 ou parar a sessão. Não é necessário copiar IDs nativos manualmente.
 
+## Escopo organizacional e histórico preservado
+
+Conversas orquestradas têm uma identidade versionada de escopo organizacional.
+Ela inclui o diretório do projeto, as identidades e os endpoints dos servidores
+habilitados e as restrições explícitas de `--knowledge-source`. Registros legados
+habilitados de Memory/Context também participam. Um compositor sem propósito
+selecionado não significa que a conversa tenha escopo organizacional vazio.
+A indisponibilidade temporária de um servidor não altera essa identidade;
+mudanças nas fontes configuradas ou em seus endpoints podem alterá-la.
+
+Resume, troca de frontend, descoberta no picker nativo e busca de mappings do
+provider exigem o mesmo escopo. Informe as restrições originais de
+`--knowledge-source` ao retomar ou recuperar uma conversa restrita. O menu de
+conversas também aceita esses seletores. Um escopo diferente retorna
+`SESSION_KNOWLEDGE_SCOPE_MISMATCH` antes de reabrir a conversa. Registros antigos
+sem escopo verificado retornam `SESSION_KNOWLEDGE_SCOPE_UNVERIFIED`; seus metadados
+e seu histórico nativo permanecem no local original.
+
+Para preservar uma conversa gerenciada existente sob uma seleção de fontes
+revisada, visualize primeiro a proposta de adoção:
+
+```sh
+ivoai session adopt-scope <id> --knowledge-source voicecorp
+ivoai session adopt-scope <id> --knowledge-source voicecorp --confirm
+```
+
+Sem seletor, são usadas as fontes configuradas habilitadas. `--json` apresenta
+a mesma prévia ou resultado. **A adoção preserva o histórico nativo existente do
+provider, incluindo informações do escopo organizacional anterior.** Ela não
+apaga, remove trechos nem separa esse histórico. Inicie outra conversa quando as
+informações anteriores não puderem entrar no novo contexto.
+
+A aplicação exige uma conversa orquestrada inativa, um mapping existente da
+sessão do provider e um fingerprint de identidade compatível, informado pelo
+cliente oficial. Prova de conta ausente, divergente ou indisponível bloqueia a
+alteração. A prévia não inicia o provider nem muda o vínculo. O menu oferece a
+mesma prévia e exige digitar `ADOPT SCOPE` para aplicar.
+
+Antes de alterar o escopo, IVOAI grava um backup privado e imutável dos metadados
+em `sessions/scope-backups/`. O caminho retornado permite visualizar e restaurar
+o vínculo anterior:
+
+```sh
+ivoai session restore-scope <id> --backup /absolute/path/from-adoption.json
+ivoai session restore-scope <id> --backup /absolute/path/from-adoption.json --confirm
+```
+
+A restauração verifica localização, tipo de arquivo, permissões, digest,
+identidade da sessão e prova da conta atual. Primeiro preserva os metadados
+atuais e depois restaura somente o campo de escopo: estado de processos, grants,
+mappings do provider e tarefas concluídas não voltam ao estado anterior.
+Restaurar um escopo histórico não verificado também restaura sua restrição de
+resume. O menu exige digitar `RESTORE SCOPE`. Nenhuma das operações copia
+transcripts ou credenciais, reconstrói histórico nativo ausente ou importa uma
+conversa não gerenciada do provider.
+
 ## `/resume` nativo do Codex
 
 Dentro de `ivoai codex`, o picker oficial permite listar, pesquisar, visualizar,
-cancelar e selecionar conversas gerenciadas do projeto atual. A seleção altera o
+cancelar e selecionar conversas gerenciadas do projeto e escopo organizacional
+atuais. A seleção altera o
 vínculo lógico IVOAI; não inicia outro orchestrator. Threads externas ao IVOAI não
 são importadas silenciosamente.
 
@@ -44,6 +103,12 @@ executor oficial continua dono do login e de seu histórico. IVOAI guarda mappin
 opacos e fingerprint da identidade da conta, não credenciais. Previews do picker
 são tráfego transitório, não entradas do journal. Sem prova compatível de conta,
 não se reutiliza um mapping não verificado.
+
+O frontend nativo recebe um `CODEX_HOME` isolado; `SQLITE_HOME` não é repassado
+do ambiente do operador. Os diretórios de histórico nativo existentes são
+preservados, enquanto descoberta e resume gerenciados verificam o escopo.
+Isso não estabelece a causa dos resets históricos na primeira execução:
+esse diagnóstico permanece desconhecido.
 
 Cada novo turno usa modelo/effort e routing de conhecimento atuais. Informações
 já discutidas continuam na conversa nativa; resume não apaga esse histórico.
@@ -95,6 +160,9 @@ O schema v0.10.2 continua legível. Checkpoints antigos no runtime são promovid
 resetar configuração. Profiles, auth ownership, MCP, Skills/Ponytail e policies
 permanecem. Binários antigos ignoram o diretório aditivo de checkpoints; não oferecem
 as operações novas, mas o reapply v0.10.3 recupera acesso ao estado preservado.
+A validação versionada do escopo organizacional é aditiva. Leitores antigos ainda
+conseguem ler os metadados da sessão; um escopo legado pode exigir adoção explícita
+e verificada antes de ser retomado por uma versão que aplica o novo limite.
 
 ## Limites e diagnóstico
 

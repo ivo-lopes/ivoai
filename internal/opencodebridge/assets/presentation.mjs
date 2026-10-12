@@ -41,8 +41,14 @@ export function panel(status) {
     orchestration.push(line(`${clean(worker.id)} · ${clean(worker.role)} · ${clean(worker.state)}`),
       line(`  ${clean(worker.executor)} / ${clean(worker.tier)} / ${clean(worker.model)} · reasoning=${clean(worker.effort, "unsupported")}`),
       line(`  purposes=${(Array.isArray(worker.purposes) ? worker.purposes : []).slice(0, 8).map(x => clean(x)).join(", ") || "none"} · MCPs=${(Array.isArray(worker.mcps) ? worker.mcps : []).slice(0, 16).map(x => clean(x)).join(", ") || "none"}`))
+    if (worker.task_id || worker.dependencies?.length || worker.duration_ms > 0) orchestration.push(line(`  task=${clean(worker.task_id)} · dependencies=${(Array.isArray(worker.dependencies) ? worker.dependencies : []).slice(0, 16).map(x => clean(x)).join(", ") || "none"} · duration=${Number.isFinite(worker.duration_ms) && worker.duration_ms >= 0 ? (worker.duration_ms / 1000).toFixed(1) + "s" : "unavailable"}`))
+    if (worker.blocked_reason) orchestration.push(line(`  blocked=${clean(worker.blocked_reason)}`, "warning"))
     if (Array.isArray(worker.skills)) orchestration.push(line(`  Skills=${worker.skills.slice(0, 12).map(x => clean(x)).join(", ") || "none"} · Ponytail=${worker.skills.includes("ponytail") ? "active" : "inactive"}`))
   }
+  if (status.activity_gap) orchestration.push(line("Activity history gap · showing retained events", "warning"))
+  const activity = (Array.isArray(status.activity) ? status.activity : []).slice(-8)
+  if (activity.length) orchestration.push(line("Recent activity", "heading"))
+  for (const event of activity) orchestration.push(line(`${clean(event.operation)}${event.phase ? " · " + clean(event.phase) : ""} · ${clean(event.task_id || event.worker_id || event.component, "session")} · ${clean(event.state)}${event.routing_reason ? " · " + clean(event.routing_reason) : ""}${event.fallback_reason ? " · fallback=" + clean(event.fallback_reason) : ""}`, ["failed", "blocked", "denied"].includes(event.state) ? "warning" : "muted"))
   result.splice(2, 0, ...orchestration)
   for (const [id, name] of [["codex", "Codex"], ["claude", "Claude"], ["opencode", "OpenCode"]]) {
     const auth = clean(status[id + "_auth"])

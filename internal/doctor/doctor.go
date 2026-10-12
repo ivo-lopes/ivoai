@@ -20,6 +20,7 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/connections"
 	"github.com/ivo-lopes/ivoai/internal/core"
 	"github.com/ivo-lopes/ivoai/internal/headroom"
+	"github.com/ivo-lopes/ivoai/internal/memory"
 	"github.com/ivo-lopes/ivoai/internal/orchestration"
 	"github.com/ivo-lopes/ivoai/internal/platform"
 	"github.com/ivo-lopes/ivoai/internal/policy"
@@ -218,9 +219,14 @@ func (d Doctor) Run(ctx context.Context) Report {
 	r.Caveman = d.managedComponent("caveman", state.Components["caveman"])
 	r.CompressionEffective, r.CompressionReason = effectiveCompression(cfg, r.Headroom, r.Caveman)
 	r.Memory = componentFromState(state.Components["ai-memory"])
-	r.Memory.Hooks = hooksInstalled(d.Store.Paths.HooksDir)
+	hooksHealthy, hookIssues := memory.InspectHooks(d.Store.Paths.HooksDir)
+	r.Memory.Hooks = hooksHealthy
 	if r.Memory.Fixture {
 		r.Memory.Hooks = true
+		hookIssues = nil
+	}
+	if cfg.Memory.Enabled && r.Memory.Installed {
+		r.Issues = append(r.Issues, hookIssues...)
 	}
 	r.Ruflo = (orchestration.Manager{Runner: d.Runner, Binary: state.Components["ruflo"].Path, ProfileDir: d.Store.Paths.DataDir}).Inspect(ctx)
 	if fixture := state.Components["ruflo"]; !r.Ruflo.Installed && strings.HasSuffix(fixture.Version, "-fixture") {
@@ -251,9 +257,6 @@ func (d Doctor) Run(ctx context.Context) Report {
 		if !component.Installed {
 			r.Issues = append(r.Issues, name+" is not installed")
 		}
-	}
-	if cfg.Memory.Enabled && r.Memory.Installed && !r.Memory.Hooks {
-		r.Issues = append(r.Issues, "ai-memory hooks are not installed")
 	}
 	if cfg.Orchestration.Enabled {
 		if !r.Ruflo.Installed {
@@ -891,8 +894,8 @@ func componentFromAuth(a Auth) Component {
 	return Component{Installed: a.Installed, Version: a.Version}
 }
 func hooksInstalled(path string) bool {
-	entries, err := os.ReadDir(path)
-	return err == nil && len(entries) > 0
+	healthy, _ := memory.InspectHooks(path)
+	return healthy
 }
 func permissions(path string) string {
 	info, err := os.Stat(path)
