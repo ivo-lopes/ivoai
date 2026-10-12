@@ -1,0 +1,40 @@
+--- a/packages/opencode/src/config/config.ts
++++ b/packages/opencode/src/config/config.ts
+@@ -11,7 +11,7 @@
+ import { Auth } from "../auth"
+ import { Env } from "../env"
+ import { applyEdits, modify } from "jsonc-parser"
+-import { InstallationLocal, InstallationVersion } from "@opencode-ai/core/installation/version"
++import { InstallationLocal } from "@opencode-ai/core/installation/version"
+ import { existsSync } from "fs"
+ import { Account } from "@/account/account"
+ import { isRecord } from "@/util/record"
+@@ -454,7 +454,7 @@
+               add: [
+                 {
+                   name: "@opencode-ai/plugin",
+-                  version: InstallationLocal ? undefined : InstallationVersion,
++                  version: InstallationLocal ? undefined : "1.19.0",
+                 },
+               ],
+             })
+--- a/packages/opencode/src/config/tui.ts
++++ b/packages/opencode/src/config/tui.ts
+@@ -16,7 +16,7 @@
+ import { CurrentWorkingDirectory } from "./tui-cwd"
+ import { ConfigPlugin } from "@/config/plugin"
+ import { TuiKeybind } from "@opencode-ai/tui/config/keybind"
+-import { InstallationLocal, InstallationVersion } from "@opencode-ai/core/installation/version"
++import { InstallationLocal } from "@opencode-ai/core/installation/version"
+ import { makeRuntime } from "@opencode-ai/core/effect/runtime"
+ import { Filesystem } from "@/util/filesystem"
+ import { ConfigVariable } from "@/config/variable"
+@@ -239,7 +239,7 @@
+             add: [
+               {
+                 name: "@opencode-ai/plugin",
+-                version: InstallationLocal ? undefined : InstallationVersion,
++                version: InstallationLocal ? undefined : "1.19.0",
+               },
+             ],
+           })
