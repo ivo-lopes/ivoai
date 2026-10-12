@@ -28,7 +28,9 @@ printf '%s  %s\n' "$node_sha" "$work/node.tgz" | sha256sum --check --status
 tar --extract --gzip --file "$work/node.tgz" --directory "$work/node" --strip-components=1 --no-same-owner
 tar --extract --gzip --file "$archive" --directory "$work/payload" --no-same-owner
 export IVOAI_GRAFT_TEST_NODE="$work/node/bin/node" IVOAI_GRAFT_TEST_DIST="$work/payload"
+export IVOAI_GRAFT_TEST_ARCHIVE="$archive" IVOAI_GRAFT_TEST_METADATA="$metadata"
 cd -- "$repo_root"
 "$IVOAI_GRAFT_TEST_NODE" --test internal/codeintel/adapter.test.mjs
 go test -count=1 -timeout=5m ./internal/codeintel -run '^TestReviewed' -v
+go test -count=1 -timeout=5m ./internal/components -run '^TestReviewedManagedGraftArtifact$' -v
 printf '%s\n' 'Managed Graft native sandbox, operations, MCP and worktree contracts: PASS'

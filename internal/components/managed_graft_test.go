@@ -18,8 +18,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/ivo-lopes/ivoai/internal/componentupdate"
 	"github.com/ivo-lopes/ivoai/internal/config"
 	"github.com/ivo-lopes/ivoai/internal/platform"
+	"github.com/ivo-lopes/ivoai/internal/supplychain"
 )
 
 func graftMetadata(t *testing.T, arch string, payload []byte) map[string]string {
@@ -176,6 +178,37 @@ func testManagedGraftInstallation(t *testing.T, archive []byte, metadata map[str
 				t.Fatalf("failed candidate changed active runtime: %+v %v", current.Components["graft"], err)
 			}
 		})
+	}
+	// A second reviewed object exercises real promotion and pointer/state rollback.
+	// For the opt-in artifact test, the previous object is the distributed archive.
+	archive = graftTestArchive(t, "graft-runtime", []byte("#!/bin/sh\n# second reviewed fixture\n[ \"$#\" = 1 ] && [ \"$1\" = --version ] || exit 1\nprintf '0.21.1-ivoai.1\\n'\n"))
+	metadata = graftMetadata(t, runtime.GOARCH, archive)
+	next, err := managedGraftSpec(encodedGraft(t, metadata), "linux/"+runtime.GOARCH)
+	if err != nil {
+		t.Fatal(err)
+	}
+	installer.Catalog = []Spec{next}
+	if err := installer.Setup(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	updated, err := store.LoadState()
+	if err != nil || updated.Components["graft"].Path == got.Path {
+		t.Fatal("second object was not activated", err)
+	}
+	source, err := ResolvedSource(next)
+	if err != nil {
+		t.Fatal(err)
+	}
+	rollback := componentupdate.Manager{Supply: supplychain.Manager{Root: filepath.Join(paths.DataDir, "supply-chain")}, Store: store, Runner: managedGraftRunner{Runner: runner}, Executable: "graft-runtime", VersionArg: []string{"--version"}, Discoverer: componentupdate.StaticDiscoverer{Source: source}, Fetcher: componentupdate.HTTPFetcher{Client: client}}
+	if restored, err := rollback.Rollback(context.Background(), "graft"); err != nil || !restored {
+		t.Fatal("Graft rollback failed", err)
+	}
+	restored, err := store.LoadState()
+	if err != nil || restored.Components["graft"].Path != got.Path || restored.Components["graft"].Version != got.Version {
+		t.Fatal("Graft rollback did not restore prior state", err)
+	}
+	if again, err := rollback.Rollback(context.Background(), "graft"); err != nil || again {
+		t.Fatal("rollback not idempotent", err)
 	}
 }
 
