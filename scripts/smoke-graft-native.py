@@ -254,8 +254,10 @@ def live(binary_argument, root_argument):
         assert value.get("tasks") and all(t.get("state") == "completed" for t in value["tasks"]), "TASK_INCOMPLETE"
         assert checkpoint(value)["recovery"]["integrated"] is True, "PLAN_NOT_INTEGRATED"
         assert native_evidence(value), "REAL_GRAFT_TOOL_CALL_NOT_PROVEN"
-        assert "GraftNativeCaller" in history, "STRUCTURAL_ANSWER_NOT_VISIBLE"
-        assert "code.inspect" in history, "CODE_OBSERVATION_NOT_VISIBLE_IN_NATIVE_PANEL"
+        # Session persistence can precede final SSE/TUI rendering. Wait for the
+        # native renderer rather than treating persisted completion as visible.
+        wait_for(lambda text, _: "GraftNativeCaller" in text, 30, "STRUCTURAL_ANSWER_NOT_VISIBLE")
+        wait_for(lambda text, _: "code.inspect" in text, 15, "CODE_OBSERVATION_NOT_VISIBLE_IN_NATIVE_PANEL")
         for name, content in files.items():
             assert (repo / name).read_text() == content, "SOURCE_MODIFIED"
         clean = subprocess.run(["git", "status", "--porcelain"], cwd=repo, check=True, capture_output=True)
