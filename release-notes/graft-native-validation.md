@@ -1,8 +1,9 @@
 # Graft native runtime — validation record
 
 This record separates implementation, provider execution, artifact validation and
-publication. It is a candidate record until the release workflow and distributed
-artifacts have been verified. No production deployment is included.
+publication. It records pre-publication validation; the release workflow and
+downloaded public artifacts require their own verification, recorded on PR #29
+and in the delivery report. No production deployment is included.
 
 ## Reconciliation and provenance
 
@@ -173,6 +174,15 @@ startup timed out before rendering; the unchanged isolated rerun passed in
 17.605 s. This is a native frontend test with a simulated backend, not provider
 inference.
 
+The final **real managed OpenCode → IVOAI → official Codex** smoke passed in
+122.92 s on the `0ab37315` candidate. It exercised the public composer API,
+read-only fixture plan approval, native `graft_trace_calls`, completed/integrated
+task state, visible structural answer and the actual operational dialog.
+Repository mutations and personal Codex configuration mutations were both zero.
+The reviewed Graft CI archive was used; OpenCode 1.19.0-ivoai.2 was built locally
+from the reviewed build inputs. This is real provider evidence, distinct from the
+synthetic-SSE UI tests. Published artifacts are still verified separately.
+
 Review refinements include exact native tool allowlists (an explicit empty list
 denies access), completed native quota/checkpoint admission before prefetch,
 standard-parser validation of exact Go declarations, and unknown index state for
@@ -196,7 +206,7 @@ for lifecycle updates in the correct Plane project.
 | --- | --- |
 | IVOAI-172 | Receipt-owned hook preflight and transactional recovery from merged PR #28 |
 | IVOAI-138 | Typed correlated telemetry, bounded replay/SSE and explicit unavailable states |
-| IVOAI-132 | Operational OpenCode console; current real frontend validation remains a separate gate |
+| IVOAI-132 | Operational OpenCode console; real Codex/native Graft lifecycle and visible diagnostics passed |
 | IVOAI-131 | Existing navigation, model/effort, diffs and operational presentation preserved |
 | IVOAI-133 | Seven profiles, preview, effective configuration and bounded restoration |
 | IVOAI-135 | Shared CLI/TUI administration and documented administrative exceptions |
