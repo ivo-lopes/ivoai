@@ -1,13 +1,70 @@
 package app
 
 import (
+	"os"
+	"path/filepath"
+	"testing"
+	"time"
+
+	"github.com/ivo-lopes/ivoai/internal/config"
 	"github.com/ivo-lopes/ivoai/internal/observability"
 	"github.com/ivo-lopes/ivoai/internal/opencodebridge"
 	"github.com/ivo-lopes/ivoai/internal/quota"
 	"github.com/ivo-lopes/ivoai/internal/session"
-	"testing"
-	"time"
 )
+
+func TestOperationalQuotaReadFailureIsDistinctFromMissingAndStale(t *testing.T) {
+	now := time.Now().UTC()
+	for _, fixture := range []struct{ name, quotaState, auth string }{
+		{"malformed", "error", "error / not verified"},
+		{"missing", "unavailable", "unavailable / not verified"},
+		{"stale", "stale", "stale / not verified"},
+	} {
+		t.Run(fixture.name, func(t *testing.T) {
+			store := quota.Store{Root: t.TempDir()}
+			if fixture.name == "malformed" {
+				if err := os.WriteFile(filepath.Join(store.Root, "snapshot.json"), []byte("private malformed cache"), 0600); err != nil {
+					t.Fatal(err)
+				}
+			}
+			if fixture.name == "stale" {
+				value := available(quota.ProviderCodex)
+				value.ObservedAt = now.Add(-time.Hour)
+				if err := store.Put(value); err != nil {
+					t.Fatal(err)
+				}
+			}
+			values, failures := operationalQuotas(store, time.Minute, now)
+			status := (&App{}).openCodeAutoStatus(session.Store{}, "missing", config.Default(), sessionKnowledge{}, false, values, sharedKnowledgeCompressionPolicy{}, failures)
+			if status.CodexQuota != fixture.quotaState || status.CodexAuth != fixture.auth {
+				t.Fatalf("quota=%q auth=%q", status.CodexQuota, status.CodexAuth)
+			}
+		})
+	}
+}
+
+func TestOperationalQuotaExplicitTelemetryState(t *testing.T) {
+	for _, fixture := range []struct {
+		name    string
+		unknown bool
+		windows []quota.Window
+		want    string
+	}{
+		{"not_exposed", false, []quota.Window{{State: quota.TelemetryNotExposed}}, "not_exposed"},
+		{"unknown", true, []quota.Window{{State: quota.TelemetryNotExposed}}, "unknown"},
+		{"mixed", false, []quota.Window{{State: quota.TelemetryNotExposed}, {State: quota.TelemetryAvailable, Available: true, RemainingPercent: 50}}, "available"},
+		{"absent", false, nil, "available"},
+	} {
+		t.Run(fixture.name, func(t *testing.T) {
+			value := available(quota.ProviderCodex)
+			value.TelemetryUnknown, value.Windows = fixture.unknown, fixture.windows
+			status := (&App{}).openCodeAutoStatus(session.Store{}, "missing", config.Default(), sessionKnowledge{}, false, map[quota.Provider]quota.ProviderQuota{quota.ProviderCodex: value}, sharedKnowledgeCompressionPolicy{}, nil)
+			if status.CodexQuota != fixture.want {
+				t.Fatalf("quota=%q want=%q", status.CodexQuota, fixture.want)
+			}
+		})
+	}
+}
 
 func TestOperationalQuotaSnapshotFreshness(t *testing.T) {
 	now := time.Now().UTC()

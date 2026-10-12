@@ -230,6 +230,9 @@ func (a *App) openCodeAutoStatus(store session.Store, id string, cfg config.Conf
 	}
 	value, _ := store.Get(id)
 	auth := func(provider quota.Provider) string {
+		if errors.Is(probeErrors[provider], errOperationalQuotaReadFailed) {
+			return "error / not verified"
+		}
 		if errors.Is(probeErrors[provider], errOperationalQuotaUnavailable) {
 			return "unavailable / not verified"
 		}
@@ -242,6 +245,9 @@ func (a *App) openCodeAutoStatus(store session.Store, id string, cfg config.Conf
 		return "authentication required"
 	}
 	quotaState := func(provider quota.Provider) string {
+		if errors.Is(probeErrors[provider], errOperationalQuotaReadFailed) {
+			return "error"
+		}
 		if errors.Is(probeErrors[provider], errOperationalQuotaStale) {
 			return "stale"
 		}
@@ -257,6 +263,13 @@ func (a *App) openCodeAutoStatus(store session.Store, id string, cfg config.Conf
 		}
 		if value.TelemetryUnknown {
 			return "unknown"
+		}
+		notExposed := len(value.Windows) > 0
+		for _, window := range value.Windows {
+			notExposed = notExposed && window.State == quota.TelemetryNotExposed
+		}
+		if notExposed {
+			return "not_exposed"
 		}
 		if value.Eligible {
 			return "available"

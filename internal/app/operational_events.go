@@ -12,6 +12,7 @@ import (
 
 var errOperationalQuotaStale = errors.New("stale operational quota")
 var errOperationalQuotaUnavailable = errors.New("operational quota unavailable")
+var errOperationalQuotaReadFailed = errors.New("operational quota read failed")
 
 // Operational views read existing evidence; displaying progress never launches
 // an executor or probes authentication. Dispatch retains its own live gates.
@@ -22,14 +23,21 @@ func operationalQuotas(store quota.Store, ttl time.Duration, now time.Time) (map
 	snapshot, err := store.Load()
 	failures := map[quota.Provider]error{}
 	for _, provider := range quota.Providers() {
+		if err != nil {
+			failures[provider] = errOperationalQuotaReadFailed
+			continue
+		}
 		value, ok := snapshot.Providers[provider]
-		if err != nil || !ok {
+		if !ok {
 			failures[provider] = errOperationalQuotaUnavailable
 			continue
 		}
 		if value.ObservedAt.IsZero() || value.ObservedAt.After(now.Add(time.Second)) || now.Sub(value.ObservedAt) > ttl {
 			failures[provider] = errOperationalQuotaStale
 		}
+	}
+	if err != nil {
+		return nil, failures
 	}
 	return snapshot.Providers, failures
 }
