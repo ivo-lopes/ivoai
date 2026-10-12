@@ -11,12 +11,16 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
 	"syscall"
 	"testing"
 	"time"
+
+	"github.com/ivo-lopes/ivoai/internal/observability"
+	"golang.org/x/sys/unix"
 )
 
 func TestManagedOpenCodeUsesPrivateIsolatedConfiguration(t *testing.T) {
@@ -323,8 +327,19 @@ func TestLiveManagedOpenCodeAttachRendersIVOAIPlugin(t *testing.T) {
 		t.Run(fmt.Sprintf("width%d", width), func(t *testing.T) {
 			root := t.TempDir()
 			bridge, err := Start(Options{Runner: &fakeRunner{}, Select: func(context.Context, string) (string, error) { return "codex", nil }, Status: func() Status {
-				return Status{Version: "fixture", Frontend: "opencode", KnowledgeMode: "restricted", PermissionMode: "full", ConfiguredCount: 2, ConnectedCount: 1, Servers: []ServerView{{Alias: "source-A", Purpose: "fixture", Enabled: true, Selected: true, Health: "healthy", AuthState: "authenticated"}, {Alias: "source-B", Purpose: "other", Enabled: true, Health: "down", AuthState: "configured / not verified"}}}
-			}})
+				return Status{SessionID: "sess_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", Version: "fixture", Frontend: "opencode", KnowledgeMode: "restricted", PermissionMode: "full", ConfiguredCount: 2, ConnectedCount: 1, Servers: []ServerView{{Alias: "source-A", Purpose: "fixture", Enabled: true, Selected: true, Health: "healthy", AuthState: "authenticated"}, {Alias: "source-B", Purpose: "other", Enabled: true, Health: "down", AuthState: "configured / not verified"}}}
+			}, EventSnapshot: func(after uint64) (observability.Page, error) {
+				const sessionID = "sess_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+				events := []observability.Event{}
+				if after == 0 {
+					hit, fresh, files := true, true, 2
+					events = append(events, observability.Event{ObservedAt: time.Now().UTC(), SessionID: sessionID, SchemaVersion: 1, Sequence: 1, Category: observability.CategoryCapability, Operation: observability.OperationCodeInspect, State: observability.StateCompleted, Provider: "graft", CacheHit: &hit, IndexFresh: &fresh, IndexFiles: &files, SourceFiles: &files})
+					for i := uint64(2); i <= 13; i++ {
+						events = append(events, observability.Event{ObservedAt: time.Now().UTC(), SessionID: sessionID, SchemaVersion: 1, Sequence: i, Category: observability.CategoryWorker, Operation: observability.OperationWorkerLifecycle, State: observability.StateCompleted})
+					}
+				}
+				return observability.Page{SchemaVersion: 1, SessionID: sessionID, LatestSequence: 13, Events: events}, nil
+			}, EventSubscribe: func(context.Context) (<-chan struct{}, error) { return make(chan struct{}), nil }})
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -352,6 +367,12 @@ func TestLiveManagedOpenCodeAttachRendersIVOAIPlugin(t *testing.T) {
 			if err := command.Start(); err != nil {
 				t.Fatal(err)
 			}
+			t.Cleanup(func() {
+				if command.ProcessState == nil {
+					_ = syscall.Kill(-command.Process.Pid, syscall.SIGKILL)
+					_ = command.Wait()
+				}
+			})
 			waitText := func(expected string, timeout time.Duration) bool {
 				deadline := time.Now().Add(timeout)
 				for time.Now().Before(deadline) {
@@ -368,7 +389,31 @@ func TestLiveManagedOpenCodeAttachRendersIVOAIPlugin(t *testing.T) {
 				_, _ = io.WriteString(stdin, "/ivoai")
 				time.Sleep(300 * time.Millisecond)
 				_, _ = io.WriteString(stdin, "\r")
-				waitText("Permissions:", 8*time.Second)
+				waitText("Code (last observed)", 8*time.Second)
+				// The bounded operational panel grows with actual lifecycle
+				// events. Reach lower rows through native keyboard scrolling.
+				for i := 0; i < 6; i++ {
+					_, _ = io.WriteString(stdin, "\x1b[6~")
+					time.Sleep(100 * time.Millisecond)
+					resizeManagedTestPTY(t, command.Process.Pid, width+1)
+					time.Sleep(100 * time.Millisecond)
+					resizeManagedTestPTY(t, command.Process.Pid, width)
+					time.Sleep(100 * time.Millisecond)
+				}
+				_, _ = io.WriteString(stdin, "\x1b[F")
+				time.Sleep(300 * time.Millisecond)
+				// Native rendering uses differential ANSI updates (source-A
+				// to source-B may emit only B). Resize the owned PTY to obtain
+				// a complete frame before asserting lower rows in the stream.
+				resizeManagedTestPTY(t, command.Process.Pid, width+1)
+				time.Sleep(300 * time.Millisecond)
+				resizeManagedTestPTY(t, command.Process.Pid, width)
+				waitText("Runtime", 2*time.Second)
+				waitText("source-B", 2*time.Second)
+				_, _ = io.WriteString(stdin, "\x1b")
+				time.Sleep(300 * time.Millisecond)
+				_, _ = io.WriteString(stdin, "fixture-focus-restored")
+				waitText("fixture-focus-restored", 2*time.Second)
 			}
 			_, _ = stdin.Write([]byte{3})
 			_ = stdin.Close()
@@ -388,7 +433,7 @@ func TestLiveManagedOpenCodeAttachRendersIVOAIPlugin(t *testing.T) {
 			if !strings.Contains(plain, "IVOAI") || !strings.Contains(plain, "OpenCode frontend") {
 				t.Fatalf("managed TUI did not render the IVOAI plugin (transcript bytes=%d)", len(body))
 			}
-			for _, expected := range []string{"Permissions:", "full", "source-A", "source-B", "restricted"} {
+			for _, expected := range []string{"Permissions:", "full", "source-A", "source-B", "restricted", "Code (last observed)", "cache=hit", "index=fresh", "fixture-focus-restored"} {
 				if !strings.Contains(plain, expected) {
 					t.Fatalf("managed panel omitted %q at width %d", expected, width)
 				}
@@ -397,11 +442,48 @@ func TestLiveManagedOpenCodeAttachRendersIVOAIPlugin(t *testing.T) {
 	}
 }
 
+func resizeManagedTestPTY(t *testing.T, scriptPID, columns int) {
+	t.Helper()
+	children, err := os.ReadFile(fmt.Sprintf("/proc/%d/task/%d/children", scriptPID, scriptPID))
+	if err != nil {
+		t.Fatal("cannot identify native test PTY child")
+	}
+	for _, child := range strings.Fields(string(children)) {
+		pid, err := strconv.Atoi(child)
+		if err != nil || pid <= 0 {
+			continue
+		}
+		path := fmt.Sprintf("/proc/%d/fd/0", pid)
+		target, err := os.Readlink(path)
+		if err != nil || !strings.HasPrefix(target, "/dev/pts/") {
+			continue
+		}
+		fd, err := unix.Open(path, unix.O_RDWR|unix.O_NOCTTY|unix.O_CLOEXEC, 0)
+		if err != nil {
+			t.Fatal("cannot open owned native test PTY")
+		}
+		err = unix.IoctlSetWinsize(fd, unix.TIOCSWINSZ, &unix.Winsize{Row: 40, Col: uint16(columns)})
+		_ = unix.Close(fd)
+		if err != nil {
+			t.Fatal("cannot resize owned native test PTY")
+		}
+		return
+	}
+	t.Fatal("owned native test PTY child was not found")
+}
+
 func shellQuote(value string) string {
 	return "'" + strings.ReplaceAll(value, "'", "'\\''") + "'"
 }
 
+func TestStripTerminalControlsPreservesTextAcrossNativeStyleChanges(t *testing.T) {
+	if actual := stripTerminalControls("index=fres\x1b[0m\x1b[38;2;255;255;255mh"); actual != "index=fresh" {
+		t.Fatalf("native style fragments were mistaken for text: %q", actual)
+	}
+}
+
 func stripTerminalControls(value string) string {
+	value = regexp.MustCompile("\x1b\\[[0-?]*[ -/]*[@-~]").ReplaceAllString(value, "")
 	var result strings.Builder
 	for _, character := range value {
 		if character == '\n' || character == '\r' || character == '\t' || character >= 0x20 && character != 0x7f {
