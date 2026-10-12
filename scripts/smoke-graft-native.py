@@ -260,8 +260,15 @@ def live(binary_argument, root_argument):
         # Session persistence can precede final SSE/TUI rendering. Wait for the
         # native renderer rather than treating persisted completion as visible.
         wait_for(lambda text, _: "GraftNativeCaller" in text, 30, "STRUCTURAL_ANSWER_NOT_VISIBLE")
-        wait_for(lambda text, _: "Code: graft" in text and "cache=" in text and "index=" in text,
+        # Detailed code telemetry belongs to the existing /ivoai operational
+        # dialog; the normal session sidebar intentionally shows only servers.
+        # Exercise the native resize path so its complete rows fit the fixture.
+        fcntl.ioctl(master, termios.TIOCSWINSZ, struct.pack("HHHH", 60, 160, 0, 0))
+        send("/ivoai")
+        send("\r")
+        wait_for(lambda text, _: "Code (last observed): graft" in text and "cache=" in text and "index=" in text,
                  15, "CODE_OBSERVATION_NOT_VISIBLE_IN_NATIVE_PANEL")
+        send("\x1b")
         for name, content in files.items():
             assert (repo / name).read_text() == content, "SOURCE_MODIFIED"
         clean = subprocess.run(["git", "status", "--porcelain"], cwd=repo, check=True, capture_output=True)
