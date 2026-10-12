@@ -208,7 +208,9 @@ func (r Resolver) probe(ctx context.Context, path, ownership string) Candidate {
 		}
 	}
 	if ownership == "managed" {
-		host := filepath.Join(filepath.Dir(path), "codex-code-mode-host")
+		// Ownership was established against the registered managed executable.
+		// A PATH alias of that same file must not change its companion directory.
+		host := filepath.Join(filepath.Dir(r.Managed.Path), "codex-code-mode-host")
 		info, err := os.Stat(host)
 		if err != nil || !info.Mode().IsRegular() || info.Mode()&0111 == 0 || !r.Host.Installed || !r.Host.Managed || r.Host.Path != host || r.Host.Version != c.Version {
 			c.Reason = "managed_companion_incompatible"
