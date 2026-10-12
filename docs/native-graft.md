@@ -76,6 +76,15 @@ stored per repository/worktree/organization/permission identity; queries and
 source content are not stored in this cost history.
 A conservative task classifier can prefetch bounded code evidence; it neither
 grants capabilities nor replaces institutional Memory/Context research.
+Workers receive only their own scoped evidence after Skill Gate admission. For a
+ready primary-owned task, the approved plan or subsequent wait response can carry
+the same exact artifact-backed evidence automatically. Each task is delivered at
+most once per bridge process; worker evidence is not copied to the primary.
+The aggregate primary evidence envelope is limited to 4,096 bytes and retrieval
+to 20 seconds per response. Revoked admission discards pending evidence. A failure
+returns a sanitized degraded indicator, allowing permitted fallback inspection.
+Explicit native tool restrictions and required-skill denials also constrain
+prefetch. Raw evidence stays out of persisted plans, checkpoints and event logs.
 
 `deep`/LLM enrichment and LSP subprocesses are disabled until there is a safe,
 reviewed integration through official clients. The adapter performs graph-only

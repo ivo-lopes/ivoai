@@ -81,6 +81,16 @@ máximo 18 linhas agregadas por identidade de repositório, worktree, organizaç
 e permissões, sem consultas nem conteúdo das fontes. Um classificador conservador de tarefas
 pode antecipar evidência limitada de código; ele não concede capabilities nem
 substitui a pesquisa institucional em Memory/Context.
+Workers recebem apenas sua evidência delimitada, após admissão pelo Skill Gate.
+Para uma tarefa pronta e pertencente ao principal, a resposta do plano aprovado
+ou de uma espera posterior pode entregar automaticamente a mesma evidência exata,
+com referência ao ArtifactStore. Cada tarefa recebe essa entrega no máximo uma vez
+por processo da ponte; a evidência dos workers não é copiada ao principal.
+O envelope agregado do principal tem limite de 4.096 bytes e a recuperação,
+20 segundos por resposta. Revogação descarta evidência pendente. Falhas retornam
+um indicador sanitizado de degradação, permitindo inspeção alternativa autorizada.
+Restrições explícitas de ferramentas e negações de skills obrigatórias também
+limitam a antecipação. Planos, checkpoints e eventos não persistem a evidência bruta.
 
 Enriquecimento `deep`/LLM e subprocessos LSP ficam desabilitados até existir uma
 integração segura e revisada pelos clientes oficiais. O adaptador gera somente o
