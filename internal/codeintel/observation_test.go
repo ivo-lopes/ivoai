@@ -31,3 +31,17 @@ func TestObservationIsSanitizedAndDistinguishesUnknown(t *testing.T) {
 		t.Fatal(fail)
 	}
 }
+
+func TestDirectObservationDoesNotInventStructuralIndexFreshness(t *testing.T) {
+	event := Observation(core.CodeResult{ProviderVersion: "direct", Fresh: true, Files: 3}, nil)
+	if event.Provider != "direct" || event.RoutingReason != observability.ReasonDirect || event.SourceFiles == nil || *event.SourceFiles != 3 {
+		t.Fatal("direct source observation missing")
+	}
+	if event.IndexFresh != nil || event.IndexFiles != nil {
+		t.Fatal("direct source inspection fabricated a structural index observation")
+	}
+	structural := Observation(core.CodeResult{ProviderVersion: Version, Fresh: true, IndexedFiles: 3}, nil)
+	if structural.IndexFresh == nil || !*structural.IndexFresh || structural.IndexFiles == nil || *structural.IndexFiles != 3 {
+		t.Fatal("observed structural index diagnostics lost")
+	}
+}
