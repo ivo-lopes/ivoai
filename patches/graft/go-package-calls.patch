@@ -62,7 +62,7 @@
    name: string; // the symbol's own name: "get"
 --- a/src/graph/resolve.ts
 +++ b/src/graph/resolve.ts
-@@ -268,6 +268,31 @@
+@@ -268,6 +268,36 @@
          if (hit && hit.id !== e.source) add(e.source, hit.id, "references", hit.confidence);
        }
      } else if (e.relation === "calls") {
@@ -71,7 +71,12 @@
 +        const candidates = new Set<string>();
 +        let matchedImports = 0;
 +        for (const imp of imports) {
-+          const representative = resolveGoImport(imp.specifier, opts.goModules ?? [], goFilesByDir);
++          if (imp.specifier.split("/").some(part => !part || part === "." || part === "..")) continue;
++          const modules = (opts.goModules ?? []).filter(mod => imp.specifier === mod.module || imp.specifier.startsWith(mod.module + "/"));
++          const longest = Math.max(...modules.map(mod => mod.module.length));
++          const matches = modules.filter(mod => mod.module.length === longest);
++          if (matches.length !== 1) continue; // No external-path coincidence or ambiguous module.
++          const representative = resolveGoImport(imp.specifier, matches, goFilesByDir);
 +          if (!byId.has(representative)) continue; // external or missing source
 +          const dir = posix.dirname(representative);
 +          const files = goFilesByDir.get(dir) ?? [];

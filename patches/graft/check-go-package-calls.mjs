@@ -38,4 +38,5 @@ check('select receive shadows','package app\nimport "example.test/root/one"\nfun
 check('multiple parameters shadow','package app\nimport "example.test/root/one"\nfunc Entry(a, first Thing){first.Scale(1)}',[]);
 check('named result shadows','package app\nimport "example.test/root/one"\nfunc Entry()(first Thing){first.Scale(1);return}',[]);
 check('unrelated import preserves typed methods','package app\nimport "example.test/root/one"\ntype Worker struct{}\nfunc(w Worker) Run(){}\nfunc Entry(){w:=Worker{};w.Run()}',['app/a.go:Run']);
-console.log('Go package call regression: 19 cases passed');
+check('external path cannot coincide with source file','package app\nimport \"one/a.go\"\nfunc Entry(){first.Scale(1)}',[]);
+console.log('Go package call regression: 20 cases passed');
