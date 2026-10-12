@@ -85,6 +85,16 @@ took 46,383 ms, with observed peak Node RSS 324,014,080 bytes. These timings are
 not an idle-host benchmark. Direct text remained faster for some simple cases.
 Result-byte reductions are not equivalent to measured provider-token savings.
 
+A separate 121-file structural benchmark established a warm-query target of
+100 ms from the observed 8–12-ms baseline, retaining the existing 90-second cold
+timeout, 4,096-byte response budget and monitored 512-MiB RSS ceiling. Ten warm
+samples all hit the cache; nearest-rank p95 was **9 ms**. Cold construction took
+4,241 ms, an incremental source edit 628 ms, a rename 767 ms and deletion 744 ms.
+The changed signature and source digest were checked, not just timing. Maximum
+observed Node RSS was 109,203,456 bytes. These are local tool-layer measurements;
+provider token counts remain unavailable. Raw samples are in
+[`structural-cache-incremental.json`](evidence/graft-v0.12.0/structural-cache-incremental.json).
+
 The extended harness initially caused Codex to create eight temporary fixture
 trust entries in its personal configuration. Only those eight exact owned entries
 were removed, preserving all unrelated values. The harness now uses the existing
