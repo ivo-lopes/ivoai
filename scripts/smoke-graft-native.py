@@ -28,7 +28,7 @@ def admissible_plan(value, checkpoint, directory):
     task = tasks[0]
     tools = task.get("allowed_mcp_tools") or {}
     return (task.get("role") == "research" and task.get("execution_mode") == "primary"
-            and task.get("id") and not task.get("knowledge_sources")
+            and task.get("id") and set(task.get("knowledge_sources") or []) <= {"ivoai-code"}
             and not task.get("write_paths") and not task.get("dependencies")
             and set(task.get("allowed_mcps") or []) <= {"ivoai-code"}
             and set(tools) <= {"ivoai-code"}
@@ -57,6 +57,7 @@ def self_test():
     assert admissible_plan(value, checkpoint, "/fixture"), "VALID_FIXTURE_PLAN_REJECTED"
     for key, bad in (("write_paths", ["*"]), ("execution_mode", "worker"),
                      ("allowed_mcps", ["external"]),
+                     ("knowledge_sources", ["ivoai-memory"]),
                      ("allowed_mcp_tools", {"ivoai-code": ["execute"]})):
         changed = json.loads(json.dumps(checkpoint))
         changed["recovery"]["plan"]["tasks"][0][key] = bad
@@ -239,6 +240,7 @@ def live(binary_argument, root_argument):
                 "approved": recovery.get("approved"), "plan_matches": plan.get("id") == value.get("plan_id"),
                 "tasks": [{"role": t.get("role"), "mode": t.get("execution_mode"),
                     "knowledge_count": len(t.get("knowledge_sources") or []),
+                    "only_code_knowledge": set(t.get("knowledge_sources") or []) <= {"ivoai-code"},
                     "write_count": len(t.get("write_paths") or []),
                     "dependency_count": len(t.get("dependencies") or []),
                     "only_code_mcp": set(t.get("allowed_mcps") or []) <= {"ivoai-code"},
@@ -258,7 +260,8 @@ def live(binary_argument, root_argument):
         # Session persistence can precede final SSE/TUI rendering. Wait for the
         # native renderer rather than treating persisted completion as visible.
         wait_for(lambda text, _: "GraftNativeCaller" in text, 30, "STRUCTURAL_ANSWER_NOT_VISIBLE")
-        wait_for(lambda text, _: "code.inspect" in text, 15, "CODE_OBSERVATION_NOT_VISIBLE_IN_NATIVE_PANEL")
+        wait_for(lambda text, _: "Code: graft" in text and "cache=" in text and "index=" in text,
+                 15, "CODE_OBSERVATION_NOT_VISIBLE_IN_NATIVE_PANEL")
         for name, content in files.items():
             assert (repo / name).read_text() == content, "SOURCE_MODIFIED"
         clean = subprocess.run(["git", "status", "--porcelain"], cwd=repo, check=True, capture_output=True)
