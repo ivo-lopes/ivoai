@@ -145,10 +145,12 @@ def metadata():
     return {}
 
 def codex_composer_ready(text):
-    # 0.162.1 startup showed this complete set of composer landmarks while
-    # neither historical footer phrase appeared. Do not accept its banner alone.
+    # 0.162.1 uses these landmarks without either historical footer phrase.
+    # Its /model startup hint disappears on resume. Reject admission/picker UI.
+    if any(dialog in text for dialog in ("Resume a previous session", "Sign in with ChatGPT", "Do you trust")):
+        return False
     return ("context left" in text or "? for shortcuts" in text or
-            all(marker in text for marker in ("OpenAI Codex", "/model", "›", "shortcuts")))
+            all(marker in text for marker in ("OpenAI Codex", "›", "shortcuts")))
 
 def wait_for(predicate, timeout, failure, failure_baseline=0):
     global peak_workers

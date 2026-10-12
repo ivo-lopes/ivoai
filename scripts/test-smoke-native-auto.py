@@ -19,6 +19,14 @@ class NativeComposerTests(unittest.TestCase):
         # Only allowlisted landmarks from startup diagnostics, no transcript.
         self.assertTrue(self.checker()("OpenAI Codex /model › shortcuts"))
 
+    def test_resumed_composer_omits_initial_model_hint(self):
+        self.assertTrue(self.checker()("OpenAI Codex › shortcuts"))
+
+    def test_picker_and_admission_dialogs_are_not_composers(self):
+        check = self.checker()
+        for dialog in ["Resume a previous session", "Sign in with ChatGPT", "Do you trust"]:
+            self.assertFalse(check("OpenAI Codex /model › shortcuts " + dialog))
+
     def test_banner_or_partial_landmarks_are_not_ready(self):
         check = self.checker()
         for text in ["OpenAI Codex", "OpenAI Codex /model", "shortcuts", "› /model shortcuts"]:
