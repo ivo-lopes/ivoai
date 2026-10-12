@@ -1,0 +1,54 @@
+--- a/viewer/tree.ts
++++ b/viewer/tree.ts
+@@ -5,7 +5,8 @@
+ import { type VizGraph, colorToken, cvar } from "./data.js";
+ 
+ function esc(s: string): string {
+-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;");
++  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;")
++    .replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+ }
+ 
+ export function renderOutline(
+--- a/viewer/detail.ts
++++ b/viewer/detail.ts
+@@ -6,7 +6,8 @@
+ import { type Evidence, type NodeOwner, type VizGraph, colorToken, cvar } from "./data.js";
+ 
+ function esc(s: string): string {
+-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;");
++  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;")
++    .replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+ }
+ 
+ /**
+--- a/viewer/main.ts
++++ b/viewer/main.ts
+@@ -47,7 +47,7 @@
+     const btn = document.createElement("button");
+     btn.type = "button";
+     btn.className = "echip" + (view.hiddenRels[key] ? "" : " on");
+-    btn.innerHTML = `${glyphFor(key)} ${key} <span style="opacity:.55">${counts.get(key)}</span>`;
++    btn.innerHTML = `${glyphFor(key)} ${escapeText(key)} <span style="opacity:.55">${counts.get(key)}</span>`;
+     btn.title = (CHIP_HINT[key] ?? `"${key}" edges`) + " — click to " + (view.hiddenRels[key] ? "show" : "hide");
+     btn.addEventListener("click", () => {
+       view.hiddenRels[key] = !view.hiddenRels[key];
+@@ -82,7 +82,7 @@
+     const chip = document.createElement("button");
+     chip.type = "button";
+     chip.className = "lchip" + (view.hiddenTypes[type] ? " off" : "");
+-    chip.innerHTML = `<span class="sw" style="background:${cvar(colorToken(graphTab(), type))}"></span>${type} <span style="color:var(--muted);font-weight:500">${count}</span>`;
++    chip.innerHTML = `<span class="sw" style="background:${cvar(colorToken(graphTab(), type))}"></span>${escapeText(type)} <span style="color:var(--muted);font-weight:500">${count}</span>`;
+     chip.addEventListener("click", () => {
+       view.hiddenTypes[type] = !view.hiddenTypes[type];
+       renderLegend();
+@@ -191,7 +191,8 @@
+ }
+ 
+ function escapeText(s: string): string {
+-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;");
++  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;")
++    .replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+ }
+ 
+ function showEmpty(html: string): void {
