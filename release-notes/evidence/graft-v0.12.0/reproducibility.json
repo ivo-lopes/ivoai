@@ -1,0 +1,13 @@
+{
+  "prior_run": 38312535988,
+  "verified_run": 38313736037,
+  "verified_head": "93db550d6d822e7c864d3868f161c779f2b3048c",
+  "architecture": "linux/amd64",
+  "archive_bytes": 7689744,
+  "sha256": "3f07763f1a04d1ac533bb5557702bfc9307feb2f85bf5e384b7f9831f1505d7b",
+  "metadata_equal": true,
+  "revision_verified": "6e081db298bbddf1d943f202764d4c958b0674d451ef1bac7387f62de776cdc9",
+  "provenance_matched": true,
+  "tar_entries": 2841,
+  "claim": "Byte-identical independently rebuilt CI archives for the same reviewed Graft build inputs; not an independent signature."
+}

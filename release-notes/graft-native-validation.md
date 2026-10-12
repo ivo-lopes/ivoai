@@ -32,6 +32,11 @@ produced an amd64 archive with SHA-256
 This artifact was downloaded and exercised through the real sandbox, MCP SDK and
 component promotion/rollback tests. It is **CI evidence**, not proof of a published
 release. The final release hashes must be verified separately.
+The successful later [CI run 38313736037](https://github.com/ivo-lopes/ivoai/actions/runs/38313736037)
+rebuilt the same reviewed Graft inputs. Its downloaded amd64 archive is byte-for-byte
+identical (7,689,744 bytes), with equal metadata and matching embedded provenance.
+[`reproducibility.json`](evidence/graft-v0.12.0/reproducibility.json) records this
+repeated-build evidence; it is not an independent cryptographic signature.
 
 ## Architecture and implementation map
 
