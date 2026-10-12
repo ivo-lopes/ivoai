@@ -164,6 +164,15 @@ not represented as a configuration-preservation pass.
 - Claude validation is contractual/simulated. No Claude authentication or paid
   fallback was attempted. IVOAI-188 remains deferred for real Claude validation.
 
+The managed OpenCode 1.19.0-ivoai.2 TUI passed native terminal contracts at
+60/100/160 columns with synthetic SSE lifecycle events: last observed structural
+status, cache/freshness, lower server rows, PageDown/End navigation, resizing and
+Escape restoring composer focus. The test revealed a real non-scrolling dialog
+and an ANSI-normalization bug in the harness. Both have regressions. One width-100
+startup timed out before rendering; the unchanged isolated rerun passed in
+17.605 s. This is a native frontend test with a simulated backend, not provider
+inference.
+
 Review refinements include exact native tool allowlists (an explicit empty list
 denies access), completed native quota/checkpoint admission before prefetch,
 standard-parser validation of exact Go declarations, and unknown index state for
