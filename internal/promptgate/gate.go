@@ -27,7 +27,7 @@ func (r Result) Message() string {
 // presence. Content after a label must contain an actionable objective or an
 // observable result. Bullets, prose, and headings use the same representation.
 var label = regexp.MustCompile(`(?i)(?:^|[\n.;])\s*[#* ]*(objetivo|objective|goal|entregáveis|entregavel|entregável|deliverables?|expected output|acceptance criteria|acceptance|critérios de aceite|criterios de aceite|aceite|restrições|restricoes|constraints|contexto|context|escopo|scope)\s*[:\n]`)
-var action = regexp.MustCompile(`(?i)\b(analis[ea]|anal[yi][sz]e|identifi(?:que|y)|implement[ea]?|corrija|fix|create|crie|read|leia|investigu[ea]|investigate|compare|document[ea]?|return|retorne|informe|report|gere|generate)\b`)
+var action = regexp.MustCompile(`(?i)\b(analis[ea]|anal[yi][sz]e|(?:identifique|identify)|implement[ea]?|corrija|fix|create|crie|read|leia|investigu[ea]|investigate|compare|document[ea]?|return|retorne|informe|report|gere|generate)\b`)
 var artifact = regexp.MustCompile(`(?i)\b(relatório|relatorio|report|findings|root cause|causa raiz|feature|features|versão|versao|version|documentação|documentation|docs|arquivo|file|patch|testes?|tests?|resultado|result|valor|value|implementação|implementation|alterações|changes)\b`)
 var observable = regexp.MustCompile(`(?i)(?:\b(?:retornar|retorne|return|returns|informe|output|deve|must|shall|passes|passa|funciona|works|intact[oa]|unchanged|updated|atualizad[oa]s?|implementad[oa]s?|implemented|sem alteração|no changes|contém|contains|exit|identifi(?:que|ed)|com findings)\b|(?:=|==|>=|<=)\s*\S+)`)
 var vague = regexp.MustCompile(`(?i)^(?:[-*\d.)\s]*)(?:ok|done|feito|tbd|todo|a/b/c|a, b, c|yes|sim|sucesso|success|tudo funcionando|everything works|critérios|criteria)[.!\s]*$`)
