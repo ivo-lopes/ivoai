@@ -67,8 +67,12 @@ permissões.
 A inspeção automática pode responder diretamente a uma busca literal. Na inspeção
 da API de um arquivo pequeno identificado, pode retornar o arquivo completo quando
 ele couber em metade do orçamento de resultado solicitado. Relações e questões
-estruturais maiores usam Graft. Uma declaração exata e inequívoca também pode
-usar um trecho direto curto antes de existir índice. As verificações de
+estruturais maiores usam Graft. Uma declaração Go inequívoca, verificada pelo
+parser padrão da linguagem, também pode usar um trecho direto curto. Um grafo já
+construído não obriga a iniciar outro processo Node; um resultado da consulta exata
+em cache é revalidado antes da reutilização. Os aliases MCP de implementação e API
+usam a mesma seleção; a pesquisa agrupada preserva o agrupamento estrutural. Cada
+alias anuncia apenas os parâmetros de sua operação. As verificações de
 elegibilidade precedem a comparação de custos. Medições locais limitadas
 atualizam estimativas de latência e tamanho por operação; CPU, memória e tokens
 não medidos permanecem desconhecidos. Bytes divididos por quatro são uma
@@ -107,7 +111,7 @@ extração estrutural.
 O host lê bytes exatos e limitados através de `os.Root`, verifica caminhos e tipos
 de arquivo e copia os bytes para um snapshot privado. O Graft recebe esse snapshot,
 sem permissão de escrita no repositório original. Digests das fontes, identidade
-do adaptador e versão gerenciada controlam atualização e reutilização de
+do adaptador e identidade do objeto gerenciado imutável controlam atualização e reutilização de
 resultados. Recibos também validam toda a árvore do índice, inclusive o cache de extração, antes de
 reutilizar um índice; evidência inválida de cache provoca reconstrução. O cache
 mantém no máximo 64 resultados por geração de fontes. Texto do repositório e

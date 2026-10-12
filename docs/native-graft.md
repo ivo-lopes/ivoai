@@ -62,8 +62,12 @@ organization or permissions scope.
 Automatic inspection can answer a literal search directly. For API inspection of
 an identified small file, it can return the complete file when it fits within half
 the requested result budget. Relations and larger structural questions use Graft.
-An unambiguous exact declaration can also use a short direct excerpt before an
-index exists. This routing avoids a structural subprocess when exact local
+An unambiguous Go declaration, verified by the standard Go parser, can also use a
+short direct excerpt. A warm graph alone does not force another Node process;
+an existing exact-query cache is revalidated before reuse. The implementation and
+file-API MCP aliases use this same selection; grouped search retains structural
+grouping. Each alias advertises only its operation's parameters.
+This routing avoids a structural subprocess when exact local
 evidence is already sufficient. Eligibility checks precede cost ranking. Bounded
 local measurements update latency and result-size estimates by operation; missing
 CPU, memory or token measurements remain unknown. Bytes divided by four is an
@@ -98,7 +102,7 @@ inventory count is not a claim that every file received structural extraction.
 The host reads bounded exact bytes through `os.Root`, checks paths and file types,
 and copies those bytes into a private snapshot. Graft receives that snapshot,
 never a write grant to the original repository. Source digests, adapter identity
-and managed version govern freshness and result reuse. Receipts also validate the
+and immutable managed object identity govern freshness and result reuse. Receipts also validate the
 complete index tree, including extraction-cache sidecars, before reusing an index; invalid cache evidence causes rebuilding.
 Query results are bounded to 64 cached entries per source generation. Repository
 text and cached results remain untrusted data, not instructions or authorization.
