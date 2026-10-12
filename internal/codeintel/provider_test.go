@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -94,7 +95,8 @@ func TestSidecarIntegrityAndCacheMeasurements(t *testing.T) {
 		t.Fatal(err)
 	}
 	key, _ := Identity(p.Root, p.Scope, p.Permissions)
-	os.WriteFile(filepath.Join(p.CacheRoot, key, "index", ".graph", "extraction.json"), []byte(`{"untrusted":"injected"}`), 0600)
+	os.MkdirAll(filepath.Join(p.CacheRoot, key, "index", ".cache"), 0700)
+	os.WriteFile(filepath.Join(p.CacheRoot, key, "index", ".cache", "extraction.json"), []byte(`{"untrusted":"injected"}`), 0600)
 	r, err := p.Query(context.Background(), q)
 	if err != nil || r.CacheHit || calls.Load() != 2 {
 		t.Fatalf("sidecar integrity not checked: %+v %v", r, err)
@@ -102,5 +104,23 @@ func TestSidecarIntegrityAndCacheMeasurements(t *testing.T) {
 	r, err = p.Query(context.Background(), q)
 	if err != nil || !r.CacheHit || r.PeakMemoryBytes != nil || r.CPUMS != nil {
 		t.Fatalf("cache hit fabricated runtime measures: %+v %v", r, err)
+	}
+}
+
+func TestLocalCostHistoryRetainsOnlyAggregateMeasurements(t *testing.T) {
+	p, _ := testProvider(t)
+	if _, e := p.Query(context.Background(), core.CodeQuery{Operation: "ask", Query: "private request text"}); e != nil {
+		t.Fatal(e)
+	}
+	body, e := os.ReadFile(p.costPath())
+	if e != nil {
+		t.Fatal(e)
+	}
+	if strings.Contains(string(body), "private") || strings.Contains(string(body), "main.go") {
+		t.Fatal("source/query retained in cost history")
+	}
+	cost, ok := p.costHistory().Cost("ask", "graft")
+	if !ok || !cost.LatencyMS.Known || cost.CPUMS.Known {
+		t.Fatalf("invalid observed aggregate %+v", cost)
 	}
 }

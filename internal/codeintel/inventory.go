@@ -15,6 +15,8 @@ import (
 
 var generatedBundle = regexp.MustCompile(`(?i)(?:\.[a-f0-9]{8,64}|\.min)\.(?:mjs|cjs|js)$`)
 
+var projectMarkers = strings.Fields("go.mod package.json pyproject.toml Cargo.toml composer.json pom.xml build.gradle build.gradle.kts pnpm-workspace.yaml")
+
 var sourceExtensions = strings.Fields(".go .py .pyi .js .jsx .ts .tsx .mjs .cjs .java .kt .kts .php .r .swift .rs .c .h .cpp .cc .cxx .hpp .hh .rb .cs .scala .ex .exs .sol .ml .mli .zig .dart .clj .cljs .cljc .bb .nix .lua .vue .svelte .astro")
 
 // Inventory uses Git's ignore rules but no hooks, fsmonitor, textconv, global
@@ -44,7 +46,7 @@ func Inventory(ctx context.Context, root string) ([]string, error) {
 		if generatedBundle.MatchString(filepath.Base(name)) {
 			continue
 		}
-		if !slices.Contains(sourceExtensions, strings.ToLower(filepath.Ext(name))) && name != "go.mod" {
+		if !slices.Contains(sourceExtensions, strings.ToLower(filepath.Ext(name))) && !slices.Contains(projectMarkers, filepath.Base(name)) {
 			continue
 		}
 		parts := strings.Split(name, string(filepath.Separator))
@@ -72,6 +74,16 @@ func Inventory(ctx context.Context, root string) ([]string, error) {
 		if len(files) > MaxFiles {
 			return nil, errors.New("code inventory exceeds file budget")
 		}
+	}
+	hasSource := false
+	for _, name := range files {
+		if slices.Contains(sourceExtensions, strings.ToLower(filepath.Ext(name))) {
+			hasSource = true
+			break
+		}
+	}
+	if !hasSource {
+		return nil, nil
 	}
 	slices.Sort(files)
 	return slices.Compact(files), nil

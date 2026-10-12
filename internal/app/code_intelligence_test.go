@@ -202,6 +202,12 @@ func TestNativeCodeProviderRequiresExpectedVerifiedArtifact(t *testing.T) {
 		t.Fatal(err)
 	}
 	root := t.TempDir()
+	if err := exec.Command("git", "init", "-q", root).Run(); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, "main.go"), []byte("package fixture"), 0600); err != nil {
+		t.Fatal(err)
+	}
 	provider, err := a.codeIntelligenceProvider(context.Background(), root, "cs_fixture", spec)
 	if err != nil {
 		t.Fatal(err)

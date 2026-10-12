@@ -69,3 +69,23 @@ func TestInventoryExcludesGeneratedBundlesButKeepsSource(t *testing.T) {
 		t.Fatalf("generated bundles admitted: %v", files)
 	}
 }
+
+func TestMonorepoModuleIdentityIsPreserved(t *testing.T) {
+	p, _ := testProvider(t)
+	os.Mkdir(filepath.Join(p.Root, "backend"), 0700)
+	os.WriteFile(filepath.Join(p.Root, "backend", "go.mod"), []byte("module example.invalid/backend\ngo 1.27\n"), 0600)
+	os.WriteFile(filepath.Join(p.Root, "backend", "main.go"), []byte("package backend\nfunc Run(){}"), 0600)
+	files, e := Inventory(context.Background(), p.Root)
+	if e != nil {
+		t.Fatal(e)
+	}
+	found := false
+	for _, f := range files {
+		if f == "backend/go.mod" {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatal("monorepo module identity discarded")
+	}
+}

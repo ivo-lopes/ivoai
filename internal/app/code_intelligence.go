@@ -43,6 +43,13 @@ func (a *App) codeIntelligenceProvider(ctx context.Context, root, scope string, 
 	if _, err := codeintel.Identity(root, scope, "filesystem.read"); err != nil {
 		return nil, err
 	}
+	inventory, err := codeintel.Inventory(ctx, root)
+	if err != nil {
+		return nil, err
+	}
+	if len(inventory) == 0 {
+		return nil, codeintel.ErrNoSupportedSources
+	}
 	decision := policy.DefaultEngine().Evaluate(policy.Request{SubjectID: nativeCodeMCP, SubjectKind: policy.SubjectTool, Scope: scope, DeclaredCapabilities: []string{"filesystem.read"}, RequestedCapabilities: []string{"filesystem.read"}, Risk: skills.RiskLow, MetadataValid: true, ConflictResolved: true})
 	if decision.Decision != policy.Allow {
 		return nil, errors.New("code intelligence denied by filesystem policy")

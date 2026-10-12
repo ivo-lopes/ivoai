@@ -18,6 +18,8 @@ import (
 	"golang.org/x/sys/unix"
 )
 
+var ErrNoSupportedSources = errors.New("repository has no supported source files")
+
 const Version = "0.21.1-ivoai.1"
 const MaxResultBytes = 32768
 
@@ -61,6 +63,7 @@ func (p *Provider) Query(ctx context.Context, q core.CodeQuery) (result core.Cod
 	start := time.Now()
 	defer func() {
 		result.DurationMS = time.Since(start).Milliseconds()
+		p.recordCost(q, result, err)
 		if p.Observe != nil {
 			p.Observe(result, err)
 		}
@@ -104,7 +107,7 @@ func (p *Provider) Query(ctx context.Context, q core.CodeQuery) (result core.Cod
 		return result, err
 	}
 	if len(files) == 0 {
-		return result, errors.New("repository has no supported source files")
+		return result, ErrNoSupportedSources
 	}
 	snap, err := Snapshot(p.Root, files)
 	if err != nil {
@@ -115,7 +118,7 @@ func (p *Provider) Query(ctx context.Context, q core.CodeQuery) (result core.Cod
 	var receipt indexReceipt
 	data, _ := readBounded(receiptPath, 4096)
 	_ = json.Unmarshal(data, &receipt)
-	currentHash, hashErr := indexDigest(filepath.Join(index, ".graph"))
+	currentHash, hashErr := indexDigest(index)
 	adapterHash := digest(adapter)
 	validIndex := hashErr == nil && currentHash == receipt.Index && receipt.Adapter == adapterHash
 	if !validIndex {
@@ -165,7 +168,7 @@ func (p *Provider) Query(ctx context.Context, q core.CodeQuery) (result core.Cod
 	if len(response.Text) > q.BudgetBytes {
 		return result, errors.New("structural result exceeded context budget")
 	}
-	indexHash, err := indexDigest(filepath.Join(index, ".graph"))
+	indexHash, err := indexDigest(index)
 	if err != nil {
 		return result, errors.New("structural index was not produced")
 	}
@@ -322,6 +325,9 @@ func indexDigest(root string) (string, error) {
 			return err
 		}
 		if e.IsDir() {
+			if path == filepath.Join(root, "visualization") {
+				return filepath.SkipDir
+			}
 			return nil
 		}
 		if !e.Type().IsRegular() {
@@ -343,7 +349,7 @@ func indexDigest(root string) (string, error) {
 		if err != nil {
 			return err
 		}
-		if rel == "wiring.json" {
+		if rel == filepath.Join(".graph", "wiring.json") {
 			hasWiring = true
 		}
 		fmt.Fprintf(h, "%s\x00%s\n", rel, digest(body))
