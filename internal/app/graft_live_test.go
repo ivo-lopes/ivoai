@@ -11,8 +11,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ivo-lopes/ivoai/internal/codexresolver"
 	"github.com/ivo-lopes/ivoai/internal/components"
 	"github.com/ivo-lopes/ivoai/internal/config"
+	"github.com/ivo-lopes/ivoai/internal/platform"
 	"github.com/ivo-lopes/ivoai/internal/supplychain"
 )
 
@@ -156,6 +158,13 @@ func TestLiveGraftManagedOpenCode(t *testing.T) {
 	}}
 	if err := store.SaveState(state); err != nil {
 		t.Fatal(err)
+	}
+	resolution, err := (codexresolver.Resolver{Runner: platform.ExecRunner{}, PATH: os.Getenv("PATH"), Managed: state.Components["codex"], Host: state.Components["codex-code-mode-host"]}).Resolve(context.Background())
+	if err != nil {
+		for _, candidate := range resolution.Candidates {
+			t.Log("CODEX_FIXTURE_CANDIDATE_REASON=" + candidate.Reason)
+		}
+		t.Fatal("paired official Codex fixture failed native preflight")
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Minute)
 	defer cancel()
