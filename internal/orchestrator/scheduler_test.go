@@ -138,8 +138,15 @@ func TestSpawnBatchRunsIndependentTasksConcurrentlyAndHonorsDAG(t *testing.T) {
 		close(release)
 		t.Fatal("spawn_batch waited for workers to complete")
 	}
-	if _, err := server.wait(context.Background(), toolRequest(map[string]any{"plan_id": planID, "task_ids": []string{"a", "b", "c", "d", "e"}, "mode": "all", "timeout_seconds": 5})); err != nil {
+	// Parallelism is proven by the adapter's peer gate, not wall-clock speed.
+	// Allow race-instrumented persistence to settle every descendant before
+	// asserting result ownership; a timed-out wait is a successful tool reply.
+	waited, err := server.wait(context.Background(), toolRequest(map[string]any{"plan_id": planID, "task_ids": []string{"a", "b", "c", "d", "e"}, "mode": "all", "timeout_seconds": 30}))
+	if err != nil {
 		t.Fatal(err)
+	}
+	if waited.StructuredContent.(map[string]any)["timed_out"] == true {
+		t.Fatalf("DAG did not complete: %+v", waited.StructuredContent)
 	}
 	updated, err := store.Get(id)
 	if err != nil {
