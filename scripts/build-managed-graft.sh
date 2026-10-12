@@ -38,7 +38,10 @@ fetch "${GRAFT_NODE_ARCHIVE:-}" "https://nodejs.org/dist/v$node_version/node-v$n
 python3 "$helper/build.py" extract "$work/source.tgz" "$work/build"
 tar --extract --gzip --file "$work/node.tgz" --directory "$work/node" --strip-components=1 --no-same-owner
 printf '%s  %s\n' "$lock_sha" "$work/build/package-lock.json" | sha256sum --check --status
-python3 "$helper/build.py" lock "$work/build/package-lock.json" "$work/dependencies.json"
+patch --directory "$work/build" --strip=1 --fuzz=0 < "$helper/dependency-lock.patch"
+printf '%s  %s\n' 5fda79923e595c061e52a8f0154b7465fce7f5ac6441e5ed1ccff14cd46ae663 "$work/build/package-lock.json" | sha256sum --check --status
+cp "$work/build/package-lock.json" "$work/build/build-package-lock.json"
+python3 "$helper/build.py" lock "$work/build/package-lock.json" "$work/build-dependencies.json"
 if [[ -n ${GRAFT_NPM_CACHE:-} ]]; then
   # Only npm content-addressed packages, never user configuration or credentials.
   cp -a -- "$GRAFT_NPM_CACHE/_cacache" "$work/cache/"
@@ -68,6 +71,7 @@ else
   network_args+=(--share-net --ro-bind /etc/resolv.conf /etc/resolv.conf --ro-bind /etc/ssl /etc/ssl)
 fi
 "${sandbox[@]}" "${network_args[@]}" /node/bin/node /node/lib/node_modules/npm/bin/npm-cli.js "${npm_args[@]}"
+"${sandbox[@]}" /node/bin/node /review/check-dependencies.mjs /build
 patch --directory "$work/build" --strip=1 --fuzz=0 < "$helper/tree-sitter-node26.patch"
 patch --directory "$work/build" --strip=1 --fuzz=0 < "$helper/bounded-parse-lifecycle.patch"
 patch --directory "$work/build" --strip=1 --fuzz=0 < "$helper/viewer-escaping.patch"
@@ -83,9 +87,15 @@ done
 "${sandbox[@]}" /node/bin/node /review/check-go-package-calls.mjs /build
 "${sandbox[@]}" /node/bin/node scripts/build-viewer.mjs
 "${sandbox[@]}" /node/bin/node /node/lib/node_modules/npm/bin/npm-cli.js prune --omit=dev --ignore-scripts --offline --no-audit --no-fund
+"${sandbox[@]}" /usr/bin/python3 /review/prepare_grammars.py /build
+"${sandbox[@]}" /usr/bin/python3 /review/prune_cli.py /build
+"${sandbox[@]}" /node/bin/node /review/check-yaml-library.mjs /build
+python3 "$helper/build.py" lock "$work/build/package-lock.json" "$work/dependencies.json"
+mv "$work/build/build-package-lock.json" "$work/payload/"
 mv "$work/build/dist" "$work/build/node_modules" "$work/build/package.json" "$work/build/package-lock.json" "$work/build/LICENSE" "$work/payload/"
 install -m 0755 "$helper/graft-runtime" "$work/payload/graft-runtime"
 cp "$work/dependencies.json" "$work/payload/dependencies.json"
+cp "$work/build-dependencies.json" "$work/payload/build-dependencies.json"
 python3 "$helper/provenance.py" "$work/payload" "$repo_root" "$arch" "$node_sha" "$cpu_flags" "$cxx"
 # Smoke the exact cleaned payload, not the source tree or its development deps.
 python3 - "$helper" "$work/payload" <<'PY'
