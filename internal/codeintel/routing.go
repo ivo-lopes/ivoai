@@ -21,6 +21,9 @@ func (p *Provider) Inspect(ctx context.Context, q core.CodeQuery) (core.CodeResu
 	if !p.Allowed {
 		return core.CodeResult{}, errors.New("code intelligence denied by host policy")
 	}
+	if _, err := Identity(p.Root, p.Scope, p.Permissions); err != nil {
+		return core.CodeResult{}, err
+	}
 	q, err := Normalize(q)
 	if err != nil {
 		return core.CodeResult{}, err

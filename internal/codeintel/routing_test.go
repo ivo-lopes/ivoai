@@ -58,3 +58,14 @@ func TestColdExactDeclarationAvoidsIndexConstruction(t *testing.T) {
 		t.Fatalf("valid structural cache not reused: %+v %v", r, e)
 	}
 }
+
+func TestDirectInspectionRequiresTrustedScope(t *testing.T) {
+	for _, q := range []core.CodeQuery{{Operation: "grep", Query: "package"}, {Operation: "skeleton", File: "main.go"}, {Operation: "ask", Query: "SmallKnown"}} {
+		p, _ := testProvider(t)
+		p.Scope = ""
+		os.WriteFile(filepath.Join(p.Root, "main.go"), []byte("package fixture\nfunc SmallKnown() int { return 42 }\n"), 0600)
+		if _, err := p.Inspect(context.Background(), q); err == nil {
+			t.Errorf("%s accepted absent organization scope", q.Operation)
+		}
+	}
+}
