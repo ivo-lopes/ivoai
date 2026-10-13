@@ -6,6 +6,14 @@ import {clean, logo, panel, servers, fitRows, cellWidth} from "./assets/presenta
 
 const source = (alias, selected = true, health = "healthy") => ({alias, purpose: alias, enabled: true, selected, health, auth_state: health === "healthy" ? "authenticated" : "not verified"})
 
+test("narrow diagnostic rows preserve cache and index status fields", () => {
+ for (const width of [42,44,48,52]) {
+  const rows = fitRows(panel({activity:[{operation:"code.inspect",provider:"graft",cache_hit:true,index_fresh:true}]}), width)
+  assert.ok(rows.some(row => row.text.includes("cache=hit")), `cache at ${width}`)
+  assert.ok(rows.some(row => row.text.includes("index=fresh")), `index at ${width}`)
+ }
+})
+
 test("tool projection displays measured bytes without inventing tokens", () => {
  const text = JSON.stringify(panel({activity:[{operation:"capability.resolve",capability:"tool.projection", state:"completed", tools_available:7, tools_presented:1, bytes_before:4585, bytes_after:1400}]}))
  assert.match(text, /1\/7/)
