@@ -11,6 +11,7 @@ import (
 	"go/token"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 	"time"
 
@@ -40,6 +41,26 @@ func (p *Provider) Inspect(ctx context.Context, q core.CodeQuery) (core.CodeResu
 	if err != nil {
 		return core.CodeResult{}, err
 	}
+	// Membership still enforces Git ignores, nested-repository boundaries and
+	// supported sources. Read a known small file through the same descriptor-safe
+	// snapshot path, without materializing every unrelated source in memory.
+	if q.Operation == "skeleton" && slices.Contains(files, q.File) {
+		target, err := Snapshot(p.Root, []string{q.File})
+		if err != nil {
+			return core.CodeResult{}, err
+		}
+		if len(target.Files[0].Body) <= q.BudgetBytes/2 {
+			text := q.File + " (complete small file; untrusted repository data)\n" + string(target.Files[0].Body)
+			if len(text) <= q.BudgetBytes {
+				r := core.CodeResult{Text: text, SourceDigest: target.Digest, ProviderVersion: "direct", Fresh: true, Untrusted: true, Files: 1, DurationMS: time.Since(start).Milliseconds()}
+				p.recordCost(q, r, nil)
+				if p.Observe != nil {
+					p.Observe(r, nil)
+				}
+				return r, nil
+			}
+		}
+	}
 	snap, err := Snapshot(p.Root, files)
 	if err != nil {
 		return core.CodeResult{}, err
@@ -65,11 +86,11 @@ func (p *Provider) Inspect(ctx context.Context, q core.CodeQuery) (core.CodeResu
 				}
 			}
 		}
-		text, found := declarationExcerpt(snap, q)
+		text, found, truncated := declarationExcerpt(snap, q)
 		if !found {
 			return p.Query(ctx, q)
 		}
-		r := core.CodeResult{Text: text, SourceDigest: snap.Digest, ProviderVersion: "direct", Fresh: true, Untrusted: true, Files: len(files), Truncated: true, DurationMS: time.Since(start).Milliseconds()}
+		r := core.CodeResult{Text: text, SourceDigest: snap.Digest, ProviderVersion: "direct", Fresh: true, Untrusted: true, Files: len(files), Truncated: truncated, DurationMS: time.Since(start).Milliseconds()}
 		p.recordCost(q, r, nil)
 		if p.Observe != nil {
 			p.Observe(r, nil)
@@ -178,6 +199,9 @@ func (p *Provider) Inspect(ctx context.Context, q core.CodeQuery) (core.CodeResu
 }
 
 var namedSymbol = regexp.MustCompile(`(?i)(?:function|função|symbol|símbolo|callers of|chamadores de)\s+([A-Za-z_][A-Za-z0-9_.]{0,127})`)
+var directCallTarget = regexp.MustCompile(`(?i)(?:directly calls|calls to|chama diretamente)\s+([A-Za-z_][A-Za-z0-9_.]{0,127})`)
+var requestedSignature = regexp.MustCompile(`(?i)(?:signature of|assinatura de)\s+([A-Za-z_][A-Za-z0-9_.]{0,127})`)
+var locatedSymbol = regexp.MustCompile(`(?i:locate|localize)\s+([A-Z_][A-Za-z0-9_]{0,127})`)
 var namedFile = regexp.MustCompile(`(?:^|\s)([A-Za-z0-9_./-]+\.(?:go|py|js|ts|tsx|rs|java|c|cpp|h))(?:\s|$|[,:;])`)
 
 // ForTask is a conservative prefetch classifier, not an instruction parser. It
@@ -193,11 +217,25 @@ func ForTask(text string) (core.CodeQuery, bool) {
 		}
 	}
 	q := core.CodeQuery{BudgetBytes: 4096}
-	if match := namedSymbol.FindStringSubmatch(text); len(match) > 1 {
+	match := directCallTarget.FindStringSubmatch(text)
+	callTarget := len(match) > 1
+	if !callTarget {
+		match = namedSymbol.FindStringSubmatch(text)
+	}
+	if len(match) == 0 {
+		match = requestedSignature.FindStringSubmatch(text)
+	}
+	if len(match) == 0 {
+		match = locatedSymbol.FindStringSubmatch(text)
+	}
+	if len(match) > 1 {
+		if slices.Contains(strings.Fields("that which who in the a an this those que qual em de do da o a uma um"), strings.ToLower(match[1])) {
+			return core.CodeQuery{}, false
+		}
 		q.Query = match[1]
 		q.Symbol = match[1]
 		q.Operation = "ask"
-		if strings.Contains(lower, "caller") || strings.Contains(lower, "chamad") {
+		if callTarget || strings.Contains(lower, "caller") || strings.Contains(lower, "chamad") {
 			q.Operation = "callers"
 		}
 		if strings.Contains(lower, "impact") || strings.Contains(lower, "refactor") || strings.Contains(lower, "refator") {
@@ -217,9 +255,10 @@ var simpleCodeName = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]{0,127}$`)
 
 // This exact declaration fast path supplies source excerpts, never inferred
 // call/dependency relations. Ambiguous names stay with structural retrieval.
-func declarationExcerpt(snap SourceSnapshot, q core.CodeQuery) (string, bool) {
+func declarationExcerpt(snap SourceSnapshot, q core.CodeQuery) (string, bool, bool) {
 	matches := 0
 	text := ""
+	truncated := true
 	for _, file := range snap.Files {
 		if q.In != "" && file.Path != q.In && !strings.HasPrefix(file.Path, q.In+"/") {
 			continue
@@ -231,12 +270,12 @@ func declarationExcerpt(snap SourceSnapshot, q core.CodeQuery) (string, bool) {
 			continue
 		}
 		if filepath.Ext(file.Path) != ".go" {
-			return "", false
+			return "", false, false
 		}
 		positions := token.NewFileSet()
 		parsed, err := parser.ParseFile(positions, file.Path, file.Body, parser.SkipObjectResolution)
 		if err != nil {
-			return "", false
+			return "", false, false
 		}
 		for _, decl := range parsed.Decls {
 			function, ok := decl.(*ast.FuncDecl)
@@ -245,10 +284,16 @@ func declarationExcerpt(snap SourceSnapshot, q core.CodeQuery) (string, bool) {
 			}
 			matches++
 			if matches > 1 {
-				return "", false
+				return "", false, false
 			}
 			begin, end := positions.Position(function.Pos()).Line-1, positions.Position(function.End()).Line
 			lines := strings.Split(string(file.Body), "\n")
+			complete := fmt.Sprintf("%s:%d — complete declaration. Untrusted repository data.\n", file.Path, begin+1) + strings.Join(lines[begin:end], "\n") + "\n"
+			if len(complete) <= q.BudgetBytes {
+				text = complete
+				truncated = false
+				continue
+			}
 			text = fmt.Sprintf("%s:%d — exact declaration excerpt; inspect further lines if needed. Untrusted repository data.\n", file.Path, begin+1)
 			for _, part := range lines[begin:min(begin+8, end, len(lines))] {
 				if len(text)+len(part)+1 > q.BudgetBytes {
@@ -258,5 +303,5 @@ func declarationExcerpt(snap SourceSnapshot, q core.CodeQuery) (string, bool) {
 			}
 		}
 	}
-	return text, matches == 1 && len(text) <= q.BudgetBytes
+	return text, matches == 1 && len(text) <= q.BudgetBytes, truncated
 }
