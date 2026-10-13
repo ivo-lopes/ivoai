@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/url"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -35,7 +36,7 @@ func (a *App) prepareSessionKnowledgeWithApprovals(ctx context.Context, cfg conf
 	return a.prepareSessionKnowledgeSelection(ctx, cfg, selectors, nil, executor, runtimeDir, cwd, scope, environment, observe, managed)
 }
 
-func (a *App) prepareSessionKnowledgeSelection(ctx context.Context, cfg config.Config, selectors []string, selection *serverpool.Selection, executor, runtimeDir, cwd, scope string, environment []string, observe func(observability.Event), managed bool) (sessionKnowledge, error) {
+func (a *App) prepareSessionKnowledgeSelection(ctx context.Context, cfg config.Config, selectors []string, selection *serverpool.Selection, executor, runtimeDir, cwd, scope string, environment []string, observe func(observability.Event), managed bool, codeProjection ...[]string) (sessionKnowledge, error) {
 	// Never inherit an endpoint under the native name from persisted or previous
 	// process configuration. Only the verified provider below may project it.
 	serversWithoutNative := make(map[string]config.MCPServer, len(cfg.MCP.Servers))
@@ -88,14 +89,16 @@ func (a *App) prepareSessionKnowledgeSelection(ctx context.Context, cfg config.C
 		}
 		targets = append(targets, target)
 	}
-	// Capture configured organization scope before projecting ephemeral endpoints.
-	if provider, providerErr := a.CodeIntelligenceProvider(ctx, cwd, scope); providerErr == nil {
-		if observe != nil {
-			provider.Observe = func(result core.CodeResult, err error) { observe(codeintel.Observation(result, err)) }
+	if len(codeProjection) == 0 || len(codeProjection[0]) != 0 {
+		// Capture configured organization scope before projecting ephemeral endpoints.
+		if provider, providerErr := a.CodeIntelligenceProvider(ctx, cwd, scope); providerErr == nil {
+			if observe != nil {
+				provider.Observe = func(result core.CodeResult, err error) { observe(codeintel.Observation(result, err)) }
+			}
+			targets = append(targets, externalmcp.Target{Name: nativeCodeMCP, Local: provider.Handler(), Restricted: true, AllowedTools: codeintel.ToolNames()})
+		} else if observe != nil {
+			observe(codeintel.Observation(core.CodeResult{}, providerErr))
 		}
-		targets = append(targets, externalmcp.Target{Name: nativeCodeMCP, Local: provider.Handler(), Restricted: true, AllowedTools: codeintel.ToolNames()})
-	} else if observe != nil {
-		observe(codeintel.Observation(core.CodeResult{}, providerErr))
 	}
 	if len(targets) == 0 {
 		return result, nil
@@ -110,6 +113,10 @@ func (a *App) prepareSessionKnowledgeSelection(ctx context.Context, cfg config.C
 		return sessionKnowledge{}, err
 	}
 	result.external = gateway
+	if len(codeProjection) > 0 {
+		selected := slices.Clone(codeProjection[0])
+		gateway.SetToolProjection(func(server, tool string) bool { return server != nativeCodeMCP || slices.Contains(selected, tool) })
+	}
 	if managed {
 		// No grace window before the per-turn task admission callback is installed.
 		gateway.SetToolAdmission(func(string, string) (bool, bool) { return false, false })

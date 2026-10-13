@@ -10,7 +10,9 @@ import (
 	"sync"
 
 	"github.com/ivo-lopes/ivoai/internal/agents"
+	"github.com/ivo-lopes/ivoai/internal/codeintel"
 	"github.com/ivo-lopes/ivoai/internal/config"
+	"github.com/ivo-lopes/ivoai/internal/externalmcp"
 	"github.com/ivo-lopes/ivoai/internal/observability"
 	"github.com/ivo-lopes/ivoai/internal/opencodebridge"
 	"github.com/ivo-lopes/ivoai/internal/promptgate"
@@ -117,7 +119,7 @@ func (a *App) prepareAutoPromptKnowledge(ctx context.Context, cfg config.Config,
 		}
 		cfg.MCP.Servers = servers
 	}
-	return a.prepareSessionKnowledgeSelection(ctx, cfg, selectors, &selection, executor, runtimeDir, cwd, scope, os.Environ(), observe, true)
+	return a.prepareSessionKnowledgeSelection(ctx, cfg, selectors, &selection, executor, runtimeDir, cwd, scope, os.Environ(), observe, true, codeintel.ProjectTools(prompt))
 }
 
 func (a *App) scopeAutoRunner(base opencodebridge.ExecutorRunner, original config.Config, state config.State, store session.Store, id, cwd, runtimeDir, instructionsPath string, agentArgs, selectors []string, current *autoTurnState, catalog opencodebridge.ModelCatalog) opencodebridge.ExecutorRunner {
@@ -151,6 +153,11 @@ func (a *App) scopeAutoRunner(base opencodebridge.ExecutorRunner, original confi
 			return nil, nil, err
 		}
 		if k.external != nil {
+			k.external.SetInventoryObserver(func(_ string, metrics externalmcp.InventoryMetrics) {
+				_, _ = store.Update(id, func(v *session.Session) error {
+					return session.AppendObservation(v, observability.Event{Category: observability.CategoryCapability, Operation: observability.OperationCapabilityResolve, Component: "tools", Capability: "tool.projection", State: observability.StateCompleted, ToolsAvailable: &metrics.Available, ToolsPresented: &metrics.Presented, BytesBefore: int64(metrics.SchemaBytesBefore), BytesAfter: int64(metrics.SchemaBytesAfter), TokenBasis: "unavailable", RoutingReason: observability.ReasonContextBudgetApplied})
+				})
+			})
 			k.external.SetToolAdmission(func(server, tool string) (bool, bool) {
 				v, err := store.Get(id)
 				if err != nil {

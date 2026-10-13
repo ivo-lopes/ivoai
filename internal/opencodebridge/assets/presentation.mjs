@@ -53,6 +53,11 @@ export function panel(status) {
   // A completed inspection remains diagnostic evidence after task lifecycle
   // rows advance. This is its observed state, not a fresh repository probe.
   const code = retained.filter(event => event.operation === "code.inspect").at(-1)
+  const projection = retained.filter(event => event.operation === "capability.resolve" && event.capability === "tool.projection").at(-1)
+  if (projection) {
+    const measured = value => Number.isFinite(value) && value >= 0 ? value : "unknown"
+    orchestration.push(line(`Tools (last discovery): ${measured(projection.tools_presented)}/${measured(projection.tools_available)} · schema bytes=${measured(projection.bytes_before)}→${measured(projection.bytes_after)} · tokens=unknown`))
+  }
   if (code) {
     const metric = (value, suffix = "") => Number.isFinite(value) && value >= 0 ? value + suffix : "unknown"
     orchestration.push(line(`Code (last observed): ${clean(code.provider)} · cache=${typeof code.cache_hit === "boolean" ? code.cache_hit ? "hit" : "miss" : "unknown"} · index=${typeof code.index_fresh === "boolean" ? code.index_fresh ? "fresh" : "stale" : "unknown"}`),

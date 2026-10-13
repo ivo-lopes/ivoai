@@ -5,6 +5,16 @@ import {fileURLToPath} from "node:url"
 import {clean, logo, panel, servers, fitRows, cellWidth} from "./assets/presentation.mjs"
 
 const source = (alias, selected = true, health = "healthy") => ({alias, purpose: alias, enabled: true, selected, health, auth_state: health === "healthy" ? "authenticated" : "not verified"})
+
+test("tool projection displays measured bytes without inventing tokens", () => {
+ const text = JSON.stringify(panel({activity:[{operation:"capability.resolve",capability:"tool.projection", state:"completed", tools_available:7, tools_presented:1, bytes_before:4585, bytes_after:1400}]}))
+ assert.match(text, /1\/7/)
+ assert.match(text, /4585/)
+ assert.match(text, /1400/)
+ assert.match(text, /tokens=unknown/)
+ const unknown = JSON.stringify(panel({activity:[{operation:"capability.resolve",capability:"tool.projection",state:"completed"}]}))
+ assert.match(unknown,/unknown\/unknown/)
+})
 const normal = {frontend:"opencode", primary:"codex", session_state:"running", selection_mode:"auto", effective_model:"fixture-model", effective_effort:"high", permission_mode:"interactive", resume_policy:"fresh native turn; identity unverified", codex_auth:"authenticated", codex_quota:"available", claude_auth:"not configured", claude_quota:"N/A", opencode_auth:"authenticated", opencode_quota:"unknown", memory:"ready", context:"ready", compression:"direct", skills:"policy-gated", version:"fixture", configured_count:2, connected_count:2, enabled_count:2, selected_count:2, knowledge_mode:"federated", servers:[source("source-A"),source("source-B")]}
 const states = {
  capabilities:{...normal,workers:[{id:"implementation-a",role:"implementation",state:"running",executor:"codex",tier:"BALANCED",model:"fixture-balanced",effort:"medium",purposes:[],mcps:[],skills:["ponytail","caveman-surgical-patch"]},{id:"research-b",role:"research",state:"running",executor:"claude",tier:"LIGHT",model:"fixture-economical",effort:"low",purposes:[],mcps:[],skills:[]}]},

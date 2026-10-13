@@ -11,8 +11,26 @@ import (
 	"testing"
 
 	"github.com/ivo-lopes/ivoai/internal/config"
+	"github.com/ivo-lopes/ivoai/internal/observability"
 	"github.com/ivo-lopes/ivoai/internal/secrets"
 )
+
+func TestInstitutionalTurnDoesNotPrepareCodeRuntime(t *testing.T) {
+	a := autoTestApp(t, t.TempDir(), "#!/bin/sh\nexit 0\n", "#!/bin/sh\nexit 0\n")
+	var inspections int
+	k, err := a.prepareAutoPromptKnowledge(context.Background(), config.Default(), nil, "Read institutional documentation only", "codex", t.TempDir(), t.TempDir(), func(e observability.Event) {
+		if e.Operation == observability.OperationCodeInspect {
+			inspections++
+		}
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer k.close()
+	if inspections != 0 {
+		t.Fatal("irrelevant code runtime was prepared and reported as degraded")
+	}
+}
 
 func TestAutoPurposeRoutingDoesNotQueryIrrelevantInstitution(t *testing.T) {
 	root := t.TempDir()
