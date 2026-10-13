@@ -7,7 +7,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"go/format"
+	"io"
 	"io/fs"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -67,6 +70,10 @@ func TestExtendedLiveCodexBenchmark(t *testing.T) {
 		ToolsPresented                                                        int
 		InventoryRequests, ToolSchemaBytes                                    int
 		ToolSequence                                                          []string
+		Decisions                                                             []inspectionTrace
+		ItemCounts                                                            map[string]int
+		CommandResultBytes                                                    int
+		FixtureSHA256, TestBinarySHA256                                       string
 		ProjectionExperiment                                                  bool
 		DurationMS                                                            int64
 		InputTokens, CachedInputTokens, OutputTokens                          any
@@ -77,6 +84,7 @@ func TestExtendedLiveCodexBenchmark(t *testing.T) {
 		Correct                                                               bool
 		Error                                                                 string `json:",omitempty"`
 	}
+	binaryHash := extendedExecutableHash(t)
 	var rows []row
 	persist := func() {
 		if path := os.Getenv("IVOAI_GRAFT_EXTENDED_OUTPUT"); path != "" {
@@ -138,7 +146,7 @@ func TestExtendedLiveCodexBenchmark(t *testing.T) {
 							t.Fatal(err)
 						}
 					}
-					r := row{Scenario: s.name, Arm: arm, Model: "gpt-6.1-sol", Effort: "low", Repetition: repetition, ProjectionExperiment: projectionExperiment}
+					r := row{FixtureSHA256: before, TestBinarySHA256: binaryHash, ItemCounts: map[string]int{}, Scenario: s.name, Arm: arm, Model: "gpt-6.1-sol", Effort: "low", Repetition: repetition, ProjectionExperiment: projectionExperiment}
 					var mu sync.Mutex
 					p.Observe = func(result core.CodeResult, err error) {
 						if err != nil {
@@ -172,7 +180,13 @@ func TestExtendedLiveCodexBenchmark(t *testing.T) {
 					if projectionExperiment || arm == "B" {
 						r.ToolsPresented = len(projected)
 					}
-					gateway, e := externalmcp.Start([]externalmcp.Target{{Name: "ivoai-code", Local: p.Handler(), Restricted: true, AllowedTools: projected}}, "full")
+					gateway, e := externalmcp.Start([]externalmcp.Target{{Name: "ivoai-code", Local: traceInspection(p.Handler(), func(v inspectionTrace) {
+						mu.Lock()
+						defer mu.Unlock()
+						if len(r.Decisions) < 64 {
+							r.Decisions = append(r.Decisions, v)
+						}
+					}), Restricted: true, AllowedTools: projected}}, "full")
 					if e != nil {
 						t.Fatal(e)
 					}
@@ -229,8 +243,11 @@ func TestExtendedLiveCodexBenchmark(t *testing.T) {
 					var answer strings.Builder
 					for _, line := range bytes.Split(out.Bytes(), []byte("\n")) {
 						var event struct {
-							Type  string
-							Item  struct{ Type, Text, Tool string }
+							Type string
+							Item struct {
+								Type, Text, Tool string
+								AggregatedOutput string `json:"aggregated_output"`
+							}
 							Usage map[string]any
 						}
 						if json.Unmarshal(line, &event) != nil {
@@ -240,6 +257,17 @@ func TestExtendedLiveCodexBenchmark(t *testing.T) {
 							r.InputTokens = event.Usage["input_tokens"]
 							r.CachedInputTokens = event.Usage["cached_input_tokens"]
 							r.OutputTokens = event.Usage["output_tokens"]
+						}
+						if event.Type == "item.completed" {
+							label := "other"
+							switch event.Item.Type {
+							case "command_execution", "mcp_tool_call", "agent_message", "reasoning", "plan", "web_search", "file_change", "collab_tool_call", "dynamic_tool_call":
+								label = event.Item.Type
+							}
+							r.ItemCounts[label]++
+							if label == "command_execution" {
+								r.CommandResultBytes += len(event.Item.AggregatedOutput)
+							}
 						}
 						if event.Type == "item.completed" && (event.Item.Type == "command_execution" || event.Item.Type == "mcp_tool_call") {
 							r.ToolCalls++
@@ -555,4 +583,89 @@ func guardExtendedCodexConfig(t *testing.T) {
 			t.Error("personal configuration changed")
 		}
 	})
+}
+
+// Benchmark-only boundary recorder. Arguments and response text are never saved.
+type inspectionTrace struct {
+	Operation            string
+	ExactName, HasFile   bool
+	Provider             string
+	Bytes, ResponseBytes int
+	Truncated, Failed    bool
+}
+
+func traceInspection(next http.Handler, observe func(inspectionTrace)) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			next.ServeHTTP(w, r)
+			return
+		}
+		body, err := io.ReadAll(io.LimitReader(r.Body, 16385))
+		if err != nil || len(body) > 16384 {
+			http.Error(w, "bounded request required", 400)
+			return
+		}
+		r.Body = io.NopCloser(bytes.NewReader(body))
+		var request struct {
+			Method string
+			Params struct {
+				Name      string
+				Arguments json.RawMessage
+			}
+		}
+		if json.Unmarshal(body, &request) != nil || request.Method != "tools/call" {
+			next.ServeHTTP(w, r)
+			return
+		}
+		q, err := toolQuery(request.Params.Name, request.Params.Arguments)
+		trace := inspectionTrace{Operation: "invalid", Failed: err != nil}
+		if err == nil {
+			trace.Operation = q.Operation
+			trace.ExactName = simpleCodeName.MatchString(q.Query)
+			trace.HasFile = q.File != ""
+		}
+		rec := httptest.NewRecorder()
+		next.ServeHTTP(rec, r)
+		var response struct {
+			Result struct {
+				IsError bool
+				Content []struct{ Text string }
+			}
+		}
+		trace.ResponseBytes = rec.Body.Len()
+		if json.Unmarshal(rec.Body.Bytes(), &response) == nil {
+			trace.Failed = trace.Failed || response.Result.IsError
+			for _, c := range response.Result.Content {
+				var result core.CodeResult
+				if json.Unmarshal([]byte(c.Text), &result) == nil {
+					trace.Provider = "graft"
+					if result.ProviderVersion == "direct" {
+						trace.Provider = "direct"
+					}
+					trace.Bytes += len(result.Text)
+					trace.Truncated = result.Truncated
+				}
+			}
+		}
+		observe(trace)
+		for k, v := range rec.Header() {
+			w.Header()[k] = v
+		}
+		w.WriteHeader(rec.Code)
+		_, _ = w.Write(rec.Body.Bytes())
+	})
+}
+
+func extendedExecutableHash(t *testing.T) string {
+	t.Helper()
+	f, err := os.Open(os.Args[0])
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer f.Close()
+	h := sha256.New()
+	if _, err := io.Copy(h, f); err != nil {
+		t.Fatal(err)
+	}
+	return fmt.Sprintf("%x", h.Sum(nil))
 }
