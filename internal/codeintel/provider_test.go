@@ -129,8 +129,10 @@ func TestSidecarIntegrityAndCacheMeasurements(t *testing.T) {
 
 func TestLocalCostHistoryRetainsOnlyAggregateMeasurements(t *testing.T) {
 	p, _ := testProvider(t)
-	if _, e := p.Query(context.Background(), core.CodeQuery{Operation: "ask", Query: "private request text"}); e != nil {
-		t.Fatal(e)
+	for i := range 5 {
+		if _, e := p.Query(context.Background(), core.CodeQuery{Operation: "ask", Query: "private request text" + strings.Repeat("x", i)}); e != nil {
+			t.Fatal(e)
+		}
 	}
 	body, e := os.ReadFile(p.costPath())
 	if e != nil {
