@@ -190,6 +190,37 @@ arquitetura não transforma trabalho pendente em concluído.
 
 ## Eficiência medida
 
+### Candidato de otimização econômica
+
+O próximo candidato apresenta `code_inspect` nas sessões AUTO e nos workers,
+preservando os contratos nativos quando seus nomes forem solicitados. Pedidos
+exclusivamente institucionais dispensam o transporte de código no AUTO; pedidos
+ambíguos conservam a fachada. As nove operações locais continuam implementadas.
+Listas explícitas de ferramentas dos workers prevalecem, inclusive listas vazias.
+O prefetch automático não pode contornar uma restrição explícita.
+
+A seleção dos schemas ocorre antes de iniciar o cliente. A autorização continua
+independente, verificada a cada chamada: descobrir ferramentas antes da aprovação
+do plano não concede permissão de execução. O evento `tool.projection` mede a
+quantidade de ferramentas disponíveis/apresentadas e os bytes serializados dos
+schemas, sem persistir definições ou argumentos. O painel OpenCode apresenta
+essas medidas e mantém a atribuição de tokens como desconhecida. Menos bytes de
+schemas, isoladamente, não comprovam economia no provedor. Sessões nativas diretas
+preservam o inventário anterior, pois sua tarefa não é conhecida na inicialização.
+
+A inspeção de arquivo pequeno identificado lê apenas esse arquivo após validar
+sua presença no inventário Git. Seu digest corresponde ao arquivo consultado.
+Declarações Go exatas são entregues integralmente quando cabem no orçamento; caso
+contrário, permanecem identificadas como trechos. Referências gramaticais ambíguas
+não viram nomes de símbolos. Previsões de custo exigem cinco amostras e pelo menos
+90% de observações bem-sucedidas. Agregados inválidos preservam os valores
+conservadores. Nenhuma permissão ou limite de recursos é ampliado.
+
+O piloto inicial de projeção, com três repetições, preservou a correção, mas não
+atingiu a meta de eficiência para publicação. Consulte a
+[validação do candidato](https://github.com/ivo-lopes/ivoai/blob/fix/economic-runtime/release-notes/economic-runtime-validation.md).
+Os resultados históricos da v0.12.0 abaixo permanecem inalterados.
+
 Duas comparações reais com Codex, cada uma com 12 cenários pareados, passaram nos
 critérios de correção, mas aumentaram tokens e tempo agregados ao expor ferramentas
 MCP estruturais. A rodada posterior mediu 879.174 versus 1.203.629 tokens de entrada

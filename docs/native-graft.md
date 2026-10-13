@@ -174,6 +174,36 @@ be inferred as complete from this architecture description.
 
 ## Measured efficiency
 
+### Economic runtime candidate
+
+The next candidate narrows automatic turn/worker discovery to `code_inspect`
+unless native operation names are explicitly requested. Pure institutional
+requests omit the code transport in AUTO; ambiguous requests retain the facade.
+All nine local operations remain implemented. Explicit worker allowlists still
+take precedence, including an empty deny list. Automatic worker evidence cannot
+bypass an exact tool restriction. Native direct sessions retain the existing
+full discovery contract because their task is not known at launch.
+
+Schema selection is fixed before client startup. Execution admission remains
+independent and is checked for every call; pre-plan discovery does not grant
+permission. The `tool.projection` event measures available/presented tool counts
+and serialized schema bytes without saving tool definitions or arguments. The
+OpenCode diagnostic shows these observations and reports token attribution as
+unknown. Fewer schema bytes alone do not prove lower provider usage.
+
+Small known-file inspection reads only the authorized file after checking Git
+inventory membership; its source digest covers that file, not unrelated sources.
+Exact Go declarations are returned in full when they fit the result budget,
+otherwise explicitly marked as excerpts. Ambiguous natural-language references
+do not become symbol names. Cost predictions require at least five samples and
+at least 90% successful observations; malformed persisted aggregates leave
+conservative defaults in force. No permission or resource ceiling is increased.
+
+The initial three-repetition schema-projection pilot preserved correctness but
+did not meet the release efficiency gate. See
+[candidate validation](https://github.com/ivo-lopes/ivoai/blob/fix/economic-runtime/release-notes/economic-runtime-validation.md).
+The v0.12.0 measurements below remain historical evidence, unchanged.
+
 Two real Codex comparisons, each covering 12 paired scenarios, passed their
 correctness checks but increased aggregate tokens and elapsed time when exposing
 structural MCP tools. The follow-up measured 879,174 versus 1,203,629 input tokens
