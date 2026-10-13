@@ -1,0 +1,24 @@
+{
+  "runtime_revision": "944e946e",
+  "structured_ablation_revision": "0e363710",
+  "baseline_release": "v0.12.0",
+  "baseline_release_binary_sha256": "6d56102801344f4ef76b55e775dd3f2ff78b61c50088e53ce750d36e0a7c5197",
+  "candidate_smoke_binary_sha256": "b236cad5badcf336582cafd91a84ef67f2581e696badb1cd41d9c94efbfa3027",
+  "baseline_release_binary_used_in_api_ablation": false,
+  "api_ablation_arms": "same candidate code: seven schemas vs targeted API projection",
+  "model": "gpt-6.1-sol",
+  "effort": "low",
+  "graft": "0.21.1-ivoai.1",
+  "opencode": "1.19.0-ivoai.2",
+  "global_release_gate_passed": false,
+  "full_16_scenario_comparison_completed": false,
+  "datasets": {
+    "api-causal-after.json": "f3eb9eea44bd9cbd7b0e63874aec7e551a1ca147c686678f3a23fb232f75082e",
+    "api-causal-before.json": "726ca8bc05eab9d7b331e0108c90ea72f825a99518fc4d8392067c8335e3acce",
+    "api-events-after.json": "54673edb49bdb2346311198badf2ee73225d73817baf83a6d57508ff849a749f",
+    "api-schema-v2.json": "58da10529b96b61def76bb23a28a97da381b3574878e336dc2b9b1767547b804",
+    "cache-final.json": "9ff3026abb463abdef8397250511975f28b0224b5d5a848a4848e2b3ff062381",
+    "concurrency-final.json": "695772985a8583a6be3d6b78f12c6470077e4fdb0315350b43a7c089791f10db",
+    "model-provenance.json": "f024679be18e1c5b61556b1208f3423736c3f251e8d2ab9329ea5d64ff7dc98e"
+  }
+}

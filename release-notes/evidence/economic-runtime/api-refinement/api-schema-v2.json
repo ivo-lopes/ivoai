@@ -1,0 +1,326 @@
+[
+  {
+    "Scenario": "api_signatures",
+    "Arm": "B",
+    "Model": "gpt-6.1-sol",
+    "Effort": "low",
+    "Oracle": "api_schema_v2",
+    "Repetition": 0,
+    "ToolsPresented": 1,
+    "InventoryRequests": 1,
+    "ToolSchemaBytes": 594,
+    "ToolSequence": [
+      "command_execution",
+      "mcp_tool_call:graft_find_code"
+    ],
+    "Decisions": [
+      {
+        "Operation": "ask",
+        "ExactName": true,
+        "HasFile": false,
+        "Provider": "direct",
+        "Bytes": 136,
+        "ResponseBytes": 508,
+        "Truncated": false,
+        "Failed": false
+      }
+    ],
+    "ItemCounts": {
+      "agent_message": 2,
+      "command_execution": 1,
+      "mcp_tool_call": 1
+    },
+    "CommandResultBytes": 723,
+    "FixtureSHA256": "59151722507dccd7cfcc596d4668981b52c72b03470bf7746991f7b470e8a005",
+    "TestBinarySHA256": "7c47c05d964607c743c3a89867c4e082139fe21d21ce5ba32a7801f1fe5d2879",
+    "ProjectionExperiment": true,
+    "DurationMS": 25056,
+    "InputTokens": 92397,
+    "CachedInputTokens": 66176,
+    "OutputTokens": 256,
+    "ToolDescriptionTokens": null,
+    "ReasoningTokens": null,
+    "ToolCalls": 2,
+    "NativeCalls": 1,
+    "StructuralCalls": 0,
+    "CacheHits": 0,
+    "NativeResultBytes": 136,
+    "CPUTimeMS": null,
+    "PeakMemoryBytes": null,
+    "CodexProcessCPUMS": 2836,
+    "CodexPeakMemoryBytes": 553291776,
+    "Correct": true
+  },
+  {
+    "Scenario": "api_signatures",
+    "Arm": "A",
+    "Model": "gpt-6.1-sol",
+    "Effort": "low",
+    "Oracle": "api_schema_v2",
+    "Repetition": 0,
+    "ToolsPresented": 7,
+    "InventoryRequests": 1,
+    "ToolSchemaBytes": 4585,
+    "ToolSequence": [
+      "command_execution",
+      "mcp_tool_call:code_inspect",
+      "mcp_tool_call:graft_file_api"
+    ],
+    "Decisions": [
+      {
+        "Operation": "ask",
+        "ExactName": false,
+        "HasFile": false,
+        "Provider": "graft",
+        "Bytes": 428,
+        "ResponseBytes": 924,
+        "Truncated": false,
+        "Failed": false
+      },
+      {
+        "Operation": "skeleton",
+        "ExactName": false,
+        "HasFile": true,
+        "Provider": "direct",
+        "Bytes": 214,
+        "ResponseBytes": 594,
+        "Truncated": false,
+        "Failed": false
+      }
+    ],
+    "ItemCounts": {
+      "agent_message": 2,
+      "command_execution": 1,
+      "mcp_tool_call": 2
+    },
+    "CommandResultBytes": 835,
+    "FixtureSHA256": "59151722507dccd7cfcc596d4668981b52c72b03470bf7746991f7b470e8a005",
+    "TestBinarySHA256": "7c47c05d964607c743c3a89867c4e082139fe21d21ce5ba32a7801f1fe5d2879",
+    "ProjectionExperiment": true,
+    "DurationMS": 20314,
+    "InputTokens": 94020,
+    "CachedInputTokens": 67200,
+    "OutputTokens": 253,
+    "ToolDescriptionTokens": null,
+    "ReasoningTokens": null,
+    "ToolCalls": 3,
+    "NativeCalls": 2,
+    "StructuralCalls": 1,
+    "CacheHits": 0,
+    "NativeResultBytes": 642,
+    "CPUTimeMS": 554,
+    "PeakMemoryBytes": 109080576,
+    "CodexProcessCPUMS": 2731,
+    "CodexPeakMemoryBytes": 527826944,
+    "Correct": true
+  },
+  {
+    "Scenario": "api_signatures",
+    "Arm": "A",
+    "Model": "gpt-6.1-sol",
+    "Effort": "low",
+    "Oracle": "api_schema_v2",
+    "Repetition": 1,
+    "ToolsPresented": 7,
+    "InventoryRequests": 1,
+    "ToolSchemaBytes": 4585,
+    "ToolSequence": [
+      "command_execution",
+      "mcp_tool_call:code_inspect",
+      "command_execution"
+    ],
+    "Decisions": [
+      {
+        "Operation": "ask",
+        "ExactName": false,
+        "HasFile": false,
+        "Provider": "graft",
+        "Bytes": 439,
+        "ResponseBytes": 913,
+        "Truncated": false,
+        "Failed": false
+      }
+    ],
+    "ItemCounts": {
+      "agent_message": 2,
+      "command_execution": 2,
+      "mcp_tool_call": 1
+    },
+    "CommandResultBytes": 908,
+    "FixtureSHA256": "59151722507dccd7cfcc596d4668981b52c72b03470bf7746991f7b470e8a005",
+    "TestBinarySHA256": "7c47c05d964607c743c3a89867c4e082139fe21d21ce5ba32a7801f1fe5d2879",
+    "ProjectionExperiment": true,
+    "DurationMS": 24810,
+    "InputTokens": 119306,
+    "CachedInputTokens": 92288,
+    "OutputTokens": 290,
+    "ToolDescriptionTokens": null,
+    "ReasoningTokens": null,
+    "ToolCalls": 3,
+    "NativeCalls": 1,
+    "StructuralCalls": 1,
+    "CacheHits": 0,
+    "NativeResultBytes": 439,
+    "CPUTimeMS": 553,
+    "PeakMemoryBytes": 109580288,
+    "CodexProcessCPUMS": 2833,
+    "CodexPeakMemoryBytes": 604127232,
+    "Correct": false
+  },
+  {
+    "Scenario": "api_signatures",
+    "Arm": "B",
+    "Model": "gpt-6.1-sol",
+    "Effort": "low",
+    "Oracle": "api_schema_v2",
+    "Repetition": 1,
+    "ToolsPresented": 1,
+    "InventoryRequests": 1,
+    "ToolSchemaBytes": 594,
+    "ToolSequence": [
+      "command_execution",
+      "mcp_tool_call:graft_find_code"
+    ],
+    "Decisions": [
+      {
+        "Operation": "ask",
+        "ExactName": true,
+        "HasFile": false,
+        "Provider": "direct",
+        "Bytes": 136,
+        "ResponseBytes": 508,
+        "Truncated": false,
+        "Failed": false
+      }
+    ],
+    "ItemCounts": {
+      "agent_message": 2,
+      "command_execution": 1,
+      "mcp_tool_call": 1
+    },
+    "CommandResultBytes": 733,
+    "FixtureSHA256": "59151722507dccd7cfcc596d4668981b52c72b03470bf7746991f7b470e8a005",
+    "TestBinarySHA256": "7c47c05d964607c743c3a89867c4e082139fe21d21ce5ba32a7801f1fe5d2879",
+    "ProjectionExperiment": true,
+    "DurationMS": 18823,
+    "InputTokens": 67141,
+    "CachedInputTokens": 41088,
+    "OutputTokens": 193,
+    "ToolDescriptionTokens": null,
+    "ReasoningTokens": null,
+    "ToolCalls": 2,
+    "NativeCalls": 1,
+    "StructuralCalls": 0,
+    "CacheHits": 0,
+    "NativeResultBytes": 136,
+    "CPUTimeMS": null,
+    "PeakMemoryBytes": null,
+    "CodexProcessCPUMS": 2559,
+    "CodexPeakMemoryBytes": 613748736,
+    "Correct": true
+  },
+  {
+    "Scenario": "api_signatures",
+    "Arm": "B",
+    "Model": "gpt-6.1-sol",
+    "Effort": "low",
+    "Oracle": "api_schema_v2",
+    "Repetition": 2,
+    "ToolsPresented": 1,
+    "InventoryRequests": 1,
+    "ToolSchemaBytes": 594,
+    "ToolSequence": [
+      "command_execution",
+      "mcp_tool_call:graft_find_code"
+    ],
+    "Decisions": [
+      {
+        "Operation": "ask",
+        "ExactName": true,
+        "HasFile": false,
+        "Provider": "direct",
+        "Bytes": 136,
+        "ResponseBytes": 508,
+        "Truncated": false,
+        "Failed": false
+      }
+    ],
+    "ItemCounts": {
+      "agent_message": 2,
+      "command_execution": 1,
+      "mcp_tool_call": 1
+    },
+    "CommandResultBytes": 723,
+    "FixtureSHA256": "59151722507dccd7cfcc596d4668981b52c72b03470bf7746991f7b470e8a005",
+    "TestBinarySHA256": "7c47c05d964607c743c3a89867c4e082139fe21d21ce5ba32a7801f1fe5d2879",
+    "ProjectionExperiment": true,
+    "DurationMS": 18732,
+    "InputTokens": 86401,
+    "CachedInputTokens": 62208,
+    "OutputTokens": 241,
+    "ToolDescriptionTokens": null,
+    "ReasoningTokens": null,
+    "ToolCalls": 2,
+    "NativeCalls": 1,
+    "StructuralCalls": 0,
+    "CacheHits": 0,
+    "NativeResultBytes": 136,
+    "CPUTimeMS": null,
+    "PeakMemoryBytes": null,
+    "CodexProcessCPUMS": 2314,
+    "CodexPeakMemoryBytes": 593678336,
+    "Correct": true
+  },
+  {
+    "Scenario": "api_signatures",
+    "Arm": "A",
+    "Model": "gpt-6.1-sol",
+    "Effort": "low",
+    "Oracle": "api_schema_v2",
+    "Repetition": 2,
+    "ToolsPresented": 7,
+    "InventoryRequests": 1,
+    "ToolSchemaBytes": 4585,
+    "ToolSequence": [
+      "command_execution",
+      "mcp_tool_call:graft_find_code"
+    ],
+    "Decisions": [
+      {
+        "Operation": "ask",
+        "ExactName": true,
+        "HasFile": false,
+        "Provider": "direct",
+        "Bytes": 136,
+        "ResponseBytes": 508,
+        "Truncated": false,
+        "Failed": false
+      }
+    ],
+    "ItemCounts": {
+      "agent_message": 2,
+      "command_execution": 1,
+      "mcp_tool_call": 1
+    },
+    "CommandResultBytes": 723,
+    "FixtureSHA256": "59151722507dccd7cfcc596d4668981b52c72b03470bf7746991f7b470e8a005",
+    "TestBinarySHA256": "7c47c05d964607c743c3a89867c4e082139fe21d21ce5ba32a7801f1fe5d2879",
+    "ProjectionExperiment": true,
+    "DurationMS": 13956,
+    "InputTokens": 67540,
+    "CachedInputTokens": 41344,
+    "OutputTokens": 182,
+    "ToolDescriptionTokens": null,
+    "ReasoningTokens": null,
+    "ToolCalls": 2,
+    "NativeCalls": 1,
+    "StructuralCalls": 0,
+    "CacheHits": 0,
+    "NativeResultBytes": 136,
+    "CPUTimeMS": null,
+    "PeakMemoryBytes": null,
+    "CodexProcessCPUMS": 2260,
+    "CodexPeakMemoryBytes": 626556928,
+    "Correct": true
+  }
+]

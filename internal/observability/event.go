@@ -153,6 +153,8 @@ const (
 // It cannot represent prompts, responses, artifacts, headers, environments,
 // credentials, cookies, provider auth records, or private knowledge content.
 type Event struct {
+	ToolsAvailable         *int             `json:"tools_available,omitempty"`
+	ToolsPresented         *int             `json:"tools_presented,omitempty"`
 	CacheHit               *bool            `json:"cache_hit,omitempty"`
 	IndexFresh             *bool            `json:"index_fresh,omitempty"`
 	IndexFiles             *int             `json:"index_files,omitempty"`
@@ -278,6 +280,14 @@ func Normalize(value Event) (Event, error) {
 }
 
 func (e Event) Validate() error {
+	for _, n := range []*int{e.ToolsAvailable, e.ToolsPresented} {
+		if n != nil && (*n < 0 || *n > 20000) {
+			return errors.New("invalid tool projection metric")
+		}
+	}
+	if e.ToolsAvailable != nil && e.ToolsPresented != nil && *e.ToolsPresented > *e.ToolsAvailable {
+		return errors.New("tool projection exceeds inventory")
+	}
 	for _, v := range []*int{e.IndexFiles, e.SourceFiles} {
 		if v != nil && (*v < 0 || *v > 20000) {
 			return errors.New("invalid code coverage metric")

@@ -36,9 +36,9 @@ func (p *Provider) costHistory() toolrouting.History {
 	return h
 }
 func (p *Provider) recordCost(q core.CodeQuery, r core.CodeResult, err error) {
-	// Cache hits need no process prediction update. Unknown/failed setup does not
-	// masquerade as a fast usable provider; failures remain operational events.
-	if r.CacheHit || err != nil {
+	// Cache hits and failures before an actual provider attempt do not predict
+	// execution cost. Attempted failures retain only aggregate measurements.
+	if r.CacheHit || err != nil && r.ProviderVersion == "" {
 		return
 	}
 	path := p.costPath()
@@ -60,7 +60,7 @@ func (p *Provider) recordCost(q core.CodeQuery, r core.CodeResult, err error) {
 	if r.ProviderVersion == "direct" {
 		tool = "direct"
 	}
-	h.Observe(q.Operation, tool, toolrouting.Sample{LatencyMS: r.DurationMS, ResultBytes: len(r.Text), CPU: r.CPUMS, Memory: r.PeakMemoryBytes, Success: true})
+	h.Observe(q.Operation, tool, toolrouting.Sample{LatencyMS: r.DurationMS, ResultBytes: len(r.Text), CPU: r.CPUMS, Memory: r.PeakMemoryBytes, Success: err == nil})
 	body, e := json.Marshal(h)
 	if e == nil && len(body) <= 16384 {
 		_ = platform.AtomicWritePrivate(body, path)

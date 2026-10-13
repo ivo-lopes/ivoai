@@ -1,0 +1,71 @@
+{
+  "Rows": [
+    {
+      "Project": 0,
+      "WallMS": 570,
+      "CacheHit": true,
+      "CPUMS": null,
+      "RSS": null,
+      "Correct": true
+    },
+    {
+      "Project": 0,
+      "WallMS": 597,
+      "CacheHit": false,
+      "CPUMS": 512,
+      "RSS": 106655744,
+      "Correct": true
+    },
+    {
+      "Project": 0,
+      "WallMS": 597,
+      "CacheHit": true,
+      "CPUMS": null,
+      "RSS": null,
+      "Correct": true
+    },
+    {
+      "Project": 0,
+      "WallMS": 622,
+      "CacheHit": true,
+      "CPUMS": null,
+      "RSS": null,
+      "Correct": true
+    },
+    {
+      "Project": 1,
+      "WallMS": 1080,
+      "CacheHit": true,
+      "CPUMS": null,
+      "RSS": null,
+      "Correct": true
+    },
+    {
+      "Project": 1,
+      "WallMS": 1108,
+      "CacheHit": false,
+      "CPUMS": 519,
+      "RSS": 106790912,
+      "Correct": true
+    },
+    {
+      "Project": 1,
+      "WallMS": 1109,
+      "CacheHit": true,
+      "CPUMS": null,
+      "RSS": null,
+      "Correct": true
+    },
+    {
+      "Project": 1,
+      "WallMS": 1134,
+      "CacheHit": true,
+      "CPUMS": null,
+      "RSS": null,
+      "Correct": true
+    }
+  ],
+  "StructuralProcesses": 2,
+  "PeakConcurrentProcesses": 1,
+  "CacheHits": 6
+}

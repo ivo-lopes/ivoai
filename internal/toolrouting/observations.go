@@ -71,7 +71,13 @@ func (h *History) Observe(operation, tool string, s Sample) {
 }
 func (h History) Cost(operation, tool string) (Cost, bool) {
 	a, ok := h.Entries[historyKey(operation, tool)]
-	if !ok || a.Samples <= 0 {
+	// A single fast response is not evidence of a cheaper reliable provider.
+	// Persisted local aggregates are untrusted; malformed or sparse history
+	// leaves the deterministic host defaults in force.
+	if !ok || a.Samples < 5 || a.Samples > 10000 || a.Failures < 0 || a.Failures > a.Samples/10 ||
+		!finite(a.LatencyMS) || a.LatencyMS > 90000 || !finite(a.ResultBytes) || a.ResultBytes > 32768 ||
+		a.CPU != nil && (!finite(*a.CPU) || *a.CPU > 86400000) ||
+		a.Memory != nil && (!finite(*a.Memory) || *a.Memory > 1<<40) {
 		return Cost{}, false
 	}
 	estimate := func(v float64) Estimate { return Estimate{Value: v, Known: true, Estimated: true} }

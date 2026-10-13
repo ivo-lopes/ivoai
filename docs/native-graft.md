@@ -17,9 +17,14 @@ remains pending under IVOAI-188 and is not implied by local fixtures or Codex te
 The reviewed upstream is `trailhq/Graft` version **0.21.1**, commit
 `fe30ead39d5e6f0c921018d364da2bdbc9d4b3ad`, under the MIT license. IVOAI's managed
 identity is **0.21.1-ivoai.1**. Its source tar SHA-256 is
-`ab27f9123eeb59b3987a342a24b7e357ad3412f41c556fde3a76ca9e250d2db1`;
+`d39598390324ad0076a88ab593b63ad2ba352370ea07c073e31f11327979f8e1`;
 the npm lock SHA-256 is
 `c05064ea18ed1b538e27cc788f1d6ea2cae00b2c00c79ef552fc1bb4c54fd5f5`.
+
+The upstream repository was renamed to `trailhq/Trail-Code`. The reviewed source
+archive changes only its root directory prefix; the pinned commit and all 391
+normalized entries retain identical contents, modes and links. The v0.12.0
+archive hash remains recorded in the historical validation report.
 
 The release build installs locked dependencies with lifecycle scripts disabled,
 compiles the ten native bindings explicitly with managed Node **26.11.1** headers,
@@ -173,6 +178,40 @@ must be recorded by the candidate's final validation report; pending work must n
 be inferred as complete from this architecture description.
 
 ## Measured efficiency
+
+### Economic runtime candidate
+
+The next candidate narrows automatic turn/worker discovery to `code_inspect`
+unless native operation names are explicitly requested. Single-signature API
+requests use the implementation lookup contract; a known-file API request uses
+the file-API contract. Mixed relationship/impact requests retain the facade. Pure institutional
+requests omit the code transport in AUTO; ambiguous requests retain the facade.
+All nine local operations remain implemented. Explicit worker allowlists still
+take precedence, including an empty deny list. Automatic worker evidence cannot
+bypass an exact tool restriction. Native direct sessions retain the existing
+full discovery contract because their task is not known at launch.
+
+Schema selection is fixed before client startup. Execution admission remains
+independent and is checked for every call; pre-plan discovery does not grant
+permission. The `tool.projection` event measures available/presented tool counts
+and serialized schema bytes without saving tool definitions or arguments. The
+OpenCode diagnostic shows these observations and reports token attribution as
+unknown. Fewer schema bytes alone do not prove lower provider usage.
+
+Small known-file inspection reads only the authorized file after checking Git
+inventory membership; its source digest covers that file, not unrelated sources.
+Exact Go declarations include the parsed package name, rather than inferring it
+from the directory, and are returned in full when they fit the result budget,
+otherwise explicitly marked as excerpts. Ambiguous natural-language references
+do not become symbol names. Cost predictions require at least five samples and
+at least 90% successful observations; malformed persisted aggregates leave
+conservative defaults in force. Normalized operations are included in sanitized capability events; tool queries
+and repository content remain excluded. No permission or resource ceiling is increased.
+
+The initial three-repetition schema-projection pilot preserved correctness but
+did not meet the release efficiency gate. See
+[candidate validation](https://github.com/ivo-lopes/ivoai/blob/fix/economic-runtime/release-notes/economic-runtime-validation.md).
+The v0.12.0 measurements below remain historical evidence, unchanged.
 
 Two real Codex comparisons, each covering 12 paired scenarios, passed their
 correctness checks but increased aggregate tokens and elapsed time when exposing

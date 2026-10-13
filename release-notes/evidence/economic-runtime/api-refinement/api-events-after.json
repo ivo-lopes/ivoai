@@ -1,0 +1,308 @@
+[
+  {
+    "Scenario": "api_signatures",
+    "Arm": "B",
+    "Model": "gpt-6.1-sol",
+    "Effort": "low",
+    "Repetition": 0,
+    "ToolsPresented": 1,
+    "InventoryRequests": 1,
+    "ToolSchemaBytes": 594,
+    "ToolSequence": [
+      "command_execution",
+      "mcp_tool_call:graft_find_code"
+    ],
+    "Decisions": [
+      {
+        "Operation": "ask",
+        "ExactName": true,
+        "HasFile": false,
+        "Provider": "direct",
+        "Bytes": 136,
+        "ResponseBytes": 486,
+        "Truncated": false,
+        "Failed": false
+      }
+    ],
+    "ItemCounts": {
+      "agent_message": 2,
+      "command_execution": 1,
+      "mcp_tool_call": 1
+    },
+    "CommandResultBytes": 0,
+    "FixtureSHA256": "59151722507dccd7cfcc596d4668981b52c72b03470bf7746991f7b470e8a005",
+    "TestBinarySHA256": "47c8ff50e5a7ea6c77843f7788211fea36ef504659fa4f0d4a36ab5a4fc70eb3",
+    "ProjectionExperiment": true,
+    "DurationMS": 15583,
+    "InputTokens": 67438,
+    "CachedInputTokens": 37760,
+    "OutputTokens": 194,
+    "ToolDescriptionTokens": null,
+    "ReasoningTokens": null,
+    "ToolCalls": 2,
+    "NativeCalls": 1,
+    "StructuralCalls": 0,
+    "CacheHits": 0,
+    "NativeResultBytes": 136,
+    "CPUTimeMS": null,
+    "PeakMemoryBytes": null,
+    "CodexProcessCPUMS": 2279,
+    "CodexPeakMemoryBytes": 677945344,
+    "Correct": true
+  },
+  {
+    "Scenario": "api_signatures",
+    "Arm": "A",
+    "Model": "gpt-6.1-sol",
+    "Effort": "low",
+    "Repetition": 0,
+    "ToolsPresented": 7,
+    "InventoryRequests": 1,
+    "ToolSchemaBytes": 4585,
+    "ToolSequence": [
+      "command_execution",
+      "mcp_tool_call:graft_file_api"
+    ],
+    "Decisions": [
+      {
+        "Operation": "skeleton",
+        "ExactName": false,
+        "HasFile": true,
+        "Provider": "direct",
+        "Bytes": 214,
+        "ResponseBytes": 567,
+        "Truncated": false,
+        "Failed": false
+      }
+    ],
+    "ItemCounts": {
+      "agent_message": 2,
+      "command_execution": 1,
+      "mcp_tool_call": 1
+    },
+    "CommandResultBytes": 0,
+    "FixtureSHA256": "59151722507dccd7cfcc596d4668981b52c72b03470bf7746991f7b470e8a005",
+    "TestBinarySHA256": "47c8ff50e5a7ea6c77843f7788211fea36ef504659fa4f0d4a36ab5a4fc70eb3",
+    "ProjectionExperiment": true,
+    "DurationMS": 15803,
+    "InputTokens": 93183,
+    "CachedInputTokens": 70528,
+    "OutputTokens": 228,
+    "ToolDescriptionTokens": null,
+    "ReasoningTokens": null,
+    "ToolCalls": 2,
+    "NativeCalls": 1,
+    "StructuralCalls": 0,
+    "CacheHits": 0,
+    "NativeResultBytes": 214,
+    "CPUTimeMS": null,
+    "PeakMemoryBytes": null,
+    "CodexProcessCPUMS": 2286,
+    "CodexPeakMemoryBytes": 657428480,
+    "Correct": true
+  },
+  {
+    "Scenario": "api_signatures",
+    "Arm": "A",
+    "Model": "gpt-6.1-sol",
+    "Effort": "low",
+    "Repetition": 1,
+    "ToolsPresented": 7,
+    "InventoryRequests": 1,
+    "ToolSchemaBytes": 4585,
+    "ToolSequence": [
+      "command_execution",
+      "mcp_tool_call:code_inspect"
+    ],
+    "Decisions": [
+      {
+        "Operation": "skeleton",
+        "ExactName": false,
+        "HasFile": true,
+        "Provider": "direct",
+        "Bytes": 214,
+        "ResponseBytes": 567,
+        "Truncated": false,
+        "Failed": false
+      }
+    ],
+    "ItemCounts": {
+      "agent_message": 2,
+      "command_execution": 1,
+      "mcp_tool_call": 1
+    },
+    "CommandResultBytes": 0,
+    "FixtureSHA256": "59151722507dccd7cfcc596d4668981b52c72b03470bf7746991f7b470e8a005",
+    "TestBinarySHA256": "47c8ff50e5a7ea6c77843f7788211fea36ef504659fa4f0d4a36ab5a4fc70eb3",
+    "ProjectionExperiment": true,
+    "DurationMS": 18873,
+    "InputTokens": 92485,
+    "CachedInputTokens": 77568,
+    "OutputTokens": 213,
+    "ToolDescriptionTokens": null,
+    "ReasoningTokens": null,
+    "ToolCalls": 2,
+    "NativeCalls": 1,
+    "StructuralCalls": 0,
+    "CacheHits": 0,
+    "NativeResultBytes": 214,
+    "CPUTimeMS": null,
+    "PeakMemoryBytes": null,
+    "CodexProcessCPUMS": 2540,
+    "CodexPeakMemoryBytes": 684036096,
+    "Correct": true
+  },
+  {
+    "Scenario": "api_signatures",
+    "Arm": "B",
+    "Model": "gpt-6.1-sol",
+    "Effort": "low",
+    "Repetition": 1,
+    "ToolsPresented": 1,
+    "InventoryRequests": 1,
+    "ToolSchemaBytes": 594,
+    "ToolSequence": [
+      "command_execution",
+      "mcp_tool_call:graft_find_code"
+    ],
+    "Decisions": [
+      {
+        "Operation": "ask",
+        "ExactName": true,
+        "HasFile": false,
+        "Provider": "direct",
+        "Bytes": 136,
+        "ResponseBytes": 486,
+        "Truncated": false,
+        "Failed": false
+      }
+    ],
+    "ItemCounts": {
+      "agent_message": 2,
+      "command_execution": 1,
+      "mcp_tool_call": 1
+    },
+    "CommandResultBytes": 0,
+    "FixtureSHA256": "59151722507dccd7cfcc596d4668981b52c72b03470bf7746991f7b470e8a005",
+    "TestBinarySHA256": "47c8ff50e5a7ea6c77843f7788211fea36ef504659fa4f0d4a36ab5a4fc70eb3",
+    "ProjectionExperiment": true,
+    "DurationMS": 17083,
+    "InputTokens": 67346,
+    "CachedInputTokens": 55168,
+    "OutputTokens": 190,
+    "ToolDescriptionTokens": null,
+    "ReasoningTokens": null,
+    "ToolCalls": 2,
+    "NativeCalls": 1,
+    "StructuralCalls": 0,
+    "CacheHits": 0,
+    "NativeResultBytes": 136,
+    "CPUTimeMS": null,
+    "PeakMemoryBytes": null,
+    "CodexProcessCPUMS": 2442,
+    "CodexPeakMemoryBytes": 699187200,
+    "Correct": true
+  },
+  {
+    "Scenario": "api_signatures",
+    "Arm": "B",
+    "Model": "gpt-6.1-sol",
+    "Effort": "low",
+    "Repetition": 2,
+    "ToolsPresented": 1,
+    "InventoryRequests": 1,
+    "ToolSchemaBytes": 594,
+    "ToolSequence": [
+      "command_execution",
+      "mcp_tool_call:graft_find_code"
+    ],
+    "Decisions": [
+      {
+        "Operation": "ask",
+        "ExactName": true,
+        "HasFile": false,
+        "Provider": "direct",
+        "Bytes": 136,
+        "ResponseBytes": 487,
+        "Truncated": false,
+        "Failed": false
+      }
+    ],
+    "ItemCounts": {
+      "agent_message": 2,
+      "command_execution": 1,
+      "mcp_tool_call": 1
+    },
+    "CommandResultBytes": 0,
+    "FixtureSHA256": "59151722507dccd7cfcc596d4668981b52c72b03470bf7746991f7b470e8a005",
+    "TestBinarySHA256": "47c8ff50e5a7ea6c77843f7788211fea36ef504659fa4f0d4a36ab5a4fc70eb3",
+    "ProjectionExperiment": true,
+    "DurationMS": 20437,
+    "InputTokens": 92605,
+    "CachedInputTokens": 80256,
+    "OutputTokens": 259,
+    "ToolDescriptionTokens": null,
+    "ReasoningTokens": null,
+    "ToolCalls": 2,
+    "NativeCalls": 1,
+    "StructuralCalls": 0,
+    "CacheHits": 0,
+    "NativeResultBytes": 136,
+    "CPUTimeMS": null,
+    "PeakMemoryBytes": null,
+    "CodexProcessCPUMS": 2895,
+    "CodexPeakMemoryBytes": 721088512,
+    "Correct": true
+  },
+  {
+    "Scenario": "api_signatures",
+    "Arm": "A",
+    "Model": "gpt-6.1-sol",
+    "Effort": "low",
+    "Repetition": 2,
+    "ToolsPresented": 7,
+    "InventoryRequests": 1,
+    "ToolSchemaBytes": 4585,
+    "ToolSequence": [
+      "command_execution",
+      "mcp_tool_call:graft_find_code"
+    ],
+    "Decisions": [
+      {
+        "Operation": "ask",
+        "ExactName": true,
+        "HasFile": false,
+        "Provider": "direct",
+        "Bytes": 136,
+        "ResponseBytes": 486,
+        "Truncated": false,
+        "Failed": false
+      }
+    ],
+    "ItemCounts": {
+      "agent_message": 2,
+      "command_execution": 1,
+      "mcp_tool_call": 1
+    },
+    "CommandResultBytes": 0,
+    "FixtureSHA256": "59151722507dccd7cfcc596d4668981b52c72b03470bf7746991f7b470e8a005",
+    "TestBinarySHA256": "47c8ff50e5a7ea6c77843f7788211fea36ef504659fa4f0d4a36ab5a4fc70eb3",
+    "ProjectionExperiment": true,
+    "DurationMS": 17424,
+    "InputTokens": 67400,
+    "CachedInputTokens": 37760,
+    "OutputTokens": 184,
+    "ToolDescriptionTokens": null,
+    "ReasoningTokens": null,
+    "ToolCalls": 2,
+    "NativeCalls": 1,
+    "StructuralCalls": 0,
+    "CacheHits": 0,
+    "NativeResultBytes": 136,
+    "CPUTimeMS": null,
+    "PeakMemoryBytes": null,
+    "CodexProcessCPUMS": 2665,
+    "CodexPeakMemoryBytes": 758566912,
+    "Correct": true
+  }
+]

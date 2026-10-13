@@ -28,3 +28,36 @@ func TestAggregateCostIsBoundedAndDoesNotInferUnknown(t *testing.T) {
 		t.Fatal("invalid measure accepted")
 	}
 }
+
+func TestCostRequiresRepeatedSuccessfulObservations(t *testing.T) {
+	var h History
+	for i := range 4 {
+		h.Observe("ask", "graft", Sample{LatencyMS: 100, ResultBytes: 400, Success: true})
+		if _, ok := h.Cost("ask", "graft"); ok {
+			t.Fatalf("only %d samples displaced conservative defaults", i+1)
+		}
+	}
+	h.Observe("ask", "graft", Sample{LatencyMS: 100, ResultBytes: 400, Success: true})
+	if _, ok := h.Cost("ask", "graft"); !ok {
+		t.Fatal("stable history unavailable")
+	}
+	h.Observe("ask", "graft", Sample{LatencyMS: 0, ResultBytes: 0, Success: false})
+	if _, ok := h.Cost("ask", "graft"); ok {
+		t.Fatal("unreliable history used for cost selection")
+	}
+}
+
+func TestCostRejectsMalformedPersistedAggregates(t *testing.T) {
+	for _, a := range []Aggregate{
+		{Samples: 10, LatencyMS: -1},
+		{Samples: 10, ResultBytes: 32769},
+		{Samples: 10001},
+		{Samples: 10, Failures: -1},
+		{Samples: 10, LatencyMS: 90001},
+	} {
+		h := History{Entries: map[string]Aggregate{"ask:graft": a}}
+		if _, ok := h.Cost("ask", "graft"); ok {
+			t.Fatalf("invalid persisted aggregate accepted: %+v", a)
+		}
+	}
+}

@@ -10,9 +10,53 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 )
+
+func TestProjectedFacadeSurvivesPlanAdmissionAndKeepsExactGrants(t *testing.T) {
+	p, calls := testProvider(t)
+	g, err := externalmcp.Start([]externalmcp.Target{{Name: "ivoai-code", Local: p.Handler(), Restricted: true, AllowedTools: ToolNames()}}, "full")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer g.Close()
+	selected := ProjectTools("Inspect the APIs in this repository")
+	g.SetToolProjection(func(_, name string) bool { return slices.Contains(selected, name) })
+	g.SetToolAdmission(func(_, _ string) (bool, bool) { return false, false })
+	measurements := make(chan externalmcp.InventoryMetrics, 1)
+	g.SetInventoryObserver(func(_ string, m externalmcp.InventoryMetrics) { measurements <- m })
+	client := mcp.NewClient(&mcp.Implementation{Name: "fixture", Version: "1"}, nil)
+	s, err := client.Connect(context.Background(), &mcp.StreamableClientTransport{Endpoint: g.URL(0), HTTPClient: &http.Client{Transport: authorizedTransport{g.Token()}}, DisableStandaloneSSE: true}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer s.Close()
+	list, err := s.ListTools(context.Background(), nil)
+	if err != nil || len(list.Tools) != 1 || list.Tools[0].Name != "code_inspect" {
+		t.Fatalf("pre-plan schema: %v %v", list, err)
+	}
+	m := <-measurements
+	if m.Available != 7 || m.Presented != 1 || m.SchemaBytesAfter >= m.SchemaBytesBefore {
+		t.Fatalf("projection measurements: %+v", m)
+	}
+	t.Logf("schemas: %d -> %d; serialized bytes: %d -> %d (not tokens)", m.Available, m.Presented, m.SchemaBytesBefore, m.SchemaBytesAfter)
+	args := &mcp.CallToolParams{Name: "code_inspect", Arguments: map[string]any{"operation": "grep", "query": "package"}}
+	if result, err := s.CallTool(context.Background(), args); err == nil && !result.IsError {
+		t.Fatal("projection granted execution before approval")
+	}
+	g.SetToolAdmission(func(_, name string) (bool, bool) { return name == "code_inspect", true })
+	if result, err := s.CallTool(context.Background(), args); err != nil || result.IsError {
+		t.Fatalf("admitted facade failed: %v %+v", err, result)
+	}
+	if calls.Load() != 0 {
+		t.Fatal("literal inspection started structural process")
+	}
+	if result, err := s.CallTool(context.Background(), &mcp.CallToolParams{Name: "graft_repo_map", Arguments: map[string]any{}}); err == nil && !result.IsError {
+		t.Fatal("ungranted alias executed")
+	}
+}
 
 type authorizedTransport struct{ token string }
 

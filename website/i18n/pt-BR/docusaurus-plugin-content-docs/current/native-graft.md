@@ -19,9 +19,14 @@ fixtures locais nem por testes com Codex.
 O upstream revisado é `trailhq/Graft`, versão **0.21.1**, commit
 `fe30ead39d5e6f0c921018d364da2bdbc9d4b3ad`, sob licença MIT. A identidade gerenciada
 pelo IVOAI é **0.21.1-ivoai.1**. O SHA-256 do tar de origem é
-`ab27f9123eeb59b3987a342a24b7e357ad3412f41c556fde3a76ca9e250d2db1`;
+`d39598390324ad0076a88ab593b63ad2ba352370ea07c073e31f11327979f8e1`;
 o SHA-256 do lock npm é
 `c05064ea18ed1b538e27cc788f1d6ea2cae00b2c00c79ef552fc1bb4c54fd5f5`.
+
+O repositório upstream foi renomeado para `trailhq/Trail-Code`. O arquivo revisado
+altera apenas o prefixo do diretório raiz; o commit e as 391 entradas normalizadas
+preservam conteúdo, modos e links. O hash anterior permanece no relatório
+histórico da v0.12.0.
 
 O build de release instala as dependências fixadas com scripts de ciclo de vida
 desabilitados, compila explicitamente os dez bindings nativos com os headers do
@@ -190,6 +195,37 @@ arquitetura não transforma trabalho pendente em concluído.
 
 ## Eficiência medida
 
+### Candidato de otimização econômica
+
+O próximo candidato apresenta `code_inspect` nas sessões AUTO e nos workers,
+preservando os contratos nativos quando seus nomes forem solicitados. Pedidos
+exclusivamente institucionais dispensam o transporte de código no AUTO; pedidos
+ambíguos conservam a fachada. As nove operações locais continuam implementadas.
+Listas explícitas de ferramentas dos workers prevalecem, inclusive listas vazias.
+O prefetch automático não pode contornar uma restrição explícita.
+
+A seleção dos schemas ocorre antes de iniciar o cliente. A autorização continua
+independente, verificada a cada chamada: descobrir ferramentas antes da aprovação
+do plano não concede permissão de execução. O evento `tool.projection` mede a
+quantidade de ferramentas disponíveis/apresentadas e os bytes serializados dos
+schemas, sem persistir definições ou argumentos. O painel OpenCode apresenta
+essas medidas e mantém a atribuição de tokens como desconhecida. Menos bytes de
+schemas, isoladamente, não comprovam economia no provedor. Sessões nativas diretas
+preservam o inventário anterior, pois sua tarefa não é conhecida na inicialização.
+
+A inspeção de arquivo pequeno identificado lê apenas esse arquivo após validar
+sua presença no inventário Git. Seu digest corresponde ao arquivo consultado.
+Declarações Go exatas são entregues integralmente quando cabem no orçamento; caso
+contrário, permanecem identificadas como trechos. Referências gramaticais ambíguas
+não viram nomes de símbolos. Previsões de custo exigem cinco amostras e pelo menos
+90% de observações bem-sucedidas. Agregados inválidos preservam os valores
+conservadores. Nenhuma permissão ou limite de recursos é ampliado.
+
+O piloto inicial de projeção, com três repetições, preservou a correção, mas não
+atingiu a meta de eficiência para publicação. Consulte a
+[validação do candidato](https://github.com/ivo-lopes/ivoai/blob/fix/economic-runtime/release-notes/economic-runtime-validation.md).
+Os resultados históricos da v0.12.0 abaixo permanecem inalterados.
+
 Duas comparações reais com Codex, cada uma com 12 cenários pareados, passaram nos
 critérios de correção, mas aumentaram tokens e tempo agregados ao expor ferramentas
 MCP estruturais. A rodada posterior mediu 879.174 versus 1.203.629 tokens de entrada
@@ -207,3 +243,15 @@ uma meta de 100 ms. O build inicial levou 4.241 ms; atualizações por edição,
 renomeação e remoção levaram 628/767/744 ms, com pico de RSS observado de
 109.203.456 bytes. O [relatório e os dados brutos](https://github.com/ivo-lopes/ivoai/blob/v0.12.0/release-notes/graft-native-validation.md)
 registram revisões, escopo e limitações. Resultados desfavoráveis são preservados.
+
+
+### Refinamento de consultas de API
+
+Uma consulta de assinatura única usa o contrato de localização de implementação;
+a consulta de API de arquivo conhecido usa o contrato de API de arquivo. Pedidos
+mistos com relações ou impacto conservam a fachada geral. Declarações Go incluem
+o nome do pacote obtido pelo parser, sem inferi-lo pelo diretório. A operação
+normalizada aparece nos eventos de capacidade; consultas e conteúdo privado não
+são persistidos. Esses refinamentos não representam comprovação de economia
+agregada: os resultados negativos e os critérios pendentes permanecem no relatório
+de validação do PR #30.

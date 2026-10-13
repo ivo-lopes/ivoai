@@ -10,7 +10,7 @@ import (
 )
 
 func TestObservationIsSanitizedAndDistinguishesUnknown(t *testing.T) {
-	r := core.CodeResult{Text: "SECRET private repository body", ProviderVersion: Version, CacheHit: true, Fresh: true, Files: 2, IndexedFiles: 1, DurationMS: 12}
+	r := core.CodeResult{Operation: "SECRET arbitrary operation", Text: "SECRET private repository body", ProviderVersion: Version, CacheHit: true, Fresh: true, Files: 2, IndexedFiles: 1, DurationMS: 12}
 	event := Observation(r, nil)
 	normalized, err := observability.Normalize(event)
 	if err != nil {

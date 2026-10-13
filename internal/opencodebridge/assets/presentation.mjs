@@ -53,9 +53,16 @@ export function panel(status) {
   // A completed inspection remains diagnostic evidence after task lifecycle
   // rows advance. This is its observed state, not a fresh repository probe.
   const code = retained.filter(event => event.operation === "code.inspect").at(-1)
+  const projection = retained.filter(event => event.operation === "capability.resolve" && event.capability === "tool.projection").at(-1)
+  if (projection) {
+    const measured = value => Number.isFinite(value) && value >= 0 ? value : "unknown"
+    orchestration.push(line(`Tools (last discovery): ${measured(projection.tools_presented)}/${measured(projection.tools_available)}`),
+      line(`  schema bytes=${measured(projection.bytes_before)}→${measured(projection.bytes_after)}`), line("  tokens=unknown"))
+  }
   if (code) {
     const metric = (value, suffix = "") => Number.isFinite(value) && value >= 0 ? value + suffix : "unknown"
-    orchestration.push(line(`Code (last observed): ${clean(code.provider)} · cache=${typeof code.cache_hit === "boolean" ? code.cache_hit ? "hit" : "miss" : "unknown"} · index=${typeof code.index_fresh === "boolean" ? code.index_fresh ? "fresh" : "stale" : "unknown"}`),
+    orchestration.push(line(`Code (last observed): ${clean(code.provider)}`),
+      line(`  cache=${typeof code.cache_hit === "boolean" ? code.cache_hit ? "hit" : "miss" : "unknown"} · index=${typeof code.index_fresh === "boolean" ? code.index_fresh ? "fresh" : "stale" : "unknown"}`),
       line(`  observed=${clean(code.observed_at, "unknown", 64)} · coverage=${metric(code.index_files)}/${metric(code.source_files)} files · latency=${metric(code.duration_ms, "ms")} · memory=${code.peak_memory_bytes == null ? "unknown" : metric(Math.round(code.peak_memory_bytes / 1048576), "MiB")} · cpu=${metric(code.cpu_ms, "ms")}`))
   }
   result.splice(2, 0, ...orchestration)

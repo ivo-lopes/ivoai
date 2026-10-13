@@ -63,6 +63,9 @@ func (p *Provider) Query(ctx context.Context, q core.CodeQuery) (result core.Cod
 	start := time.Now()
 	defer func() {
 		result.DurationMS = time.Since(start).Milliseconds()
+		if normalized, e := Normalize(q); e == nil {
+			result.Operation = normalized.Operation
+		}
 		p.recordCost(q, result, err)
 		if p.Observe != nil {
 			p.Observe(result, err)
@@ -161,6 +164,9 @@ func (p *Provider) Query(ctx context.Context, q core.CodeQuery) (result core.Cod
 	if run == nil {
 		run = p.runProcess
 	}
+	// Mark actual attempts separately from rejected requests or unavailable
+	// setup. Failed attempts must not disappear from reliability estimates.
+	result.ProviderVersion = Version
 	response, err := run(ctx, request)
 	if err != nil {
 		_ = os.Remove(receiptPath)

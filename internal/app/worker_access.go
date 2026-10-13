@@ -235,7 +235,7 @@ func (a *App) prepareWorkerAccess(ctx context.Context, cfg config.Config, store 
 	provider, providerErr := a.CodeIntelligenceProvider(ctx, request.Directory, current.KnowledgeScopeID)
 	if providerErr == nil {
 		provider.Observe = observeCode
-		allowed := codeintel.ToolNames()
+		allowed := codeintel.ProjectTools(task.Task)
 		if exact, ok := task.AllowedMCPTools[nativeCodeMCP]; ok {
 			allowed = append([]string(nil), exact...)
 		}

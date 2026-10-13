@@ -13,8 +13,8 @@ files += [path.relative_to(repo).as_posix() for path in sorted((repo/'patches/gr
 provenance = {
     'managedVersion': '0.21.1-ivoai.1', 'upstreamVersion': '0.21.1',
     'revision': 'fe30ead39d5e6f0c921018d364da2bdbc9d4b3ad',
-    'sourceURL': 'https://codeload.github.com/trailhq/Graft/tar.gz/fe30ead39d5e6f0c921018d364da2bdbc9d4b3ad',
-    'sourceSHA256': 'ab27f9123eeb59b3987a342a24b7e357ad3412f41c556fde3a76ca9e250d2db1',
+    'sourceURL': 'https://codeload.github.com/trailhq/Trail-Code/tar.gz/fe30ead39d5e6f0c921018d364da2bdbc9d4b3ad',
+    'sourceSHA256': 'd39598390324ad0076a88ab593b63ad2ba352370ea07c073e31f11327979f8e1',
     'lockSHA256': 'c05064ea18ed1b538e27cc788f1d6ea2cae00b2c00c79ef552fc1bb4c54fd5f5',
     'reviewedBuildLockSHA256': hashlib.sha256((payload/'build-package-lock.json').read_bytes()).hexdigest(),
     'runtimeLockSHA256': hashlib.sha256((payload/'package-lock.json').read_bytes()).hexdigest(),

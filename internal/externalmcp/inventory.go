@@ -12,6 +12,13 @@ import (
 
 type inventoryRequestKey struct{}
 
+// InventoryMetrics contains serialization measurements only, never tool names,
+// descriptions, arguments or response content. Bytes are not token counts.
+type InventoryMetrics struct {
+	Available, Presented                int
+	SchemaBytesBefore, SchemaBytesAfter int
+}
+
 func writeDenied(w http.ResponseWriter, id json.RawMessage, reason string) {
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(map[string]any{"jsonrpc": "2.0", "id": id, "result": map[string]any{"isError": true, "content": []map[string]string{{"type": "text", "text": reason}}}})
@@ -19,7 +26,7 @@ func writeDenied(w http.ResponseWriter, id json.RawMessage, reason string) {
 
 // tools/list is finite JSON or finite SSE. No unauthorized schema is projected.
 // Unknown encodings and oversized inventories fail closed, never pass through.
-func filterInventory(response *http.Response, allowed map[string]bool) error {
+func filterInventory(response *http.Response, allowed map[string]bool, observers ...func(InventoryMetrics)) error {
 	body, err := io.ReadAll(io.LimitReader(response.Body, (4<<20)+1))
 	response.Body.Close()
 	if err != nil || len(body) > 4<<20 {
@@ -62,6 +69,13 @@ func filterInventory(response *http.Response, allowed map[string]bool) error {
 			return nil, errors.New("incomplete MCP inventory")
 		}
 		envelope["result"], _ = json.Marshal(result)
+		before, _ := json.Marshal(tools)
+		after, _ := json.Marshal(selected)
+		for _, observe := range observers {
+			if observe != nil {
+				observe(InventoryMetrics{len(tools), len(selected), len(before), len(after)})
+			}
+		}
 		return json.Marshal(envelope)
 	}
 	if strings.HasPrefix(response.Header.Get("Content-Type"), "application/json") {

@@ -2,6 +2,7 @@ package externalmcp
 
 import (
 	"context"
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -10,6 +11,18 @@ import (
 	"testing"
 	"time"
 )
+
+func TestInventoryMeasurementsAreObservedAndContentFree(t *testing.T) {
+	response := &http.Response{Header: http.Header{"Content-Type": {"application/json"}}, Body: io.NopCloser(strings.NewReader(`{"jsonrpc":"2.0","id":1,"result":{"tools":[{"name":"read_tool","description":"PRIVATE"},{"name":"other"}]}}`))}
+	var got InventoryMetrics
+	if err := filterInventory(response, map[string]bool{}, func(m InventoryMetrics) { got = m }); err != nil {
+		t.Fatal(err)
+	}
+	body, _ := json.Marshal(got)
+	if got.Available != 2 || got.Presented != 0 || got.SchemaBytesAfter != 2 || got.SchemaBytesBefore <= got.SchemaBytesAfter || strings.Contains(string(body), "PRIVATE") {
+		t.Fatalf("invalid sanitized measurement: %s", body)
+	}
+}
 
 func TestExactInventoryJSONAndSSE(t *testing.T) {
 	for _, sse := range []bool{false, true} {
@@ -38,6 +51,48 @@ func TestExactInventoryJSONAndSSE(t *testing.T) {
 		}
 		g.Close()
 		server.Close()
+	}
+}
+
+func TestInventoryProjectionNeverBroadensStaticScope(t *testing.T) {
+	for _, sse := range []bool{false, true} {
+		upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			body := `{"jsonrpc":"2.0","id":1,"result":{"tools":[{"name":"read_tool"},{"name":"write_tool"},{"name":"outside_scope"}]}}`
+			w.Header().Set("Content-Type", "application/json")
+			if sse {
+				w.Header().Set("Content-Type", "text/event-stream")
+				body = "data: " + body + "\n\n"
+			}
+			io.WriteString(w, body)
+		}))
+		t.Cleanup(upstream.Close)
+		g, err := Start([]Target{{Name: "code", URL: upstream.URL, Restricted: true, AllowedTools: []string{"read_tool", "write_tool"}}}, "full")
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(g.Close)
+		var admitted atomic.Bool
+		g.SetToolProjection(func(server, tool string) bool {
+			// Calling back into the gateway also proves the callback is not
+			// invoked while its mutex is held.
+			_ = g.Pending()
+			return admitted.Load() && server == "code" && tool != "write_tool"
+		})
+		for _, allow := range []bool{false, true, false} {
+			admitted.Store(allow)
+			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+			r, err := gatewayRequest(ctx, g, 0, `{"jsonrpc":"2.0","id":1,"method":"tools/list"}`)
+			if err != nil {
+				cancel()
+				t.Fatal(err)
+			}
+			body, err := io.ReadAll(r.Body)
+			r.Body.Close()
+			cancel()
+			if err != nil || r.StatusCode != 200 || strings.Contains(string(body), "read_tool") != allow || strings.Contains(string(body), "write_tool") || strings.Contains(string(body), "outside_scope") {
+				t.Fatalf("admission=%v inventory=%s error=%v", allow, body, err)
+			}
+		}
 	}
 }
 

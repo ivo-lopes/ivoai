@@ -1,5 +1,14 @@
 # Releases
 
+## v0.12.1
+
+Compatible corrections to exact/API retrieval, sanitized operation telemetry and
+OpenCode catalog readiness. Published after explicit maintainer instruction with
+**economic acceptance still failed** and the full 16-scenario comparison incomplete.
+No aggregate token or latency savings are claimed. See the
+[release notes](https://github.com/ivo-lopes/ivoai/blob/v0.12.1/release-notes/v0.12.1.md)
+for validation, compatibility and rollback limits.
+
 ## v0.12.0
 
 Consolidates the P1/P2 session, hook-recovery, telemetry and automation-profile

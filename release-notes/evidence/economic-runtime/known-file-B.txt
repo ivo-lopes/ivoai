@@ -1,0 +1,11 @@
+goos: linux
+goarch: amd64
+pkg: github.com/ivo-lopes/ivoai/internal/codeintel
+cpu: AMD Ryzen 5 PRO 4650U with Radeon Graphics
+BenchmarkKnownFileContext-2   	      20	   2937555 ns/op	   85301 B/op	     931 allocs/op
+BenchmarkKnownFileContext-2   	      20	   2505452 ns/op	   85271 B/op	     931 allocs/op
+BenchmarkKnownFileContext-2   	      20	   2675911 ns/op	   86955 B/op	     931 allocs/op
+BenchmarkKnownFileContext-2   	      20	   2696599 ns/op	   85263 B/op	     931 allocs/op
+BenchmarkKnownFileContext-2   	      20	   2343427 ns/op	   86700 B/op	     930 allocs/op
+PASS
+ok  	github.com/ivo-lopes/ivoai/internal/codeintel	0.478s

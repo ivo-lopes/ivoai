@@ -3,7 +3,7 @@
 The source is `trailhq/Graft` commit
 `fe30ead39d5e6f0c921018d364da2bdbc9d4b3ad`, version `0.21.1` (MIT).
 The source tar SHA-256 is
-`ab27f9123eeb59b3987a342a24b7e357ad3412f41c556fde3a76ca9e250d2db1`;
+`d39598390324ad0076a88ab593b63ad2ba352370ea07c073e31f11327979f8e1`;
 the npm lock SHA-256 is
 `c05064ea18ed1b538e27cc788f1d6ea2cae00b2c00c79ef552fc1bb4c54fd5f5`.
 The managed artifact identity is `0.21.1-ivoai.1`. No upstream tag is moved.

@@ -44,15 +44,32 @@ type pending struct {
 	reply chan bool
 }
 type Gateway struct {
-	url, token    string
-	interactive   atomic.Bool
-	server        *http.Server
-	transport     *http.Transport
-	mu            sync.Mutex
-	pending       map[string]pending
-	cancel        context.CancelFunc
-	admission     func() bool
-	toolAdmission func(server, tool string) (allowed, approved bool)
+	url, token        string
+	interactive       atomic.Bool
+	server            *http.Server
+	transport         *http.Transport
+	mu                sync.Mutex
+	pending           map[string]pending
+	cancel            context.CancelFunc
+	admission         func() bool
+	toolAdmission     func(server, tool string) (allowed, approved bool)
+	toolProjection    func(server, tool string) bool
+	inventoryObserver func(string, InventoryMetrics)
+}
+
+// SetInventoryObserver receives content-free measurements of actual discovery.
+func (g *Gateway) SetInventoryObserver(observe func(string, InventoryMetrics)) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	g.inventoryObserver = observe
+}
+
+// SetToolProjection narrows discovery without granting execution. Configure it
+// before launching a client: clients may retain their initial tool inventory.
+func (g *Gateway) SetToolProjection(check func(string, string) bool) {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	g.toolProjection = check
 }
 
 func (g *Gateway) SetToolAdmission(check func(string, string) (bool, bool)) {
@@ -154,7 +171,26 @@ func Start(targets []Target, mode string) (*Gateway, error) {
 				}
 				response.Header.Del("Set-Cookie")
 				if target.Restricted && response.Request.Context().Value(inventoryRequestKey{}) == true && response.StatusCode == http.StatusOK {
-					return filterInventory(response, allowedTools)
+					// Projection is distinct from execution admission: an initial
+					// pre-plan inventory must not permanently hide future task tools.
+					// Call host policy outside the gateway mutex.
+					g.mu.Lock()
+					check := g.toolProjection
+					observe := g.inventoryObserver
+					g.mu.Unlock()
+					visible := allowedTools
+					if check != nil {
+						visible = make(map[string]bool, len(allowedTools))
+						for tool := range allowedTools {
+							allowed := check(target.Name, tool)
+							visible[tool] = allowed
+						}
+					}
+					return filterInventory(response, visible, func(m InventoryMetrics) {
+						if observe != nil {
+							observe(target.Name, m)
+						}
+					})
 				}
 				response.Body = &boundedBody{ReadCloser: response.Body, remaining: 16 << 20}
 				return nil
