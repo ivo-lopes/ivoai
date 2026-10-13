@@ -19,9 +19,14 @@ fixtures locais nem por testes com Codex.
 O upstream revisado é `trailhq/Graft`, versão **0.21.1**, commit
 `fe30ead39d5e6f0c921018d364da2bdbc9d4b3ad`, sob licença MIT. A identidade gerenciada
 pelo IVOAI é **0.21.1-ivoai.1**. O SHA-256 do tar de origem é
-`ab27f9123eeb59b3987a342a24b7e357ad3412f41c556fde3a76ca9e250d2db1`;
+`d39598390324ad0076a88ab593b63ad2ba352370ea07c073e31f11327979f8e1`;
 o SHA-256 do lock npm é
 `c05064ea18ed1b538e27cc788f1d6ea2cae00b2c00c79ef552fc1bb4c54fd5f5`.
+
+O repositório upstream foi renomeado para `trailhq/Trail-Code`. O arquivo revisado
+altera apenas o prefixo do diretório raiz; o commit e as 391 entradas normalizadas
+preservam conteúdo, modos e links. O hash anterior permanece no relatório
+histórico da v0.12.0.
 
 O build de release instala as dependências fixadas com scripts de ciclo de vida
 desabilitados, compila explicitamente os dez bindings nativos com os headers do

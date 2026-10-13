@@ -17,9 +17,14 @@ remains pending under IVOAI-188 and is not implied by local fixtures or Codex te
 The reviewed upstream is `trailhq/Graft` version **0.21.1**, commit
 `fe30ead39d5e6f0c921018d364da2bdbc9d4b3ad`, under the MIT license. IVOAI's managed
 identity is **0.21.1-ivoai.1**. Its source tar SHA-256 is
-`ab27f9123eeb59b3987a342a24b7e357ad3412f41c556fde3a76ca9e250d2db1`;
+`d39598390324ad0076a88ab593b63ad2ba352370ea07c073e31f11327979f8e1`;
 the npm lock SHA-256 is
 `c05064ea18ed1b538e27cc788f1d6ea2cae00b2c00c79ef552fc1bb4c54fd5f5`.
+
+The upstream repository was renamed to `trailhq/Trail-Code`. The reviewed source
+archive changes only its root directory prefix; the pinned commit and all 391
+normalized entries retain identical contents, modes and links. The v0.12.0
+archive hash remains recorded in the historical validation report.
 
 The release build installs locked dependencies with lifecycle scripts disabled,
 compiles the ten native bindings explicitly with managed Node **26.11.1** headers,
