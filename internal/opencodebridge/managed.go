@@ -506,68 +506,114 @@ func (m *Managed) waitReady(ctx context.Context) error {
 	}
 }
 
+// Provider readiness records only bounded protocol states, never response bodies,
+// provider model names, paths, credentials or arbitrary transport error strings.
 func (m *Managed) waitProviderReady(ctx context.Context, directory string) error {
-	client := &http.Client{Timeout: 2 * time.Second}
+	client := &http.Client{Timeout: 2 * time.Second, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
 	target, err := url.Parse(m.URL + "/config/providers")
 	if err != nil {
-		return err
+		return errors.New("invalid provider readiness endpoint")
 	}
 	query := target.Query()
 	query.Set("directory", directory)
 	target.RawQuery = query.Encode()
-	deadline := time.NewTimer(20 * time.Second)
-	defer deadline.Stop()
-	ticker := time.NewTicker(100 * time.Millisecond)
-	defer ticker.Stop()
+	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
+	defer cancel()
+	attempts, state := 0, "not_requested"
+	delay := 100 * time.Millisecond
+	failure := func(cause error) error {
+		return fmt.Errorf("IVOAI provider catalog readiness: last=%s attempts=%d: %w", state, attempts, cause)
+	}
 	for {
+		if err := ctx.Err(); err != nil {
+			return failure(err)
+		}
 		select {
 		case <-m.done:
-			return errors.New("backend exited before provider readiness")
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-deadline.C:
-			return errors.New("IVOAI provider catalog readiness timeout")
-		case <-ticker.C:
-			request, err := http.NewRequestWithContext(ctx, http.MethodGet, target.String(), nil)
-			if err != nil {
-				return err
+			return failure(errors.New("backend exited"))
+		default:
+		}
+		request, err := http.NewRequestWithContext(ctx, http.MethodGet, target.String(), nil)
+		if err != nil {
+			return errors.New("invalid provider readiness request")
+		}
+		request.SetBasicAuth("ivoai", m.password)
+		request.Header.Set("Cache-Control", "no-cache")
+		attempts++
+		response, err := client.Do(request)
+		if err != nil {
+			if ctx.Err() != nil {
+				return failure(ctx.Err())
 			}
-			request.SetBasicAuth("ivoai", m.password)
-			response, err := client.Do(request)
-			if err != nil {
-				continue
+			state = "communication_failure"
+		} else {
+			state = providerCatalogState(response, m.expectedModels)
+			if state == "ready" {
+				return nil
 			}
-			body, readErr := io.ReadAll(io.LimitReader(response.Body, (64<<10)+1))
-			_ = response.Body.Close()
-			if response.StatusCode != http.StatusOK || readErr != nil || len(body) > 64<<10 {
-				continue
-			}
-			var registry struct {
-				Providers []struct {
-					ID     string         `json:"id"`
-					Models map[string]any `json:"models"`
-				} `json:"providers"`
-			}
-			if json.Unmarshal(body, &registry) != nil {
-				continue
-			}
-			for _, provider := range registry.Providers {
-				if provider.ID != "ivoai" {
-					continue
-				}
-				ready := true
-				for _, model := range m.expectedModels {
-					if _, ok := provider.Models[model]; !ok {
-						ready = false
-						break
-					}
-				}
-				if ready && len(m.expectedModels) > 0 {
-					return nil
-				}
+			if state == "authentication" || state == "redirect" {
+				return failure(errors.New("terminal response"))
 			}
 		}
+		timer := time.NewTimer(delay)
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			return failure(ctx.Err())
+		case <-m.done:
+			timer.Stop()
+			return failure(errors.New("backend exited"))
+		case <-timer.C:
+		}
+		delay = min(2*delay, time.Second)
 	}
+}
+
+func providerCatalogState(response *http.Response, expected []string) string {
+	defer response.Body.Close()
+	switch {
+	case response.StatusCode == http.StatusUnauthorized || response.StatusCode == http.StatusForbidden:
+		return "authentication"
+	case response.StatusCode >= 300 && response.StatusCode < 400:
+		return "redirect"
+	case response.StatusCode == http.StatusAccepted:
+		return "loading"
+	case response.StatusCode != http.StatusOK:
+		return "unavailable"
+	}
+	if age := response.Header.Get("Age"); age != "" && age != "0" {
+		return "cached_response"
+	}
+	body, err := io.ReadAll(io.LimitReader(response.Body, (64<<10)+1))
+	if err != nil || len(body) > 64<<10 {
+		return "invalid_response"
+	}
+	var registry struct {
+		Providers []struct {
+			ID     string         `json:"id"`
+			Models map[string]any `json:"models"`
+		} `json:"providers"`
+	}
+	if json.Unmarshal(body, &registry) != nil {
+		return "invalid_response"
+	}
+	if len(registry.Providers) == 0 {
+		return "empty_catalog"
+	}
+	for _, provider := range registry.Providers {
+		if provider.ID != "ivoai" {
+			continue
+		}
+		for _, model := range expected {
+			if _, ok := provider.Models[model]; !ok {
+				return "partial_catalog"
+			}
+		}
+		if len(expected) > 0 {
+			return "ready"
+		}
+	}
+	return "partial_catalog"
 }
 
 func (m *Managed) Close(ctx context.Context) error {
