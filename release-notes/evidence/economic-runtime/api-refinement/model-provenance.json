@@ -1,0 +1,44 @@
+{
+  "codex_version": "0.162.1",
+  "binary_sha256": "628e35487d888a28f0427fc37501da529dd3d81fcbad7a2c3421c1e8670d92e1",
+  "model_list": [
+    {
+      "id": "gpt-6.1-sol",
+      "model": "gpt-6.1-sol",
+      "efforts": [
+        {
+          "reasoningEffort": "low",
+          "description": "Fast responses with lighter reasoning"
+        },
+        {
+          "reasoningEffort": "medium",
+          "description": "Balances speed and reasoning depth for everyday tasks"
+        },
+        {
+          "reasoningEffort": "high",
+          "description": "Greater reasoning depth for complex problems"
+        },
+        {
+          "reasoningEffort": "xhigh",
+          "description": "Extra high reasoning depth for complex problems"
+        },
+        {
+          "reasoningEffort": "max",
+          "description": "Maximum reasoning depth for the hardest problems"
+        },
+        {
+          "reasoningEffort": "ultra",
+          "description": "Maximum reasoning with automatic task delegation"
+        }
+      ]
+    }
+  ],
+  "thread_start": {
+    "model": "gpt-6.1-sol",
+    "modelProvider": "openai",
+    "reasoningEffort": "low"
+  },
+  "inference_executed": false,
+  "provenance": "official_app_server_client_selection",
+  "independent_backend_model_attestation": null
+}

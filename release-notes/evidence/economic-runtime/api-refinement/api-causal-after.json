@@ -1,0 +1,261 @@
+[
+  {
+    "Scenario": "api_signatures",
+    "Arm": "B",
+    "Model": "gpt-6.1-sol",
+    "Effort": "low",
+    "Repetition": 0,
+    "ToolsPresented": 1,
+    "InventoryRequests": 1,
+    "ToolSchemaBytes": 594,
+    "ToolSequence": [
+      "command_execution",
+      "command_execution",
+      "mcp_tool_call:graft_find_code"
+    ],
+    "Decisions": [
+      {
+        "Operation": "ask",
+        "ExactName": true,
+        "HasFile": false,
+        "Provider": "direct",
+        "Bytes": 136,
+        "ResponseBytes": 486,
+        "Truncated": false,
+        "Failed": false
+      }
+    ],
+    "ProjectionExperiment": true,
+    "DurationMS": 20506,
+    "InputTokens": 92648,
+    "CachedInputTokens": 66176,
+    "OutputTokens": 285,
+    "ToolDescriptionTokens": null,
+    "ReasoningTokens": null,
+    "ToolCalls": 3,
+    "NativeCalls": 1,
+    "StructuralCalls": 0,
+    "CacheHits": 0,
+    "NativeResultBytes": 136,
+    "CPUTimeMS": null,
+    "PeakMemoryBytes": null,
+    "CodexProcessCPUMS": 2332,
+    "CodexPeakMemoryBytes": 702550016,
+    "Correct": true
+  },
+  {
+    "Scenario": "api_signatures",
+    "Arm": "A",
+    "Model": "gpt-6.1-sol",
+    "Effort": "low",
+    "Repetition": 0,
+    "ToolsPresented": 7,
+    "InventoryRequests": 1,
+    "ToolSchemaBytes": 4585,
+    "ToolSequence": [
+      "command_execution",
+      "mcp_tool_call:graft_find_code"
+    ],
+    "Decisions": [
+      {
+        "Operation": "ask",
+        "ExactName": true,
+        "HasFile": false,
+        "Provider": "direct",
+        "Bytes": 136,
+        "ResponseBytes": 486,
+        "Truncated": false,
+        "Failed": false
+      }
+    ],
+    "ProjectionExperiment": true,
+    "DurationMS": 15600,
+    "InputTokens": 67566,
+    "CachedInputTokens": 53504,
+    "OutputTokens": 206,
+    "ToolDescriptionTokens": null,
+    "ReasoningTokens": null,
+    "ToolCalls": 2,
+    "NativeCalls": 1,
+    "StructuralCalls": 0,
+    "CacheHits": 0,
+    "NativeResultBytes": 136,
+    "CPUTimeMS": null,
+    "PeakMemoryBytes": null,
+    "CodexProcessCPUMS": 2426,
+    "CodexPeakMemoryBytes": 691879936,
+    "Correct": true
+  },
+  {
+    "Scenario": "api_signatures",
+    "Arm": "A",
+    "Model": "gpt-6.1-sol",
+    "Effort": "low",
+    "Repetition": 1,
+    "ToolsPresented": 7,
+    "InventoryRequests": 1,
+    "ToolSchemaBytes": 4585,
+    "ToolSequence": [
+      "command_execution",
+      "mcp_tool_call:graft_find_code"
+    ],
+    "Decisions": [
+      {
+        "Operation": "ask",
+        "ExactName": true,
+        "HasFile": false,
+        "Provider": "direct",
+        "Bytes": 136,
+        "ResponseBytes": 486,
+        "Truncated": false,
+        "Failed": false
+      }
+    ],
+    "ProjectionExperiment": true,
+    "DurationMS": 17637,
+    "InputTokens": 67408,
+    "CachedInputTokens": 41088,
+    "OutputTokens": 206,
+    "ToolDescriptionTokens": null,
+    "ReasoningTokens": null,
+    "ToolCalls": 2,
+    "NativeCalls": 1,
+    "StructuralCalls": 0,
+    "CacheHits": 0,
+    "NativeResultBytes": 136,
+    "CPUTimeMS": null,
+    "PeakMemoryBytes": null,
+    "CodexProcessCPUMS": 2461,
+    "CodexPeakMemoryBytes": 718618624,
+    "Correct": true
+  },
+  {
+    "Scenario": "api_signatures",
+    "Arm": "B",
+    "Model": "gpt-6.1-sol",
+    "Effort": "low",
+    "Repetition": 1,
+    "ToolsPresented": 1,
+    "InventoryRequests": 1,
+    "ToolSchemaBytes": 594,
+    "ToolSequence": [
+      "command_execution",
+      "mcp_tool_call:graft_find_code"
+    ],
+    "Decisions": [
+      {
+        "Operation": "ask",
+        "ExactName": true,
+        "HasFile": false,
+        "Provider": "direct",
+        "Bytes": 136,
+        "ResponseBytes": 486,
+        "Truncated": false,
+        "Failed": false
+      }
+    ],
+    "ProjectionExperiment": true,
+    "DurationMS": 21099,
+    "InputTokens": 92795,
+    "CachedInputTokens": 60288,
+    "OutputTokens": 250,
+    "ToolDescriptionTokens": null,
+    "ReasoningTokens": null,
+    "ToolCalls": 2,
+    "NativeCalls": 1,
+    "StructuralCalls": 0,
+    "CacheHits": 0,
+    "NativeResultBytes": 136,
+    "CPUTimeMS": null,
+    "PeakMemoryBytes": null,
+    "CodexProcessCPUMS": 2718,
+    "CodexPeakMemoryBytes": 762068992,
+    "Correct": true
+  },
+  {
+    "Scenario": "api_signatures",
+    "Arm": "B",
+    "Model": "gpt-6.1-sol",
+    "Effort": "low",
+    "Repetition": 2,
+    "ToolsPresented": 1,
+    "InventoryRequests": 1,
+    "ToolSchemaBytes": 594,
+    "ToolSequence": [
+      "command_execution",
+      "mcp_tool_call:graft_find_code"
+    ],
+    "Decisions": [
+      {
+        "Operation": "ask",
+        "ExactName": true,
+        "HasFile": false,
+        "Provider": "direct",
+        "Bytes": 136,
+        "ResponseBytes": 486,
+        "Truncated": false,
+        "Failed": false
+      }
+    ],
+    "ProjectionExperiment": true,
+    "DurationMS": 14816,
+    "InputTokens": 67612,
+    "CachedInputTokens": 37888,
+    "OutputTokens": 186,
+    "ToolDescriptionTokens": null,
+    "ReasoningTokens": null,
+    "ToolCalls": 2,
+    "NativeCalls": 1,
+    "StructuralCalls": 0,
+    "CacheHits": 0,
+    "NativeResultBytes": 136,
+    "CPUTimeMS": null,
+    "PeakMemoryBytes": null,
+    "CodexProcessCPUMS": 2724,
+    "CodexPeakMemoryBytes": 785031168,
+    "Correct": true
+  },
+  {
+    "Scenario": "api_signatures",
+    "Arm": "A",
+    "Model": "gpt-6.1-sol",
+    "Effort": "low",
+    "Repetition": 2,
+    "ToolsPresented": 7,
+    "InventoryRequests": 1,
+    "ToolSchemaBytes": 4585,
+    "ToolSequence": [
+      "command_execution",
+      "mcp_tool_call:graft_file_api"
+    ],
+    "Decisions": [
+      {
+        "Operation": "skeleton",
+        "ExactName": false,
+        "HasFile": true,
+        "Provider": "direct",
+        "Bytes": 214,
+        "ResponseBytes": 567,
+        "Truncated": false,
+        "Failed": false
+      }
+    ],
+    "ProjectionExperiment": true,
+    "DurationMS": 14953,
+    "InputTokens": 67399,
+    "CachedInputTokens": 55168,
+    "OutputTokens": 163,
+    "ToolDescriptionTokens": null,
+    "ReasoningTokens": null,
+    "ToolCalls": 2,
+    "NativeCalls": 1,
+    "StructuralCalls": 0,
+    "CacheHits": 0,
+    "NativeResultBytes": 214,
+    "CPUTimeMS": null,
+    "PeakMemoryBytes": null,
+    "CodexProcessCPUMS": 2621,
+    "CodexPeakMemoryBytes": 751611904,
+    "Correct": true
+  }
+]

@@ -345,3 +345,132 @@ The official 0.162.1 App Server `model/list` and `thread/start` were exercised
 in an isolated CODEX_HOME without credentials or inference. They report the
 requested model and reasoning effort as client selection. They do not attest
 which backend model served previous exec turns; no runtime_verified flag is used.
+
+### Findings and implementation from the API investigation
+
+The instrumented pre-fix reproduction recorded B doing non-exact `ask` through
+Graft followed by file `skeleton` or shell inspection. A used direct file API
+inspection or exact symbol lookup. Arguments, source and full model messages
+were not persisted. This proves an avoidable retrieval sequence in these new
+samples; the old 51,902-token outlier cannot be reconstructed retrospectively.
+An independent fixture demonstrated a correctness gap in direct evidence: the
+actual Go package name was absent, and a directory name cannot establish it.
+
+`7cf9b6b8` supplies the parsed package with the bounded declaration and projects
+the existing implementation/file-API contracts for single API tasks. Mixed
+relations/impact retain the facade, and explicit grants remain authoritative.
+Normalized operation names now appear as `code.<operation>` in the existing
+capability event. Unrecognized operation text is omitted from telemetry.
+No additional orchestration service, Graft switch, permissions or memory limit.
+This is not a general host proof that every acceptance criterion is satisfied:
+relationships and executable verification still need their own evidence.
+
+The old and new API ablations are recorded separately under
+[evidence/economic-runtime/api-refinement](evidence/economic-runtime/api-refinement).
+Each row is three independent cold-local-cache pairs; A has seven schemas and
+B has the then-current projection. These are discovery ablations on a shared
+runtime, not published-v0.12.0 versus candidate full execution.
+
+| API ablation | Input A / B | ms A / B | Calls A / B | Structural A / B | Correct A / B |
+|---|---:|---:|---:|---:|---:|
+| Instrumented before | 253588 / 281789 | 57446 / 68535 | 7 / 9 | 0 / 3 | 3/3 / 3/3 |
+| First refinement | 202373 / 253055 | 48190 / 56421 | 6 / 7 | 0 / 0 | 3/3 / 3/3 |
+| Refinement with item counters | 253068 / 227389 | 52100 / 53103 | 6 / 6 | 0 / 0 | 3/3 / 3/3 |
+
+The sign of token improvement changes between repetitions/experiments. Removing
+structural calls does not establish aggregate token or latency savings. The
+item counters expose the same completed command/MCP/message counts with different
+provider input totals; those counters are not an official per-inference request
+trace. No hidden reasoning or backend routing is inferred from them.
+`CommandResultBytes` in `api-events-after.json` is **invalid/unavailable** due to
+a missing JSON field tag in that instrumentation revision; the zero values must
+not be used. The tag is corrected before `api_schema_v2`. Historical files remain
+unaltered. Byte measurements are never substituted for provider token accounting.
+
+### Readiness reliability
+
+`5796e7fd` preserves the 20-second ceiling while classifying loading (202),
+unavailable status, empty/partial catalogs, invalid response, communication
+failure and timeout. Authentication errors and redirects terminate immediately.
+Responses carrying positive cache age are not accepted as fresh readiness.
+Transient retries use bounded backoff instead of ten requests per second.
+Diagnostics contain fixed state labels/counts, never response bodies, model
+catalog contents, credentials or arbitrary network errors. Cancellation retains
+its original error identity.
+
+The old code repeated 401 nine times before a one-second fixture deadline. The
+new tests prove one terminal attempt, recover from loading/empty responses, and
+reject redirects/stale catalog responses. Race tests passed. The actual pinned
+OpenCode interface passed nine launches (three repetitions at widths 60/100/160,
+154.774 seconds total). This does not establish the cause of the historical
+intermittent timeout, which remains unknown; its next occurrence is diagnosable.
+
+### Local cache and concurrency measurements
+
+Real reviewed Graft artifacts, synthetic data, race detector; no inference.
+The 121-file cold build took 3860 ms. Ten warm requests all hit cache, p95 19 ms
+(target 100 ms); source edit/rename/delete took 521/612/595 ms and invalidated
+receipts correctly. Maximum measured process RSS was 108085248 bytes. These were
+local tool-layer observations during other host validation, not an idle-host or
+provider-token benchmark.
+
+Eight concurrent requests across two distinct repositories and organization
+scopes produced two structural processes in total, at most one active process,
+six cache hits and eight correct isolated responses. Peak observed RSS was
+106790912 bytes. This proves provider admission/deduplication/isolation for that
+fixture; it is not a multiple-worker or frontend-session A/B benchmark.
+
+### Current acceptance boundary
+
+The full published-binary comparison across all 16 requested scenarios remains
+unexecuted. Do not relabel the focused API ablation, previous App prefetch subset,
+provider concurrency fixture or regression suites as that matrix. In particular,
+new real comparisons for monorepos, unsupported parsers, institutional Memory /
+Context, multiple workers, multi-turn reuse and interrupted frontend continuity
+remain missing. The earlier matrix above continues to describe those gaps.
+The gate remains failed; PR #30 stays draft and no release is authorized.
+
+Full normal Go tests, vet and govulncheck passed after the runtime corrections;
+the owning codeintel/observability/opencodebridge packages passed race tests.
+The real managed OpenCode -> IVOAI -> Codex smoke passed in 143.95 seconds with
+approved plan, integrated task and structural evidence, zero repository and
+personal-configuration mutations. Documentation was regenerated in EN and pt-BR.
+The final PR CI must validate the exact committed tree, including the final test
+harness. Component pins and manifests remain unchanged.
+
+The official model provenance probe used isolated CODEX_HOME and no inference:
+model/list includes gpt-6.1-sol/low; thread/start reports that selection and the
+openai provider. This is official client selection, not independent backend
+attestation and not retroactive proof of historical exec inference identity.
+
+A final directed search of accessible local repository directories found no
+Plane MCP source. Explicit pessoal-ivo still returns WORKSPACE_REQUIRED because
+the exposed schema lacks workspace_slug. No canonical project identity or writes
+were obtained. IVOAI-188 remains pending real Claude; no Claude inference occurred.
+
+### Structured API result and release decision
+
+`api_schema_v2` ran at `0e363710` (runtime identical to `944e946e`) with test
+binary SHA-256 `7c47c05d964607c743c3a89867c4e082139fe21d21ce5ba32a7801f1fe5d2879`.
+All six rows and fixture hashes are retained. B passed 3/3; A passed 2/3. A
+repetition 1 failed the strict acceptance check; the overall opt-in test **failed**.
+No private answers were retained and no particular mismatched field is inferred.
+
+Among the two pairs correct in both arms, input was **161560 -> 178798** (+10.67%)
+and time **34270 -> 43788 ms** (+27.77%). Across all rows, including the A failure,
+input was 280866 -> 245939 and time 59080 -> 62611 ms. The all-row token reduction
+is not equivalent-quality savings. B made zero structural calls in all three
+samples; eliminating those calls still did not satisfy the economic gate.
+No further retries were used to select a favorable measurement.
+
+The provider event stream does not expose per-inference input attribution, so
+identical completed item counts cannot prove identical inference work or explain
+all residual variance. No prompts or reasoning were captured to force attribution.
+The full 16-scenario final acceptance, published A/B binaries, complete worker /
+continuity coverage and aggregate savings remain unproven. This is a partial
+technical delivery, not completion of the requested release mission.
+
+Binary and dataset identities are in `api-refinement/manifest.json`. The published
+v0.12.0 binary hash is recorded as provenance, explicitly **not** as an executable
+used by the schema ablation. No release was published and no artifacts are claimed
+as newly distributed. Final CI status belongs to the existing PR #30.
