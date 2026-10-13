@@ -3,6 +3,7 @@ package codeintel
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"go/format"
@@ -33,6 +34,12 @@ func TestExtendedLiveCodexBenchmark(t *testing.T) {
 	if codex == "" || node == "" || dist == "" {
 		t.Fatal("official Codex and reviewed artifact required")
 	}
+	projectionExperiment := os.Getenv("IVOAI_ECONOMIC_PROJECTION") == "1"
+	repetitions := 1
+	if projectionExperiment {
+		repetitions = 3
+		guardExtendedCodexConfig(t)
+	}
 	type scenario struct {
 		name, prompt   string
 		expected       []string
@@ -56,6 +63,11 @@ func TestExtendedLiveCodexBenchmark(t *testing.T) {
 	}
 	type row struct {
 		Scenario, Arm, Model, Effort                                          string
+		Repetition                                                            int
+		ToolsPresented                                                        int
+		InventoryRequests, ToolSchemaBytes                                    int
+		ToolSequence                                                          []string
+		ProjectionExperiment                                                  bool
 		DurationMS                                                            int64
 		InputTokens, CachedInputTokens, OutputTokens                          any
 		ToolDescriptionTokens, ReasoningTokens                                any
@@ -78,161 +90,203 @@ func TestExtendedLiveCodexBenchmark(t *testing.T) {
 		}
 	}
 	defer persist()
-	for _, s := range cases {
-		for _, arm := range []string{"A", "B"} {
-			t.Run(s.name+"/"+arm, func(t *testing.T) {
-				p, _ := testProvider(t)
-				p.Node = node
-				p.Distribution = dist
-				p.Executable = os.Args[0]
-				p.run = p.runProcess
-				if s.real {
-					root := os.Getenv("IVOAI_GRAFT_BENCHMARK_REPO")
-					if root == "" {
-						t.Fatal("explicit read-only IVOAI repository required")
-					}
-					p.Root = root
-				} else {
-					extendedFixture(t, p.Root)
-					if s.name == "worktree_uncommitted" {
-						p.Root = extendedWorktree(t, p.Root)
-					}
+	for repetition := range repetitions {
+		for scenarioIndex, s := range cases {
+			arms := []string{"A", "B"}
+			if projectionExperiment && (repetition+scenarioIndex)%2 == 1 {
+				arms = []string{"B", "A"}
+			}
+			for _, arm := range arms {
+				name := s.name + "/" + arm
+				if projectionExperiment {
+					name = fmt.Sprintf("%s/repeat%d/%s", s.name, repetition, arm)
 				}
-				before := extendedTreeDigest(t, p.Root)
-				baseline := map[string][]byte{}
-				if s.edit {
-					files, err := Inventory(context.Background(), p.Root)
-					if err != nil {
-						t.Fatal(err)
+				t.Run(name, func(t *testing.T) {
+					p, _ := testProvider(t)
+					p.Node = node
+					p.Distribution = dist
+					p.Executable = os.Args[0]
+					p.run = p.runProcess
+					if s.real {
+						root := os.Getenv("IVOAI_GRAFT_BENCHMARK_REPO")
+						if root == "" {
+							t.Fatal("explicit read-only IVOAI repository required")
+						}
+						p.Root = root
+					} else {
+						extendedFixture(t, p.Root)
+						if s.name == "worktree_uncommitted" {
+							p.Root = extendedWorktree(t, p.Root)
+						}
 					}
-					snapshot, err := Snapshot(p.Root, files)
-					if err != nil {
-						t.Fatal(err)
+					before := extendedTreeDigest(t, p.Root)
+					baseline := map[string][]byte{}
+					if s.edit {
+						files, err := Inventory(context.Background(), p.Root)
+						if err != nil {
+							t.Fatal(err)
+						}
+						snapshot, err := Snapshot(p.Root, files)
+						if err != nil {
+							t.Fatal(err)
+						}
+						for _, f := range snapshot.Files {
+							baseline[f.Path] = f.Body
+						}
+						baseline["README.md"], err = os.ReadFile(filepath.Join(p.Root, "README.md"))
+						if err != nil {
+							t.Fatal(err)
+						}
 					}
-					for _, f := range snapshot.Files {
-						baseline[f.Path] = f.Body
+					r := row{Scenario: s.name, Arm: arm, Model: "gpt-6.1-sol", Effort: "low", Repetition: repetition, ProjectionExperiment: projectionExperiment}
+					var mu sync.Mutex
+					p.Observe = func(result core.CodeResult, err error) {
+						if err != nil {
+							return
+						}
+						mu.Lock()
+						defer mu.Unlock()
+						r.NativeCalls++
+						r.NativeResultBytes += len(result.Text)
+						if result.ProviderVersion != "direct" {
+							r.StructuralCalls++
+						}
+						if result.CacheHit {
+							r.CacheHits++
+						}
+						if result.CPUMS != nil {
+							if r.CPUTimeMS == nil {
+								r.CPUTimeMS = new(int64)
+							}
+							*r.CPUTimeMS += *result.CPUMS
+						}
+						if result.PeakMemoryBytes != nil && (r.PeakMemoryBytes == nil || *result.PeakMemoryBytes > *r.PeakMemoryBytes) {
+							v := *result.PeakMemoryBytes
+							r.PeakMemoryBytes = &v
+						}
 					}
-					baseline["README.md"], err = os.ReadFile(filepath.Join(p.Root, "README.md"))
-					if err != nil {
-						t.Fatal(err)
+					projected := ToolNames()
+					if projectionExperiment && arm == "B" {
+						projected = ProjectTools(s.prompt)
 					}
-				}
-				r := row{Scenario: s.name, Arm: arm, Model: "gpt-6.1-sol", Effort: "low"}
-				var mu sync.Mutex
-				p.Observe = func(result core.CodeResult, err error) {
-					if err != nil {
-						return
+					if projectionExperiment || arm == "B" {
+						r.ToolsPresented = len(projected)
+					}
+					gateway, e := externalmcp.Start([]externalmcp.Target{{Name: "ivoai-code", Local: p.Handler(), Restricted: true, AllowedTools: projected}}, "full")
+					if e != nil {
+						t.Fatal(e)
+					}
+					defer gateway.Close()
+					gateway.SetInventoryObserver(func(_ string, m externalmcp.InventoryMetrics) {
+						mu.Lock()
+						defer mu.Unlock()
+						r.InventoryRequests++
+						r.ToolSchemaBytes = m.SchemaBytesAfter
+						r.ToolsPresented = m.Presented
+					})
+					sandbox := "read-only"
+					if s.edit {
+						sandbox = "workspace-write"
+					}
+					args := []string{"exec", "--ignore-user-config", "--ephemeral", "--sandbox", sandbox, "--skip-git-repo-check", "--json", "--color", "never", "-m", r.Model, "-c", `model_reasoning_effort="low"`, "-C", p.Root}
+					// Reuse the managed executor's explicit untrusted override. Codex
+					// otherwise persists inferred trust for workspace-write exec.
+					args = append(args, codexresolver.ProjectTrustArgs(p.Root)...)
+					env := []string{}
+					for _, entry := range os.Environ() {
+						name, _, _ := strings.Cut(entry, "=")
+						if name != "OPENAI_API_KEY" && name != "CODEX_API_KEY" {
+							env = append(env, entry)
+						}
+					}
+					if arm == "B" || projectionExperiment {
+						args = append(args, "-c", "mcp_servers.ivoai-code.url="+strconv.Quote(gateway.URL(0)), "-c", `mcp_servers.ivoai-code.bearer_token_env_var="IVOAI_TEST_CODE_TOKEN"`, "-c", `mcp_servers.ivoai-code.default_tools_approval_mode="approve"`)
+						env = append(env, "IVOAI_TEST_CODE_TOKEN="+gateway.Token())
+					}
+					args = append(args, "Authorized local benchmark. Use an approved repository inspection capability when available and appropriate; avoid redundant exploration. Do not access external targets, accounts, credentials or external network services. Do not run installation commands. Host-side validation runs offline after your turn. "+s.prompt+" Respond concisely with the requested facts.")
+					ctx, cancel := context.WithTimeout(context.Background(), 180*time.Second)
+					defer cancel()
+					cmd := exec.CommandContext(ctx, codex, args...)
+					cmd.Env = env
+					out := &extendedBoundedBuffer{max: 2 << 20}
+					cmd.Stdout = out
+					cmd.Stderr = &extendedBoundedBuffer{max: 64 << 10}
+					start := time.Now()
+					e = cmd.Run()
+					r.DurationMS = time.Since(start).Milliseconds()
+					if cmd.ProcessState != nil {
+						if usage, ok := cmd.ProcessState.SysUsage().(*syscall.Rusage); ok {
+							cpu := usage.Utime.Sec*1000 + usage.Utime.Usec/1000 + usage.Stime.Sec*1000 + usage.Stime.Usec/1000
+							rss := usage.Maxrss * 1024
+							r.CodexProcessCPUMS = &cpu
+							r.CodexPeakMemoryBytes = &rss
+						}
+					}
+					if e != nil {
+						r.Error = "provider_execution_failed"
+						t.Error(r.Error)
+					}
+					var answer strings.Builder
+					for _, line := range bytes.Split(out.Bytes(), []byte("\n")) {
+						var event struct {
+							Type  string
+							Item  struct{ Type, Text, Tool string }
+							Usage map[string]any
+						}
+						if json.Unmarshal(line, &event) != nil {
+							continue
+						}
+						if event.Type == "turn.completed" {
+							r.InputTokens = event.Usage["input_tokens"]
+							r.CachedInputTokens = event.Usage["cached_input_tokens"]
+							r.OutputTokens = event.Usage["output_tokens"]
+						}
+						if event.Type == "item.completed" && (event.Item.Type == "command_execution" || event.Item.Type == "mcp_tool_call") {
+							r.ToolCalls++
+							label := event.Item.Type
+							if event.Item.Type == "mcp_tool_call" {
+								for _, tool := range ToolNames() {
+									if event.Item.Tool == tool {
+										label += ":" + tool
+										break
+									}
+								}
+							}
+							if len(r.ToolSequence) < 64 {
+								r.ToolSequence = append(r.ToolSequence, label)
+							}
+						}
+						if event.Item.Type == "agent_message" {
+							answer.WriteString(event.Item.Text)
+						}
+					}
+					r.Correct = e == nil && r.InputTokens != nil
+					for _, expected := range s.expected {
+						if !strings.Contains(answer.String(), expected) {
+							r.Correct = false
+						}
+					}
+					if s.edit {
+						body, err := os.ReadFile(filepath.Join(p.Root, s.file))
+						if err != nil || !strings.Contains(string(body), s.contains) {
+							r.Correct = false
+						}
+						if !extendedValidateEdit(p.Root, s.name, baseline) || !extendedCompile(t, p.Root, s.name) {
+							r.Correct = false
+						}
+					} else if extendedTreeDigest(t, p.Root) != before {
+						r.Correct = false
+						t.Error("read-only scenario modified source")
+					}
+					if !r.Correct {
+						t.Error("scenario correctness failed; private model output not persisted")
 					}
 					mu.Lock()
-					defer mu.Unlock()
-					r.NativeCalls++
-					r.NativeResultBytes += len(result.Text)
-					if result.ProviderVersion != "direct" {
-						r.StructuralCalls++
-					}
-					if result.CacheHit {
-						r.CacheHits++
-					}
-					if result.CPUMS != nil {
-						if r.CPUTimeMS == nil {
-							r.CPUTimeMS = new(int64)
-						}
-						*r.CPUTimeMS += *result.CPUMS
-					}
-					if result.PeakMemoryBytes != nil && (r.PeakMemoryBytes == nil || *result.PeakMemoryBytes > *r.PeakMemoryBytes) {
-						v := *result.PeakMemoryBytes
-						r.PeakMemoryBytes = &v
-					}
-				}
-				gateway, e := externalmcp.Start([]externalmcp.Target{{Name: "ivoai-code", Local: p.Handler(), Restricted: true, AllowedTools: ToolNames()}}, "full")
-				if e != nil {
-					t.Fatal(e)
-				}
-				defer gateway.Close()
-				sandbox := "read-only"
-				if s.edit {
-					sandbox = "workspace-write"
-				}
-				args := []string{"exec", "--ignore-user-config", "--ephemeral", "--sandbox", sandbox, "--skip-git-repo-check", "--json", "--color", "never", "-m", r.Model, "-c", `model_reasoning_effort="low"`, "-C", p.Root}
-				// Reuse the managed executor's explicit untrusted override. Codex
-				// otherwise persists inferred trust for workspace-write exec.
-				args = append(args, codexresolver.ProjectTrustArgs(p.Root)...)
-				env := os.Environ()
-				if arm == "B" {
-					args = append(args, "-c", "mcp_servers.ivoai-code.url="+strconv.Quote(gateway.URL(0)), "-c", `mcp_servers.ivoai-code.bearer_token_env_var="IVOAI_TEST_CODE_TOKEN"`, "-c", `mcp_servers.ivoai-code.default_tools_approval_mode="approve"`)
-					env = append(env, "IVOAI_TEST_CODE_TOKEN="+gateway.Token())
-				}
-				args = append(args, "Authorized local benchmark. Use an approved repository inspection capability when available and appropriate; avoid redundant exploration. Do not access external targets, accounts, credentials or external network services. Do not run installation commands. Host-side validation runs offline after your turn. "+s.prompt+" Respond concisely with the requested facts.")
-				ctx, cancel := context.WithTimeout(context.Background(), 180*time.Second)
-				defer cancel()
-				cmd := exec.CommandContext(ctx, codex, args...)
-				cmd.Env = env
-				out := &extendedBoundedBuffer{max: 2 << 20}
-				cmd.Stdout = out
-				cmd.Stderr = &extendedBoundedBuffer{max: 64 << 10}
-				start := time.Now()
-				e = cmd.Run()
-				r.DurationMS = time.Since(start).Milliseconds()
-				if cmd.ProcessState != nil {
-					if usage, ok := cmd.ProcessState.SysUsage().(*syscall.Rusage); ok {
-						cpu := usage.Utime.Sec*1000 + usage.Utime.Usec/1000 + usage.Stime.Sec*1000 + usage.Stime.Usec/1000
-						rss := usage.Maxrss * 1024
-						r.CodexProcessCPUMS = &cpu
-						r.CodexPeakMemoryBytes = &rss
-					}
-				}
-				if e != nil {
-					r.Error = "provider_execution_failed"
-					t.Error(r.Error)
-				}
-				var answer strings.Builder
-				for _, line := range bytes.Split(out.Bytes(), []byte("\n")) {
-					var event struct {
-						Type  string
-						Item  struct{ Type, Text string }
-						Usage map[string]any
-					}
-					if json.Unmarshal(line, &event) != nil {
-						continue
-					}
-					if event.Type == "turn.completed" {
-						r.InputTokens = event.Usage["input_tokens"]
-						r.CachedInputTokens = event.Usage["cached_input_tokens"]
-						r.OutputTokens = event.Usage["output_tokens"]
-					}
-					if event.Type == "item.completed" && (event.Item.Type == "command_execution" || event.Item.Type == "mcp_tool_call") {
-						r.ToolCalls++
-					}
-					if event.Item.Type == "agent_message" {
-						answer.WriteString(event.Item.Text)
-					}
-				}
-				r.Correct = e == nil && r.InputTokens != nil
-				for _, expected := range s.expected {
-					if !strings.Contains(answer.String(), expected) {
-						r.Correct = false
-					}
-				}
-				if s.edit {
-					body, err := os.ReadFile(filepath.Join(p.Root, s.file))
-					if err != nil || !strings.Contains(string(body), s.contains) {
-						r.Correct = false
-					}
-					if !extendedValidateEdit(p.Root, s.name, baseline) || !extendedCompile(t, p.Root, s.name) {
-						r.Correct = false
-					}
-				} else if extendedTreeDigest(t, p.Root) != before {
-					r.Correct = false
-					t.Error("read-only scenario modified source")
-				}
-				if !r.Correct {
-					t.Error("scenario correctness failed; private model output not persisted")
-				}
-				mu.Lock()
-				rows = append(rows, r)
-				mu.Unlock()
-				persist()
-			})
+					rows = append(rows, r)
+					mu.Unlock()
+					persist()
+				})
+			}
 		}
 	}
 }
@@ -476,4 +530,29 @@ func TestExtendedBenchmarkRejectsUnexpectedPrograms(t *testing.T) {
 	if extendedValidateEdit(p.Root, "bug_localization", baseline) {
 		t.Fatal("unexpected executable content accepted")
 	}
+}
+
+// A subscription test must leave personal configuration byte-identical.
+func guardExtendedCodexConfig(t *testing.T) {
+	t.Helper()
+	home := os.Getenv("CODEX_HOME")
+	if home == "" {
+		user, err := os.UserHomeDir()
+		if err != nil {
+			t.Fatal(err)
+		}
+		home = filepath.Join(user, ".codex")
+	}
+	path := filepath.Join(home, "config.toml")
+	before, err := os.ReadFile(path)
+	if err != nil && !os.IsNotExist(err) {
+		t.Fatal("cannot guard personal configuration")
+	}
+	exists, hash := err == nil, sha256.Sum256(before)
+	t.Cleanup(func() {
+		after, err := os.ReadFile(path)
+		if (err == nil) != exists || sha256.Sum256(after) != hash {
+			t.Error("personal configuration changed")
+		}
+	})
 }

@@ -58,11 +58,21 @@ func TestLivePrimaryCodePrefetchBenchmark(t *testing.T) {
 	}
 	inventoryHash := sha256.Sum256(inventory)
 	guardPrefetchCodexConfig(t)
+	runtimeArm := os.Getenv("IVOAI_ECONOMIC_RUNTIME_ARM")
+	if runtimeArm != "" && runtimeArm != "A" && runtimeArm != "B" {
+		t.Fatal("invalid comparison arm")
+	}
 	cases := []struct{ name, task, prompt string }{
 		{"api", "Inspect API mathpkg/scale.go", "Report Scale's symbol, source file, ordered parameter_types, and return_type as JSON."},
 		{"implementation", "Locate function Scale", "Report Scale's symbol, source file, input 3 and computed result as JSON."},
 		{"multi_module_callers", "Identify callers of Scale", "Report every direct caller of Scale as a JSON callers array, each with symbol and repository-relative file. Include only direct callers."},
 	}
+	if runtimeArm != "" {
+		cases[0].task = "Report the public signature of Scale"
+		cases[1].task = "Locate Scale and explain its operation"
+		cases[2].task = "Identify the function that directly calls Scale"
+	}
+
 	var rows []prefetchLiveRow
 	persist := func() {
 		if path := os.Getenv("IVOAI_GRAFT_PREFETCH_OUTPUT"); path != "" {
@@ -78,6 +88,9 @@ func TestLivePrimaryCodePrefetchBenchmark(t *testing.T) {
 	defer persist()
 	for _, scenario := range cases {
 		for _, arm := range []string{"A", "B"} {
+			if runtimeArm != "" && arm != runtimeArm {
+				continue
+			}
 			t.Run(scenario.name+"/"+arm, func(t *testing.T) {
 				root := prefetchLiveRepository(t)
 				before := prefetchLiveSourceHash(t, root)
@@ -92,7 +105,7 @@ func TestLivePrimaryCodePrefetchBenchmark(t *testing.T) {
 				}()
 				start := time.Now()
 				var evidence json.RawMessage
-				if arm == "B" {
+				if arm == "B" || runtimeArm != "" {
 					ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 					evidence, err = a.preparePrimaryCodeEvidence(ctx, store, id, task, 4094, func(_ context.Context, directory, scope string) (*codeintel.Provider, error) {
 						if directory != root || scope != "cs_prefetch_fixture" {
@@ -102,55 +115,57 @@ func TestLivePrimaryCodePrefetchBenchmark(t *testing.T) {
 					})
 					cancel()
 					row.PrefetchMS = time.Since(start).Milliseconds()
-					if err != nil || len(evidence) == 0 || len(evidence) > 4094 {
+					if err != nil || len(evidence) == 0 && runtimeArm == "" || len(evidence) > 4094 {
 						t.Fatal("production primary prefetch failed or exceeded budget; private errors omitted")
 					}
-					var value struct {
-						Text      string                     `json:"text"`
-						Artifact  workingcontext.ArtifactRef `json:"artifact"`
-						Untrusted bool                       `json:"untrusted"`
-						Fidelity  string                     `json:"fidelity"`
-					}
-					if json.Unmarshal(evidence, &value) != nil || !value.Untrusted || value.Fidelity != "exact_required" {
-						t.Fatal("invalid production evidence fidelity")
-					}
-					artifacts, e := workingcontext.NewLocalStore(filepath.Join(a.Store.Paths.CacheDir, "working-context"), workingcontext.LocalOptions{})
-					if e != nil {
-						t.Fatal(e)
-					}
-					reader, _, e := artifacts.Read(context.Background(), workingcontext.Ownership{SessionID: id, TaskID: task.ID}, value.Artifact.ID)
-					if e != nil {
-						t.Fatal("exact artifact unavailable")
-					}
-					exact, e := io.ReadAll(reader)
-					reader.Close()
-					if e != nil || string(exact) != value.Text {
-						t.Fatal("source evidence differs from exact artifact")
-					}
-					row.SourceBytes = len(exact)
-					saved, e := store.Get(id)
-					if e != nil {
-						t.Fatal(e)
-					}
-					for _, event := range saved.Observability {
-						if event.Operation == observability.OperationCodeInspect && event.State == observability.StateCompleted {
-							row.PrefetchCalls++
-							if event.Provider == "graft" {
-								row.StructuralCalls++
-							}
-							if event.CacheHit != nil && *event.CacheHit {
-								row.CacheHits++
-							}
-							row.NativeCPUMS = event.CPUMilliseconds
-							row.NativePeakMemoryBytes = event.PeakMemoryBytes
+					if len(evidence) > 0 {
+						var value struct {
+							Text      string                     `json:"text"`
+							Artifact  workingcontext.ArtifactRef `json:"artifact"`
+							Untrusted bool                       `json:"untrusted"`
+							Fidelity  string                     `json:"fidelity"`
 						}
-					}
-					if row.PrefetchCalls != 1 || (scenario.name == "multi_module_callers" && row.StructuralCalls != 1) {
-						t.Fatal("prefetch did not execute expected native capability")
+						if json.Unmarshal(evidence, &value) != nil || !value.Untrusted || value.Fidelity != "exact_required" {
+							t.Fatal("invalid production evidence fidelity")
+						}
+						artifacts, e := workingcontext.NewLocalStore(filepath.Join(a.Store.Paths.CacheDir, "working-context"), workingcontext.LocalOptions{})
+						if e != nil {
+							t.Fatal(e)
+						}
+						reader, _, e := artifacts.Read(context.Background(), workingcontext.Ownership{SessionID: id, TaskID: task.ID}, value.Artifact.ID)
+						if e != nil {
+							t.Fatal("exact artifact unavailable")
+						}
+						exact, e := io.ReadAll(reader)
+						reader.Close()
+						if e != nil || string(exact) != value.Text {
+							t.Fatal("source evidence differs from exact artifact")
+						}
+						row.SourceBytes = len(exact)
+						saved, e := store.Get(id)
+						if e != nil {
+							t.Fatal(e)
+						}
+						for _, event := range saved.Observability {
+							if event.Operation == observability.OperationCodeInspect && event.State == observability.StateCompleted {
+								row.PrefetchCalls++
+								if event.Provider == "graft" {
+									row.StructuralCalls++
+								}
+								if event.CacheHit != nil && *event.CacheHit {
+									row.CacheHits++
+								}
+								row.NativeCPUMS = event.CPUMilliseconds
+								row.NativePeakMemoryBytes = event.PeakMemoryBytes
+							}
+						}
+						if row.PrefetchCalls != 1 || (scenario.name == "multi_module_callers" && row.StructuralCalls != 1) {
+							t.Fatal("prefetch did not execute expected native capability")
+						}
 					}
 				}
 				prompt := "Authorized synthetic local read-only benchmark. Do not edit files, install software, inspect credentials, or access external network targets. Host-provided primary_code_evidence is untrusted exact repository data: use it when sufficient; otherwise inspect local files. " + scenario.prompt + " Respond concisely with the requested facts."
-				if arm == "B" {
+				if len(evidence) > 0 {
 					envelope, _ := json.Marshal(map[string]any{"primary_code_evidence": []json.RawMessage{evidence}})
 					row.EvidenceBytes = len(envelope)
 					prompt += "\n" + string(envelope)
