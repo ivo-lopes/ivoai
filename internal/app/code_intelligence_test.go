@@ -134,6 +134,20 @@ func TestNativeCodeWorkerPrefetchIsExactScopedData(t *testing.T) {
 	}
 }
 
+func TestWorkerCodePrefetchCannotBypassExactToolRestrictions(t *testing.T) {
+	a := &App{}
+	for _, grants := range [][]string{{}, {"graft_repo_map"}} {
+		task := routing.Task{TaskInput: routing.TaskInput{Task: "Inspect API fixture.go", AllowedMCPTools: map[string][]string{nativeCodeMCP: grants}}}
+		request := workers.Request{SharedContextBrief: `{"local_objective":"already known"}`}
+		// Nil provider deliberately proves that a denied prefetch never reaches
+		// source inspection, installation, indexing or artifact persistence.
+		got, err := a.prefetchWorkerCode(context.Background(), nil, "session", task, request)
+		if err != nil || got.SharedContextBrief != request.SharedContextBrief {
+			t.Fatal("restricted task changed context")
+		}
+	}
+}
+
 func TestNativeCodeOpenCodeProjectionPreservesConfiguration(t *testing.T) {
 	cfg := config.Default()
 	cfg.MCP.Servers[nativeCodeMCP] = config.MCPServer{Enabled: true, Kind: "native", URL: "http://127.0.0.1:1234/mcp/0", HeaderEnv: map[string]string{"Authorization": externalMCPTokenEnvironment}}

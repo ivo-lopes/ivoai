@@ -121,6 +121,12 @@ func nativeCodeEnvironment(environment []string, cfg config.Config) ([]string, e
 }
 
 func (a *App) prefetchWorkerCode(ctx context.Context, provider *codeintel.Provider, id string, task routing.Task, request workers.Request) (workers.Request, error) {
+	// Automatic retrieval is not an alternate route around an exact grant.
+	// Match the primary contract: native aliases may be invoked explicitly,
+	// but only code_inspect authorizes automatic evidence preparation.
+	if tools, restricted := task.AllowedMCPTools[nativeCodeMCP]; restricted && !slices.Contains(tools, "code_inspect") {
+		return request, nil
+	}
 	query, ok := codeintel.ForTask(task.Task)
 	if !ok {
 		return request, nil
