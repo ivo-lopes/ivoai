@@ -2,6 +2,7 @@ package codeintel
 
 import (
 	"context"
+	"errors"
 	"github.com/ivo-lopes/ivoai/internal/core"
 	"os"
 	"os/exec"
@@ -144,5 +145,39 @@ func TestLocalCostHistoryRetainsOnlyAggregateMeasurements(t *testing.T) {
 	cost, ok := p.costHistory().Cost("ask", "graft")
 	if !ok || !cost.LatencyMS.Known || cost.CPUMS.Known {
 		t.Fatalf("invalid observed aggregate %+v", cost)
+	}
+}
+
+func TestCostHistoryAccountsForAttemptedProviderFailures(t *testing.T) {
+	p, _ := testProvider(t)
+	for i := range 5 {
+		if _, err := p.Query(context.Background(), core.CodeQuery{Operation: "ask", Query: strings.Repeat("x", i+1)}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, ok := p.costHistory().Cost("ask", "graft"); !ok {
+		t.Fatal("successful samples missing")
+	}
+	p.run = func(context.Context, adapterRequest) (adapterResponse, error) {
+		return adapterResponse{}, errors.New("private failure details")
+	}
+	if _, err := p.Query(context.Background(), core.CodeQuery{Operation: "ask", Query: "new"}); err == nil {
+		t.Fatal("failure fixture succeeded")
+	}
+	h := p.costHistory()
+	if a := h.Entries["ask:graft"]; a.Samples != 6 || a.Failures != 1 {
+		t.Fatalf("failure ignored: %+v", a)
+	}
+	if _, ok := h.Cost("ask", "graft"); ok {
+		t.Fatal("unreliable provider displaced defaults")
+	}
+	p.Allowed = false
+	_, _ = p.Query(context.Background(), core.CodeQuery{Operation: "ask", Query: "denied"})
+	if p.costHistory().Entries["ask:graft"].Samples != 6 {
+		t.Fatal("denied request changed performance history")
+	}
+	body, err := os.ReadFile(p.costPath())
+	if err != nil || strings.Contains(string(body), "private") {
+		t.Fatal("failure content persisted")
 	}
 }
