@@ -1,5 +1,14 @@
 # Releases
 
+## v0.12.1
+
+Correções compatíveis na recuperação de código/API, telemetria sanitizada e
+prontidão do catálogo OpenCode. Publicada por instrução explícita do mantenedor,
+com **aceite econômico ainda reprovado** e matriz de 16 cenários incompleta.
+Não há comprovação de economia agregada de tokens ou latência. Consulte as
+[notas da versão](https://github.com/ivo-lopes/ivoai/blob/v0.12.1/release-notes/v0.12.1.md)
+para validação, compatibilidade e limites de rollback.
+
 ## v0.12.0
 
 Consolida as mudanças P1/P2 de sessões, recuperação de hooks, telemetria e perfis

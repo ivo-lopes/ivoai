@@ -474,3 +474,12 @@ Binary and dataset identities are in `api-refinement/manifest.json`. The publish
 v0.12.0 binary hash is recorded as provenance, explicitly **not** as an executable
 used by the schema ablation. No release was published and no artifacts are claimed
 as newly distributed. Final CI status belongs to the existing PR #30.
+
+### Publication instruction after failed-gate disclosure
+
+After receiving the final failed-gate report, the maintainer instructed publication
+("Prossiga com a publicação"). This supersedes the earlier hold for publication,
+not the recorded acceptance outcome: economic acceptance remains failed, the
+16-scenario comparison incomplete, and no savings claim is made. v0.12.1 release
+notes disclose these limits. All security, integrity and workflow checks remain
+required; no branch protections or checks are bypassed.
