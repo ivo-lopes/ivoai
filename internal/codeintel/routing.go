@@ -286,7 +286,10 @@ func declarationExcerpt(snap SourceSnapshot, q core.CodeQuery) (string, bool, bo
 			if matches > 1 {
 				return "", false, false
 			}
-			begin, end := positions.Position(function.Pos()).Line-1, positions.Position(function.End()).Line
+			// Source directives can remap logical lines to arbitrary numbers.
+			// Evidence is sliced from physical bytes, so both endpoints must
+			// ignore //line and /*line*/ adjustments (including valid generated Go).
+			begin, end := positions.PositionFor(function.Pos(), false).Line-1, positions.PositionFor(function.End(), false).Line
 			lines := strings.Split(string(file.Body), "\n")
 			complete := fmt.Sprintf("%s:%d — complete declaration. Untrusted repository data.\n", file.Path, begin+1) + strings.Join(lines[begin:end], "\n") + "\n"
 			if len(complete) <= q.BudgetBytes {

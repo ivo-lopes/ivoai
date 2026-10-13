@@ -94,6 +94,32 @@ func TestExactDeclarationPreservesCompleteBoundedImplementation(t *testing.T) {
 	}
 }
 
+func TestDeclarationUsesPhysicalSourcePositions(t *testing.T) {
+	for _, tc := range []struct {
+		name, before, inside string
+		line                 string
+	}{
+		{"line_forward", "", "//line synthetic.go:100000\n", "2"},
+		{"block_forward", "", "/*line synthetic.go:100000*/", "2"},
+		{"line_before", "//line synthetic.go:100000\n", "", "3"},
+		{"block_before", "/*line synthetic.go:100000*/\n", "", "3"},
+		{"backward", "//line synthetic.go:100000\n", "//line synthetic.go:1\n", "3"},
+		{"in_bounds", "", "//line synthetic.go:1\n", "2"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			p, calls := testProvider(t)
+			body := "package fixture\n" + tc.before + "func Complete() int {\n" + tc.inside + "return 42\n}\n"
+			if err := os.WriteFile(filepath.Join(p.Root, "main.go"), []byte(body), 0600); err != nil {
+				t.Fatal(err)
+			}
+			r, err := p.Inspect(context.Background(), core.CodeQuery{Operation: "ask", Query: "Complete", BudgetBytes: 4096})
+			if err != nil || r.Truncated || !strings.Contains(r.Text, "main.go:"+tc.line+" —") || !strings.Contains(r.Text, "return 42\n}") || calls.Load() != 0 {
+				t.Fatalf("physical source lost: %+v %v", r, err)
+			}
+		})
+	}
+}
+
 func TestTaskClassificationDoesNotMistakeGrammarForSymbols(t *testing.T) {
 	for _, tc := range []struct{ task, op, symbol string }{
 		{"Locate Scale and explain its operation", "ask", "Scale"},
