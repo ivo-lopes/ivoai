@@ -238,3 +238,15 @@ uma meta de 100 ms. O build inicial levou 4.241 ms; atualizações por edição,
 renomeação e remoção levaram 628/767/744 ms, com pico de RSS observado de
 109.203.456 bytes. O [relatório e os dados brutos](https://github.com/ivo-lopes/ivoai/blob/v0.12.0/release-notes/graft-native-validation.md)
 registram revisões, escopo e limitações. Resultados desfavoráveis são preservados.
+
+
+### Refinamento de consultas de API
+
+Uma consulta de assinatura única usa o contrato de localização de implementação;
+a consulta de API de arquivo conhecido usa o contrato de API de arquivo. Pedidos
+mistos com relações ou impacto conservam a fachada geral. Declarações Go incluem
+o nome do pacote obtido pelo parser, sem inferi-lo pelo diretório. A operação
+normalizada aparece nos eventos de capacidade; consultas e conteúdo privado não
+são persistidos. Esses refinamentos não representam comprovação de economia
+agregada: os resultados negativos e os critérios pendentes permanecem no relatório
+de validação do PR #30.

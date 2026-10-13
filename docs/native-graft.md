@@ -177,7 +177,9 @@ be inferred as complete from this architecture description.
 ### Economic runtime candidate
 
 The next candidate narrows automatic turn/worker discovery to `code_inspect`
-unless native operation names are explicitly requested. Pure institutional
+unless native operation names are explicitly requested. Single-signature API
+requests use the implementation lookup contract; a known-file API request uses
+the file-API contract. Mixed relationship/impact requests retain the facade. Pure institutional
 requests omit the code transport in AUTO; ambiguous requests retain the facade.
 All nine local operations remain implemented. Explicit worker allowlists still
 take precedence, including an empty deny list. Automatic worker evidence cannot
@@ -193,11 +195,13 @@ unknown. Fewer schema bytes alone do not prove lower provider usage.
 
 Small known-file inspection reads only the authorized file after checking Git
 inventory membership; its source digest covers that file, not unrelated sources.
-Exact Go declarations are returned in full when they fit the result budget,
+Exact Go declarations include the parsed package name, rather than inferring it
+from the directory, and are returned in full when they fit the result budget,
 otherwise explicitly marked as excerpts. Ambiguous natural-language references
 do not become symbol names. Cost predictions require at least five samples and
 at least 90% successful observations; malformed persisted aggregates leave
-conservative defaults in force. No permission or resource ceiling is increased.
+conservative defaults in force. Normalized operations are included in sanitized capability events; tool queries
+and repository content remain excluded. No permission or resource ceiling is increased.
 
 The initial three-repetition schema-projection pilot preserved correctness but
 did not meet the release efficiency gate. See
