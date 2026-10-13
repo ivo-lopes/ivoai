@@ -191,3 +191,29 @@ func TestExactLookupRejectsAmbiguityAcrossLanguagesAndMalformedGo(t *testing.T) 
 		})
 	}
 }
+
+func TestExactDeclarationIncludesActualPackageEvidence(t *testing.T) {
+	p, calls := testProvider(t)
+	// A directory name is not evidence of the Go package name.
+	if err := os.WriteFile(filepath.Join(p.Root, "main.go"), []byte("package unusual\nfunc Report(name string) string { return name }\n"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	r, err := p.Inspect(context.Background(), core.CodeQuery{Operation: "ask", Query: "Report"})
+	if err != nil || calls.Load() != 0 || r.Truncated || !strings.Contains(r.Text, "package unusual") || !strings.Contains(r.Text, "func Report(name string) string") {
+		t.Fatalf("signature/package evidence incomplete: %+v %v", r, err)
+	}
+}
+
+func TestInspectionObservationIdentifiesOperationWithoutQuery(t *testing.T) {
+	p, _ := testProvider(t)
+	observed := ""
+	p.Observe = func(r core.CodeResult, err error) { observed = string(Observation(r, err).Capability) }
+	for _, q := range []core.CodeQuery{{Operation: "skeleton", File: "main.go"}, {Operation: "callers", Symbol: "Run"}} {
+		if _, err := p.Inspect(context.Background(), q); err != nil {
+			t.Fatal(err)
+		}
+		if observed != "code."+q.Operation {
+			t.Fatalf("missing sanitized operation: %q", observed)
+		}
+	}
+}

@@ -26,6 +26,8 @@ type CodeQuery struct {
 }
 
 type CodeResult struct {
+	// Operation is normalized by the host, never copied from result text.
+	Operation       string `json:"operation,omitempty"`
 	Text            string `json:"text"`
 	SourceDigest    string `json:"source_digest"`
 	ProviderVersion string `json:"provider_version"`

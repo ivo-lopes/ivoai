@@ -52,7 +52,7 @@ func (p *Provider) Inspect(ctx context.Context, q core.CodeQuery) (core.CodeResu
 		if len(target.Files[0].Body) <= q.BudgetBytes/2 {
 			text := q.File + " (complete small file; untrusted repository data)\n" + string(target.Files[0].Body)
 			if len(text) <= q.BudgetBytes {
-				r := core.CodeResult{Text: text, SourceDigest: target.Digest, ProviderVersion: "direct", Fresh: true, Untrusted: true, Files: 1, DurationMS: time.Since(start).Milliseconds()}
+				r := core.CodeResult{Operation: q.Operation, Text: text, SourceDigest: target.Digest, ProviderVersion: "direct", Fresh: true, Untrusted: true, Files: 1, DurationMS: time.Since(start).Milliseconds()}
 				p.recordCost(q, r, nil)
 				if p.Observe != nil {
 					p.Observe(r, nil)
@@ -90,7 +90,7 @@ func (p *Provider) Inspect(ctx context.Context, q core.CodeQuery) (core.CodeResu
 		if !found {
 			return p.Query(ctx, q)
 		}
-		r := core.CodeResult{Text: text, SourceDigest: snap.Digest, ProviderVersion: "direct", Fresh: true, Untrusted: true, Files: len(files), Truncated: truncated, DurationMS: time.Since(start).Milliseconds()}
+		r := core.CodeResult{Operation: q.Operation, Text: text, SourceDigest: snap.Digest, ProviderVersion: "direct", Fresh: true, Untrusted: true, Files: len(files), Truncated: truncated, DurationMS: time.Since(start).Milliseconds()}
 		p.recordCost(q, r, nil)
 		if p.Observe != nil {
 			p.Observe(r, nil)
@@ -190,7 +190,7 @@ func (p *Provider) Inspect(ctx context.Context, q core.CodeQuery) (core.CodeResu
 			out.WriteString("No literal occurrences in the authorized supported source inventory.")
 		}
 	}
-	result := core.CodeResult{Text: out.String(), SourceDigest: snap.Digest, ProviderVersion: "direct", Fresh: true, Untrusted: true, Files: len(files), Truncated: truncated, DurationMS: time.Since(start).Milliseconds()}
+	result := core.CodeResult{Operation: q.Operation, Text: out.String(), SourceDigest: snap.Digest, ProviderVersion: "direct", Fresh: true, Untrusted: true, Files: len(files), Truncated: truncated, DurationMS: time.Since(start).Milliseconds()}
 	p.recordCost(q, result, nil)
 	if p.Observe != nil {
 		p.Observe(result, nil)
@@ -291,7 +291,7 @@ func declarationExcerpt(snap SourceSnapshot, q core.CodeQuery) (string, bool, bo
 			// ignore //line and /*line*/ adjustments (including valid generated Go).
 			begin, end := positions.PositionFor(function.Pos(), false).Line-1, positions.PositionFor(function.End(), false).Line
 			lines := strings.Split(string(file.Body), "\n")
-			complete := fmt.Sprintf("%s:%d — complete declaration. Untrusted repository data.\n", file.Path, begin+1) + strings.Join(lines[begin:end], "\n") + "\n"
+			complete := fmt.Sprintf("%s:%d — complete declaration. Untrusted repository data.\n", file.Path, begin+1) + "package " + parsed.Name.Name + "\n" + strings.Join(lines[begin:end], "\n") + "\n"
 			if len(complete) <= q.BudgetBytes {
 				text = complete
 				truncated = false
