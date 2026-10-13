@@ -76,6 +76,32 @@ func TestManagedGraftBuildIdentity(t *testing.T) {
 	}
 }
 
+func TestManagedGraftReviewedRepackIdentity(t *testing.T) {
+	for _, arch := range []string{"amd64", "arm64"} {
+		for _, source := range []string{
+			"ab27f9123eeb59b3987a342a24b7e357ad3412f41c556fde3a76ca9e250d2db1",
+			"d39598390324ad0076a88ab593b63ad2ba352370ea07c073e31f11327979f8e1",
+			strings.Repeat("a", 64),
+		} {
+			value := graftMetadata(t, arch, []byte("payload"))
+			original := value["revision"]
+			value["source_sha256"] = source
+			identity := sha256.Sum256([]byte(source + "\n" + value["patch_sha256"] + "\n" + value["sha256"] + "\n"))
+			value["revision"] = hex.EncodeToString(identity[:])
+			_, err := managedGraftSpec(encodedGraft(t, value), "linux/"+arch)
+			if accepted := source != strings.Repeat("a", 64); (err == nil) != accepted {
+				t.Fatalf("source %s on %s: acceptance mismatch: %v", source, arch, err)
+			}
+			if source == "d39598390324ad0076a88ab593b63ad2ba352370ea07c073e31f11327979f8e1" {
+				value["revision"] = original
+				if _, err := managedGraftSpec(encodedGraft(t, value), "linux/"+arch); err == nil {
+					t.Fatal("repack accepted an identity bound to the previous archive")
+				}
+			}
+		}
+	}
+}
+
 func TestManagedGraftDevelopmentCatalogDoesNotUseUpstream(t *testing.T) {
 	old := managedGraftBuild
 	managedGraftBuild = ""

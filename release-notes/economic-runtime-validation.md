@@ -483,3 +483,18 @@ not the recorded acceptance outcome: economic acceptance remains failed, the
 16-scenario comparison incomplete, and no savings claim is made. v0.12.1 release
 notes disclose these limits. All security, integrity and workflow checks remain
 required; no branch protections or checks are bypassed.
+
+### Release preparation: upstream archive rename
+
+The new publication CI reproduced a source-checksum failure on both architectures.
+The previously cached source still matches the approved ab27f912… hash. GitHub now
+resolves trailhq/Graft to trailhq/Trail-Code; the same immutable commit has tree
+5f3dfac88f4aa4964dded8cbffaf548bbf06cebc. Comparing all 391 normalized tar entries
+found identical contents, types, modes and links; only the archive root prefix
+changed. The full inventory and both hashes are retained in
+`evidence/economic-runtime/graft-source-repack.json`. Build inputs/provenance now
+pin d3959839…; the runtime admits only this reviewed repack and the original hash.
+The source/patch/payload identity binding is unchanged. A regression test first
+reproduced the repack rejection, then validated both reviewed sources, rejected an
+unknown source even with a consistent identity, and rejected reuse of the old
+object identity for the new archive. No upstream lifecycle scripts were admitted.
