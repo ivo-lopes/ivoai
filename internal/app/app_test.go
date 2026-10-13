@@ -569,7 +569,25 @@ func managedSetupApp(t *testing.T, memoryEnabled bool, runner *setupRunner) (*Ap
 		t.Fatal(err)
 	}
 	a.Runner = runner
+	// This fixture tests App/memory behavior, not component installation.
+	// Supply-chain components cannot be faked by only setting Installed=true:
+	// the real installer correctly revalidates their objects and downloads them.
+	// Keep that integrity path covered by components' isolated artifact tests.
+	a.setupComponents = func(context.Context) error { return nil }
 	return a, output
+}
+
+func TestSetupPropagatesComponentFailureBeforeMemory(t *testing.T) {
+	runner := &setupRunner{}
+	a, _ := managedSetupApp(t, true, runner)
+	failure := errors.New("isolated component failure")
+	a.setupComponents = func(context.Context) error { return failure }
+	if err := a.Setup(context.Background()); !errors.Is(err, failure) {
+		t.Fatalf("component failure lost: %v", err)
+	}
+	if len(runner.calls) != 0 {
+		t.Fatal("memory work ran after component failure")
+	}
 }
 
 func TestSetupCompletesWhenMemoryHooksFail(t *testing.T) {

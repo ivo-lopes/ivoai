@@ -49,6 +49,9 @@ type App struct {
 	QuotaManager     *quota.Manager
 	AutoPollInterval time.Duration
 	HTTPClient       *http.Client
+	// Isolate App setup tests from component downloads while exercising memory
+	// hooks and diagnostics normally. Production always uses Installer.Setup.
+	setupComponents func(context.Context) error
 	// OpenCodeBridgeRunner and StartOpenCodeManaged are injected only by
 	// hermetic tests. Production uses the official managed adapters.
 	OpenCodeBridgeRunner     opencodebridge.ExecutorRunner
@@ -207,7 +210,11 @@ func (a *App) Setup(ctx context.Context) error {
 	if err := a.migrateLegacyMemory(); err != nil {
 		return fmt.Errorf("legacy Memory migration: %w", err)
 	}
-	if err := installer.Setup(ctx); err != nil {
+	install := installer.Setup
+	if a.setupComponents != nil {
+		install = a.setupComponents
+	}
+	if err := install(ctx); err != nil {
 		return err
 	}
 	if err := a.NativeCapabilityAction(ctx, "update", ""); err != nil {

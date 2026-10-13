@@ -122,6 +122,12 @@ not official model tokens. Later harness instrumentation adds actual discovery
 counts and sanitized tool sequences; those fields are absent from this pilot
 and were not reconstructed retrospectively.
 
+Provider-reported cached input was 624384 / 677120 and output was 2293 / 2333.
+The remaining input was 206312 / 203905. Most of the aggregate input increase
+was therefore cached input; no monetary saving or cost is inferred without
+verified pricing. Provider cache equivalence is not established by cold local
+Graft caches.
+
 ## Production prefetch comparison against v0.12.0
 
 Raw data: [runtime-comparison.json](evidence/economic-runtime/runtime-comparison.json).
@@ -228,12 +234,36 @@ Executed successfully in this cycle:
 - Real `TestLiveGraftManagedOpenCode`: **166.06 s**, approved plan, integrated task,
   official Codex native tool use and structural evidence, operational panel,
   **0 repository mutations, 0 personal Codex configuration mutations**.
+- Repeated real smoke after the retrieval/security/panel corrections: **118.17 s**,
+  same acceptance markers, zero repository/personal-config mutations. This is
+  another functional smoke, not a controlled A/B latency comparison.
+- Cross-builds and emulated version smoke for candidate Linux amd64/ARM64;
+  Nehalem (no AVX/AVX2) smoke for candidate IVOAI, pinned OpenCode and Graft
+  library/native-WASM grammars passed. QEMU was reused from an isolated cache;
+  no system packages installed. Native ARM64 execution is covered by CI.
+- Actual published v0.12.0 binary → candidate → v0.12.0 configuration rollback
+  and reapply passed in 7.83 s, preserving two server profiles and secret
+  isolation. This is config/binary compatibility, not database migration rollback.
+- Full local race suite passed before the final test-fixture isolation change;
+  final CI reruns the exact committed source. ShellCheck and generated CLI
+  reference consistency passed.
 
 The first full Go attempt overlapped replacement of generated embedded docs and
 was invalidated by missing old asset paths. It was stopped; the stable rerun
 passed. The first live smoke build omitted the release metadata URL and failed
 before client launch; correcting the harness metadata enabled the successful
 run. Neither failure was hidden by weakening product checks.
+
+A later normal-suite rerun exposed an existing non-hermetic App fixture:
+`managedSetupApp` marked synthetic binaries installed, but the supply-chain
+installer correctly revalidated them and attempted a real Caveman download.
+One download timed out after 286.13 s. The owned test process was stopped with
+stack capture; this run is **failed**, not counted as passing. App now has a
+private installer seam used only by that fixture, leaving Memory hooks and
+diagnostics active. Production still calls the same real installer. Five
+focused setup/hook/doctor/error-propagation tests passed in 24.887 s. Component
+integrity, hostile archives and real installation remain tested separately;
+no integrity check or critical test was disabled.
 
 Full race, final post-fix regression, architecture/platform, install/update and
 rollback validation are tracked separately; ordinary opt-in live tests skip
@@ -266,3 +296,32 @@ concurrency coverage. No new release/tag or production deployment is claimed.
 Keep the candidate reviewable and retain all negative results. The next cycle
 must first expand the comparison and resolve these acceptance gaps; no generic
 token-saving percentage should be advertised.
+
+## Git and operational reconciliation
+
+Review: [PR #30](https://github.com/ivo-lopes/ivoai/pull/30), draft,
+`fix/economic-runtime`, based on published `db93c6eb`. No merge, tag or release.
+The initial CI run [38332814626](https://github.com/ivo-lopes/ivoai/actions/runs/38332814626)
+passed all 12 platform/install jobs; its quality job was still running when the
+fixture correction was prepared. Use the PR's current checks for the final head.
+Classic branch protection returned “Branch not protected”; rulesets were empty.
+The user's stricter technical release gates still apply.
+
+Commits are separated by routing history, retrieval, exact worker grants,
+MCP/metrics, experiments, bilingual docs, source-position correction, session
+compatibility, failed-attempt accounting, narrow-panel correction and driver.
+Complete history: `git log db93c6eb..fix/economic-runtime --oneline`.
+
+Plane reconciliation for IVOAI-172, 171, 132, 131, 138, 133, 135 and 136 was
+**not applied**: canonical workspace/project identity remains unavailable.
+Their P1/P2 implementations remain inherited from v0.12.0; no task is marked
+Done merely because code exists. No duplicate optimization task was created.
+IVOAI-188 remains exclusively pending real Claude Code acceptance.
+
+Local candidate binary SHA-256 (not published release artifacts):
+
+- amd64: `627896b91bd197d8323d28727556e33c2a68ce2a13e0ffbd71411fb7860f085f`
+- arm64: `f418aa59bd3f5598b6458e5e2ddd892c74bde5559e3f9f659e815b213257618e`
+
+These binaries contain the runtime through `e6281e32`; later fixture/report
+changes require final CI validation, not a claim that a release was distributed.
