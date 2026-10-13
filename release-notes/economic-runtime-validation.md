@@ -325,3 +325,23 @@ Local candidate binary SHA-256 (not published release artifacts):
 
 These binaries contain the runtime through `e6281e32`; later fixture/report
 changes require final CI validation, not a claim that a release was distributed.
+
+## API refinement — predeclared structured ablation (2026-10-13)
+
+Continue the existing branch; do not replace historical measurements. The new
+`api_schema_v2` experiment compares seven native schemas (A) with the targeted
+API lookup contract (B), on the same updated production code in both arms.
+This isolates discovery; **A is not the published v0.12.0 binary in this ablation**.
+Three independent pairs alternate AB/BA, with cold local caches, requested
+Codex gpt-6.1-sol/low, identical permissions, fixtures and JSON response schemas.
+Acceptance independently checks symbol, actual package, ordered parameter types
+and return type. Earlier substring-based API rows remain narrow smoke evidence.
+The new oracle is versioned before this run, not retroactively applied to missing
+historical answers. Keep all failures. The release's 10% input / 5% latency,
+two-of-three and zero correctness-regression gates remain unchanged; this single
+scenario cannot satisfy the required full matrix.
+
+The official 0.162.1 App Server `model/list` and `thread/start` were exercised
+in an isolated CODEX_HOME without credentials or inference. They report the
+requested model and reasoning effort as client selection. They do not attest
+which backend model served previous exec turns; no runtime_verified flag is used.

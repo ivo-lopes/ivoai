@@ -65,7 +65,7 @@ func TestExtendedLiveCodexBenchmark(t *testing.T) {
 		{name: "worktree_uncommitted", prompt: "Read the current worktree's UncommittedValue implementation, not just HEAD. Report its numeric return value and file.", expected: []string{"78", "dirty.go"}},
 	}
 	type row struct {
-		Scenario, Arm, Model, Effort                                          string
+		Scenario, Arm, Model, Effort, Oracle                                  string
 		Repetition                                                            int
 		ToolsPresented                                                        int
 		InventoryRequests, ToolSchemaBytes                                    int
@@ -146,7 +146,7 @@ func TestExtendedLiveCodexBenchmark(t *testing.T) {
 							t.Fatal(err)
 						}
 					}
-					r := row{FixtureSHA256: before, TestBinarySHA256: binaryHash, ItemCounts: map[string]int{}, Scenario: s.name, Arm: arm, Model: "gpt-6.1-sol", Effort: "low", Repetition: repetition, ProjectionExperiment: projectionExperiment}
+					r := row{Oracle: "legacy_fact_smoke", FixtureSHA256: before, TestBinarySHA256: binaryHash, ItemCounts: map[string]int{}, Scenario: s.name, Arm: arm, Model: "gpt-6.1-sol", Effort: "low", Repetition: repetition, ProjectionExperiment: projectionExperiment}
 					var mu sync.Mutex
 					p.Observe = func(result core.CodeResult, err error) {
 						if err != nil {
@@ -217,6 +217,16 @@ func TestExtendedLiveCodexBenchmark(t *testing.T) {
 						args = append(args, "-c", "mcp_servers.ivoai-code.url="+strconv.Quote(gateway.URL(0)), "-c", `mcp_servers.ivoai-code.bearer_token_env_var="IVOAI_TEST_CODE_TOKEN"`, "-c", `mcp_servers.ivoai-code.default_tools_approval_mode="approve"`)
 						env = append(env, "IVOAI_TEST_CODE_TOKEN="+gateway.Token())
 					}
+					if s.name == "api_signatures" {
+						r.Oracle = "api_schema_v2"
+						schema := map[string]any{"type": "object", "additionalProperties": false, "required": []string{"symbol", "package", "parameter_types", "return_type"}, "properties": map[string]any{"symbol": map[string]string{"type": "string"}, "package": map[string]string{"type": "string"}, "return_type": map[string]string{"type": "string"}, "parameter_types": map[string]any{"type": "array", "items": map[string]string{"type": "string"}}}}
+						body, _ := json.Marshal(schema)
+						path := filepath.Join(t.TempDir(), "response-schema.json")
+						if err := os.WriteFile(path, body, 0600); err != nil {
+							t.Fatal(err)
+						}
+						args = append(args, "--output-schema", path)
+					}
 					args = append(args, "Authorized local benchmark. Use an approved repository inspection capability when available and appropriate; avoid redundant exploration. Do not access external targets, accounts, credentials or external network services. Do not run installation commands. Host-side validation runs offline after your turn. "+s.prompt+" Respond concisely with the requested facts.")
 					ctx, cancel := context.WithTimeout(context.Background(), 180*time.Second)
 					defer cancel()
@@ -241,6 +251,7 @@ func TestExtendedLiveCodexBenchmark(t *testing.T) {
 						t.Error(r.Error)
 					}
 					var answer strings.Builder
+					var lastMessage string
 					for _, line := range bytes.Split(out.Bytes(), []byte("\n")) {
 						var event struct {
 							Type string
@@ -286,6 +297,7 @@ func TestExtendedLiveCodexBenchmark(t *testing.T) {
 						}
 						if event.Item.Type == "agent_message" {
 							answer.WriteString(event.Item.Text)
+							lastMessage = event.Item.Text
 						}
 					}
 					r.Correct = e == nil && r.InputTokens != nil
@@ -293,6 +305,9 @@ func TestExtendedLiveCodexBenchmark(t *testing.T) {
 						if !strings.Contains(answer.String(), expected) {
 							r.Correct = false
 						}
+					}
+					if s.name == "api_signatures" {
+						r.Correct = r.Correct && apiSignatureCorrect(lastMessage)
 					}
 					if s.edit {
 						body, err := os.ReadFile(filepath.Join(p.Root, s.file))
@@ -668,4 +683,24 @@ func extendedExecutableHash(t *testing.T) string {
 		t.Fatal(err)
 	}
 	return fmt.Sprintf("%x", h.Sum(nil))
+}
+
+func apiSignatureCorrect(body string) bool {
+	var value struct {
+		Symbol     string   `json:"symbol"`
+		Package    string   `json:"package"`
+		Parameters []string `json:"parameter_types"`
+		Return     string   `json:"return_type"`
+	}
+	return json.Unmarshal([]byte(body), &value) == nil && value.Symbol == "Report" && value.Package == "mathpkg" && len(value.Parameters) == 1 && value.Parameters[0] == "string" && value.Return == "string"
+}
+func TestAPISignatureOracleRejectsIncidentalFacts(t *testing.T) {
+	for _, body := range []string{`Report string mathpkg`, `{"symbol":"Report","package":"other","parameter_types":["string"],"return_type":"string"}`, `{"symbol":"Report","package":"mathpkg","parameter_types":["int"],"return_type":"string"}`} {
+		if apiSignatureCorrect(body) {
+			t.Fatal("invalid API fact accepted")
+		}
+	}
+	if !apiSignatureCorrect(`{"symbol":"Report","package":"mathpkg","parameter_types":["string"],"return_type":"string"}`) {
+		t.Fatal("correct API rejected")
+	}
 }
