@@ -8,7 +8,7 @@ consult the linked project for the complete text.
 | Project | Version | License / terms | Role | Upstream |
 |---|---:|---|---|---|
 | Model Context Protocol Go SDK | 1.8.0 | Apache-2.0 / MIT (file-specific; see upstream LICENSE) | Official Streamable HTTP and MCP protocol implementation linked into the ivoai Web MCP gateway | <https://github.com/modelcontextprotocol/go-sdk> |
-| Go toolchain | 1.27.2 | BSD-3-Clause | Ephemeral, checksum-pinned compiler for source-checkout installation when compatible Go is unavailable | <https://go.dev/dl/> |
+| Go toolchain | 1.27.3 | BSD-3-Clause | Ephemeral, checksum-pinned compiler for source-checkout installation when compatible Go is unavailable | <https://go.dev/dl/> |
 | OpenAI Codex CLI | 0.162.1 | Apache-2.0 | Official ChatGPT/Codex terminal client | <https://github.com/openai/codex> |
 | Anthropic Claude Code | 2.1.296 | Proprietary; Anthropic Consumer or Commercial Terms, depending on account | Official Claude terminal client | <https://github.com/anthropics/claude-code> |
 | OpenCode | 1.19.0 (`733b2c627e5aec39cb33cc22373bdce33053ef2c`) | MIT | Pinned managed AUTO frontend; upstream source and notices remain intact | <https://github.com/anomalyco/opencode/releases/tag/v1.19.0> |
