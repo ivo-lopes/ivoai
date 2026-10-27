@@ -1,0 +1,91 @@
+{
+  "schema_version": 1,
+  "component": "ruflo_production_dependencies",
+  "advisory_exclusions": [],
+  "audits": {
+    "before": {
+      "info": 0,
+      "low": 0,
+      "moderate": 3,
+      "high": 11,
+      "critical": 0,
+      "total": 14
+    },
+    "after_transitive_updates": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 8,
+      "critical": 0,
+      "total": 8
+    },
+    "after_zod_backport": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 0
+    }
+  },
+  "inputs_sha256": {
+    "internal/components/assets/package.json": "2f7f56f07761f81d33065bac9306b6ff1d77d3677917570f5be7e895b3570602",
+    "internal/components/assets/package-lock.json": "e7d52c89585f22222e94bec77b776877df3dd1ccd3ded3a5466d8c91866507fd",
+    "internal/components/assets/ivoai-zod3-compat-3.25.76-ivoai.1.tgz": "8ab043ba2c6b342ae614f766fdad0270cc97e59450a5fe3e16ed7b72b0f4b6a3"
+  },
+  "official_v4_preserved": {
+    "node_modules/@modelcontextprotocol/client/node_modules/zod": {
+      "version": "4.6.6",
+      "resolved": "https://registry.npmjs.org/zod/-/zod-4.6.6.tgz",
+      "integrity": "sha512-4UmzQUF5fxvfcYHlbjBmejU+w+hbDnWFx4aS8kBx7nPBHcO2SqPbpAG8snbdg+Xse4pRefR98hgjFgIMCI/UhA=="
+    },
+    "node_modules/@modelcontextprotocol/core/node_modules/zod": {
+      "version": "4.6.6",
+      "resolved": "https://registry.npmjs.org/zod/-/zod-4.6.6.tgz",
+      "integrity": "sha512-4UmzQUF5fxvfcYHlbjBmejU+w+hbDnWFx4aS8kBx7nPBHcO2SqPbpAG8snbdg+Xse4pRefR98hgjFgIMCI/UhA=="
+    },
+    "node_modules/@modelcontextprotocol/server/node_modules/zod": {
+      "version": "4.6.6",
+      "resolved": "https://registry.npmjs.org/zod/-/zod-4.6.6.tgz",
+      "integrity": "sha512-4UmzQUF5fxvfcYHlbjBmejU+w+hbDnWFx4aS8kBx7nPBHcO2SqPbpAG8snbdg+Xse4pRefR98hgjFgIMCI/UhA=="
+    },
+    "node_modules/agentic-flow/node_modules/fastmcp/node_modules/zod": {
+      "version": "4.6.6",
+      "resolved": "https://registry.npmjs.org/zod/-/zod-4.6.6.tgz",
+      "integrity": "sha512-4UmzQUF5fxvfcYHlbjBmejU+w+hbDnWFx4aS8kBx7nPBHcO2SqPbpAG8snbdg+Xse4pRefR98hgjFgIMCI/UhA=="
+    }
+  },
+  "local_validation": {
+    "node": "26.11.1",
+    "npm": "11.20.0",
+    "npm_ci_lifecycle_scripts": false,
+    "isolated_real_cli_version": "ruflo v3.56.5",
+    "real_installer_attempts": [
+      {
+        "status": "FAIL",
+        "reason": "npm_launcher_mode_0775_rejected",
+        "duration_seconds": 38.82
+      },
+      {
+        "status": "PASS",
+        "reason": "private_stage_mode_normalization_then_real_promotion_and_idempotence",
+        "duration_seconds": 38.39
+      }
+    ],
+    "zod_node_fixtures": {
+      "passed": 24,
+      "failed": 0,
+      "skipped": 0,
+      "type_checks": true,
+      "real_pure_consumer": true
+    },
+    "zod_builder_tests": {
+      "passed": 9
+    },
+    "inference_attempts": 0,
+    "platforms_certified": [
+      "linux_amd64_cli_installation_only"
+    ],
+    "whole_ruflo_capability_certification": false
+  }
+}

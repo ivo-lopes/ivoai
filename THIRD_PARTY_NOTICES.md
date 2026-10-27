@@ -43,6 +43,16 @@ local version is not an upstream release. Dependency audits have no advisory
 allowlist. Caveman product 3.2.0 and binary bundle 2.1.0 are Apache-2.0; native
 skills retain LICENSE, NOTICE and the historical MIT attribution.
 
+Ruflo's Zod V3 dependency ranges use the explicit local MIT-licensed fork
+`@ivoai/zod3-compat@3.25.76-ivoai.1`. It is built from official Zod 4.6.7 with
+V3 root exports and early upper-bound rejection backported to V3 arrays/sets;
+the patched V4 subtree and upstream license are retained. Official V4 dependency
+ranges continue to resolve upstream V4. This is not an upstream V3 release.
+The reviewed source identity, patch, checksums, reproduction procedure and limits
+are in [patches/zod3-compat](patches/zod3-compat/README.md), with the full MIT
+notice in [LICENSE](patches/zod3-compat/LICENSE). A clean dependency audit does
+not certify unbounded schemas or arbitrary refinements against resource abuse.
+
 ## Claude Red
 
 The native Skill catalog includes 51 unmodified declarative `SKILL.md` files

@@ -18,9 +18,74 @@ passed locally.
 
 An initial accessibility run overlapped a separate consistency rebuild, which
 removed the served build temporarily: 149 tests passed and three failed while
-pages were unavailable. Those three passed in an isolated rerun. A complete
-serialized rerun and exact-head CI remain separate validation results; the
-failed run is not counted as a complete passing suite.
+pages were unavailable. Those three passed in an isolated rerun. The complete
+serialized rerun then passed all 152 checks (5.5 minutes). Exact-head CI remains
+a separate promotion gate; the failed run is retained as a failed run.
+
+## Managed Ruflo runtime
+
+The additional local runtime audit found 14 advisories, including eleven high
+and three moderate. Pinned updates address TOML, body-parser, fast-uri, qs,
+ip-address and the two active undici major ranges. Zod V3 ranges use the explicit
+MIT fork documented in `patches/zod3-compat`; V4 ranges retain their four official
+4.6.6 copies and integrity values. The candidate production audit reports zero
+advisories, without exclusions. This does not by itself prove the fork correct:
+its actual early-rejection behavior, V3 consumer compatibility, source identity
+and reproducible payload are validated separately.
+
+Ruflo remains 3.56.5, but the installer now identifies its dependency profile by
+SHA-256 of the exact embedded package manifest and lockfile. An existing managed
+installation with that top-level version still migrates when its dependency
+profile differs. npm runs with lifecycle scripts disabled in a private staging
+directory, using the managed Node and an isolated environment. The installer
+probes the contained launcher before promotion and atomically switches the
+wrapper only after successful validation. A nonblocking lock admits one builder;
+failure preserves the previous wrapper. Named profiles are never repaired in
+place. Existing user-owned installations remain under their prior adoption
+policy; this change does not patch an unmanaged third-party installation.
+
+The old flat runtime and earlier profiles remain available for rollback.
+Restoring the old wrapper can also restore older vulnerable dependencies; it is
+an emergency compatibility recovery, not a security fix. Retention consumes
+disk space, and automatic profile garbage collection is intentionally absent.
+Managed runtime, cache and wrapper paths must have no symlink ancestors; such
+configurations now fail closed. Idempotent admission checks the exact manifests,
+wrapper and contained regular launcher; it does not rehash the entire installed
+node_modules tree or protect against compromise by the same operating-system
+user. No new state schema or database is introduced.
+
+The first real installer run failed closed because npm installed the reviewed
+launcher with mode 0775. The installer now normalizes that contained regular
+leaf to 0700 only within the new private stage, before its version probe. A
+promoted profile with unsafe permissions still fails closed and is never
+repaired in place. Regressions exercise both cases; no permission check was
+removed to accept the original mode.
+
+The corrected real installer run passed in 38.39 seconds, including the promoted
+wrapper and idempotence. Before/after runtime audit counts, the unchanged V4
+identities, candidate hashes and both real-installer outcomes are retained in
+`evidence/backend-first/dependency-remediation/runtime-audit.json`. All 24 Zod
+fixtures passed with Node 26.11.1, including the strict ESM/CJS type checks and
+actual pure Security validator from the isolated locked prefix. Nine builder
+security tests passed. The archive was rebuilt independently with identical
+bytes. The full components race suite passed locally (7.815 seconds). These are
+Linux amd64 results, not whole-capability or ARM64 runtime certification.
+
+After the installer fix, the full normal Go suite and `go vet ./...` passed.
+Linux amd64 (`GOAMD64=v1`) and ARM64 builds succeeded. Those cross-builds do not
+substitute for execution of optional native dependencies on either architecture.
+
+Deterministic installer tests cover same-version lock replacement, legacy
+prefix migration, idempotence, preservation of old payloads, executable rollback,
+failed npm/version/manifest checks, symlink escapes and concurrent admission.
+The opt-in `TestLiveRufloProfileInstallation` uses a checksum-verified official
+Node archive to install the real locked graph in a temporary root, promote it
+and verify its launcher and idempotent admission. Run it with
+`IVOAI_TEST_RUFLO_NODE_ARCHIVE=/absolute/path/node.tar.gz go test
+./internal/components -run '^TestLiveRufloProfileInstallation$' -count=1 -v`.
+Without that input the test is explicitly skipped and supplies no live evidence.
+It does not perform inference, read personal provider credentials, certify
+native optional libraries on every CPU, or establish client parity.
 
 ## Native-client limitation
 

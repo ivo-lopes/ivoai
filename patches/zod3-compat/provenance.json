@@ -1,0 +1,19 @@
+{
+  "upstream_name": "zod",
+  "upstream_version": "4.6.7",
+  "upstream_url": "https://registry.npmjs.org/zod/-/zod-4.6.7.tgz",
+  "upstream_integrity": "sha512-g8W2D2kU6a8untc053fX1uVBKzM7yqAxW/3zwk83+6RyF2+SKOuV+c0wBDhUwzV1PaGapmZH+rmcUzPf+3CGwg==",
+  "upstream_sha256": "84efd155bed93270286e793fc951be270b536cbd5b0eeb111f0fa3967201d698",
+  "upstream_git_revision": "b500a2ee95134f81d74da7911d7378dd2853d042",
+  "license": "MIT",
+  "fork_name": "@ivoai/zod3-compat",
+  "fork_version": "3.25.76-ivoai.1",
+  "patch_file": "4.6.7-v3-upper-bounds.patch",
+  "patch_sha256": "1463a1399cef358e84d1a36dc80b1c29902d9cdfbb7354633379e36ad5a90428",
+  "upstream_fix_reference": "https://github.com/colinhacks/zod/commit/a0ebf970f2d752e5f58527cd2942ff48be4f46bd",
+  "advisory": "GHSA-mrhx-c7xc-m3w5",
+  "scope": "Early upper-bound rejection in V3 arrays/sets; original patched V4 subtree retained; no bound added to deliberately unbounded schemas.",
+  "archive_file": "ivoai-zod3-compat-3.25.76-ivoai.1.tgz",
+  "archive_sha256": "8ab043ba2c6b342ae614f766fdad0270cc97e59450a5fe3e16ed7b72b0f4b6a3",
+  "archive_integrity": "sha512-4OgQrmyO6Ys1d8oZ+4XZYy8xmTw3T8q8+PhznijHd2SFkN7FrzY9RrqfyVEWD5ZjEsbS+j5HYvGjKm4/BhlrJA=="
+}
