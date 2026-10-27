@@ -295,6 +295,17 @@ replace the 36 observations measured at `21c0a267`, where `git-log` was eligible
 Status/grep remain experimental: literal coverage and the latency above do not
 justify application adoption or an equivalent-quality claim.
 
+Post-policy validation at `0b83ce76`: focused Evidence/RTK tests, vet and the
+three Python harness tests passed. An independent read-only review confirmed
+the three deny boundaries and unchanged historical JSON bytes. A new private
+static helper built with Go 1.27.3, CGO disabled, GOAMD64=v1, `-trimpath` and
+`-buildvcs=false` has SHA-256
+`4563d78ffbef6eac3a224b8a3333419bffeed5814bf5263ee8b33ea4669d7336`.
+The opt-in `TestRealPinnedOSSView` passed with that helper and the pinned RTK:
+grep transformed the controlled fixture, while both `git-diff` and `git-log`
+were rejected by the real helper. This targeted check adds no new AB/BA round
+and does not replace any historical observation or certify non-AVX execution.
+
 The status result saves only four bytes when transformation succeeds. grep
 saves 532 bytes while retaining these chosen literals. Literal substring coverage
 is a limited diagnostic: status categories, log relationships, grep line-number
