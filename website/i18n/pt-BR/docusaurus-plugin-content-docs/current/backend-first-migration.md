@@ -8,7 +8,7 @@ Ele não certifica implementações adicionadas posteriormente em uma branch de 
 
 ## Incremento implementado após o baseline auditado
 
-A preparação da v0.13.0 inclui o Evidence Gateway experimental e limitado de código,
+O incremento da v0.13.0 inclui o Evidence Gateway experimental e limitado de código,
 intake compartilhado de prompts informais e contratos de turno de executor no
 Core, além de propriedade de conclusão/recursos por turno e correção de dependências.
 São entregas parciais da migração abaixo, não a conclusão da IVOAI-191.
@@ -16,11 +16,20 @@ O Gateway permanece desativado por padrão; a execução normal ainda usa a pol�
 existente de aceite do DAG. Adaptadores de Memory/Context/ferramentas, integração
 da política de recuperação, despacho adaptativo, certificação dos clientes nativos
 e retirada do OpenCode continuam pendentes. Consulte a
-[validação do backend](https://github.com/ivo-lopes/ivoai/blob/5949f20d238acc1c4108515fc462b88e979537c3/release-notes/backend-first-validation.md), os
-[contratos Core](https://github.com/ivo-lopes/ivoai/blob/5949f20d238acc1c4108515fc462b88e979537c3/release-notes/backend-neutral-turn-contracts.md) e a [correção de dependências](https://github.com/ivo-lopes/ivoai/blob/5949f20d238acc1c4108515fc462b88e979537c3/release-notes/dependency-remediation-validation.md).
+[validação do backend](https://github.com/ivo-lopes/ivoai/blob/v0.13.0/release-notes/backend-first-validation.md), os
+[contratos Core](https://github.com/ivo-lopes/ivoai/blob/v0.13.0/release-notes/backend-neutral-turn-contracts.md) e a [correção de dependências](https://github.com/ivo-lopes/ivoai/blob/v0.13.0/release-notes/dependency-remediation-validation.md).
 O gate econômico global atual continua INCOMPLETE; o subconjunto final medido não
-atingiu as metas de 10% na entrada e 5% no tempo. Nenhum experimento posterior de
-fast path por metadados está incluído nesta release preparada.
+atingiu as metas de 10% na entrada e 5% no tempo. Os pilotos posteriores de resposta
+local determinística a `VERSION`, sem modelo, e de RTK estão excluídos.
+
+Os [PRs #31](https://github.com/ivo-lopes/ivoai/pull/31) e
+[#32](https://github.com/ivo-lopes/ivoai/pull/32) foram incorporados como `c475d2a3`
+e `7f5cf051`. Seus heads de runtime `d6f445e3` e `5949f20d` passaram em 15/15
+verificações cada ([CI do PR #31](https://github.com/ivo-lopes/ivoai/actions/runs/40594966702),
+[CI do PR #32](https://github.com/ivo-lopes/ivoai/actions/runs/40595049106)).
+A publicação exige aprovação do CI de metadados/documentação e do pipeline
+Release, que recompila e valida os artefatos de distribuição. Isso não implanta
+em produção nem comprova publicação de artefatos antes da execução desse pipeline.
 
 ## Fontes e estado de execução
 
@@ -173,12 +182,14 @@ As funções compartilhadas devem chegar ao núcleo antes da remoção da integr
 
 ## Dependências e plataformas suportadas
 
-O `go.mod` histórico auditado da v0.12.1 exige Go 1.27.2. O candidato preparado
-para v0.13.0 eleva o mínimo do módulo e a versão fixada para bootstrap a Go 1.27.3
+O `go.mod` histórico auditado da v0.12.1 exige Go 1.27.2. O incremento da
+v0.13.0 eleva o mínimo do módulo e a versão fixada para bootstrap a Go 1.27.3
 após o gate de vulnerabilidade do CI anterior falhar em Go 1.27.2 com
 [GO-2026-6809](https://pkg.go.dev/vuln/GO-2026-6809) alcançável em `crypto/x509`.
 Hashes de bootstrap Linux amd64/ARM64, manifesto e notice foram atualizados juntos.
-O novo CI do HEAD exato `5949f20d` permanece pendente. Os módulos Go diretos do baseline auditado são
+O CI do HEAD exato de runtime `5949f20d` passou em 15/15 verificações, conforme
+registrado acima. Os gates de metadados/documentação e Release se aplicam
+separadamente. Os módulos Go diretos do baseline auditado são
 `github.com/coder/websocket` 1.8.15,
 `github.com/modelcontextprotocol/go-sdk` 1.8.0,
 `github.com/pelletier/go-toml/v2` 2.4.3,

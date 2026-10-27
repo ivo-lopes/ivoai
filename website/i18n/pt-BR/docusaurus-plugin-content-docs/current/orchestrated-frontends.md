@@ -1,5 +1,13 @@
 # Frontends orquestrados
 
+O incremento da v0.13.0 compartilha contratos de turno de executor no Core e
+preserva callbacks de conclusão/recursos por turno preparado. A serialização do
+Bridge e o aceite do DAG permanecem; isso não habilita primaries paralelos na
+mesma sessão. O CI de runtime passou em 15/15 nos heads dos dois PRs incorporados;
+consulte o [registro da release](releases.md) para os CIs e os gates separados de
+metadados/documentação e Release para publicação. Os pilotos locais posteriores
+de `VERSION` e RTK estão excluídos.
+
 ## Comandos
 
 | Comando | Admissão e execução |

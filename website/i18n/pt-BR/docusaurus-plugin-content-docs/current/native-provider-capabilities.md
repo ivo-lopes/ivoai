@@ -11,20 +11,25 @@ a implementação existente destas possibilidades oferecidas pelos projetos de o
 O gate de aceite econômico continua sem comprovação; percentuais de compressão
 de terceiros não representam economia das sessões do IVOAI.
 
-## Limite atual do Core na preparação da v0.13.0
+## Limite atual do Core na v0.13.0
 
 Entradas, resultados, falhas e traces operacionais de executores foram movidos
 para `internal/core/turn.go`; aliases compatíveis preservam a superfície anterior
 do pacote. A conclusão do turno e as leases de recursos são locais a cada turno
 preparado. O frontend Codex ainda usa Bridge e catálogo de modelos do OpenCode;
 é uma extração parcial, não a remoção do adaptador nem alteração no aceite do DAG.
-Consulte a [validação dos contratos](https://github.com/ivo-lopes/ivoai/blob/5949f20d238acc1c4108515fc462b88e979537c3/release-notes/backend-neutral-turn-contracts.md).
+Consulte a [validação dos contratos](https://github.com/ivo-lopes/ivoai/blob/v0.13.0/release-notes/backend-neutral-turn-contracts.md).
 
 O probe administrativo do Claude retornou `loggedIn=false`, `authMethod=none` e
 exit 1; nenhuma inferência com Claude foi tentada. Antigravity permanece apenas
 como pesquisa, sem certificação de paridade da TUI nativa. A ingestão no Context
 continua `CONTEXT_SYNC=BLOCKED` na IVOAI-175. A autenticação existente dos clientes
 nativos e a propriedade da configuração pessoal permanecem inalteradas.
+
+O CI de runtime passou em 15/15 nos heads dos dois PRs incorporados; o
+[registro da release](releases.md) vincula esses CIs e os gates separados de
+metadados/documentação e Release. CI de runtime aprovado não comprova paridade
+dos clientes nativos.
 
 ## Evidências e matriz de clientes
 

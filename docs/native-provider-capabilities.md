@@ -10,20 +10,24 @@ The repository baseline is v0.12.1 (`3ff6db8b`). Existing implementation must be
 distinguished from these upstream possibilities. The economic acceptance gate
 remains unproven; upstream compression percentages are not IVOAI session savings.
 
-## Current Core boundary in the v0.13.0 preparation
+## Current Core boundary in v0.13.0
 
 Executor input, results, failures and operational traces have moved to
 `internal/core/turn.go`; compatible aliases preserve the older package surface.
 Turn completion and resource leases are local to each prepared turn. The Codex
 frontend still uses the OpenCode Bridge and model Catalog, so this is partial
 extraction, not removal of the adapter or a change to DAG acceptance. See the
-[contract validation](https://github.com/ivo-lopes/ivoai/blob/5949f20d238acc1c4108515fc462b88e979537c3/release-notes/backend-neutral-turn-contracts.md).
+[contract validation](https://github.com/ivo-lopes/ivoai/blob/v0.13.0/release-notes/backend-neutral-turn-contracts.md).
 
 Claude's administrative probe returned `loggedIn=false`, `authMethod=none` and
 exit 1; no Claude inference was attempted. Antigravity remains research-only,
 and no native TUI parity is certified. Context ingestion remains
 `CONTEXT_SYNC=BLOCKED` under IVOAI-175. Existing native-client authentication and
 personal configuration ownership remain unchanged.
+
+Runtime CI passed 15/15 at both merged PR heads; the [release record](releases.md)
+links those runs and the separate metadata/documentation and Release gates.
+Passing runtime CI does not establish native-client parity.
 
 ## Evidence and client matrix
 

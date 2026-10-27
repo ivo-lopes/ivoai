@@ -8,18 +8,27 @@ It does not certify implementations subsequently added on a development branch.
 
 ## Implemented increment after the audited baseline
 
-The v0.13.0 preparation includes the bounded experimental code Evidence Gateway,
+The v0.13.0 increment includes the bounded experimental code Evidence Gateway,
 shared informal-prompt intake and Core-owned executor-turn contracts, together
 with turn-local completion/resource ownership and dependency remediation. These
 are partial deliveries on the migration below, not completion of IVOAI-191.
 The Gateway stays disabled by default; ordinary execution still uses the existing
 DAG acceptance policy. Memory/Context/tool adapters, recovery-policy integration,
 adaptive dispatch, native-client certification and OpenCode retirement remain
-pending. See [backend validation](https://github.com/ivo-lopes/ivoai/blob/5949f20d238acc1c4108515fc462b88e979537c3/release-notes/backend-first-validation.md),
-[Core contracts](https://github.com/ivo-lopes/ivoai/blob/5949f20d238acc1c4108515fc462b88e979537c3/release-notes/backend-neutral-turn-contracts.md) and [dependency remediation](https://github.com/ivo-lopes/ivoai/blob/5949f20d238acc1c4108515fc462b88e979537c3/release-notes/dependency-remediation-validation.md).
+pending. See [backend validation](https://github.com/ivo-lopes/ivoai/blob/v0.13.0/release-notes/backend-first-validation.md),
+[Core contracts](https://github.com/ivo-lopes/ivoai/blob/v0.13.0/release-notes/backend-neutral-turn-contracts.md) and [dependency remediation](https://github.com/ivo-lopes/ivoai/blob/v0.13.0/release-notes/dependency-remediation-validation.md).
 The current global economic gate remains INCOMPLETE; the final measured subset
-failed the 10% input and 5% elapsed targets. No later metadata fast-path experiment
-is included in this prepared release.
+failed the 10% input and 5% elapsed targets. Later pilots for a deterministic
+local `VERSION` answer without a model and RTK are excluded.
+
+[PR #31](https://github.com/ivo-lopes/ivoai/pull/31) and
+[PR #32](https://github.com/ivo-lopes/ivoai/pull/32) merged as `c475d2a3` and
+`7f5cf051`. Their runtime heads `d6f445e3` and `5949f20d` each passed 15/15
+checks ([PR #31 run](https://github.com/ivo-lopes/ivoai/actions/runs/40594966702),
+[PR #32 run](https://github.com/ivo-lopes/ivoai/actions/runs/40595049106)).
+Publication requires passing metadata/documentation CI and the Release pipeline,
+which rebuilds and validates distribution artifacts. This does not deploy to
+production or establish artifact publication before that pipeline executes.
 
 ## Sources and execution state
 
@@ -169,12 +178,13 @@ managed integration removal.
 
 ## Dependencies and platform envelope
 
-The historical audited v0.12.1 `go.mod` requires Go 1.27.2. The prepared v0.13.0
-candidate raises both the module minimum and source-bootstrap pin to Go 1.27.3
+The historical audited v0.12.1 `go.mod` requires Go 1.27.2. The v0.13.0
+increment raises both the module minimum and source-bootstrap pin to Go 1.27.3
 after the earlier CI vulnerability gate failed on Go 1.27.2 with reachable
 [GO-2026-6809](https://pkg.go.dev/vuln/GO-2026-6809) in `crypto/x509`. The Linux
 amd64/ARM64 bootstrap hashes, manifest and notice were updated together. New
-exact-head CI on `5949f20d` remains pending. Direct Go modules in the audited baseline are
+exact-head runtime CI on `5949f20d` passed 15/15 checks as recorded above.
+Metadata/documentation and Release gates apply separately. Direct Go modules in the audited baseline are
 `github.com/coder/websocket` 1.8.15,
 `github.com/modelcontextprotocol/go-sdk` 1.8.0,
 `github.com/pelletier/go-toml/v2` 2.4.3,
@@ -182,7 +192,7 @@ exact-head CI on `5949f20d` remains pending. Direct Go modules in the audited ba
 `go.sum` supplies module integrity; indirect versions remain defined by `go.mod`.
 Earlier local checks already used Go 1.27.3, while CI selected 1.27.2 from the
 then-current module directive; the local clean scan did not certify that CI
-compiler. The new candidate pin aligns the required toolchain with 1.27.3. This
+compiler. The new pin aligns the required toolchain with 1.27.3. This
 does not change historical benchmark executable identities or establish an
 equivalent published-binary comparison.
 

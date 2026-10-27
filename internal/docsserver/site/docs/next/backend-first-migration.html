@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="generator" content="Docusaurus v3.10.2">
 <title data-rh="true">Backend-first migration: audited baseline and delivery gates | IVOAI</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="http://localhost:7780/docs/next/backend-first-migration"><meta data-rh="true" property="og:locale" content="en_US"><meta data-rh="true" property="og:locale:alternate" content="pt_BR"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="Backend-first migration: audited baseline and delivery gates | IVOAI"><meta data-rh="true" name="description" content="Audit date published v0.12.1, commit"><meta data-rh="true" property="og:description" content="Audit date published v0.12.1, commit"><link data-rh="true" rel="icon" href="/img/favicon.svg"><link data-rh="true" rel="canonical" href="http://localhost:7780/docs/next/backend-first-migration"><link data-rh="true" rel="alternate" href="http://localhost:7780/docs/next/backend-first-migration" hreflang="en-US"><link data-rh="true" rel="alternate" href="http://localhost:7780/pt-BR/docs/next/backend-first-migration" hreflang="pt-BR"><link data-rh="true" rel="alternate" href="http://localhost:7780/docs/next/backend-first-migration" hreflang="x-default"><link rel="stylesheet" href="/assets/css/styles.c768eb50.css">
-<script src="/assets/js/runtime~main.3f523ba4.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.e0edef82.js" defer="defer"></script>
 <script src="/assets/js/main.441dc8c8.js" defer="defer"></script>
 </head>
 <body>
@@ -18,18 +18,26 @@
 This document distinguishes that baseline from the approved migration target.
 It does not certify implementations subsequently added on a development branch.</p>
 <h2 class="anchor anchorTargetStickyNavbar_J2Vv" id="implemented-increment-after-the-audited-baseline">Implemented increment after the audited baseline<a href="#implemented-increment-after-the-audited-baseline" class="hash-link" aria-label="Direct link to Implemented increment after the audited baseline" title="Direct link to Implemented increment after the audited baseline" translate="no">​</a></h2>
-<p>The v0.13.0 preparation includes the bounded experimental code Evidence Gateway,
+<p>The v0.13.0 increment includes the bounded experimental code Evidence Gateway,
 shared informal-prompt intake and Core-owned executor-turn contracts, together
 with turn-local completion/resource ownership and dependency remediation. These
 are partial deliveries on the migration below, not completion of IVOAI-191.
 The Gateway stays disabled by default; ordinary execution still uses the existing
 DAG acceptance policy. Memory/Context/tool adapters, recovery-policy integration,
 adaptive dispatch, native-client certification and OpenCode retirement remain
-pending. See <a href="https://github.com/ivo-lopes/ivoai/blob/5949f20d238acc1c4108515fc462b88e979537c3/release-notes/backend-first-validation.md" target="_blank" rel="noopener noreferrer" class="">backend validation</a>,
-<a href="https://github.com/ivo-lopes/ivoai/blob/5949f20d238acc1c4108515fc462b88e979537c3/release-notes/backend-neutral-turn-contracts.md" target="_blank" rel="noopener noreferrer" class="">Core contracts</a> and <a href="https://github.com/ivo-lopes/ivoai/blob/5949f20d238acc1c4108515fc462b88e979537c3/release-notes/dependency-remediation-validation.md" target="_blank" rel="noopener noreferrer" class="">dependency remediation</a>.
+pending. See <a href="https://github.com/ivo-lopes/ivoai/blob/v0.13.0/release-notes/backend-first-validation.md" target="_blank" rel="noopener noreferrer" class="">backend validation</a>,
+<a href="https://github.com/ivo-lopes/ivoai/blob/v0.13.0/release-notes/backend-neutral-turn-contracts.md" target="_blank" rel="noopener noreferrer" class="">Core contracts</a> and <a href="https://github.com/ivo-lopes/ivoai/blob/v0.13.0/release-notes/dependency-remediation-validation.md" target="_blank" rel="noopener noreferrer" class="">dependency remediation</a>.
 The current global economic gate remains INCOMPLETE; the final measured subset
-failed the 10% input and 5% elapsed targets. No later metadata fast-path experiment
-is included in this prepared release.</p>
+failed the 10% input and 5% elapsed targets. Later pilots for a deterministic
+local <code>VERSION</code> answer without a model and RTK are excluded.</p>
+<p><a href="https://github.com/ivo-lopes/ivoai/pull/31" target="_blank" rel="noopener noreferrer" class="">PR #31</a> and
+<a href="https://github.com/ivo-lopes/ivoai/pull/32" target="_blank" rel="noopener noreferrer" class="">PR #32</a> merged as <code>c475d2a3</code> and
+<code>7f5cf051</code>. Their runtime heads <code>d6f445e3</code> and <code>5949f20d</code> each passed 15/15
+checks (<a href="https://github.com/ivo-lopes/ivoai/actions/runs/40594966702" target="_blank" rel="noopener noreferrer" class="">PR #31 run</a>,
+<a href="https://github.com/ivo-lopes/ivoai/actions/runs/40595049106" target="_blank" rel="noopener noreferrer" class="">PR #32 run</a>).
+Publication requires passing metadata/documentation CI and the Release pipeline,
+which rebuilds and validates distribution artifacts. This does not deploy to
+production or establish artifact publication before that pipeline executes.</p>
 <h2 class="anchor anchorTargetStickyNavbar_J2Vv" id="sources-and-execution-state">Sources and execution state<a href="#sources-and-execution-state" class="hash-link" aria-label="Direct link to Sources and execution state" title="Direct link to Sources and execution state" translate="no">​</a></h2>
 <p>Git and reproducible runtime observations establish delivered behavior. Plane
 records execution intent, acceptance requirements and task history; a task&#x27;s
@@ -132,12 +140,13 @@ history owned by the user. Keep explicit compatibility errors or deprecated
 command routing during coexistence. Shared functions must reach the core before
 managed integration removal.</p>
 <h2 class="anchor anchorTargetStickyNavbar_J2Vv" id="dependencies-and-platform-envelope">Dependencies and platform envelope<a href="#dependencies-and-platform-envelope" class="hash-link" aria-label="Direct link to Dependencies and platform envelope" title="Direct link to Dependencies and platform envelope" translate="no">​</a></h2>
-<p>The historical audited v0.12.1 <code>go.mod</code> requires Go 1.27.2. The prepared v0.13.0
-candidate raises both the module minimum and source-bootstrap pin to Go 1.27.3
+<p>The historical audited v0.12.1 <code>go.mod</code> requires Go 1.27.2. The v0.13.0
+increment raises both the module minimum and source-bootstrap pin to Go 1.27.3
 after the earlier CI vulnerability gate failed on Go 1.27.2 with reachable
 <a href="https://pkg.go.dev/vuln/GO-2026-6809" target="_blank" rel="noopener noreferrer" class="">GO-2026-6809</a> in <code>crypto/x509</code>. The Linux
 amd64/ARM64 bootstrap hashes, manifest and notice were updated together. New
-exact-head CI on <code>5949f20d</code> remains pending. Direct Go modules in the audited baseline are
+exact-head runtime CI on <code>5949f20d</code> passed 15/15 checks as recorded above.
+Metadata/documentation and Release gates apply separately. Direct Go modules in the audited baseline are
 <code>github.com/coder/websocket</code> 1.8.15,
 <code>github.com/modelcontextprotocol/go-sdk</code> 1.8.0,
 <code>github.com/pelletier/go-toml/v2</code> 2.4.3,
@@ -145,7 +154,7 @@ exact-head CI on <code>5949f20d</code> remains pending. Direct Go modules in the
 <code>go.sum</code> supplies module integrity; indirect versions remain defined by <code>go.mod</code>.
 Earlier local checks already used Go 1.27.3, while CI selected 1.27.2 from the
 then-current module directive; the local clean scan did not certify that CI
-compiler. The new candidate pin aligns the required toolchain with 1.27.3. This
+compiler. The new pin aligns the required toolchain with 1.27.3. This
 does not change historical benchmark executable identities or establish an
 equivalent published-binary comparison.</p>
 <p>Reviewed external pins and licenses are recorded in

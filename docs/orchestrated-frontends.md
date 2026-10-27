@@ -1,5 +1,12 @@
 # Orchestrated frontends
 
+The v0.13.0 increment shares executor-turn contracts in Core and keeps each
+prepared turn’s completion/resource callbacks. Bridge serialization and DAG
+acceptance remain; this does not enable parallel primaries in one session.
+Runtime CI passed 15/15 at both merged PR heads; see the [release record](releases.md)
+for those runs and the separate metadata/documentation and Release publication gates.
+The later local `VERSION` and RTK pilots are excluded.
+
 ## Commands
 
 | Command | Admission and execution |
