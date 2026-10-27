@@ -152,8 +152,9 @@ Real tests require explicit paths and otherwise report **NOT_RUN / skipped**.
 Skipped runs are not real-integration passes. Each AB/BA arm uses the same
 already-persisted synthetic snapshot, authorization, generation and 32 KiB
 budget; six repetitions alternate baseline/candidate order and retain every
-numeric observation. Both arms use exact Gateway recoveries. No inference,
-paid API, tool command or original operation runs.
+numeric observation. Both arms use exact Gateway recoveries. The original fixture-only run executes no inference, paid API or original tool
+command. In the generated follow-up below, isolated synthetic Git/grep commands
+run once during capture; measured view arms never reexecute them.
 
 Validation completed locally: `go test ./...`, the focused race tests and vet
 passed. The explicit real-RTK tests passed separately, including a wrong binary
@@ -219,7 +220,118 @@ fallback), and retain revocation/generation-change-after-error rejection.
 
 Before application adoption: independent review; full baseline/candidate task
 matrix and quality/security gates; distribution/license review; non-AVX and
-ARM64 validation where supported; real git-status/git-log coverage; and explicit
+ARM64 validation where supported; broader quality-preserving Git/search coverage; and explicit
 host routing with sufficient expected benefit. Rollback is immediate: keep
 `Enabled=false` or omit the provider/helper; exact ArtifactStore recovery and
 Direct remain available. Do not infer that this experiment completes IVOAI-200.
+
+
+## Frozen generated-command follow-up (36 additional observations)
+
+This follow-up retains the original 60 observations unchanged and adds a separate
+[36-observation dataset](./evidence/rtk-oss-v1.1.0-generated-abba.json). It does not
+replace, rescore or exclude earlier results. Runtime source remains
+`ae3f4b186b932dc8bd2b4c272ad672bf2704c027`; the initial harness was committed as
+`071c369c4d127b54b7f0939a0ec3d77bc989a2cb`, and the corrected frozen harness as
+`21c0a2676e5365bd61a52232a48917b4b68415f6` before the measured execution. No App
+wiring or eligibility/default change is part of this follow-up.
+
+The initial frozen execution failed before any view observations because the
+harness requested a 1 MiB context budget, exceeding the Gateway's existing 32 KiB
+maximum. Its [preflight report](./evidence/rtk-oss-v1.1.0-generated-preflight.json)
+retains the failed exit, zero observations, helper/test/source identities and
+phase durations. The harness was corrected to the same 32 KiB budget for both
+arms; production limits were unchanged. Subtest indentation parsing was also
+corrected before the completed round. The failed attempt is not counted as a
+successful test or measured pair.
+
+The new opt-in `TestRealRTKGeneratedGatewayABBA` creates an entirely synthetic
+project and captures actual `/usr/bin/git status`, `/usr/bin/git log` and
+`/usr/bin/grep` stdout once each. The history has 18 distinct commit subjects;
+status includes staged modifications, unstaged modifications, deleted files and
+untracked files; grep searches 72 distinct matching markers across 24 paths.
+There are no user sources, remotes or inherited environment/configuration.
+Git uses a private HOME/XDG directory, empty templates, disabled system/global
+configuration, hooks, signing, external protocol access, maintenance and fsmonitor.
+Search and Git commands have fixed arguments and run only in temporary synthetic
+directories; stderr is discarded and no raw command output appears in reports.
+
+Each complete snapshot is persisted once through the Gateway into the actual
+Local ArtifactStore. A newly opened LocalStore recovers its disk-persisted artifact
+reference byte-for-byte before timing. Twelve views per snapshot alternate AB/BA
+order across six repetitions (A=Direct, B=optional RTK). Both arms recover the same
+sealed reference before/after transformation; a further untimed exact recovery
+checks each observation. Capturing/generating the synthetic project is outside
+view timings. Capture durations are reported separately, not total session or
+benchmark setup costs. Snapshot hashes and artifact IDs confirm that each pair
+uses the same stored bytes. References and raw payloads live only in private
+transient test storage and expire/are cleaned with that test; this adds no durable
+client recovery API.
+
+| Generated snapshot | Raw bytes | RTK arm representations, all six retained | Declared literal facts present | Direct total µs | RTK total µs |
+| --- | ---: | --- | --- | ---: | ---: |
+| Git status | 1,000 | five derived views of 996 bytes; one `provider_failed` exact fallback of 1,000 bytes | 22/22 paths in each view | 849 | 282,444 |
+| Git log | 3,180 | five derived views of 198 bytes; one `provider_failed` exact fallback of 3,180 bytes | **1/18 full subjects in each derived view**; 18/18 in fallback | 1,136 | 267,119 |
+| grep | 8,280 | six derived views of 7,748 bytes | 96/96 paths/distinct markers in each view | 1,421 | 307,588 |
+
+All 18 Direct observations present the exact original with all declared literal
+facts. All 36 observations retain exact raw recovery; that does not make their
+presentation semantically sufficient. Five derived Git log views each omit 17
+of the 18 full subjects (85 missing subject checks across those five rows).
+Consequently this test provides direct evidence against adopting that Git log
+view for questions needing the complete subjects. The byte reduction cannot be
+credited as useful equivalent-quality compression. Changes to Git log eligibility
+require a separate runtime change and new validation; these observations must
+remain immutable.
+
+The status result saves only four bytes when transformation succeeds. grep
+saves 532 bytes while retaining these chosen literals. Literal substring coverage
+is a limited diagnostic: status categories, log relationships, grep line-number
+semantics and downstream task correctness were not scored. A retained substring
+is not proof of equivalent meaning, and no semantic-parity gate is asserted.
+
+Two optimization availability failures remain in the dataset: status repetition
+3 (47,049 µs) and log repetition 2 (31,560 µs), both `provider_failed` with correct
+exact Direct fallback. Their internal causes were not established; private
+provider stderr is neither exposed nor retained. They count as provider failures,
+not successful RTK transformations or baseline correctness failures. No round was
+repeated to erase them. Every RTK arm adds substantial elapsed overhead: aggregate
+view time was 3,406 µs Direct versus 857,151 µs optional RTK (853,745 µs extra over
+18 candidate observations). These are local elapsed observations, not statistical
+confidence estimates or measured CPU/RAM consumption.
+
+The frozen driver, `scripts/benchmark-rtk-generated.py`, verifies the existing
+RTK executable/archive SHA pins and records all 499 tracked Go source hashes,
+`go.mod`/`go.sum` identities, harness SHA, tool versions and compiled artifacts. It
+builds helper and test binary in a private temporary directory using Go 1.27.3,
+`CGO_ENABLED=0`, `GOAMD64=v1`, `-trimpath` and `-buildvcs=false`; helper mode is
+0500. The measured helper SHA-256 is
+`3b9cbc9988ababb00b8ac12696cec23d3f24a0ce48bff2eb576d653aa452006f`; test-binary
+SHA-256 is `1da6464fd7ed8d9b37633d705c7c8245b084128cb2383e05762b15dd72f3dc14`.
+The local tools report Git 2.47.3 and GNU grep 3.11. All source/measurement output
+is allowlisted identity/numeric/boolean/fixed-label JSON written atomically with
+0600 permissions; arbitrary stdout/stderr is not persisted. The Python regression
+suite checks malformed/unknown scalar fields, subtest parsing, missing/duplicate
+pairs and separate failure/omission accounting. The synthetic command generation
+test, focused existing view/provider tests and evidence vet passed before the
+frozen round; the helper package has no test functions and was only compiled.
+No new concurrency mechanism was introduced by this sequential harness.
+
+Reproduce from a clean checkout of the frozen source commit, writing outside the
+checkout (the driver rejects a dirty source):
+
+```sh
+python3 scripts/benchmark-rtk-generated.py \
+  --rtk /private/tmp/rtk \
+  --archive /private/tmp/rtk-oss.tar.gz \
+  --go /private/toolchain/go/bin/go \
+  --module-cache /private/tmp/gomodcache \
+  --output /private/tmp/generated-rtk-diagnostic.json
+python3 -m unittest discover -s scripts -p test_benchmark_rtk_generated.py -v
+```
+
+The evidence expands local command-format coverage; it does not certify useful
+Git log coverage, representative project/task quality, a model/session economic
+gate or IVOAI-200 completion. There is no inference, API cost/quota measurement,
+CPU measurement, ARM64 runtime test or non-AVX-machine execution claim. RTK remains
+an explicitly optional library experiment with Direct available and no App wiring.
