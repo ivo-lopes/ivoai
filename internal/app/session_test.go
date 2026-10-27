@@ -186,7 +186,7 @@ esac
 `)
 	a := sessionTestApp(t, root, codex, appExecutable(t, root, "claude", "#!/bin/sh\nexit 0\n"), ruflo)
 	a.StartCodexNative = func(ctx context.Context, options codexfrontend.Options) (nativeCodexFrontend, error) {
-		text, err := options.Bridge.SubmitTurn(ctx, options.SessionID, "native_fixture_intake", "corrija isso", "auto", "")
+		text, err := options.Bridge.SubmitTurn(ctx, options.SessionID, "native_fixture_intake", "Leia VERSION\x00", "auto", "")
 		if err != nil || !strings.Contains(text, "insufficient") {
 			t.Fatal("native frontend did not reuse shared admission")
 		}
@@ -202,7 +202,7 @@ esac
 	if err := os.Chdir(root); err != nil {
 		t.Fatal(err)
 	}
-	a.In = strings.NewReader("corrija isso")
+	a.In = strings.NewReader("Leia VERSION\x00")
 	if err := a.SessionStart(context.Background(), "codex", session.ModeOrchestrated, nil); err != nil {
 		t.Fatal(err)
 	}

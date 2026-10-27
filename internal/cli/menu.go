@@ -213,7 +213,7 @@ func (s *menuSession) configuration() (bool, error) {
 		{id: "config.auto", label: toggleLabel("Automatic Orchestration", snapshot.AutoEnabled), run: s.simple(func() error { return s.app.ConfigSet("orchestration.auto.enabled", opposite(snapshot.AutoEnabled)) })},
 		{id: "config.auto-profiles", label: "Automation Profiles", description: "Preview, apply and restore bounded execution settings", run: s.automationProfiles},
 		{id: "config.auto-policy", label: "Orchestration Policies", description: "Sources, worker capacity, write isolation and quota conservation", run: s.orchestrationPolicies},
-		{id: "config.auto-gate", label: "AUTO Prompt Gate: Acceptance Required", disabled: "Refine insufficient prompts; direct commands keep their own contract"},
+		{id: "config.auto-gate", label: "AUTO Intake: Natural Language", disabled: "Questions and informal requests are accepted; plan approval is separate"},
 		{id: "config.auto-plan", label: "Plan Execution: " + snapshot.PlanExecution, description: "Plan approval is separate from tool permissions and quota routing approval", run: s.simple(func() error {
 			mode := "immediate"
 			if snapshot.PlanExecution == "immediate" {

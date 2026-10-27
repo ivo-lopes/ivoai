@@ -1,0 +1,17 @@
+{
+  "baseline_release": "v0.12.1",
+  "baseline_revision": "3ff6db8bb0174b1ae6f781f6754e2653a6dae5db",
+  "scope": "cold_App_prefetch_subset_not_full_published_binary_frontend",
+  "toolchain": "go1.27.3",
+  "codex_version": "0.164.0",
+  "node_version": "26.11.1",
+  "overall_exit_code": 0,
+  "full_16_scenario_matrix": false,
+  "warm_reuse_measured": false,
+  "host_idle": false,
+  "effective_model": "client_requested_not_backend_attested",
+  "provider_cache_equivalence": false,
+  "candidate_tree": "intermediate_uncommitted_development_snapshot",
+  "harness_contract": "explicit_unqualified_symbol_same_harness_both_builds",
+  "later_delta": "quoted-credential_and_private-key_admission_checks_added_after_measurement; synthetic_fixtures_do_not_contain_those_patterns"
+}

@@ -198,8 +198,8 @@ select_go_toolchain() {
   fi
 
   case "$required_go/$arch" in
-    1.27.2/amd64) go_checksum="ecbadb99091a3f46e31f5f934b068b1864eafa7995211b39eaddf76996045fe5" ;;
-    1.27.2/arm64) go_checksum="94f3e30b8e374bc285e7dadc11e0865726b9bc6e85b841ccceaabc0214c6b7c8" ;;
+    1.27.3/amd64) go_checksum="65efbc80fdc1fa2cd2631cad5b481777a68e8725f34e89f50fc6ac714e379b40" ;;
+    1.27.3/arm64) go_checksum="a06e99309dbcbdca1a8ccd2282c3ee146e55930886e26b4f1193269587165f49" ;;
     *) fail "no reviewed Go toolchain is pinned for Go $required_go on linux/$arch" ;;
   esac
   go_asset="go${required_go}.linux-${arch}.tar.gz"

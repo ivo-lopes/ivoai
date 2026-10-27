@@ -28,6 +28,7 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/memory"
 	"github.com/ivo-lopes/ivoai/internal/platform"
 	"github.com/ivo-lopes/ivoai/internal/supplychain"
+	"golang.org/x/sys/unix"
 )
 
 //go:embed assets/package.json
@@ -38,6 +39,9 @@ var rufloPackageLock []byte
 
 //go:embed assets/braces-3.0.4-ivoai.1.tgz
 var rufloBracesPatch []byte
+
+//go:embed assets/ivoai-zod3-compat-3.25.76-ivoai.1.tgz
+var rufloZod3Patch []byte
 
 //go:embed assets/headroom-amd64.lock
 var headroomAMD64Lock []byte
@@ -204,10 +208,16 @@ func (i *Installer) ensure(ctx context.Context, spec Spec, previous config.Compo
 	if spec.Strategy == StrategySupplyChain {
 		return i.ensureSupplyChain(ctx, spec, previous)
 	}
+	// The Ruflo version alone does not identify its transitive dependency pins.
+	// Legacy flat prefixes must migrate even when the top-level version matches.
+	ruflo := spec.Strategy == StrategyNPMIsolated && spec.Name == "ruflo"
+	if ruflo && previous.Installed && previous.Managed && previous.Version == spec.Version && i.currentRufloProfile(spec, previous) {
+		return previous, nil
+	}
 	// Existing compatible Codex pairs change only through the atomic updater,
 	// never by overwriting their files during idempotent setup. The catalog
 	// pin below is a verified fresh-install bootstrap, not launch policy.
-	if previous.Installed && previous.Managed && (previous.Version == spec.Version || (spec.Name == "codex" || spec.Name == "codex-code-mode-host") && versionAtLeast(previous.Version, codexresolver.MinimumSupported)) {
+	if !ruflo && previous.Installed && previous.Managed && (previous.Version == spec.Version || (spec.Name == "codex" || spec.Name == "codex-code-mode-host") && versionAtLeast(previous.Version, codexresolver.MinimumSupported)) {
 		if info, err := os.Stat(previous.Path); err == nil && info.Mode().IsRegular() && info.Mode().Perm()&0o077 == 0 {
 			return previous, nil
 		}
@@ -227,7 +237,9 @@ func (i *Installer) ensure(ctx context.Context, spec Spec, previous config.Compo
 	if err != nil {
 		return config.ComponentState{}, err
 	}
-	if !spec.NoVersionProbe {
+	// Ruflo is probed before its atomic wrapper promotion. A post-promotion
+	// failure must never remove the last working wrapper or its rollback target.
+	if !spec.NoVersionProbe && !ruflo {
 		actual := detectVersion(ctx, i.Runner, path)
 		if !sameVersion(actual, spec.Version) {
 			_ = os.Remove(path)
@@ -480,53 +492,249 @@ func (i *Installer) installUVTool(ctx context.Context, spec Spec) (string, error
 	return i.installWrapper(spec.Executable, filepath.Join(binDir, spec.Executable), "")
 }
 
+// rufloProfilePath identifies the reviewed dependency graph, independently of
+// the unchanged top-level Ruflo version. Prior profiles remain rollback targets.
+func (i *Installer) rufloProfilePath() string {
+	hash := sha256.New()
+	_, _ = hash.Write(rufloPackageJSON)
+	_, _ = hash.Write(rufloPackageLock)
+	return filepath.Join(i.Store.Paths.DataDir, "components", "ruflo-runtime-"+hex.EncodeToString(hash.Sum(nil)))
+}
+
+// rufloSafePath rejects symlinks in managed roots before any write. npm's .bin
+// link is handled separately: only its resolved regular in-profile leaf runs.
+func rufloSafePath(path string) error {
+	if !filepath.IsAbs(path) || filepath.Clean(path) != path {
+		return errors.New("Ruflo runtime requires a specific absolute managed path")
+	}
+	for current := path; ; current = filepath.Dir(current) {
+		info, err := os.Lstat(current)
+		if err != nil && !errors.Is(err, os.ErrNotExist) {
+			return err
+		}
+		if err == nil && info.Mode()&os.ModeSymlink != 0 {
+			return errors.New("Ruflo runtime path contains a symlink")
+		}
+		if current == filepath.Dir(current) {
+			return nil
+		}
+	}
+}
+
+func rufloProfileLauncher(prefix string, spec Spec) (string, error) {
+	launcher, err := rufloProfileLeaf(prefix, spec)
+	if err != nil {
+		return "", err
+	}
+	info, err := os.Lstat(launcher)
+	if err != nil || info.Mode()&0o100 == 0 || info.Mode().Perm()&0o022 != 0 {
+		return "", errors.New("Ruflo runtime launcher must be a contained regular executable")
+	}
+	return launcher, nil
+}
+
+func rufloProfileLeaf(prefix string, spec Spec) (string, error) {
+	if err := rufloSafePath(prefix); err != nil {
+		return "", err
+	}
+	for name, expected := range map[string][]byte{"package.json": rufloPackageJSON, "package-lock.json": rufloPackageLock} {
+		body, err := platform.ReadRegularFile(filepath.Join(prefix, name), int64(len(expected)+1))
+		if err != nil || !bytes.Equal(body, expected) {
+			return "", errors.New("Ruflo runtime manifest or lock differs from the reviewed profile")
+		}
+	}
+	launcher, err := filepath.EvalSymlinks(filepath.Join(prefix, "node_modules", ".bin", spec.Executable))
+	if err != nil {
+		return "", errors.New("Ruflo runtime launcher is missing")
+	}
+	relative, err := filepath.Rel(prefix, launcher)
+	if err != nil || relative == "." || !filepath.IsLocal(relative) {
+		return "", errors.New("Ruflo runtime launcher escapes the reviewed profile")
+	}
+	if err := rufloSafePath(launcher); err != nil {
+		return "", err
+	}
+	info, err := os.Lstat(launcher)
+	if err != nil || !info.Mode().IsRegular() {
+		return "", errors.New("Ruflo runtime launcher must be a contained regular executable")
+	}
+	return launcher, nil
+}
+
+func (i *Installer) currentRufloProfile(spec Spec, previous config.ComponentState) bool {
+	wrapper := filepath.Join(i.Store.Paths.BinDir, spec.Executable)
+	if previous.Path != wrapper || rufloSafePath(wrapper) != nil {
+		return false
+	}
+	info, err := os.Lstat(wrapper)
+	if err != nil || !info.Mode().IsRegular() || info.Mode().Perm() != 0o700 {
+		return false
+	}
+	node := ManagedNodePath(i.Store.Paths.DataDir)
+	if rufloSafePath(node) != nil {
+		return false
+	}
+	if info, err := os.Lstat(node); err != nil || !info.Mode().IsRegular() || info.Mode()&0o100 == 0 {
+		return false
+	}
+	launcher, err := rufloProfileLauncher(i.rufloProfilePath(), spec)
+	if err != nil {
+		return false
+	}
+	body, err := platform.ReadRegularFile(wrapper, 16<<10)
+	return err == nil && bytes.Equal(body, wrapperScript(launcher, filepath.Dir(ManagedNodePath(i.Store.Paths.DataDir))))
+}
+
 func (i *Installer) installNPMTool(ctx context.Context, spec Spec) (string, error) {
+	if spec.Name != "ruflo" || spec.Executable != "ruflo" {
+		return "", errors.New("unsupported managed npm runtime")
+	}
+	if err := validateRufloLock(spec); err != nil {
+		return "", err
+	}
+	if err := rufloSafePath(filepath.Join(i.Store.Paths.BinDir, spec.Executable)); err != nil {
+		return "", err
+	}
+	root := filepath.Join(i.Store.Paths.DataDir, "components")
+	if err := rufloSafePath(root); err != nil {
+		return "", err
+	}
+	if err := platform.EnsurePrivateDir(root); err != nil {
+		return "", err
+	}
+	// Serialize graph admission and wrapper promotion across setup processes.
+	lock, err := os.OpenFile(filepath.Join(root, "ruflo-install.lock"), os.O_CREATE|os.O_RDWR|unix.O_NOFOLLOW|unix.O_NONBLOCK, 0o600)
+	if err != nil {
+		return "", err
+	}
+	defer lock.Close()
+	if info, err := lock.Stat(); err != nil || !info.Mode().IsRegular() || info.Mode().Perm()&0o077 != 0 {
+		return "", errors.New("unsafe Ruflo installation lock")
+	}
+	if err := unix.Flock(int(lock.Fd()), unix.LOCK_EX|unix.LOCK_NB); err != nil {
+		return "", errors.New("Ruflo installation already active")
+	}
+	defer unix.Flock(int(lock.Fd()), unix.LOCK_UN)
+
+	if err := rufloSafePath(ManagedNodePath(i.Store.Paths.DataDir)); err != nil {
+		return "", err
+	}
 	node, npmCLI, err := i.ensureNode(ctx)
 	if err != nil {
 		return "", err
 	}
-	probe, err := i.Runner.Run(ctx, node, []string{"--version"}, platform.RunOptions{CleanEnv: true, Env: []string{"PATH=" + filepath.Dir(node) + ":/usr/local/bin:/usr/bin:/bin"}, Timeout: 10 * time.Second})
+	if err := rufloSafePath(npmCLI); err != nil {
+		return "", err
+	}
+	sandboxHome := filepath.Join(i.Store.Paths.DataDir, "installer-home")
+	npmCache := filepath.Join(i.Store.Paths.CacheDir, "npm")
+	for _, dir := range []string{sandboxHome, npmCache} {
+		if err := rufloSafePath(dir); err != nil {
+			return "", err
+		}
+		if err := platform.EnsurePrivateDir(dir); err != nil {
+			return "", err
+		}
+	}
+	environment := []string{"HOME=" + sandboxHome, "PATH=" + filepath.Dir(node) + ":/usr/local/bin:/usr/bin:/bin", "NPM_CONFIG_CACHE=" + npmCache, "RUFLO_PROVIDER=ivoai-disabled", "CLAUDE_FLOW_MEMORY_BACKEND=memory"}
+	probe, err := i.Runner.Run(ctx, node, []string{"--version"}, platform.RunOptions{CleanEnv: true, Env: environment, Timeout: 10 * time.Second})
 	if err != nil {
 		if strings.Contains(probe.Stderr, "libatomic.so.1") {
 			return "", errors.New("managed Node requires libatomic.so.1; on Debian/Ubuntu run sudo apt-get install libatomic1, then repeat ivoai setup")
 		}
 		return "", fmt.Errorf("managed Node runtime preflight: %w", err)
 	}
-	prefix := filepath.Join(i.Store.Paths.DataDir, "components", "ruflo")
-	if err := platform.EnsurePrivateDir(prefix); err != nil {
+	if !sameVersion(strings.TrimSpace(probe.Stdout), managedNodeVersion) {
+		return "", errors.New("managed Node runtime version does not match the reviewed pin")
+	}
+	prefix := i.rufloProfilePath()
+	if _, err := os.Lstat(prefix); errors.Is(err, os.ErrNotExist) {
+		staging, err := os.MkdirTemp(root, ".ruflo-stage-")
+		if err != nil {
+			return "", err
+		}
+		defer os.RemoveAll(staging)
+		for name, body := range map[string][]byte{
+			"package.json": rufloPackageJSON, "package-lock.json": rufloPackageLock,
+			"braces-3.0.4-ivoai.1.tgz":              rufloBracesPatch,
+			"ivoai-zod3-compat-3.25.76-ivoai.1.tgz": rufloZod3Patch,
+		} {
+			if err := platform.AtomicWritePrivate(body, filepath.Join(staging, name)); err != nil {
+				return "", err
+			}
+		}
+		_, err = i.Runner.Run(ctx, node, []string{npmCLI, "ci", "--prefix", staging, "--ignore-scripts", "--no-audit", "--no-fund"}, platform.RunOptions{Dir: staging, Env: environment, CleanEnv: true, Stdout: i.Out, Stderr: i.Out, Timeout: 15 * time.Minute})
+		if err != nil {
+			return "", err
+		}
+		// npm can preserve a group-writable executable mode from its package
+		// extraction. Normalize only the contained leaf in this new private stage;
+		// previously promoted profiles remain immutable and strictly validated.
+		leaf, err := rufloProfileLeaf(staging, spec)
+		if err != nil {
+			return "", err
+		}
+		if err := os.Chmod(leaf, 0o700); err != nil {
+			return "", err
+		}
+		if err := i.probeRufloProfile(ctx, node, staging, spec, environment); err != nil {
+			return "", err
+		}
+		if err := platform.SyncDir(staging); err != nil {
+			return "", err
+		}
+		if err := ctx.Err(); err != nil {
+			return "", err
+		}
+		if err := os.Rename(staging, prefix); err != nil {
+			return "", err
+		}
+		if err := platform.SyncDir(root); err != nil {
+			return "", err
+		}
+	} else if err != nil {
+		return "", err
+	} else if err := i.probeRufloProfile(ctx, node, prefix, spec, environment); err != nil {
+		// A named immutable profile is never repaired or replaced in place.
 		return "", err
 	}
-	sandboxHome := filepath.Join(i.Store.Paths.DataDir, "installer-home")
-	if err := platform.EnsurePrivateDir(sandboxHome); err != nil {
-		return "", err
-	}
-	npmCache := filepath.Join(i.Store.Paths.CacheDir, "npm")
-	if err := platform.EnsurePrivateDir(npmCache); err != nil {
-		return "", err
-	}
-	if err := validateRufloLock(spec); err != nil {
-		return "", err
-	}
-	if err := platform.AtomicWritePrivate(rufloPackageJSON, filepath.Join(prefix, "package.json")); err != nil {
-		return "", err
-	}
-	if err := platform.AtomicWritePrivate(rufloPackageLock, filepath.Join(prefix, "package-lock.json")); err != nil {
-		return "", err
-	}
-	if err := platform.AtomicWritePrivate(rufloBracesPatch, filepath.Join(prefix, "braces-3.0.4-ivoai.1.tgz")); err != nil {
-		return "", err
-	}
-	_, err = i.Runner.Run(ctx, node, []string{npmCLI, "ci", "--prefix", prefix, "--ignore-scripts", "--no-audit", "--no-fund"}, platform.RunOptions{Dir: prefix, Env: []string{"HOME=" + sandboxHome, "PATH=" + filepath.Dir(node) + ":/usr/local/bin:/usr/bin:/bin", "NPM_CONFIG_CACHE=" + npmCache}, CleanEnv: true, Stdout: i.Out, Stderr: i.Out, Timeout: 15 * time.Minute})
+	launcher, err := rufloProfileLauncher(prefix, spec)
 	if err != nil {
 		return "", err
 	}
-	return i.installWrapper(spec.Executable, filepath.Join(prefix, "node_modules", ".bin", spec.Executable), filepath.Dir(node))
+	wrapper := filepath.Join(i.Store.Paths.BinDir, spec.Executable)
+	if err := rufloSafePath(wrapper); err != nil {
+		return "", err
+	}
+	if err := ensureBinDir(i.Store.Paths.BinDir); err != nil {
+		return "", err
+	}
+	if err := ctx.Err(); err != nil {
+		return "", err
+	}
+	if err := platform.AtomicWriteFile(wrapperScript(launcher, filepath.Dir(node)), wrapper, 0o700); err != nil {
+		return "", err
+	}
+	return wrapper, nil
+}
+
+func (i *Installer) probeRufloProfile(ctx context.Context, node, prefix string, spec Spec, environment []string) error {
+	launcher, err := rufloProfileLauncher(prefix, spec)
+	if err != nil {
+		return err
+	}
+	result, err := i.Runner.Run(ctx, node, []string{launcher, "--version"}, platform.RunOptions{Dir: prefix, Env: environment, CleanEnv: true, Timeout: 10 * time.Second})
+	if err != nil || !sameVersion(strings.TrimSpace(strings.Split(result.Stdout, "\n")[0]), spec.Version) {
+		return errors.New("staged Ruflo version does not match the reviewed pin")
+	}
+	return nil
 }
 
 func validateRufloLock(spec Spec) error {
 	var lock struct {
 		LockfileVersion int `json:"lockfileVersion"`
 		Packages        map[string]struct {
+			Name      string `json:"name"`
 			Version   string `json:"version"`
 			Resolved  string `json:"resolved"`
 			Integrity string `json:"integrity"`
@@ -549,6 +757,15 @@ func validateRufloLock(spec Spec) error {
 			digest := sha512.Sum512(rufloBracesPatch)
 			if pkg.Integrity != "sha512-"+base64.StdEncoding.EncodeToString(digest[:]) {
 				return errors.New("embedded braces patch integrity mismatch")
+			}
+			continue
+		}
+		// This exact reviewed local fork is the only Zod file dependency admitted.
+		// V4 dependencies must retain their official registry packages.
+		if path == "node_modules/zod" && pkg.Name == "@ivoai/zod3-compat" && pkg.Version == "3.25.76-ivoai.1" && pkg.Resolved == "file:ivoai-zod3-compat-3.25.76-ivoai.1.tgz" {
+			digest := sha512.Sum512(rufloZod3Patch)
+			if pkg.Integrity != "sha512-"+base64.StdEncoding.EncodeToString(digest[:]) {
+				return errors.New("embedded Zod V3 compatibility patch integrity mismatch")
 			}
 			continue
 		}
@@ -757,11 +974,8 @@ func (i *Installer) installWrapper(name, target, prependPath string) (string, er
 	if info, err := os.Stat(target); err != nil || info.IsDir() {
 		return "", fmt.Errorf("installed %s launcher is missing", name)
 	}
-	line := "exec " + shellQuote(target) + " \"$@\""
-	if prependPath != "" {
-		line = "PATH=" + shellQuote(prependPath) + ":\"$PATH\"\nexport PATH\n" + line
-	}
-	body := []byte("#!/bin/sh\n" + line + "\n")
+	body := wrapperScript(target, prependPath)
+
 	destination := filepath.Join(i.Store.Paths.BinDir, name)
 	if err := platform.AtomicWritePrivate(body, destination); err != nil {
 		return "", err
@@ -771,6 +985,14 @@ func (i *Installer) installWrapper(name, target, prependPath string) (string, er
 	}
 	return destination, nil
 }
+func wrapperScript(target, prependPath string) []byte {
+	line := "exec " + shellQuote(target) + " \"$@\""
+	if prependPath != "" {
+		line = "PATH=" + shellQuote(prependPath) + ":\"$PATH\"\nexport PATH\n" + line
+	}
+	return []byte("#!/bin/sh\n" + line + "\n")
+}
+
 func shellQuote(value string) string { return "'" + strings.ReplaceAll(value, "'", "'\\''") + "'" }
 
 func (i *Installer) ensureUV(ctx context.Context) (string, error) {

@@ -100,7 +100,7 @@ func TestTerminalDecisionsRemainExplicit(t *testing.T) {
 
 func TestTerminalGateBeforeExecutorAndSharedTurn(t *testing.T) {
 	for _, frontend := range []string{"codex", "opencode"} {
-		for _, input := range []string{"corrija isso", "Read VERSION and report the value. Acceptance: return only the version; do not modify files."} {
+		for _, input := range []string{"Leia VERSION\x00", "Qual versão deste projeto?"} {
 			t.Run(frontend+input[:4], func(t *testing.T) {
 				runner := &fakeRunner{}
 				var attempt TurnAttempt
@@ -118,7 +118,7 @@ func TestTerminalGateBeforeExecutorAndSharedTurn(t *testing.T) {
 				runner.mu.Lock()
 				calls := len(runner.requests)
 				runner.mu.Unlock()
-				if input == "corrija isso" {
+				if strings.ContainsRune(input, '\x00') {
 					if calls != 0 || !strings.Contains(output.String(), "insufficient") {
 						t.Fatal("gate bypass or missing rejection")
 					}

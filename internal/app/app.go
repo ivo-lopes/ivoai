@@ -23,6 +23,7 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/connections"
 	"github.com/ivo-lopes/ivoai/internal/core"
 	"github.com/ivo-lopes/ivoai/internal/doctor"
+	"github.com/ivo-lopes/ivoai/internal/evidence"
 	"github.com/ivo-lopes/ivoai/internal/memory"
 	"github.com/ivo-lopes/ivoai/internal/opencodebridge"
 	"github.com/ivo-lopes/ivoai/internal/orchestration"
@@ -40,6 +41,7 @@ import (
 )
 
 type App struct {
+	evidenceGateway  *evidence.Gateway
 	CodexResolution  func(context.Context, config.State) (config.State, codexresolver.Resolution, error)
 	Version          string
 	Store            *config.Store

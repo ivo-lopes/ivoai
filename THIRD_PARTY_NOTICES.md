@@ -8,7 +8,7 @@ consult the linked project for the complete text.
 | Project | Version | License / terms | Role | Upstream |
 |---|---:|---|---|---|
 | Model Context Protocol Go SDK | 1.8.0 | Apache-2.0 / MIT (file-specific; see upstream LICENSE) | Official Streamable HTTP and MCP protocol implementation linked into the ivoai Web MCP gateway | <https://github.com/modelcontextprotocol/go-sdk> |
-| Go toolchain | 1.27.2 | BSD-3-Clause | Ephemeral, checksum-pinned compiler for source-checkout installation when compatible Go is unavailable | <https://go.dev/dl/> |
+| Go toolchain | 1.27.3 | BSD-3-Clause | Ephemeral, checksum-pinned compiler for source-checkout installation when compatible Go is unavailable | <https://go.dev/dl/> |
 | OpenAI Codex CLI | 0.162.1 | Apache-2.0 | Official ChatGPT/Codex terminal client | <https://github.com/openai/codex> |
 | Anthropic Claude Code | 2.1.296 | Proprietary; Anthropic Consumer or Commercial Terms, depending on account | Official Claude terminal client | <https://github.com/anthropics/claude-code> |
 | OpenCode | 1.19.0 (`733b2c627e5aec39cb33cc22373bdce33053ef2c`) | MIT | Pinned managed AUTO frontend; upstream source and notices remain intact | <https://github.com/anomalyco/opencode/releases/tag/v1.19.0> |
@@ -42,6 +42,16 @@ upstream LICENSE and README; SHA-512 is recorded in both package locks. This
 local version is not an upstream release. Dependency audits have no advisory
 allowlist. Caveman product 3.2.0 and binary bundle 2.1.0 are Apache-2.0; native
 skills retain LICENSE, NOTICE and the historical MIT attribution.
+
+Ruflo's Zod V3 dependency ranges use the explicit local MIT-licensed fork
+`@ivoai/zod3-compat@3.25.76-ivoai.1`. It is built from official Zod 4.6.7 with
+V3 root exports and early upper-bound rejection backported to V3 arrays/sets;
+the patched V4 subtree and upstream license are retained. Official V4 dependency
+ranges continue to resolve upstream V4. This is not an upstream V3 release.
+The reviewed source identity, patch, checksums, reproduction procedure and limits
+are in [patches/zod3-compat](patches/zod3-compat/README.md), with the full MIT
+notice in [LICENSE](patches/zod3-compat/LICENSE). A clean dependency audit does
+not certify unbounded schemas or arbitrary refinements against resource abuse.
 
 ## Claude Red
 

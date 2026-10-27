@@ -10,22 +10,35 @@ func TestIntakeContracts(t *testing.T) {
 		name, prompt string
 		ready        bool
 	}{
-		{"shallow", "corrija o projeto", false},
-		{"referent", "Corrija isso", false},
-		{"unresolved structured referent", "Objective: Fix this and generate a patch.\nAcceptance: tests must pass.", false},
-		{"resolved structured referent", "Objective: Fix this in handler.go and generate a patch.\nAcceptance: tests must pass.", true},
-		{"no acceptance", "Analise o repositório fixture e gere relatório de findings.", false},
-		{"empty heading", "Objetivo: Leia VERSION e informe o valor.\nAcceptance:", false},
-		{"vague acceptance", "Objetivo: Leia VERSION e informe o valor.\nAcceptance: tudo funcionando", false},
-		{"keyword stuffing", "objective deliverable acceptance criteria constraints", false},
-		{"simple", "Leia VERSION e informe o valor.\nAcceptance: retornar somente a versão.", true},
-		{"prose", "Read VERSION and report its value. The output must contain only the version.", true},
-		{"identify English action", "Objective: Identify the caller of Target in caller.ts.\nDeliverable: a report of caller names.\nAcceptance: the report must contain the caller name.", true},
-		{"identify still requires acceptance", "Objective: Identify the caller of Target in caller.ts.\nDeliverable: a report of caller names.", false},
-		{"identify Portuguese action", "Objetivo: Identifique os chamadores de Target em caller.ts.\nEntregáveis: relatório de chamadores.\nAceite: o relatório deve conter os nomes.", true},
-		{"concrete file deliverables", "Objective: implement two independent changes in this small fixture repository. Deliverables: a.sh prints A and b.sh prints B; README.md explains both. Constraints: do not modify protected.txt. Acceptance: sh a.sh returns A; sh b.sh returns B; protected.txt is unchanged.", true},
-		{"complex", "Objetivo:\nAnalise o repositório fixture e implemente duas features independentes.\nEntregáveis:\n- feature A\n- feature B\n- documentação\nRestrições:\nNão modificar protected.txt.\nAcceptance:\n- feature A funciona\n- feature B funciona\n- docs atualizadas\n- protected.txt permanece intacto", true},
+		{"informal objective", "corrija o projeto", true},
+		{"unresolved referent is input, not permission", "Corrija isso", true},
+		{"question", "Qual versão deste projeto?", true},
+		{"explanation", "Explique a função Assess", true},
+		{"no acceptance", "Analise o repositório fixture e gere relatório de findings.", true},
+		{"empty acceptance heading", "Objetivo: Leia VERSION e informe o valor.\nAcceptance:", true},
+		{"vague acceptance is not a grant", "Objetivo: Leia VERSION e informe o valor.\nAcceptance: tudo funcionando", true},
+		{"keywords are valid text", "objective deliverable acceptance criteria constraints", true},
+		{"single word", "oi", true},
+		{"explicit acceptance", "Read VERSION and report its value. Acceptance: return only the version.", true},
+		{"structured", "Objective: implement two independent changes.\nDeliverables: a.sh prints A and b.sh prints B.\nAcceptance: tests pass.", true},
+		{"line feed and tab", "Leia VERSION\n\tRetorne a versão.", true},
+		{"CRLF paste", "Leia VERSION\r\nRetorne a versão.", true},
+		{"Unicode", "Explique a função 测试 🚀", true},
+		{"maximum bytes", strings.Repeat("a", MaxPromptBytes), true},
+		{"maximum Unicode bytes", strings.Repeat("é", MaxPromptBytes/2), true},
+		{"empty", "", false},
+		{"whitespace only", " \t\n\r\n", false},
+		{"Unicode whitespace only", "\u2003\u00a0", false},
 		{"bounded", strings.Repeat("a", MaxPromptBytes+1), false},
+		{"invalid UTF-8", string([]byte{'a', 0xff}), false},
+		{"NUL", "Leia VERSION\x00", false},
+		{"terminal escape", "Leia VERSION\x1b[2J", false},
+		{"bell", "Leia VERSION\a", false},
+		{"delete", "Leia VERSION\x7f", false},
+		{"standalone carriage return", "Leia VERSION\rRetorne a versão.", false},
+		{"trailing carriage return", "Leia VERSION\r", false},
+		{"bidirectional override", "Leia VERSION\u202e", false},
+		{"bidirectional isolate", "Leia VERSION\u2066", false},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			r := Assess(tt.prompt)
@@ -41,8 +54,10 @@ func TestIntakeContracts(t *testing.T) {
 
 func TestGateDoesNotReturnPrompt(t *testing.T) {
 	const private = "private-data-not-for-metadata"
-	r := Assess(private)
-	if strings.Contains(r.Message(), private) {
-		t.Fatal("prompt leaked")
+	for _, prompt := range []string{private, private + "\x00"} {
+		r := Assess(prompt)
+		if strings.Contains(r.Message(), private) || strings.Contains(strings.Join(r.Missing, " "), private) {
+			t.Fatal("prompt leaked")
+		}
 	}
 }

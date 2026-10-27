@@ -105,9 +105,12 @@ session-only `--settings` file that captures structured statusline telemetry. No
 permanent third-party configuration is overwritten. Details are in
 [auto-orchestration.md](auto-orchestration.md).
 
-AUTO first requires an objective, deliverable and observable acceptance criteria.
-Purpose-auto selects relevant institutional sources before bounded knowledge
-lookups. IVOAI validates the DAG and waits for plan approval by default. It calculates
+AUTO accepts bounded non-empty UTF-8 text, including informal requests and
+questions, without requiring acceptance criteria in the prompt. Readiness grants
+no tool or plan authority; empty/malformed input is rejected before execution.
+The separate primary-only path without a DAG remains pending. Purpose-auto selects
+relevant institutional sources before bounded knowledge lookups. IVOAI validates
+the DAG and waits for plan approval by default. It calculates
 weighted capability tiers, keeps uneconomic read-only work in the primary, and
 launches dependency-ready workers within host and user limits. Each worker receives
 a local SharedContextBrief and deny-by-default MCP capabilities. Approved writers

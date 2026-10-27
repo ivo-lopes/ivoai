@@ -155,6 +155,9 @@ func (a *App) prefetchWorkerCode(ctx context.Context, provider *codeintel.Provid
 // prefetchCodeEvidence is shared by primary and workers, preserving exact
 // restricted artifacts without creating executor grants or loading skills.
 func (a *App) prefetchCodeEvidence(ctx context.Context, provider *codeintel.Provider, id, taskID, workerID string, query core.CodeQuery) (json.RawMessage, error) {
+	if os.Getenv("IVOAI_EXPERIMENTAL_EVIDENCE_GATEWAY") == "1" {
+		return a.gatewayCodeEvidence(ctx, provider, id, taskID, workerID, query)
+	}
 	result, err := provider.Inspect(ctx, query)
 	if err != nil {
 		return nil, err

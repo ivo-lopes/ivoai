@@ -35,6 +35,34 @@ func TestRufloLocalPatchRequiresExactIntegrity(t *testing.T) {
 	}
 }
 
+func TestRufloZodForkRequiresExactIdentityAndIntegrity(t *testing.T) {
+	var spec Spec
+	for _, item := range DefaultCatalog() {
+		if item.Name == "ruflo" {
+			spec = item
+		}
+	}
+	original, patch := rufloPackageLock, rufloZod3Patch
+	t.Cleanup(func() { rufloPackageLock, rufloZod3Patch = original, patch })
+	if err := validateRufloLock(spec); err != nil {
+		t.Fatal(err)
+	}
+	for _, invalid := range []string{
+		strings.ReplaceAll(string(original), "file:ivoai-zod3-compat-3.25.76-ivoai.1.tgz", "file:unreviewed-zod.tgz"),
+		strings.ReplaceAll(string(original), `"name": "@ivoai/zod3-compat"`, `"name": "zod"`),
+	} {
+		rufloPackageLock = []byte(invalid)
+		if err := validateRufloLock(spec); err == nil {
+			t.Fatal("unreviewed Zod fork identity accepted")
+		}
+	}
+	rufloPackageLock = original
+	rufloZod3Patch = []byte("tampered")
+	if err := validateRufloLock(spec); err == nil {
+		t.Fatal("modified embedded Zod archive accepted")
+	}
+}
+
 // npm resolves local file dependencies against its working directory even when
 // --prefix is provided. The installer must be independent of the caller's cwd.
 func newRufloRuntimeFixture(t *testing.T) managedInstallerFixture {
@@ -46,7 +74,7 @@ func newRufloRuntimeFixture(t *testing.T) managedInstallerFixture {
 		if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
 			t.Fatal(err)
 		}
-		if err := os.WriteFile(path, []byte("fixture"), 0600); err != nil {
+		if err := os.WriteFile(path, []byte("fixture"), 0700); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -55,7 +83,7 @@ func newRufloRuntimeFixture(t *testing.T) managedInstallerFixture {
 
 func TestRufloInstallUsesStagedWorkingDirectory(t *testing.T) {
 	fixture := newRufloRuntimeFixture(t)
-	prefix := filepath.Join(fixture.store.Paths.DataDir, "components", "ruflo")
+	prefix := filepath.Join(fixture.store.Paths.DataDir, "components")
 	fixture.installer.Runner = rufloWorkingDirectoryRunner{t: t, prefix: prefix}
 	for _, spec := range DefaultCatalog() {
 		if spec.Name == "ruflo" {
@@ -82,13 +110,23 @@ func (r rufloWorkingDirectoryRunner) Run(_ context.Context, _ string, args []str
 	if len(args) == 1 && args[0] == "--version" {
 		return platform.Result{Stdout: "v" + managedNodeVersion + "\n"}, nil
 	}
-	if options.Dir != r.prefix {
-		r.t.Fatalf("npm cwd=%q, want staged prefix %q", options.Dir, r.prefix)
+	if len(args) == 2 && args[1] == "--version" {
+		for _, spec := range DefaultCatalog() {
+			if spec.Name == "ruflo" {
+				return platform.Result{Stdout: "ruflo " + spec.Version + "\n"}, nil
+			}
+		}
+	}
+	if filepath.Dir(options.Dir) != r.prefix || !strings.HasPrefix(filepath.Base(options.Dir), ".ruflo-stage-") {
+		r.t.Fatalf("npm cwd=%q, want private stage below %q", options.Dir, r.prefix)
 	}
 	if _, err := os.Stat(filepath.Join(options.Dir, "braces-3.0.4-ivoai.1.tgz")); err != nil {
 		r.t.Fatal(err)
 	}
-	launcher := filepath.Join(r.prefix, "node_modules", ".bin", "ruflo")
+	if _, err := os.Stat(filepath.Join(options.Dir, "ivoai-zod3-compat-3.25.76-ivoai.1.tgz")); err != nil {
+		r.t.Fatal(err)
+	}
+	launcher := filepath.Join(options.Dir, "node_modules", ".bin", "ruflo")
 	if err := os.MkdirAll(filepath.Dir(launcher), 0700); err != nil {
 		return platform.Result{}, err
 	}

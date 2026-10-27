@@ -63,9 +63,9 @@ func TestLivePrimaryCodePrefetchBenchmark(t *testing.T) {
 		t.Fatal("invalid comparison arm")
 	}
 	cases := []struct{ name, task, prompt string }{
-		{"api", "Inspect API mathpkg/scale.go", "Report Scale's symbol, source file, ordered parameter_types, and return_type as JSON."},
-		{"implementation", "Locate function Scale", "Report Scale's symbol, source file, input 3 and computed result as JSON."},
-		{"multi_module_callers", "Identify callers of Scale", "Report every direct caller of Scale as a JSON callers array, each with symbol and repository-relative file. Include only direct callers."},
+		{"api", "Inspect API mathpkg/scale.go", "Report Scale's unqualified declaration identifier as symbol, source file, ordered parameter_types, and return_type as JSON."},
+		{"implementation", "Locate function Scale", "Report Scale's unqualified declaration identifier as symbol, source file, input 3 and computed result as JSON."},
+		{"multi_module_callers", "Identify callers of Scale", "Report every direct caller of Scale as a JSON callers array, each with unqualified declaration identifier as symbol and repository-relative file. Include only direct callers."},
 	}
 	if runtimeArm != "" {
 		cases[0].task = "Report the public signature of Scale"
@@ -436,6 +436,9 @@ func prefetchLiveCorrect(scenario, text string) (bool, bool) {
 		if !decode(&value) {
 			return false, false
 		}
+		if os.Getenv("IVOAI_GRAFT_PREFETCH_DIAGNOSTICS") == "1" {
+			fmt.Fprintf(os.Stderr, "prefetch_oracle implementation symbol=%t file=%t input=%t result=%t\n", value.Symbol == "Scale", value.File == "mathpkg/scale.go", value.Input == 3, value.Result == 6)
+		}
 		return true, value.Symbol == "Scale" && value.File == "mathpkg/scale.go" && value.Input == 3 && value.Result == 6
 	case "multi_module_callers":
 		type caller struct {
@@ -462,6 +465,7 @@ func TestPrimaryPrefetchLiveExactQuality(t *testing.T) {
 		{"api", `{"symbol":"Scale","file":"mathpkg/scale.go","parameter_types":["string"],"return_type":"int"}`, false},
 		{"implementation", `{"symbol":"Scale","file":"mathpkg/scale.go","input":3,"result":6}`, true},
 		{"implementation", `{"symbol":"Scale","file":"mathpkg/scale.go","input":3,"result":60}`, false},
+		{"implementation", `{"symbol":"mathpkg.Scale","file":"mathpkg/scale.go","input":3,"result":6}`, false},
 		{"multi_module_callers", `{"callers":[{"symbol":"Process","file":"service/process.go"},{"symbol":"Entry","file":"app/entry.go"}]}`, true},
 		{"multi_module_callers", `{"callers":[{"symbol":"Entry","file":"app/entry.go"},{"symbol":"Entry","file":"app/entry.go"}]}`, false},
 		{"multi_module_callers", `{"callers":[{"symbol":"Entry","file":"app/entry.go"}]}`, false},

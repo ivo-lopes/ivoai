@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="generator" content="Docusaurus v3.10.2">
 <title data-rh="true">Automatic orchestration | IVOAI</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="http://localhost:7780/docs/next/auto-orchestration"><meta data-rh="true" property="og:locale" content="en_US"><meta data-rh="true" property="og:locale:alternate" content="pt_BR"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="Automatic orchestration | IVOAI"><meta data-rh="true" name="description" content="ivoai codex and ivoai opencode are orchestrated frontends of the same quota-aware"><meta data-rh="true" property="og:description" content="ivoai codex and ivoai opencode are orchestrated frontends of the same quota-aware"><link data-rh="true" rel="icon" href="/img/favicon.svg"><link data-rh="true" rel="canonical" href="http://localhost:7780/docs/next/auto-orchestration"><link data-rh="true" rel="alternate" href="http://localhost:7780/docs/next/auto-orchestration" hreflang="en-US"><link data-rh="true" rel="alternate" href="http://localhost:7780/pt-BR/docs/next/auto-orchestration" hreflang="pt-BR"><link data-rh="true" rel="alternate" href="http://localhost:7780/docs/next/auto-orchestration" hreflang="x-default"><script data-rh="true" type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Automatic orchestration","item":"http://localhost:7780/docs/next/auto-orchestration"}]}</script><link rel="stylesheet" href="/assets/css/styles.c768eb50.css">
-<script src="/assets/js/runtime~main.acb7a29c.js" defer="defer"></script>
-<script src="/assets/js/main.15a95779.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.3b4a1535.js" defer="defer"></script>
+<script src="/assets/js/main.441dc8c8.js" defer="defer"></script>
 </head>
 <body>
 <svg style="display: none;"><defs>
@@ -19,12 +19,17 @@ IVOAI remains the control plane and invokes the
 official Codex or Claude Code CLI as the selected executor; inference is never sent
 through Ruflo or a copied provider credential.</p>
 <h2 class="anchor anchorTargetStickyNavbar_J2Vv" id="start-and-conversation-ownership">Start and conversation ownership<a href="#start-and-conversation-ownership" class="hash-link" aria-label="Direct link to Start and conversation ownership" title="Direct link to Start and conversation ownership" translate="no">​</a></h2>
-<p>AUTO requires an actionable objective, a concrete deliverable and observable
-acceptance criteria. Markdown headings are optional. An insufficient request is
-rejected with <code>waiting_for_refinement</code> and only the missing fields; it does not
-start workers or query institutional sources. Direct <code>ivoai codex --direct</code>/<code>ivoai claude</code>
-remain available for unrestricted conversational intake.</p>
-<p>Example: <code>Read VERSION and report its value. Acceptance: return only the version.</code></p>
+<p>AUTO accepts informal requests and questions without requiring an objective,
+deliverable or acceptance template. Intake accepts non-empty UTF-8 text up to
+128 KiB, including tabs and LF/CRLF line endings. Empty, malformed, oversized or
+unsafe control-character input is rejected before execution with a fixed
+diagnostic; the diagnostic never includes prompt fragments.</p>
+<p>Example: <code>Qual versão deste projeto?</code></p>
+<p>Intake readiness does not grant tools, approve plans or establish acceptance.
+Ambiguity can be resolved by the primary without treating missing prompt headings
+as an authorization boundary. A simple primary-only path without a DAG remains
+pending; this intake change retains the existing plan, quota, grant and final
+validation gates below.</p>
 <p>The default per-turn pipeline is intake → purpose selection → bounded knowledge
 bootstrap → native DAG → explicit plan approval → controlled workers → integration
 and validation → primary synthesis. Full OpenCode permissions do not approve a plan.</p>

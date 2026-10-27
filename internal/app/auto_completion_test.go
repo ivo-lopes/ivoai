@@ -30,9 +30,9 @@ func TestAutoFinalResponseRequiresDAGAcceptanceAndClosesCapability(t *testing.T)
 					return nil
 				},
 			}
-			prompt := "corrija o projeto"
+			prompt := ""
 			if sufficient {
-				prompt = "Read VERSION and report its value. Acceptance: return only the version."
+				prompt = "Qual versão deste projeto?"
 			}
 			_, err := runner.Run(context.Background(), opencodebridge.ExecutorRequest{Prompt: prompt}, func(string) error { emitted++; return nil })
 			if (err == nil) != (sufficient && complete) {

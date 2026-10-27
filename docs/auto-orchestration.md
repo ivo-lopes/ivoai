@@ -9,13 +9,19 @@ through Ruflo or a copied provider credential.
 
 ## Start and conversation ownership
 
-AUTO requires an actionable objective, a concrete deliverable and observable
-acceptance criteria. Markdown headings are optional. An insufficient request is
-rejected with `waiting_for_refinement` and only the missing fields; it does not
-start workers or query institutional sources. Direct `ivoai codex --direct`/`ivoai claude`
-remain available for unrestricted conversational intake.
+AUTO accepts informal requests and questions without requiring an objective,
+deliverable or acceptance template. Intake accepts non-empty UTF-8 text up to
+128 KiB, including tabs and LF/CRLF line endings. Empty, malformed, oversized or
+unsafe control-character input is rejected before execution with a fixed
+diagnostic; the diagnostic never includes prompt fragments.
 
-Example: `Read VERSION and report its value. Acceptance: return only the version.`
+Example: `Qual versão deste projeto?`
+
+Intake readiness does not grant tools, approve plans or establish acceptance.
+Ambiguity can be resolved by the primary without treating missing prompt headings
+as an authorization boundary. A simple primary-only path without a DAG remains
+pending; this intake change retains the existing plan, quota, grant and final
+validation gates below.
 
 The default per-turn pipeline is intake → purpose selection → bounded knowledge
 bootstrap → native DAG → explicit plan approval → controlled workers → integration

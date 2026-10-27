@@ -1,0 +1,163 @@
+{
+  "schema_version": 1,
+  "scope": "app_primary_prefetch_subset",
+  "global_economic_gate": "INCOMPLETE",
+  "required_scenarios": 16,
+  "measured_scenarios": [
+    "api",
+    "implementation",
+    "multi_module_callers"
+  ],
+  "all_attempts": {
+    "A": {
+      "attempts": 9,
+      "correct": 9,
+      "measured_rows": 9,
+      "InputTokens": {
+        "sum": 141424,
+        "observed_rows": 9
+      },
+      "CachedInputTokens": {
+        "sum": 24576,
+        "observed_rows": 9
+      },
+      "OutputTokens": {
+        "sum": 356,
+        "observed_rows": 9
+      },
+      "TotalMS": {
+        "sum": 45575,
+        "observed_rows": 9
+      },
+      "ToolCalls": {
+        "sum": 0,
+        "observed_rows": 9
+      }
+    },
+    "B": {
+      "attempts": 9,
+      "correct": 9,
+      "measured_rows": 9,
+      "InputTokens": {
+        "sum": 133738,
+        "observed_rows": 9
+      },
+      "CachedInputTokens": {
+        "sum": 12288,
+        "observed_rows": 9
+      },
+      "OutputTokens": {
+        "sum": 348,
+        "observed_rows": 9
+      },
+      "TotalMS": {
+        "sum": 45520,
+        "observed_rows": 9
+      },
+      "ToolCalls": {
+        "sum": 0,
+        "observed_rows": 9
+      }
+    }
+  },
+  "matched_pairs": {
+    "count": 9,
+    "arms": {
+      "A": {
+        "attempts": 9,
+        "correct": 9,
+        "measured_rows": 9,
+        "InputTokens": {
+          "sum": 141424,
+          "observed_rows": 9
+        },
+        "CachedInputTokens": {
+          "sum": 24576,
+          "observed_rows": 9
+        },
+        "OutputTokens": {
+          "sum": 356,
+          "observed_rows": 9
+        },
+        "TotalMS": {
+          "sum": 45575,
+          "observed_rows": 9
+        },
+        "ToolCalls": {
+          "sum": 0,
+          "observed_rows": 9
+        }
+      },
+      "B": {
+        "attempts": 9,
+        "correct": 9,
+        "measured_rows": 9,
+        "InputTokens": {
+          "sum": 133738,
+          "observed_rows": 9
+        },
+        "CachedInputTokens": {
+          "sum": 12288,
+          "observed_rows": 9
+        },
+        "OutputTokens": {
+          "sum": 348,
+          "observed_rows": 9
+        },
+        "TotalMS": {
+          "sum": 45520,
+          "observed_rows": 9
+        },
+        "ToolCalls": {
+          "sum": 0,
+          "observed_rows": 9
+        }
+      }
+    },
+    "reduction_percent": {
+      "InputTokens": 5.434721122298902,
+      "TotalMS": 0.12068019747668678
+    }
+  },
+  "per_repetition": [
+    {
+      "repetition": 0,
+      "matched_pairs": 3,
+      "reduction_percent": {
+        "InputTokens": 5.4326382554464265,
+        "TotalMS": -3.3787465940054497
+      }
+    },
+    {
+      "repetition": 1,
+      "matched_pairs": 3,
+      "reduction_percent": {
+        "InputTokens": 10.314857660195152,
+        "TotalMS": 3.967989329776592
+      }
+    },
+    {
+      "repetition": 2,
+      "matched_pairs": 3,
+      "reduction_percent": {
+        "InputTokens": -0.004486518013369824,
+        "TotalMS": 0.12797724848915748
+      }
+    }
+  ],
+  "improved_repetitions": 1,
+  "subset_economic_diagnostic": "FAIL",
+  "targets": {
+    "input_reduction_percent": 10,
+    "time_reduction_percent": 5,
+    "minimum_repetitions": 3,
+    "improved_fraction": "2/3"
+  },
+  "provider_usage": "reported_by_client_event_protocol",
+  "effective_model_observed": null,
+  "monetary_cost": null,
+  "cache_accounting": "cached_input_tokens_are_subset_of_input_tokens",
+  "workers": "not_applicable_primary_only",
+  "delegations": "not_applicable_primary_only",
+  "quota_consumption": null
+}
