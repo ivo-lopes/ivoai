@@ -80,3 +80,111 @@ agent sessions: `CONTEXT_SYNC=BLOCKED`, IVOAI-175.
 Rollback of the benchmark changes is an ordinary code revert. No public runtime
 contract, component pin, provider authentication or persisted session schema was
 changed by this delivery. No new release is claimed by this report.
+
+## Experimental Gateway (IVOAI-199 / IVOAI-148 / IVOAI-192)
+
+The opt-in implementation composes existing prefetch and ArtifactStore. It adds
+session/scope/generation keys, bounded concurrent deduplication, permission
+rechecks, exact references, provenance/gaps and secret admission. The library's
+sealed recovery API is tested separately; existing client artifact transports
+still retain their prior session/ownership policy. General recovery-policy
+integration, Memory/Context/tools adapters and task-specific sufficiency remain
+pending. The experimental flag stays **off**.
+
+All real attempts are retained in separate datasets:
+
+| Experiment | Correct A / B | Matched pairs | Input change A→B | Elapsed change A→B |
+|---|---:|---:|---:|---:|
+| Initial Gateway | 9/9 / 6/9 | 6 | +5.84% | +7.90% |
+| Legacy-compatible wire envelope | 7/9 / 7/9 | 6 | +2.86% | +1.56% |
+| Explicit unqualified-symbol prompt | 9/9 / 9/9 | 9 | −5.43% | −0.12% |
+
+Dataset directories are `candidate-gateway`, `candidate-gateway-v2` and
+`candidate-gateway-v3` under `evidence/backend-first`. Every manifest preserves
+binary, harness, official client, Node and distribution identities. These are
+development test binaries, not a published candidate release. The intermediate
+source trees were uncommitted; exact binary hashes must not be substituted for
+a claim of reproducible published-executable comparison.
+
+The first diagnostic retained only correctness flags: symbol differed from the
+strict oracle; file, input and computed result matched. No answer was retained,
+and the exact differing symbol is unknown. The old prompt did not specify
+qualification. Both harnesses now explicitly request an unqualified declaration
+identifier; the strict oracle still rejects `mathpkg.Scale`. This is a new
+measurement contract, not a reinterpretation of earlier failures.
+
+The final three-scenario comparison used 141424/133738 input tokens,
+24576/12288 cached-input tokens, 356/348 output tokens and 45575/45520 ms.
+All 18 attempts passed their strict oracles. The subset economic gate **failed**:
+5.43% input and 0.12% time reductions fall below the 10%/5% targets. The global
+gate remains INCOMPLETE. Cache equivalence is unproven, no model tool calls were
+made in either arm, and no warm or cross-worker inference savings were measured.
+Do not attribute the observed aggregate reduction causally to reuse.
+
+Linux wait4 resource measurements are present in the candidate experiments.
+They cover the command and its reaped descendants; maximum RSS is the maximum
+individual process value, not simultaneous summed process-tree RAM. None of
+these comparisons certifies the unchanged structural memory ceiling for the
+whole Codex process. Quota and monetary consumption remain unknown.
+
+The final quoted-credential/private-key admission hardening was added after the
+last inference binary was built. Its security regressions and race checks are
+recorded separately; synthetic benchmark sources do not exercise those patterns.
+The reported binary identities remain the measured identities.
+
+## Permissive intake (IVOAI-193)
+
+The shared intake accepts bounded nonempty UTF-8 natural language without
+requiring objective/deliverable/acceptance headings. It rejects malformed text,
+unsafe controls and oversized input, with fixed diagnostic labels. LF, tabs and
+CRLF remain valid. The Codex, bridge and App gates use the same assessment.
+Approval, sandbox, MCP grants, task validation and final DAG acceptance were not
+removed. Primary-only execution without a DAG is a separate pending change.
+
+Normal package tests and focused race tests passed. Official Codex 0.164.0
+against a local synthetic provider passed native App Server admission/resume and
+PTY tests, including oversized input, informal text and an actual approval
+exchange in the fixture. These are protocol tests, not real subscription
+inference or proof of Claude/Antigravity parity. The real Codex inference above
+uses the App prefetch harness, not that synthetic provider.
+
+## Full scenario status
+
+None of the 16 scenarios is fully certified across published binaries, clients,
+model/resource provenance, cold/warm and security cases. Narrow evidence exists
+as follows; unavailable work remains pending rather than counted as passing.
+
+| Required scenario | Current evidence / remaining gap |
+|---|---|
+| Small known-file correction | Direct-read contracts; executable edit A/B pending |
+| Function identification | Real repeated prefetch subset; full client flow pending |
+| Cross-module refactor | Existing contracts; comparative executable refactor pending |
+| Dependencies | Direct-caller subset; broader dependency recall pending |
+| Impact | Provider contracts; real task A/B pending |
+| APIs | Real repeated strict signature subset; full certification pending |
+| Large project / IVOAI | Historical negative retained; current real comparison pending |
+| Monorepo | Real Git worktree/subdirectory regression; inference A/B pending |
+| Unsupported parser | Existing fallback contracts; real repeated comparison pending |
+| Institutional documentation | Context retrieval unavailable; IVOAI-175 pending |
+| ai-memory history | Requested canonical pages unavailable; real comparison pending |
+| Non-code tasks | Intake contracts; real economy comparison pending |
+| Multiple workers | Deterministic retrieval reuse/isolation; real inference A/B pending |
+| Reuse between turns | Bounded cache contracts; persistent-client comparison pending |
+| Interrupted continuity | Native synthetic protocol tests; real comparative flow pending |
+| Concurrent distinct projects | Scope/concurrency regressions; real provider comparison pending |
+
+## Final local checks for this development batch
+
+- Full normal Go suite passed after the runtime/intake changes; live opt-in paths
+  without their required inputs remain skipped, not counted as provider evidence.
+- Final `internal/evidence` and `internal/app` race suites passed (58.128 s and
+  112.208 s). The code adapter additionally passed immediate-plan, stopped-worker
+  and real monorepo-worktree regressions.
+- `go vet ./...` passed; pinned govulncheck 1.7.0 reported no vulnerabilities
+  with the local Go 1.27.3 toolchain.
+- All 24 Python tests in normal discovery, nine standalone smoke-assertion tests
+  and 41 frontend Node tests passed. Synthetic tests are labeled as such.
+- The EN/pt-BR production documentation build and translation parity passed.
+  Native amd64 and ARM64 cross-builds were exercised locally; exact-head CI,
+  distributed installation/update/rollback and no-AVX runtime certification are
+  separate promotion gates. No new release or production deployment occurred.

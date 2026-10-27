@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "scope": "app_primary_prefetch_subset",
+  "repetitions": 3,
+  "model_requested": "gpt-6.1-sol",
+  "effort_requested": "low",
+  "effective_model_observed": null,
+  "tools_exposed": 0,
+  "runtime_flags": {
+    "experimental_evidence_gateway": true
+  },
+  "baseline_test_sha256": "136476c85e716cd417f1106bcd07c722546587bc10fd814aab457faae2a384ef",
+  "candidate_test_sha256": "f18e91143414bb1e46549827f2b8a781f74f86e58518b402402abe00853300a6",
+  "codex_sha256": "b93f6811d3f653f0fb83be4050d857fb9abbb111dfa2ce160563327daff7f306",
+  "node_sha256": "5a7b8a3cf5ccb57d297519754fd73238f64cf560afd0ef19a2f9bf7384cbb657",
+  "sandbox_sha256": "97199c52aaf8e352ace030c245990ab14b98f80b387d0791ef8c04a851bbc3f8",
+  "distribution_inventory_sha256": "4c405568d9fd2d3bf78f7831d4b536a460bde13cb2a8724332e61ff4b6228c43",
+  "harness_sha256": "d601c9b951a2ee3ae63943081321dfbc46981c152ddbfd5f29dbd744a027665c"
+}

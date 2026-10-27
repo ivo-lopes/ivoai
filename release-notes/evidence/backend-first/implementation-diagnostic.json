@@ -1,0 +1,9 @@
+{
+  "scope": "single_follow_up_diagnostic_not_acceptance_run",
+  "symbol_correct": false,
+  "file_correct": true,
+  "input_correct": true,
+  "result_correct": true,
+  "response_retained": false,
+  "oracle_relaxed": false
+}

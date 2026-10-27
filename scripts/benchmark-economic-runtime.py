@@ -115,24 +115,21 @@ def read_evidence(path, scenario, arm, repetition, code, inventory_hash):
     return base
 
 
-
 def wait4_process(process, timeout):
     """Reap this owned PID exactly once; Popen must not poll/wait before wait4."""
     deadline = time.monotonic() + timeout
-    timed_out = False
     try:
         while True:
             pid, status, usage = os.wait4(process.pid, os.WNOHANG)
             if pid:
                 process.returncode = os.waitstatus_to_exitcode(status)
-                return (124 if timed_out else process.returncode), usage
+                return process.returncode, usage
             remaining = deadline - time.monotonic()
             if remaining <= 0:
                 try:
                     os.killpg(process.pid, signal.SIGKILL)
                 except ProcessLookupError:
                     pass
-                timed_out = True
                 # SIGKILL has been delivered to our disposable group. Reap the
                 # owned test PID, preserving partial resource usage on timeout.
                 pid, status, usage = os.wait4(process.pid, 0)

@@ -6,6 +6,8 @@ import json
 import os
 from pathlib import Path
 import tempfile
+import signal
+import time
 import unittest
 from unittest import mock
 
@@ -247,6 +249,37 @@ class DriverTests(unittest.TestCase):
         self.assertGreaterEqual(resources["LocalUserCPUMS"], 0)
         with self.assertRaises(ChildProcessError):
             os.waitpid(processes[0].pid, os.WNOHANG)
+
+    @unittest.skipUnless(hasattr(os, "wait4") and os.sys.platform.startswith("linux"), "Linux process group accounting")
+    def test_native_wait4_timeout_kills_descendant_group(self):
+        with tempfile.TemporaryDirectory() as directory, \
+                mock.patch.object(BENCHMARK.Path, "is_file", return_value=False):
+            child_pid_file = Path(directory) / "child.pid"
+            program = ("import subprocess,time; from pathlib import Path; "
+                       "child=subprocess.Popen(['/usr/bin/python3','-c','import time;time.sleep(30)']); "
+                       f"Path({str(child_pid_file)!r}).write_text(str(child.pid)); time.sleep(30)")
+            code, resources = BENCHMARK.run_attempt(["/usr/bin/python3", "-c", program],
+                os.environ.copy(), Path(directory) / "resource.json", timeout=1)
+            self.assertEqual(code, 124)
+            self.assertGreater(resources["LocalElapsedMS"], 0)
+            child_pid = int(child_pid_file.read_text())
+            deadline = time.monotonic() + 1
+            try:
+                while time.monotonic() < deadline:
+                    try:
+                        state = (Path("/proc") / str(child_pid) / "stat").read_text().rsplit(")", 1)[1].split()[0]
+                    except FileNotFoundError:
+                        break
+                    if state == "Z":  # killed orphan may await its init reaper
+                        break
+                    time.sleep(0.01)
+                else:
+                    self.fail("timed-out command left an executing descendant")
+            finally:
+                try:
+                    os.kill(child_pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
 
     def test_runtime_flag_manifest_is_explicit_boolean(self):
         with mock.patch.dict(os.environ, {"IVOAI_EXPERIMENTAL_EVIDENCE_GATEWAY": "1"}):
