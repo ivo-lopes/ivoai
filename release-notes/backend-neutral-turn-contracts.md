@@ -1,6 +1,6 @@
 # Provider-neutral executor turn contracts
 
-IVOAI-192 incremental change, based on `9874dbdf`.
+IVOAI-192 incremental change, rebased on `2ba265cb` from PR #31.
 
 Shared executor input, results, failures and traces lived in `opencodebridge`,
 forcing backend consumers to use a frontend namespace. Their definitions now
@@ -94,3 +94,9 @@ Additional local validation passed:
   task metadata.
 - App race tests passed for the new preparation/lifecycle tests, existing final
   acceptance tests and primary grant isolation tests.
+
+After rebasing onto the audited dependency/profile updates in PR #31, the full
+normal Go suite, focused contract/lifecycle/native-admission race tests and full
+vet passed again. No opt-in live client tests were enabled for this revalidation.
+The release verifier also runs the reviewed Zod runtime/type fixtures already
+required by the parent PR's CI, keeping those dependency gates aligned.
