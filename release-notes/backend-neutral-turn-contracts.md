@@ -63,3 +63,34 @@ Opt-in live client tests were not enabled for this refactor. These results do
 not establish additional client parity or whole-session token/latency savings.
 No release or production deployment is part of this increment. Rollback is a
 code revert; no stored-data conversion is required.
+
+## Follow-up: turn-local completion and resource lifetime
+
+Automatic turn preparation now returns a `preparedAutoTurn` value containing its
+executor runner, release callback and completion validator. `autoTurnRunner.Run`
+keeps this value local to one execution. The existing production DAG validator
+is created for that prepared turn instead of stored on the shared runner.
+
+Release runs after preparation, execution, validation or final-emitter failure
+when a callback has been acquired. The production preparation paths continue
+closing their own partial resources before returning an empty failed descriptor.
+Final output remains buffered until validation passes, with the existing 1 MiB
+bound and missing-final failure class. Existing injected passthrough fixtures keep
+their prior streaming behavior.
+
+This prepares a safer boundary for later adaptive decisions. It does not enable
+execution without a DAG, change the default completion policy, or alter executor
+arguments, model selection, scheduler, grants, approvals or sandbox settings.
+
+Additional local validation passed:
+
+- `go test ./internal/app -count=1 -timeout=20m`: full App package suite.
+- Focused lifecycle tests cover preparation errors with an acquired lease,
+  executor/validation/emitter errors, missing output, the exact 1 MiB boundary and
+  over-limit rejection. Concurrent turns retain different validators and release
+  callbacks; a rejected turn cannot inherit another turn's acceptance or emit.
+- Production scoped-runner tests retain `DAG_INCOMPLETE` and
+  `ACCEPTANCE_INCOMPLETE` failures, and permit synthesis only after completed
+  task metadata.
+- App race tests passed for the new preparation/lifecycle tests, existing final
+  acceptance tests and primary grant isolation tests.
