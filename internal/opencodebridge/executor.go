@@ -39,30 +39,13 @@ type CLIRunner struct {
 	Claude ExecutorSpec
 }
 
-// ExecutorFailure is deliberately metadata-only. It gives the bridge and
-// diagnostics a stable reason without exposing stderr, prompts, credentials,
-// or tool results.
-type ExecutorFailure struct {
-	Class    string
-	ExitCode int
-}
-
-func (e *ExecutorFailure) Error() string {
-	if e.ExitCode >= 0 {
-		return fmt.Sprintf("%s (exit %d)", e.Class, e.ExitCode)
-	}
-	return e.Class
-}
+// ExecutorFailure remains an alias for callers using the legacy bridge name.
+type ExecutorFailure = core.ExecutorFailure
 
 func failure(class string) error { return &ExecutorFailure{Class: class, ExitCode: -1} }
 
-func FailureClass(err error) string {
-	var value *ExecutorFailure
-	if errors.As(err, &value) && value.Class != "" {
-		return value.Class
-	}
-	return "executor_failure"
-}
+// FailureClass preserves the legacy entry point and its stable fallback class.
+func FailureClass(err error) string { return core.FailureClass(err) }
 
 func (r CLIRunner) Run(ctx context.Context, request ExecutorRequest, emit func(string) error) (outcome ExecutorResult, runError error) {
 	spec := r.Codex

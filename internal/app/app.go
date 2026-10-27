@@ -56,7 +56,7 @@ type App struct {
 	setupComponents func(context.Context) error
 	// OpenCodeBridgeRunner and StartOpenCodeManaged are injected only by
 	// hermetic tests. Production uses the official managed adapters.
-	OpenCodeBridgeRunner     opencodebridge.ExecutorRunner
+	OpenCodeBridgeRunner     core.ExecutorRunner
 	ProviderAccountReference func(context.Context, string) (string, error)
 	OpenCodeModelCatalog     *opencodebridge.ModelCatalog
 	StartOpenCodeManaged     func(context.Context, opencodebridge.ManagedOptions) (managedOpenCodeFrontend, error)

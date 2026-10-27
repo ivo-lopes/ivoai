@@ -747,15 +747,15 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 		return err
 	}
 	baseRunner := bridgeRunner
-	bridgeRunner = turnRunnerFunc(func(turnCtx context.Context, request opencodebridge.ExecutorRequest, emit func(string) error) (opencodebridge.ExecutorResult, error) {
+	bridgeRunner = turnRunnerFunc(func(turnCtx context.Context, request core.ExecutorRequest, emit func(string) error) (core.ExecutorResult, error) {
 		turnID := currentID()
 		turnDir, err := store.RuntimeDir(turnID)
 		if err != nil {
-			return opencodebridge.ExecutorResult{}, err
+			return core.ExecutorResult{}, err
 		}
 		path := filepath.Join(turnDir, "automatic-instructions.md")
 		if err := platform.AtomicWritePrivate([]byte(instructions), path); err != nil {
-			return opencodebridge.ExecutorResult{}, err
+			return core.ExecutorResult{}, err
 		}
 		runner := a.scopeAutoRunner(baseRunner, originalConfig, state, store, turnID, cwd, turnDir, path, agentArgs, selectors, turnState, modelCatalog)
 		return runner.Run(turnCtx, request, emit)

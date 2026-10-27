@@ -14,6 +14,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ivo-lopes/ivoai/internal/core"
 	"github.com/ivo-lopes/ivoai/internal/opencodebridge"
 	"github.com/ivo-lopes/ivoai/internal/platform"
 	"github.com/ivo-lopes/ivoai/internal/quota"
@@ -234,8 +235,8 @@ func (n *NativeOpenCode) CanModel(model string) bool {
 	return false
 }
 
-func (n *NativeOpenCode) Run(ctx context.Context, request opencodebridge.ExecutorRequest, emit func(string) error) (opencodebridge.ExecutorResult, error) {
-	result := opencodebridge.ExecutorResult{RequestedModel: request.Model, SelectionMode: request.SelectionMode, ConfigurationSource: "official OpenCode HTTP", CompressionProvider: "direct"}
+func (n *NativeOpenCode) Run(ctx context.Context, request core.ExecutorRequest, emit func(string) error) (core.ExecutorResult, error) {
+	result := core.ExecutorResult{RequestedModel: request.Model, SelectionMode: request.SelectionMode, ConfigurationSource: "official OpenCode HTTP", CompressionProvider: "direct"}
 	if request.Executor != "opencode" {
 		return result, errors.New("native executor routing mismatch")
 	}
@@ -444,14 +445,14 @@ func nativeLabel(value string) bool {
 // RoutedRunner keeps executor ownership in IVOAI; the native backend never
 // points at the frontend bridge. Existing official CLI runners are unchanged.
 type RoutedRunner struct {
-	Official opencodebridge.ExecutorRunner
+	Official core.ExecutorRunner
 	Native   *NativeOpenCode
 }
 
-func (r RoutedRunner) Run(ctx context.Context, request opencodebridge.ExecutorRequest, emit func(string) error) (opencodebridge.ExecutorResult, error) {
+func (r RoutedRunner) Run(ctx context.Context, request core.ExecutorRequest, emit func(string) error) (core.ExecutorResult, error) {
 	if request.Executor == "opencode" {
 		if r.Native == nil {
-			return opencodebridge.ExecutorResult{}, errors.New("native OpenCode unavailable")
+			return core.ExecutorResult{}, errors.New("native OpenCode unavailable")
 		}
 		return r.Native.Run(ctx, request, emit)
 	}

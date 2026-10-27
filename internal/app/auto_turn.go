@@ -12,6 +12,7 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/agents"
 	"github.com/ivo-lopes/ivoai/internal/codeintel"
 	"github.com/ivo-lopes/ivoai/internal/config"
+	"github.com/ivo-lopes/ivoai/internal/core"
 	"github.com/ivo-lopes/ivoai/internal/externalmcp"
 	"github.com/ivo-lopes/ivoai/internal/observability"
 	"github.com/ivo-lopes/ivoai/internal/opencodebridge"
@@ -42,31 +43,31 @@ func (s *autoTurnState) set(k sessionKnowledge, n *agents.NativeOpenCode) {
 }
 
 type autoTurnRunner struct {
-	prepare  func(context.Context, opencodebridge.ExecutorRequest) (opencodebridge.ExecutorRunner, func(), error)
-	resolve  func(opencodebridge.ExecutorRequest) (opencodebridge.ExecutorRequest, error)
+	prepare  func(context.Context, core.ExecutorRequest) (core.ExecutorRunner, func(), error)
+	resolve  func(core.ExecutorRequest) (core.ExecutorRequest, error)
 	validate func() error
 }
 
-type turnRunnerFunc func(context.Context, opencodebridge.ExecutorRequest, func(string) error) (opencodebridge.ExecutorResult, error)
+type turnRunnerFunc func(context.Context, core.ExecutorRequest, func(string) error) (core.ExecutorResult, error)
 
-func (f turnRunnerFunc) Run(ctx context.Context, request opencodebridge.ExecutorRequest, emit func(string) error) (opencodebridge.ExecutorResult, error) {
+func (f turnRunnerFunc) Run(ctx context.Context, request core.ExecutorRequest, emit func(string) error) (core.ExecutorResult, error) {
 	return f(ctx, request, emit)
 }
 
-func (r autoTurnRunner) Run(ctx context.Context, request opencodebridge.ExecutorRequest, emit func(string) error) (opencodebridge.ExecutorResult, error) {
+func (r autoTurnRunner) Run(ctx context.Context, request core.ExecutorRequest, emit func(string) error) (core.ExecutorResult, error) {
 	if !promptgate.Assess(request.Prompt).Ready {
-		return opencodebridge.ExecutorResult{}, &opencodebridge.ExecutorFailure{Class: "PROMPT_INSUFFICIENT", ExitCode: -1}
+		return core.ExecutorResult{}, &core.ExecutorFailure{Class: "PROMPT_INSUFFICIENT", ExitCode: -1}
 	}
 	if r.resolve != nil {
 		var err error
 		request, err = r.resolve(request)
 		if err != nil {
-			return opencodebridge.ExecutorResult{}, err
+			return core.ExecutorResult{}, err
 		}
 	}
 	runner, close, err := r.prepare(ctx, request)
 	if err != nil {
-		return opencodebridge.ExecutorResult{}, err
+		return core.ExecutorResult{}, err
 	}
 	defer close()
 	if r.validate == nil {
@@ -89,7 +90,7 @@ func (r autoTurnRunner) Run(ctx context.Context, request opencodebridge.Executor
 		return result, err
 	}
 	if final.Len() == 0 {
-		return result, &opencodebridge.ExecutorFailure{Class: "FINAL_RESPONSE_MISSING", ExitCode: 1}
+		return result, &core.ExecutorFailure{Class: "FINAL_RESPONSE_MISSING", ExitCode: 1}
 	}
 	return result, emit(final.String())
 }
@@ -122,8 +123,8 @@ func (a *App) prepareAutoPromptKnowledge(ctx context.Context, cfg config.Config,
 	return a.prepareSessionKnowledgeSelection(ctx, cfg, selectors, &selection, executor, runtimeDir, cwd, scope, os.Environ(), observe, true, codeintel.ProjectTools(prompt))
 }
 
-func (a *App) scopeAutoRunner(base opencodebridge.ExecutorRunner, original config.Config, state config.State, store session.Store, id, cwd, runtimeDir, instructionsPath string, agentArgs, selectors []string, current *autoTurnState, catalog opencodebridge.ModelCatalog) opencodebridge.ExecutorRunner {
-	wrapped := autoTurnRunner{prepare: func(ctx context.Context, request opencodebridge.ExecutorRequest) (opencodebridge.ExecutorRunner, func(), error) {
+func (a *App) scopeAutoRunner(base core.ExecutorRunner, original config.Config, state config.State, store session.Store, id, cwd, runtimeDir, instructionsPath string, agentArgs, selectors []string, current *autoTurnState, catalog opencodebridge.ModelCatalog) core.ExecutorRunner {
+	wrapped := autoTurnRunner{prepare: func(ctx context.Context, request core.ExecutorRequest) (core.ExecutorRunner, func(), error) {
 		k, err := a.prepareAutoPromptKnowledge(ctx, original, selectors, request.Prompt, request.Executor, runtimeDir, cwd, func(event observability.Event) {
 			_, _ = store.Update(id, func(value *session.Session) error { return session.AppendObservation(value, event) })
 		})
@@ -206,7 +207,7 @@ func (a *App) scopeAutoRunner(base opencodebridge.ExecutorRunner, original confi
 					}
 				}
 				spec.Args, spec.Env = args, inheritHookSessionEnvironment(executorBridgeEnvironment(k.environment), spec.Env)
-				spec.ObserveProgress = func(trace opencodebridge.ExecutionTrace) {
+				spec.ObserveProgress = func(trace core.ExecutionTrace) {
 					encoded, err := json.Marshal(trace)
 					if err == nil {
 						_, _ = store.Update(id, func(v *session.Session) error { v.ExecutorTrace = encoded; return nil })
@@ -255,11 +256,11 @@ func (a *App) scopeAutoRunner(base opencodebridge.ExecutorRunner, original confi
 		return runner, k.close, nil
 	}}
 	if a.OpenCodeBridgeRunner == nil {
-		wrapped.resolve = func(request opencodebridge.ExecutorRequest) (opencodebridge.ExecutorRequest, error) {
+		wrapped.resolve = func(request core.ExecutorRequest) (core.ExecutorRequest, error) {
 			if request.SelectionMode == "auto" {
 				model, ok := catalog.StrongPrimary(request.Executor)
 				if !ok {
-					return request, &opencodebridge.ExecutorFailure{Class: "MODEL_UNAVAILABLE", ExitCode: 1}
+					return request, &core.ExecutorFailure{Class: "MODEL_UNAVAILABLE", ExitCode: 1}
 				}
 				request.Model, request.Effort = model.UpstreamModel, model.DefaultEffort
 			}
@@ -271,11 +272,11 @@ func (a *App) scopeAutoRunner(base opencodebridge.ExecutorRunner, original confi
 				return err
 			}
 			if v.CurrentPhase != "synthesizing" || len(v.Tasks) == 0 {
-				return &opencodebridge.ExecutorFailure{Class: "DAG_INCOMPLETE", ExitCode: 1}
+				return &core.ExecutorFailure{Class: "DAG_INCOMPLETE", ExitCode: 1}
 			}
 			for _, task := range v.Tasks {
 				if task.State != session.StateCompleted {
-					return &opencodebridge.ExecutorFailure{Class: "ACCEPTANCE_INCOMPLETE", ExitCode: 1}
+					return &core.ExecutorFailure{Class: "ACCEPTANCE_INCOMPLETE", ExitCode: 1}
 				}
 			}
 			return nil
