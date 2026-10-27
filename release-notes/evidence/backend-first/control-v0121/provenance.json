@@ -1,0 +1,19 @@
+{
+  "experiment": "same_binary_control_not_candidate_optimization",
+  "baseline_revision": "3ff6db8bb0174b1ae6f781f6754e2653a6dae5db",
+  "baseline_release": "v0.12.1",
+  "arms_use_identical_test_binary": true,
+  "published_binary_full_e2e": false,
+  "toolchain": "go1.27.3 linux/amd64",
+  "codex_version": "0.164.0",
+  "node_version": "26.11.1",
+  "graft_archive_sha256": "85cd3b4f5a06e99a683739aa6fe7325951d3343834ef5ad18a37e30e9bfac441",
+  "node_archive_sha256": "15fc043a51a5783f2f4b634561091658f5a7f0e3db03f997dca3a8033a33e45b",
+  "overall_exit_code": 1,
+  "failure": "implementation_A_repetition_1_strict_oracle",
+  "local_resources": "unavailable_no_GNU_time_at_execution",
+  "model_identity": "client_requested_only_not_backend_attested",
+  "provider_cache_equivalence": false,
+  "host_idle": false,
+  "context_sync": "BLOCKED_IVOAI-175"
+}
