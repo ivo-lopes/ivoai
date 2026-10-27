@@ -62,29 +62,45 @@ func FailureClass(err error) string {
 }
 
 // ExecutionTrace contains only bounded operational metadata. Prompts, tool
-// arguments/results, provider tokens and arbitrary stderr never enter it.
+// arguments/results, authentication tokens and arbitrary stderr never enter it.
 type ExecutionTrace struct {
-	ConfiguredMCP       []string    `json:"configured_mcp,omitempty"`
-	Executor            string      `json:"executor"`
-	Executable          string      `json:"resolved_executable"`
-	Version             string      `json:"executor_version"`
-	Directory           string      `json:"working_directory"`
-	PID                 int         `json:"child_pid"`
-	ExitCode            int         `json:"exit_code"`
-	Signal              string      `json:"signal,omitempty"`
-	Events              int         `json:"stdout_events"`
-	LastEvent           string      `json:"last_valid_event"`
-	Completion          bool        `json:"completion_event"`
-	FinalResponse       bool        `json:"final_response_present"`
-	OutputBytes         int         `json:"partial_output_bytes"`
-	StderrBytes         int         `json:"stderr_bytes"`
-	Failure             string      `json:"failure_class,omitempty"`
-	RequestedModel      string      `json:"requested_model,omitempty"`
-	RequestedEffort     string      `json:"requested_reasoning,omitempty"`
-	EffectiveModel      string      `json:"effective_model,omitempty"`
-	EffectiveEffort     string      `json:"effective_reasoning,omitempty"`
-	ConfigurationSource string      `json:"configuration_source,omitempty"`
-	Tools               []ToolTrace `json:"mcp_operations,omitempty"`
+	Usage               *ReportedTokenUsage `json:"usage,omitempty"`
+	UsageStatus         string              `json:"usage_status,omitempty"`
+	ConfiguredMCP       []string            `json:"configured_mcp,omitempty"`
+	Executor            string              `json:"executor"`
+	Executable          string              `json:"resolved_executable"`
+	Version             string              `json:"executor_version"`
+	Directory           string              `json:"working_directory"`
+	PID                 int                 `json:"child_pid"`
+	ExitCode            int                 `json:"exit_code"`
+	Signal              string              `json:"signal,omitempty"`
+	Events              int                 `json:"stdout_events"`
+	LastEvent           string              `json:"last_valid_event"`
+	Completion          bool                `json:"completion_event"`
+	FinalResponse       bool                `json:"final_response_present"`
+	OutputBytes         int                 `json:"partial_output_bytes"`
+	StderrBytes         int                 `json:"stderr_bytes"`
+	Failure             string              `json:"failure_class,omitempty"`
+	RequestedModel      string              `json:"requested_model,omitempty"`
+	RequestedEffort     string              `json:"requested_reasoning,omitempty"`
+	EffectiveModel      string              `json:"effective_model,omitempty"`
+	EffectiveEffort     string              `json:"effective_reasoning,omitempty"`
+	ConfigurationSource string              `json:"configuration_source,omitempty"`
+	Tools               []ToolTrace         `json:"mcp_operations,omitempty"`
+}
+
+// ReportedTokenUsage retains a bounded official-client report, not an estimate,
+// price, quota measurement or independent attestation of a provider/backend.
+// CachedInputTokens is a subset of InputTokens; nil means it was not reported.
+// A CLI invocation may contain multiple model calls. Never sum this report with
+// partial/cumulative events or treat it as usage for the whole IVOAI session.
+type ReportedTokenUsage struct {
+	InputTokens       int64  `json:"input_tokens"`
+	OutputTokens      int64  `json:"output_tokens"`
+	CachedInputTokens *int64 `json:"cached_input_tokens,omitempty"`
+	Basis             string `json:"basis"`
+	Source            string `json:"source"`
+	Scope             string `json:"scope"`
 }
 type ToolTrace struct {
 	Server       string   `json:"server"`

@@ -943,6 +943,12 @@ func writeOpenAIErrorCode(w http.ResponseWriter, status int, message, code strin
 
 // ScanJSONLines provides the bounded scanner used by official-client adapters.
 func ScanJSONLines(reader io.Reader, handle func(map[string]any) error) error {
+	return scanJSONLines(reader, handle, false)
+}
+
+// The CLI runner preserves numeric lexemes for exact usage validation. Keep
+// the exported scanner's historical float64 callback contract unchanged.
+func scanJSONLines(reader io.Reader, handle func(map[string]any) error, exactNumbers bool) error {
 	counted := &countingReader{reader: reader}
 	scanner := bufio.NewScanner(counted)
 	scanner.Buffer(make([]byte, 64<<10), 1<<20)
@@ -956,7 +962,18 @@ func ScanJSONLines(reader io.Reader, handle func(map[string]any) error) error {
 			continue
 		}
 		var value map[string]any
-		if err := json.Unmarshal(line, &value); err != nil {
+		var decodeErr error
+		if exactNumbers {
+			decoder := json.NewDecoder(bytes.NewReader(line))
+			decoder.UseNumber()
+			decodeErr = decoder.Decode(&value)
+			if decodeErr == nil && decoder.Decode(new(any)) != io.EOF {
+				decodeErr = errors.New("trailing executor JSON data")
+			}
+		} else {
+			decodeErr = json.Unmarshal(line, &value)
+		}
+		if decodeErr != nil {
 			// Official clients may emit bounded human startup noise before the
 			// JSON event stream. Once the stream starts, or when a line claims
 			// to be a JSON object, corruption is never silently discarded.
