@@ -87,6 +87,24 @@ Without that input the test is explicitly skipped and supplies no live evidence.
 It does not perform inference, read personal provider credentials, certify
 native optional libraries on every CPU, or establish client parity.
 
+## Go toolchain promotion gate
+
+CI run [40591751032](https://github.com/ivo-lopes/ivoai/actions/runs/40591751032)
+on `2ba265cb` passed the twelve independent platform jobs, normal/race Go tests,
+documentation/a11y, both npm audits, native protocol fixtures, vet, build and
+ShellCheck. Promotion still failed: the workflow selected Go 1.27.2 from go.mod,
+and govulncheck reported reachable
+[GO-2026-6809](https://pkg.go.dev/vuln/GO-2026-6809) in crypto/x509. Two dependent
+server jobs were skipped, not passed. No merge or release followed that result.
+
+Go 1.27.3 includes the upstream correction. The module minimum, source-bootstrap
+installer checksums, component manifest and third-party notice now pin 1.27.3.
+Both Linux archive SHA-256 values were checked against the
+[official release metadata](https://go.dev/dl/?mode=json). Local checks above
+already used the reviewed Go 1.27.3 archive; this difference explains why the
+local vulnerability scan passed while CI correctly rejected the older compiler.
+The vulnerability gate remains enabled and a new exact-head CI run is required.
+
 ## Native-client limitation
 
 Claude Code 2.1.251 administrative authentication status returned exit 1,
