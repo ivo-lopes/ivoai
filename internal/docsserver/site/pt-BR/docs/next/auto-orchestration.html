@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="generator" content="Docusaurus v3.10.2">
 <title data-rh="true">Orquestração automática | IVOAI</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="http://localhost:7780/pt-BR/docs/next/auto-orchestration"><meta data-rh="true" property="og:locale" content="pt_BR"><meta data-rh="true" property="og:locale:alternate" content="en_US"><meta data-rh="true" name="docusaurus_locale" content="pt-BR"><meta data-rh="true" name="docsearch:language" content="pt-BR"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="Orquestração automática | IVOAI"><meta data-rh="true" name="description" content="ivoai codex e ivoai opencode compartilham o mesmo core. O primeiro usa admissão"><meta data-rh="true" property="og:description" content="ivoai codex e ivoai opencode compartilham o mesmo core. O primeiro usa admissão"><link data-rh="true" rel="icon" href="/pt-BR/img/favicon.svg"><link data-rh="true" rel="canonical" href="http://localhost:7780/pt-BR/docs/next/auto-orchestration"><link data-rh="true" rel="alternate" href="http://localhost:7780/docs/next/auto-orchestration" hreflang="en-US"><link data-rh="true" rel="alternate" href="http://localhost:7780/pt-BR/docs/next/auto-orchestration" hreflang="pt-BR"><link data-rh="true" rel="alternate" href="http://localhost:7780/docs/next/auto-orchestration" hreflang="x-default"><script data-rh="true" type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Orquestração automática","item":"http://localhost:7780/pt-BR/docs/next/auto-orchestration"}]}</script><link rel="stylesheet" href="/pt-BR/assets/css/styles.ef9ae034.css">
-<script src="/pt-BR/assets/js/runtime~main.80533468.js" defer="defer"></script>
-<script src="/pt-BR/assets/js/main.fa89afd0.js" defer="defer"></script>
+<script src="/pt-BR/assets/js/runtime~main.d218985e.js" defer="defer"></script>
+<script src="/pt-BR/assets/js/main.423c6b9f.js" defer="defer"></script>
 </head>
 <body>
 <svg style="display: none;"><defs>
@@ -22,16 +22,17 @@ Claude opcional e Native OpenCode elegível mantêm autenticação oficial próp
 O IVOAI não copia credentials de providers para o OpenCode.</p>
 <div class="language-sh codeBlockContainer_Jx85 theme-code-block" style="--prism-color:#bfc7d5;--prism-background-color:#292d3e"><div class="codeBlockContent_qLEI"><pre tabindex="0" class="prism-code language-sh codeBlock_SoU2 thin-scrollbar" style="color:#bfc7d5;background-color:#292d3e"><code class="codeBlockLines_Ct5X"><div class="token-line" style="color:#bfc7d5"><span class="token plain">ivoai codex</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">ivoai opencode</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">ivoai opencode </span><span class="token parameter variable" style="color:rgb(191, 199, 213)">--planner</span><span class="token plain"> codex</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">ivoai opencode </span><span class="token parameter variable" style="color:rgb(191, 199, 213)">--planner</span><span class="token plain"> claude</span><br></div></code></pre></div></div>
 <h2 class="anchor anchorTargetStickyNavbar_J2Vv" id="prompt-e-plano">Prompt e plano<a href="#prompt-e-plano" class="hash-link" aria-label="Link direto para Prompt e plano" title="Link direto para Prompt e plano" translate="no">​</a></h2>
-<p>AUTO exige objetivo, entregável e critérios de aceite observáveis. Markdown e
-headings específicos não são obrigatórios. Exemplo:</p>
-<blockquote>
-<p>Leia VERSION neste repositório e informe seu valor sem alterar arquivos.
-Aceite: retornar somente a versão encontrada.</p>
-</blockquote>
-<p>Um prompt como “corrija o projeto” retorna <code>Prompt readiness: insufficient</code>,
-os campos faltantes e <code>waiting_for_refinement</code>. Não há Guided Prompt Builder,
-execução parcial ou workers antes do gate. O gate usa análise estrutural
-conservadora; reformule ambiguidades com alvos e resultados verificáveis.</p>
+<p>AUTO aceita pedidos informais e perguntas sem exigir um modelo de objetivo,
+entregável ou critérios de aceite. A entrada aceita texto UTF-8 não vazio de até
+128 KiB, incluindo tabulações e quebras de linha LF/CRLF. Texto vazio, malformado,
+acima do limite ou com caracteres de controle inseguros é rejeitado antes da
+execução com um diagnóstico fixo, que nunca inclui trechos do prompt.</p>
+<p>Exemplo: <code>Qual versão deste projeto?</code></p>
+<p>Readiness não concede ferramentas, aprova planos nem comprova aceite. O primary
+pode esclarecer ambiguidades sem tratar a ausência de headings como uma fronteira
+de autorização. O caminho simples somente com primary, sem DAG, permanece pendente;
+esta mudança de entrada preserva os gates existentes de plano, quota, permissões
+e validação final.</p>
 <p>Após readiness, purpose-auto seleciona sources antes de Memory/Context. O primary
 gera o menor DAG útil. A UI apresenta plano e pede aprovação por padrão; cancelar
 não inicia workers. <code>plan_execution=immediate</code> permite início sem essa etapa de

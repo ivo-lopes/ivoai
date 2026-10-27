@@ -74,8 +74,8 @@ does not imply a second runtime authority.
 | `doctor`, `docsserver` | Runtime diagnostics/component matrix and embedded documentation serving. |
 | `promptgate` | Bounded, non-executing intake assessment. At baseline it still requires observable acceptance criteria and rejects some otherwise actionable informal requests. |
 
-Contract definitions are in [core/contracts.go](../internal/core/contracts.go)
-and [core/codeintelligence.go](../internal/core/codeintelligence.go).
+Contract definitions are in [core/contracts.go](https://github.com/ivo-lopes/ivoai/blob/v0.12.1/internal/core/contracts.go)
+and [core/codeintelligence.go](https://github.com/ivo-lopes/ivoai/blob/v0.12.1/internal/core/codeintelligence.go).
 Runtime contracts are intentionally separate from persisted configuration and
 ownership schemas; adding an adapter need not introduce a schema migration.
 
@@ -164,7 +164,7 @@ An available development Go 1.27.3 toolchain is a build-environment fact, not a
 change to the published bootstrap pin or proof of equivalent benchmark binaries.
 
 Reviewed external pins and licenses are recorded in
-[manifest/components.yaml](../manifest/components.yaml) and the compiled catalog:
+[manifest/components.yaml](https://github.com/ivo-lopes/ivoai/blob/v0.12.1/manifest/components.yaml) and the compiled catalog:
 
 | Components | Baseline pins |
 |---|---|
@@ -191,10 +191,10 @@ OpenViking provider requires AGPL distribution assessment before adoption.
 
 [PR #30](https://github.com/ivo-lopes/ivoai/pull/30) delivered bounded retrieval,
 schema projection, failure accounting and diagnostics. The inherited
-[validation report](../release-notes/economic-runtime-validation.md) preserves
+[validation report](https://github.com/ivo-lopes/ivoai/blob/v0.12.1/release-notes/economic-runtime-validation.md) preserves
 multiple experiments with different scopes and binary identities. Some sections
 describe intermediate draft/release decisions; the actual merged commit and
-[v0.12.1 notes](../release-notes/v0.12.1.md) establish final publication status.
+[v0.12.1 notes](https://github.com/ivo-lopes/ivoai/blob/v0.12.1/release-notes/v0.12.1.md) establish final publication status.
 
 The economic gate remained failed when v0.12.1 was published. The schema pilot
 increased aggregate input by 6.06% and reduced time by 2.73%, missing both targets.
@@ -267,7 +267,7 @@ the affected paths:
 - [architecture.md](architecture.md) labels itself a v0.5.0 baseline while mixing
   later capabilities. Older limitation/compatibility text says native orchestration
   is future work, although `NativeOrchestrator` is implemented.
-- [SECURITY.md](../SECURITY.md) describes automatic workers uniformly as advisory
+- [SECURITY.md](https://github.com/ivo-lopes/ivoai/blob/v0.12.1/SECURITY.md) describes automatic workers uniformly as advisory
   readers. The actual worker adapter also supports controlled writers using
   Codex `workspace-write` or restricted Claude tools in owned worktrees. Describe
   their host-approved write sets, isolation, validation and integration boundaries

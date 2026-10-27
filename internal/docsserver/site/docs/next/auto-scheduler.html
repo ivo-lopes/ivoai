@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="generator" content="Docusaurus v3.10.2">
 <title data-rh="true">Automatic scheduler and model routing | IVOAI</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="http://localhost:7780/docs/next/auto-scheduler"><meta data-rh="true" property="og:locale" content="en_US"><meta data-rh="true" property="og:locale:alternate" content="pt_BR"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="Automatic scheduler and model routing | IVOAI"><meta data-rh="true" name="description" content="ivoai opencode uses an in-process policy engine and the session-local"><meta data-rh="true" property="og:description" content="ivoai opencode uses an in-process policy engine and the session-local"><link data-rh="true" rel="icon" href="/img/favicon.svg"><link data-rh="true" rel="canonical" href="http://localhost:7780/docs/next/auto-scheduler"><link data-rh="true" rel="alternate" href="http://localhost:7780/docs/next/auto-scheduler" hreflang="en-US"><link data-rh="true" rel="alternate" href="http://localhost:7780/pt-BR/docs/next/auto-scheduler" hreflang="pt-BR"><link data-rh="true" rel="alternate" href="http://localhost:7780/docs/next/auto-scheduler" hreflang="x-default"><script data-rh="true" type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Automatic scheduler and model routing","item":"http://localhost:7780/docs/next/auto-scheduler"}]}</script><link rel="stylesheet" href="/assets/css/styles.c768eb50.css">
-<script src="/assets/js/runtime~main.acb7a29c.js" defer="defer"></script>
-<script src="/assets/js/main.15a95779.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.7390017b.js" defer="defer"></script>
+<script src="/assets/js/main.441dc8c8.js" defer="defer"></script>
 </head>
 <body>
 <svg style="display: none;"><defs>
@@ -20,9 +20,11 @@ primary checkout. Native AUTO does not depend on Ruflo lifecycle.</p>
 <h2 class="anchor anchorTargetStickyNavbar_J2Vv" id="first-substantive-turn">First substantive turn<a href="#first-substantive-turn" class="hash-link" aria-label="Direct link to First substantive turn" title="Direct link to First substantive turn" translate="no">​</a></h2>
 <p>The primary follows this order:</p>
 <div class="language-text codeBlockContainer_Jx85 theme-code-block" style="--prism-color:#bfc7d5;--prism-background-color:#292d3e"><div class="codeBlockContent_qLEI"><pre tabindex="0" class="prism-code language-text codeBlock_SoU2 thin-scrollbar" style="color:#bfc7d5;background-color:#292d3e"><code class="codeBlockLines_Ct5X"><div class="token-line" style="color:#bfc7d5"><span class="token plain">Prompt readiness -&gt; purpose-auto -&gt; selected Memory/Context -&gt; bounded brief</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  -&gt; validated DAG -&gt; scores -&gt; quota/capability routing -&gt; plan approval</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  -&gt; host/DAG admission -&gt; scoped workers -&gt; result validation</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">  -&gt; checked integration -&gt; strong primary synthesis</span><br></div></code></pre></div></div>
-<p>Acceptance criteria are mandatory. Insufficient prompts return missing fields and
-wait for refinement, without planning or launching workers. Selected, relevant
-Memory and Context attempts occur once. <code>orchestration_bootstrap</code> stores a
+<p>Prompt acceptance criteria are optional. Intake checks non-empty bounded UTF-8
+text and rejects unsafe control characters; it does not approve a plan or grant
+tools. Task acceptance, plan approval and DAG completion remain required in the
+current scheduler. A separate primary-only path without a DAG remains pending.
+Selected, relevant Memory and Context attempts occur once. <code>orchestration_bootstrap</code> stores a
 maximum-64-KiB, secret-free brief in the private session runtime directory. Session
 JSON retains only its timestamp, source statuses, reference count, and SHA-256 hash.
 Each worker receives only its local objective, acceptance, constraints, permitted
