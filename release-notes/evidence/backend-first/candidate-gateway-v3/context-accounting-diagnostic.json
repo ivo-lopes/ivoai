@@ -1,0 +1,214 @@
+{
+  "schema_version": 1,
+  "kind": "supplemental_context_accounting_diagnostic",
+  "not_scored": true,
+  "no_rows_excluded": true,
+  "new_inference_attempts": 0,
+  "input_file": "release-notes/evidence/backend-first/candidate-gateway-v3/runtime-comparison.json",
+  "input_sha256": "de3e1156a48fc42fa6eba3a2e0efb0310e9818f86a8de620b2144fe5e3a87bc9",
+  "generator_file": "context-accounting-diagnostic.py",
+  "generator_sha256": "82ed0b9b8e23d27710c451c7c9d0d1525d69d14986878afd26593d866bb4bc25",
+  "input_row_count": 18,
+  "pair_count": 9,
+  "method": {
+    "group_by": [
+      "Scenario",
+      "Repetition"
+    ],
+    "pair_input_delta": "A.InputTokens - B.InputTokens",
+    "pair_reduction_percent": "100 * (A.InputTokens - B.InputTokens) / A.InputTokens",
+    "median": "statistics.median of all nine pair_reduction_percent values",
+    "decomposition": "Three largest positive A-minus-B input deltas; descriptive post-hoc accounting only, no rows excluded"
+  },
+  "pairs": [
+    {
+      "scenario": "api",
+      "repetition": 0,
+      "A_input_tokens": 14855,
+      "B_input_tokens": 14857,
+      "input_delta_A_minus_B": -2,
+      "input_reduction_percent": -0.013463480309660047,
+      "A_prompt_bytes": 1095,
+      "B_prompt_bytes": 1093,
+      "prompt_byte_delta_A_minus_B": 2,
+      "A_source_bytes": 127,
+      "B_source_bytes": 127,
+      "source_bytes_equal": true,
+      "A_correct": true,
+      "B_correct": true
+    },
+    {
+      "scenario": "api",
+      "repetition": 1,
+      "A_input_tokens": 17418,
+      "B_input_tokens": 14854,
+      "input_delta_A_minus_B": 2564,
+      "input_reduction_percent": 14.720404179584339,
+      "A_prompt_bytes": 1095,
+      "B_prompt_bytes": 1093,
+      "prompt_byte_delta_A_minus_B": 2,
+      "A_source_bytes": 127,
+      "B_source_bytes": 127,
+      "source_bytes_equal": true,
+      "A_correct": true,
+      "B_correct": true
+    },
+    {
+      "scenario": "api",
+      "repetition": 2,
+      "A_input_tokens": 14858,
+      "B_input_tokens": 14855,
+      "input_delta_A_minus_B": 3,
+      "input_reduction_percent": 0.020191142818683536,
+      "A_prompt_bytes": 1095,
+      "B_prompt_bytes": 1095,
+      "prompt_byte_delta_A_minus_B": 0,
+      "A_source_bytes": 127,
+      "B_source_bytes": 127,
+      "source_bytes_equal": true,
+      "A_correct": true,
+      "B_correct": true
+    },
+    {
+      "scenario": "implementation",
+      "repetition": 0,
+      "A_input_tokens": 17409,
+      "B_input_tokens": 14850,
+      "input_delta_A_minus_B": 2559,
+      "input_reduction_percent": 14.6992934688954,
+      "A_prompt_bytes": 1080,
+      "B_prompt_bytes": 1082,
+      "prompt_byte_delta_A_minus_B": -2,
+      "A_source_bytes": 127,
+      "B_source_bytes": 127,
+      "source_bytes_equal": true,
+      "A_correct": true,
+      "B_correct": true
+    },
+    {
+      "scenario": "implementation",
+      "repetition": 1,
+      "A_input_tokens": 14848,
+      "B_input_tokens": 14849,
+      "input_delta_A_minus_B": -1,
+      "input_reduction_percent": -0.006734913793103448,
+      "A_prompt_bytes": 1080,
+      "B_prompt_bytes": 1082,
+      "prompt_byte_delta_A_minus_B": -2,
+      "A_source_bytes": 127,
+      "B_source_bytes": 127,
+      "source_bytes_equal": true,
+      "A_correct": true,
+      "B_correct": true
+    },
+    {
+      "scenario": "implementation",
+      "repetition": 2,
+      "A_input_tokens": 14845,
+      "B_input_tokens": 14849,
+      "input_delta_A_minus_B": -4,
+      "input_reduction_percent": -0.02694509936005389,
+      "A_prompt_bytes": 1082,
+      "B_prompt_bytes": 1082,
+      "prompt_byte_delta_A_minus_B": 0,
+      "A_source_bytes": 127,
+      "B_source_bytes": 127,
+      "source_bytes_equal": true,
+      "A_correct": true,
+      "B_correct": true
+    },
+    {
+      "scenario": "multi_module_callers",
+      "repetition": 0,
+      "A_input_tokens": 14877,
+      "B_input_tokens": 14873,
+      "input_delta_A_minus_B": 4,
+      "input_reduction_percent": 0.026887141224709282,
+      "A_prompt_bytes": 1147,
+      "B_prompt_bytes": 1147,
+      "prompt_byte_delta_A_minus_B": 0,
+      "A_source_bytes": 129,
+      "B_source_bytes": 129,
+      "source_bytes_equal": true,
+      "A_correct": true,
+      "B_correct": true
+    },
+    {
+      "scenario": "multi_module_callers",
+      "repetition": 1,
+      "A_input_tokens": 17439,
+      "B_input_tokens": 14875,
+      "input_delta_A_minus_B": 2564,
+      "input_reduction_percent": 14.702677905843226,
+      "A_prompt_bytes": 1147,
+      "B_prompt_bytes": 1147,
+      "prompt_byte_delta_A_minus_B": 0,
+      "A_source_bytes": 129,
+      "B_source_bytes": 129,
+      "source_bytes_equal": true,
+      "A_correct": true,
+      "B_correct": true
+    },
+    {
+      "scenario": "multi_module_callers",
+      "repetition": 2,
+      "A_input_tokens": 14875,
+      "B_input_tokens": 14876,
+      "input_delta_A_minus_B": -1,
+      "input_reduction_percent": -0.0067226890756302525,
+      "A_prompt_bytes": 1147,
+      "B_prompt_bytes": 1147,
+      "prompt_byte_delta_A_minus_B": 0,
+      "A_source_bytes": 129,
+      "B_source_bytes": 129,
+      "source_bytes_equal": true,
+      "A_correct": true,
+      "B_correct": true
+    }
+  ],
+  "aggregate": {
+    "A_input_tokens": 141424,
+    "B_input_tokens": 133738,
+    "input_delta_A_minus_B": 7686,
+    "input_reduction_percent": 5.434721122298902,
+    "median_pair_reduction_percent": 0.020191142818683536
+  },
+  "largest_three_positive_deltas": {
+    "pairs": [
+      {
+        "scenario": "api",
+        "repetition": 1
+      },
+      {
+        "scenario": "multi_module_callers",
+        "repetition": 1
+      },
+      {
+        "scenario": "implementation",
+        "repetition": 0
+      }
+    ],
+    "delta_sum": 7687,
+    "remaining_six_delta_sum": -1,
+    "prompt_byte_deltas_A_minus_B": [
+      2,
+      0,
+      -2
+    ],
+    "absolute_prompt_byte_differences": [
+      2,
+      2,
+      0
+    ],
+    "source_bytes_equal_within_each_pair": true
+  },
+  "interpretation": {
+    "provider_context_accounting_origin": "unexplained_not_investigated_or_attested",
+    "cache_or_reuse_causality_established": false,
+    "backend_model_identity_established": false,
+    "host_bytes_are_provider_input_token_attribution": false,
+    "economic_gate_changed": false,
+    "subset_economic_gate": "FAIL",
+    "global_economic_gate": "INCOMPLETE"
+  }
+}

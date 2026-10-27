@@ -1,5 +1,13 @@
 # Frontends orquestrados
 
+O incremento da v0.13.0 compartilha contratos de turno de executor no Core e
+preserva callbacks de conclusão/recursos por turno preparado. A serialização do
+Bridge e o aceite do DAG permanecem; isso não habilita primaries paralelos na
+mesma sessão. O CI de runtime passou em 15/15 nos heads dos dois PRs incorporados;
+consulte o [registro da release](releases.md) para os CIs e os gates separados de
+metadados/documentação e Release para publicação. Os pilotos locais posteriores
+de `VERSION` e RTK estão excluídos.
+
 ## Comandos
 
 | Comando | Admissão e execução |
@@ -45,8 +53,7 @@ mesmos mappings de [continuidade](conversation-continuity.md). Alterações de
 configuração global não são expostas pela façade. IVOAI guarda metadados
 sanitizados, não um segundo store de transcripts.
 
-Prompt insuficiente não inicia worker nem execução substantiva. Critérios de aceite
-são obrigatórios nos dois frontends. Full não aprova planos. Immediate start
+A rejeição de um prompt não inicia worker nem execução substantiva. Títulos de critérios de aceite são opcionais: linguagem natural informal e limitada usa a avaliação compartilhada de intake. A política existente de DAG, grants e validação de conclusão continua em vigor; esta entrega não introduz execução sem DAG. Full não aprova planos. Immediate start
 permanece configuração explícita compartilhada.
 
 ## Um control plane

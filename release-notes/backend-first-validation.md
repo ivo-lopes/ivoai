@@ -188,3 +188,22 @@ as follows; unavailable work remains pending rather than counted as passing.
   Native amd64 and ARM64 cross-builds were exercised locally; exact-head CI,
   distributed installation/update/rollback and no-AVX runtime certification are
   separate promotion gates. No new release or production deployment occurred.
+
+## Supplemental context-accounting diagnostic (existing final 18 attempts)
+
+The post-hoc [pair diagnostic](evidence/backend-first/candidate-gateway-v3/context-accounting-diagnostic.json)
+records the source-file SHA-256, all nine pairs and formulas without excluding or
+rescoring any row (`not_scored=true`, `no_rows_excluded=true`). It adds **zero new
+inference attempts**. Reproduce it with `python3 release-notes/evidence/backend-first/candidate-gateway-v3/context-accounting-diagnostic.py`; the generator refuses a changed input digest. The aggregate A-minus-B input difference is 7686 tokens;
+the three largest positive pair differences sum to 7687, while the other six
+sum to -1. Those three pairs differ by only 2, 2 and 0 host prompt bytes, and
+source-result byte counts are equal within each pair. The median input reduction
+across all nine pairs is approximately **0.020191%**.
+
+This is supplemental accounting of the existing reports, not a new gate or a
+causal attribution. The origin of the three higher provider-reported input totals
+was not investigated or attested. Host byte counts do not establish full provider
+request context, effective backend identity or the cause of input-token variation;
+no cache, reuse or model mechanism is assigned responsibility. Original rows,
+failures, binary identities and acceptance outcomes remain unchanged: the final
+subset is **FAIL** against 10%/5%, and the global matrix remains **INCOMPLETE**.
