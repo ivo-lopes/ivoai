@@ -20,14 +20,13 @@ func TestAutoFinalResponseRequiresDAGAcceptanceAndClosesCapability(t *testing.T)
 		for _, complete := range []bool{false, true} {
 			calls, released, emitted := 0, 0, 0
 			runner := autoTurnRunner{
-				prepare: func(context.Context, opencodebridge.ExecutorRequest) (opencodebridge.ExecutorRunner, func(), error) {
-					return finalFixtureRunner{&calls}, func() { released++ }, nil
-				},
-				validate: func() error {
-					if !complete {
-						return errors.New("DAG_INCOMPLETE")
-					}
-					return nil
+				prepare: func(context.Context, opencodebridge.ExecutorRequest) (preparedAutoTurn, error) {
+					return preparedAutoTurn{Runner: finalFixtureRunner{&calls}, Release: func() { released++ }, Validate: func() error {
+						if !complete {
+							return errors.New("DAG_INCOMPLETE")
+						}
+						return nil
+					}}, nil
 				},
 			}
 			prompt := ""

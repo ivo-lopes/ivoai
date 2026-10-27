@@ -13,6 +13,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/ivo-lopes/ivoai/internal/core"
 	"github.com/ivo-lopes/ivoai/internal/observability"
 	"github.com/ivo-lopes/ivoai/internal/promptgate"
 	"github.com/ivo-lopes/ivoai/internal/quota"
@@ -30,34 +31,11 @@ const (
 	maxPromptBytes  = 512 << 10
 )
 
-type ExecutorRequest struct {
-	Executor          string
-	Model             string
-	Effort            string
-	SelectionMode     string
-	CatalogRevision   string
-	Prompt            string
-	FrontendSessionID string
-	ExecutorSessionID string
-}
-
-type ExecutorResult struct {
-	AuthReference       string
-	Trace               *ExecutionTrace
-	ExecutorSessionID   string
-	CompressionUsed     bool
-	CompressionProvider string
-	SelectionMode       string
-	RequestedModel      string
-	Model               string
-	Effort              string
-	CatalogRevision     string
-	ConfigurationSource string
-}
-
-type ExecutorRunner interface {
-	Run(context.Context, ExecutorRequest, func(string) error) (ExecutorResult, error)
-}
+// Source-compatible names for the provider-neutral turn boundary. Frontend
+// options, model catalogs and transport lifecycle remain in this package.
+type ExecutorRequest = core.ExecutorRequest
+type ExecutorResult = core.ExecutorResult
+type ExecutorRunner = core.ExecutorRunner
 
 type SelectExecutor func(context.Context, string) (string, error)
 type MonitorExecutor func(context.Context, string) string

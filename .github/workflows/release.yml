@@ -42,6 +42,10 @@ jobs:
         run: npm audit --omit=dev --audit-level=high --prefix internal/components/assets
       - name: Patched braces regression fixtures
         run: bash scripts/test-braces.sh
+      - name: Reviewed Zod V3 compatibility security fixtures
+        env:
+          IVOAI_ZOD_TSC: ${{ github.workspace }}/website/node_modules/.bin/tsc
+        run: bash scripts/test-zod3-compat.sh
       - name: Non-executing intake and documentation comparison fixtures
         run: python3 -m unittest discover -s scripts -p 'test_*.py'
       - name: Reviewed Graft build and ABI fixtures

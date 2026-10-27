@@ -12,6 +12,7 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/agents"
 	"github.com/ivo-lopes/ivoai/internal/codeintel"
 	"github.com/ivo-lopes/ivoai/internal/config"
+	"github.com/ivo-lopes/ivoai/internal/core"
 	"github.com/ivo-lopes/ivoai/internal/externalmcp"
 	"github.com/ivo-lopes/ivoai/internal/observability"
 	"github.com/ivo-lopes/ivoai/internal/opencodebridge"
@@ -41,41 +42,51 @@ func (s *autoTurnState) set(k sessionKnowledge, n *agents.NativeOpenCode) {
 	s.knowledge, s.native = k, n
 }
 
-type autoTurnRunner struct {
-	prepare  func(context.Context, opencodebridge.ExecutorRequest) (opencodebridge.ExecutorRunner, func(), error)
-	resolve  func(opencodebridge.ExecutorRequest) (opencodebridge.ExecutorRequest, error)
-	validate func() error
+// preparedAutoTurn binds one execution to its own release and completion
+// policy. Run keeps this value local; a shared runner never stores a mutable
+// validation callback for another turn to replace.
+type preparedAutoTurn struct {
+	Runner   core.ExecutorRunner
+	Release  func()
+	Validate func() error
 }
 
-type turnRunnerFunc func(context.Context, opencodebridge.ExecutorRequest, func(string) error) (opencodebridge.ExecutorResult, error)
+type autoTurnRunner struct {
+	prepare func(context.Context, core.ExecutorRequest) (preparedAutoTurn, error)
+	resolve func(core.ExecutorRequest) (core.ExecutorRequest, error)
+}
 
-func (f turnRunnerFunc) Run(ctx context.Context, request opencodebridge.ExecutorRequest, emit func(string) error) (opencodebridge.ExecutorResult, error) {
+type turnRunnerFunc func(context.Context, core.ExecutorRequest, func(string) error) (core.ExecutorResult, error)
+
+func (f turnRunnerFunc) Run(ctx context.Context, request core.ExecutorRequest, emit func(string) error) (core.ExecutorResult, error) {
 	return f(ctx, request, emit)
 }
 
-func (r autoTurnRunner) Run(ctx context.Context, request opencodebridge.ExecutorRequest, emit func(string) error) (opencodebridge.ExecutorResult, error) {
+func (r autoTurnRunner) Run(ctx context.Context, request core.ExecutorRequest, emit func(string) error) (core.ExecutorResult, error) {
 	if !promptgate.Assess(request.Prompt).Ready {
-		return opencodebridge.ExecutorResult{}, &opencodebridge.ExecutorFailure{Class: "PROMPT_INSUFFICIENT", ExitCode: -1}
+		return core.ExecutorResult{}, &core.ExecutorFailure{Class: "PROMPT_INSUFFICIENT", ExitCode: -1}
 	}
 	if r.resolve != nil {
 		var err error
 		request, err = r.resolve(request)
 		if err != nil {
-			return opencodebridge.ExecutorResult{}, err
+			return core.ExecutorResult{}, err
 		}
 	}
-	runner, close, err := r.prepare(ctx, request)
-	if err != nil {
-		return opencodebridge.ExecutorResult{}, err
+	prepared, err := r.prepare(ctx, request)
+	if prepared.Release != nil {
+		defer prepared.Release()
 	}
-	defer close()
-	if r.validate == nil {
-		return runner.Run(ctx, request, emit)
+	if err != nil {
+		return core.ExecutorResult{}, err
+	}
+	if prepared.Validate == nil {
+		return prepared.Runner.Run(ctx, request, emit)
 	}
 	// Operational progress comes from status/events. Buffer the final answer
 	// until the native DAG has completed; partial prose is not acceptance.
 	var final strings.Builder
-	result, err := runner.Run(ctx, request, func(text string) error {
+	result, err := prepared.Runner.Run(ctx, request, func(text string) error {
 		if final.Len()+len(text) > 1<<20 {
 			return errors.New("bounded final response exceeded")
 		}
@@ -85,11 +96,11 @@ func (r autoTurnRunner) Run(ctx context.Context, request opencodebridge.Executor
 	if err != nil {
 		return result, err
 	}
-	if err := r.validate(); err != nil {
+	if err := prepared.Validate(); err != nil {
 		return result, err
 	}
 	if final.Len() == 0 {
-		return result, &opencodebridge.ExecutorFailure{Class: "FINAL_RESPONSE_MISSING", ExitCode: 1}
+		return result, &core.ExecutorFailure{Class: "FINAL_RESPONSE_MISSING", ExitCode: 1}
 	}
 	return result, emit(final.String())
 }
@@ -122,13 +133,14 @@ func (a *App) prepareAutoPromptKnowledge(ctx context.Context, cfg config.Config,
 	return a.prepareSessionKnowledgeSelection(ctx, cfg, selectors, &selection, executor, runtimeDir, cwd, scope, os.Environ(), observe, true, codeintel.ProjectTools(prompt))
 }
 
-func (a *App) scopeAutoRunner(base opencodebridge.ExecutorRunner, original config.Config, state config.State, store session.Store, id, cwd, runtimeDir, instructionsPath string, agentArgs, selectors []string, current *autoTurnState, catalog opencodebridge.ModelCatalog) opencodebridge.ExecutorRunner {
-	wrapped := autoTurnRunner{prepare: func(ctx context.Context, request opencodebridge.ExecutorRequest) (opencodebridge.ExecutorRunner, func(), error) {
+func (a *App) scopeAutoRunner(base core.ExecutorRunner, original config.Config, state config.State, store session.Store, id, cwd, runtimeDir, instructionsPath string, agentArgs, selectors []string, current *autoTurnState, catalog opencodebridge.ModelCatalog) core.ExecutorRunner {
+	enforceDAG := a.OpenCodeBridgeRunner == nil
+	wrapped := autoTurnRunner{prepare: func(ctx context.Context, request core.ExecutorRequest) (preparedAutoTurn, error) {
 		k, err := a.prepareAutoPromptKnowledge(ctx, original, selectors, request.Prompt, request.Executor, runtimeDir, cwd, func(event observability.Event) {
 			_, _ = store.Update(id, func(value *session.Session) error { return session.AppendObservation(value, event) })
 		})
 		if err != nil {
-			return nil, nil, err
+			return preparedAutoTurn{}, err
 		}
 		_, err = store.Update(id, func(value *session.Session) error {
 			value.KnowledgeSources = k.aliases()
@@ -150,7 +162,7 @@ func (a *App) scopeAutoRunner(base opencodebridge.ExecutorRunner, original confi
 		})
 		if err != nil {
 			k.close()
-			return nil, nil, err
+			return preparedAutoTurn{}, err
 		}
 		if k.external != nil {
 			k.external.SetInventoryObserver(func(_ string, metrics externalmcp.InventoryMetrics) {
@@ -192,7 +204,7 @@ func (a *App) scopeAutoRunner(base opencodebridge.ExecutorRunner, original confi
 				args, err := a.autoBridgeArgs(executor, agentArgs, id, runtimeDir, instructionsPath, k.config)
 				if err != nil {
 					k.close()
-					return nil, nil, err
+					return preparedAutoTurn{}, err
 				}
 				spec := &cli.Codex
 				if executor == "claude" {
@@ -202,11 +214,11 @@ func (a *App) scopeAutoRunner(base opencodebridge.ExecutorRunner, original confi
 					args, err = (workers.Adapter{Runner: a.Runner}).IsolateCodexMCPs(ctx, spec.Path, args)
 					if err != nil {
 						k.close()
-						return nil, nil, err
+						return preparedAutoTurn{}, err
 					}
 				}
 				spec.Args, spec.Env = args, inheritHookSessionEnvironment(executorBridgeEnvironment(k.environment), spec.Env)
-				spec.ObserveProgress = func(trace opencodebridge.ExecutionTrace) {
+				spec.ObserveProgress = func(trace core.ExecutionTrace) {
 					encoded, err := json.Marshal(trace)
 					if err == nil {
 						_, _ = store.Update(id, func(v *session.Session) error { v.ExecutorTrace = encoded; return nil })
@@ -223,12 +235,12 @@ func (a *App) scopeAutoRunner(base opencodebridge.ExecutorRunner, original confi
 			native = a.nativeOpenCode(k.config, state, cwd, filepath.Join(runtimeDir, "native-turn"), k.environment, false)
 			if native == nil {
 				k.close()
-				return nil, nil, errors.New("native OpenCode scoped transport unavailable")
+				return preparedAutoTurn{}, errors.New("native OpenCode scoped transport unavailable")
 			}
 			instructions, err := os.ReadFile(instructionsPath)
 			if err != nil {
 				k.close()
-				return nil, nil, err
+				return preparedAutoTurn{}, err
 			}
 			native.Options.Instructions = string(instructions) + "\n\n" + native.Options.Instructions
 			// Native primary follows the same read-only coordinator contract;
@@ -241,44 +253,47 @@ func (a *App) scopeAutoRunner(base opencodebridge.ExecutorRunner, original confi
 			executable, err := os.Executable()
 			if err != nil {
 				k.close()
-				return nil, nil, err
+				return preparedAutoTurn{}, err
 			}
 			environment, err := opencodebridge.NativeControlPlaneEnvironment(executorBridgeEnvironment(k.environment))
 			if err != nil {
 				k.close()
-				return nil, nil, err
+				return preparedAutoTurn{}, err
 			}
 			native.Options.NativeMCP["ivoai-orchestrator"] = map[string]any{"type": "local", "command": []string{executable, "_orchestrator-serve", "--session", id}, "environment": environment}
 			runner = agents.RoutedRunner{Official: runner, Native: native}
 		}
 		current.set(k, native)
-		return runner, k.close, nil
+		prepared := preparedAutoTurn{Runner: runner, Release: k.close}
+		if enforceDAG {
+			prepared.Validate = func() error {
+				v, err := store.Get(id)
+				if err != nil {
+					return err
+				}
+				if v.CurrentPhase != "synthesizing" || len(v.Tasks) == 0 {
+					return &core.ExecutorFailure{Class: "DAG_INCOMPLETE", ExitCode: 1}
+				}
+				for _, task := range v.Tasks {
+					if task.State != session.StateCompleted {
+						return &core.ExecutorFailure{Class: "ACCEPTANCE_INCOMPLETE", ExitCode: 1}
+					}
+				}
+				return nil
+			}
+		}
+		return prepared, nil
 	}}
-	if a.OpenCodeBridgeRunner == nil {
-		wrapped.resolve = func(request opencodebridge.ExecutorRequest) (opencodebridge.ExecutorRequest, error) {
+	if enforceDAG {
+		wrapped.resolve = func(request core.ExecutorRequest) (core.ExecutorRequest, error) {
 			if request.SelectionMode == "auto" {
 				model, ok := catalog.StrongPrimary(request.Executor)
 				if !ok {
-					return request, &opencodebridge.ExecutorFailure{Class: "MODEL_UNAVAILABLE", ExitCode: 1}
+					return request, &core.ExecutorFailure{Class: "MODEL_UNAVAILABLE", ExitCode: 1}
 				}
 				request.Model, request.Effort = model.UpstreamModel, model.DefaultEffort
 			}
 			return request, nil
-		}
-		wrapped.validate = func() error {
-			v, err := store.Get(id)
-			if err != nil {
-				return err
-			}
-			if v.CurrentPhase != "synthesizing" || len(v.Tasks) == 0 {
-				return &opencodebridge.ExecutorFailure{Class: "DAG_INCOMPLETE", ExitCode: 1}
-			}
-			for _, task := range v.Tasks {
-				if task.State != session.StateCompleted {
-					return &opencodebridge.ExecutorFailure{Class: "ACCEPTANCE_INCOMPLETE", ExitCode: 1}
-				}
-			}
-			return nil
 		}
 	}
 	return wrapped
