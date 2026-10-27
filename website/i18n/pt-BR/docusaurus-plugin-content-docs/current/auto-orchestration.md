@@ -19,16 +19,19 @@ ivoai opencode --planner claude
 
 ## Prompt e plano
 
-AUTO exige objetivo, entregável e critérios de aceite observáveis. Markdown e
-headings específicos não são obrigatórios. Exemplo:
+AUTO aceita pedidos informais e perguntas sem exigir um modelo de objetivo,
+entregável ou critérios de aceite. A entrada aceita texto UTF-8 não vazio de até
+128 KiB, incluindo tabulações e quebras de linha LF/CRLF. Texto vazio, malformado,
+acima do limite ou com caracteres de controle inseguros é rejeitado antes da
+execução com um diagnóstico fixo, que nunca inclui trechos do prompt.
 
-> Leia VERSION neste repositório e informe seu valor sem alterar arquivos.
-> Aceite: retornar somente a versão encontrada.
+Exemplo: `Qual versão deste projeto?`
 
-Um prompt como “corrija o projeto” retorna `Prompt readiness: insufficient`,
-os campos faltantes e `waiting_for_refinement`. Não há Guided Prompt Builder,
-execução parcial ou workers antes do gate. O gate usa análise estrutural
-conservadora; reformule ambiguidades com alvos e resultados verificáveis.
+Readiness não concede ferramentas, aprova planos nem comprova aceite. O primary
+pode esclarecer ambiguidades sem tratar a ausência de headings como uma fronteira
+de autorização. O caminho simples somente com primary, sem DAG, permanece pendente;
+esta mudança de entrada preserva os gates existentes de plano, quota, permissões
+e validação final.
 
 Após readiness, purpose-auto seleciona sources antes de Memory/Context. O primary
 gera o menor DAG útil. A UI apresenta plano e pede aprovação por padrão; cancelar

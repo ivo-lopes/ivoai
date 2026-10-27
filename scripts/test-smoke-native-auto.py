@@ -6,6 +6,29 @@ from pathlib import Path
 import unittest
 
 
+class IntakeFixtureTests(unittest.TestCase):
+    def test_oversized_fixture_is_complete_utf8_paste_before_submission(self):
+        tree = ast.parse(Path(__file__).with_name("smoke-native-auto.py").read_text())
+        nodes = [n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == "send_oversized_fixture"]
+        self.assertEqual(len(nodes), 1)
+        output = bytearray()
+        def write(_fd, payload):
+            # A real PTY may accept only part of a chunk; the fixture must not
+            # silently shrink below the backend's rejection threshold.
+            count = min(317, len(payload))
+            output.extend(payload[:count])
+            return count
+        namespace = {"master": 1, "os": type("PTY", (), {"write": staticmethod(write)}),
+                     "send": lambda text: output.extend(text.encode()), "pump": lambda _: None}
+        exec(compile(ast.Module(body=nodes, type_ignores=[]), "intake-fixture", "exec"), namespace)
+        namespace["send_oversized_fixture"]()
+        self.assertTrue(output.startswith(b"\x1b[200~"))
+        self.assertTrue(output.endswith(b"\x1b[201~\r"))
+        payload = output[len(b"\x1b[200~"):-len(b"\x1b[201~\r")]
+        self.assertGreater(len(payload), 128 << 10)
+        self.assertEqual(payload.decode("utf-8"), "a" * ((128 << 10) + 1))
+
+
 class NativeComposerTests(unittest.TestCase):
     def checker(self):
         tree = ast.parse(Path(__file__).with_name("smoke-native-auto.py").read_text())

@@ -87,6 +87,22 @@ def send(text):
     os.write(master, text.encode())
     pump(.3)
 
+def send_oversized_fixture():
+    # Empty/NUL input may be consumed by the native composer. Paste ordinary
+    # UTF-8 text above IVOAI's 128 KiB limit to exercise backend intake instead.
+    # Drain output between chunks so a large PTY write cannot deadlock the smoke.
+    payload = b"a" * ((128 << 10) + 1)
+    send("\x1b[200~")
+    for offset in range(0, len(payload), 4096):
+        pending = payload[offset:offset + 4096]
+        while pending:
+            written = os.write(master, pending)
+            assert written > 0, "FIXTURE_PASTE_WRITE_FAILED"
+            pending = pending[written:]
+            pump(.02)
+    send("\x1b[201~")
+    send("\r")
+
 def fixture_position(text):
     index = history.rfind(text)
     moves = list(re.finditer(r"\x1b\[(\d+);(\d+)[Hf]", history[:index]))
@@ -282,16 +298,18 @@ try:
         # fixture input until the native composer has rendered its footer.
         wait_for(lambda text, _: codex_composer_ready(text),
                  60, "NATIVE_COMPOSER_NOT_READY")
-    send("corrija o projeto")
-    send("\r")
+    send_oversized_fixture()
     wait_for(lambda text, _: "insufficient" in text.lower(), 45, "PROMPT_GATE_FAILED")
     assert not metadata().get("workers"), "WORKER_STARTED_BEFORE_GATE"
     assert not any(e.get("operation") == "skill.gate" for e in metadata().get("observability", [])), "SKILL_GATE_BEFORE_PROMPT_GATE"
-    print("INSUFFICIENT_PROMPT_REJECTED=PASS NO_WORKER_BEFORE_GATE=true", flush=True)
-    prompt = "Read VERSION in this fixture repository and report its value without modifying files. Acceptance: return exactly fixture-1 as the final response. Use a single primary-owned research task, record its completion and integrate the plan before synthesis."
+    print("OVERSIZED_PROMPT_REJECTED=PASS NO_WORKER_BEFORE_GATE=true", flush=True)
+    prompt = "Qual versão deste projeto? Leia VERSION e informe seu valor sem modificar arquivos."
     if complex_case:
         prompt = "Objective: implement two independent changes in this small fixture repository and document them. Deliverables: a.sh must print exactly A, b.sh must print exactly B, and README.md explains both commands. Constraints: do not change protected.txt or VERSION; no external knowledge or MCP is necessary; use two independent implementation workers in isolated worktrees, plus bounded documentation and validation tasks. Acceptance: sh a.sh returns A with exit 0; sh b.sh returns B with exit 0; README.md documents both commands; protected.txt and VERSION are unchanged; final validation passes. Present the native DAG for approval; let IVOAI automatically dispatch workers, integrate and synthesize only after all local acceptance passes."
     if ux_smoke:
+        # This separate multiline/keyboard fixture deliberately keeps explicit
+        # sections. They test composition, not an intake-template requirement.
+        prompt = "Read VERSION in this fixture repository and report its value without modifying files. Acceptance: return exactly fixture-1 as the final response. Use a single primary-owned research task, record its completion and integrate the plan before synthesis."
         objective, acceptance = prompt.split(" Acceptance:", 1)
         before = len(metadata().get("turn_attempts", []))
         send(objective)
@@ -398,8 +416,7 @@ try:
         assert metadata()["frontend_session_id"] == original_thread, "NATIVE_THREAD_MAPPING_CHANGED"
         prior_attempts = len(metadata().get("turn_attempts", []))
         history = ""
-        send("corrija isso")
-        send("\r")
+        send_oversized_fixture()
         wait_for(lambda text, _: "insufficient" in text.lower(), 30, "RESUMED_PROMPT_GATE_FAILED")
         assert len(metadata().get("turn_attempts", [])) == prior_attempts, "REJECTED_RESUME_STARTED_EXECUTOR"
         history = ""

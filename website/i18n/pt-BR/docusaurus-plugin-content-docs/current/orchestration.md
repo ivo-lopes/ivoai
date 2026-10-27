@@ -107,8 +107,12 @@ escopo de processo. O Claude as recebe por `--append-system-prompt-file` e um ar
 statusline. Nenhuma configuração permanente de terceiros é sobrescrita. Os detalhes
 estão em [auto-orchestration.md](auto-orchestration.md).
 
-AUTO exige primeiro objetivo, entregável e critérios de aceite observáveis.
-Purpose-auto seleciona sources relevantes antes de Memory/Context. O IVOAI valida o
+AUTO aceita texto UTF-8 não vazio e limitado, incluindo pedidos informais e
+perguntas, sem exigir critérios de aceite no prompt. Readiness não concede
+autoridade sobre ferramentas ou planos; entradas vazias ou malformadas são
+rejeitadas antes da execução. O caminho separado somente com primary, sem DAG,
+permanece pendente. Purpose-auto seleciona sources institucionais relevantes antes
+das consultas limitadas a Memory/Context. O IVOAI valida o
 DAG e aguarda aprovação por padrão. Calcula tiers de capability, mantém trabalho
 read-only antieconômico no primary e inicia workers conforme dependências, host e
 limite do usuário. Cada worker recebe um brief local e MCPs deny-by-default.

@@ -174,16 +174,21 @@ func TestLiveNativeTUI(t *testing.T) {
 	wait("Level for Codex · Fixture strong")
 	send("\x1b[A")
 	send("\r")
-	send("corrija isso")
+	// A bracketed paste reaches text intake without the terminal interpreting
+	// unsafe control keys. The synthetic payload exceeds the 128 KiB limit.
+	send("\x1b[200~" + strings.Repeat("a", (128<<10)+1) + "\x1b[201~")
 	send("\r")
 	wait("PROMPT_INSUFFICIENT")
 	if runner.calls.Load() != 0 {
-		t.Fatal("native composer bypassed gate")
+		t.Fatal("oversized native input started a turn")
 	}
 	if _, err := os.Stat(marker); !os.IsNotExist(err) {
 		t.Fatal("project MCP executed before native admission")
 	}
-	send("Read VERSION and report the value. Acceptance: return only the version; do not modify files.")
+	// Informal input passes intake while the existing real approval flow remains.
+	// Empty/unsafe input is exercised directly at the App Server boundary: the
+	// native composer does not submit an empty message.
+	send("Qual versão deste projeto?")
 	send("\r")
 	wait("Approve fixture plan")
 	send("\r")
@@ -221,7 +226,7 @@ func TestLiveNativeTUI(t *testing.T) {
 	if runner.calls.Load() != 1 {
 		t.Fatal("native resume replayed completed turn")
 	}
-	t.Log(fmt.Sprintf("native composer gate=PASS approval=PASS synthesis=PASS worker_calls=%d", runner.calls.Load()))
+	t.Log(fmt.Sprintf("native oversized intake=PASS informal intake=PASS approval=PASS synthesis=PASS executor_calls=%d", runner.calls.Load()))
 }
 
 // Native renderers may use cursor movement instead of literal whitespace.

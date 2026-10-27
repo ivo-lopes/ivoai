@@ -6,9 +6,11 @@ O modo AUTO nativo não depende do lifecycle Ruflo do modo orchestrated legado.
 
 ## Admissão e plano
 
-O prompt precisa conter objetivo, entregável e critérios de aceite observáveis.
-Headings Markdown não são obrigatórios. Prompts ambíguos ou insuficientes retornam
-somente os campos faltantes e aguardam reformulação, sem iniciar workers.
+Os critérios de aceite no prompt são opcionais. A entrada verifica texto UTF-8
+não vazio e limitado, rejeitando caracteres de controle inseguros; não aprova
+planos nem concede ferramentas. O aceite local das tarefas, a aprovação do plano
+e a conclusão do DAG continuam obrigatórios no scheduler atual. O caminho separado
+somente com primary, sem DAG, permanece pendente.
 
 Fluxo: readiness → purpose-auto → Memory/Context selecionados → brief limitado →
 DAG → roteamento → aprovação → workers → validação → integração → síntese.

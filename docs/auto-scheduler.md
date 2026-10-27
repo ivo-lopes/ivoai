@@ -17,9 +17,11 @@ Prompt readiness -> purpose-auto -> selected Memory/Context -> bounded brief
   -> checked integration -> strong primary synthesis
 ```
 
-Acceptance criteria are mandatory. Insufficient prompts return missing fields and
-wait for refinement, without planning or launching workers. Selected, relevant
-Memory and Context attempts occur once. `orchestration_bootstrap` stores a
+Prompt acceptance criteria are optional. Intake checks non-empty bounded UTF-8
+text and rejects unsafe control characters; it does not approve a plan or grant
+tools. Task acceptance, plan approval and DAG completion remain required in the
+current scheduler. A separate primary-only path without a DAG remains pending.
+Selected, relevant Memory and Context attempts occur once. `orchestration_bootstrap` stores a
 maximum-64-KiB, secret-free brief in the private session runtime directory. Session
 JSON retains only its timestamp, source statuses, reference count, and SHA-256 hash.
 Each worker receives only its local objective, acceptance, constraints, permitted

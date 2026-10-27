@@ -100,7 +100,7 @@ func (b *Bridge) RunTerminal(ctx context.Context, options TerminalOptions) error
 	if _, ok := b.catalog.Resolve(model, effort); !ok {
 		return errors.New("MODEL_UNAVAILABLE: selection not in runtime catalog")
 	}
-	fmt.Fprintln(options.Out, "IVOAI · Codex Orchestrated\nMultiline prompt: finish with /submit. Acceptance criteria are required.\n/models · /model <id> · /reasoning <effort> · /status · /approve · /reject · /cancel · /exit")
+	fmt.Fprintln(options.Out, "IVOAI · Codex Orchestrated\nMultiline prompt: finish with /submit. Informal requests and questions are accepted. Plan approval is separate.\n/models · /model <id> · /reasoning <effort> · /status · /approve · /reject · /cancel · /exit")
 	lines := make(chan string)
 	inputError := make(chan error, 1)
 	go func() {

@@ -75,9 +75,58 @@ func TestNativeAdmissionFailsClosed(t *testing.T) {
 		t.Run(method, func(t *testing.T) {
 			upstream := &writeBuffer{}
 			f := &Facade{ctx: context.Background(), upstream: upstream, threads: map[string]bool{"fixture": true}, decisions: map[string]string{}}
-			f.handle(rpc{ID: json.RawMessage(`1`), Method: method, Params: json.RawMessage(`{"threadId":"fixture","input":[{"type":"text","text":"corrija isso"}]}`)})
+			f.handle(rpc{ID: json.RawMessage(`1`), Method: method, Params: json.RawMessage(`{"threadId":"fixture","input":[{"type":"text","text":""}]}`)})
 			if upstream.Len() != 0 || f.active != nil {
 				t.Fatal("unadmitted execution reached native App Server")
+			}
+		})
+	}
+}
+
+func TestNativeIntakeAcceptsInformalTextWithoutChangingSandbox(t *testing.T) {
+	catalog := opencodebridge.CatalogFromRegistry(routing.Registry{Providers: map[string]routing.ProviderCapability{"codex": {Provider: "codex", Authenticated: true, Models: []routing.ModelCapability{{Name: "fixture-strong", CapabilityTier: routing.TierStrong, SupportedEfforts: []string{"high"}, DefaultEffort: "high", Source: routing.SourceRuntimeVerified}}}}})
+	bridge, err := opencodebridge.Start(opencodebridge.Options{Catalog: catalog, Runner: &fixtureRunner{}, Select: func(context.Context, string) (string, error) { return "codex", nil }, Status: func() opencodebridge.Status { return opencodebridge.Status{} }})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer bridge.Close(context.Background())
+	model, ok := catalog.StrongPrimary("codex")
+	if !ok {
+		t.Fatal("fixture model unavailable")
+	}
+	for _, tt := range []struct {
+		name, prompt string
+		ready        bool
+	}{
+		{"question", "Qual versão deste projeto?", true},
+		{"informal", "corrija isso", true},
+		{"empty", "", false},
+		{"unsafe", "Leia VERSION\x00", false},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			upstream := &writeBuffer{}
+			f := &Facade{ctx: context.Background(), options: Options{Bridge: bridge}, upstream: upstream, threads: map[string]bool{"fixture": true}, model: model.ID}
+			params, _ := json.Marshal(map[string]any{"threadId": "fixture", "input": []map[string]string{{"type": "text", "text": tt.prompt}}, "approvalPolicy": "never", "sandboxPolicy": map[string]any{"type": "dangerFullAccess"}})
+			f.handle(rpc{ID: json.RawMessage(`1`), Method: "turn/start", Params: params})
+			if !tt.ready {
+				if upstream.Len() != 0 || f.active != nil {
+					t.Fatal("invalid input reached native App Server")
+				}
+				return
+			}
+			var forwarded struct {
+				Params struct {
+					ApprovalPolicy string `json:"approvalPolicy"`
+					SandboxPolicy  struct {
+						Type string `json:"type"`
+					} `json:"sandboxPolicy"`
+				} `json:"params"`
+			}
+			if f.active == nil || f.active.prompt != tt.prompt || json.Unmarshal(upstream.Bytes(), &forwarded) != nil {
+				t.Fatal("informal text did not reach native admission unchanged")
+			}
+			if forwarded.Params.ApprovalPolicy != "never" || forwarded.Params.SandboxPolicy.Type != "readOnly" {
+				t.Fatal("readiness changed the enforced native sandbox")
 			}
 		})
 	}
@@ -236,7 +285,7 @@ func TestLiveNativeAppServerAdmission(t *testing.T) {
 	if started.Thread.ID == "" {
 		t.Fatal("native thread missing")
 	}
-	send(3, "turn/start", map[string]any{"threadId": started.Thread.ID, "input": []any{map[string]any{"type": "text", "text": "corrija isso"}}})
+	send(3, "turn/start", map[string]any{"threadId": started.Thread.ID, "input": []any{map[string]any{"type": "text", "text": ""}}})
 	if event := waitID("3"); !bytes.Contains(event.Error, []byte("PROMPT_INSUFFICIENT")) {
 		t.Fatal("first turn did not fail closed")
 	}
@@ -321,7 +370,7 @@ func TestLiveNativeAppServerAdmission(t *testing.T) {
 	if event := waitID("3"); len(event.Error) > 0 || !strings.Contains(string(event.Result), "fixture synthesis") {
 		t.Fatalf("native resume failed: %.600s %.600s", event.Error, event.Result)
 	}
-	send(4, "turn/start", map[string]any{"threadId": started.Thread.ID, "input": []any{map[string]any{"type": "text", "text": "corrija isso"}}})
+	send(4, "turn/start", map[string]any{"threadId": started.Thread.ID, "input": []any{map[string]any{"type": "text", "text": ""}}})
 	if event := waitID("4"); !bytes.Contains(event.Error, []byte("PROMPT_INSUFFICIENT")) {
 		t.Fatal("resume bypassed prompt gate")
 	}
