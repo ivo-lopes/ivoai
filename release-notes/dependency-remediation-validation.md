@@ -87,6 +87,23 @@ Without that input the test is explicitly skipped and supplies no live evidence.
 It does not perform inference, read personal provider credentials, certify
 native optional libraries on every CPU, or establish client parity.
 
+## Additional real Ruflo MCP probe
+
+An additional real Ruflo MCP probe against the same locked graph passed
+`initialize`, discovery of the ten expected coordination tools and
+`swarm_status` (`no_swarm`, zero). It ran under `bwrap --unshare-all`, with no
+network, a read-only runtime prefix and temporary HOME/XDG/cwd/cache. Wall time
+was 211 ms and sampled process-tree peak RSS was 94560256 bytes across three
+processes; payload CPU was not independently measured. No inference, task/swarm
+mutation or personal configuration was used. The sanitized result is in
+`evidence/backend-first/dependency-remediation/ruflo-mcp-smoke.json`.
+
+The MCP server announces a hardcoded 3.0.0 while the locked package and CLI are
+3.56.5; that report is not package identity attestation. Upstream `--tools`
+filters discovery and is not proof that hidden tool names cannot execute.
+IVOAI grants and containment remain authoritative. This narrow probe is not
+certification of lifecycle mutations, every Ruflo capability or other platforms.
+
 ## Go toolchain promotion gate
 
 CI run [40591751032](https://github.com/ivo-lopes/ivoai/actions/runs/40591751032)
@@ -104,6 +121,12 @@ Both Linux archive SHA-256 values were checked against the
 already used the reviewed Go 1.27.3 archive; this difference explains why the
 local vulnerability scan passed while CI correctly rejected the older compiler.
 The vulnerability gate remains enabled and a new exact-head CI run is required.
+
+The isolated source installer smoke also passed with a PATH containing no Go:
+it downloaded and checksum-verified 1.27.3, built and installed the real binary,
+verified repeat-install idempotence and exercised the existing mock setup/server
+contracts. The setup fixtures are not provider or production-server evidence;
+personal installations and configuration were untouched.
 
 ## Native-client limitation
 
