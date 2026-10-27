@@ -1,8 +1,38 @@
 # Arquitetura do ivoai
 
-Status: base de implementação para v0.5.0. As decisões e os dados upstream foram
-validados até 2026-08-25. As versões exatas fixadas estão em `manifest/components.yaml`; este
-documento explica por que elas existem e como as peças se encaixam.
+Esta página preserva descrições históricas da arquitetura, originalmente baseadas
+na v0.5.0, e registra separadamente o estado incremental atual abaixo. As versões
+exatas estão em `manifest/components.yaml`; comportamento entregue e limites da
+migração pertencem às evidências versionadas de implementação e validação.
+
+## Entrega incremental atual: v0.13.0
+
+Este incremento amplia a v0.12.1. Os [PRs #31](https://github.com/ivo-lopes/ivoai/pull/31) e
+[#32](https://github.com/ivo-lopes/ivoai/pull/32) foram incorporados como `c475d2a3`
+e `7f5cf051`. Seus heads de runtime `d6f445e3` e `5949f20d` passaram em 15/15
+verificações cada ([CI do PR #31](https://github.com/ivo-lopes/ivoai/actions/runs/40594966702),
+[CI do PR #32](https://github.com/ivo-lopes/ivoai/actions/runs/40595049106)).
+A publicação exige aprovação do CI de metadados/documentação e do pipeline
+Release, que recompila e valida os artefatos de distribuição. Isso não implanta
+em produção nem comprova publicação de artefatos antes da execução desse pipeline.
+
+Solicitações, resultados, falhas e traces compartilhados de
+executores agora pertencem a `internal/core/turn.go`, com aliases OpenCode
+compatíveis. Cada turno preparado possui seu validador de conclusão e callback
+de liberação de recursos. Bridge/catálogos de modelos ainda dependem de
+adaptadores no namespace do OpenCode, e o scheduler existente e o aceite do DAG
+continuam como autoridade. Isso não adiciona execução sem DAG nem remove OpenCode.
+
+O intake compartilhado aceita linguagem natural limitada e executável sem títulos
+obrigatórios de aceite. Verificações existentes de aprovação, privilégio, sandbox
+e grants de ferramentas permanecem. O Evidence Gateway aditivo fica desativado
+por padrão; oferece reutilização limitada de prefetch de código, proveniência e
+referências exatas de artefatos, não um gateway geral de Memory/Context/ferramentas
+nem integração completa da política de recuperação. O subconjunto final não
+atingiu as metas econômicas de 10%/5%; o gate global de 16 cenários é INCOMPLETE.
+Consulte as [evidências da entrega](https://github.com/ivo-lopes/ivoai/blob/v0.13.0/release-notes/backend-first-validation.md) e o
+[relatório dos contratos Core](https://github.com/ivo-lopes/ivoai/blob/v0.13.0/release-notes/backend-neutral-turn-contracts.md) já versionados. As descrições
+históricas dos subsistemas abaixo devem ser lidas nos limites das versões originais.
 
 ## Objetivos e limites
 
