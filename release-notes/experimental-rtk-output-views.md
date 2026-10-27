@@ -29,7 +29,9 @@ provider-token measurement or proof of semantic task correctness.
 
 Only complete, extracted `tool_read` plain-text **inventory** snapshots are
 eligible, with separate explicit `Enabled` and `AllowDerived` admission. Filters
-are limited to `git-status`, `git-log` and `grep`; no automatic filter detection.
+are limited to `git-status` and `grep`; no automatic filter detection.
+`git-log` now bypasses before provider invocation following the adverse frozen
+experiment below. The concrete provider and sandbox helper also reject it.
 Errors, stack traces, diffs, test reports, other evidence sources, incomplete
 results, inferred relations and prior compression bypass. The host must label
 output kinds correctly; this slice does not infer that a successful process
@@ -106,7 +108,7 @@ repository, credentials, host executables or provider API environment is mounted
 
 **Hash verification, `--version` and `pipe` all run inside this containment.**
 The strict helper verifies the hardcoded executable hash, accepts only version
-or those three filters, seals pipe input into a RAM file capped at 1 MiB and
+or those two filters, seals pipe input into a RAM file capped at 1 MiB and
 uses the existing `codesandbox` Landlock/seccomp launcher. No write grants,
 network or child processes are allowed after exec. A separate RTK tracking
 database, telemetry marker or other file cannot be created. No service runs.
@@ -283,6 +285,15 @@ view for questions needing the complete subjects. The byte reduction cannot be
 credited as useful equivalent-quality compression. Changes to Git log eligibility
 require a separate runtime change and new validation; these observations must
 remain immutable.
+
+The subsequent runtime policy change removes `git-log` from Gateway eligibility
+and from both executable boundaries. It returns exact Direct/reference-only
+under the usual recovery/authorization checks, without invoking any provider.
+A regression verifies that a provider callback cannot run for this filter; the
+real helper rejection is checked separately. This decision does not rescore or
+replace the 36 observations measured at `21c0a267`, where `git-log` was eligible.
+Status/grep remain experimental: literal coverage and the latency above do not
+justify application adoption or an equivalent-quality claim.
 
 The status result saves only four bytes when transformation succeeds. grep
 saves 532 bytes while retaining these chosen literals. Literal substring coverage

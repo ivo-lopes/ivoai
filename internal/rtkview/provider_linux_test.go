@@ -15,7 +15,7 @@ import (
 
 func TestRejectsInvalidRuntimeAndArgumentsWithoutExecution(t *testing.T) {
 	p := New("/nonexistent", "/nonexistent")
-	for _, filter := range []string{"git-status", "git-diff", "$(touch /tmp/unwanted)", ""} {
+	for _, filter := range []string{"git-status", "git-log", "git-diff", "$(touch /tmp/unwanted)", ""} {
 		if _, err := p.Transform(context.Background(), filter, []byte("input")); !errors.Is(err, ErrUnavailable) {
 			t.Fatalf("%q: %v", filter, err)
 		}
@@ -88,6 +88,7 @@ func TestRealPinnedOSSView(t *testing.T) {
 	}{
 		{"grep", make([]byte, maxBytes+1)},
 		{"git-diff", raw},
+		{"git-log", raw},
 	} {
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 		_, err := p.run(ctx, binary, "pipe", input.filter, input.raw)

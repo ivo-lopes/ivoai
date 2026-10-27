@@ -51,7 +51,7 @@ func TestOutputViewPreservesExactArtifactAndDoesNotRefetch(t *testing.T) {
 }
 
 func TestOutputViewBypassPoliciesNeverInvokeProvider(t *testing.T) {
-	for _, kind := range []string{"disabled", "no_consent", "compression_stack", "diff", "error", "stack_trace", "test_report", "unknown_filter", "inferred", "incomplete", "code", "wrong_media"} {
+	for _, kind := range []string{"disabled", "no_consent", "compression_stack", "diff", "error", "stack_trace", "test_report", "unknown_filter", "lossy_git_log", "inferred", "incomplete", "code", "wrong_media"} {
 		t.Run(kind, func(t *testing.T) {
 			f := newGatewayFixture(t)
 			f.request.Source = "tool_read"
@@ -66,6 +66,8 @@ func TestOutputViewBypassPoliciesNeverInvokeProvider(t *testing.T) {
 				opts.CompressionApplied = true
 			case "unknown_filter":
 				opts.Filter = "git-diff"
+			case "lossy_git_log":
+				opts.Filter = "git-log"
 			case "inferred":
 				doc.Basis = Inferred
 			case "incomplete":
@@ -85,6 +87,9 @@ func TestOutputViewBypassPoliciesNeverInvokeProvider(t *testing.T) {
 			view, err := f.gateway.ViewOutput(context.Background(), f.request, packet.Ref, provider, opts)
 			if err != nil || view.Derived || view.Text != string(doc.Raw) {
 				t.Fatalf("bypass lost exact evidence: %+v %v", view, err)
+			}
+			if kind == "lossy_git_log" && view.Diagnostic != "policy_bypass" {
+				t.Fatal("git-log must bypass before invoking any provider")
 			}
 		})
 	}

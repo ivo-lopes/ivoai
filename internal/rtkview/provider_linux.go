@@ -110,7 +110,7 @@ func (p *Provider) run(ctx context.Context, binary, mode, filter string, raw []b
 	return bytes.Clone(output.Bytes()), nil
 }
 
-func allowedFilter(s string) bool { return s == "git-status" || s == "git-log" || s == "grep" }
+func allowedFilter(s string) bool { return s == "git-status" || s == "grep" }
 
 func regularExecutable(path string) bool {
 	if !filepath.IsAbs(path) || filepath.Clean(path) != path {

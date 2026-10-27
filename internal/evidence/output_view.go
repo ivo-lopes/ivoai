@@ -105,7 +105,9 @@ func (g *Gateway) ViewOutput(ctx context.Context, r Request, ref Ref, p OutputVi
 }
 
 func viewFilter(filter string) bool {
-	return filter == "git-status" || filter == "git-log" || filter == "grep"
+	// The frozen generated-command experiment lost 17 of 18 full subjects in
+	// git-log views. Retaining raw artifacts does not make that view sufficient.
+	return filter == "git-status" || filter == "grep"
 }
 
 func safeView(body []byte) bool {

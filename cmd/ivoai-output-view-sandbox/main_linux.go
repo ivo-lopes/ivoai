@@ -28,7 +28,7 @@ func run() bool {
 	args := []string{"--version"}
 	if os.Args[1] == "pipe" {
 		filter := os.Args[2]
-		if filter != "git-status" && filter != "git-log" && filter != "grep" {
+		if filter != "git-status" && filter != "grep" {
 			return false
 		}
 		args = []string{"pipe", "--filter", filter}
