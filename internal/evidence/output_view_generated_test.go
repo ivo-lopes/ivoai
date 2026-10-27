@@ -208,7 +208,7 @@ func TestRealRTKGeneratedGatewayABBA(t *testing.T) {
 			if err != nil {
 				t.Fatal("gateway creation failed")
 			}
-			request := Request{Owner: workingcontext.Ownership{SessionID: "sess_" + strings.Repeat("a", 32), TaskID: "primary"}, Scope: Scope{Organization: Digest("synthetic-org"), Repository: Digest("synthetic-repository"), Worktree: Digest("synthetic-worktree"), Permissions: Digest("synthetic-read")}, Source: "tool_read", QueryDigest: Digest(snapshot.name), ReadOnly: true, BudgetBytes: MaxPayloadBytes, Authorize: func(ctx context.Context) error { return ctx.Err() }, CurrentGeneration: func(ctx context.Context) (string, error) { return Digest(snapshot.raw), ctx.Err() }}
+			request := Request{Owner: workingcontext.Ownership{SessionID: "sess_" + strings.Repeat("a", 32), TaskID: "primary"}, Scope: Scope{Organization: Digest("synthetic-org"), Repository: Digest("synthetic-repository"), Worktree: Digest("synthetic-worktree"), Permissions: Digest("synthetic-read")}, Source: "tool_read", QueryDigest: Digest(snapshot.name), ReadOnly: true, BudgetBytes: 32768, Authorize: func(ctx context.Context) error { return ctx.Err() }, CurrentGeneration: func(ctx context.Context) (string, error) { return Digest(snapshot.raw), ctx.Err() }}
 			fetches := 0
 			packet, err := gateway.Retrieve(context.Background(), request, func(context.Context) (Document, error) {
 				fetches++

@@ -21,6 +21,7 @@ class GeneratedRTKReport(unittest.TestCase):
         encoded = json.dumps(row())
         parsed = benchmark.observations('arbitrary output containing secrets\n    output_view_generated_test.go:99: GENERATED_RTK_JSON='+encoded+'\n')
         self.assertEqual(parsed, [row()])
+        self.assertEqual(benchmark.observations('        output_view_generated_test.go:99: GENERATED_RTK_JSON='+encoded), [row()])
         for field, value in [('raw_bytes', True), ('scenario', 'untrusted'), ('duration_us', -1), ('artifact_id', '../private'), ('facts_present', 3), ('derived', 'yes'), ('raw_stdout', 'data')]:
             invalid=row();invalid[field]=value
             with self.subTest(field=field), self.assertRaises(ValueError):

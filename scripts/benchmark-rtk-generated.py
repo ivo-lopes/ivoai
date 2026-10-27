@@ -18,7 +18,7 @@ EXPECTED_ARCHIVE_SHA = "4dec94a64035e08189ae82fd5408fe4ae9ae27a665fc07e3e3ec3c4c
 INTEGER_FIELDS = {"repetition", "arm", "order", "duration_us", "raw_bytes", "view_bytes", "facts_total", "facts_present", "facts_missing", "capture_us"}
 BOOL_FIELDS = {"derived", "exact_recovery", "baseline_correct", "provider_failure", "view_error", "artifact_persisted"}
 STRING_FIELDS = {"scenario", "diagnostic", "artifact_id", "snapshot_sha256"}
-MARKER = re.compile(r"^    output_view_generated_test\.go:[0-9]+: GENERATED_RTK_JSON=(\{.*\})$")
+MARKER = re.compile(r"^[ \t]+output_view_generated_test\.go:[0-9]+: GENERATED_RTK_JSON=(\{.*\})$")
 
 
 def sha(path):
