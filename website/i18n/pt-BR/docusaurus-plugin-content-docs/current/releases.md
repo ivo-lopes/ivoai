@@ -1,5 +1,43 @@
 # Releases
 
+## v0.13.0
+
+Entrega backend-first incremental: evidências de benchmark que falham de forma
+fechada, Evidence Gateway opcional e desativado por padrão, intake de prompts
+informais, contratos de turno de executor neutros em relação ao provedor e
+atualizações isoladas de perfis de dependências do Ruflo gerenciado. OpenCode
+permanece operacional; a execução do primary ainda segue a política existente
+de conclusão do DAG. A autenticação do Claude não foi confirmada; a integração
+real com Antigravity e a ingestão no Context continuam não verificadas/bloqueadas.
+
+**O aceite econômico foi reprovado:** a comparação final de três cenários reduziu
+a entrada em 5.43% e o tempo em 0.12%, abaixo das metas de 10%/5%. Os quatro datasets
+preservam 72 tentativas reais; o gate global de 16 cenários permanece INCOMPLETE.
+Não há alegação de economia geral, migração concluída ou nova paridade de clientes.
+
+Os [PRs #31](https://github.com/ivo-lopes/ivoai/pull/31) e
+[#32](https://github.com/ivo-lopes/ivoai/pull/32) foram incorporados como `c475d2a3`
+e `7f5cf051`. Seus heads de runtime `d6f445e3` e `5949f20d` passaram em 15/15
+verificações cada ([CI do PR #31](https://github.com/ivo-lopes/ivoai/actions/runs/40594966702),
+[CI do PR #32](https://github.com/ivo-lopes/ivoai/actions/runs/40595049106)).
+A publicação exige aprovação do CI de metadados/documentação e do pipeline
+Release, que recompila e valida os artefatos de distribuição. Isso não implanta
+em produção nem comprova publicação de artefatos antes da execução desse pipeline.
+
+Consulte a
+[validação do backend](https://github.com/ivo-lopes/ivoai/blob/v0.13.0/release-notes/backend-first-validation.md), a
+[validação dos contratos Core](https://github.com/ivo-lopes/ivoai/blob/v0.13.0/release-notes/backend-neutral-turn-contracts.md) e o
+[relatório de dependências/rollback](https://github.com/ivo-lopes/ivoai/blob/v0.13.0/release-notes/dependency-remediation-validation.md) já versionados. Consulte as [notas bilíngues da release](https://github.com/ivo-lopes/ivoai/blob/v0.13.0/release-notes/v0.13.0.md).
+Os pilotos locais posteriores de `VERSION` e RTK estão excluídos.
+
+Os pipelines anteriores dos PRs #31/#32 passaram nas verificações de testes,
+race, docs, auditorias e ShellCheck, mas reprovaram no gate de vulnerabilidade do
+Go 1.27.2 por [GO-2026-6809](https://pkg.go.dev/vuln/GO-2026-6809). O incremento
+agora exige Go 1.27.3, incluindo os dois arquivos Linux de bootstrap
+verificados. Os heads de runtime corrigidos passaram nos CIs vinculados acima;
+isso não transforma retroativamente aprovações parciais anteriores em promoção
+com CI verde.
+
 ## v0.12.1
 
 Correções compatíveis na recuperação de código/API, telemetria sanitizada e

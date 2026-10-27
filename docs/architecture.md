@@ -1,8 +1,37 @@
 # ivoai architecture
 
-Status: implementation baseline for v0.5.0. Decisions and upstream data were
-validated through 2026-08-25. Exact pins live in `manifest/components.yaml`; this
-document explains why they exist and how the pieces fit together.
+This page retains historical architecture descriptions originally based on
+v0.5.0 and records the current incremental status separately below. Exact pins
+live in `manifest/components.yaml`; delivered behavior and migration limits belong
+to versioned implementation and validation evidence.
+
+## Current incremental delivery: v0.13.0
+
+This increment extends v0.12.1. [PR #31](https://github.com/ivo-lopes/ivoai/pull/31) and
+[PR #32](https://github.com/ivo-lopes/ivoai/pull/32) merged as `c475d2a3` and
+`7f5cf051`. Their runtime heads `d6f445e3` and `5949f20d` each passed 15/15
+checks ([PR #31 run](https://github.com/ivo-lopes/ivoai/actions/runs/40594966702),
+[PR #32 run](https://github.com/ivo-lopes/ivoai/actions/runs/40595049106)).
+Publication requires passing metadata/documentation CI and the Release pipeline,
+which rebuilds and validates distribution artifacts. This does not deploy to
+production or establish artifact publication before that pipeline executes.
+
+Shared executor requests, results, failures and traces now belong to
+`internal/core/turn.go`, with compatible OpenCode aliases. Prepared turns own
+their completion validator and resource-release callback. Bridge/model catalogs
+still depend on OpenCode-namespaced adapters, and the existing scheduler and DAG
+acceptance remain authoritative. This does not add execution without a DAG or
+remove OpenCode.
+
+The shared intake accepts actionable bounded natural language without mandatory
+acceptance headings. Existing approval, privilege, sandbox and tool-grant checks
+remain. The additive Evidence Gateway is disabled by default; it supplies bounded
+code-prefetch reuse, provenance and exact artifact references, not a general
+Memory/Context/tool gateway or completed recovery-policy integration. The final
+subset missed the 10%/5% economic targets; the 16-scenario global gate is INCOMPLETE.
+See the committed [delivery evidence](https://github.com/ivo-lopes/ivoai/blob/v0.13.0/release-notes/backend-first-validation.md) and
+[Core contract report](https://github.com/ivo-lopes/ivoai/blob/v0.13.0/release-notes/backend-neutral-turn-contracts.md). Historical subsystem descriptions below
+must be read within their original version boundaries.
 
 ## Goals and boundaries
 

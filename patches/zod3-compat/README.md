@@ -45,6 +45,13 @@ recursive inputs, arbitrary user refinements and unbounded schemas are not
 certified resource-safe by this patch. A clean npm audit for the explicit fork
 name is not evidence of that broader property.
 
+The explicit `@ivoai/zod3-compat` name also means npm advisory matching does not
+automatically track future advisories against the upstream `zod` identity. IVOAI
+must retain the immutable source/patch pins, provenance and regression tests and
+manually review upstream security changes until a suitable upstream V3 fix or
+validated consumer migration replaces this fork. No automatic cross-name
+advisory monitor is implemented or claimed.
+
 ## Reproduction and verification
 
 Download the official source archive to a temporary path without running package

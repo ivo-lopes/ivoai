@@ -1,5 +1,40 @@
 # Releases
 
+## v0.13.0
+
+Incremental backend-first delivery: fail-closed benchmark evidence, an optional
+Evidence Gateway disabled by default, informal-prompt intake, provider-neutral
+executor-turn contracts and isolated dependency-profile updates for managed Ruflo.
+OpenCode remains operational; primary execution still follows the existing DAG
+completion policy. Claude authentication was not confirmed; Antigravity runtime
+integration and Context ingestion remain unverified/blocked.
+
+**Economic acceptance failed:** the final three-scenario comparison reduced input
+by 5.43% and elapsed time by 0.12%, below the 10%/5% targets. All four datasets
+retain 72 real attempts; the global 16-scenario gate remains INCOMPLETE. No general
+savings, complete migration or new client parity is claimed.
+
+[PR #31](https://github.com/ivo-lopes/ivoai/pull/31) and
+[PR #32](https://github.com/ivo-lopes/ivoai/pull/32) merged as `c475d2a3` and
+`7f5cf051`. Their runtime heads `d6f445e3` and `5949f20d` each passed 15/15
+checks ([PR #31 run](https://github.com/ivo-lopes/ivoai/actions/runs/40594966702),
+[PR #32 run](https://github.com/ivo-lopes/ivoai/actions/runs/40595049106)).
+Publication requires passing metadata/documentation CI and the Release pipeline,
+which rebuilds and validates distribution artifacts. This does not deploy to
+production or establish artifact publication before that pipeline executes.
+
+See the committed [backend validation](https://github.com/ivo-lopes/ivoai/blob/v0.13.0/release-notes/backend-first-validation.md),
+[Core contract validation](https://github.com/ivo-lopes/ivoai/blob/v0.13.0/release-notes/backend-neutral-turn-contracts.md) and
+[dependency/rollback report](https://github.com/ivo-lopes/ivoai/blob/v0.13.0/release-notes/dependency-remediation-validation.md). See the [bilingual release notes](https://github.com/ivo-lopes/ivoai/blob/v0.13.0/release-notes/v0.13.0.md).
+The later local `VERSION` and RTK pilots are excluded.
+
+The earlier PR #31/#32 pipelines passed their test/race/docs/audit/ShellCheck
+checks but failed the Go 1.27.2 vulnerability gate for
+[GO-2026-6809](https://pkg.go.dev/vuln/GO-2026-6809). The increment now
+requires Go 1.27.3, including both verified Linux bootstrap archives. The corrected
+runtime heads passed the runs linked above; this does not retroactively make the
+earlier partial passes a green promotion result.
+
 ## v0.12.1
 
 Compatible corrections to exact/API retrieval, sanitized operation telemetry and
