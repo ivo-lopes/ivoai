@@ -1,0 +1,486 @@
+{
+  "command": "go test ./internal/evidence -run TestRealRTKGatewayABBA -count=1 -json",
+  "go_version": "1.27.3",
+  "recorded_at_utc": "2026-10-27T22:57:45.719873+00:00",
+  "rtk_version": "1.1.0",
+  "scenarios": {
+    "diff_exact": {
+      "baseline_total_us": 707,
+      "baseline_view_bytes_total": 486,
+      "candidate_total_us": 1161,
+      "candidate_view_bytes_total": 486,
+      "exact_recovery": true,
+      "observations": [
+        {
+          "arm": 0,
+          "diagnostic": "disabled",
+          "duration_us": 107,
+          "repetition": 0,
+          "view_bytes": 81
+        },
+        {
+          "arm": 1,
+          "diagnostic": "policy_bypass",
+          "duration_us": 130,
+          "repetition": 0,
+          "view_bytes": 81
+        },
+        {
+          "arm": 1,
+          "diagnostic": "policy_bypass",
+          "duration_us": 116,
+          "repetition": 1,
+          "view_bytes": 81
+        },
+        {
+          "arm": 0,
+          "diagnostic": "disabled",
+          "duration_us": 132,
+          "repetition": 1,
+          "view_bytes": 81
+        },
+        {
+          "arm": 0,
+          "diagnostic": "disabled",
+          "duration_us": 125,
+          "repetition": 2,
+          "view_bytes": 81
+        },
+        {
+          "arm": 1,
+          "diagnostic": "policy_bypass",
+          "duration_us": 127,
+          "repetition": 2,
+          "view_bytes": 81
+        },
+        {
+          "arm": 1,
+          "diagnostic": "policy_bypass",
+          "duration_us": 120,
+          "repetition": 3,
+          "view_bytes": 81
+        },
+        {
+          "arm": 0,
+          "diagnostic": "disabled",
+          "duration_us": 114,
+          "repetition": 3,
+          "view_bytes": 81
+        },
+        {
+          "arm": 0,
+          "diagnostic": "disabled",
+          "duration_us": 115,
+          "repetition": 4,
+          "view_bytes": 81
+        },
+        {
+          "arm": 1,
+          "diagnostic": "policy_bypass",
+          "duration_us": 112,
+          "repetition": 4,
+          "view_bytes": 81
+        },
+        {
+          "arm": 1,
+          "diagnostic": "policy_bypass",
+          "duration_us": 553,
+          "repetition": 5,
+          "view_bytes": 81
+        },
+        {
+          "arm": 0,
+          "diagnostic": "disabled",
+          "duration_us": 111,
+          "repetition": 5,
+          "view_bytes": 81
+        }
+      ],
+      "raw_bytes": 81,
+      "repetitions": 6
+    },
+    "grep_inventory": {
+      "baseline_total_us": 760,
+      "baseline_view_bytes_total": 11100,
+      "candidate_total_us": 272057,
+      "candidate_view_bytes_total": 1884,
+      "exact_recovery": true,
+      "observations": [
+        {
+          "arm": 0,
+          "diagnostic": "disabled",
+          "duration_us": 139,
+          "repetition": 0,
+          "view_bytes": 1850
+        },
+        {
+          "arm": 1,
+          "diagnostic": "applied",
+          "duration_us": 44888,
+          "repetition": 0,
+          "view_bytes": 314
+        },
+        {
+          "arm": 1,
+          "diagnostic": "applied",
+          "duration_us": 45225,
+          "repetition": 1,
+          "view_bytes": 314
+        },
+        {
+          "arm": 0,
+          "diagnostic": "disabled",
+          "duration_us": 121,
+          "repetition": 1,
+          "view_bytes": 1850
+        },
+        {
+          "arm": 0,
+          "diagnostic": "disabled",
+          "duration_us": 111,
+          "repetition": 2,
+          "view_bytes": 1850
+        },
+        {
+          "arm": 1,
+          "diagnostic": "applied",
+          "duration_us": 44921,
+          "repetition": 2,
+          "view_bytes": 314
+        },
+        {
+          "arm": 1,
+          "diagnostic": "applied",
+          "duration_us": 46719,
+          "repetition": 3,
+          "view_bytes": 314
+        },
+        {
+          "arm": 0,
+          "diagnostic": "disabled",
+          "duration_us": 123,
+          "repetition": 3,
+          "view_bytes": 1850
+        },
+        {
+          "arm": 0,
+          "diagnostic": "disabled",
+          "duration_us": 118,
+          "repetition": 4,
+          "view_bytes": 1850
+        },
+        {
+          "arm": 1,
+          "diagnostic": "applied",
+          "duration_us": 45137,
+          "repetition": 4,
+          "view_bytes": 314
+        },
+        {
+          "arm": 1,
+          "diagnostic": "applied",
+          "duration_us": 45165,
+          "repetition": 5,
+          "view_bytes": 314
+        },
+        {
+          "arm": 0,
+          "diagnostic": "disabled",
+          "duration_us": 145,
+          "repetition": 5,
+          "view_bytes": 1850
+        }
+      ],
+      "raw_bytes": 1850,
+      "repetitions": 6
+    },
+    "stack_error_exact": {
+      "baseline_total_us": 596,
+      "baseline_view_bytes_total": 342,
+      "candidate_total_us": 590,
+      "candidate_view_bytes_total": 342,
+      "exact_recovery": true,
+      "observations": [
+        {
+          "arm": 0,
+          "diagnostic": "disabled",
+          "duration_us": 102,
+          "repetition": 0,
+          "view_bytes": 57
+        },
+        {
+          "arm": 1,
+          "diagnostic": "policy_bypass",
+          "duration_us": 100,
+          "repetition": 0,
+          "view_bytes": 57
+        },
+        {
+          "arm": 1,
+          "diagnostic": "policy_bypass",
+          "duration_us": 97,
+          "repetition": 1,
+          "view_bytes": 57
+        },
+        {
+          "arm": 0,
+          "diagnostic": "disabled",
+          "duration_us": 97,
+          "repetition": 1,
+          "view_bytes": 57
+        },
+        {
+          "arm": 0,
+          "diagnostic": "disabled",
+          "duration_us": 102,
+          "repetition": 2,
+          "view_bytes": 57
+        },
+        {
+          "arm": 1,
+          "diagnostic": "policy_bypass",
+          "duration_us": 99,
+          "repetition": 2,
+          "view_bytes": 57
+        },
+        {
+          "arm": 1,
+          "diagnostic": "policy_bypass",
+          "duration_us": 97,
+          "repetition": 3,
+          "view_bytes": 57
+        },
+        {
+          "arm": 0,
+          "diagnostic": "disabled",
+          "duration_us": 100,
+          "repetition": 3,
+          "view_bytes": 57
+        },
+        {
+          "arm": 0,
+          "diagnostic": "disabled",
+          "duration_us": 98,
+          "repetition": 4,
+          "view_bytes": 57
+        },
+        {
+          "arm": 1,
+          "diagnostic": "policy_bypass",
+          "duration_us": 97,
+          "repetition": 4,
+          "view_bytes": 57
+        },
+        {
+          "arm": 1,
+          "diagnostic": "policy_bypass",
+          "duration_us": 99,
+          "repetition": 5,
+          "view_bytes": 57
+        },
+        {
+          "arm": 0,
+          "diagnostic": "disabled",
+          "duration_us": 95,
+          "repetition": 5,
+          "view_bytes": 57
+        }
+      ],
+      "raw_bytes": 57,
+      "repetitions": 6
+    },
+    "test_report_exact": {
+      "baseline_total_us": 614,
+      "baseline_view_bytes_total": 270,
+      "candidate_total_us": 653,
+      "candidate_view_bytes_total": 270,
+      "exact_recovery": true,
+      "observations": [
+        {
+          "arm": 0,
+          "diagnostic": "disabled",
+          "duration_us": 112,
+          "repetition": 0,
+          "view_bytes": 45
+        },
+        {
+          "arm": 1,
+          "diagnostic": "policy_bypass",
+          "duration_us": 102,
+          "repetition": 0,
+          "view_bytes": 45
+        },
+        {
+          "arm": 1,
+          "diagnostic": "policy_bypass",
+          "duration_us": 107,
+          "repetition": 1,
+          "view_bytes": 45
+        },
+        {
+          "arm": 0,
+          "diagnostic": "disabled",
+          "duration_us": 100,
+          "repetition": 1,
+          "view_bytes": 45
+        },
+        {
+          "arm": 0,
+          "diagnostic": "disabled",
+          "duration_us": 99,
+          "repetition": 2,
+          "view_bytes": 45
+        },
+        {
+          "arm": 1,
+          "diagnostic": "policy_bypass",
+          "duration_us": 111,
+          "repetition": 2,
+          "view_bytes": 45
+        },
+        {
+          "arm": 1,
+          "diagnostic": "policy_bypass",
+          "duration_us": 111,
+          "repetition": 3,
+          "view_bytes": 45
+        },
+        {
+          "arm": 0,
+          "diagnostic": "disabled",
+          "duration_us": 97,
+          "repetition": 3,
+          "view_bytes": 45
+        },
+        {
+          "arm": 0,
+          "diagnostic": "disabled",
+          "duration_us": 106,
+          "repetition": 4,
+          "view_bytes": 45
+        },
+        {
+          "arm": 1,
+          "diagnostic": "policy_bypass",
+          "duration_us": 120,
+          "repetition": 4,
+          "view_bytes": 45
+        },
+        {
+          "arm": 1,
+          "diagnostic": "policy_bypass",
+          "duration_us": 99,
+          "repetition": 5,
+          "view_bytes": 45
+        },
+        {
+          "arm": 0,
+          "diagnostic": "disabled",
+          "duration_us": 96,
+          "repetition": 5,
+          "view_bytes": 45
+        }
+      ],
+      "raw_bytes": 45,
+      "repetitions": 6
+    },
+    "tiny_grep": {
+      "baseline_total_us": 687,
+      "baseline_view_bytes_total": 54,
+      "candidate_total_us": 275295,
+      "candidate_view_bytes_total": 54,
+      "exact_recovery": true,
+      "observations": [
+        {
+          "arm": 0,
+          "diagnostic": "disabled",
+          "duration_us": 109,
+          "repetition": 0,
+          "view_bytes": 9
+        },
+        {
+          "arm": 1,
+          "diagnostic": "view_rejected",
+          "duration_us": 45595,
+          "repetition": 0,
+          "view_bytes": 9
+        },
+        {
+          "arm": 1,
+          "diagnostic": "view_rejected",
+          "duration_us": 45218,
+          "repetition": 1,
+          "view_bytes": 9
+        },
+        {
+          "arm": 0,
+          "diagnostic": "disabled",
+          "duration_us": 120,
+          "repetition": 1,
+          "view_bytes": 9
+        },
+        {
+          "arm": 0,
+          "diagnostic": "disabled",
+          "duration_us": 110,
+          "repetition": 2,
+          "view_bytes": 9
+        },
+        {
+          "arm": 1,
+          "diagnostic": "view_rejected",
+          "duration_us": 46270,
+          "repetition": 2,
+          "view_bytes": 9
+        },
+        {
+          "arm": 1,
+          "diagnostic": "view_rejected",
+          "duration_us": 45043,
+          "repetition": 3,
+          "view_bytes": 9
+        },
+        {
+          "arm": 0,
+          "diagnostic": "disabled",
+          "duration_us": 113,
+          "repetition": 3,
+          "view_bytes": 9
+        },
+        {
+          "arm": 0,
+          "diagnostic": "disabled",
+          "duration_us": 106,
+          "repetition": 4,
+          "view_bytes": 9
+        },
+        {
+          "arm": 1,
+          "diagnostic": "view_rejected",
+          "duration_us": 45537,
+          "repetition": 4,
+          "view_bytes": 9
+        },
+        {
+          "arm": 1,
+          "diagnostic": "view_rejected",
+          "duration_us": 47629,
+          "repetition": 5,
+          "view_bytes": 9
+        },
+        {
+          "arm": 0,
+          "diagnostic": "disabled",
+          "duration_us": 127,
+          "repetition": 5,
+          "view_bytes": 9
+        }
+      ],
+      "raw_bytes": 9,
+      "repetitions": 6
+    }
+  },
+  "scope": "Synthetic pre-executed output snapshots only; not provider inference, session tokens, CPU/RAM use, semantic quality parity or 16-scenario economic certification.",
+  "source_commit": "753a3b0e939f2e4490fc24e3a1984010f40a103c",
+  "test_exit_code": 0
+}

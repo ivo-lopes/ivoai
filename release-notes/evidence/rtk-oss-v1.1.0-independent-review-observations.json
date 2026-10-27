@@ -1,0 +1,66 @@
+{
+  "kind": "independent_read_only_review_observations",
+  "source": "Captured from tool session 13393 output; no replacement/cleanup rerun performed.",
+  "command": "IVOAI_TEST_RTK_OSS=/tmp/ivoai-rtk-oss-pinned/rtk IVOAI_TEST_RTK_HELPER=/tmp/ivoai-rtk-oss-pinned/ivoai-output-view-sandbox go test -race ./internal/rtkview ./internal/evidence -run TestRealPinnedOSSView|TestRealRTKGatewayABBA -count=1 -v -timeout=60s",
+  "coverage": "Exact scenario aggregates and the observed unfavorable row only; not a complete copy of all 60 observation rows. Full console output remains in tool session 13393.",
+  "optimization_availability_failure": {
+    "scenario": "tiny_grep",
+    "repetition": 4,
+    "arm": 1,
+    "duration_us": 28943,
+    "view_bytes": 9,
+    "diagnostic": "provider_failed",
+    "interpretation": "Optimization unavailable; validated Direct fallback preserved original bytes. This is not a successful RTK transformation."
+  },
+  "scenario_aggregates": [
+    {
+      "scenario": "grep_inventory",
+      "raw_bytes": 1850,
+      "candidate_view_bytes": 314,
+      "baseline_total_us": 6178,
+      "candidate_total_us": 303947,
+      "exact_recovery": true
+    },
+    {
+      "scenario": "tiny_grep",
+      "raw_bytes": 9,
+      "candidate_view_bytes": 9,
+      "baseline_total_us": 6076,
+      "candidate_total_us": 270709,
+      "exact_recovery": true
+    },
+    {
+      "scenario": "diff_exact",
+      "raw_bytes": 81,
+      "candidate_view_bytes": 81,
+      "baseline_total_us": 5593,
+      "candidate_total_us": 5474,
+      "exact_recovery": true
+    },
+    {
+      "scenario": "test_report_exact",
+      "raw_bytes": 45,
+      "candidate_view_bytes": 45,
+      "baseline_total_us": 5916,
+      "candidate_total_us": 5172,
+      "exact_recovery": true
+    },
+    {
+      "scenario": "stack_error_exact",
+      "raw_bytes": 57,
+      "candidate_view_bytes": 57,
+      "baseline_total_us": 5324,
+      "candidate_total_us": 5293,
+      "exact_recovery": true
+    }
+  ],
+  "deadline_probe": {
+    "parent_deadline_ms": 100,
+    "noncooperative_callback_ms": 300,
+    "observed_elapsed_ms": 301,
+    "output_returned": false,
+    "error": "context deadline exceeded",
+    "interpretation": "Context budget is cooperative, not a hard callback termination deadline."
+  },
+  "limits": "No token/session economics, formal security certification, binary SBOM, or reproducible-build attestation claimed."
+}
