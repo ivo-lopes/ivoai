@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "component": "documentation_production_dependencies",
+  "before": {
+    "info": 0,
+    "low": 4,
+    "moderate": 9,
+    "high": 9,
+    "critical": 1
+  },
+  "after": {
+    "info": 0,
+    "low": 0,
+    "moderate": 0,
+    "high": 0,
+    "critical": 0
+  },
+  "advisory_exclusions": [],
+  "source_ci_run": "https://github.com/ivo-lopes/ivoai/actions/runs/40587006811",
+  "source_head": "9874dbdfff0322a00be64e0b00735580e8beae86",
+  "candidate_inputs_sha256": {
+    "website/pnpm-lock.yaml": "64931d224f2bd8128d94f7dd447cbf958d8f8cec322c22a8465970d99f96226e",
+    "website/pnpm-workspace.yaml": "a97904d2c3ed6ebb8f953a9e6a0c50eac2be32d25b78ac6007a309f281dc8f05"
+  }
+}
