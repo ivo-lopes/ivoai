@@ -48,8 +48,10 @@ transcript store. Global configuration mutation and arbitrary thread import/fork
 remain outside this façade. See [Conversation continuity](conversation-continuity.md).
 
 Prompt rejection starts no worker and no substantive executor turn. Acceptance
-criteria are mandatory in both orchestrated frontends. Full OpenCode permissions
-do not bypass plan approval. Immediate start remains an explicit shared policy.
+criteria headings are optional: bounded informal natural language uses the shared
+intake assessment. Full OpenCode permissions do not bypass plan approval. Immediate
+start remains an explicit shared policy. The existing DAG, grants and completion
+validation remain in force; this delivery does not introduce execution without a DAG.
 
 ## One control plane
 

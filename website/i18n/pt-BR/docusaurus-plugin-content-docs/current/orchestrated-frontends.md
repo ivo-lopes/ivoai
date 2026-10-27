@@ -45,8 +45,7 @@ mesmos mappings de [continuidade](conversation-continuity.md). Alterações de
 configuração global não são expostas pela façade. IVOAI guarda metadados
 sanitizados, não um segundo store de transcripts.
 
-Prompt insuficiente não inicia worker nem execução substantiva. Critérios de aceite
-são obrigatórios nos dois frontends. Full não aprova planos. Immediate start
+A rejeição de um prompt não inicia worker nem execução substantiva. Títulos de critérios de aceite são opcionais: linguagem natural informal e limitada usa a avaliação compartilhada de intake. A política existente de DAG, grants e validação de conclusão continua em vigor; esta entrega não introduz execução sem DAG. Full não aprova planos. Immediate start
 permanece configuração explícita compartilhada.
 
 ## Um control plane

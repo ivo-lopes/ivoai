@@ -6,6 +6,22 @@ Data da auditoria: 2026-10-27. Baseline de código: `v0.12.1` publicada, commit
 Este documento distingue esse baseline do destino aprovado para a migração.
 Ele não certifica implementações adicionadas posteriormente em uma branch de desenvolvimento.
 
+## Incremento implementado após o baseline auditado
+
+A preparação da v0.13.0 inclui o Evidence Gateway experimental e limitado de código,
+intake compartilhado de prompts informais e contratos de turno de executor no
+Core, além de propriedade de conclusão/recursos por turno e correção de dependências.
+São entregas parciais da migração abaixo, não a conclusão da IVOAI-191.
+O Gateway permanece desativado por padrão; a execução normal ainda usa a política
+existente de aceite do DAG. Adaptadores de Memory/Context/ferramentas, integração
+da política de recuperação, despacho adaptativo, certificação dos clientes nativos
+e retirada do OpenCode continuam pendentes. Consulte a
+[validação do backend](https://github.com/ivo-lopes/ivoai/blob/5949f20d238acc1c4108515fc462b88e979537c3/release-notes/backend-first-validation.md), os
+[contratos Core](https://github.com/ivo-lopes/ivoai/blob/5949f20d238acc1c4108515fc462b88e979537c3/release-notes/backend-neutral-turn-contracts.md) e a [correção de dependências](https://github.com/ivo-lopes/ivoai/blob/5949f20d238acc1c4108515fc462b88e979537c3/release-notes/dependency-remediation-validation.md).
+O gate econômico global atual continua INCOMPLETE; o subconjunto final medido não
+atingiu as metas de 10% na entrada e 5% no tempo. Nenhum experimento posterior de
+fast path por metadados está incluído nesta release preparada.
+
 ## Fontes e estado de execução
 
 O Git e observações reproduzíveis do runtime estabelecem o comportamento entregue.
@@ -157,15 +173,22 @@ As funções compartilhadas devem chegar ao núcleo antes da remoção da integr
 
 ## Dependências e plataformas suportadas
 
-O `go.mod` do baseline exige Go 1.27.2. Os módulos Go diretos são
+O `go.mod` histórico auditado da v0.12.1 exige Go 1.27.2. O candidato preparado
+para v0.13.0 eleva o mínimo do módulo e a versão fixada para bootstrap a Go 1.27.3
+após o gate de vulnerabilidade do CI anterior falhar em Go 1.27.2 com
+[GO-2026-6809](https://pkg.go.dev/vuln/GO-2026-6809) alcançável em `crypto/x509`.
+Hashes de bootstrap Linux amd64/ARM64, manifesto e notice foram atualizados juntos.
+O novo CI do HEAD exato `5949f20d` permanece pendente. Os módulos Go diretos do baseline auditado são
 `github.com/coder/websocket` 1.8.15,
 `github.com/modelcontextprotocol/go-sdk` 1.8.0,
 `github.com/pelletier/go-toml/v2` 2.4.3,
 `golang.org/x/sys` 0.49.0 e `golang.org/x/term` 0.47.0.
 `go.sum` fornece a integridade dos módulos; as versões indiretas permanecem definidas por `go.mod`.
-A disponibilidade de uma toolchain Go 1.27.3 para desenvolvimento é um fato do
-ambiente de build, não uma alteração da versão fixada para bootstrap publicada
-nem prova de equivalência entre os binários do benchmark.
+As verificações locais anteriores já usavam Go 1.27.3, mas o CI selecionava
+1.27.2 pela diretiva então vigente; o scan local limpo não certificava aquele
+compilador do CI. O candidato agora alinha a toolchain exigida com 1.27.3. Isso
+não altera identidades históricas dos executáveis medidos nem estabelece
+comparação equivalente entre binários publicados.
 
 As versões externas fixadas e as licenças revisadas estão registradas em
 [manifest/components.yaml](https://github.com/ivo-lopes/ivoai/blob/v0.12.1/manifest/components.yaml) e no catálogo compilado:

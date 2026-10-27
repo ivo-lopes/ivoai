@@ -1,8 +1,30 @@
 # Arquitetura do ivoai
 
-Status: base de implementação para v0.5.0. As decisões e os dados upstream foram
-validados até 2026-08-25. As versões exatas fixadas estão em `manifest/components.yaml`; este
-documento explica por que elas existem e como as peças se encaixam.
+Esta página preserva descrições históricas da arquitetura, originalmente baseadas
+na v0.5.0, e registra separadamente o estado incremental atual abaixo. As versões
+exatas estão em `manifest/components.yaml`; comportamento entregue e limites da
+migração pertencem às evidências versionadas de implementação e validação.
+
+## Entrega incremental atual: preparação da v0.13.0
+
+O candidato atual amplia a v0.12.1 publicada; a publicação e o CI do HEAD exato
+estão pendentes. Solicitações, resultados, falhas e traces compartilhados de
+executores agora pertencem a `internal/core/turn.go`, com aliases OpenCode
+compatíveis. Cada turno preparado possui seu validador de conclusão e callback
+de liberação de recursos. Bridge/catálogos de modelos ainda dependem de
+adaptadores no namespace do OpenCode, e o scheduler existente e o aceite do DAG
+continuam como autoridade. Isso não adiciona execução sem DAG nem remove OpenCode.
+
+O intake compartilhado aceita linguagem natural limitada e executável sem títulos
+obrigatórios de aceite. Verificações existentes de aprovação, privilégio, sandbox
+e grants de ferramentas permanecem. O Evidence Gateway aditivo fica desativado
+por padrão; oferece reutilização limitada de prefetch de código, proveniência e
+referências exatas de artefatos, não um gateway geral de Memory/Context/ferramentas
+nem integração completa da política de recuperação. O subconjunto final não
+atingiu as metas econômicas de 10%/5%; o gate global de 16 cenários é INCOMPLETE.
+Consulte as [evidências da entrega](https://github.com/ivo-lopes/ivoai/blob/5949f20d238acc1c4108515fc462b88e979537c3/release-notes/backend-first-validation.md) e o
+[relatório dos contratos Core](https://github.com/ivo-lopes/ivoai/blob/5949f20d238acc1c4108515fc462b88e979537c3/release-notes/backend-neutral-turn-contracts.md) já versionados. As descrições
+históricas dos subsistemas abaixo devem ser lidas nos limites das versões originais.
 
 ## Objetivos e limites
 

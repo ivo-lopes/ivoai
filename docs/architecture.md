@@ -1,8 +1,29 @@
 # ivoai architecture
 
-Status: implementation baseline for v0.5.0. Decisions and upstream data were
-validated through 2026-08-25. Exact pins live in `manifest/components.yaml`; this
-document explains why they exist and how the pieces fit together.
+This page retains historical architecture descriptions originally based on
+v0.5.0 and records the current incremental status separately below. Exact pins
+live in `manifest/components.yaml`; delivered behavior and migration limits belong
+to versioned implementation and validation evidence.
+
+## Current incremental delivery: v0.13.0 preparation
+
+The current candidate extends published v0.12.1; publication and exact-head CI
+are pending. Shared executor requests, results, failures and traces now belong to
+`internal/core/turn.go`, with compatible OpenCode aliases. Prepared turns own
+their completion validator and resource-release callback. Bridge/model catalogs
+still depend on OpenCode-namespaced adapters, and the existing scheduler and DAG
+acceptance remain authoritative. This does not add execution without a DAG or
+remove OpenCode.
+
+The shared intake accepts actionable bounded natural language without mandatory
+acceptance headings. Existing approval, privilege, sandbox and tool-grant checks
+remain. The additive Evidence Gateway is disabled by default; it supplies bounded
+code-prefetch reuse, provenance and exact artifact references, not a general
+Memory/Context/tool gateway or completed recovery-policy integration. The final
+subset missed the 10%/5% economic targets; the 16-scenario global gate is INCOMPLETE.
+See the committed [delivery evidence](https://github.com/ivo-lopes/ivoai/blob/5949f20d238acc1c4108515fc462b88e979537c3/release-notes/backend-first-validation.md) and
+[Core contract report](https://github.com/ivo-lopes/ivoai/blob/5949f20d238acc1c4108515fc462b88e979537c3/release-notes/backend-neutral-turn-contracts.md). Historical subsystem descriptions below
+must be read within their original version boundaries.
 
 ## Goals and boundaries
 

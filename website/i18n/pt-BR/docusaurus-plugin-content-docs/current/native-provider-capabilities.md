@@ -11,6 +11,21 @@ a implementação existente destas possibilidades oferecidas pelos projetos de o
 O gate de aceite econômico continua sem comprovação; percentuais de compressão
 de terceiros não representam economia das sessões do IVOAI.
 
+## Limite atual do Core na preparação da v0.13.0
+
+Entradas, resultados, falhas e traces operacionais de executores foram movidos
+para `internal/core/turn.go`; aliases compatíveis preservam a superfície anterior
+do pacote. A conclusão do turno e as leases de recursos são locais a cada turno
+preparado. O frontend Codex ainda usa Bridge e catálogo de modelos do OpenCode;
+é uma extração parcial, não a remoção do adaptador nem alteração no aceite do DAG.
+Consulte a [validação dos contratos](https://github.com/ivo-lopes/ivoai/blob/5949f20d238acc1c4108515fc462b88e979537c3/release-notes/backend-neutral-turn-contracts.md).
+
+O probe administrativo do Claude retornou `loggedIn=false`, `authMethod=none` e
+exit 1; nenhuma inferência com Claude foi tentada. Antigravity permanece apenas
+como pesquisa, sem certificação de paridade da TUI nativa. A ingestão no Context
+continua `CONTEXT_SYNC=BLOCKED` na IVOAI-175. A autenticação existente dos clientes
+nativos e a propriedade da configuração pessoal permanecem inalteradas.
+
 ## Evidências e matriz de clientes
 
 As verificações locais usaram somente `--version` e `--help`. Uma opção listada
@@ -21,7 +36,7 @@ componentes por esta pesquisa.
 
 | Cliente | Versão e superfície observadas localmente | Linha de base do IVOAI / trabalho pendente |
 |---|---|---|
-| Codex | 0.164.0; `app-server --help` expõe transportes stdio, Unix socket e WebSocket, substituições de configuração por processo e geração de schemas | `internal/codexfrontend` já fornece integração nativa gerenciada. Sua implementação ainda referencia tipos compartilhados de `opencodebridge`. A presença do protocolo nativo não comprova que o OpenCode já possa ser removido. |
+| Codex | 0.164.0; `app-server --help` expõe transportes stdio, Unix socket e WebSocket, substituições de configuração por processo e geração de schemas | `internal/codexfrontend` já fornece integração nativa gerenciada. Os tipos compartilhados de turno de executor foram movidos para o Core; dependências de Bridge/catálogo de modelos permanecem. A presença do protocolo nativo não comprova que o OpenCode já possa ser removido. |
 | Claude Code | 2.1.251; a ajuda expõe modo print, entrada/saída JSON e streaming, retomada/ID de sessão, ferramentas explícitas, modo de permissão, configurações por processo e configuração estrita de MCP | Existem caminhos de executor/worker pela CLI oficial. A IVOAI-194 ainda exige mediação gerenciada da conversa nativa e evidências reais de paridade. Flags headless, por si só, não comprovam controle transparente da TUI nativa. |
 | Antigravity | `agy` 1.4.8; a ajuda expõe formatos print/stream, retomada de conversa, modelo/effort, modo de execução, sandbox, caminho de log e controle de comandos com barra | Subsídio de pesquisa para IVOAI-150/196. Estas verificações não comprovam integração do Antigravity nem certificação de inferência. |
 
