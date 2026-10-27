@@ -138,30 +138,24 @@
 +export default z;
 --- a/src/v3/types.ts
 +++ b/src/v3/types.ts
-@@ -2266,6 +2266,7 @@
-           message: def.exactLength.message,
+@@ -2267,4 +2267,5 @@
          });
          status.dirty();
 +        if (tooBig) return INVALID;
        }
      }
- 
-@@ -2294,6 +2295,7 @@
-           message: def.maxLength.message,
+@@ -2295,4 +2296,5 @@
          });
          status.dirty();
 +        return INVALID;
        }
      }
- 
-@@ -3728,6 +3730,7 @@
-           message: def.maxSize.message,
+@@ -3729,4 +3731,5 @@
          });
          status.dirty();
 +        return INVALID;
        }
      }
- 
 --- a/v3/types.cjs
 +++ b/v3/types.cjs
 @@ -1793,6 +1793,7 @@

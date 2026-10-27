@@ -9,7 +9,7 @@
   "fork_name": "@ivoai/zod3-compat",
   "fork_version": "3.25.76-ivoai.1",
   "patch_file": "4.6.7-v3-upper-bounds.patch",
-  "patch_sha256": "1463a1399cef358e84d1a36dc80b1c29902d9cdfbb7354633379e36ad5a90428",
+  "patch_sha256": "511bf61cca78143d40df9397c2a8b89ab1b759f7ee1b0c833f2db4a1275aa620",
   "upstream_fix_reference": "https://github.com/colinhacks/zod/commit/a0ebf970f2d752e5f58527cd2942ff48be4f46bd",
   "advisory": "GHSA-mrhx-c7xc-m3w5",
   "scope": "Early upper-bound rejection in V3 arrays/sets; original patched V4 subtree retained; no bound added to deliberately unbounded schemas.",
