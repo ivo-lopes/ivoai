@@ -16,6 +16,27 @@ import (
 
 const maxCheckpointBytes = 32 << 10
 
+// CheckpointAbsent observes only namespace entries. It never opens checkpoint
+// contents or follows the leaf entry, so a FIFO, directory, symlink (including
+// dangling links), or any other entry is present rather than an absent file.
+// Both current and legacy locations must be absent; inspection errors deny
+// absence. Callers use this for admission, not for loading/recovery.
+func (s Store) CheckpointAbsent(id string) (bool, error) {
+	if err := ValidateID(id); err != nil {
+		return false, err
+	}
+	for _, path := range []string{filepath.Join(s.Root, "checkpoints", id+".json"), filepath.Join(s.Root, "runtime", id, "checkpoint.json")} {
+		_, err := os.Lstat(path)
+		if err == nil {
+			return false, nil
+		}
+		if !errors.Is(err, os.ErrNotExist) {
+			return false, err
+		}
+	}
+	return true, nil
+}
+
 type Checkpoint struct {
 	// Recovery is written by the host scheduler, never by the checkpoint tool.
 	Recovery        *RecoveryPlan `json:"recovery,omitempty"`
