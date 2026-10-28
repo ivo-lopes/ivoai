@@ -1,5 +1,26 @@
 # Releases
 
+## v0.15.0 — candidata local, não publicada
+
+A fonte candidata `0bab9b34` inclui independência dos provedores/setup nativos,
+Gateway no prefetch de código já admitido sob flag OFF por padrão, recuperação
+exata G0 Core/MCP protegida e SPI G1a de snapshots Memory sem ligação ao App,
+controles/preflight offline e piloto adaptativo opcional. Caminhos nativos excluem
+descoberta/fallback OpenCode; setup padrão de cliente deixa de provisioná-lo.
+`ivoai setup --mode client --legacy-opencode`, comandos legados descontinuados e
+históricos/checkpoints preservados continuam disponíveis. A flag adaptativa fica
+OFF: primeiro envelope literal elegível, sem classificador, com DAG/aprovações Core.
+Provas oficiais sintéticas de metadados não validam modelos reais nem paridade TUI.
+
+PR55 é pré-requisito offline de fonte, não concorrência observada de clientes.
+PR54/56 não incorporados ficam excluídos. Economia global continua INCOMPLETE;
+evidências adversas permanecem. Paridade geral de modelos/TUI/Claude/Antigravity
+e administração não está comprovada; Context segue BLOCKED/IVOAI-175. O advisory
+LOW de deepmerge na documentação permanece needs_review. Canário real, CI final,
+validação dos artefatos e publicação continuam pendentes, independentemente da
+preparação desta candidata. Consulte as [notas bilíngues preliminares](https://github.com/ivo-lopes/ivoai/blob/release/v0.15.0-candidate/release-notes/v0.15.0.md)
+para migrar/reverter sem apagar dados preservados nem reproduzir mutações.
+
 ## v0.14.0
 
 A [v0.14.0](https://github.com/ivo-lopes/ivoai/releases/tag/v0.14.0) foi publicada

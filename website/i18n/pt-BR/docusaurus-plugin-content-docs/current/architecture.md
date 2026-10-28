@@ -5,6 +5,17 @@ na v0.5.0, e registra separadamente o estado incremental atual abaixo. As versõ
 exatas estão em `manifest/components.yaml`; comportamento entregue e limites da
 migração pertencem às evidências versionadas de implementação e validação.
 
+## Candidata local v0.15.0
+
+Independência nativa de provedores/setup e composição adaptativa/Core DAG opcional
+estão preparados como candidata. G0 está ligado ao prefetch de código já admitido
+sob flag experimental OFF por padrão, com recuperação exata Core/MCP protegida e
+opt-in separado para criação protegida. G1a Memory segue SPI do host sem ligação
+a App, scheduler ou clientes; PR55 é apenas preflight offline. Adaptação fica OFF
+por padrão.
+CI final, canário real e artefatos exigem validações próprias. O estado publicado
+da v0.14.0 abaixo é histórico. Consulte [releases](releases.md).
+
 ## Release atual: v0.14.0
 
 O mesmo Core agora fornece um [console administrativo local de consulta](admin-console.md).

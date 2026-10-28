@@ -1,5 +1,26 @@
 # Releases
 
+## v0.15.0 — local candidate, not published
+
+Candidate source `0bab9b34` includes native-provider/default-setup independence,
+default-OFF Gateway code-prefetch with protected G0 Core/MCP recovery, unwired
+G1a Memory snapshot SPI, offline benchmark
+controls/preflight and the optional adaptive primary pilot. Native paths exclude
+OpenCode discovery/fallback; default client setup omits it. Explicit
+`ivoai setup --mode client --legacy-opencode`, deprecated legacy commands and
+retained histories/checkpoints remain available. The adaptive flag stays OFF:
+first eligible literal envelope, no prompt classifier, existing Core DAG/approvals.
+Official synthetic metadata proofs are not general real-model or TUI validation.
+
+PR55 is a source-only offline concurrency prerequisite, not observed concurrent
+clients. Unmerged PR54/56 are excluded. Global economics remains INCOMPLETE;
+historical adverse evidence is unchanged. General model/TUI/Claude/Antigravity
+and admin parity are unproven; Context remains BLOCKED/IVOAI-175. The LOW docs
+deepmerge advisory remains needs_review. Actual canary, final CI, distribution
+checks and publication are pending, independently of preparing this candidate.
+See the [draft bilingual notes](https://github.com/ivo-lopes/ivoai/blob/release/v0.15.0-candidate/release-notes/v0.15.0.md)
+for migration and rollback without deleting retained data or replaying mutations.
+
 ## v0.14.0
 
 Published [v0.14.0](https://github.com/ivo-lopes/ivoai/releases/tag/v0.14.0) on

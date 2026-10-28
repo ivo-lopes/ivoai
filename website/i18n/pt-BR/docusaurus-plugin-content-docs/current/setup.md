@@ -5,6 +5,13 @@
 `ivoai setup` provisiona componentes gerenciados de forma transacional e preserva
 instalações externas de executores e a autenticação delas.
 
+A candidata local v0.15.0 omite OpenCode do setup padrão de cliente e do setup
+candidato do updater. Para provisionar explicitamente o componente de
+compatibilidade preservado, use `ivoai setup --mode client --legacy-opencode`;
+setup de servidor recusa essa flag. O setup comum preserva propriedade, binários
+e histórico OpenCode existentes; não desinstala, repara nem adota o componente.
+Consulte [releases](releases.md) para estado da candidata e limites da migração.
+
 ## Configuração de servidor em Debian 12 e LXC
 
 `sudo ivoai setup --mode server` executa um preflight antes de gravar o estado do

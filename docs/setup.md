@@ -5,6 +5,13 @@
 `ivoai setup` provisions managed components transactionally and preserves external
 executor installations and their authentication.
 
+The local v0.15.0 candidate omits OpenCode from ordinary client setup and updater
+candidate setup. To explicitly provision the retained compatibility component,
+use `ivoai setup --mode client --legacy-opencode`; server setup refuses this flag.
+Ordinary setup preserves existing OpenCode ownership, binaries and history; it
+does not uninstall, repair or adopt that component. See [releases](releases.md)
+for candidate status and native migration limits.
+
 ## Debian 12 and LXC server setup
 
 `sudo ivoai setup --mode server` performs a preflight before writing server state:
