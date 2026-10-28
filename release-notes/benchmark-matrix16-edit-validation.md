@@ -9,6 +9,11 @@ the original v2 artifacts remain unchanged. The corrected common harness was
 rebuilt over both runtime revisions before a new offline discovery. The catalog
 and driver schema remain version 2; “v3” identifies this evidence generation.
 
+A subsequent [twelve-turn official-client cohort](benchmark-matrix16-edit-live-validation.md)
+validated these edit contracts. Neither arm injected host evidence; its numerical
+diagnostic FAIL is not an evaluation of an activated optimization. The sections
+below describe the original offline increment.
+
 This increment adds executable workspace-edit contracts for the existing
 `small_known_file_correction` and `cross_module_refactor` IDs. The v2 catalog has
 nine supported contracts, five UNSUPPORTED cases and two BLOCKED cases. **No real

@@ -1,0 +1,194 @@
+{
+  "scope": "reviewed_exact_12_turn_real_comparison_supervision",
+  "started_at": "2026-10-28T16:25:22.587183+00:00",
+  "freeze_sha256": "95150cfae4dc5ae46c1cf15b946706ac89f3a8e0fc73f6088834a2d0cd4fd4e9",
+  "source_commit": "6294172995385849154cc6ec6d106b4448c0f56c",
+  "host_shared_not_reserved": true,
+  "load_before": [
+    11.162109375,
+    6.1689453125,
+    4.6142578125
+  ],
+  "turn_completions": [
+    {
+      "repetition": 0,
+      "scenario": "small_known_file_correction",
+      "arm": "A",
+      "test_exit_code": 0,
+      "measurement_valid": true,
+      "observed_completed_at": "2026-10-28T16:26:04.276089+00:00",
+      "host_load_average": [
+        8.828125,
+        6.181640625,
+        4.685546875
+      ]
+    },
+    {
+      "repetition": 0,
+      "scenario": "small_known_file_correction",
+      "arm": "B",
+      "test_exit_code": 0,
+      "measurement_valid": true,
+      "observed_completed_at": "2026-10-28T16:26:30.417996+00:00",
+      "host_load_average": [
+        8.93798828125,
+        6.453125,
+        4.82470703125
+      ]
+    },
+    {
+      "repetition": 0,
+      "scenario": "cross_module_refactor",
+      "arm": "B",
+      "test_exit_code": 0,
+      "measurement_valid": true,
+      "observed_completed_at": "2026-10-28T16:26:49.293599+00:00",
+      "host_load_average": [
+        9.77734375,
+        6.74560546875,
+        4.94580078125
+      ]
+    },
+    {
+      "repetition": 0,
+      "scenario": "cross_module_refactor",
+      "arm": "A",
+      "test_exit_code": 0,
+      "measurement_valid": true,
+      "observed_completed_at": "2026-10-28T16:27:06.133930+00:00",
+      "host_load_average": [
+        11.1201171875,
+        7.2734375,
+        5.16015625
+      ]
+    },
+    {
+      "repetition": 1,
+      "scenario": "small_known_file_correction",
+      "arm": "B",
+      "test_exit_code": 0,
+      "measurement_valid": true,
+      "observed_completed_at": "2026-10-28T16:27:30.282853+00:00",
+      "host_load_average": [
+        8.90185546875,
+        7.04541015625,
+        5.14013671875
+      ]
+    },
+    {
+      "repetition": 1,
+      "scenario": "small_known_file_correction",
+      "arm": "A",
+      "test_exit_code": 0,
+      "measurement_valid": true,
+      "observed_completed_at": "2026-10-28T16:27:53.159592+00:00",
+      "host_load_average": [
+        7.79150390625,
+        6.900390625,
+        5.1318359375
+      ]
+    },
+    {
+      "repetition": 1,
+      "scenario": "cross_module_refactor",
+      "arm": "A",
+      "test_exit_code": 0,
+      "measurement_valid": true,
+      "observed_completed_at": "2026-10-28T16:28:13.615161+00:00",
+      "host_load_average": [
+        6.93505859375,
+        6.7607421875,
+        5.12353515625
+      ]
+    },
+    {
+      "repetition": 1,
+      "scenario": "cross_module_refactor",
+      "arm": "B",
+      "test_exit_code": 0,
+      "measurement_valid": true,
+      "observed_completed_at": "2026-10-28T16:28:31.746197+00:00",
+      "host_load_average": [
+        5.40966796875,
+        6.419921875,
+        5.04541015625
+      ]
+    },
+    {
+      "repetition": 2,
+      "scenario": "small_known_file_correction",
+      "arm": "A",
+      "test_exit_code": 0,
+      "measurement_valid": true,
+      "observed_completed_at": "2026-10-28T16:28:59.494683+00:00",
+      "host_load_average": [
+        4.810546875,
+        6.19287109375,
+        5.00537109375
+      ]
+    },
+    {
+      "repetition": 2,
+      "scenario": "small_known_file_correction",
+      "arm": "B",
+      "test_exit_code": 0,
+      "measurement_valid": true,
+      "observed_completed_at": "2026-10-28T16:29:26.670916+00:00",
+      "host_load_average": [
+        4.9287109375,
+        6.0546875,
+        4.99560546875
+      ]
+    },
+    {
+      "repetition": 2,
+      "scenario": "cross_module_refactor",
+      "arm": "B",
+      "test_exit_code": 0,
+      "measurement_valid": true,
+      "observed_completed_at": "2026-10-28T16:29:43.433129+00:00",
+      "host_load_average": [
+        4.5869140625,
+        5.92138671875,
+        4.96875
+      ]
+    },
+    {
+      "repetition": 2,
+      "scenario": "cross_module_refactor",
+      "arm": "A",
+      "test_exit_code": 0,
+      "measurement_valid": true,
+      "observed_completed_at": "2026-10-28T16:29:58.247988+00:00",
+      "host_load_average": [
+        4.39453125,
+        5.810546875,
+        4.94775390625
+      ]
+    }
+  ],
+  "raw_provider_output_retained": false,
+  "parameters_changed_after_launch": false,
+  "provider_model_backend_cache_quota_equivalence": "UNKNOWN",
+  "native_workers_retries_delegations": "UNKNOWN",
+  "status": "COMPLETED_ALL_TURNS",
+  "freeze_before": "PASS",
+  "preflight_finished_at": "2026-10-28T16:25:30.055103+00:00",
+  "preflight_exit_code": 0,
+  "freeze_after_preflight": "PASS",
+  "comparison_started_at": "2026-10-28T16:25:30.999392+00:00",
+  "load_at_comparison_start": [
+    10.36181640625,
+    6.1630859375,
+    4.6298828125
+  ],
+  "driver_exit_code": 0,
+  "finished_at": "2026-10-28T16:29:58.261392+00:00",
+  "load_after": [
+    4.39453125,
+    5.810546875,
+    4.94775390625
+  ],
+  "unrecognized_driver_stdout_lines_discarded": 0,
+  "freeze_after": "PASS"
+}
