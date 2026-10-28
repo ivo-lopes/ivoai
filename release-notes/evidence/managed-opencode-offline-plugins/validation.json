@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "recorded_at_utc": "2026-10-28T16:42:37.746384+00:00",
+  "recorded_at_utc": "2026-10-28T16:45:51.876204+00:00",
   "base_commit": "2bf9f94358aa54c22e0cc8d839e3a108774811c6",
   "source_status": "Local uncommitted snapshot; subsequent commit binds all recorded files. No release/publication/installation.",
   "plane_tasks": {
@@ -41,14 +41,17 @@
     "local_shellcheck": "UNAVAILABLE_CI_GATE_REQUIRED",
     "arm_component_runtime": "PENDING_NATIVE_CI",
     "non_avx_component_runtime": "PENDING_QEMU_CI",
-    "ci_exact_head": "PENDING_NO_PUSH",
+    "ci_exact_head": "PENDING_LOCAL_BRANCH_NOT_PUSHED",
     "combined_full_go_after_docs": "PASS_59_PACKAGES_standard_cache",
     "combined_affected_race_uncached": "PASS_admin4.382s_webauth2.958s_bridge21.423s_agents2.501s_components23.625s",
     "combined_vet_all": "PASS",
     "combined_core_amd64v1_arm64_cgo0_builds": "PASS_GO1.27.3_PRIVATE_WIP_MODIFIED_TRUE_NOT_RELEASE",
     "combined_own_frozen_docs_build_check": "PASS_EN_PT",
     "combined_real_offline_suite": "PASS_8_REQUIRED_NAMED_TOP_LEVEL_TESTS_ZERO_SKIPS",
-    "combined_policy_user_and_uid0": "PASS_6_CASES_EACH_MANAGED_REGISTRY0_UNFLAGGED_CONTROL1"
+    "combined_policy_user_and_uid0": "PASS_6_CASES_EACH_MANAGED_REGISTRY0_UNFLAGGED_CONTROL1",
+    "certification_notes_own_frozen_en_pt_docs": "PASS",
+    "certification_notes_embedded_portal_test": "PASS_uncached_0.007s",
+    "certification_notes_core_crossbuilds": "PASS_AMD64v1_ARM64_GO1.27.3_CGO0_PRIVATE_WIP_NOT_RELEASE"
   },
   "adverse_outcomes": [
     {
@@ -121,18 +124,26 @@
     "vet-combined-after-docs.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "docs-build-combined.log": "68e243ea8c60e5e4f2af71bd3f4baf1efc1336f47d31072ac507d34ca746e1e0",
     "docs-check-combined.log": "5dcca4289d7a5201310f9bd27e5fd5a9016ae4f842615b702513d881b31c7b67",
-    "offline-validation-combined-final.log": "d415d79e30dfc0dbfd920eb52c225582ff6a93fa2bd243a88ae58198c4b65244"
+    "offline-validation-combined-final.log": "d415d79e30dfc0dbfd920eb52c225582ff6a93fa2bd243a88ae58198c4b65244",
+    "notes-integration.log": "b1cc24347b0ca27b6d69fe8048d2d6ad259a487e8d055223db796648ad9d3e0c",
+    "docs-build-certification.log": "225a9b42ad5007d9c7d506207b993fe18ea8a5b03b23b87c21dc3a9983a198d9",
+    "docs-check-certification.log": "6c34cba75ab30af9a8e204a7b4022b828673aab1d83a84fe214344caf94b488c",
+    "docsserver-certification.log": "3c5628c1863bb7369f91600d7243231ca78fa0fcffa6c81d05db9dc2df916c09"
   },
   "go_build_sha256": {
     "ivoai-amd64v1-final": "06064920eed0d4b525bff8b4c7d8c692c55fa3d6cdd11cf366d4c712a5a1b5f3",
     "ivoai-arm64-final": "477d7035650eb54f9341e6673fe20016660628b61f95c2d564f95ea20abd39a4",
     "ivoai-amd64v1-combined-final": "48c648a9ae02d9aa540201a5d27154134e7852af4994241df7f0b29d1ef371d2",
-    "ivoai-arm64-combined-final": "9c4112e9ad4d212d613bf845a96b2edc0ef3fbf0833c07ee1b3079be4159d344"
+    "ivoai-arm64-combined-final": "9c4112e9ad4d212d613bf845a96b2edc0ef3fbf0833c07ee1b3079be4159d344",
+    "ivoai-amd64v1-certification": "933849fcbc361e54b52450c0d852abe75657b42df2af17b27b4a2881ca8b5b36",
+    "ivoai-arm64-certification": "a5683c90ef3847d77c4446b25b9c5f344e417a40b5f86e9b2601901a7b8f215c"
   },
   "source_sha256": {
     ".github/workflows/ci.yml": "7725c7efee32530763f01565b8ee30e84d016af5a8c90b45ff189b464965af32",
     ".github/workflows/release.yml": "55c03292d1672cf358a18247b1ac068b1545aac8c132cbb960797d6613b745e6",
     "THIRD_PARTY_NOTICES.md": "c13ebc0acf1895e8eb7ca40589b353f51d1d9984c9db8cc34f130147166e5ee0",
+    "docs/architecture.md": "318cffbdd0d1969039be37b28104f69eb9ae76c5bda7c121ebde0f9878a53af6",
+    "docs/releases.md": "0d0fe070eba1228c8b0c05d580fd4b4aa848bdf3111473c6b748f86d6a33a1bc",
     "docs/troubleshooting.md": "b03e831fada7a270dbd18de2313c6dbe059c0209eeb0443fddde627e6c9a79ff",
     "internal/app/graft_live_test.go": "fccaaf375e53a50678ea68e49867ddacb2c02eb93fa58ca6e32fbca8af805374",
     "internal/app/native_auto_live_test.go": "a8967d4130717589ac67be4099b4d7a4e0a58c9025f13332c574d8dfd3628607",
@@ -144,15 +155,18 @@
     "manifest/components.yaml": "82e691a8d901cc140998736a09066da4be1b172392f0747c2a579e06d5f8a2e5",
     "patches/opencode/1.19.0-managed-local-plugins.patch": "22f550551848c6240022767c070d8cc1082f0fb3da16210bde28d08d98fd103c",
     "patches/opencode/README.md": "c8e5775a50f8aa03453f4ee1add41122eef8797398ca32a5ee87a6f8193e2559",
-    "release-notes/managed-opencode-offline-validation.md": "9761d0c03cd712aad56b64b2e59fdd18c4eed80fa14f390fae0b7cd29017107d",
+    "release-notes/managed-opencode-offline-validation.md": "eeb45e2480ce62ef41b3246d9f4d5170db70c1ea4cf7a709e6769b8106bb8292",
+    "release-notes/v0.14.0.md": "10e0ff66c85ddbd5db1d6e9a472693a78c0e13c90980bfe0da90d4b11faf16ad",
     "scripts/build-managed-opencode.sh": "5a0d055b9975b83a1ea39906df28ccc2d34d7a79b471409c2f06ae01336e8e7a",
     "scripts/test-managed-opencode-offline.sh": "9d49ee8d1d9299f415dd7008e75dae6eeecce0ae50669014b79e89f71b769ca1",
     "scripts/test-managed-opencode-policy.py": "3cd1f5847677ef9988d3894a6b3ecb5ae27a6c43c0c776f942e4c6e4eac6b221",
     "scripts/test-managed-opencode.sh": "131d706ae123d2a8ea08fb605f776eebc01aae269754345c1e7c6803faa11ac2",
     "scripts/test-opencode-managed-source.mjs": "9b6a99a8cab439461d718edae176b7a7471cc14f48d24d1bad50a27f6d9c7f03",
     "scripts/test-patched-opencode.sh": "4448ff2d159837fc1844c17dc6482c8dc6d50c6c5d78181b0a338b1408a8b9ed",
+    "website/i18n/pt-BR/docusaurus-plugin-content-docs/current/architecture.md": "57ff81c7b42f4f38becc9b7cf1091b6f44f0478ea4bf11f2e56e3ae836c69211",
+    "website/i18n/pt-BR/docusaurus-plugin-content-docs/current/releases.md": "324469162385c5135a0d69ddcfb00f384df8d199dc433e278f89b553a7ee5cdc",
     "website/i18n/pt-BR/docusaurus-plugin-content-docs/current/troubleshooting.md": "3ffb07f6dece842d65eca57186f449e151c8b404e31e6c3b736154c3ed5fd1c5",
-    "website/static/build-input.sha256": "59d681ffc9b6c7bb7403a4a602b270d0ae9c0887de1324b129d9e3be93fb12e1"
+    "website/static/build-input.sha256": "a3f1f01d704745cda89f0d5cdab7ec42ede8f277e190e83dbba24e697fef31c3"
   },
   "public_evidence_sha256": {
     "combined-offline-agents.log": "bc794e494fe141fddda8b9fda0a20df06b345209528d01061c13500f2974bf6f",
@@ -171,5 +185,8 @@
   },
   "initial_fix_commit": "67c644c839fc8513b8000deff47a22a5442f8596",
   "combined_main_commit": "3be82befea6ed3875373afcb1bfaa450710310ac",
-  "combined_admin_oauth_and_release_browser_gate_preserved": true
+  "combined_admin_oauth_and_release_browser_gate_preserved": true,
+  "combined_runtime_commit": "8826b8c16c2ea6ec140ada0a6fcf83e192922d5d",
+  "certification_notes_source_commit": "df8cbb420975f2bfbaf0885022bcfb9a00725530",
+  "certification_notes_integrated_commit": "4ee0004e296c70a198f9f6e9d30708a3eac58250"
 }

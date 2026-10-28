@@ -141,3 +141,11 @@ The new patch file contains seven normal unified-diff blank context lines that
 an initial staged whitespace check reported. Its bytes were retained for immutable
 patch/component provenance; other source whitespace and the final merge diff
 were clean. No whitespace or CI configuration was weakened to hide that format.
+
+The documentation-only certification notes from
+`df8cbb420975f2bfbaf0885022bcfb9a00725530` were subsequently integrated as
+`4ee0004e296c70a198f9f6e9d30708a3eac58250`. Own frozen EN/PT site build/check,
+focused embedded-portal tests and both Core cross-builds passed again. This adds
+the candidate migration notes and separately scoped 126-attempt economic history;
+it does not incorporate the runtime of PR45/46/47 or publish the candidate.
+No upstream component source changed and no additional inference was run.
