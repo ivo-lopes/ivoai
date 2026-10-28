@@ -265,13 +265,15 @@ func (s Store) write(value Session) error {
 	return platform.AtomicWritePrivate(append(body, '\n'), path)
 }
 
-func (s Store) read(path string) (Session, error) {
+func (s Store) read(path string) (Session, error) { return s.readBounded(path, maxStateBytes) }
+
+func (s Store) readBounded(path string, limit int64) (Session, error) {
 	if filepath.Dir(path) != s.Root {
 		if err := s.validateSessionNamespace(filepath.Dir(path)); err != nil {
 			return Session{}, err
 		}
 	}
-	fd, err := unix.Open(path, unix.O_RDONLY|unix.O_CLOEXEC|unix.O_NOFOLLOW, 0)
+	fd, err := unix.Open(path, unix.O_RDONLY|unix.O_CLOEXEC|unix.O_NOFOLLOW|unix.O_NONBLOCK, 0)
 	if err != nil {
 		return Session{}, err
 	}
@@ -285,14 +287,14 @@ func (s Store) read(path string) (Session, error) {
 	if err != nil {
 		return Session{}, err
 	}
-	if info.Mode()&os.ModeSymlink != 0 || !info.Mode().IsRegular() || info.Mode().Perm()&0o077 != 0 || info.Size() > maxStateBytes {
+	if info.Mode()&os.ModeSymlink != 0 || !info.Mode().IsRegular() || info.Mode().Perm()&0o077 != 0 || info.Size() > limit {
 		return Session{}, errors.New("unsafe session state file")
 	}
-	body, err := io.ReadAll(io.LimitReader(file, maxStateBytes+1))
+	body, err := io.ReadAll(io.LimitReader(file, limit+1))
 	if err != nil {
 		return Session{}, err
 	}
-	if len(body) > maxStateBytes {
+	if int64(len(body)) > limit {
 		return Session{}, errors.New("session metadata exceeds size limit")
 	}
 	var disk diskSession

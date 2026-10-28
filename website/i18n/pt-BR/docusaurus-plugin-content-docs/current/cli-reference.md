@@ -7,6 +7,8 @@ ivoai - personal AI client and server platform
 Usage:
   ivoai                         interactive menu
   ivoai help | version | uninstall
+  ivoai admin serve [--listen 127.0.0.1:7781]
+  ivoai admin access create [--ttl 10m] | list | revoke <id>
   ivoai status [--json]
   ivoai setup [--mode client|server]
   ivoai doctor [--json] [--inventory]
@@ -108,3 +110,13 @@ para a unidade systemd gerenciada. O default é `0.0.0.0:7780`.
 Variáveis internas de capability da sessão e variáveis apenas de teste não são interfaces públicas
 intencionalmente. Comandos retornam zero em sucesso, diferente de zero em falha de
 validação/runtime e 130 em cancelamento quando o ciclo de vida do executor oferece suporte.
+
+## Administração local somente leitura
+
+`ivoai admin serve` inicia explicitamente um listener opcional em endereço numérico de loopback (padrão `127.0.0.1:7781`). Ele não inicia nas sessões comuns de clientes ou no gateway. Use o mesmo proprietário local e ConfigRoot/StateRoot privados existentes; não o execute como serviço privilegiado do gateway nem o exponha por proxy reverso. Em outro terminal, execute `ivoai admin access create --ttl 10m` e informe o código único na página OAuth local. O código é impresso intencionalmente apenas nesse comando de emissão; list/revoke mostram metadados. `ivoai admin access revoke <id>` invalida o acesso do grant.
+
+O console reutiliza o store OAuth PKCE existente com escopo `admin:read` e recurso específicos da instância. Defaults/tokens Web MCP, credenciais de conectores e capabilities de sessão continuam separados. O token de acesso fica em cookie HttpOnly/SameSiteStrict de uma hora; o console não usa armazenamento de tokens no navegador nem refresh token. HTTP é aceito apenas em loopback numérico; Host/Origin são exatos, headers forwarded são ignorados e não existe delegação remota de operador/RBAC. O estado é privado em `admin/<instance>/oauth.json` sob StateRoot, separado das configurações dos clientes nativos. Apenas o formulário OAuth usa `Referrer-Policy: same-origin`, para que o envio pelo navegador preserve um Origin verificável; callback, API e console usam `no-referrer`. `Origin: null` é recusado, inclusive com nonce válido no formulário.
+
+A primeira fatia lê metadados/eventos de sessões, versões de componentes selecionados e configuração agregada de conexões. Usa os mesmos stores App/Core e DTOs com campos permitidos, sem probes de provedores, rede, chat ou controles de execução em GET. O uso, quando disponível, é um relatório persistido do cliente oficial com escopo `cli_invocation`; cache de entrada está incluído na entrada e valores desconhecidos são null. Não é total de sessão nem resultado econômico. Contagens cobrem um subconjunto limitado (32 sessões, até33 entradas consultadas por namespace existente, 256KiB por registro); preserve flags partial/truncated e não presuma que o subconjunto contém a sessão global mais recente. I/O do filesystem e callbacks do host são cooperativos, sem interrupção forçada.
+
+A paridade administrativa permanece parcial: não há setup/update/rollback/uninstall, stop/start, aprovações, edição de credenciais, backup/restore, purge de conectores, gestão de evidence/cache/índices, login nativo ou interface conversacional. O inventário contém118 IDs estáveis da TUI; o console de leitura não conclui essas capacidades. O proprietário local e o filesystem permanecem confiáveis; rechecks de auth/raiz na leitura não dão proteção atômica contra processo local privilegiado que substitua estado. Encerre o listener explícito para desativar o console; configurações nativas e execuções em andamento permanecem inalteradas.

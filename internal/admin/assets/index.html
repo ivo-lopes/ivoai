@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Operação · IVOAI</title>
+  <link rel="stylesheet" href="/assets/admin.css">
+  <script src="/assets/admin.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Ir para o conteúdo</a>
+  <div class="shell">
+    <aside class="sidebar" aria-label="Navegação do console">
+      <a class="brand" href="#sessions" aria-label="IVOAI, operação"><span class="brand-mark" aria-hidden="true">I</span> IVOAI</a>
+      <p class="sidebar-caption">Operação</p>
+      <nav aria-label="Áreas administrativas">
+        <a class="nav-link" href="#sessions" data-view="sessions" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 9v11"/></svg>Sessões</a>
+        <a class="nav-link" href="#components" data-view="components"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 9 5-9 5-9-5 9-5Zm-9 9 9 5 9-5M3 16l9 5 9-5"/></svg>Componentes</a>
+        <a class="nav-link" href="#connections" data-view="connections"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 7H5a3 3 0 0 0-3 3v4a3 3 0 0 0 3 3h3m8-10h3a3 3 0 0 1 3 3v4a3 3 0 0 1-3 3h-3M8 12h8"/></svg>Conexões</a>
+      </nav>
+      <div class="sidebar-footer"><span class="read-only-dot" aria-hidden="true"></span> Acesso de leitura<p>As execuções continuam nos clientes nativos.</p></div>
+    </aside>
+
+    <main id="main" tabindex="-1">
+      <header class="page-header">
+        <div><p class="context-label">Console local</p><h1 id="page-title">Sessões</h1></div>
+        <div class="header-actions"><span id="connection-label" class="connection-label">Verificando acesso</span><button id="refresh" class="button" type="button" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 7v5h-5M4 17v-5h5m-4-4a8 8 0 0 1 13-3l2 2M4 17l2 2a8 8 0 0 0 13-3"/></svg>Atualizar</button><button id="sign-out" class="button" type="button" hidden>Encerrar acesso</button></div>
+      </header>
+      <p id="announcement" class="visually-hidden" role="status" aria-live="polite"></p>
+      <div id="error" class="notice notice-error" role="alert" hidden></div>
+
+      <section id="access-panel" class="access-panel" aria-labelledby="access-title">
+        <div class="access-symbol" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3m-4 4v3"/></svg></div>
+        <h2 id="access-title">Verificando seu acesso</h2>
+        <p id="access-description">Conectando ao serviço administrativo local.</p>
+        <a id="sign-in" class="button button-primary" href="/auth/start" hidden>Autorizar acesso local</a>
+        <p id="access-help" class="access-help" hidden>Use o código de acesso criado no terminal do IVOAI. A autorização permite consultar o estado; não inicia nem altera execuções.</p>
+        <noscript>Ative JavaScript para consultar o console. A autorização é feita pelo serviço local.</noscript>
+      </section>
+
+      <div id="workspace" hidden>
+        <section class="snapshot-bar" aria-label="Estado observado">
+          <div><span class="snapshot-indicator" aria-hidden="true"></span><strong>Estado local</strong><span id="snapshot-time">Sem medição</span></div>
+          <p>Somente leitura <span aria-hidden="true">/</span> <span id="version">Versão não informada</span></p>
+        </section>
+
+        <section id="sessions-view" class="view" aria-labelledby="sessions-title">
+          <div class="section-heading"><div><h2 id="sessions-title">Sessões registradas</h2><p>Consulte o estado e a última execução de cada sessão.</p></div><p id="session-count" class="item-count"></p></div>
+          <div class="filter-bar">
+            <div class="field search-field"><label for="session-search">Buscar sessão</label><input id="session-search" type="search" placeholder="Identificador ou executor" autocomplete="off" maxlength="100"></div>
+            <div class="field"><label for="session-state">Estado</label><select id="session-state"><option value="all">Todos os estados</option></select></div>
+            <div class="field"><label for="session-executor">Executor</label><select id="session-executor"><option value="all">Todos os executores</option></select></div>
+          </div>
+          <div id="session-summary" class="session-summary" aria-live="polite"></div>
+          <div class="table-frame"><table class="sessions-table"><caption class="visually-hidden">Sessões locais e última execução</caption><thead><tr><th scope="col">Sessão</th><th scope="col">Executor</th><th scope="col">Estado</th><th scope="col">Última atividade</th><th scope="col">Última execução</th><th scope="col"><span class="visually-hidden">Detalhes</span></th></tr></thead><tbody id="sessions-body"></tbody></table></div>
+          <div id="sessions-empty" class="empty-state" hidden><h3>Nenhuma sessão encontrada</h3><p id="sessions-empty-description">As sessões aparecem aqui depois de serem registradas pelo IVOAI.</p></div>
+          <p class="section-note">Consumo e duração se referem à última execução disponível. Sem medição não significa consumo zero.</p>
+        </section>
+
+        <section id="components-view" class="view" aria-labelledby="components-title" hidden>
+          <div class="section-heading"><div><h2 id="components-title">Componentes</h2><p>Disponibilidade informada pelo backend nesta consulta.</p></div></div>
+          <div id="components-list" class="inventory-list"></div>
+          <p class="section-note">Instalação e disponibilidade são estados distintos. Esta tela não instala ou ativa componentes.</p>
+        </section>
+
+        <section id="connections-view" class="view" aria-labelledby="connections-title" hidden>
+          <div class="section-heading"><div><h2 id="connections-title">Conexões</h2><p>Capacidades de integração expostas pelo serviço local.</p></div></div>
+          <div id="connections-list" class="inventory-list"></div>
+          <p class="section-note">Credenciais, endereços privados e configurações pessoais não são exibidos.</p>
+        </section>
+      </div>
+      <footer class="page-footer">IVOAI Core <span aria-hidden="true">/</span> Administração local</footer>
+    </main>
+  </div>
+
+  <dialog id="session-dialog" aria-labelledby="detail-title">
+    <div class="detail-header"><div><p class="context-label">Detalhe da sessão</p><h2 id="detail-title">Sessão</h2></div><button id="close-detail" class="button button-icon" aria-label="Fechar detalhes" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div>
+    <div class="detail-content"><dl id="session-facts" class="facts-grid"></dl>
+      <section aria-labelledby="usage-title"><h3 id="usage-title">Última execução</h3><div id="usage-details"></div></section>
+      <section aria-labelledby="events-title"><div class="events-heading"><h3 id="events-title">Eventos registrados</h3><button id="refresh-events" class="button" type="button">Atualizar eventos</button></div><p class="section-note">Somente metadados administrativos. Saídas e conteúdo das tarefas não são exibidos.</p><div id="events-status" role="status"></div><ol id="events-list" class="events-list"></ol></section>
+    </div>
+  </dialog>
+</body>
+</html>
