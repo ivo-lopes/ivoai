@@ -1,0 +1,12 @@
+{
+  "compared_to": "edff3fc17f1c24c1035d03b613f3d44ca27ca5be",
+  "input_files": 394,
+  "input_sha256": "705408480af21f74380d5eb380dd05bef7b26229673a7da4d2a0101d84f86710",
+  "markers": {
+    "website/static/build-input.sha256": "705408480af21f74380d5eb380dd05bef7b26229673a7da4d2a0101d84f86710",
+    "internal/docsserver/site/build-input.sha256": "705408480af21f74380d5eb380dd05bef7b26229673a7da4d2a0101d84f86710"
+  },
+  "changed_paths": [],
+  "new_node_build": false,
+  "scope": "Exact byte identity to incoming independently built source/embed; no new local Node build claimed."
+}

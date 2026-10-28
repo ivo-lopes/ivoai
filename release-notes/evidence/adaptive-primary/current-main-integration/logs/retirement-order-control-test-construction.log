@@ -1,0 +1,4 @@
+# github.com/ivo-lopes/ivoai/internal/app [github.com/ivo-lopes/ivoai/internal/app.test]
+[PRIVATE_VALIDATION]/retirement-order-control/auto_turn.go:160:6: syntax error: unexpected keyword if at end of statement
+FAIL	github.com/ivo-lopes/ivoai/internal/app [build failed]
+FAIL

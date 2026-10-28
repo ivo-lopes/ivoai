@@ -1,0 +1,63 @@
+=== RUN   TestProtectedArtifactRoutesNeverFallBackAfterRestartOrFlagoff
+=== RUN   TestProtectedArtifactRoutesNeverFallBackAfterRestartOrFlagoff/restart
+=== RUN   TestProtectedArtifactRoutesNeverFallBackAfterRestartOrFlagoff/missing_callback
+=== RUN   TestProtectedArtifactRoutesNeverFallBackAfterRestartOrFlagoff/revoked
+--- PASS: TestProtectedArtifactRoutesNeverFallBackAfterRestartOrFlagoff (0.01s)
+    --- PASS: TestProtectedArtifactRoutesNeverFallBackAfterRestartOrFlagoff/restart (0.00s)
+    --- PASS: TestProtectedArtifactRoutesNeverFallBackAfterRestartOrFlagoff/missing_callback (0.00s)
+    --- PASS: TestProtectedArtifactRoutesNeverFallBackAfterRestartOrFlagoff/revoked (0.00s)
+=== RUN   TestProtectedWorkerProjectionUsesActualMCPAccessWithoutSchedulerTools
+--- PASS: TestProtectedWorkerProjectionUsesActualMCPAccessWithoutSchedulerTools (0.01s)
+=== RUN   TestAdmittedPrimaryProtectedReadersRecheckAuthority
+=== RUN   TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read/valid
+    artifact_reader_test.go:228: reissued snapshot fetched again
+=== RUN   TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read/closed_before
+    artifact_reader_test.go:228: reissued snapshot fetched again
+=== RUN   TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read/stale_before
+    artifact_reader_test.go:228: reissued snapshot fetched again
+=== RUN   TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read/identity_missing
+    artifact_reader_test.go:228: reissued snapshot fetched again
+=== RUN   TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read/closed_during
+    artifact_reader_test.go:228: reissued snapshot fetched again
+=== RUN   TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read/replaced_during
+    artifact_reader_test.go:228: reissued snapshot fetched again
+=== RUN   TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read/host_revoked_during
+    artifact_reader_test.go:228: reissued snapshot fetched again
+=== RUN   TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read/core_revoked_during
+    artifact_reader_test.go:228: reissued snapshot fetched again
+=== RUN   TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read_range/valid
+    artifact_reader_test.go:228: reissued snapshot fetched again
+=== RUN   TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read_range/closed_before
+    artifact_reader_test.go:228: reissued snapshot fetched again
+=== RUN   TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read_range/stale_before
+    artifact_reader_test.go:228: reissued snapshot fetched again
+=== RUN   TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read_range/identity_missing
+    artifact_reader_test.go:228: reissued snapshot fetched again
+=== RUN   TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read_range/closed_during
+    artifact_reader_test.go:228: reissued snapshot fetched again
+=== RUN   TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read_range/replaced_during
+    artifact_reader_test.go:228: reissued snapshot fetched again
+=== RUN   TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read_range/host_revoked_during
+    artifact_reader_test.go:228: reissued snapshot fetched again
+=== RUN   TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read_range/core_revoked_during
+    artifact_reader_test.go:228: reissued snapshot fetched again
+--- FAIL: TestAdmittedPrimaryProtectedReadersRecheckAuthority (0.01s)
+    --- FAIL: TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read/valid (0.00s)
+    --- FAIL: TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read/closed_before (0.00s)
+    --- FAIL: TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read/stale_before (0.00s)
+    --- FAIL: TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read/identity_missing (0.00s)
+    --- FAIL: TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read/closed_during (0.00s)
+    --- FAIL: TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read/replaced_during (0.00s)
+    --- FAIL: TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read/host_revoked_during (0.00s)
+    --- FAIL: TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read/core_revoked_during (0.00s)
+    --- FAIL: TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read_range/valid (0.00s)
+    --- FAIL: TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read_range/closed_before (0.00s)
+    --- FAIL: TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read_range/stale_before (0.00s)
+    --- FAIL: TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read_range/identity_missing (0.00s)
+    --- FAIL: TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read_range/closed_during (0.00s)
+    --- FAIL: TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read_range/replaced_during (0.00s)
+    --- FAIL: TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read_range/host_revoked_during (0.00s)
+    --- FAIL: TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read_range/core_revoked_during (0.00s)
+FAIL
+FAIL	github.com/ivo-lopes/ivoai/internal/orchestrator	0.051s
+FAIL

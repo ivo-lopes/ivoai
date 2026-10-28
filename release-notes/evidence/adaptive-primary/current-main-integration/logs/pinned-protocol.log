@@ -1,0 +1,18 @@
+=== RUN   TestLiveAdaptivePrimaryCoreEscalationWithoutChildFlag
+    adaptive_primary_live_test.go:334: ADAPTIVE_CORE_PROTOCOL={"scope":"real_Core_MCP_child_and_reviewed_pair_identity","admission_flag_in_child":false,"same_turn_DAG":true,"plan_approval_exercised":true,"read_bootstrap_sufficient_without_plan":false,"closed_and_stale_child_denied":true,"workers":0,"model_inference":false}
+--- PASS: TestLiveAdaptivePrimaryCoreEscalationWithoutChildFlag (6.68s)
+=== RUN   TestLiveAdaptivePrimaryCoreReadBootstrapWithoutChildFlag
+    adaptive_primary_live_test.go:334: ADAPTIVE_CORE_PROTOCOL={"scope":"real_Core_MCP_child_and_reviewed_pair_identity","admission_flag_in_child":false,"same_turn_DAG":false,"plan_approval_exercised":false,"read_bootstrap_sufficient_without_plan":true,"closed_and_stale_child_denied":true,"workers":0,"model_inference":false}
+--- PASS: TestLiveAdaptivePrimaryCoreReadBootstrapWithoutChildFlag (3.24s)
+=== RUN   TestLiveAdaptivePrimaryOfficialCLIWithoutDAG
+=== RUN   TestLiveAdaptivePrimaryOfficialCLIWithoutDAG/usage_absent
+    adaptive_primary_live_test.go:435: ADAPTIVE_OFFICIAL_CLI={"version":"0.162.1","provider":"synthetic_loopback","requests":1,"DAG":false,"workers":0,"duplicate":409,"fake_provider_usage_present":false,"real_inference":false,"subscription_authentication":false}
+    adaptive_primary_live_test.go:436: ADAPTIVE_INSTRUCTION_BYTES={"initial_utf8_bytes":4114,"legacy_utf8_bytes":8323,"DAG_protocol_utf8_bytes":8323,"not_token_or_cost_measurement":true}
+=== RUN   TestLiveAdaptivePrimaryOfficialCLIWithoutDAG/usage_complete
+    adaptive_primary_live_test.go:435: ADAPTIVE_OFFICIAL_CLI={"version":"0.162.1","provider":"synthetic_loopback","requests":1,"DAG":false,"workers":0,"duplicate":409,"fake_provider_usage_present":true,"real_inference":false,"subscription_authentication":false}
+    adaptive_primary_live_test.go:436: ADAPTIVE_INSTRUCTION_BYTES={"initial_utf8_bytes":4114,"legacy_utf8_bytes":8323,"DAG_protocol_utf8_bytes":8323,"not_token_or_cost_measurement":true}
+--- PASS: TestLiveAdaptivePrimaryOfficialCLIWithoutDAG (7.00s)
+    --- PASS: TestLiveAdaptivePrimaryOfficialCLIWithoutDAG/usage_absent (3.19s)
+    --- PASS: TestLiveAdaptivePrimaryOfficialCLIWithoutDAG/usage_complete (3.81s)
+PASS
+ok  	github.com/ivo-lopes/ivoai/internal/app	17.964s

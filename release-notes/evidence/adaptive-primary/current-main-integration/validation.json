@@ -1,0 +1,288 @@
+{
+  "schema_version": 1,
+  "recorded_utc": "2026-10-28T21:54:52.333647+00:00",
+  "source_git": "6fdd943ce447374568f76c698322c1b80f7b836e",
+  "source_tree": "31013608730a3beaf65aa7ac300f776cdc45a5af",
+  "parents": [
+    "6ff8ad5834f53a955ef6c37f5d5c03e809708970",
+    "edff3fc17f1c24c1035d03b613f3d44ca27ca5be"
+  ],
+  "source_epoch_clean_and_frozen": true,
+  "source_manifest_sha256": "84eaf44f3817c307c3af2085983a51bd433fa46fafcfdf08165bf6edbb782f33",
+  "previous_epochs_preserved": [
+    "6ff8ad5834f53a955ef6c37f5d5c03e809708970",
+    "edff3fc17f1c24c1035d03b613f3d44ca27ca5be"
+  ],
+  "included_actual_main": "1dcf90400f67eb960a2446ccf3c987ecf977a9d8",
+  "admission": {
+    "flag": "IVOAI_EXPERIMENTAL_ADAPTIVE_PRIMARY",
+    "default": "OFF",
+    "source_scope": "First eligible literal user-message envelope in a fresh managed Codex session, reviewed runtime only; no content classifier. Read-only primary may request the existing approved Core DAG.",
+    "official_test_scope": "Narrow synthetic metadata fixture, two usage-schema branches; real Core MCP child and reviewed CLI pair; no model inference, subscription authentication or general-task quality measurement.",
+    "official_pair_version": "0.162.1 linux amd64",
+    "pinned_pair_sha256": {
+      "codex": "628e35487d888a28f0427fc37501da529dd3d81fcbad7a2c3421c1e8670d92e1",
+      "codex-code-mode-host": "ec71830690a7c0024916ee0c99fbdc635bc6e747ff665ea4f03a8389bbcb6b30"
+    },
+    "pair_provenance": "Existing private reviewed copies, SHA rechecked by production admission path. No download/install/authentication performed; upstream archive/source pins remain in managed-codex-worker-boundary.md."
+  },
+  "composition": {
+    "manually_resolved": [
+      "internal/app/auto_turn.go",
+      "internal/knowledgerouter/router.go",
+      "internal/orchestrator/scheduler.go",
+      "internal/orchestrator/server.go"
+    ],
+    "new_hardening": "Full artifact handlers preserve Core/primary receipt checks before recovery, after recovery, and at registered result delivery; private exact-owner worker projection remains Store-less and protected-only.",
+    "native_gate_order": "Explicit legacy executor and native retained checkpoint/FIFO inspection deny before retiring prior closed receipt.",
+    "preserved": "Scoped quota/provider catalogs and checks before discovery/effects; strict per-call Memory snapshot transport; sealed recovery grants/generation; pure receipt checks under existing session lock and nonblocking/nofollow checkpoint reads; NoReplay/NoAutomaticFailover; one Core authority.",
+    "public_client_configuration_changes": false
+  },
+  "gates": {
+    "full_go": {
+      "command": "go test ./...",
+      "exit": 0,
+      "result": "PASS"
+    },
+    "affected_race": {
+      "command": "go test -race ./internal/app ./internal/orchestrator ./internal/evidence ./internal/workingcontext ./internal/knowledgerouter ./internal/session ./internal/core ./internal/opencodebridge ./internal/nativecodex ./internal/externalmcp",
+      "exit": 0,
+      "result": "PASS"
+    },
+    "vet": {
+      "command": "go vet ./...",
+      "exit": 0,
+      "result": "PASS"
+    },
+    "python": {
+      "command": "python3 -m unittest discover -s scripts -p 'test_*.py'",
+      "exit": 0,
+      "result": "PASS"
+    },
+    "pinned_protocol": {
+      "command": "IVOAI_ADAPTIVE_LIVE=1 IVOAI_ADAPTIVE_REAL_CODEX=<reviewed codex> IVOAI_ADAPTIVE_REAL_COMPANION=<reviewed host> go test -race ./internal/app -run '^TestLiveAdaptivePrimary(CoreEscalationWithoutChildFlag|CoreReadBootstrapWithoutChildFlag|OfficialCLIWithoutDAG)$' -count=1 -v",
+      "exit": 0,
+      "result": "PASS"
+    },
+    "mandatory_rollback": {
+      "command": "scripts/test-protected-evidence-rollback.sh",
+      "exit": 0,
+      "result": "PASS"
+    },
+    "cli_reference": {
+      "command": "scripts/generate-cli-reference.sh --check",
+      "exit": 0,
+      "result": "PASS"
+    },
+    "build_amd64_v1": {
+      "command": "GOOS=linux GOARCH=amd64 GOAMD64=v1 CGO_ENABLED=0 go build -trimpath -o <private output> ./cmd/ivoai",
+      "exit": 0,
+      "result": "PASS"
+    },
+    "build_arm64": {
+      "command": "GOOS=linux GOARCH=arm64 CGO_ENABLED=0 go build -trimpath -o <private output> ./cmd/ivoai",
+      "exit": 0,
+      "result": "PASS"
+    },
+    "runtime_version_help": {
+      "command": "<new amd64 binary> version; <new amd64 binary> help (each env -i with private HOME/XDG; no provider launch)",
+      "exit": 0,
+      "result": "PASS"
+    }
+  },
+  "counts": {
+    "full_go_passed_packages": 59,
+    "full_go_cached_packages": 1,
+    "full_go_no_test_packages": 3,
+    "race_passed_packages": 10,
+    "python_tests": 73,
+    "focused_primary_rpc_subcases": 16,
+    "native_retirement_order_subcases": 4,
+    "pinned_protocol_top_level_passes": 3,
+    "pinned_protocol_skips": 0,
+    "official_cli_usage_subcases": 2,
+    "mandatory_real_rollback_named_passes": 1,
+    "mandatory_rollback_skips": 0
+  },
+  "adverse_controls": {
+    "naive_extraction": {
+      "result": "EXPECTED_FAIL",
+      "exit": 1,
+      "protected_primary_denial_subcases_failed": 14,
+      "positive_subcases_passed": 2,
+      "scope": "Counterfactual composition overlay replaces only reader registrations/handlers with incoming G0 versions lacking new receipt checks. This is not a historical G0 finding: receipts were absent there."
+    },
+    "retirement_before_native_gate": {
+      "result": "EXPECTED_FAIL",
+      "exit": 1,
+      "subcases_failed": 4,
+      "scope": "Overlay moves receipt retirement before native compatibility checks; unchanged tests detect rewritten session/receipt."
+    },
+    "new_fixture_construction_failures": [
+      "artifact-composition-focused.log: invalid cross-session cache reuse assumption",
+      "composition-focused-2.log: non-existent document field and incomplete receipt fixture",
+      "composition-focused-3.log: required document classification and recovery plan directory omitted",
+      "retirement-order-control-test-construction.log: overlay generator omitted newline"
+    ],
+    "historical_adverse_epochs": "Unchanged old receipts retain inconclusive race timeout and initial failed regression/construction results; no new explanation claimed."
+  },
+  "instruction_bytes": {
+    "initial_utf8": 4114,
+    "legacy_and_DAG_utf8": 8323,
+    "historical_legacy_utf8": 8313,
+    "tokens_or_cost_measurement": false,
+    "global_economic_gate": "FAIL/INCOMPLETE; not evaluated by this integration"
+  },
+  "binaries": {
+    "ivoai-linux-amd64-v1": {
+      "sha256": "495b9cd1afef0a3e86eccd86e1715b7b2ba899fabf87978c821810192ab10cc8",
+      "bytes": 75931732
+    },
+    "ivoai-linux-arm64": {
+      "sha256": "5da8374e6dd2a68cb1312721fcb501fbd2bfcca08c81e67bbbac3527b2a3e90c",
+      "bytes": 73905824
+    }
+  },
+  "build_runtime_limits": {
+    "go": "go1.27.3",
+    "amd64": "Build metadata GOAMD64=v1, CGO=0, clean source6fdd; version/help executed in private empty environment.",
+    "arm64": "Cross compilation and GOARM64=v8.0 metadata only; not executed locally.",
+    "no_AVX_execution": "NOT_RUN: qemu-x86_64 not installed locally; hosted no-AVX gate remains required.",
+    "new_release": false
+  },
+  "docs": {
+    "inputs_and_embed_exact_to_incoming": true,
+    "file_count": 394,
+    "input_sha256": "705408480af21f74380d5eb380dd05bef7b26229673a7da4d2a0101d84f86710",
+    "new_local_node_build": false,
+    "reason": "Authored docs, website inputs, embedded site and build/check scripts byte-identical to reviewed incoming edff; CLI reference rechecked."
+  },
+  "rollback": "Unset admission flag for future launches; finish/cancel admitted turns before downgrade. Preserve receipts, attempts, claims, checkpoints and evidence; do not erase to force replay. Mandatory old-Core protected namespace rollback passes.",
+  "limits": [
+    "No real provider/cohort, credentials or personal configuration touched.",
+    "No native TUI parity, Claude/Antigravity activation, global OpenCode removal or Context ingestion claim.",
+    "v0.14.0 tag/assets/publication remain immutable and do not contain this subsequent integration.",
+    "Fresh final-source hosted checks and parent review still required before merge; no push/tag/release by this task.",
+    "Checkpoint and session files are serialized under the existing lock; no cross-file rollback transaction is claimed."
+  ],
+  "artifacts": {
+    "logs/full-go.log": {
+      "raw_private_sha256": "43bb50d2fbd72ebfdc1347067f408b43763a3f1856b93bf8fc5c6e86d579a597",
+      "public_sha256": "43bb50d2fbd72ebfdc1347067f408b43763a3f1856b93bf8fc5c6e86d579a597",
+      "normalization": "replace exact validation/worktree paths and strip trailing line whitespace; preserve content, outcomes and timings"
+    },
+    "logs/affected-race.log": {
+      "raw_private_sha256": "811b1f8f1c1764cce0bac36e5bbc4456918e840e97f40a667aff53eb411a85e3",
+      "public_sha256": "811b1f8f1c1764cce0bac36e5bbc4456918e840e97f40a667aff53eb411a85e3",
+      "normalization": "replace exact validation/worktree paths and strip trailing line whitespace; preserve content, outcomes and timings"
+    },
+    "logs/vet.log": {
+      "raw_private_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "public_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "normalization": "replace exact validation/worktree paths and strip trailing line whitespace; preserve content, outcomes and timings"
+    },
+    "logs/python.log": {
+      "raw_private_sha256": "26d69b49c5f1f342064b28587b312df83103e20e6895cc3dc5c748052ac90c28",
+      "public_sha256": "26d69b49c5f1f342064b28587b312df83103e20e6895cc3dc5c748052ac90c28",
+      "normalization": "replace exact validation/worktree paths and strip trailing line whitespace; preserve content, outcomes and timings"
+    },
+    "logs/pinned-protocol.log": {
+      "raw_private_sha256": "bd1a05d77018edde813f16e8b6fa8f9a299bcb1bdb16cc0c4fa9565bb4be58e3",
+      "public_sha256": "bd1a05d77018edde813f16e8b6fa8f9a299bcb1bdb16cc0c4fa9565bb4be58e3",
+      "normalization": "replace exact validation/worktree paths and strip trailing line whitespace; preserve content, outcomes and timings"
+    },
+    "logs/mandatory-rollback.log": {
+      "raw_private_sha256": "20ace89fdc463722366e0f01a914b6951cff05fcd0ddb78d9403043585805ff1",
+      "public_sha256": "2e5eec474108192530505529596a619957ff9b50770d3e59e47c98d951c71cea",
+      "normalization": "replace exact validation/worktree paths and strip trailing line whitespace; preserve content, outcomes and timings"
+    },
+    "logs/cli-reference.log": {
+      "raw_private_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "public_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "normalization": "replace exact validation/worktree paths and strip trailing line whitespace; preserve content, outcomes and timings"
+    },
+    "logs/build-amd64-v1.log": {
+      "raw_private_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "public_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "normalization": "replace exact validation/worktree paths and strip trailing line whitespace; preserve content, outcomes and timings"
+    },
+    "logs/build-arm64.log": {
+      "raw_private_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "public_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "normalization": "replace exact validation/worktree paths and strip trailing line whitespace; preserve content, outcomes and timings"
+    },
+    "logs/build-amd64-v1-metadata.log": {
+      "raw_private_sha256": "33e01daf7899bdf9bb3c34dd6e0f7075b57678bf179e9e04f85d2389175d169f",
+      "public_sha256": "40cc7ff93918f89717940c87f7f38b02cf105ccc2223c5222efb98b9eeb5fc97",
+      "normalization": "replace exact validation/worktree paths and strip trailing line whitespace; preserve content, outcomes and timings"
+    },
+    "logs/build-arm64-metadata.log": {
+      "raw_private_sha256": "dd869c37f22c4957866085438169c0f5d7e217afaae0ee42765c9a2f17791a85",
+      "public_sha256": "613a0b809da75b9492e1fdc5c3cf43a7cc831ccdbec0b6b05b1d4d0e2f53d143",
+      "normalization": "replace exact validation/worktree paths and strip trailing line whitespace; preserve content, outcomes and timings"
+    },
+    "logs/runtime-version.log": {
+      "raw_private_sha256": "9c5955fc99a60b8f6dee6cf582c4420d91e1b3e2a201f532c91e2cbdfce7fa51",
+      "public_sha256": "9c5955fc99a60b8f6dee6cf582c4420d91e1b3e2a201f532c91e2cbdfce7fa51",
+      "normalization": "replace exact validation/worktree paths and strip trailing line whitespace; preserve content, outcomes and timings"
+    },
+    "logs/runtime-help.log": {
+      "raw_private_sha256": "112885f1cdcab1d5b06dcac38a4dd50b26e6824e1e95f26952446f1384cffced",
+      "public_sha256": "112885f1cdcab1d5b06dcac38a4dd50b26e6824e1e95f26952446f1384cffced",
+      "normalization": "replace exact validation/worktree paths and strip trailing line whitespace; preserve content, outcomes and timings"
+    },
+    "logs/artifact-composition-focused.log": {
+      "raw_private_sha256": "8875fd4ae7cc3afa441650de7b49bacd4f1f9754a9bfc894a95c32e5f57ef92f",
+      "public_sha256": "8875fd4ae7cc3afa441650de7b49bacd4f1f9754a9bfc894a95c32e5f57ef92f",
+      "normalization": "replace exact validation/worktree paths and strip trailing line whitespace; preserve content, outcomes and timings"
+    },
+    "logs/composition-focused-2.log": {
+      "raw_private_sha256": "58c187961f507b634ae40b9dc4f86461cbc8aaa43a7b07c52ab4bfe5322f29c3",
+      "public_sha256": "58c187961f507b634ae40b9dc4f86461cbc8aaa43a7b07c52ab4bfe5322f29c3",
+      "normalization": "replace exact validation/worktree paths and strip trailing line whitespace; preserve content, outcomes and timings"
+    },
+    "logs/composition-focused-3.log": {
+      "raw_private_sha256": "09486050c5d875a0f36c9cdd992acb79b3b0aad9d82d774377a1ae1eec133508",
+      "public_sha256": "09486050c5d875a0f36c9cdd992acb79b3b0aad9d82d774377a1ae1eec133508",
+      "normalization": "replace exact validation/worktree paths and strip trailing line whitespace; preserve content, outcomes and timings"
+    },
+    "logs/composition-focused-4.log": {
+      "raw_private_sha256": "18f9bde7efd6fe3bed1137d3a2d6f4aa812db49fe7274557e350d7ec53a0e0af",
+      "public_sha256": "18f9bde7efd6fe3bed1137d3a2d6f4aa812db49fe7274557e350d7ec53a0e0af",
+      "normalization": "replace exact validation/worktree paths and strip trailing line whitespace; preserve content, outcomes and timings"
+    },
+    "logs/naive-extraction-control-test.log": {
+      "raw_private_sha256": "4a9704dba907f6b2f19d9a86f40213570f5b14313debae3c165a34238217ae94",
+      "public_sha256": "4a9704dba907f6b2f19d9a86f40213570f5b14313debae3c165a34238217ae94",
+      "normalization": "replace exact validation/worktree paths and strip trailing line whitespace; preserve content, outcomes and timings"
+    },
+    "controls/naive-extraction-control-artifact_reader.go.txt": {
+      "sha256": "9d4dadce58fdc937733de4a25201f0cd411db7d73d05db89c9646ccb9fb0a1ca"
+    },
+    "controls/naive-extraction-control-server.go.txt": {
+      "sha256": "3db0e54563929bb5654aeadd94da87491fe141e8e82ea13417a69c85f825fc3e"
+    },
+    "logs/retirement-order-control-test.log": {
+      "raw_private_sha256": "4952949ecd7b6e88cfaea4c7c0efa1026fb7faa028989264f012c657fe7fef77",
+      "public_sha256": "4952949ecd7b6e88cfaea4c7c0efa1026fb7faa028989264f012c657fe7fef77",
+      "normalization": "replace exact validation/worktree paths and strip trailing line whitespace; preserve content, outcomes and timings"
+    },
+    "logs/retirement-order-control-test-construction.log": {
+      "raw_private_sha256": "fbbef29033f0fe6338ff1e7035b7a3d79a97ddf5d15b1f6a13231c3c3b102e70",
+      "public_sha256": "1bfd2b839a67347b0d053d946985d8f5657b8fc4c59ab2d1e7c0986979673648",
+      "normalization": "replace exact validation/worktree paths and strip trailing line whitespace; preserve content, outcomes and timings"
+    },
+    "controls/retirement-order-control-auto_turn.go.txt": {
+      "sha256": "2fc79dbe345cb23c4fe94a466f6757789a29f7707642749dca42f41202a4cae7"
+    },
+    "controls/README.md": {
+      "sha256": "02517b4cc069423206ae14e4e14003c6fc7d717f1dfea1f01bd076bdedc2c82f"
+    }
+  },
+  "independent_source_review": {
+    "source_git": "6fdd943ce447374568f76c698322c1b80f7b836e",
+    "result": "No concrete blocking finding in scoped read-only review",
+    "scope": "Four merge resolutions, full/private protected readers and meaningful RPC tests, provider order/schema/quota, checkpoint lock and FIFO identity. Reviewer used immutable source only and did not execute tests.",
+    "limit": "Checkpoint/receipt writes are serialized by the existing lock, not an atomic rollback transaction across two files. No formal certification."
+  }
+}
