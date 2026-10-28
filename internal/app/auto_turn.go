@@ -133,9 +133,19 @@ func (a *App) prepareAutoPromptKnowledge(ctx context.Context, cfg config.Config,
 	return a.prepareSessionKnowledgeSelection(ctx, cfg, selectors, &selection, executor, runtimeDir, cwd, scope, os.Environ(), observe, true, codeintel.ProjectTools(prompt))
 }
 
-func (a *App) scopeAutoRunner(base core.ExecutorRunner, original config.Config, state config.State, store session.Store, id, cwd, runtimeDir, instructionsPath string, agentArgs, selectors []string, current *autoTurnState, catalog opencodebridge.ModelCatalog) core.ExecutorRunner {
+type autoTurnOptions struct {
+	// Set only by the host that created a new Codex session in this process.
+	FreshLocalEvidenceSession bool
+}
+
+func (a *App) scopeAutoRunner(base core.ExecutorRunner, original config.Config, state config.State, store session.Store, id, cwd, runtimeDir, instructionsPath string, agentArgs, selectors []string, current *autoTurnState, catalog opencodebridge.ModelCatalog, options ...autoTurnOptions) core.ExecutorRunner {
 	enforceDAG := a.OpenCodeBridgeRunner == nil
 	wrapped := autoTurnRunner{prepare: func(ctx context.Context, request core.ExecutorRequest) (preparedAutoTurn, error) {
+		if len(options) == 1 && options[0].FreshLocalEvidenceSession {
+			if local, accepted, err := a.prepareLocalMetadataTurn(ctx, original, state, store, id, cwd, selectors, request); accepted {
+				return local, err
+			}
+		}
 		k, err := a.prepareAutoPromptKnowledge(ctx, original, selectors, request.Prompt, request.Executor, runtimeDir, cwd, func(event observability.Event) {
 			_, _ = store.Update(id, func(value *session.Session) error { return session.AppendObservation(value, event) })
 		})

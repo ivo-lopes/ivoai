@@ -635,6 +635,7 @@ func (b *Bridge) chat(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		go func(currentExecutor, currentPrompt, currentResume string, attemptCtx context.Context) {
+			attemptCtx = context.WithValue(attemptCtx, singleUserMessageKey{}, singleUserInput(request.Messages))
 			value, runErr := b.runner.Run(attemptCtx, ExecutorRequest{
 				Executor: currentExecutor, Model: selection.Model, Effort: selection.Effort,
 				SelectionMode: selection.Mode, CatalogRevision: selection.CatalogRevision,
@@ -645,6 +646,13 @@ func (b *Bridge) chat(w http.ResponseWriter, r *http.Request) {
 			ended := time.Now().UTC()
 			turn.EndedAt, turn.EffectiveModel, turn.EffectiveEffort = &ended, value.Model, value.Effort
 			turn.NativeSessionID, turn.Trace, turn.State = value.ExecutorSessionID, value.Trace, "completed"
+			if value.ConfigurationSource == core.LocalMetadataSource {
+				// Host metadata has no CLI execution, model, exit code or native
+				// thread. Requested selection remains the admitted route only.
+				turn.EffectiveExecutor, turn.EffectiveModel, turn.EffectiveEffort = "", "", ""
+				value.AuthReference = ""
+				turn.FinalResponse = runErr == nil
+			}
 			if value.Trace != nil {
 				exit := value.Trace.ExitCode
 				turn.ExitCode, turn.FinalResponse = &exit, value.Trace.FinalResponse
@@ -678,7 +686,7 @@ func (b *Bridge) chat(w http.ResponseWriter, r *http.Request) {
 					error
 					RateLimited() bool
 				}
-				if selection.Mode == "auto" && !emitted.Load() && attempt < b.maxFailovers && errors.As(outcome.err, &limitError) && limitError.RateLimited() {
+				if outcome.value.ConfigurationSource != core.LocalMetadataSource && selection.Mode == "auto" && !emitted.Load() && attempt < b.maxFailovers && errors.As(outcome.err, &limitError) && limitError.RateLimited() {
 					if next, selectErr := chooseAlternate(); selectErr == nil {
 						advance(next, "native provider reported a rate limit")
 						continue
@@ -712,6 +720,19 @@ func (b *Bridge) chat(w http.ResponseWriter, r *http.Request) {
 			cancel()
 			if !finishedReceived {
 				outcome = <-finished
+			}
+			if outcome.value.ConfigurationSource == core.LocalMetadataSource {
+				// Admission bound this operation to local evidence and a live
+				// receipt. Quota cancellation cannot reinterpret it as model
+				// work, even before any text was emitted. Do not choose an
+				// alternate, construct a handoff or replay it through a CLI.
+				b.storeCompletion(requestKey, cachedCompletion{failed: true, selection: selectionKey})
+				if stream {
+					_ = writeStreamError(w, "IVOAI stopped the local evidence turn after a quota change", "local_evidence_quota_changed")
+					return
+				}
+				writeOpenAIErrorCode(w, http.StatusServiceUnavailable, "IVOAI stopped the local evidence turn after a quota change", "local_evidence_quota_changed")
+				return
 			}
 			_ = b.persistMapping(frontendID, executor, outcome.value)
 			if emitted.Load() {
@@ -763,7 +784,10 @@ func (b *Bridge) chat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	content := strings.Join(chunks, "")
-	b.storeCompletion(requestKey, cachedCompletion{content: content, replayable: len(content) <= 1<<20, selection: selectionKey})
+	// Local evidence is admitted against a live turn/source/config receipt.
+	// Replaying its prose would skip those checks. Retain the completed claim
+	// so duplicates fail with 409; never retry them through a CLI.
+	b.storeCompletion(requestKey, cachedCompletion{content: content, replayable: result.ConfigurationSource != core.LocalMetadataSource && len(content) <= 1<<20, selection: selectionKey})
 	if stream {
 		_ = writeFinish(w, request.Model)
 		_, _ = io.WriteString(w, "data: [DONE]\n\n")
@@ -943,6 +967,12 @@ func writeOpenAIErrorCode(w http.ResponseWriter, status int, message, code strin
 
 // ScanJSONLines provides the bounded scanner used by official-client adapters.
 func ScanJSONLines(reader io.Reader, handle func(map[string]any) error) error {
+	return scanJSONLines(reader, handle, false)
+}
+
+// The CLI runner preserves numeric lexemes for exact usage validation. Keep
+// the exported scanner's historical float64 callback contract unchanged.
+func scanJSONLines(reader io.Reader, handle func(map[string]any) error, exactNumbers bool) error {
 	counted := &countingReader{reader: reader}
 	scanner := bufio.NewScanner(counted)
 	scanner.Buffer(make([]byte, 64<<10), 1<<20)
@@ -956,7 +986,18 @@ func ScanJSONLines(reader io.Reader, handle func(map[string]any) error) error {
 			continue
 		}
 		var value map[string]any
-		if err := json.Unmarshal(line, &value); err != nil {
+		var decodeErr error
+		if exactNumbers {
+			decoder := json.NewDecoder(bytes.NewReader(line))
+			decoder.UseNumber()
+			decodeErr = decoder.Decode(&value)
+			if decodeErr == nil && decoder.Decode(new(any)) != io.EOF {
+				decodeErr = errors.New("trailing executor JSON data")
+			}
+		} else {
+			decodeErr = json.Unmarshal(line, &value)
+		}
+		if decodeErr != nil {
 			// Official clients may emit bounded human startup noise before the
 			// JSON event stream. Once the stream starts, or when a line claims
 			// to be a JSON object, corruption is never silently discarded.
