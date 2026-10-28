@@ -179,6 +179,7 @@ def waiter():
 
 def run_one(item, home, wait4):
     row = {**item, 'status': 'FAILED', 'correct': False, 'error': None,
+           'failure_phase': 'launch',
            'fixture_known': expected(item['case']), 'actual_fixture': None,
            'process_observation': None, 'barrier_observed_processes': None,
            'known_identities_not_observed': None, 'exit_code': None,
@@ -195,26 +196,32 @@ def run_one(item, home, wait4):
                                    stderr=subprocess.DEVNULL, env=private_env(home),
                                    start_new_session=True)
         deadline = started / 1e9 + ATTEMPT_SECONDS
+        row['failure_phase'] = 'ready'
         ready = read_message(process.stdout.fileno(), deadline)
         if ready != {'kind': 'ready', 'ready_children': expected(item['case'])['ready_children']}:
             raise ValueError('protocol')
         barrier_started = time.monotonic_ns()
         if item['arm'] == 'ON':
+            row['failure_phase'] = 'sample'
             sampler = ProcessSampler(process.pid)
             sampler.tick()
             row['barrier_observed_processes'] = sampler.result()['sampled_process_count_peak']
+        row['failure_phase'] = 'release'
         active_started = time.monotonic_ns()
         process.stdin.write(b'G'); process.stdin.close()
         row['barrier_hold_ms'] = (active_started - barrier_started) / 1e6
+        row['failure_phase'] = 'wait4'
         code, usage = wait4(process, max(0, deadline - time.monotonic()), sampler)
         row['exit_code'] = code
+        row['failure_phase'] = 'done' if code == 0 else 'wait4'
         done = read_message(process.stdout.fileno(), time.monotonic() + 0.5)
         known = expected(item['case'])
         keys = ('started_children', 'completed_children', 'child_failures', 'checksum', 'touched_pages')
+        row['failure_phase'] = 'oracle' if code == 0 else 'wait4'
         if code != 0 or done.get('kind') != 'done' or any(type(done.get(k)) is not int or done[k] != known[k] for k in keys):
             raise ValueError('fixture')
         row['actual_fixture'] = {k: done[k] for k in keys + ('reported_coordinator_cpu_ms', 'reported_waited_children_cpu_ms')}
-        row['status'], row['correct'] = 'PASS', True
+        row['status'], row['correct'], row['failure_phase'] = 'PASS', True, None
     except (OSError, ValueError, TimeoutError, subprocess.TimeoutExpired):
         row['error'] = 'fixture_or_protocol_failed'
     finally:
@@ -280,7 +287,7 @@ def main(output):
     started, rows, wait4 = time.monotonic(), [], waiter()
     for item in workload_plan:
         if sources() != frozen or time.monotonic() - started > TOTAL_SECONDS - ATTEMPT_SECONDS - 1:
-            row = {**item, 'status': 'NOT_RUN', 'correct': False, 'error': 'source_changed_or_total_budget'}
+            row = {**item, 'status': 'NOT_RUN', 'correct': False, 'error': 'source_changed_or_total_budget', 'failure_phase': None}
         else:
             with tempfile.TemporaryDirectory(prefix='sampler-offline-', dir=output) as home:
                 row = run_one(item, Path(home), wait4)

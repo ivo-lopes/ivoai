@@ -1,0 +1,8 @@
+test_limits_missing_reparented_and_nonregular_are_not_full_coverage (test_benchmark_process_sampler.SamplerTests.test_limits_missing_reparented_and_nonregular_are_not_full_coverage) ... ok
+test_nonleader_children_identity_and_payload_privacy (test_benchmark_process_sampler.SamplerTests.test_nonleader_children_identity_and_payload_privacy) ... ok
+test_real_parent_and_child_memory_are_only_sampled_rss_sum (test_benchmark_process_sampler.SamplerTests.test_real_parent_and_child_memory_are_only_sampled_rss_sum) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 1.079s
+
+OK

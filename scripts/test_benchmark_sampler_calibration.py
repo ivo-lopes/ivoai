@@ -43,10 +43,11 @@ class CalibrationTests(unittest.TestCase):
             item = calibration.plan()[0]
             # A failed owned launch must remain a row with unknown workload
             # CPU/actual children, rather than zero or a successful fixture.
-            with mock.patch.object(calibration.subprocess, 'Popen', side_effect=OSError):
+            with mock.patch.object(calibration.subprocess, 'Popen', side_effect=OSError('PRIVATE_SECRET')):
                 row = calibration.run_one(item, Path(temporary), calibration.waiter())
             self.assertEqual(row['status'], 'FAILED')
             self.assertFalse(row['correct'])
+            self.assertEqual(row['failure_phase'], 'launch')
             self.assertIsNone(row['workload_wait4_user_ms'])
             self.assertIsNone(row['actual_fixture'])
             self.assertIsNone(row['process_observation'])
@@ -57,18 +58,22 @@ class CalibrationTests(unittest.TestCase):
         wait4 = calibration.waiter()
         with tempfile.TemporaryDirectory() as temporary:
             for case in ('touched_memory_children', 'churn'):
-                item = next(r for r in calibration.plan() if r['case'] == case and r['arm'] == 'ON')
-                row = calibration.run_one(item, Path(temporary), wait4)
-                self.assertTrue(row['correct'], row['error'])
-                self.assertEqual(row['actual_fixture']['completed_children'], calibration.expected(case)['completed_children'])
-                observed = row['process_observation']
-                self.assertEqual(observed['status'], 'partial')
-                self.assertIsNone(observed['exact_peak_rss'])
-                self.assertIsNone(observed['actual_process_total'])
-                self.assertGreater(observed['sample_count'], 0)
-                self.assertGreaterEqual(row['known_identities_not_observed'], 0)
-                for field in ('pid', 'argv', 'environment', 'command'):
-                    self.assertNotIn('"' + field + '"', json.dumps(row))
+                with self.subTest(case=case):
+                    item = next(r for r in calibration.plan() if r['case'] == case and r['arm'] == 'ON')
+                    row = calibration.run_one(item, Path(temporary), wait4)
+                    message = json.dumps(row, sort_keys=True, allow_nan=False)
+                    self.assertLessEqual(len(message.encode()), 32768)
+                    self.assertTrue(row['correct'], message)
+                    self.assertIsNone(row['failure_phase'], message)
+                    self.assertEqual(row['actual_fixture']['completed_children'], calibration.expected(case)['completed_children'], message)
+                    observed = row['process_observation']
+                    self.assertEqual(observed['status'], 'partial', message)
+                    self.assertIsNone(observed['exact_peak_rss'], message)
+                    self.assertIsNone(observed['actual_process_total'], message)
+                    self.assertGreater(observed['sample_count'], 0, message)
+                    self.assertGreaterEqual(row['known_identities_not_observed'], 0, message)
+                    for field in ('pid', 'argv', 'environment', 'command'):
+                        self.assertNotIn('"' + field + '"', json.dumps(row), message)
 
 
 if __name__ == '__main__':

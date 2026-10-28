@@ -1,5 +1,12 @@
 # Offline ProcessSampler calibration — IVOAI-138 / IVOAI-198
 
+**Reliability limitation:** a later independent run of the unchanged `8f513876`
+fixture tests failed once; its original case/stage was not recorded. Follow-up
+successes do not establish a fix. The [diagnostic follow-up](process-sampler-diagnostics.md)
+preserves that failure and adds bounded phase/case messages. This increment
+remains a draft; the original 32 observations below are not rescored.
+
+
 This separate Python harness calibrates the existing optional sampler on fixed
 local subprocess trees. It changes neither `ProcessSampler`, the economic driver,
 its schemas/defaults nor any historical dataset. **No native client, provider,

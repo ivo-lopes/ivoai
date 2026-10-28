@@ -1,0 +1,11 @@
+Command: IVOAI_SAMPLER_CALIBRATION_FIXTURES=1 PYTHONPATH=scripts python3 -m unittest discover -s scripts -p test_benchmark_sampler_calibration.py
+Source: 8f513876dacc0c7b101bcfda7eb3f74486036d6c, unchanged
+Result: exit 1
+...F
+FAIL: test_real_memory_and_churn_have_known_counts_and_partial_observation
+  test_benchmark_sampler_calibration.py:62
+    self.assertTrue(row['correct'], row['error'])
+AssertionError: False is not true : fixture_or_protocol_failed
+Ran 4 tests in 4.830s
+FAILED (failures=1)
+The original test did not report which case, row or stage. No cause inferred.
