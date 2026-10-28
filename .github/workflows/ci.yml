@@ -36,6 +36,11 @@ jobs:
         run: |
           corepack pnpm --dir website exec playwright install --with-deps chromium
           corepack pnpm --dir website test:a11y
+      - name: Administrative console UI and real App OAuth integration
+        timeout-minutes: 8
+        env:
+          IVOAI_ADMIN_UI_NODE_MODULES: ${{ github.workspace }}/website/node_modules
+        run: scripts/test-admin-console-ci.sh
       - name: Runtime dependency audit
         run: npm audit --omit=dev --audit-level=high --prefix internal/components/assets
       - name: Patched braces regression fixtures
