@@ -126,6 +126,42 @@ These checks are not native-provider integration tests. Sanitized observations
 and the initial failure are retained in
 [offline findings](evidence/compression-policy-gates/offline-findings.json).
 
+## Revalidation after the first PR gate
+
+CI40613895059 at head5e852b84 failed the embedded documentation comparison:
+13 jobs succeeded, quality failed and two dependent jobs were skipped. The
+borrowed dependency tree had produced different CSS module identifiers and
+asset hashes. Installing the frozen dependencies in this worktree's own website
+and rebuilding produced the CSS filenames observed in CI. A subsequent complete
+`scripts/build-docs.sh --check` passed without changing the comparison rules.
+Corepack0.36.0, pnpm12.11.2 and Node26.11.1 were used.
+
+Following a temporary-directory reset, Go1.27.3 and Node26.11.1 were restored from
+official archives and checked against the previously audited hashes. Six focused
+Go packages passed, while the App suite initially timed out in
+`TestAutoMidSessionFailoverPreservesWorkingTreeAndHandoff` during concurrent
+validation. That failure is retained; the unchanged case passed alone in1.28s,
+then the full App package with `-p 1` and focused vet passed. No timeout or test
+assertion was relaxed. This does not prove that concurrent-load flakiness has
+been eliminated.
+
+The pinned Caveman MCP binary was then downloaded into private scratch, verified
+against SHA24339e645da66fb3580e3d9410743499845748238f01d0dc8097330fcb0f9bde,
+and exercised with the existing opt-in canary under a fresh network/PID/mount
+namespace. Only read-only system libraries and the test/helper binaries were
+mounted; no host home, repository, credentials or personal configuration was
+accessible. All22 scenarios passed quality and the stricter availability gate:
+17 calls, one applied transform,16 passthroughs and five bypasses, with zero
+degradation or mismatches. Harness wall time was2.37s. CPU/RSS collected through
+the wrapper are not proven runtime aggregates and remain unknown.
+
+The983089→28131 context-byte figures include the existing8KiB projection budget,
+summaries and raw-reference bypass. They are neither a Caveman compression ratio
+nor provider-token/session savings. This is one run without a matched Direct
+arm or AB/BA repetitions. See the immutable input/log digests and limits in
+[pinned canary evidence](evidence/compression-policy-gates/pinned-caveman-canary.json).
+The prior offline-only report remains unchanged and describes its original scope.
+
 ## Recovery, cache and sensitivity limits
 
 The pinned [Caveman engine](https://github.com/JuliusBrussee/caveman/blob/e20f07e8152a0c0360f58c09e79d30ac94329991/engine/engine.go)
