@@ -1,0 +1,172 @@
+{
+  "task": "IVOAI-194 under IVOAI-191; combined v0.14.0 candidate",
+  "date": "2026-10-28",
+  "source_epoch": {
+    "reviewed_main": "a7db2d90b5d503bada40f0c7cb8f495b75313061",
+    "claude_correction": "7489bdf008f3106b2432fece64b044f422325c8d",
+    "merge": "f4259374",
+    "core_gate_original_commit": "cd43fcbd0361b0e3da06025c99cc4af398c8da0f",
+    "parent_before_documentation_commit": "aef0e4c3a9cd7945369282c6d03092d892555e40",
+    "final_commit_binding": "This receipt is committed with the combined candidate; exact remote CI must run on that final commit.",
+    "excluded_pull_requests": [
+      45,
+      46,
+      47
+    ]
+  },
+  "source_hashes": {
+    ".github/workflows/ci.yml": "6c392c93fdefcc89a2639f8e900bc48363367dcc99ec2e1e9cc0fa55c0b5494b",
+    ".github/workflows/release.yml": "ec7e2046efd55bf020bdc0241b1ddc4e784d61f639d8807e2d1d87210a615308",
+    "internal/workers/adapter.go": "eb75ea7c5e6a7b241e7c9448ed34e2e1c05a109871adc8d6e8fe6a81c4c8be15",
+    "internal/workers/claude_tools_test.go": "d71649c060951a11711d6aefbe3df0d8d514cc9c03fe1450628fdf840068c755",
+    "internal/workers/claude_official_test.go": "170ec631b365b787bd009a6958fcd4d335d505e59c59bb7573f46a4205d4f85b",
+    "scripts/test-claude-worker-tools.sh": "b97a82173df51cb0f1945f2c0e55a1eb0e6185be174c650689786aa19c7e5d4d",
+    "scripts/test_claude_worker_tools.py": "46f4c0f1e86a851291d78a972affee82a42607c5bd8c29abc57337eee413a37e",
+    "docs/releases.md": "c0808cfc65abf47e583925792e85e31af7748cc2b516efc3bea76100ef37591b",
+    "docs/architecture.md": "eb412df5f7dbd2f03316f9af23830c972ea99fb785239d4e11cd6de6e4013a0f",
+    "website/i18n/pt-BR/docusaurus-plugin-content-docs/current/releases.md": "c1a4e52d1ee65270d182ee33d5f040db4f3fe357460a4d1441884816764ae31d",
+    "website/i18n/pt-BR/docusaurus-plugin-content-docs/current/architecture.md": "33ef82a83a61de5161d9b8436d4c6a0c6d0f4591e3f4f23efd4195e16316cfd6",
+    "website/package.json": "7728c44ef3d2006a765ab1095d41e5dd12881f57ff25f156e5347955b7275015",
+    "website/pnpm-lock.yaml": "64931d224f2bd8128d94f7dd447cbf958d8f8cec322c22a8465970d99f96226e",
+    "release-notes/v0.14.0.md": "07e05601ce8b5e6d18065f0a95aa7eb00b218cc4010344ddf16ce76c78dbadfb"
+  },
+  "core_source_assets_superset": {
+    "selection": "git ls-files -z -- cmd internal go.mod go.sum; sort paths; sha256 each current regular file; concatenate digest + two spaces + repo-relative path + newline",
+    "scope": "Superset of repository Core source/assets and tests; excludes module-cache bytes and Go VCS/linker metadata. New embedded assets were staged before enumeration.",
+    "files": 2011,
+    "sha256": "a268b7a561e990172fa808f3f50e64c8b8a090d56e5a4e5a7817cc9de48ae993",
+    "embedded_site_marker": "cfdbdf12c35db4b6feb58e9531346bbc7ab3e5cee88df90341a32b874ff5aaec",
+    "website_input_marker": "cfdbdf12c35db4b6feb58e9531346bbc7ab3e5cee88df90341a32b874ff5aaec"
+  },
+  "core_builds": {
+    "amd64v1": {
+      "sha256": "6534752ab5968a0a21eb2548d6dc70f392dbcc312b30d61a7d979d4cd51ad7f8",
+      "elf_machine": 62,
+      "status": "BUILD_PASS",
+      "distributed_release_artifact": false
+    },
+    "arm64": {
+      "sha256": "7d24414116b69feb63ca53d67c9206af4754358cd5d5977ffec6ce1bab4c6a48",
+      "elf_machine": 183,
+      "status": "BUILD_PASS",
+      "distributed_release_artifact": false
+    },
+    "native_amd64_version": {
+      "status": "PASS",
+      "stdout_sha256": "c78f0abc1bbeeb6a82fb4239a641e28f1b1c5cfdc1084bbe6a5ee9f25af49075",
+      "private_HOME_XDG": true,
+      "real_inference": false
+    },
+    "native_amd64_help": {
+      "status": "PASS",
+      "stdout_sha256": "3cca92f1e89bcad603e04d8e224463e26a8986af963d3f0acca0df2d2657c6a1",
+      "private_HOME_XDG": true,
+      "real_inference": false
+    },
+    "limitations": [
+      "Core build/source sanity only; local binaries do not embed reviewed release component metadata.",
+      "Native ARM and Nehalem execution of the exact tagged distribution remains a required Release gate.",
+      "qemu-x86_64 unavailable locally; no local no-AVX runtime claim."
+    ]
+  },
+  "official_claude_receipt": {
+    "file": "combined014-official-2.1.296-amd64.json",
+    "sha256": "fda5fb9ba37b7dfa29919c0099a70509674ceb9123e3877cf44c653939743fcb"
+  },
+  "checks": [
+    {
+      "command": "go test ./... -count=1",
+      "status": "PASS",
+      "log_sha256": "d46004886222efb554cd0f4e15408c610ddea09a2396658eb4ea7a214e45982b",
+      "passing_packages": 59,
+      "packages_without_tests": 3
+    },
+    {
+      "command": "go test -race ./internal/workers ./internal/app ./internal/externalmcp ./internal/agents ./internal/quota -count=1 -timeout 10m",
+      "status": "PASS",
+      "log_sha256": "508392fe576fcb09f7e472c51f2b76dd11c01161a5286254ea0d02962d0a763e",
+      "passing_packages": 5,
+      "after_final_embed": true
+    },
+    {
+      "command": "go vet ./...",
+      "status": "PASS",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "command": "scripts/generate-cli-reference.sh --check",
+      "status": "PASS",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "command": "scripts/build-docs.sh",
+      "status": "PASS",
+      "log_sha256": "41e29d9e4b985bc6acf63c9049acd3ed281a4188742c5a6a54c8c72bf38f6dc3",
+      "frozen": true,
+      "own_dependencies": true,
+      "locales": [
+        "en",
+        "pt-BR"
+      ]
+    },
+    {
+      "command": "scripts/build-docs.sh --check",
+      "status": "PASS",
+      "log_sha256": "236b4b5e7e71f77902bccfbf0aff2cd5c87e23dcd4686dd2d0f748ba3f60a6f5",
+      "non_javascript_embed_comparison": true
+    },
+    {
+      "command": "scripts/test-claude-worker-tools.sh --archive [verified official archive]",
+      "status": "PASS",
+      "log_sha256": "d8ac1dbedafca5c00ccb59493c94d54374cdb108e569380a89b9ce11545583ac",
+      "mandatory_cases": 5,
+      "passed": 5,
+      "skipped": 0
+    },
+    {
+      "command": "node --test [managed presentation/keyboard/events]",
+      "status": "PASS",
+      "log_sha256": "16a6b38aba9fa2065236269e617375274c29c355abc781d10f5f53bc8b026219"
+    },
+    {
+      "command": "python3 -m unittest discover -s scripts -p test_*.py",
+      "status": "PASS",
+      "log_sha256": "0ca3806c36ca422fecd0e7a7c547c675ecc61a303688d3d591c44df1d9ab8f42",
+      "tests": 49
+    },
+    {
+      "command": "Workflow YAML + all embedded Bash blocks syntax; duplicate-key check in CI/Release/component manifest",
+      "status": "PASS",
+      "bash_blocks": 78,
+      "yaml_files": 3
+    }
+  ],
+  "prior_epochs_unchanged": {
+    "claude_7489bdf0": {
+      "release-notes/evidence/claude-worker-tools/validation.json": "a8cad7871b2f67ca63063455b66ed1cdd2eaa70ba2cc4cb8ffb35283819c96d5",
+      "release-notes/evidence/claude-worker-tools/official-2.1.296-amd64.json": "ce1882be51d635e319ae48a20953135b730a5bc9bc51980945d5b5ac415004f0"
+    },
+    "opencode_a7db2d90": true,
+    "opencode_archive_sha256": "8ea481d8a2c2d1f11417a78a3a8121e3d790630b9ed3c99b010b2cb4d24999a2",
+    "opencode_compiled_source_manifest_sha256": "1b784a2efd59eee24351880fd83d3a75a55d92582f93ac43fd07f3175c56de7b"
+  },
+  "retained_setup_failure": {
+    "status": "FAIL_PREPARATION",
+    "reason": "Fresh Corepack cache initially selected pnpm 12.16.1; project version guard refused it. Required 12.11.2 was then prepared without changing lockfile or relaxing gates.",
+    "log_sha256": "4616c6b0862cce74a3b8e07ec65ebc35827d2e6e9426741976cf114f64b93cce",
+    "counted_as_success": false
+  },
+  "pending": [
+    "Exact final source 16-check GitHub CI.",
+    "Remote ShellCheck; unavailable locally.",
+    "Tagged Release rebuild and exact Core execution on Nehalem amd64/native ARM before archiving."
+  ],
+  "limitations": [
+    "No tag/release/push or production deployment performed by this work.",
+    "No inference/authentication or personal client/config/credential change.",
+    "Local Core builds are candidates without embedded release metadata; no local no-AVX/ARM runtime claim.",
+    "Official Claude proof is Linux amd64 2.1.296 only, no TUI/account/quota parity or economic evidence.",
+    "No .3 source/pin/manifest mutation; earlier CI belongs to its historical epoch and final-source gates remain required.",
+    "Economic targets remain failed/incomplete and PR45/46/47 remain excluded."
+  ]
+}

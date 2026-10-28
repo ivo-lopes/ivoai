@@ -1,0 +1,14 @@
+F
+======================================================================
+FAIL: test_default_scenarios_require_discovery_before_any_client_turn (test_benchmark_catalog.PreflightTests.test_default_scenarios_require_discovery_before_any_client_turn)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "<repository>/scripts/test_benchmark_catalog.py", line 141, in test_default_scenarios_require_discovery_before_any_client_turn
+    self.assertEqual(attempts, 0, "default path invoked client turns before validating binary contracts")
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 6 != 0 : default path invoked client turns before validating binary contracts
+
+----------------------------------------------------------------------
+Ran 1 test in 0.258s
+
+FAILED (failures=1)

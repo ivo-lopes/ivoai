@@ -11,7 +11,7 @@ consult the linked project for the complete text.
 | Go toolchain | 1.27.3 | BSD-3-Clause | Ephemeral, checksum-pinned compiler for source-checkout installation when compatible Go is unavailable | <https://go.dev/dl/> |
 | OpenAI Codex CLI | 0.162.1 | Apache-2.0 | Official ChatGPT/Codex terminal client | <https://github.com/openai/codex> |
 | Anthropic Claude Code | 2.1.296 | Proprietary; Anthropic Consumer or Commercial Terms, depending on account | Official Claude terminal client | <https://github.com/anthropics/claude-code> |
-| OpenCode | 1.19.0 (`733b2c627e5aec39cb33cc22373bdce33053ef2c`) | MIT | Pinned managed AUTO frontend; upstream source and notices remain intact | <https://github.com/anomalyco/opencode/releases/tag/v1.19.0> |
+| OpenCode | 1.19.0 (`733b2c627e5aec39cb33cc22373bdce33053ef2c`) | MIT | Legacy managed frontend; private `1.19.0-ivoai.3` adds reviewed local-plugin/offline-install controls; upstream source and MIT notices remain intact | <https://github.com/anomalyco/opencode/releases/tag/v1.19.0> |
 | Headroom | 0.40.0 | Apache-2.0 | Optional local context-optimization proxy/wrapper | <https://github.com/headroomlabs-ai/headroom> |
 | ai-memory | 2.6.3 | MIT | Persistent cross-session/cross-agent operational memory and hooks | <https://github.com/akitaonrails/ai-memory> |
 | Ruflo | 3.56.5 | MIT | Workflow, skills and temporary orchestration state | <https://github.com/ruvnet/ruflo> |

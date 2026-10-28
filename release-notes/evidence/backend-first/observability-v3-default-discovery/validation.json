@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "scope": "v3_default_discovery_admission_correction",
+  "base_commit": "f9c7daaef5292b5e23b67c08b357b4bae0e9223d",
+  "plane_tasks": [
+    "IVOAI-138",
+    "IVOAI-198"
+  ],
+  "default_scenarios_unchanged": [
+    "api",
+    "implementation",
+    "multi_module_callers"
+  ],
+  "ab_ba_order_unchanged": [
+    "A",
+    "B",
+    "B",
+    "A",
+    "A",
+    "B"
+  ],
+  "before": {
+    "regression": "FAIL_REPRODUCED",
+    "capability_mismatch_client_turn_markers": 6,
+    "scope": "FAKE_EXECUTABLE_ONLY_NO_REAL_CLIENT_OR_PROVIDER",
+    "immutable_driver_sha256_matches_f9_report": true,
+    "original_failure_log_sha256": "959e649cbdddeca9363b9110672b365f966b44c6812b0a810370538cfe95b0e8",
+    "public_failure_log": "before-sanitized.log",
+    "redaction": "repository absolute path replaced with <repository>; assertion/exit/marker unchanged"
+  },
+  "fix": "always discover both compiled contracts, including no-flags default; no ready fallback",
+  "after": {
+    "python_tests": 42,
+    "python_seconds": 9.005,
+    "status": "PASS",
+    "default_negative_modes": [
+      "mismatch",
+      "skipped",
+      "bool_version",
+      "duplicate",
+      "bad_exit"
+    ],
+    "negative_client_turn_markers": 0,
+    "valid_default_fixture_turns": 6,
+    "valid_default_contracts_and_rows_bound": true,
+    "default_preflight_only_client_turns": 0,
+    "compiled_go_preflight": {
+      "A": "READY",
+      "B": "READY",
+      "scenarios": 3,
+      "client_provider_attempts": 0
+    }
+  },
+  "source_sha256": {
+    "scripts/benchmark-economic-runtime.py": "f3d88a3bfb4117606648a2d58ec2b4bc62a549bc41660c75c9c0192807a94e60",
+    "scripts/test_benchmark_catalog.py": "6fe281717f3ec041b445d91fd426e4cc9ef04f535c90c6778f9f747f03648208",
+    "scripts/test_benchmark_economic_runtime.py": "ff76b119d5bdcd604acdd0087cd18e5144f258192cbf63a0ee70e980fd46453f"
+  },
+  "production_runtime_changed": false,
+  "go_harness_or_observer_changed": false,
+  "schema_version_changed": false,
+  "old_f9_and_prior_evidence_modified": false,
+  "historical_real_turns": 126,
+  "historical_real_turns_rescored": 0,
+  "new_real_model_inferences": 0,
+  "compatibility": "old/missing/mismatched capability binaries now BLOCKED before client execution; rebuild identical common harness on both arms",
+  "environment_test": "two discovery subprocesses have private HOME and no CODEX_HOME/credential environment; six fake invocation environments retain the reviewed client-owned scope allowlist",
+  "new_economic_result": null,
+  "global_economic_gate": "INCOMPLETE",
+  "context_sync": "BLOCKED",
+  "context_task": "IVOAI-175",
+  "data_sha256": {
+    "before-after.json": "d07156d839e8504f9f5233c9e133a4daa768a3f3a7f758848bcdd51c3f400cc8",
+    "before-marker.txt": "11f5d225675e9db976fe2979a653561b4b07da1ed110e9f5a0156f2e602db2d2",
+    "before-sanitized.log": "d152f7723e1184773d0493fb5e1834003d652606545bc319fe40b0de350fdb36",
+    "compiled-default-manifest.json": "9fe33186f216d113eacc17b0c756c5962e001ea0ced7a4bf48c088426303b82f",
+    "compiled-default-preflight.json": "dd693d554f67c7c43b974ed64828fb8f7ebc369a3d5003441945d1c546e07dab",
+    "compiled-default-summary.json": "f2aaf621f326b169ed0721afab0495bc58573f46d1a48b0d681401eeff277530",
+    "final-python.log": "0ce86e45c13f3129b5d2ebaabe33bb774f8645c09d8d0a6caf86a1de48340667"
+  }
+}

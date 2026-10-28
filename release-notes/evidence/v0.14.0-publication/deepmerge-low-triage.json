@@ -1,0 +1,175 @@
+{
+  "observed_date": "2026-10-28",
+  "threshold_unchanged": "high",
+  "high_threshold_exit": 0,
+  "low_details_exit": 1,
+  "reported_vulnerabilities": {
+    "info": 0,
+    "low": 1,
+    "moderate": 0,
+    "high": 0,
+    "critical": 0
+  },
+  "advisory": {
+    "id": 1243505,
+    "title": "deepmerge mergeObject() allows prototype poisoning of returned objects",
+    "module_name": "deepmerge",
+    "severity": "low",
+    "url": "https://github.com/advisories/GHSA-gcqx-w48m-w2h4",
+    "vulnerable_versions": ">=4.2.0 <=4.3.1",
+    "patched_versions": null,
+    "findings": [
+      {
+        "version": "4.3.1",
+        "paths": [
+          ".>@docusaurus/preset-classic>@docusaurus/plugin-svgr>@svgr/webpack>@svgr/plugin-svgo>deepmerge"
+        ],
+        "dev": false,
+        "optional": false,
+        "bundled": false
+      }
+    ]
+  },
+  "official_ghsa_once": {
+    "url": "https://github.com/advisories/GHSA-gcqx-w48m-w2h4",
+    "cve": "CVE-2026-93753",
+    "severity": "low",
+    "affected_versions": ">=4.2.0 <=4.3.1",
+    "patched_versions": "None listed as observed",
+    "consulted_after": "IvoAI Memory and Context (Context empty)"
+  },
+  "local_dependency_route": [
+    "ivoai-documentation",
+    "@docusaurus/preset-classic@3.10.2",
+    "@docusaurus/plugin-svgr@3.10.2",
+    "@svgr/webpack@8.1.0",
+    "@svgr/plugin-svgo@8.1.0",
+    "deepmerge@4.3.1"
+  ],
+  "local_reachability": {
+    "declared_dependency_present": true,
+    "reviewed_plugin_entry_import_or_call_to_deepmerge": false,
+    "identified_phase": "Node/Webpack SVG loader/configuration at documentation build time",
+    "observed_plugin_behavior": "getSvgoConfig then svgo.optimize; installed entry contains no deepmerge reference",
+    "svgo_3_3_5_declares_deepmerge": false,
+    "go_docsserver_behavior": "serves immutable embedded files with net/http; no Node or runtime SVG transformation",
+    "request_or_browser_to_affected_function_demonstrated": false,
+    "claim_of_complete_browser_bundle_absence": false,
+    "severity_escalated_or_exploit_proven": false
+  },
+  "reviewed_local_files_sha256": {
+    "@svgr/plugin-svgo@8.1.0/dist/index.js": "4a9a9511fdeee0ecf9ed25837b44f1c8b82b3a069bd9a34247077ff5034b9078",
+    "@svgr/plugin-svgo@8.1.0/package.json": "31492e34b636250222efad5010097b13f11a389cb5cfdf7b380165fc8d1e65d5",
+    "@svgr/webpack@8.1.0/dist/index.js": "78ccb4eaea60b7ab8a0689ad1ef106b1f202dd5aba7823f984176a8e570ec2b6",
+    "@docusaurus/plugin-svgr@3.10.2/lib/svgrLoader.js": "0680b1552361c636ed098eb3ea42f2b849dc8732918d552479a384874330de28",
+    "svgo@3.3.5/package.json": "84724e5d55ff7d9502516157a811875c377bb7ad674cab615fb18aaef3d17501",
+    "deepmerge@4.3.1/dist/cjs.js": "2e5160f84a1141bd927264afe4d15766f1e6cf07daef182b37ff53fea121de7d",
+    "website/docusaurus.config.ts": "22f539ceae914bc23de3404ce0e30669ac8a1eab56026dabbecbb6d536f62203",
+    "internal/docsserver/server.go": "6784691f08b6b430c3141dcc845266c9fff4ad67661638330e36f0d9a51f0d0a"
+  },
+  "source_and_dependencies_changed": false,
+  "raw_private_hashes": {
+    "high_json": "ffffa99c7e8e322f071c31baf5be2fc6194a35d942176dfbba80c4355140abe0",
+    "low_details_json": "e3ce7c7670155f20d96716f4a295d4817a8b7b48c4ad482b84957632d10afb13",
+    "why_json": "fb4fb8b1f57856a342eb3e9f3b9818c21219bf360c6ded28059c7d56942bade0"
+  },
+  "public_filter": "High-threshold JSON is byte-identical; dependency why removes only its absolute path. Low-details output is summarized into advisory fields; full private JSON is bound by hash.",
+  "interpretation": "Residual upstream low advisory remains recorded. No route from Go HTTP/browser input to the affected merge function was demonstrated in the reviewed dependency path; this is scoped triage, not universal safety certification. Historical zero-audit statements remain their original epochs.",
+  "static_triage": {
+    "schema_version": "triage-finding/v0",
+    "repository": {
+      "path": ".",
+      "revision": "6d99e320912f3f7325c3009209a10e9df86610d4"
+    },
+    "findings": [
+      {
+        "triage_item_id": "triage-001",
+        "input_id": "GHSA-gcqx-w48m-w2h4",
+        "source_type": "advisory",
+        "title": "deepmerge mergeObject() allows prototype poisoning of returned objects",
+        "normalized_input": {
+          "vulnerable_component": "deepmerge mergeObject",
+          "claimed_source": "attacker-controlled object passed to deepmerge",
+          "claimed_sink": "prototype poisoning of the returned object",
+          "claimed_control": "insufficient handling of crafted object properties in affected versions",
+          "affected_version_or_path": "deepmerge 4.3.1 in the documentation dependency graph",
+          "preconditions": [
+            "An application must invoke the affected merge function with attacker-controlled object data."
+          ],
+          "impact": "Upstream low-severity prototype poisoning; application impact not demonstrated here.",
+          "references": [
+            "https://github.com/advisories/GHSA-gcqx-w48m-w2h4"
+          ]
+        },
+        "verdict": "needs_review",
+        "confidence": "medium",
+        "affected_locations": [
+          {
+            "label": "declared dependency",
+            "path": "website/node_modules/.pnpm/@svgr+plugin-svgo@8.1.0_@svgr+core@8.1.0_supports-color@8.1.1_typescript@7.0.2__typescript@7.0.2/node_modules/@svgr/plugin-svgo/package.json",
+            "lines": "41",
+            "detail": "Installed package declares deepmerge; resolved version 4.3.1 is in the affected range."
+          },
+          {
+            "label": "reviewed actual loader",
+            "path": "website/node_modules/.pnpm/@svgr+plugin-svgo@8.1.0_@svgr+core@8.1.0_supports-color@8.1.1_typescript@7.0.2__typescript@7.0.2/node_modules/@svgr/plugin-svgo/dist/index.js",
+            "lines": "75-76",
+            "detail": "Actual entry obtains config and calls svgo.optimize; it contains no deepmerge import or call."
+          },
+          {
+            "label": "upstream affected function",
+            "path": "website/node_modules/.pnpm/deepmerge@4.3.1/node_modules/deepmerge/dist/cjs.js",
+            "lines": "79-98",
+            "detail": "mergeObject implementation exists in the dependency; its invocation by IVOAI was not established."
+          },
+          {
+            "label": "Core docs HTTP surface",
+            "path": "internal/docsserver/server.go",
+            "lines": "19-31",
+            "detail": "Go embeds and serves immutable files without a Node/SVG transformation pipeline."
+          }
+        ],
+        "reachable_path": [
+          "Declared dependency route: Docusaurus preset -> SVGR webpack -> plugin-svgo -> deepmerge 4.3.1.",
+          "Reviewed executable plugin entry calls svgo.optimize, not deepmerge.",
+          "No complete lower-trust input-to-mergeObject path established."
+        ],
+        "boundary_assessment": {
+          "product_surface": "docs",
+          "source_trust": "trusted_developer_config",
+          "boundary_crossed": null,
+          "policy_basis": "Root SECURITY.md applies to website and internal/docsserver: dependency pinning is in scope (line22), severity depends on realistic reachability (line92), upstream defects with no reachable IVOAI impact are outside reportable scope (line106). This triage leaves reachability unresolved."
+        },
+        "exploitability_stack_rank": {
+          "rank_queue": "needs_review",
+          "rank": 1,
+          "rationale": "Only supplied finding; affected dependency confirmed, application source-to-sink reachability unresolved.",
+          "drivers": [
+            "upstream LOW rating",
+            "build-time Node configuration path observed",
+            "no attacker-input invocation shown"
+          ]
+        },
+        "evidence": [
+          "Audit reports deepmerge4.3.1 affected, one LOW, zero moderate/high/critical.",
+          "Declared dependency and affected mergeObject are present; exact reviewed files are hashed above."
+        ],
+        "counterevidence": [
+          "Installed plugin-svgo entry contains no deepmerge reference.",
+          "SVGO3.3.5 does not declare deepmerge.",
+          "Go docsserver serves immutable embedded files."
+        ],
+        "proof_gaps": [
+          "No complete static invocation path from lower-trust input to deepmerge was established.",
+          "Absence from every browser bundle or alternate build-time consumer was not certified.",
+          "No PoC or dynamic vulnerability validation was performed."
+        ],
+        "recommended_next_step": "If further assessment is needed, establish the smallest concrete static caller/input path to deepmerge in the pinned documentation build before escalating severity or selecting a dependency mitigation.",
+        "fix_finding_handoff": null
+      }
+    ],
+    "method": "Read-only static triage-finding skill; no PoC, source/dependency edits or dynamic vulnerability tests.",
+    "security_policy_sha256": "f3776050edaf81f8316e32f9dbb58ca63abb22a62d5ec0a2fe923233ead06d4e",
+    "artifact_destination": "Repository documentation receipt explicitly requested by task owner; no separate security scan artifact or external publication created."
+  }
+}

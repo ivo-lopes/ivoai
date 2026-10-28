@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "scope": "local_admin_oauth_route_projection",
+  "base_commit": "8e56741aa4e02bc07600356717d18d72c22c8b92",
+  "source_sha256": {
+    "internal/admin/server.go": "9bc5783f937909a3675f8aab75ff56863461bd7cfb678bb27e56fcc67512c2eb",
+    "internal/admin/oauth_surface_test.go": "9503ddfd762d4f65c354b85f13223b4c966706994042005305266fd11c31e56a"
+  },
+  "private_log_sha256": {
+    "release014-oauth-surface-before.log": "13938cb97e05d8208d488d65589322edbe3881aeaf6ac909669c918bbf46479b",
+    "release014-oauth-surface-mux-conflict.log": "46c23af9b93049f0c9790e453134f2dd4a571857e23b1b403283cade2e4adce4",
+    "release014-oauth-surface-after.log": "666ff7d2b7fb491300d04f29f010f88c5ea4350dcd55ec81747b7caec8b2603e",
+    "release014-admin-browser.log": "1f02b86b8f7991f174ed16a357a34ff64b761b4b11d8e5690568dca5a1069374"
+  },
+  "attempts": [
+    {
+      "name": "before_fix_regression",
+      "status": "FAIL",
+      "observed": "POST /oauth/register returned 201"
+    },
+    {
+      "name": "intermediate_mux_registration",
+      "status": "FAIL",
+      "observed": "all-method subtree conflicted with GET static route"
+    },
+    {
+      "name": "corrected_admin_webauth_race_and_vet",
+      "status": "PASS",
+      "webauth_race_cache_reused": true
+    },
+    {
+      "name": "corrected_real_admin_browser_gate",
+      "status": "PASS",
+      "hermetic_runs": 1,
+      "real_app_oauth_store_runs": 2,
+      "backend_exit_codes": [
+        0,
+        0
+      ],
+      "skipped_fixtures": 0
+    }
+  ],
+  "toolchain": {
+    "go": "1.27.3",
+    "node": "26.11.1",
+    "local_chromium": "156.0.8078.47"
+  },
+  "prior_ci": {
+    "run_id": 40715183470,
+    "head": "8e56741aa4e02bc07600356717d18d72c22c8b92",
+    "status": "FAIL",
+    "failed_step": "Managed OpenCode HTTP and attach integration",
+    "observed": "provider readiness communication_failure attempts=8 deadline",
+    "admin_browser_step": "PASS",
+    "cause": "UNKNOWN",
+    "waived": false
+  },
+  "provider_inference": false,
+  "production_state": false,
+  "personal_client_configuration_modified": false,
+  "formal_security_certification": false,
+  "exact_head_ci": "PENDING",
+  "release_gate": "PENDING"
+}

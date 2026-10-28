@@ -1,0 +1,6 @@
+=== RUN   TestReviewMemorySnapshotCachePreservesRecipientSensitivity
+    review_sensitivity_test.go:22: approved=restricted actual=internal cache_hit=true first=internal live_calls=1
+--- FAIL: TestReviewMemorySnapshotCachePreservesRecipientSensitivity (0.00s)
+FAIL
+FAIL	github.com/ivo-lopes/ivoai/internal/evidence	0.010s
+FAIL

@@ -430,7 +430,9 @@ func workerArgs(request Request) ([]string, string, error) {
 		return append(args, "-"), file, nil
 	}
 	if request.Executor == "claude" {
-		args := []string{"--append-system-prompt", instructions, "--disallowedTools", "Bash,Edit,Write,NotebookEdit,mcp__ivoai-memory__memory_write_page,mcp__ivoai-memory__memory_delete_page,mcp__ivoai-memory__memory_feedback", "--permission-mode", "plan", "--print", "--output-format", "json"}
+		// Plan mode can still invoke native Agent subagents. Keep the builtin
+		// catalog closed; research and delegation use approved Core capabilities.
+		args := []string{"--append-system-prompt", instructions, "--tools", "Read,Glob,Grep", "--disallowedTools", "Bash,Edit,Write,NotebookEdit,Agent,Task,mcp__ivoai-memory__memory_write_page,mcp__ivoai-memory__memory_delete_page,mcp__ivoai-memory__memory_feedback", "--permission-mode", "plan", "--print", "--output-format", "json"}
 		if write {
 			args = []string{"--append-system-prompt", instructions, "--restricted", "--tools", "Read,Glob,Grep,Edit,Write", "--permission-mode", "acceptEdits", "--print", "--output-format", "json"}
 		}

@@ -1,0 +1,4 @@
+ok  	github.com/ivo-lopes/ivoai/internal/workingcontext	0.008s [no tests to run]
+ok  	github.com/ivo-lopes/ivoai/internal/evidence	5.744s
+ok  	github.com/ivo-lopes/ivoai/internal/orchestrator	0.005s [no tests to run]
+ok  	github.com/ivo-lopes/ivoai/internal/app	0.147s

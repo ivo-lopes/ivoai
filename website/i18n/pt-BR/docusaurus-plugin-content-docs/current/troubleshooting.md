@@ -32,7 +32,7 @@ de falha/entrega não confirmada em vez de um falso sucesso.
 
 Os assets da release incluem binários OpenCode gerenciados e metadados de
 proveniência com checksums separados. O build modificado se identifica como
-`1.19.0-ivoai.2`, não como o artefato upstream intacto. Os objetos imutáveis
+`1.19.0-ivoai.3`, não como o artefato upstream intacto. Os objetos imutáveis
 anteriores continuam disponíveis para rollback.
 
 ## Gestão de conexões multi-server
@@ -780,3 +780,21 @@ alterada em `/etc/ivoai/docs.json`. Teste primeiro
 `curl -f http://127.0.0.1:7780/` e depois o endereço LAN. Se loopback funcionar e LAN
 não, examine firewall e rota do Nginx Proxy Manager; não substitua o serviço de
 produção por `docusaurus start`.
+
+### OpenCode gerenciado exige atualização
+
+`MANAGED_OPENCODE_UPDATE_REQUIRED` indica um executável anterior ao contrato
+validado de plugins locais. Use uma release oficial do IVOAI e execute seu
+setup/update gerenciado; histórico, configuração e autenticação são preservados.
+Um Core compilado da fonte mantém o catálogo upstream quando não recebe os
+metadados validados da release. O setup não fabrica o artefato modificado.
+
+O runtime privado `.3` carrega apenas os pontos de entrada locais pertencentes
+ao IVOAI e impede instalações npm em runtime. Builds `.2` podem esperar o
+registry npm durante a disponibilidade do catálogo, mesmo com o fetch de
+modelos desativado. Os timeouts permanecem; falhar o registry não é uma solução.
+
+A raiz privada de assets exige caminho canônico sem ancestrais symlink. Use
+caminhos canônicos de runtime/cache para os mesmos diretórios preservados; o
+IVOAI não move históricos nem reescreve symlinks automaticamente. Instalações
+legadas com caminhos não canônicos exigem correção do operador.

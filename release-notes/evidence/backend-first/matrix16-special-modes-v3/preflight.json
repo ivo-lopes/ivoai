@@ -1,0 +1,206 @@
+{
+  "schema_version": 2,
+  "scope": "matrix16_discovery_preflight_no_inference",
+  "global_economic_gate": "INCOMPLETE",
+  "provider_attempts": 0,
+  "provider_cache_equivalence": "UNVERIFIED",
+  "effective_model_observed": null,
+  "discovery": {
+    "A": {
+      "status": "READY",
+      "test_exit_code": 0,
+      "capabilities": {
+        "schema_version": 2,
+        "catalog_sha256": "395f77bc5154c3df42cc7897feb7206bb38963a9441741ea24dbf290b08a9d7e",
+        "fixture_contract_sha256": "b1be89410849de350fcb334424780ce44417361806f1eba2d61522db3cbcdf73",
+        "harness_sha256": "9251e37c616461cbd4f0bc3e0b18e5c25da22d06723fa6f5841d0d808e6247ad",
+        "supported_scenarios": [
+          "api",
+          "cross_module_refactor",
+          "dependencies",
+          "implementation",
+          "monorepo",
+          "multi_module_callers",
+          "non_code",
+          "small_known_file_correction",
+          "unsupported_parser"
+        ],
+        "fixtures": {
+          "go-clamp-edit": "17989e8cf9573521b9a364538b3e9f0288bf50e7f2302d7f53d201c0957dc0c8",
+          "go-core": "94339e5800d550aaa5284ae452fef04b9c425c02dd079be54234b1bb8feb5188",
+          "monorepo-refactor-ts": "f74e0669fe05021dd8747393440d2fe5445ff0677bda2e7eb2989885a8a191ef",
+          "python-deps": "4dfd2279a45f4f1485e482743672d52a362aeb41d9dd0a671efdfa98a21847aa",
+          "monorepo-ts": "01ade0e8a5dbe64fb80ceb1210c2d0f056ed43462e9a1e86f1f9b24000feb656",
+          "rules-shell": "2650c62f41cfe3d5d0dce157cf45e35a6237605a564be2326bcd9646e123ac72",
+          "non-code": "4e5d45339ffb829146a641b9a6460879c4ab1e741f45820c00f3f3c2bb4f5cd9"
+        }
+      }
+    },
+    "B": {
+      "status": "READY",
+      "test_exit_code": 0,
+      "capabilities": {
+        "schema_version": 2,
+        "catalog_sha256": "395f77bc5154c3df42cc7897feb7206bb38963a9441741ea24dbf290b08a9d7e",
+        "fixture_contract_sha256": "b1be89410849de350fcb334424780ce44417361806f1eba2d61522db3cbcdf73",
+        "harness_sha256": "9251e37c616461cbd4f0bc3e0b18e5c25da22d06723fa6f5841d0d808e6247ad",
+        "supported_scenarios": [
+          "api",
+          "cross_module_refactor",
+          "dependencies",
+          "implementation",
+          "monorepo",
+          "multi_module_callers",
+          "non_code",
+          "small_known_file_correction",
+          "unsupported_parser"
+        ],
+        "fixtures": {
+          "go-clamp-edit": "17989e8cf9573521b9a364538b3e9f0288bf50e7f2302d7f53d201c0957dc0c8",
+          "go-core": "94339e5800d550aaa5284ae452fef04b9c425c02dd079be54234b1bb8feb5188",
+          "monorepo-refactor-ts": "f74e0669fe05021dd8747393440d2fe5445ff0677bda2e7eb2989885a8a191ef",
+          "python-deps": "4dfd2279a45f4f1485e482743672d52a362aeb41d9dd0a671efdfa98a21847aa",
+          "monorepo-ts": "01ade0e8a5dbe64fb80ceb1210c2d0f056ed43462e9a1e86f1f9b24000feb656",
+          "rules-shell": "2650c62f41cfe3d5d0dce157cf45e35a6237605a564be2326bcd9646e123ac72",
+          "non-code": "4e5d45339ffb829146a641b9a6460879c4ab1e741f45820c00f3f3c2bb4f5cd9"
+        }
+      }
+    }
+  },
+  "edit_oracle_probes": {
+    "small_known_file_correction": {
+      "A": {
+        "status": "READY",
+        "test_exit_code": 0
+      },
+      "B": {
+        "status": "READY",
+        "test_exit_code": 0
+      }
+    },
+    "cross_module_refactor": {
+      "A": {
+        "status": "READY",
+        "test_exit_code": 0
+      },
+      "B": {
+        "status": "READY",
+        "test_exit_code": 0
+      }
+    }
+  },
+  "scenarios": [
+    {
+      "scenario": "small_known_file_correction",
+      "status": "READY",
+      "reason": "",
+      "execution": "workspace_edit",
+      "client_execution": "NOT_RUN"
+    },
+    {
+      "scenario": "implementation",
+      "status": "READY",
+      "reason": "",
+      "execution": "read_only",
+      "client_execution": "NOT_RUN"
+    },
+    {
+      "scenario": "cross_module_refactor",
+      "status": "READY",
+      "reason": "",
+      "execution": "workspace_edit",
+      "client_execution": "NOT_RUN"
+    },
+    {
+      "scenario": "dependencies",
+      "status": "READY",
+      "reason": "",
+      "execution": "read_only",
+      "client_execution": "NOT_RUN"
+    },
+    {
+      "scenario": "multi_module_callers",
+      "status": "READY",
+      "reason": "",
+      "execution": "read_only",
+      "client_execution": "NOT_RUN"
+    },
+    {
+      "scenario": "api",
+      "status": "READY",
+      "reason": "",
+      "execution": "read_only",
+      "client_execution": "NOT_RUN"
+    },
+    {
+      "scenario": "large_project",
+      "status": "UNSUPPORTED",
+      "reason": "representative_large_project_fixture_and_boundaries_not_frozen",
+      "execution": "unavailable",
+      "client_execution": "NOT_RUN"
+    },
+    {
+      "scenario": "monorepo",
+      "status": "READY",
+      "reason": "",
+      "execution": "read_only",
+      "client_execution": "NOT_RUN"
+    },
+    {
+      "scenario": "unsupported_parser",
+      "status": "READY",
+      "reason": "",
+      "execution": "read_only",
+      "client_execution": "NOT_RUN"
+    },
+    {
+      "scenario": "institutional_documentation",
+      "status": "BLOCKED",
+      "reason": "context_ingestion_and_retrieval_unavailable_IVOAI_175",
+      "execution": "unavailable",
+      "client_execution": "NOT_RUN"
+    },
+    {
+      "scenario": "ai_memory_history",
+      "status": "BLOCKED",
+      "reason": "canonical_history_dataset_and_live_memory_contract_not_frozen",
+      "execution": "unavailable",
+      "client_execution": "NOT_RUN"
+    },
+    {
+      "scenario": "non_code",
+      "status": "READY",
+      "reason": "",
+      "execution": "read_only",
+      "client_execution": "NOT_RUN"
+    },
+    {
+      "scenario": "multiple_workers",
+      "status": "UNSUPPORTED",
+      "reason": "primary_only_runner_has_no_worker_or_reuse_lifecycle",
+      "execution": "unavailable",
+      "client_execution": "NOT_RUN"
+    },
+    {
+      "scenario": "reuse_between_turns",
+      "status": "UNSUPPORTED",
+      "reason": "ephemeral_single_turn_runner_has_no_warm_session",
+      "execution": "unavailable",
+      "client_execution": "NOT_RUN"
+    },
+    {
+      "scenario": "interrupted_continuity",
+      "status": "UNSUPPORTED",
+      "reason": "ephemeral_runner_has_no_interrupt_resume_comparison",
+      "execution": "unavailable",
+      "client_execution": "NOT_RUN"
+    },
+    {
+      "scenario": "concurrent_distinct_projects",
+      "status": "UNSUPPORTED",
+      "reason": "sequential_driver_has_no_concurrent_project_lifecycle",
+      "execution": "unavailable",
+      "client_execution": "NOT_RUN"
+    }
+  ]
+}

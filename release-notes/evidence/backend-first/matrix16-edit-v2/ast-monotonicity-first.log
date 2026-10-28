@@ -1,0 +1,5 @@
+--- FAIL: TestPureEditShapeRefusesExecutableInjection (0.00s)
+    edit_oracle_test.go:116: unsafe generated Go shape accepted
+FAIL
+FAIL	github.com/ivo-lopes/ivoai/internal/benchmarkfixtures	0.006s
+FAIL

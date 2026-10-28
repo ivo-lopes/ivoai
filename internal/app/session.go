@@ -414,6 +414,7 @@ func (a *App) OrchestratorServe(ctx context.Context, id string) error {
 		Registry:              registry,
 		Overrides:             routingOverrides(cfg.Orchestration.Auto.Profiles),
 		WorkingContext:        workingStore,
+		RecoverEvidence:       a.recoverProtectedEvidence,
 		Compressor:            a.workingContextCompressor(cfg, state, runtimeDir),
 	}
 	if value.Coordinator == "native" {

@@ -1,0 +1,4 @@
+# github.com/ivo-lopes/ivoai/internal/knowledgerouter
+internal/knowledgerouter/memory_page_test.go:121:55: missing parameter name
+FAIL	github.com/ivo-lopes/ivoai/internal/knowledgerouter [setup failed]
+FAIL

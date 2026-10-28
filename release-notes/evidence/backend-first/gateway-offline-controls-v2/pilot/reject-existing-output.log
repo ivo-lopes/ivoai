@@ -1,0 +1,4 @@
+=== RUN   TestExportEvidenceGatewayOfflineControls
+    evidence_gateway_control_test.go:319: receipt output must not already exist
+--- FAIL: TestExportEvidenceGatewayOfflineControls (0.00s)
+FAIL

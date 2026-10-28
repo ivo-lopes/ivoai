@@ -224,6 +224,8 @@ components:
       subscription_or_provider_owned: true
       payg_key_required_by_ivoai: false
     notes:
+      - "Source pin below is upstream; official IVOAI releases override it with reviewed private 1.19.0-ivoai.3 archive metadata."
+      - "Managed launch requires 1.19.0-ivoai.3 local-plugin/no-runtime-npm policy; .2/upstream/unknown builds require an explicit update before launch."
       - "Authentication remains entirely owned by OpenCode; IVOAI never reads or persists its auth store."
       - "Direct primary sessions are supported; AUTO/worker use is deferred to IVOAI-22."
 

@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "condition": "offline-app-gateway-v2",
+  "base_commit": "ad42d70dc6b6398811a40ec76b41ffc17d5c2315",
+  "frozen_at_utc": "2026-10-28T18:42:02.239274+00:00",
+  "source_files": 535,
+  "source_inventory_sha256": "c6f37f1d9c75f91e7a8c3e1d82b08b3a99cf5eacf56f59a7f469063e152f4c5c",
+  "changed_source_files": {
+    "internal/app/evidence_gateway_control_test.go": "c4fc023e955477dc4f23cb177c3f694d68dc0bce0c1b32eb711af08cc99bef61",
+    "internal/app/primary_prefetch_live_test.go": "6c1a9c062fae6b4903fd477fd4957debce016be793e0da072ad3bd50d06435f6"
+  },
+  "test_binary_sha256": "45d1085eb4b240a1d2812fc984b0c90e14c5b8129dc5e304956ccd5dbf80d7b5",
+  "tool_binary_sha256": {
+    "go": "5f5eb6d0b2fb6aa0bb5d5f8c5f1c944e0de955c925f0111af92a9d8f79680b5b",
+    "git": "356db14e102d68a1a37d8a1ac577dfd678d45d46e92f468bef8b7154e7bfdc60"
+  },
+  "build": "GOAMD64=v1 -trimpath -buildvcs=false; Go1.27.3 linux/amd64; not whole-toolchain or host provenance",
+  "execution": "same immutable test binary for OFF/ON; one retained App/session/cache per arm; clean receipt separate from hostile-env controls",
+  "changed_conditions": [
+    "reject inherited Git redirection, GIT_CONFIG_PARAMETERS, GIT_CONFIG and GIT_EXEC_PATH before any fixture",
+    "fixture Git init/add/commit/worktree all use absolute Git, explicit Env and command hooks/fsmonitor/untrackedCache/signing overrides"
+  ],
+  "model_calls": 0,
+  "timing": "single shared-host sequential OFF/ON; no causal LLM economics",
+  "historical_artifacts": "v1 freeze/receipt and126realattempts not modified or rescored",
+  "api_boundary": "host ArtifactStore.Read with exact issued owner; no protected public Core/MCP G0 reader claim",
+  "epoch": "final after adding executable refusal regression test; pilot preserved separately",
+  "arm64_binary_sha256": "12659a68f989279bbbee2bd63a817ec0533fc3f702fe9bb528f79ba7a897455d",
+  "pilot_freeze_sha256": "430dc6a8813357c2e512b557a8d58f31297e2d7316c7267a4338fec3af7dfdfa"
+}

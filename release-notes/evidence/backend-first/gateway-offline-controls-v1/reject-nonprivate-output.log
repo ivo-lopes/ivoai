@@ -1,0 +1,4 @@
+=== RUN   TestExportEvidenceGatewayOfflineControls
+    evidence_gateway_control_test.go:305: receipt parent must be an absolute private directory
+--- FAIL: TestExportEvidenceGatewayOfflineControls (0.00s)
+FAIL

@@ -1,0 +1,540 @@
+[
+  {
+    "name": "fake-complete-sampled",
+    "scope": "FAKE_PROTOCOL_AND_USAGE_NO_MODEL_OR_NATIVE_COMMANDS; sampled processes are actual local host/oracle processes",
+    "driver_sha256": "b81a023ee72ed2b528d4b4f7b8d27f46a3527de0cb161e0afaae62f66f88809c",
+    "sampler_sha256": "5ebaaa4c8b18e4a24b85bd35b9c57fc992b972cbb529530e86e266ca15a5a3cd",
+    "rows_sha256": "b709e34b44b4e6a19a2f1ea01b506ffc0709ef795a6948aa913dc21ef6e81430",
+    "manifest_sha256": "fa7711e5344cf5b817b24c83d24eebc65b90d7349c2847eb7db97a9cf151b504",
+    "turns": 4,
+    "correct": 4,
+    "metrics": [
+      {
+        "scenario": "small_known_file_correction",
+        "arm": "A",
+        "correct": true,
+        "measurement_valid": true,
+        "native": {
+          "schema_version": 1,
+          "stream_status": "complete",
+          "coverage": "partial_client_projection",
+          "tool_completions": {
+            "collab_tool_call": 0,
+            "command_execution": 2,
+            "file_change": 0,
+            "mcp_tool_call": 1,
+            "web_search": 0
+          },
+          "repeated_exact_payloads": {
+            "command_execution": 1,
+            "mcp_tool_call": 0
+          },
+          "collaboration_completions": {
+            "close_agent": 0,
+            "send_input": 0,
+            "spawn_agent": 0,
+            "wait": 0
+          },
+          "reported_spawn_receivers": null,
+          "unclassified_errors": 0,
+          "duplicate_terminal_items": 0,
+          "unknown_events": 0,
+          "unknown_items": 0,
+          "native_workers": null,
+          "native_delegations": null,
+          "native_retries": null
+        },
+        "process_sampling": {
+          "schema_version": 1,
+          "source": "linux_procfs_bounded_task_children_stat",
+          "status": "partial",
+          "coverage": "sampled_root_and_descendants_not_complete_or_atomic",
+          "read_loss_or_cap_detected": false,
+          "sample_count": 97,
+          "partial_samples": 0,
+          "read_failures": 0,
+          "limit_reached": false,
+          "interval_ms": 100,
+          "window_budget_ms": 25,
+          "observed_span_ms": 9877.721,
+          "max_window_ms": 7.852,
+          "observer_wall_ms": 174.36,
+          "observer_cpu_ms": 160.583,
+          "sampled_process_count_peak": 5,
+          "sampled_rss_sum_peak_bytes": 309764096,
+          "observed_identity_count": 79,
+          "rss_semantics": "kernel_approximate_sampled_rss_sum_includes_shared_pages_not_unique_physical_memory",
+          "actual_process_total": null,
+          "exact_peak_rss": null
+        }
+      },
+      {
+        "scenario": "small_known_file_correction",
+        "arm": "B",
+        "correct": true,
+        "measurement_valid": true,
+        "native": {
+          "schema_version": 1,
+          "stream_status": "complete",
+          "coverage": "partial_client_projection",
+          "tool_completions": {
+            "collab_tool_call": 0,
+            "command_execution": 2,
+            "file_change": 0,
+            "mcp_tool_call": 1,
+            "web_search": 0
+          },
+          "repeated_exact_payloads": {
+            "command_execution": 1,
+            "mcp_tool_call": 0
+          },
+          "collaboration_completions": {
+            "close_agent": 0,
+            "send_input": 0,
+            "spawn_agent": 0,
+            "wait": 0
+          },
+          "reported_spawn_receivers": null,
+          "unclassified_errors": 0,
+          "duplicate_terminal_items": 0,
+          "unknown_events": 0,
+          "unknown_items": 0,
+          "native_workers": null,
+          "native_delegations": null,
+          "native_retries": null
+        },
+        "process_sampling": {
+          "schema_version": 1,
+          "source": "linux_procfs_bounded_task_children_stat",
+          "status": "partial",
+          "coverage": "sampled_root_and_descendants_not_complete_or_atomic",
+          "read_loss_or_cap_detected": true,
+          "sample_count": 94,
+          "partial_samples": 2,
+          "read_failures": 2,
+          "limit_reached": false,
+          "interval_ms": 100,
+          "window_budget_ms": 25,
+          "observed_span_ms": 9566.607,
+          "max_window_ms": 4.233,
+          "observer_wall_ms": 171.239,
+          "observer_cpu_ms": 169.016,
+          "sampled_process_count_peak": 5,
+          "sampled_rss_sum_peak_bytes": 296148992,
+          "observed_identity_count": 76,
+          "rss_semantics": "kernel_approximate_sampled_rss_sum_includes_shared_pages_not_unique_physical_memory",
+          "actual_process_total": null,
+          "exact_peak_rss": null
+        }
+      },
+      {
+        "scenario": "cross_module_refactor",
+        "arm": "B",
+        "correct": true,
+        "measurement_valid": true,
+        "native": {
+          "schema_version": 1,
+          "stream_status": "complete",
+          "coverage": "partial_client_projection",
+          "tool_completions": {
+            "collab_tool_call": 0,
+            "command_execution": 2,
+            "file_change": 0,
+            "mcp_tool_call": 1,
+            "web_search": 0
+          },
+          "repeated_exact_payloads": {
+            "command_execution": 1,
+            "mcp_tool_call": 0
+          },
+          "collaboration_completions": {
+            "close_agent": 0,
+            "send_input": 0,
+            "spawn_agent": 0,
+            "wait": 0
+          },
+          "reported_spawn_receivers": null,
+          "unclassified_errors": 0,
+          "duplicate_terminal_items": 0,
+          "unknown_events": 0,
+          "unknown_items": 0,
+          "native_workers": null,
+          "native_delegations": null,
+          "native_retries": null
+        },
+        "process_sampling": {
+          "schema_version": 1,
+          "source": "linux_procfs_bounded_task_children_stat",
+          "status": "partial",
+          "coverage": "sampled_root_and_descendants_not_complete_or_atomic",
+          "read_loss_or_cap_detected": false,
+          "sample_count": 4,
+          "partial_samples": 0,
+          "read_failures": 0,
+          "limit_reached": false,
+          "interval_ms": 100,
+          "window_budget_ms": 25,
+          "observed_span_ms": 304.68,
+          "max_window_ms": 0.908,
+          "observer_wall_ms": 1.894,
+          "observer_cpu_ms": 1.87,
+          "sampled_process_count_peak": 3,
+          "sampled_rss_sum_peak_bytes": 67809280,
+          "observed_identity_count": 3,
+          "rss_semantics": "kernel_approximate_sampled_rss_sum_includes_shared_pages_not_unique_physical_memory",
+          "actual_process_total": null,
+          "exact_peak_rss": null
+        }
+      },
+      {
+        "scenario": "cross_module_refactor",
+        "arm": "A",
+        "correct": true,
+        "measurement_valid": true,
+        "native": {
+          "schema_version": 1,
+          "stream_status": "complete",
+          "coverage": "partial_client_projection",
+          "tool_completions": {
+            "collab_tool_call": 0,
+            "command_execution": 2,
+            "file_change": 0,
+            "mcp_tool_call": 1,
+            "web_search": 0
+          },
+          "repeated_exact_payloads": {
+            "command_execution": 1,
+            "mcp_tool_call": 0
+          },
+          "collaboration_completions": {
+            "close_agent": 0,
+            "send_input": 0,
+            "spawn_agent": 0,
+            "wait": 0
+          },
+          "reported_spawn_receivers": null,
+          "unclassified_errors": 0,
+          "duplicate_terminal_items": 0,
+          "unknown_events": 0,
+          "unknown_items": 0,
+          "native_workers": null,
+          "native_delegations": null,
+          "native_retries": null
+        },
+        "process_sampling": {
+          "schema_version": 1,
+          "source": "linux_procfs_bounded_task_children_stat",
+          "status": "partial",
+          "coverage": "sampled_root_and_descendants_not_complete_or_atomic",
+          "read_loss_or_cap_detected": false,
+          "sample_count": 4,
+          "partial_samples": 0,
+          "read_failures": 0,
+          "limit_reached": false,
+          "interval_ms": 100,
+          "window_budget_ms": 25,
+          "observed_span_ms": 304.634,
+          "max_window_ms": 0.915,
+          "observer_wall_ms": 2.362,
+          "observer_cpu_ms": 2.329,
+          "sampled_process_count_peak": 3,
+          "sampled_rss_sum_peak_bytes": 84312064,
+          "observed_identity_count": 4,
+          "rss_semantics": "kernel_approximate_sampled_rss_sum_includes_shared_pages_not_unique_physical_memory",
+          "actual_process_total": null,
+          "exact_peak_rss": null
+        }
+      }
+    ]
+  },
+  {
+    "name": "fake-incomplete",
+    "scope": "FAKE_PROTOCOL_AND_USAGE_NO_MODEL_OR_NATIVE_COMMANDS; sampled processes are actual local host/oracle processes",
+    "driver_sha256": "b81a023ee72ed2b528d4b4f7b8d27f46a3527de0cb161e0afaae62f66f88809c",
+    "sampler_sha256": "5ebaaa4c8b18e4a24b85bd35b9c57fc992b972cbb529530e86e266ca15a5a3cd",
+    "rows_sha256": "00bdd913581edbc25f73314a38bd2d5f82b747867a1b6ffdf1af82f9c63ef40e",
+    "manifest_sha256": "90155f463d43739d0b383620992c19b9b1adebee418f6ae2e76be7bc6e45a411",
+    "turns": 4,
+    "correct": 0,
+    "metrics": [
+      {
+        "scenario": "small_known_file_correction",
+        "arm": "A",
+        "correct": false,
+        "measurement_valid": true,
+        "native": {
+          "schema_version": 1,
+          "stream_status": "invalid",
+          "coverage": "partial_client_projection",
+          "tool_completions": {
+            "collab_tool_call": 0,
+            "command_execution": 2,
+            "file_change": 0,
+            "mcp_tool_call": 1,
+            "web_search": 0
+          },
+          "repeated_exact_payloads": {
+            "command_execution": 1,
+            "mcp_tool_call": 0
+          },
+          "collaboration_completions": {
+            "close_agent": 0,
+            "send_input": 0,
+            "spawn_agent": 0,
+            "wait": 0
+          },
+          "reported_spawn_receivers": null,
+          "unclassified_errors": 0,
+          "duplicate_terminal_items": 0,
+          "unknown_events": 0,
+          "unknown_items": 0,
+          "native_workers": null,
+          "native_delegations": null,
+          "native_retries": null
+        },
+        "process_sampling": null
+      },
+      {
+        "scenario": "small_known_file_correction",
+        "arm": "B",
+        "correct": false,
+        "measurement_valid": true,
+        "native": {
+          "schema_version": 1,
+          "stream_status": "invalid",
+          "coverage": "partial_client_projection",
+          "tool_completions": {
+            "collab_tool_call": 0,
+            "command_execution": 2,
+            "file_change": 0,
+            "mcp_tool_call": 1,
+            "web_search": 0
+          },
+          "repeated_exact_payloads": {
+            "command_execution": 1,
+            "mcp_tool_call": 0
+          },
+          "collaboration_completions": {
+            "close_agent": 0,
+            "send_input": 0,
+            "spawn_agent": 0,
+            "wait": 0
+          },
+          "reported_spawn_receivers": null,
+          "unclassified_errors": 0,
+          "duplicate_terminal_items": 0,
+          "unknown_events": 0,
+          "unknown_items": 0,
+          "native_workers": null,
+          "native_delegations": null,
+          "native_retries": null
+        },
+        "process_sampling": null
+      },
+      {
+        "scenario": "cross_module_refactor",
+        "arm": "B",
+        "correct": false,
+        "measurement_valid": true,
+        "native": {
+          "schema_version": 1,
+          "stream_status": "invalid",
+          "coverage": "partial_client_projection",
+          "tool_completions": {
+            "collab_tool_call": 0,
+            "command_execution": 2,
+            "file_change": 0,
+            "mcp_tool_call": 1,
+            "web_search": 0
+          },
+          "repeated_exact_payloads": {
+            "command_execution": 1,
+            "mcp_tool_call": 0
+          },
+          "collaboration_completions": {
+            "close_agent": 0,
+            "send_input": 0,
+            "spawn_agent": 0,
+            "wait": 0
+          },
+          "reported_spawn_receivers": null,
+          "unclassified_errors": 0,
+          "duplicate_terminal_items": 0,
+          "unknown_events": 0,
+          "unknown_items": 0,
+          "native_workers": null,
+          "native_delegations": null,
+          "native_retries": null
+        },
+        "process_sampling": null
+      },
+      {
+        "scenario": "cross_module_refactor",
+        "arm": "A",
+        "correct": false,
+        "measurement_valid": true,
+        "native": {
+          "schema_version": 1,
+          "stream_status": "invalid",
+          "coverage": "partial_client_projection",
+          "tool_completions": {
+            "collab_tool_call": 0,
+            "command_execution": 2,
+            "file_change": 0,
+            "mcp_tool_call": 1,
+            "web_search": 0
+          },
+          "repeated_exact_payloads": {
+            "command_execution": 1,
+            "mcp_tool_call": 0
+          },
+          "collaboration_completions": {
+            "close_agent": 0,
+            "send_input": 0,
+            "spawn_agent": 0,
+            "wait": 0
+          },
+          "reported_spawn_receivers": null,
+          "unclassified_errors": 0,
+          "duplicate_terminal_items": 0,
+          "unknown_events": 0,
+          "unknown_items": 0,
+          "native_workers": null,
+          "native_delegations": null,
+          "native_retries": null
+        },
+        "process_sampling": null
+      }
+    ]
+  },
+  {
+    "name": "final-fake-sampled",
+    "scope": "FAKE_PROTOCOL_AND_USAGE_NO_MODEL_OR_NATIVE_COMMANDS; sampled processes are actual local host/oracle processes",
+    "driver_sha256": "2635e976c32f73b753693d16367fd239d97542c106d6fe1f1f3cafe1d523660d",
+    "sampler_sha256": "5ebaaa4c8b18e4a24b85bd35b9c57fc992b972cbb529530e86e266ca15a5a3cd",
+    "rows_sha256": "66620f4106ccd1c6574fd44cf0923e9057725964189c12c137909d17f856015e",
+    "manifest_sha256": "cfea526903ece81bfcfe8671b41a44d5c96f2b8edebddcd5b1fddaf4c477401d",
+    "turns": 2,
+    "correct": 2,
+    "metrics": [
+      {
+        "scenario": "cross_module_refactor",
+        "arm": "A",
+        "correct": true,
+        "measurement_valid": true,
+        "native": {
+          "schema_version": 1,
+          "stream_status": "complete",
+          "coverage": "partial_client_projection",
+          "tool_completions": {
+            "collab_tool_call": 0,
+            "command_execution": 2,
+            "file_change": 0,
+            "mcp_tool_call": 1,
+            "web_search": 0
+          },
+          "repeated_exact_payloads": {
+            "command_execution": 1,
+            "mcp_tool_call": 0
+          },
+          "collaboration_completions": {
+            "close_agent": 0,
+            "send_input": 0,
+            "spawn_agent": 0,
+            "wait": 0
+          },
+          "reported_spawn_receivers": null,
+          "unclassified_errors": 0,
+          "duplicate_terminal_items": 0,
+          "unknown_events": 0,
+          "unknown_items": 0,
+          "native_workers": null,
+          "native_delegations": null,
+          "native_retries": null
+        },
+        "process_sampling": {
+          "schema_version": 1,
+          "source": "linux_procfs_bounded_task_children_stat",
+          "status": "partial",
+          "coverage": "sampled_root_and_descendants_not_complete_or_atomic",
+          "read_loss_or_cap_detected": false,
+          "sample_count": 4,
+          "partial_samples": 0,
+          "read_failures": 0,
+          "limit_reached": false,
+          "interval_ms": 100,
+          "window_budget_ms": 25,
+          "observed_span_ms": 305.157,
+          "max_window_ms": 1.112,
+          "observer_wall_ms": 2.234,
+          "observer_cpu_ms": 2.149,
+          "sampled_process_count_peak": 3,
+          "sampled_rss_sum_peak_bytes": 47144960,
+          "observed_identity_count": 3,
+          "rss_semantics": "kernel_approximate_sampled_rss_sum_includes_shared_pages_not_unique_physical_memory",
+          "actual_process_total": null,
+          "exact_peak_rss": null
+        }
+      },
+      {
+        "scenario": "cross_module_refactor",
+        "arm": "B",
+        "correct": true,
+        "measurement_valid": true,
+        "native": {
+          "schema_version": 1,
+          "stream_status": "complete",
+          "coverage": "partial_client_projection",
+          "tool_completions": {
+            "collab_tool_call": 0,
+            "command_execution": 2,
+            "file_change": 0,
+            "mcp_tool_call": 1,
+            "web_search": 0
+          },
+          "repeated_exact_payloads": {
+            "command_execution": 1,
+            "mcp_tool_call": 0
+          },
+          "collaboration_completions": {
+            "close_agent": 0,
+            "send_input": 0,
+            "spawn_agent": 0,
+            "wait": 0
+          },
+          "reported_spawn_receivers": null,
+          "unclassified_errors": 0,
+          "duplicate_terminal_items": 0,
+          "unknown_events": 0,
+          "unknown_items": 0,
+          "native_workers": null,
+          "native_delegations": null,
+          "native_retries": null
+        },
+        "process_sampling": {
+          "schema_version": 1,
+          "source": "linux_procfs_bounded_task_children_stat",
+          "status": "partial",
+          "coverage": "sampled_root_and_descendants_not_complete_or_atomic",
+          "read_loss_or_cap_detected": false,
+          "sample_count": 3,
+          "partial_samples": 0,
+          "read_failures": 0,
+          "limit_reached": false,
+          "interval_ms": 100,
+          "window_budget_ms": 25,
+          "observed_span_ms": 202.363,
+          "max_window_ms": 0.849,
+          "observer_wall_ms": 1.487,
+          "observer_cpu_ms": 1.479,
+          "sampled_process_count_peak": 3,
+          "sampled_rss_sum_peak_bytes": 65142784,
+          "observed_identity_count": 3,
+          "rss_semantics": "kernel_approximate_sampled_rss_sum_includes_shared_pages_not_unique_physical_memory",
+          "actual_process_total": null,
+          "exact_peak_rss": null
+        }
+      }
+    ]
+  }
+]

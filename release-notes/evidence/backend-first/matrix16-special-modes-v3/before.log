@@ -1,0 +1,23 @@
+=== RUN   TestEditSnapshotRejectsSpecialPermissionBits
+=== RUN   TestEditSnapshotRejectsSpecialPermissionBits/file_u---------
+    edit_oracle_test.go:178: special permission mutation accepted by edit contract
+=== RUN   TestEditSnapshotRejectsSpecialPermissionBits/file_g---------
+    edit_oracle_test.go:178: special permission mutation accepted by edit contract
+=== RUN   TestEditSnapshotRejectsSpecialPermissionBits/file_t---------
+    edit_oracle_test.go:178: special permission mutation accepted by edit contract
+=== RUN   TestEditSnapshotRejectsSpecialPermissionBits/directory_u---------
+    edit_oracle_test.go:178: special permission mutation accepted by edit contract
+=== RUN   TestEditSnapshotRejectsSpecialPermissionBits/directory_g---------
+    edit_oracle_test.go:178: special permission mutation accepted by edit contract
+=== RUN   TestEditSnapshotRejectsSpecialPermissionBits/directory_t---------
+    edit_oracle_test.go:178: special permission mutation accepted by edit contract
+--- FAIL: TestEditSnapshotRejectsSpecialPermissionBits (0.01s)
+    --- FAIL: TestEditSnapshotRejectsSpecialPermissionBits/file_u--------- (0.00s)
+    --- FAIL: TestEditSnapshotRejectsSpecialPermissionBits/file_g--------- (0.00s)
+    --- FAIL: TestEditSnapshotRejectsSpecialPermissionBits/file_t--------- (0.00s)
+    --- FAIL: TestEditSnapshotRejectsSpecialPermissionBits/directory_u--------- (0.00s)
+    --- FAIL: TestEditSnapshotRejectsSpecialPermissionBits/directory_g--------- (0.00s)
+    --- FAIL: TestEditSnapshotRejectsSpecialPermissionBits/directory_t--------- (0.00s)
+FAIL
+FAIL	github.com/ivo-lopes/ivoai/internal/benchmarkfixtures	0.009s
+FAIL

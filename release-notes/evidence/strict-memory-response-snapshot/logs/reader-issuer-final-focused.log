@@ -1,0 +1,114 @@
+=== RUN   TestMemoryPageReaderActualSDKHTTPIsFreshScopedAndImmutable
+=== RUN   TestMemoryPageReaderActualSDKHTTPIsFreshScopedAndImmutable/true
+=== RUN   TestMemoryPageReaderActualSDKHTTPIsFreshScopedAndImmutable/false
+--- PASS: TestMemoryPageReaderActualSDKHTTPIsFreshScopedAndImmutable (0.01s)
+    --- PASS: TestMemoryPageReaderActualSDKHTTPIsFreshScopedAndImmutable/true (0.01s)
+    --- PASS: TestMemoryPageReaderActualSDKHTTPIsFreshScopedAndImmutable/false (0.00s)
+=== RUN   TestMemoryPageArgumentsRejectUnknownAmbiguousOrUnsafeInputBeforeHTTP
+--- PASS: TestMemoryPageArgumentsRejectUnknownAmbiguousOrUnsafeInputBeforeHTTP (0.00s)
+=== RUN   TestMemoryPageStrictResponseRejectsAmbiguityErrorsAndIncompleteFrames
+=== RUN   TestMemoryPageStrictResponseRejectsAmbiguityErrorsAndIncompleteFrames/wrong_id
+=== RUN   TestMemoryPageStrictResponseRejectsAmbiguityErrorsAndIncompleteFrames/null_id
+=== RUN   TestMemoryPageStrictResponseRejectsAmbiguityErrorsAndIncompleteFrames/missing_id
+=== RUN   TestMemoryPageStrictResponseRejectsAmbiguityErrorsAndIncompleteFrames/result_and_error
+=== RUN   TestMemoryPageStrictResponseRejectsAmbiguityErrorsAndIncompleteFrames/error_only
+=== RUN   TestMemoryPageStrictResponseRejectsAmbiguityErrorsAndIncompleteFrames/duplicate_id
+=== RUN   TestMemoryPageStrictResponseRejectsAmbiguityErrorsAndIncompleteFrames/duplicate_result
+=== RUN   TestMemoryPageStrictResponseRejectsAmbiguityErrorsAndIncompleteFrames/trailing
+=== RUN   TestMemoryPageStrictResponseRejectsAmbiguityErrorsAndIncompleteFrames/batch
+=== RUN   TestMemoryPageStrictResponseRejectsAmbiguityErrorsAndIncompleteFrames/is_error
+=== RUN   TestMemoryPageStrictResponseRejectsAmbiguityErrorsAndIncompleteFrames/is_error_string
+=== RUN   TestMemoryPageStrictResponseRejectsAmbiguityErrorsAndIncompleteFrames/partial
+=== RUN   TestMemoryPageStrictResponseRejectsAmbiguityErrorsAndIncompleteFrames/truncated
+=== RUN   TestMemoryPageStrictResponseRejectsAmbiguityErrorsAndIncompleteFrames/bad_content
+=== RUN   TestMemoryPageStrictResponseRejectsAmbiguityErrorsAndIncompleteFrames/session
+=== RUN   TestMemoryPageStrictResponseRejectsAmbiguityErrorsAndIncompleteFrames/partial_http
+=== RUN   TestMemoryPageStrictResponseRejectsAmbiguityErrorsAndIncompleteFrames/duplicate_content_type
+=== RUN   TestMemoryPageStrictResponseRejectsAmbiguityErrorsAndIncompleteFrames/sse_two
+=== RUN   TestMemoryPageStrictResponseRejectsAmbiguityErrorsAndIncompleteFrames/sse_invalid_then_valid
+=== RUN   TestMemoryPageStrictResponseRejectsAmbiguityErrorsAndIncompleteFrames/sse_no_terminal
+=== RUN   TestMemoryPageStrictResponseRejectsAmbiguityErrorsAndIncompleteFrames/sse_notification
+=== RUN   TestMemoryPageStrictResponseRejectsAmbiguityErrorsAndIncompleteFrames/sse_retry
+=== RUN   TestMemoryPageStrictResponseRejectsAmbiguityErrorsAndIncompleteFrames/deep
+=== RUN   TestMemoryPageStrictResponseRejectsAmbiguityErrorsAndIncompleteFrames/nodes
+=== RUN   TestMemoryPageStrictResponseRejectsAmbiguityErrorsAndIncompleteFrames/oversize
+--- PASS: TestMemoryPageStrictResponseRejectsAmbiguityErrorsAndIncompleteFrames (0.07s)
+    --- PASS: TestMemoryPageStrictResponseRejectsAmbiguityErrorsAndIncompleteFrames/wrong_id (0.00s)
+    --- PASS: TestMemoryPageStrictResponseRejectsAmbiguityErrorsAndIncompleteFrames/null_id (0.00s)
+    --- PASS: TestMemoryPageStrictResponseRejectsAmbiguityErrorsAndIncompleteFrames/missing_id (0.00s)
+    --- PASS: TestMemoryPageStrictResponseRejectsAmbiguityErrorsAndIncompleteFrames/result_and_error (0.00s)
+    --- PASS: TestMemoryPageStrictResponseRejectsAmbiguityErrorsAndIncompleteFrames/error_only (0.00s)
+    --- PASS: TestMemoryPageStrictResponseRejectsAmbiguityErrorsAndIncompleteFrames/duplicate_id (0.00s)
+    --- PASS: TestMemoryPageStrictResponseRejectsAmbiguityErrorsAndIncompleteFrames/duplicate_result (0.00s)
+    --- PASS: TestMemoryPageStrictResponseRejectsAmbiguityErrorsAndIncompleteFrames/trailing (0.00s)
+    --- PASS: TestMemoryPageStrictResponseRejectsAmbiguityErrorsAndIncompleteFrames/batch (0.00s)
+    --- PASS: TestMemoryPageStrictResponseRejectsAmbiguityErrorsAndIncompleteFrames/is_error (0.00s)
+    --- PASS: TestMemoryPageStrictResponseRejectsAmbiguityErrorsAndIncompleteFrames/is_error_string (0.00s)
+    --- PASS: TestMemoryPageStrictResponseRejectsAmbiguityErrorsAndIncompleteFrames/partial (0.00s)
+    --- PASS: TestMemoryPageStrictResponseRejectsAmbiguityErrorsAndIncompleteFrames/truncated (0.00s)
+    --- PASS: TestMemoryPageStrictResponseRejectsAmbiguityErrorsAndIncompleteFrames/bad_content (0.00s)
+    --- PASS: TestMemoryPageStrictResponseRejectsAmbiguityErrorsAndIncompleteFrames/session (0.00s)
+    --- PASS: TestMemoryPageStrictResponseRejectsAmbiguityErrorsAndIncompleteFrames/partial_http (0.00s)
+    --- PASS: TestMemoryPageStrictResponseRejectsAmbiguityErrorsAndIncompleteFrames/duplicate_content_type (0.00s)
+    --- PASS: TestMemoryPageStrictResponseRejectsAmbiguityErrorsAndIncompleteFrames/sse_two (0.00s)
+    --- PASS: TestMemoryPageStrictResponseRejectsAmbiguityErrorsAndIncompleteFrames/sse_invalid_then_valid (0.00s)
+    --- PASS: TestMemoryPageStrictResponseRejectsAmbiguityErrorsAndIncompleteFrames/sse_no_terminal (0.00s)
+    --- PASS: TestMemoryPageStrictResponseRejectsAmbiguityErrorsAndIncompleteFrames/sse_notification (0.00s)
+    --- PASS: TestMemoryPageStrictResponseRejectsAmbiguityErrorsAndIncompleteFrames/sse_retry (0.00s)
+    --- PASS: TestMemoryPageStrictResponseRejectsAmbiguityErrorsAndIncompleteFrames/deep (0.00s)
+    --- PASS: TestMemoryPageStrictResponseRejectsAmbiguityErrorsAndIncompleteFrames/nodes (0.01s)
+    --- PASS: TestMemoryPageStrictResponseRejectsAmbiguityErrorsAndIncompleteFrames/oversize (0.02s)
+=== RUN   TestMemoryPageStrictValidationPrecedesCircuitSuccessAndLegacyIsUnchanged
+--- PASS: TestMemoryPageStrictValidationPrecedesCircuitSuccessAndLegacyIsUnchanged (0.00s)
+=== RUN   TestMemoryPageScopeRevocationCloseAndSourceSelectionFailClosed
+--- PASS: TestMemoryPageScopeRevocationCloseAndSourceSelectionFailClosed (0.00s)
+=== RUN   TestMemoryPageReaderRefusesSameOriginRedirectBeforeForwardingCredential
+--- PASS: TestMemoryPageReaderRefusesSameOriginRedirectBeforeForwardingCredential (0.00s)
+=== RUN   TestMemoryPageReaderBoundsParallelLiveCallsWithoutDeduplication
+--- PASS: TestMemoryPageReaderBoundsParallelLiveCallsWithoutDeduplication (0.00s)
+PASS
+ok  	github.com/ivo-lopes/ivoai/internal/knowledgerouter	1.116s
+=== RUN   TestMemorySnapshotIssuanceRequiresExplicitHostRetentionAndOriginalScope
+=== RUN   TestMemorySnapshotIssuanceRequiresExplicitHostRetentionAndOriginalScope/nil_retention
+=== RUN   TestMemorySnapshotIssuanceRequiresExplicitHostRetentionAndOriginalScope/unknown
+=== RUN   TestMemorySnapshotIssuanceRequiresExplicitHostRetentionAndOriginalScope/secret
+=== RUN   TestMemorySnapshotIssuanceRequiresExplicitHostRetentionAndOriginalScope/credential
+=== RUN   TestMemorySnapshotIssuanceRequiresExplicitHostRetentionAndOriginalScope/raw_auth
+=== RUN   TestMemorySnapshotIssuanceRequiresExplicitHostRetentionAndOriginalScope/missing_policy_digest
+=== RUN   TestMemorySnapshotIssuanceRequiresExplicitHostRetentionAndOriginalScope/missing_ttl
+=== RUN   TestMemorySnapshotIssuanceRequiresExplicitHostRetentionAndOriginalScope/short_ttl
+=== RUN   TestMemorySnapshotIssuanceRequiresExplicitHostRetentionAndOriginalScope/scope
+=== RUN   TestMemorySnapshotIssuanceRequiresExplicitHostRetentionAndOriginalScope/session
+=== RUN   TestMemorySnapshotIssuanceRequiresExplicitHostRetentionAndOriginalScope/zero_snapshot
+--- PASS: TestMemorySnapshotIssuanceRequiresExplicitHostRetentionAndOriginalScope (0.01s)
+    --- PASS: TestMemorySnapshotIssuanceRequiresExplicitHostRetentionAndOriginalScope/nil_retention (0.00s)
+    --- PASS: TestMemorySnapshotIssuanceRequiresExplicitHostRetentionAndOriginalScope/unknown (0.00s)
+    --- PASS: TestMemorySnapshotIssuanceRequiresExplicitHostRetentionAndOriginalScope/secret (0.00s)
+    --- PASS: TestMemorySnapshotIssuanceRequiresExplicitHostRetentionAndOriginalScope/credential (0.00s)
+    --- PASS: TestMemorySnapshotIssuanceRequiresExplicitHostRetentionAndOriginalScope/raw_auth (0.00s)
+    --- PASS: TestMemorySnapshotIssuanceRequiresExplicitHostRetentionAndOriginalScope/missing_policy_digest (0.00s)
+    --- PASS: TestMemorySnapshotIssuanceRequiresExplicitHostRetentionAndOriginalScope/missing_ttl (0.00s)
+    --- PASS: TestMemorySnapshotIssuanceRequiresExplicitHostRetentionAndOriginalScope/short_ttl (0.00s)
+    --- PASS: TestMemorySnapshotIssuanceRequiresExplicitHostRetentionAndOriginalScope/scope (0.00s)
+    --- PASS: TestMemorySnapshotIssuanceRequiresExplicitHostRetentionAndOriginalScope/session (0.00s)
+    --- PASS: TestMemorySnapshotIssuanceRequiresExplicitHostRetentionAndOriginalScope/zero_snapshot (0.00s)
+=== RUN   TestMemorySnapshotProtectedExactRecoveryAndRecipientReuseNeverReplayLive
+--- PASS: TestMemorySnapshotProtectedExactRecoveryAndRecipientReuseNeverReplayLive (0.02s)
+=== RUN   TestMemorySnapshotLocalGrantAndRetentionRevocationDenyBeforeStoreRead
+=== RUN   TestMemorySnapshotLocalGrantAndRetentionRevocationDenyBeforeStoreRead/grant
+=== RUN   TestMemorySnapshotLocalGrantAndRetentionRevocationDenyBeforeStoreRead/retention
+=== RUN   TestMemorySnapshotLocalGrantAndRetentionRevocationDenyBeforeStoreRead/policy_revision
+--- PASS: TestMemorySnapshotLocalGrantAndRetentionRevocationDenyBeforeStoreRead (0.03s)
+    --- PASS: TestMemorySnapshotLocalGrantAndRetentionRevocationDenyBeforeStoreRead/grant (0.01s)
+    --- PASS: TestMemorySnapshotLocalGrantAndRetentionRevocationDenyBeforeStoreRead/retention (0.01s)
+    --- PASS: TestMemorySnapshotLocalGrantAndRetentionRevocationDenyBeforeStoreRead/policy_revision (0.01s)
+=== RUN   TestMemorySnapshotPolicyChangeDuringPersistenceReturnsNoBinding
+--- PASS: TestMemorySnapshotPolicyChangeDuringPersistenceReturnsNoBinding (0.01s)
+=== RUN   TestGatewayInvalidHostArtifactTTLStopsBeforeFetch
+--- PASS: TestGatewayInvalidHostArtifactTTLStopsBeforeFetch (0.00s)
+=== RUN   TestMemorySnapshotUpstreamAnnotationsCannotApproveRetentionAndKnownSecretChecksRemain
+--- PASS: TestMemorySnapshotUpstreamAnnotationsCannotApproveRetentionAndKnownSecretChecksRemain (0.01s)
+=== RUN   TestMemorySnapshotRecoversOriginalCRLFSSEFramesWithoutNormalization
+--- PASS: TestMemorySnapshotRecoversOriginalCRLFSSEFramesWithoutNormalization (0.01s)
+PASS
+ok  	github.com/ivo-lopes/ivoai/internal/evidence	1.130s
