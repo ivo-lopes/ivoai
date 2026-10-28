@@ -1,0 +1,159 @@
+{
+  "scope": "Read-only protocol research with official local App Server and synthetic local Responses provider. No inference, credentials, personal config or repository modifications. Not TUI or economic certification.",
+  "binary_version": "0.164.0",
+  "binary_sha256": "b93f6811d3f653f0fb83be4050d857fb9abbb111dfa2ce160563327daff7f306",
+  "schema_sha256": {
+    "v2/ThreadStartParams.json": "80a40a7fac15b4bf70efb7f893fb353acc0a0d30c68f54aee4f01923deca85de",
+    "v2/ThreadResumeParams.json": "8152ea774ace4eb5623081abd64a1135f28cbff1e73ca641cfb80ac16f6eed32",
+    "v2/TurnStartParams.json": "f671d01c24995e99fcc110862ff3251c26d334fba212c7dc12857fb939506e47",
+    "DynamicToolCallParams.json": "401bba20cfbd95762bef0467d840430c46be53369093ad9f26425ba757e34efc",
+    "DynamicToolCallResponse.json": "abb082cad67f11fcc98ba75f2eff75d7d1723af0c657655329b83ff160451a02"
+  },
+  "official_docs": [
+    "https://learn.chatgpt.com/docs/app-server",
+    "https://learn.chatgpt.com/docs/config-file/config-reference"
+  ],
+  "unproven": [
+    "universal interception or replacement of native tool outputs",
+    "exclusive dynamic-tool catalog",
+    "real-provider authentication, quotas or model entitlement",
+    "TUI rendering/control compatibility",
+    "token, latency or whole-session savings"
+  ],
+  "research_runs": {
+    "initial": {
+      "thread_started": true,
+      "turn_completed": true,
+      "callback_received": true,
+      "callback_method": "item/tool/call",
+      "response_requests": 2,
+      "second_request_contains_host_view": true,
+      "dynamic_tool_in_nested_exec_guidance": true,
+      "top_level_tools_present": false,
+      "additional_tools_item_present": true,
+      "advertised_tool_count": 11,
+      "nested_exec_tool_count": 10
+    },
+    "code_mode_off": {
+      "thread_started": true,
+      "turn_completed": true,
+      "callback_received": true,
+      "callback_method": "item/tool/call",
+      "response_requests": 2,
+      "second_request_contains_host_view": true,
+      "dynamic_tool_in_nested_exec_guidance": true,
+      "top_level_tools_present": false,
+      "additional_tools_item_present": true,
+      "advertised_tool_count": 11,
+      "nested_exec_tool_count": 6
+    },
+    "code_mode_host_off": {
+      "thread_started": true,
+      "turn_completed": true,
+      "callback_received": true,
+      "callback_method": "item/tool/call",
+      "response_requests": 2,
+      "second_request_contains_host_view": true,
+      "dynamic_tool_in_nested_exec_guidance": true,
+      "top_level_tools_present": false,
+      "additional_tools_item_present": true,
+      "advertised_tool_count": 10,
+      "nested_exec_tool_count": 6
+    },
+    "resumed_new_process": {
+      "thread_resumed": true,
+      "turn_completed": true,
+      "callback_received": true,
+      "callback_method": "item/tool/call",
+      "response_requests": 2,
+      "second_request_contains_host_view": true,
+      "dynamic_tool_in_nested_exec_guidance": true,
+      "top_level_tools_present": false,
+      "additional_tools_item_present": true,
+      "advertised_tool_count": 11,
+      "nested_exec_tool_count": 10
+    },
+    "interrupt_pending_callback": {
+      "thread_started": true,
+      "turn_finished_event": true,
+      "native_turn_status": "interrupted",
+      "resolved_notifications": 0,
+      "callback_received": true,
+      "callback_method": "item/tool/call",
+      "response_requests": 1,
+      "second_request_contains_host_view": false,
+      "dynamic_tool_in_nested_exec_guidance": true,
+      "top_level_tools_present": false,
+      "additional_tools_item_present": true,
+      "late_response_observation_window_ms": 200,
+      "advertised_tool_count": 11,
+      "nested_exec_tool_count": 10
+    },
+    "missing_experimental_opt_in": {
+      "experimental_api_opt_in": false,
+      "thread_start_rejected": true,
+      "response_requests": 0
+    }
+  },
+  "exclusive_dynamic_catalog_proven": false,
+  "announced_tools_equal_executable_tools": false,
+  "native_collaboration_execution_probe": {
+    "scope": "Separate sterile official-client synthetic local provider; no command requested, no real inference or copied credentials",
+    "response_contract": {
+      "type": "function_call",
+      "namespace": "collaboration",
+      "name": "spawn_agent"
+    },
+    "configured_feature_flags": {
+      "multi_agent": false,
+      "multi_agent_v2": false,
+      "goals": false
+    },
+    "spawned_task_identity_returned": true,
+    "native_subagent_activity_observed": true,
+    "distinct_native_threads": 2,
+    "native_turns_started": 2,
+    "provider_http_requests": 3,
+    "host_dynamic_callback_received": false,
+    "single_core_orchestration_gate": "BLOCKED",
+    "private_protocol_sha256": "fc5c0cac6e9b5863c3e281c89ba4ceed762b4fb7fd752bdf1020c52eadb35bb4",
+    "private_provider_requests_sha256": "25dbb11eebfaa2d13b335cbccc77842e75859bb31bf44bf0ed8bd9344ee1f90d",
+    "worker_executed": true
+  },
+  "implementation_validation": {
+    "scope": "Diagnostic synthetic loopback only; no App wiring or production executor admission",
+    "toolchain": "go1.27.3 linux/amd64",
+    "full_go_test": "PASS",
+    "full_go_vet": "PASS",
+    "focused_native_race_with_official_synthetic_tests": "PASS",
+    "linux_arm64_test_compilation": "PASS_NOT_EXECUTED",
+    "diff_check": "PASS",
+    "real_provider_guard_class": "NATIVE_CODEX_WORKER_BOUNDARY_UNVERIFIED",
+    "real_provider_guard_before_callbacks_and_probes_test": "PASS",
+    "official_synthetic_proofs": {
+      "view_only_and_same_live_registry_owned_resume": {
+        "native_turns": 2,
+        "http_requests": 4,
+        "raw_sentinel_in_provider_input": false
+      },
+      "view_then_explicit_exact": {
+        "native_turns": 1,
+        "http_requests": 3,
+        "raw_delivered_only_after_explicit_exact": true
+      },
+      "pending_callback_parent_cancellation": {
+        "http_requests": 1,
+        "final_emitted": false
+      }
+    },
+    "go_file_sha256": {
+      "internal/nativecodex/registry.go": "70e2c54c56378b28f352c69d5c364bf28dda68631893d0f8d58e1f1ca541649e",
+      "internal/nativecodex/registry_test.go": "adb667de074f12d5eb94cdc6d3490515338098c531a604d5d700e5b8d6f7b60d",
+      "internal/nativecodex/runner.go": "1ee0bac880be42e00104f72b85e84e96f7de407476a39a640c9f837b6bfb4ed0",
+      "internal/nativecodex/runner_linux.go": "40472eb49b28eb17059c9c5b818876df5d970ca8c18459370507904184a22d1c",
+      "internal/nativecodex/runner_linux_test.go": "955b10d08409dc1c8d7ae91486ff4babfa2013c3e54b21057a9ad481d8d8c1ea",
+      "internal/nativecodex/runner_live_test.go": "1dc5b8096e032e5f004ced69da1b4536ebcc226f6d89929c000781a0e44beee2",
+      "internal/nativecodex/runner_unsupported.go": "77cbcd74ceff5aea97eec04055b009edb8bec66ba2f0cbc7e78fec2e7e3764d2"
+    }
+  }
+}
