@@ -39,10 +39,10 @@ func TestPinnedCavemanMCPManualCanary(t *testing.T) {
 		t.Fatal(err)
 	}
 	compressor := caveman.MCPCompressor{Binary: binary, RuntimeDir: t.TempDir(), Managed: true, Timeout: 20 * time.Second, IntegrityCheck: validate}
-	metrics, err := cavemaneval.Run(context.Background(), cavemaneval.Options{Root: t.TempDir(), Provider: "caveman", Compressor: compressor, ContextBudget: 8 << 10})
+	metrics, err := cavemaneval.Run(context.Background(), cavemaneval.Options{Root: t.TempDir(), Provider: "caveman", Compressor: compressor, ContextBudget: 8 << 10, RuntimeSHA256: cavemanMCPAMD64SHA256})
 	encoded, _ := json.Marshal(metrics)
 	t.Logf("PINNED_CAVEMAN_MCP_METRICS=%s", encoded)
-	if err != nil || !metrics.Passed() {
+	if err != nil || !metrics.QualityPassed() || !metrics.OptimizationVerified() {
 		t.Fatalf("pinned Caveman MCP canary failed: metrics=%+v err=%v", metrics, err)
 	}
 }

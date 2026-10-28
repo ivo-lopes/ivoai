@@ -6,8 +6,15 @@ IVOAI treats compression as a mutually exclusive choice for each session. The
 selection has three possible outcomes: Caveman, legacy Headroom, or Direct
 execution. Caveman and Headroom never form a chain. Caveman is the default for
 new installations and legacy configurations without an override; Direct remains
-the safety fallback, and Headroom remains temporarily available for compatibility
-and rollback during the observation window.
+the safety fallback. The Headroom component and explicit configuration are retained,
+but managed Codex/Claude wrapping is `unavailable_by_policy` and falls back to Direct.
+
+The pinned Headroom 0.40.0 wrappers register MCP/code-memory configuration in
+client-owned homes. Their documented `--no-mcp` option makes compression markers
+unactionable; a safe configuration-free path with exact recovery is not verified.
+IVOAI refuses managed wrapping before probes/startup. Binary installation/health
+remains separate from wrapper capability. This fixes a pre-existing optional path;
+it does not remove Headroom, change its pin or change the Caveman default.
 
 Caveman is a selectable `CompressionProvider` implementation and the requested
 default. The effective provider can still be Direct when fidelity, health, or

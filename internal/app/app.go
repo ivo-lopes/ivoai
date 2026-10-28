@@ -551,10 +551,7 @@ func configuredCompressionStatus(cfg config.Config, state config.State) statusVa
 	case "direct":
 		return statusValue{Text: configured + " / effective direct", Kind: terminalui.StatusSuccess}
 	case "headroom":
-		if cfg.Headroom.Enabled && componentPresent(state.Components["headroom"]) {
-			return statusValue{Text: configured + " / effective headroom", Kind: terminalui.StatusSuccess}
-		}
-		return statusValue{Text: configured + " / effective direct / fallback=headroom_unavailable", Kind: terminalui.StatusWarning}
+		return statusValue{Text: configured + " / effective direct / fallback=unavailable_by_policy", Kind: terminalui.StatusWarning}
 	case "caveman":
 		if componentPresent(state.Components["caveman"]) {
 			return statusValue{Text: configured + " / effective caveman", Kind: terminalui.StatusSuccess}

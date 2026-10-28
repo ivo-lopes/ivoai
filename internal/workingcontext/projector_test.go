@@ -61,6 +61,31 @@ func TestProjectorFailureOverridesCompressibleClassification(t *testing.T) {
 	}
 }
 
+func TestProjectorUnknownExplicitPayloadNeverGainsCompressionEligibility(t *testing.T) {
+	store, err := NewLocalStore(t.TempDir(), LocalOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	compressor := &testCompressor{fn: func(CompactRequest) (CompactResult, error) {
+		t.Fatal("unknown payload reached compressor")
+		return CompactResult{}, nil
+	}}
+	raw := []byte("complete exact unknown-format evidence")
+	result := (Projector{Store: store, Compressor: compressor}).Project(context.Background(), ProjectionInput{Owner: testOwner("1", ""), Raw: raw, Status: ResultCompleted, PayloadType: "unknown_authoritative_format", Fidelity: core.CompressionCompressible})
+	if result.Fidelity != core.CompressionExactRequired || compressor.calls != 0 || len(result.Evidence) != 1 {
+		t.Fatalf("unknown payload was compressed: %+v", result)
+	}
+	reader, _, err := store.Read(context.Background(), testOwner("1", ""), result.Evidence[0].Artifact.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer reader.Close()
+	exact, err := io.ReadAll(reader)
+	if err != nil || !bytes.Equal(exact, raw) {
+		t.Fatal("unknown payload lost exact source")
+	}
+}
+
 func TestProjectorCompressesOnlyAfterArtifactAndPreservesResultRef(t *testing.T) {
 	store, err := NewLocalStore(filepath.Join(t.TempDir(), "working-context"), LocalOptions{ID: sequentialIDs()})
 	if err != nil {

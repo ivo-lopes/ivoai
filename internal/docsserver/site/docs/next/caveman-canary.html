@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="generator" content="Docusaurus v3.10.2">
 <title data-rh="true">Caveman canary and fidelity evaluation | IVOAI</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="http://localhost:7780/docs/next/caveman-canary"><meta data-rh="true" property="og:locale" content="en_US"><meta data-rh="true" property="og:locale:alternate" content="pt_BR"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="Caveman canary and fidelity evaluation | IVOAI"><meta data-rh="true" name="description" content="The Caveman cutover is gated by evidence, not by compression ratio alone. The"><meta data-rh="true" property="og:description" content="The Caveman cutover is gated by evidence, not by compression ratio alone. The"><link data-rh="true" rel="icon" href="/img/favicon.svg"><link data-rh="true" rel="canonical" href="http://localhost:7780/docs/next/caveman-canary"><link data-rh="true" rel="alternate" href="http://localhost:7780/docs/next/caveman-canary" hreflang="en-US"><link data-rh="true" rel="alternate" href="http://localhost:7780/pt-BR/docs/next/caveman-canary" hreflang="pt-BR"><link data-rh="true" rel="alternate" href="http://localhost:7780/docs/next/caveman-canary" hreflang="x-default"><script data-rh="true" type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Caveman canary and fidelity evaluation","item":"http://localhost:7780/docs/next/caveman-canary"}]}</script><link rel="stylesheet" href="/assets/css/styles.c768eb50.css">
-<script src="/assets/js/runtime~main.e0edef82.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.2d4bad88.js" defer="defer"></script>
 <script src="/assets/js/main.441dc8c8.js" defer="defer"></script>
 </head>
 <body>
@@ -15,7 +15,15 @@
 <p>The Caveman cutover is gated by evidence, not by compression ratio alone. The
 canary compares Direct, Headroom and Caveman without changing the configured
 default. A single byte-exact mismatch, credential crossover, cross-purpose leak
-or silent corruption blocks promotion.</p>
+or silent corruption blocks promotion. Headroom&#x27;s managed wrappers currently use
+Direct due to <code>unavailable_by_policy</code>; a <code>headroom</code> fixture label is not a real run.</p>
+<p><code>QualityPassed()</code> checks the existing evidence/fact invariants and may pass for
+an intact degraded fallback. Historical <code>Passed()</code> remains its quality-only alias.
+<code>OptimizationVerified()</code> additionally requires a trusted harness&#x27;s reviewed runtime
+SHA-256, complete corpus coverage, accounted provider calls, an applied transform
+and no degradation, provider mismatch or compression failure. The opt-in pinned
+MCP gate requires both verdicts. Neither is whole-session token/cost certification;
+fake runtimes, missing providers and safe fallback are not optimization evidence.</p>
 <h2 class="anchor anchorTargetStickyNavbar_J2Vv" id="layers">Layers<a href="#layers" class="hash-link" aria-label="Direct link to Layers" title="Direct link to Layers" translate="no">​</a></h2>
 <p>The committed canary has three layers:</p>
 <ol>

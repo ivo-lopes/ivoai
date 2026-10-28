@@ -135,8 +135,11 @@ session sources, the launcher deliberately starts the official client directly
 regardless of whether Caveman or Headroom was requested. A lossy provider may
 shorten exact custom-tool results before the model sees them,
 including the end of an exact memory page. The launch prints this bypass and observed
-session metadata reports the provider-neutral bypass; Headroom remains available
-as a temporary explicit compatibility provider.
+session metadata reports the provider-neutral bypass. Headroom's component and
+explicit setting remain available, but its managed Codex/Claude wrapper is
+`unavailable_by_policy`: the pinned wrapper can modify client MCP configuration
+and no safe exact-recovery alternative is verified. IVOAI uses Direct once,
+before probing or running that wrapper, and preserves the chosen setting.
 
 For an explicit standalone OpenCode session, OpenCode keeps its native
 subscription-only provider. When the pinned Caveman runtime cannot proxy that

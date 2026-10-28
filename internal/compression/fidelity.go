@@ -44,6 +44,9 @@ func Classify(input FidelityInput) core.CompressionFidelity {
 	if input.Explicit == core.CompressionUnsupported {
 		return core.CompressionUnsupported
 	}
+	if input.Explicit != "" && input.Explicit != core.CompressionCompressible {
+		return core.CompressionExactRequired
+	}
 	if input.Authoritative || input.PolicyRelevant || input.Failed || input.RecoveryRequired {
 		return core.CompressionExactRequired
 	}
