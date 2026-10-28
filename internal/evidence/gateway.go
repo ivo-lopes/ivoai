@@ -55,10 +55,14 @@ const (
 
 // Request is created by the host after intent routing and capability admission.
 // QueryDigest includes the normalized operation, arguments and retrieval budget.
-// CurrentGeneration must observe additions, edits, renames and deletions.
+// For live indexed sources CurrentGeneration observes additions, edits, renames
+// and deletions. A host-issued immutable response uses its own nonce/digest;
+// that identity never asserts the current version or remote grant of a service.
 type Request struct {
 	// ProtectedRecovery opts into host-bound recovery and durable ID marking.
 	ProtectedRecovery bool
+	// ArtifactTTL is host policy; zero preserves the existing store default.
+	ArtifactTTL       time.Duration
 	Owner             workingcontext.Ownership
 	Scope             Scope
 	Source            string
@@ -221,7 +225,7 @@ func (g *Gateway) packet(ctx context.Context, r Request, generation string, doc 
 		}
 		defer func() { g.mu.Lock(); g.pendingBindings--; g.mu.Unlock() }()
 	}
-	artifact, err := g.store.Put(ctx, workingcontext.PutRequest{ProtectedRecovery: r.ProtectedRecovery, Kind: workingcontext.ArtifactStdout, MediaType: doc.MediaType, Owner: r.Owner, Sensitivity: doc.Sensitivity, Truncated: !doc.SourceComplete}, bytes.NewReader(doc.Raw))
+	artifact, err := g.store.Put(ctx, workingcontext.PutRequest{ProtectedRecovery: r.ProtectedRecovery, TTL: r.ArtifactTTL, Kind: workingcontext.ArtifactStdout, MediaType: doc.MediaType, Owner: r.Owner, Sensitivity: doc.Sensitivity, Truncated: !doc.SourceComplete}, bytes.NewReader(doc.Raw))
 	if err != nil {
 		return Packet{}, err
 	}
@@ -291,6 +295,9 @@ func (g *Gateway) Recover(ctx context.Context, r Request, ref Ref) ([]byte, erro
 
 func validate(r Request) error {
 	if !r.ReadOnly || r.Authorize == nil || r.CurrentGeneration == nil || r.BudgetBytes < 1 || r.BudgetBytes > 32768 || r.Owner.Validate() != nil {
+		return ErrDenied
+	}
+	if r.ArtifactTTL != 0 && (r.ArtifactTTL < time.Minute || r.ArtifactTTL > workingcontext.DefaultLimits().MaxTTL) {
 		return ErrDenied
 	}
 	if r.Source != "code" && r.Source != "memory" && r.Source != "context" && r.Source != "tool_read" {
