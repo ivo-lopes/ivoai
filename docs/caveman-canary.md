@@ -3,7 +3,16 @@
 The Caveman cutover is gated by evidence, not by compression ratio alone. The
 canary compares Direct, Headroom and Caveman without changing the configured
 default. A single byte-exact mismatch, credential crossover, cross-purpose leak
-or silent corruption blocks promotion.
+or silent corruption blocks promotion. Headroom's managed wrappers currently use
+Direct due to `unavailable_by_policy`; a `headroom` fixture label is not a real run.
+
+`QualityPassed()` checks the existing evidence/fact invariants and may pass for
+an intact degraded fallback. Historical `Passed()` remains its quality-only alias.
+`OptimizationVerified()` additionally requires a trusted harness's reviewed runtime
+SHA-256, complete corpus coverage, accounted provider calls, an applied transform
+and no degradation, provider mismatch or compression failure. The opt-in pinned
+MCP gate requires both verdicts. Neither is whole-session token/cost certification;
+fake runtimes, missing providers and safe fallback are not optimization evidence.
 
 ## Layers
 

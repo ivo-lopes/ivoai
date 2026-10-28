@@ -431,10 +431,10 @@ func TestAutoBlocksWhenBothSubscriptionsAreExhausted(t *testing.T) {
 	}
 }
 
-func TestAutoClaudeUsesCompatibleHeadroomWrapper(t *testing.T) {
+func TestAutoClaudeUsesDirectWhenHeadroomWrapperUnavailableByPolicy(t *testing.T) {
 	root := t.TempDir()
 	agentMarker := filepath.Join(root, "claude-launched")
-	a := autoTestApp(t, root, "#!/bin/sh\nexit 0\n", "#!/bin/sh\nprintf launched > '"+agentMarker+"'\n")
+	a := autoTestApp(t, root, "#!/bin/sh\nexit 0\n", "#!/bin/sh\nprintf launched >> '"+agentMarker+"'\n")
 	headroom := appExecutable(t, root, "headroom", `#!/bin/sh
 if [ "$1" = "--version" ]; then echo 'headroom 0.36.0'; exit 0; fi
 if [ "$1" = "wrap" ] && [ "$3" = "--help" ]; then exit 0; fi
@@ -463,8 +463,24 @@ exit 2
 		t.Fatalf("Headroom did not launch Claude Code: %v", err)
 	}
 	values, err := a.SessionList()
-	if err != nil || len(values) != 1 || !values[0].HeadroomUsed || values[0].State != session.StateCompleted {
+	if err != nil || len(values) != 1 || values[0].HeadroomUsed || values[0].CompressionUsed || values[0].State != session.StateCompleted {
 		t.Fatalf("automatic Headroom session=%+v err=%v", values, err)
+	}
+	if body, err := os.ReadFile(agentMarker); err != nil || string(body) != "launched" {
+		t.Fatal("Direct executor did not run exactly once")
+	}
+	found := false
+	for _, event := range values[0].Observability {
+		if event.RequestedProvider == "headroom" && event.Provider == "direct" && event.FallbackReason == "policy_denied" {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatal("Headroom policy fallback was not observable")
+	}
+	stored, _ := a.Store.Load()
+	if stored.Compression.Provider != "headroom" {
+		t.Fatal("explicit provider configuration was rewritten")
 	}
 }
 

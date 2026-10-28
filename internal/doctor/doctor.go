@@ -317,10 +317,7 @@ func effectiveCompression(cfg config.Config, headroomStatus headroom.Status, cav
 	case "direct":
 		return "direct", ""
 	case "headroom":
-		if cfg.Headroom.Enabled && headroomStatus.Installed && headroomStatus.Healthy {
-			return "headroom", ""
-		}
-		return "direct", "headroom_unavailable"
+		return "direct", "unavailable_by_policy"
 	case "caveman":
 		if cavemanStatus.Installed && cavemanStatus.Healthy {
 			return "caveman", ""
@@ -576,19 +573,20 @@ func componentMatrix(cfg config.Config, state config.State, report Report) core.
 			core.CapabilityCompressionBypass: core.SupportSupported,
 		},
 		Compatibility: compatibility(cavemanAvailable, "managed Caveman runtime is unavailable"),
-		Fallback:      core.Fallback{Allowed: true, Reason: "direct official executor remains available before launch"},
+		// The matrix must not silently select an unrequested proxy when the
+		// configured Headroom wrapper is refused. Actual launch fallback is Direct.
+		Fallback: core.Fallback{Allowed: cfg.Compression.Provider == "caveman", Reason: "direct official executor remains available before launch"},
 	})
-	headroomAvailable := cfg.Headroom.Enabled && report.Headroom.Healthy && (report.Headroom.CodexCompatible || report.Headroom.ClaudeCompatible)
 	values = append(values, core.ComponentStatus{
 		ID: core.ComponentCompression, Implementation: "headroom", Active: cfg.Compression.Provider == "headroom" && cfg.Headroom.Enabled,
-		Installed: report.Headroom.Installed, Managed: state.Components["headroom"].Managed, Available: headroomAvailable,
-		Health: health(headroomAvailable), Lifecycle: core.LifecycleStopped,
+		Installed: report.Headroom.Installed, Managed: state.Components["headroom"].Managed, Available: false,
+		Health: health(report.Headroom.Healthy), Lifecycle: core.LifecycleStopped,
 		Provenance: core.Provenance{Source: "official_probe", Version: report.Headroom.Version, Path: state.Components["headroom"].Path},
 		Capabilities: core.CapabilitySet{
-			core.CapabilityCompressionWrap:   map[bool]core.SupportState{true: core.SupportSupported, false: core.SupportUnsupported}[headroomAvailable],
+			core.CapabilityCompressionWrap:   core.SupportUnsupported,
 			core.CapabilityCompressionBypass: core.SupportSupported,
 		},
-		Compatibility: compatibility(headroomAvailable, "wrapper compatibility is unavailable"),
+		Compatibility: core.Compatibility{State: core.CompatibilityIncompatible, Reason: "unavailable_by_policy"},
 		Fallback:      core.Fallback{Allowed: true, Reason: "direct official executor remains available"},
 	})
 	orchestrationAvailable := cfg.Orchestration.Enabled && report.Ruflo.Installed && report.Ruflo.SafeMode && !report.Ruflo.ProviderExecution && !report.Ruflo.DurableMemory

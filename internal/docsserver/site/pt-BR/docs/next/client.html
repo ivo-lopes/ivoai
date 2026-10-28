@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="generator" content="Docusaurus v3.10.2">
 <title data-rh="true">Client | IVOAI</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="http://localhost:7780/pt-BR/docs/next/client"><meta data-rh="true" property="og:locale" content="pt_BR"><meta data-rh="true" property="og:locale:alternate" content="en_US"><meta data-rh="true" name="docusaurus_locale" content="pt-BR"><meta data-rh="true" name="docsearch:language" content="pt-BR"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="Client | IVOAI"><meta data-rh="true" name="description" content="Menu interativo"><meta data-rh="true" property="og:description" content="Menu interativo"><link data-rh="true" rel="icon" href="/pt-BR/img/favicon.svg"><link data-rh="true" rel="canonical" href="http://localhost:7780/pt-BR/docs/next/client"><link data-rh="true" rel="alternate" href="http://localhost:7780/docs/next/client" hreflang="en-US"><link data-rh="true" rel="alternate" href="http://localhost:7780/pt-BR/docs/next/client" hreflang="pt-BR"><link data-rh="true" rel="alternate" href="http://localhost:7780/docs/next/client" hreflang="x-default"><script data-rh="true" type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Client","item":"http://localhost:7780/pt-BR/docs/next/client"}]}</script><link rel="stylesheet" href="/pt-BR/assets/css/styles.ef9ae034.css">
-<script src="/pt-BR/assets/js/runtime~main.ed692ce7.js" defer="defer"></script>
+<script src="/pt-BR/assets/js/runtime~main.7a8d967b.js" defer="defer"></script>
 <script src="/pt-BR/assets/js/main.423c6b9f.js" defer="defer"></script>
 </head>
 <body>
@@ -90,8 +90,11 @@ não podem bloquear o launch.</p>
 sessão, o launcher inicia deliberadamente o client oficial de forma direta, independentemente de
 Caveman ou Headroom ter sido solicitado. Um provider lossy pode encurtar resultados exatos de
 custom tools antes que o modelo os veja, inclusive o fim exato de uma página de memória. O launch
-mostra esse bypass e a metadata observada da sessão reporta o bypass provider-neutral; Headroom
-permanece disponível como provider explícito temporário de compatibilidade.</p>
+mostra esse bypass e a metadata observada da sessão reporta o bypass provider-neutral.
+O componente Headroom e sua escolha explícita são mantidos, mas o wrapper gerenciado
+de Codex/Claude fica <code>unavailable_by_policy</code>: o wrapper pinado pode alterar a
+configuração MCP do cliente, sem alternativa segura com recuperação exata verificada.
+O IVOAI usa Direct uma vez, antes de sondar ou executar o wrapper, e preserva a escolha.</p>
 <p>Para uma sessão OpenCode standalone explícita, OpenCode mantém seu provider nativo somente de
 assinatura. Quando o runtime Caveman pinado não consegue fazer proxy desse provider, o preflight
 seleciona Direct antes do launch; o IVOAI não solicita API key, troca provider nem inicia OpenCode

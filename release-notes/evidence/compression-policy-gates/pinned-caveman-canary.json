@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "scope": "single output-representation canary, not AB/BA session benchmark",
+  "runtime_source": "e20f07e8152a0c0360f58c09e79d30ac94329991",
+  "runtime_sha256": "24339e645da66fb3580e3d9410743499845748238f01d0dc8097330fcb0f9bde",
+  "harness_runtime_source": "5e852b8458da24dda1a32d84d9d615b1b00257e9",
+  "harness_inputs_sha256": {
+    "internal/cavemaneval/live_test.go": "e04f9aa9d84bc2117670ec3109c2bdfedfc43cb15f1942ad58fae4f716179d1f",
+    "internal/cavemaneval/eval.go": "72c38b87a67629e0d96dcd318d889fe7267f30ac8a6263c06692df91daded2fe",
+    "internal/caveman/mcp.go": "6ecf40665b6b9aca1a831c0085c02a73cd9654b300e06778cdd4ad60d7778eb8",
+    "internal/workingcontext/projector.go": "f92d4d341b80f4c87389a69e5b8fef957f17175b94c0e18277dc9419d6e990fc",
+    "go.mod": "d1c486bcfb3a5e1127b4f47de7e62001c768ee744c42b6f96627f6895d026705",
+    "go.sum": "44f145c4f9477395f29442a17757c7de7b24df282e19c7e6ffddb58662e2553c"
+  },
+  "test_binary_sha256": "9e48d9858900f8aafa4e8607450f3f497c6fcaeb436d3fc0c49b43f8c8d89588",
+  "go_version": "go1.27.3",
+  "goarch": "amd64",
+  "goamd64": "v1",
+  "containment": {
+    "network": "unshared namespace",
+    "filesystem": "read-only /usr and two binaries; fresh tmpfs /tmp; proc/dev only",
+    "host_homes_and_repository_mounted": false,
+    "environment": "cleared; HOME/TMPDIR and explicit binary only",
+    "global_install": false,
+    "personal_configuration_access": false
+  },
+  "process": {
+    "exit_code": 0,
+    "timeout": false,
+    "wall_ms": 2367.856,
+    "runtime_cpu_and_rss": "UNKNOWN: collected wait resource counters bound wrapper/reaping, not proven provider aggregate"
+  },
+  "metrics": {
+    "provider": "caveman",
+    "token_basis": "heuristic_4_bytes",
+    "scenarios": 22,
+    "expected_scenarios": 22,
+    "bytes_before": 983089,
+    "bytes_in_context": 28131,
+    "estimated_tokens_before": 245773,
+    "estimated_tokens_in_context": 7033,
+    "context_ratio": 0.02861490668698358,
+    "latency": 2329783921,
+    "bypass_count": 5,
+    "degraded_count": 0,
+    "artifact_mismatch_count": 0,
+    "exact_required_mismatch_count": 0,
+    "semantic_mismatch_count": 0,
+    "observability_leak_count": 0,
+    "runtime_sha256": "24339e645da66fb3580e3d9410743499845748238f01d0dc8097330fcb0f9bde",
+    "compression_calls": 17,
+    "compression_applied": 1,
+    "compression_passthrough": 16,
+    "compression_failures": 0,
+    "provider_mismatch_count": 0
+  },
+  "quality_gate": "PASS",
+  "optimization_gate": "PASS: one applied transform, complete accounted corpus and no degradation",
+  "log_sha256": "53fd87988249e810241b9542e068b43fbf4be56022f9511c4f5c31a74ae14c76",
+  "limitations": [
+    "Single run, no matched Direct/ABBA repetition, no CPU/RSS attribution or ARM/no-AVX execution.",
+    "Bytes in context include the existing 8KiB projection budget, summaries and raw-reference bypass. The aggregate ratio is not Caveman compression ratio or whole-session/token savings.",
+    "Only one of 17 calls applied compression; 16 passed through and five scenarios bypassed compression.",
+    "Provider token/cost/quota and authenticated native inference were not exercised.",
+    "Exact recovery comes from IVOAI ArtifactStore; an ephemeral Caveman handle is not durable recovery proof."
+  ]
+}

@@ -29,4 +29,7 @@ func TestExplicitBypassCannotBeOverridden(t *testing.T) {
 	if got := Classify(FidelityInput{PayloadType: PayloadText, Explicit: core.CompressionBypass}); got != core.CompressionBypass {
 		t.Fatalf("fidelity=%s", got)
 	}
+	if got := Classify(FidelityInput{PayloadType: PayloadLog, Explicit: "unknown_future_fidelity"}); got != core.CompressionExactRequired {
+		t.Fatal("unknown explicit fidelity gained compression eligibility")
+	}
 }

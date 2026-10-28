@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="generator" content="Docusaurus v3.10.2">
 <title data-rh="true">Arquitetura do ivoai | IVOAI</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="http://localhost:7780/pt-BR/docs/next/architecture"><meta data-rh="true" property="og:locale" content="pt_BR"><meta data-rh="true" property="og:locale:alternate" content="en_US"><meta data-rh="true" name="docusaurus_locale" content="pt-BR"><meta data-rh="true" name="docsearch:language" content="pt-BR"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="Arquitetura do ivoai | IVOAI"><meta data-rh="true" name="description" content="Esta página preserva descrições históricas da arquitetura, originalmente baseadas"><meta data-rh="true" property="og:description" content="Esta página preserva descrições históricas da arquitetura, originalmente baseadas"><link data-rh="true" rel="icon" href="/pt-BR/img/favicon.svg"><link data-rh="true" rel="canonical" href="http://localhost:7780/pt-BR/docs/next/architecture"><link data-rh="true" rel="alternate" href="http://localhost:7780/docs/next/architecture" hreflang="en-US"><link data-rh="true" rel="alternate" href="http://localhost:7780/pt-BR/docs/next/architecture" hreflang="pt-BR"><link data-rh="true" rel="alternate" href="http://localhost:7780/docs/next/architecture" hreflang="x-default"><script data-rh="true" type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Arquitetura do ivoai","item":"http://localhost:7780/pt-BR/docs/next/architecture"}]}</script><link rel="stylesheet" href="/pt-BR/assets/css/styles.ef9ae034.css">
-<script src="/pt-BR/assets/js/runtime~main.ed692ce7.js" defer="defer"></script>
+<script src="/pt-BR/assets/js/runtime~main.7a8d967b.js" defer="defer"></script>
 <script src="/pt-BR/assets/js/main.423c6b9f.js" defer="defer"></script>
 </head>
 <body>
@@ -100,13 +100,14 @@ interface de ciclo de vida.</li>
 <li class=""><code>LegacyQdrantContextBackend</code> sobre o catálogo, o embedding local e o serviço de contexto
 Qdrant existentes. O contrato voltado ao agente permanece somente leitura; a ingestão continua sendo uma
 composição administrativa.</li>
-<li class=""><code>HeadroomCompressionProvider</code> sobre a sondagem e a invocação do wrapper existentes. A
-política de fidelidade IVOAI ainda decide quando resultados exatos de Memory/Context exigem um
-bypass, e o cliente oficial continua sendo o fallback direto.</li>
+<li class=""><code>HeadroomCompressionProvider</code> mantém saúde do binário separada do wrapper
+gerenciado. O wrapper Codex/Claude fica <code>unavailable_by_policy</code> antes de probes
+ou inicialização: alteração da configuração do cliente e recuperação exata não
+estão isoladas com segurança.</li>
 <li class=""><a class="" href="/pt-BR/docs/next/compression-provider">CompressionProvider: Caveman, Headroom e bypass direto</a>
 registra o padrão Caveman e o limite de migração. Os provedores são mutuamente
-exclusivos; Direct continua sendo o fallback de segurança, e Headroom explícito continua sendo um
-caminho temporário de compatibilidade.</li>
+exclusivos; Direct continua sendo o fallback de segurança. O componente Headroom
+e sua escolha explícita permanecem enquanto o wrapper gerenciado usa Direct.</li>
 <li class=""><a class="" href="/pt-BR/docs/next/caveman-canary">Canário do Caveman e avaliação de fidelidade</a> define o
 corpus determinístico, os critérios de exatidão byte a byte, os testes smoke opcionais com artefatos fixados e as
 evidências usadas para aprovar Caveman como padrão, mantendo o fallback Direct.</li>
