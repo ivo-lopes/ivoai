@@ -9,15 +9,18 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
+	"syscall"
 	"testing"
 	"time"
 
 	"github.com/coder/websocket"
 	"github.com/ivo-lopes/ivoai/internal/opencodebridge"
 	"github.com/ivo-lopes/ivoai/internal/routing"
+	"github.com/ivo-lopes/ivoai/internal/session"
 )
 
 type writeBuffer struct{ bytes.Buffer }
@@ -25,48 +28,113 @@ type writeBuffer struct{ bytes.Buffer }
 func (*writeBuffer) Close() error { return nil }
 
 func TestNativeCloseStopsBackgroundDirectoryWriters(t *testing.T) {
-	root := t.TempDir()
-	ready, leaked := filepath.Join(root, "ready"), filepath.Join(root, "leaked")
-	binary := filepath.Join(root, "fake-codex")
-	body := "#!/bin/sh\n(sleep 0.5; touch '" + leaked + "') &\ntouch '" + ready + "'\ncat >/dev/null\n"
-	if err := os.WriteFile(binary, []byte(body), 0700); err != nil {
-		t.Fatal(err)
-	}
-	catalog := opencodebridge.CatalogFromRegistry(routing.Registry{Providers: map[string]routing.ProviderCapability{"codex": {Provider: "codex", Authenticated: true, Models: []routing.ModelCapability{{Name: "fixture-strong", CapabilityTier: routing.TierStrong, SupportedEfforts: []string{"high"}, DefaultEffort: "high", Source: routing.SourceRuntimeVerified}}}}})
-	bridge, err := opencodebridge.Start(opencodebridge.Options{Frontend: "codex", Catalog: catalog, Runner: &fixtureRunner{}, Select: func(context.Context, string) (string, error) { return "codex", nil }, Status: func() opencodebridge.Status { return opencodebridge.Status{Frontend: "codex"} }})
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer bridge.Close(context.Background())
-	f, err := Start(context.Background(), Options{Binary: binary, Directory: root, RuntimeDir: root, SessionID: "cleanup", Bridge: bridge, Environment: []string{"PATH=/usr/bin:/bin", "HOME=" + root}})
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer f.Close()
-	for i := 0; i < 100; i++ {
-		if _, err := os.Stat(ready); err == nil {
-			break
-		}
-		time.Sleep(5 * time.Millisecond)
-	}
-	if _, err := os.Stat(ready); err != nil {
-		t.Fatal("fixture did not start")
-	}
-	args := strings.Join(f.Args(), " ")
-	if strings.Contains(args, "sandbox_mode=") || strings.Contains(args, "approval_policy=") {
-		t.Fatal("remote TUI permission overrides prevent native resume")
-	}
-	serverArgs := strings.Join(f.configArgs(), " ")
-	if !strings.Contains(serverArgs, `sandbox_mode="read-only"`) || !strings.Contains(serverArgs, `approval_policy="never"`) {
-		t.Fatal("owned App Server must retain fail-closed permission enforcement")
-	}
-	if !strings.Contains(args, "features.plugins=false") || !strings.Contains(args, "features.remote_plugin=false") {
-		t.Fatal("native plugin plane must remain disabled")
-	}
-	f.Close()
-	time.Sleep(600 * time.Millisecond)
-	if _, err := os.Stat(leaked); !os.IsNotExist(err) {
-		t.Fatal("native descendant survived frontend cleanup")
+	for _, closeBeforeTrigger := range []bool{false, true} {
+		t.Run(map[bool]string{false: "live_writer_control", true: "closed_writer"}[closeBeforeTrigger], func(t *testing.T) {
+			root := t.TempDir()
+			ready, trigger, leaked := filepath.Join(root, "ready"), filepath.Join(root, "trigger"), filepath.Join(root, "leaked")
+			pidFile := filepath.Join(root, "writer-pid")
+			binary := filepath.Join(root, "fake-codex")
+			// The writer cannot write the marker until the test releases it. A
+			// slow scheduler can no longer make it write before Close is called.
+			body := "#!/bin/sh\n(touch '" + ready + "'; while [ ! -f '" + trigger + "' ]; do sleep 0.01; done; touch '" + leaked + "') &\nprintf '%s' \"$!\" > '" + pidFile + "'\ncat >/dev/null\n"
+			if err := os.WriteFile(binary, []byte(body), 0700); err != nil {
+				t.Fatal(err)
+			}
+			catalog := opencodebridge.CatalogFromRegistry(routing.Registry{Providers: map[string]routing.ProviderCapability{"codex": {Provider: "codex", Authenticated: true, Models: []routing.ModelCapability{{Name: "fixture-strong", CapabilityTier: routing.TierStrong, SupportedEfforts: []string{"high"}, DefaultEffort: "high", Source: routing.SourceRuntimeVerified}}}}})
+			bridge, err := opencodebridge.Start(opencodebridge.Options{Frontend: "codex", Catalog: catalog, Runner: &fixtureRunner{}, Select: func(context.Context, string) (string, error) { return "codex", nil }, Status: func() opencodebridge.Status { return opencodebridge.Status{Frontend: "codex"} }})
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer bridge.Close(context.Background())
+			f, err := Start(context.Background(), Options{Binary: binary, Directory: root, RuntimeDir: root, SessionID: "cleanup", Bridge: bridge, Environment: []string{"PATH=/usr/bin:/bin", "HOME=" + root}})
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer f.Close()
+			for i := 0; i < 100; i++ {
+				_, readyErr := os.Stat(ready)
+				_, pidErr := os.Stat(pidFile)
+				if readyErr == nil && pidErr == nil {
+					break
+				}
+				time.Sleep(5 * time.Millisecond)
+			}
+			if _, err := os.Stat(ready); err != nil {
+				t.Fatal("fixture writer did not become ready")
+			}
+			encodedPID, err := os.ReadFile(pidFile)
+			if err != nil {
+				t.Fatal(err)
+			}
+			pid, err := strconv.Atoi(string(encodedPID))
+			if err != nil || pid <= 0 {
+				t.Fatal("invalid fixture PID")
+			}
+			identity := session.ProcessStart(pid)
+			if identity == "" {
+				t.Fatal("fixture process identity unavailable")
+			}
+			writerAlive := func() bool {
+				if !session.ProcessMatches(pid, identity) {
+					return false
+				}
+				stat, err := os.ReadFile("/proc/" + strconv.Itoa(pid) + "/stat")
+				if err != nil {
+					return true
+				}
+				end := strings.LastIndexByte(string(stat), ')')
+				if end < 0 {
+					return true
+				}
+				fields := strings.Fields(string(stat[end+1:]))
+				return len(fields) == 0 || fields[0] != "Z" && fields[0] != "X"
+			}
+			t.Cleanup(func() {
+				f.Close()
+				if session.ProcessMatches(pid, identity) {
+					_ = syscall.Kill(pid, syscall.SIGKILL)
+				}
+			})
+			args := strings.Join(f.Args(), " ")
+			if strings.Contains(args, "sandbox_mode=") || strings.Contains(args, "approval_policy=") {
+				t.Fatal("remote TUI permission overrides prevent native resume")
+			}
+			serverArgs := strings.Join(f.configArgs(), " ")
+			if !strings.Contains(serverArgs, `sandbox_mode="read-only"`) || !strings.Contains(serverArgs, `approval_policy="never"`) {
+				t.Fatal("owned App Server must retain fail-closed permission enforcement")
+			}
+			if !strings.Contains(args, "features.plugins=false") || !strings.Contains(args, "features.remote_plugin=false") {
+				t.Fatal("native plugin plane must remain disabled")
+			}
+			if _, err := os.Stat(leaked); !os.IsNotExist(err) {
+				t.Fatal("writer bypassed causal trigger")
+			}
+			if closeBeforeTrigger {
+				f.Close()
+				for i := 0; i < 100 && writerAlive(); i++ {
+					time.Sleep(5 * time.Millisecond)
+				}
+				if writerAlive() {
+					t.Fatal("native writer survived frontend cleanup before trigger")
+				}
+			}
+			if err := os.WriteFile(trigger, []byte("release fixture writer"), 0600); err != nil {
+				t.Fatal(err)
+			}
+			if !closeBeforeTrigger {
+				for i := 0; i < 100; i++ {
+					if _, err := os.Stat(leaked); err == nil {
+						break
+					}
+					time.Sleep(5 * time.Millisecond)
+				}
+				if _, err := os.Stat(leaked); err != nil {
+					t.Fatal("live control did not prove the writer can create its marker")
+				}
+			} else if _, err := os.Stat(leaked); !os.IsNotExist(err) {
+				t.Fatal("native writer wrote after frontend cleanup")
+			}
+		})
 	}
 }
 
@@ -378,3 +446,42 @@ func TestLiveNativeAppServerAdmission(t *testing.T) {
 }
 
 var _ io.WriteCloser = (*writeBuffer)(nil)
+
+func TestNativePickerIsolatesSharedClaudeCatalog(t *testing.T) {
+	catalog := opencodebridge.CatalogFromRegistry(routing.Registry{Providers: map[string]routing.ProviderCapability{
+		"codex":  {Authenticated: true, Models: []routing.ModelCapability{{Name: "fixture-codex-boundary", CapabilityTier: routing.TierStrong, Source: routing.SourceRuntimeVerified}}},
+		"claude": {Authenticated: true, Models: []routing.ModelCapability{{Name: "fixture-claude-boundary", CapabilityTier: routing.TierStrong, Source: routing.SourceRuntimeVerified}}},
+	}}).RestrictedTo("codex", "claude")
+	bridge, err := opencodebridge.Start(opencodebridge.Options{Catalog: catalog, Runner: &fixtureRunner{}, Select: func(context.Context, string) (string, error) { return "codex", nil }, Status: func() opencodebridge.Status { return opencodebridge.Status{} }})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer bridge.Close(context.Background())
+	model, ok := catalog.StrongPrimary("codex")
+	if !ok {
+		t.Fatal("control model missing")
+	}
+	var hasClaude bool
+	for _, entry := range catalog.Entries() {
+		hasClaude = hasClaude || entry.Executor == "claude"
+	}
+	if !hasClaude {
+		t.Fatal("shared control lost Claude")
+	}
+	upstream := &writeBuffer{}
+	f := &Facade{ctx: context.Background(), options: Options{Bridge: bridge}, upstream: upstream, threads: map[string]bool{"fixture": true}, model: model.ID}
+	list, _ := json.Marshal(f.models())
+	if strings.Contains(string(list), "fixture-claude-boundary") || !strings.Contains(string(list), "fixture-codex-boundary") {
+		t.Fatal("native picker exposed other executor")
+	}
+	for _, m := range []string{"fixture-claude-boundary", "fixture-codex-boundary"} {
+		params, _ := json.Marshal(map[string]any{"threadId": "fixture", "input": []map[string]string{{"type": "text", "text": "Inspect the fixture"}}, "model": m})
+		f.handle(rpc{ID: json.RawMessage(`1`), Method: "turn/start", Params: params})
+		if m == "fixture-claude-boundary" && (f.active != nil || upstream.Len() != 0) {
+			t.Fatal("non-Codex model reached native admission")
+		}
+		if m == "fixture-codex-boundary" && (f.active == nil || upstream.Len() == 0) {
+			t.Fatal("Codex positive control failed")
+		}
+	}
+}

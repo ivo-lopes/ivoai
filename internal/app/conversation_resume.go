@@ -46,6 +46,9 @@ func (a *App) SessionRecover(ctx context.Context, id string) error {
 	if value.Mode != session.ModeAuto || value.Coordinator != "native" {
 		return errors.New("INTERRUPTED_RECOVERY_NOT_SUPPORTED")
 	}
+	if err := store.CheckNativeProviders(value); err != nil {
+		return err
+	}
 	if _, err := orchestrator.ReconcileRecovery(ctx, store, id); err != nil {
 		return err
 	}
@@ -68,6 +71,11 @@ func (a *App) SessionResume(ctx context.Context, id string) error {
 		frontend := value.Frontend
 		if override, _ := ctx.Value(resumeFrontendKey{}).(string); override != "" {
 			frontend = override
+		}
+		target := value
+		target.Frontend = frontend
+		if err := (session.Store{Root: a.Store.Paths.SessionsDir}).CheckNativeProviders(target); err != nil {
+			return err
 		}
 		if frontend == "codex" && value.PrimaryExecutor != "codex" {
 			return errors.New("CODEX_FRONTEND_REQUIRES_CODEX_PRIMARY: use explicit provider handoff")

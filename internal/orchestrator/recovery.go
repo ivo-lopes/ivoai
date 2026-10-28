@@ -31,6 +31,9 @@ func ReconcileRecovery(ctx context.Context, store session.Store, id string) (Rec
 	if err != nil {
 		return RecoveryPreview{}, errors.New("CHECKPOINT_UNAVAILABLE")
 	}
+	if err := session.CheckNativeProviderSnapshot(v, &c); err != nil {
+		return RecoveryPreview{}, err
+	}
 	if c.Recovery == nil || c.Recovery.Integrated || c.Recovery.Plan.ID != v.PlanID || c.Recovery.Directory != v.WorkingDirectory {
 		return RecoveryPreview{}, errors.New("CHECKPOINT_NOT_RECOVERABLE")
 	}

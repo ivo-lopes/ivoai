@@ -20,7 +20,6 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/orchestration"
 	"github.com/ivo-lopes/ivoai/internal/orchestrator"
 	"github.com/ivo-lopes/ivoai/internal/platform"
-	"github.com/ivo-lopes/ivoai/internal/quota"
 	"github.com/ivo-lopes/ivoai/internal/routing"
 	"github.com/ivo-lopes/ivoai/internal/session"
 	"github.com/ivo-lopes/ivoai/internal/terminalui"
@@ -373,6 +372,9 @@ func (a *App) OrchestratorServe(ctx context.Context, id string) error {
 	if err != nil {
 		return err
 	}
+	if err := store.CheckNativeProviders(value); err != nil {
+		return err
+	}
 	if value.CodexPath != "" {
 		state, err = pinnedCodexState(state, value)
 		if err != nil {
@@ -390,15 +392,7 @@ func (a *App) OrchestratorServe(ctx context.Context, id string) error {
 		a.warn("WorkingContext artifact store is degraded; raw worker output will not be injected into primary context", workingErr)
 	}
 	knowledgeServers := runtimeKnowledgeServers(cfg.MCP.Servers)
-	native := a.nativeOpenCode(cfg, state, value.WorkingDirectory, filepath.Join(runtimeDir, "native-worker"), nil, true)
-	quotaManager := a.automaticQuotaManager(cfg, state)
-	if native != nil {
-		quotaManager.Probes[quota.ProviderOpenCode] = native
-	}
-	registry := routing.Discoverer{CodexPath: state.Components["codex"].Path, ClaudePath: state.Components["claude-code"].Path, CachePath: filepath.Join(a.Store.Paths.CacheDir, "capabilities.json")}.Discover(ctx)
-	if nativeCapabilityAvailable(ctx, native) {
-		registry.Providers["opencode"] = native.Capability()
-	}
+	native, quotaManager, registry := a.workerProviders(ctx, cfg, state, value, runtimeDir)
 	var lifecycle orchestrator.LifecycleControl = orchestration.RufloOrchestratorAdapter{Control: orchestration.ControlPlane{Manager: a.orchestrationManager(state), RuntimeDir: runtimeDir}, Managed: state.Components["ruflo"].Managed}
 	if value.Coordinator == "native" {
 		lifecycle = orchestration.NativeOrchestrator{Store: store, SessionID: id}

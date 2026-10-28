@@ -145,6 +145,23 @@ func DefaultCatalog() []Spec {
 	return catalog
 }
 
+// ClientSetupCatalog leaves the reviewed legacy catalog available for explicit
+// compatibility setup. Default client setup/update no longer installs, repairs,
+// probes or adopts OpenCode, and does not remove its existing state or files.
+func ClientSetupCatalog(includeLegacyOpenCode bool) []Spec {
+	catalog := DefaultCatalog()
+	if includeLegacyOpenCode {
+		return catalog
+	}
+	result := make([]Spec, 0, len(catalog))
+	for _, spec := range catalog {
+		if spec.Name != "opencode" {
+			result = append(result, spec)
+		}
+	}
+	return result
+}
+
 type Installer struct {
 	Runner  platform.Runner
 	Store   *config.Store

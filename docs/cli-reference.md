@@ -10,7 +10,7 @@ Usage:
   ivoai admin serve [--listen 127.0.0.1:7781]
   ivoai admin access create [--ttl 10m] | list | revoke <id>
   ivoai status [--json]
-  ivoai setup [--mode client|server]
+  ivoai setup [--mode client|server] [--legacy-opencode]
   ivoai doctor [--json] [--inventory]
   ivoai update [--dry-run] | update --rollback [--force]
   ivoai update --codex [--rollback]
