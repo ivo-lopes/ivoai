@@ -21,11 +21,11 @@ func TestCanonicalHelpCoversPublicCommandStructure(t *testing.T) {
 	usage(&output)
 	help := output.String()
 	_, source, _, _ := runtime.Caller(0)
-	files := []string{filepath.Join(filepath.Dir(source), "cli.go"), filepath.Join(filepath.Dir(source), "monitor.go"), filepath.Join(filepath.Dir(source), "automation_profiles.go")}
+	files := []string{filepath.Join(filepath.Dir(source), "cli.go"), filepath.Join(filepath.Dir(source), "monitor.go"), filepath.Join(filepath.Dir(source), "automation_profiles.go"), filepath.Join(filepath.Dir(source), "admin.go")}
 	functions := map[string]bool{
 		"runCommand": true, "runSession": true, "runConnect": true,
 		"runDisconnect": true, "runMemory": true, "runConfig": true,
-		"runProject": true, "runMonitor": true, "runAutomationProfile": true,
+		"runProject": true, "runMonitor": true, "runAutomationProfile": true, "runAdmin": true,
 	}
 	assertSourceSurfaceDocumented(t, files, functions, help)
 }

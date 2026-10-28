@@ -15,8 +15,12 @@ import (
 )
 
 type Server struct {
-	Store           *Store
-	Issuer          string
+	Store  *Store
+	Issuer string
+	// ResourcePath is host configured; empty preserves the existing /mcp audience.
+	ResourcePath string
+	// CSRFCookieName separates browser flows sharing a loopback host.
+	CSRFCookieName  string
 	mu              sync.Mutex
 	peers           map[string]rateWindow
 	authorizationMu sync.Mutex
@@ -33,7 +37,20 @@ type completedAuthorization struct {
 	ExpiresAt      time.Time
 }
 
-func (s *Server) Resource() string { return strings.TrimRight(s.Issuer, "/") + "/mcp" }
+func (s *Server) Resource() string {
+	path := s.ResourcePath
+	if path == "" {
+		path = "/mcp"
+	}
+	return strings.TrimRight(s.Issuer, "/") + path
+}
+
+func (s *Server) csrfCookieName() string {
+	if s.CSRFCookieName != "" {
+		return s.CSRFCookieName
+	}
+	return "ivoai_oauth_csrf"
+}
 
 func (s *Server) allowed(r *http.Request) bool {
 	s.mu.Lock()
@@ -92,10 +109,10 @@ func jsonResponse(w http.ResponseWriter, status int, v any) {
 	_ = json.NewEncoder(w).Encode(v)
 }
 func (s *Server) metadata(w http.ResponseWriter, _ *http.Request) {
-	jsonResponse(w, 200, map[string]any{"issuer": s.Issuer, "authorization_endpoint": s.Issuer + "/oauth/authorize", "token_endpoint": s.Issuer + "/oauth/token", "registration_endpoint": s.Issuer + "/oauth/register", "revocation_endpoint": s.Issuer + "/oauth/revoke", "response_types_supported": []string{"code"}, "grant_types_supported": []string{"authorization_code", "refresh_token"}, "code_challenge_methods_supported": []string{"S256"}, "token_endpoint_auth_methods_supported": []string{"none"}, "scopes_supported": DefaultScopes})
+	jsonResponse(w, 200, map[string]any{"issuer": s.Issuer, "authorization_endpoint": s.Issuer + "/oauth/authorize", "token_endpoint": s.Issuer + "/oauth/token", "registration_endpoint": s.Issuer + "/oauth/register", "revocation_endpoint": s.Issuer + "/oauth/revoke", "response_types_supported": []string{"code"}, "grant_types_supported": []string{"authorization_code", "refresh_token"}, "code_challenge_methods_supported": []string{"S256"}, "token_endpoint_auth_methods_supported": []string{"none"}, "scopes_supported": s.Store.DefaultScopeNames()})
 }
 func (s *Server) resourceMetadata(w http.ResponseWriter, _ *http.Request) {
-	jsonResponse(w, 200, map[string]any{"resource": s.Resource(), "authorization_servers": []string{s.Issuer}, "scopes_supported": DefaultScopes, "bearer_methods_supported": []string{"header"}})
+	jsonResponse(w, 200, map[string]any{"resource": s.Resource(), "authorization_servers": []string{s.Issuer}, "scopes_supported": s.Store.DefaultScopeNames(), "bearer_methods_supported": []string{"header"}})
 }
 func (s *Server) register(w http.ResponseWriter, r *http.Request) {
 	if !s.allowed(r) {
@@ -167,7 +184,7 @@ func supportedValues(values []string, allowed ...string) bool {
 	return true
 }
 
-var authorizePage = template.Must(template.New("authorize").Parse(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Authorize ivoai</title><style>body{font:16px system-ui;background:#111827;color:#e5e7eb;max-width:42rem;margin:3rem auto;padding:1rem}main{border:1px solid #374151;border-radius:12px;padding:2rem}input{box-sizing:border-box;width:100%;padding:.8rem;margin:.5rem 0 1rem;background:#0b1220;color:white;border:1px solid #4b5563;border-radius:7px}button{padding:.8rem 1.2rem;background:#06b6d4;color:#082f49;border:0;border-radius:7px;font-weight:bold}.scopes{color:#a78bfa}.note{color:#9ca3af}</style></head><body><main><h1>ivoai web access</h1><p><strong>{{.Client}}</strong> requested:</p><p class="scopes">{{.Scopes}}</p><p class="note">Your activation code determines which of these permissions are granted.</p><form method="post"><input type="hidden" name="csrf" value="{{.CSRF}}"><input type="hidden" name="state" value="{{.State}}"><label>One-time activation code</label><input type="password" name="activation_code" autocomplete="one-time-code" required><button type="submit">Authorize</button></form></main></body></html>`))
+var authorizePage = template.Must(template.New("authorize").Parse(`<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Authorize ivoai</title><style>body{font:16px system-ui;background:#111827;color:#e5e7eb;max-width:42rem;margin:3rem auto;padding:1rem}main{border:1px solid #374151;border-radius:12px;padding:2rem}input{box-sizing:border-box;width:100%;padding:.8rem;margin:.5rem 0 1rem;background:#0b1220;color:white;border:1px solid #4b5563;border-radius:7px}button{padding:.8rem 1.2rem;background:#06b6d4;color:#082f49;border:0;border-radius:7px;font-weight:bold}.scopes{color:#a78bfa}.note{color:#9ca3af}</style></head><body><main><h1>ivoai web access</h1><p><strong>{{.Client}}</strong> requested:</p><p class="scopes">{{.Scopes}}</p><p class="note">Your activation code determines which of these permissions are granted.</p><form method="post"><input type="hidden" name="csrf" value="{{.CSRF}}"><input type="hidden" name="state" value="{{.State}}"><label for="activation_code">One-time activation code</label><input id="activation_code" type="password" name="activation_code" autocomplete="one-time-code" required><button type="submit">Authorize</button></form></main></body></html>`))
 
 func (s *Server) parseAuthorize(r *http.Request) (Client, string, string, string, []string, error) {
 	q := r.URL.Query()
@@ -209,7 +226,7 @@ func (s *Server) authorizeForm(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid authorization request", 400)
 		return
 	}
-	http.SetCookie(w, &http.Cookie{Name: "ivoai_oauth_csrf", Value: csrf, Path: "/oauth/authorize", HttpOnly: true, Secure: strings.HasPrefix(s.Issuer, "https://"), SameSite: http.SameSiteLaxMode, MaxAge: 600})
+	http.SetCookie(w, &http.Cookie{Name: s.csrfCookieName(), Value: csrf, Path: "/oauth/authorize", HttpOnly: true, Secure: strings.HasPrefix(s.Issuer, "https://"), SameSite: http.SameSiteLaxMode, MaxAge: 600})
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; form-action 'self' "+callbackOrigin+"; frame-ancestors 'none'")
 	_ = authorizePage.Execute(w, map[string]any{"Client": c.Name, "State": state, "CSRF": csrf, "Scopes": strings.Join(scopes, " ")})
@@ -242,7 +259,7 @@ func (s *Server) authorize(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid authorization request", 400)
 		return
 	}
-	cookie, err := r.Cookie("ivoai_oauth_csrf")
+	cookie, err := r.Cookie(s.csrfCookieName())
 	if err != nil || subtle.ConstantTimeCompare([]byte(cookie.Value), []byte(r.FormValue("csrf"))) != 1 {
 		http.Error(w, "Invalid authorization request", 400)
 		return

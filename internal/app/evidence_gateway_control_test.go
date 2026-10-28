@@ -138,6 +138,9 @@ type gatewayControlReceipt struct {
 // Both arms execute identical host calls and retain CodeIntel's normal cache.
 func runGatewayOfflineControls(t *testing.T) gatewayControlReceipt {
 	t.Helper()
+	// Keep this established host-store control separate from the opt-in public
+	// protected reader. G0 has dedicated admission/rollback gates.
+	t.Setenv(protectedEvidenceFlag, "0")
 	// Refuse inherited Git redirection before creating a fixture; never operate
 	// on a caller's index/object store or run a caller's init template hooks.
 	for _, key := range []string{"GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_OBJECT_DIRECTORY", "GIT_ALTERNATE_OBJECT_DIRECTORIES", "GIT_COMMON_DIR", "GIT_CONFIG_PARAMETERS", "GIT_CONFIG", "GIT_EXEC_PATH"} {
@@ -244,6 +247,9 @@ func runGatewayOfflineControls(t *testing.T) gatewayControlReceipt {
 				return value
 			}
 			first = run("primary_cold", primaryOwner, primary, false, false)
+			if workingcontext.ProtectedArtifactID(first.Artifact.ID) {
+				t.Fatal("host-store control unexpectedly enabled protected public recovery")
+			}
 			warm := run("primary_warm", primaryOwner, primary, true, false)
 			if warm.Artifact.ID == first.Artifact.ID {
 				t.Fatal("warm retrieval did not reissue artifact")

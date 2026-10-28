@@ -1,0 +1,186 @@
+diff --git a/packages/core/src/flag/flag.ts b/packages/core/src/flag/flag.ts
+index a0eb78a..6b098d7 100644
+--- a/packages/core/src/flag/flag.ts
++++ b/packages/core/src/flag/flag.ts
+@@ -13,6 +13,8 @@ function enabledByExperimental(key: string) {
+ }
+ 
+ export const Flag = {
++  // IVOAI private managed runtime only; upstream behavior is unchanged by default.
++  IVOAI_MANAGED_LOCAL_PLUGINS: truthy("IVOAI_MANAGED_LOCAL_PLUGINS"),
+   OTEL_EXPORTER_OTLP_ENDPOINT: process.env["OTEL_EXPORTER_OTLP_ENDPOINT"],
+   OTEL_EXPORTER_OTLP_HEADERS: process.env["OTEL_EXPORTER_OTLP_HEADERS"],
+ 
+diff --git a/packages/core/src/npm.ts b/packages/core/src/npm.ts
+index 94e573d..2a90708 100644
+--- a/packages/core/src/npm.ts
++++ b/packages/core/src/npm.ts
+@@ -1,6 +1,7 @@
+ export * as Npm from "./npm"
+ 
+ import path from "path"
++import { Flag } from "./flag/flag"
+ import { createRequire } from "module"
+ import { pathToFileURL } from "url"
+ import npa from "npm-package-arg"
+@@ -87,6 +88,13 @@ const layer = Layer.effect(
+     const directory = (pkg: string) => path.join(global.cache, "packages", sanitize(pkg))
+     const reify = (input: { dir: string; add?: string[] }) =>
+       Effect.gen(function* () {
++        if (Flag.IVOAI_MANAGED_LOCAL_PLUGINS) {
++          return yield* new InstallFailedError({
++            add: input.add,
++            dir: input.dir,
++            cause: "IVOAI_MANAGED_NPM_INSTALL_DENIED",
++          })
++        }
+         yield* flock.acquire(`npm-install:${input.dir}`)
+         const { Arborist } = yield* Effect.promise(() => import("@npmcli/arborist"))
+         const add = input.add ?? []
+diff --git a/packages/opencode/src/config/config.ts b/packages/opencode/src/config/config.ts
+index aefe349..ffc0ec4 100644
+--- a/packages/opencode/src/config/config.ts
++++ b/packages/opencode/src/config/config.ts
+@@ -32,6 +32,7 @@ import { ConfigManaged } from "./managed"
+ import { ConfigParse } from "./parse"
+ import { ConfigPaths } from "./paths"
+ import { ConfigPlugin } from "./plugin"
++import { assertIvoaiManagedPlugin } from "../plugin/ivoai-managed"
+ import { ConfigVariable } from "./variable"
+ import { ConfigV2Compat } from "./v2-compat"
+ import { Npm } from "@opencode-ai/core/npm"
+@@ -351,6 +352,9 @@ const layer = Layer.effect(
+           kind?: ConfigPlugin.Scope,
+         ) {
+           if (!list?.length) return
++          for (const spec of list) {
++            yield* Effect.promise(() => assertIvoaiManagedPlugin(ConfigPlugin.pluginSpecifier(spec), "server"))
++          }
+           const hit = kind ?? (yield* pluginScopeForSource(source))
+           // Merge newly seen plugin origins with previously collected ones, then dedupe by plugin identity while
+           // keeping the winning source/scope metadata for downstream installs, writes, and diagnostics.
+@@ -449,7 +453,7 @@ const layer = Layer.effect(
+ 
+           yield* ensureGitignore(dir).pipe(Effect.orDie)
+ 
+-          const dep = yield* npmSvc
++          const dep = yield* (Flag.IVOAI_MANAGED_LOCAL_PLUGINS ? Effect.void : npmSvc
+             .install(dir, {
+               add: [
+                 {
+@@ -457,7 +461,7 @@ const layer = Layer.effect(
+                   version: InstallationLocal ? undefined : "1.19.0",
+                 },
+               ],
+-            })
++            }))
+             .pipe(
+               Effect.exit,
+               Effect.tap((exit) =>
+diff --git a/packages/opencode/src/config/tui.ts b/packages/opencode/src/config/tui.ts
+index 17fc6be..5a2027a 100644
+--- a/packages/opencode/src/config/tui.ts
++++ b/packages/opencode/src/config/tui.ts
+@@ -15,6 +15,7 @@ import { Global } from "@opencode-ai/core/global"
+ import { FSUtil } from "@opencode-ai/core/fs-util"
+ import { CurrentWorkingDirectory } from "./tui-cwd"
+ import { ConfigPlugin } from "@/config/plugin"
++import { assertIvoaiManagedPlugin } from "@/plugin/ivoai-managed"
+ import { TuiKeybind } from "@opencode-ai/tui/config/keybind"
+ import { InstallationLocal } from "@opencode-ai/core/installation/version"
+ import { makeRuntime } from "@opencode-ai/core/effect/runtime"
+@@ -155,6 +156,9 @@ const loadState = Effect.fn("TuiConfig.loadState")(function* (ctx: { directory:
+       }
+       acc.result = mergeDeep(acc.result, data)
+       if (!data.plugin?.length) return
++      for (const spec of data.plugin) {
++        yield* Effect.promise(() => assertIvoaiManagedPlugin(ConfigPlugin.pluginSpecifier(spec as ConfigPlugin.Origin["spec"]), "tui"))
++      }
+ 
+       const scope = pluginScope(file, ctx)
+       const plugins = ConfigPlugin.deduplicatePluginOrigins([
+@@ -232,7 +236,7 @@ const layer = Layer.effect(
+     const npm = yield* Npm.Service
+     const data = yield* loadState({ directory })
+     const deps = yield* Effect.forEach(
+-      data.dirs,
++      Flag.IVOAI_MANAGED_LOCAL_PLUGINS ? [] : data.dirs,
+       (dir) =>
+         npm
+           .install(dir, {
+diff --git a/packages/opencode/src/plugin/ivoai-managed.ts b/packages/opencode/src/plugin/ivoai-managed.ts
+new file mode 100644
+index 0000000..f85e55f
+--- /dev/null
++++ b/packages/opencode/src/plugin/ivoai-managed.ts
+@@ -0,0 +1,31 @@
++// Reviewed IVOAI managed entrypoints use only host-bundled runtime modules.
++// This opt-in is set by the private IVOAI launcher, never a project config.
++import fs from "node:fs/promises"
++import path from "node:path"
++import { fileURLToPath } from "node:url"
++import { Flag } from "@opencode-ai/core/flag/flag"
++
++export async function assertIvoaiManagedPlugin(spec: string, kind: "server" | "tui") {
++  if (!Flag.IVOAI_MANAGED_LOCAL_PLUGINS) return
++  const denied = () => new Error("IVOAI_MANAGED_PLUGIN_DENIED: only the reviewed private local entrypoint is allowed")
++  const assets = process.env.IVOAI_MANAGED_ASSETS_DIR
++  if (!assets || !path.isAbsolute(assets)) throw denied()
++  let entry: string
++  try {
++    const url = new URL(spec)
++    if (url.protocol !== "file:" || url.host || url.search || url.hash) throw denied()
++    entry = fileURLToPath(url)
++  } catch {
++    throw denied()
++  }
++  const root = path.resolve(assets)
++  const expected = path.join(root, kind === "server" ? "server-plugin.mjs" : "tui-plugin.tsx")
++  if (entry !== expected) throw denied()
++  const [realRoot, realEntry, rootInfo, entryInfo] = await Promise.all([
++    fs.realpath(root), fs.realpath(entry), fs.lstat(root), fs.lstat(entry),
++  ])
++  const uid = process.getuid?.()
++  if (realRoot !== root || realEntry !== expected || !rootInfo.isDirectory() || !entryInfo.isFile() ||
++      (rootInfo.mode & 0o077) !== 0 || (entryInfo.mode & 0o077) !== 0 ||
++      uid === undefined || rootInfo.uid !== uid || entryInfo.uid !== uid) throw denied()
++}
+diff --git a/packages/opencode/src/plugin/loader.ts b/packages/opencode/src/plugin/loader.ts
+index 94876b4..4c6d4e0 100644
+--- a/packages/opencode/src/plugin/loader.ts
++++ b/packages/opencode/src/plugin/loader.ts
+@@ -11,6 +11,7 @@ import {
+ import { ConfigPlugin } from "@/config/plugin"
+ import { ConfigPluginV1 } from "@opencode-ai/core/v1/config/plugin"
+ import { InstallationVersion } from "@opencode-ai/core/installation/version"
++import { assertIvoaiManagedPlugin } from "./ivoai-managed"
+ 
+ export namespace PluginLoader {
+   // A normalized plugin declaration derived from config before any filesystem or npm work happens.
+@@ -91,6 +92,12 @@ export namespace PluginLoader {
+     | { ok: false; stage: "missing"; value: Missing }
+     | { ok: false; stage: "install" | "entry" | "compatibility"; error: unknown }
+   > {
++    // Reject managed package/remote/unreviewed entries before resolution or npm work.
++    try {
++      await assertIvoaiManagedPlugin(plan.spec, kind)
++    } catch (error) {
++      return { ok: false, stage: "install", error }
++    }
+     // First make sure the plugin exists locally, installing npm plugins on demand.
+     let target = ""
+     try {
+diff --git a/packages/opencode/src/plugin/tui/runtime.ts b/packages/opencode/src/plugin/tui/runtime.ts
+index 2a88ad3..5ac4f5e 100644
+--- a/packages/opencode/src/plugin/tui/runtime.ts
++++ b/packages/opencode/src/plugin/tui/runtime.ts
+@@ -893,6 +893,9 @@ async function installPluginBySpec(
+   raw: string,
+   global = false,
+ ): Promise<TuiPluginInstallResult> {
++  if (Flag.IVOAI_MANAGED_LOCAL_PLUGINS) {
++    return { ok: false, message: "IVOAI_MANAGED_PLUGIN_INSTALL_DENIED" }
++  }
+   if (!state) {
+     return {
+       ok: false,

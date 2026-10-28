@@ -1,0 +1,7 @@
+# github.com/ivo-lopes/ivoai/internal/app [github.com/ivo-lopes/ivoai/internal/app.test]
+internal/app/evidence_recovery.go:32:45: task.WritePaths undefined (type session.TaskMetadata has no field or method WritePaths)
+FAIL	github.com/ivo-lopes/ivoai/internal/app [build failed]
+ok  	github.com/ivo-lopes/ivoai/internal/orchestrator	0.005s [no tests to run]
+ok  	github.com/ivo-lopes/ivoai/internal/evidence	4.529s
+ok  	github.com/ivo-lopes/ivoai/internal/workingcontext	0.006s [no tests to run]
+FAIL

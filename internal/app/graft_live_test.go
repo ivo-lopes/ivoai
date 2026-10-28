@@ -182,7 +182,7 @@ func TestLiveGraftManagedOpenCode(t *testing.T) {
 	state := config.State{Schema: config.StateSchemaVersion, Components: map[string]config.ComponentState{
 		"graft":                {Installed: true, Managed: true, Version: spec.Version, Path: filepath.Join(distribution, spec.PayloadPath)},
 		"codex":                {Installed: true, Managed: true, Version: "0.162.1", Path: input["CODEX"]},
-		"opencode":             {Installed: true, Managed: true, Version: "1.19.0-ivoai.2", Path: input["OPENCODE"]},
+		"opencode":             {Installed: true, Managed: true, Version: "1.19.0-ivoai.3", Path: input["OPENCODE"]},
 		"codex-code-mode-host": {Installed: true, Managed: true, Version: "0.162.1", Path: host},
 	}}
 	if err := store.SaveState(state); err != nil {

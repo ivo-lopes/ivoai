@@ -1,0 +1,108 @@
+{
+  "schema_version": 1,
+  "scope": "CI integration runner for local read-only administrative browser checks",
+  "source_base": "4098848d17fc53e2c5ef9717d55e20cacb10ce19",
+  "source_basis": "Uncommitted script/workflow delta; existing Go, backend and UI sources remain unchanged. Hashes were observed after validation, not compiler attestation. Exact-head CI is still required.",
+  "recorded_at_utc": "2026-10-28T14:23:40.183780+00:00",
+  "source_sha256": {
+    "scripts/test-admin-console-ci.sh": "c3e205c89db7065d8955b43aedb8dfb66e18ec40987899a590e3b6b5fa6dcbb7",
+    "scripts/test_admin_console_ci.py": "2ea0afa807104cbca054998885fd420dce0b62fef6cdda03617db069cef13267",
+    ".github/workflows/ci.yml": "bdfed698669ad778b18cf9c6fac85f789808eb63994461fde637030ee6d5610b"
+  },
+  "runtime": {
+    "go": "go1.27.3 linux/amd64",
+    "node": "v26.11.1",
+    "playwright": "1.64.0",
+    "local_browser": "system Chromium156.0.8078.47",
+    "local_browser_override": true,
+    "ci_browser": "Resolved from locked Playwright executablePath after the existing CI install step; not locally executed because that distribution is absent.",
+    "CI_job_timeout_minutes": 45,
+    "new_step_timeout_minutes": 8
+  },
+  "local_runs": [
+    {
+      "id": "complete-real-runner-system-chromium",
+      "exit_code": 0,
+      "status": "PASS",
+      "hermetic_ui_runs": 1,
+      "real_local_App_OAuth_Store_runs": 2,
+      "real_modes": [
+        "logout",
+        "revoke"
+      ],
+      "backend_exit_codes": [
+        0,
+        0
+      ],
+      "skipped_fixtures": 0,
+      "sanitized_stdout": [
+        "ADMIN_BROWSER_HERMETIC=PASS",
+        "ADMIN_BROWSER_REAL_LOGOUT=PASS backend_exit=0",
+        "ADMIN_BROWSER_REAL_REVOKE=PASS backend_exit=0",
+        "ADMIN_BROWSER_CI=PASS hermetic=1 real=2 skipped=0"
+      ],
+      "sanitized_stdout_sha256": "1f02b86b8f7991f174ed16a357a34ff64b761b4b11d8e5690568dca5a1069374",
+      "private_fixture_diagnostics": "Deleted with disposable private root by cleanup; no raw fixture artifacts were published.",
+      "actual_provider_execution": false,
+      "production_state": false
+    },
+    {
+      "id": "default-browser-preflight",
+      "exit_code": 1,
+      "status": "EXPECTED_DENIAL",
+      "reason": "The actual default Playwright executablePath did not exist locally; the runner refused before compile or browser execution, without a system-browser fallback.",
+      "sanitized_log": [
+        "Admin browser checks require an installed, executable Chromium.",
+        "ADMIN_BROWSER_CI=FAIL stage=prepare exit=1"
+      ],
+      "sanitized_log_sha256": "066aa12e676deccbda135fb7c6f77ca34a1627e11404dfb60730d617bc645e18",
+      "counted_as_browser_pass": false
+    }
+  ],
+  "negative_process_contracts": {
+    "scope": "Explicit fake Go/Node process control only, no browser integration",
+    "cases": [
+      "browser report PASS plus backend exit23 fails aggregate",
+      "backend exit0 with SKIP fails aggregate",
+      "Go fixture compile exit17 fails aggregate",
+      "browser exit19 fails aggregate"
+    ],
+    "initial_run": {
+      "status": "PASS",
+      "tests": 4,
+      "seconds": 1.315,
+      "record": "Tool output; no private file captured for initial invocation."
+    },
+    "recorded_run": {
+      "status": "PASS",
+      "tests": 4,
+      "seconds": 0.801,
+      "private_log_sha256": "7d5c38d3450cad496b3eea7f03f89a6e2c01dfe783f4cdae2972529347df62ac"
+    },
+    "final_source_run": {
+      "status": "PASS",
+      "tests": 4,
+      "seconds": 0.81,
+      "private_log_sha256": "51f5cf45c7fafd4920fd8c15aaa49f6272814849b81faf0650c5174eadfb8086",
+      "source_sha256": "2ea0afa807104cbca054998885fd420dce0b62fef6cdda03617db069cef13267"
+    }
+  },
+  "static_checks": {
+    "bash_n": "PASS",
+    "git_diff_check": "PASS",
+    "local_ShellCheck": "NOT_RUN: not installed",
+    "CI_ShellCheck": "Existing mandatory shellcheck install.sh scripts/*.sh includes the new script; result pending."
+  },
+  "security_and_limits": [
+    "Only fixed stage/status labels are printed by the shell; Node/Go diagnostics and disposable grants are private and cleaned.",
+    "Browser and Go test fixture results are required independently; a zero browser exit does not override backend failure or a skip.",
+    "No new package installation, paid API, native-client execution, personal-client state or credential change.",
+    "The new shell suite compiles the existing opt-in fixture once and executes that exact test separately for each real mode.",
+    "No complete administrative parity, production deployment, economic improvement or fresh exact-head CI success is asserted."
+  ],
+  "previous_evidence_unchanged": {
+    "release-notes/evidence/admin-console/ui-validation.json": "d0b168c01815cb4e4c7a10a525f25fae1b85047702956831fae601aea3f5b767",
+    "release-notes/evidence/admin-console/backend-validation.json": "439f4b731aca02744c3da6bff5ddea159423c293e7eac8578a9069fded581ef6",
+    "release-notes/evidence/admin-console/administrative-parity.json": "50d3205c28f158a843472b7a90c6ba27801aeb6907c3bc0e7a373b63439598e6"
+  }
+}
