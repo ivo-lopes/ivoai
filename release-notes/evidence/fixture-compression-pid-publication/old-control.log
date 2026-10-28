@@ -1,0 +1,4 @@
+=== RUN   TestFixtureCompressionCancellationLeavesNoOwnedFakeProcesses
+    runtime_test.go:590: invalid PID marker "": strconv.Atoi: parsing "": invalid syntax
+--- FAIL: TestFixtureCompressionCancellationLeavesNoOwnedFakeProcesses (0.01s)
+FAIL

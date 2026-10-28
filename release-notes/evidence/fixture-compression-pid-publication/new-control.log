@@ -1,0 +1,3 @@
+=== RUN   TestFixtureCompressionCancellationLeavesNoOwnedFakeProcesses
+--- PASS: TestFixtureCompressionCancellationLeavesNoOwnedFakeProcesses (0.20s)
+PASS
