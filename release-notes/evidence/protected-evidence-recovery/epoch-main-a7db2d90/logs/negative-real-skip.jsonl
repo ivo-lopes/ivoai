@@ -1,0 +1,9 @@
+{"Time":"2026-10-28T15:08:04.536544607-03:00","Action":"start","Package":"github.com/ivo-lopes/ivoai/internal/workingcontext"}
+{"Time":"2026-10-28T15:08:04.539334806-03:00","Action":"run","Package":"github.com/ivo-lopes/ivoai/internal/workingcontext","Test":"TestLiveProtectedArtifactsDoNotPoisonLegacyCoreRollback"}
+{"Time":"2026-10-28T15:08:04.539371625-03:00","Action":"output","Package":"github.com/ivo-lopes/ivoai/internal/workingcontext","Test":"TestLiveProtectedArtifactsDoNotPoisonLegacyCoreRollback","Output":"=== RUN   TestLiveProtectedArtifactsDoNotPoisonLegacyCoreRollback\n","OutputType":"frame"}
+{"Time":"2026-10-28T15:08:04.539390505-03:00","Action":"output","Package":"github.com/ivo-lopes/ivoai/internal/workingcontext","Test":"TestLiveProtectedArtifactsDoNotPoisonLegacyCoreRollback","Output":"    protected_rollback_live_test.go:17: explicit source-pinned old Core probe required; not a rollback PASS\n"}
+{"Time":"2026-10-28T15:08:04.539398005-03:00","Action":"output","Package":"github.com/ivo-lopes/ivoai/internal/workingcontext","Test":"TestLiveProtectedArtifactsDoNotPoisonLegacyCoreRollback","Output":"--- SKIP: TestLiveProtectedArtifactsDoNotPoisonLegacyCoreRollback (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-28T15:08:04.539402905-03:00","Action":"skip","Package":"github.com/ivo-lopes/ivoai/internal/workingcontext","Test":"TestLiveProtectedArtifactsDoNotPoisonLegacyCoreRollback","Elapsed":0}
+{"Time":"2026-10-28T15:08:04.539416045-03:00","Action":"output","Package":"github.com/ivo-lopes/ivoai/internal/workingcontext","Output":"PASS\n","OutputType":"frame"}
+{"Time":"2026-10-28T15:08:04.539798921-03:00","Action":"output","Package":"github.com/ivo-lopes/ivoai/internal/workingcontext","Output":"ok  \tgithub.com/ivo-lopes/ivoai/internal/workingcontext\t0.003s\n"}
+{"Time":"2026-10-28T15:08:04.53982772-03:00","Action":"pass","Package":"github.com/ivo-lopes/ivoai/internal/workingcontext","Elapsed":0.003}
