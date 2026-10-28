@@ -1,0 +1,37 @@
+{
+  "base_commit": "49445919f745157e3c8aa1c717161e49cb5f50d5",
+  "source_go_sha256": {
+    "internal/codebase/provenance_test.go": "7322720bbfc57e8cdecebe4cc532507353f566e58e4ece6b0cd282f78473d315",
+    "internal/codebase/provider.go": "37527e0a9ef66506ec79122c9930169f7a5fd8c77173d4f81198d47ce661ef0e",
+    "internal/codebase/provider_test.go": "d864fd7dbde3243bb1aab9be8cf38debe0e2bab3874783c589919a03d7894b79",
+    "internal/codebase/real_linux_test.go": "c0afd3fbb1443b841385ccb32a4f603280116b1109da706c8f1d2a6810086697",
+    "internal/codebase/response.go": "078762936f1cbc8aa820aa669c662f1518bbdd0d96293e586b2769c9a85edb84",
+    "internal/codebase/response_test.go": "e9f6b86265ca5f61ceec5c1f36e0f755a265a5bee7d098f1bf8d7a4a84624051"
+  },
+  "steps": [
+    {
+      "step": "review-unit",
+      "exit_code": 0,
+      "elapsed_seconds": 0.407
+    },
+    {
+      "step": "review-vet",
+      "exit_code": 0,
+      "elapsed_seconds": 0.178
+    },
+    {
+      "step": "review-race-real-reader",
+      "exit_code": 1,
+      "elapsed_seconds": 5.631
+    }
+  ],
+  "prior_integration_failures_retained": 2,
+  "new_provider_inference_invocations": 0,
+  "app_wiring": false,
+  "root_review_corrections": [
+    "busy admission before host callbacks",
+    "initial callback context deadline",
+    "duration starts at query entry",
+    "bidi overrides/isolate paths rejected"
+  ]
+}

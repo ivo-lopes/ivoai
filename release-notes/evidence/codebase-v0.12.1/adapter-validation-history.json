@@ -1,0 +1,157 @@
+{
+  "kind": "adapter_development_validation_history",
+  "initial_results": [
+    {
+      "step": "unit",
+      "exit_code": 0,
+      "elapsed_seconds": 0.633
+    },
+    {
+      "step": "vet",
+      "exit_code": 0,
+      "elapsed_seconds": 2.896
+    },
+    {
+      "step": "race",
+      "exit_code": 0,
+      "elapsed_seconds": 2.627
+    },
+    {
+      "step": "real-pinned-reader",
+      "exit_code": 1,
+      "elapsed_seconds": 3.558
+    }
+  ],
+  "unchanged_schema_failure_repeat": {
+    "exit_code": 1,
+    "reported_package_seconds": 3.143,
+    "capture": "tool_result_only; no raw provider output persisted"
+  },
+  "schema_correction": {
+    "upstream_source": "https://github.com/DeusData/codebase-memory-mcp/blob/a7158ac2f48ca646b4527341b76f930f2aeff87e/src/store/store.c#L7723",
+    "description": "Pinned trace excludes anchors (hop>0); first parser/fixture wrongly required a target row at hop0. Corrected to direct callers hop1 and exact/lower-bound caller totals.",
+    "failed_runs_rescored": false
+  },
+  "after_trace_correction": [
+    {
+      "step": "unit-after-trace-fix",
+      "exit_code": 0,
+      "elapsed_seconds": 0.675
+    },
+    {
+      "step": "real-pinned-reader-after-trace-fix",
+      "exit_code": 0,
+      "elapsed_seconds": 3.8
+    }
+  ],
+  "before_root_review": {
+    "base_commit": "49445919f745157e3c8aa1c717161e49cb5f50d5",
+    "source_go_sha256": {
+      "internal/codebase/provenance_test.go": "7322720bbfc57e8cdecebe4cc532507353f566e58e4ece6b0cd282f78473d315",
+      "internal/codebase/provider.go": "03ed4e745391d60855a3a48924ec77a0cf5941e973a0fe92ca7f83fa91aa2be0",
+      "internal/codebase/provider_test.go": "7b4e123b477cc0ffbc53b5b6b2e239dcfe3feed4f50ad5f98121a61062c470f5",
+      "internal/codebase/real_linux_test.go": "c0afd3fbb1443b841385ccb32a4f603280116b1109da706c8f1d2a6810086697",
+      "internal/codebase/response.go": "007fed2ca89217cbf5de325ccad365824a6b2a407e7731f6404825640b7f1cf8",
+      "internal/codebase/response_test.go": "696f4bc6d15d1018b3c71c4cd1da34c987d058204852ef324156f6d7a3382846"
+    },
+    "steps": [
+      {
+        "step": "final-unit",
+        "exit_code": 0,
+        "elapsed_seconds": 0.439
+      },
+      {
+        "step": "final-vet",
+        "exit_code": 0,
+        "elapsed_seconds": 0.2
+      },
+      {
+        "step": "final-race-real-reader",
+        "exit_code": 0,
+        "elapsed_seconds": 6.663
+      },
+      {
+        "step": "cross-compile-linux-amd64-v1",
+        "exit_code": 0,
+        "elapsed_seconds": 4.296
+      },
+      {
+        "step": "cross-compile-linux-arm64",
+        "exit_code": 0,
+        "elapsed_seconds": 19.028
+      }
+    ],
+    "prior_integration_failures_retained": 2,
+    "no_inference_invocations": true,
+    "no_app_wiring": true,
+    "codebase-amd64.test_sha256": "d9a5a880453ff8ca4689d9420d257f1f615535763afc0892c149dde625a7d1a3",
+    "codebase-arm64.test_sha256": "7e04a1fa6e5153d4022a60d57ae3296b37fceb1a6e2a5b14543d831f55b1cbd7"
+  },
+  "after_root_review_initial": {
+    "base_commit": "49445919f745157e3c8aa1c717161e49cb5f50d5",
+    "source_go_sha256": {
+      "internal/codebase/provenance_test.go": "7322720bbfc57e8cdecebe4cc532507353f566e58e4ece6b0cd282f78473d315",
+      "internal/codebase/provider.go": "37527e0a9ef66506ec79122c9930169f7a5fd8c77173d4f81198d47ce661ef0e",
+      "internal/codebase/provider_test.go": "d864fd7dbde3243bb1aab9be8cf38debe0e2bab3874783c589919a03d7894b79",
+      "internal/codebase/real_linux_test.go": "c0afd3fbb1443b841385ccb32a4f603280116b1109da706c8f1d2a6810086697",
+      "internal/codebase/response.go": "078762936f1cbc8aa820aa669c662f1518bbdd0d96293e586b2769c9a85edb84",
+      "internal/codebase/response_test.go": "e9f6b86265ca5f61ceec5c1f36e0f755a265a5bee7d098f1bf8d7a4a84624051"
+    },
+    "steps": [
+      {
+        "step": "review-unit",
+        "exit_code": 0,
+        "elapsed_seconds": 0.407
+      },
+      {
+        "step": "review-vet",
+        "exit_code": 0,
+        "elapsed_seconds": 0.178
+      },
+      {
+        "step": "review-race-real-reader",
+        "exit_code": 1,
+        "elapsed_seconds": 5.631
+      }
+    ],
+    "prior_integration_failures_retained": 2,
+    "new_provider_inference_invocations": 0,
+    "app_wiring": false,
+    "root_review_corrections": [
+      "busy admission before host callbacks",
+      "initial callback context deadline",
+      "duration starts at query entry",
+      "bidi overrides/isolate paths rejected"
+    ]
+  },
+  "review_race_deadline": {
+    "status": "FAILED",
+    "reason": "Host test callback rehashed 330MB runtime for every receipt check; initial callback moved into existing cooperative two-second budget, exposing deadline under race. Budget not increased.",
+    "failed_run_rescored": false
+  },
+  "private_logs_sha256": {
+    "review-race-real-reader.log": "760d89adb5c097aa43b575390488673cc501397261a56980661b4d9e0caaccd8",
+    "review-vet.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "review-unit.log": "edc87709ca912cc66f159bd471ee52fa34c7bfde6f19a2bd4c7d381dc3362d8e",
+    "cross-compile-linux-arm64.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "cross-compile-linux-amd64-v1.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "final-race-real-reader.log": "393ca4e858af1b6fef1c98d61d80f262f17caff420dc11d5eb2471c6740c8deb",
+    "final-vet.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "final-unit.log": "4bd40ad4797b1df088469b2f43dbcd591a3bcc0eb22c3ab2fa162e10ec1ca92b",
+    "real-pinned-reader-after-trace-fix.log": "0e69d06aae96ef0b9b88b90daeae613265be71865f86ac25d9ea8721f12a514b",
+    "unit-after-trace-fix.log": "961260b24214601018519bfdffae72c7bbf13470e56ce68e5de4b96df70183c4",
+    "real-pinned-reader.log": "39643fc791d2705fa896fae9943db4c5a4150ce4a482044e439bbd270e1edc58",
+    "race.log": "8d73a669fcfcdef8c0f304a13c872d180e79e71864a2e130fc48ab1fb6667f86",
+    "vet.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "unit.log": "961260b24214601018519bfdffae72c7bbf13470e56ce68e5de4b96df70183c4"
+  },
+  "new_inference_invocations": 0,
+  "global_quality_or_economic_gate_scored": false,
+  "fixture_refactor_compile_preflight": {
+    "status": "FAILED_BUILD",
+    "failure_label": "undefined_local_e_in_test_hash_closure",
+    "source_test_sha256": "12d626f7cdaf404b822b20b0bf3b3de341b80a341652a7574924efb84d63a603",
+    "provider_or_mcp_executed": false,
+    "corrected_by": "local short declaration; no assertion removed"
+  }
+}
