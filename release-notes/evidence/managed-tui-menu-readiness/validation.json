@@ -1,0 +1,152 @@
+{
+  "schema_version": 1,
+  "status": "TEST_SYNC_MECHANISM_REPRODUCED_AND_FIXED;_ACTUAL_CI_CAUSE_NOT_ATTESTED",
+  "source_base": "96cf9c7a44c84c8ad5bf854b394f5ffb3741d93a",
+  "comparison_sources": [
+    "a1ccf4ca33a1e1f748810add9e03fe61fb963831",
+    "6d99e320912f3f7325c3009209a10e9df86610d4"
+  ],
+  "comparison": "Entire opencodebridge, managed patches, builder and patched test script at base are identical to both sources.",
+  "original_ci_failure": {
+    "run": 40761236991,
+    "job": 123073413304,
+    "url": "https://github.com/ivo-lopes/ivoai/actions/runs/40761236991/job/123073413304",
+    "source": "Owner-reported actual GitHub job facts; full CI log not independently downloaded by this diagnostic task.",
+    "test": "TestLiveManagedOpenCodeResizeKeyboard",
+    "result": "FAIL18.01s after first resize100 log; missing Permissions at next resize60",
+    "raw_ci_transcript": "not logged by original test",
+    "upstream_version_archive_and_no_avx_checks": "Owner reported PASS; not rerun or broadened here.",
+    "failure_preserved": true
+  },
+  "reviewed_fixture": {
+    "metadata": {
+      "version": "1.19.0-ivoai.3",
+      "platform": "linux/amd64",
+      "revision": "c3307309ac2896e24320ee7a9bd3ff176097b5c59a1822679c1045d10b6ad723",
+      "sha256": "9f38b0507bdf295b34c7faf58f91fd402c5a102b76e8867242503d2e4db46b61",
+      "archive": "ivoai-opencode_linux_amd64.tar.gz",
+      "upstream_revision": "733b2c627e5aec39cb33cc22373bdce33053ef2c",
+      "source_sha256": "ab433f7a5fc9e54c90da18bd3457298009f426424805f043aa32c03543b4a192",
+      "patch_sha256": "29ab6030f52f4b95d582ce95ae001566b7b0f3bc3bfece6a1355dce4faa2e4ec",
+      "bun_version": "1.3.14",
+      "bun_sha256": "951ee2aee855f08595aeec6225226a298d3fea83a3dcd6465c09cbccdf7e848f"
+    },
+    "metadata_sha256": "4870643e5ed08a5b1f09ddcd7b1d8d4d4a9fe07cc61374c9cb782f7c125fc751",
+    "archive_sha256": "9f38b0507bdf295b34c7faf58f91fd402c5a102b76e8867242503d2e4db46b61",
+    "archive_members": "exact two regular members opencode and LICENSE; only opencode extracted",
+    "extracted_binary_sha256": "ec8dad6648150158a5cb07fbd06b388f28390acd91e09235722b3ddc3cd64c3b",
+    "version": "1.19.0-ivoai.3",
+    "association_limit": "Reviewed published LinuxAMD64 .3 archive with same immutable source/pin; not proof of exact ELF identity with the failed CI job."
+  },
+  "diagnostic_cases": [
+    {
+      "case": "baseline-traced",
+      "result": "PASS",
+      "test_log": "logs/baseline-traced-test.log",
+      "events": "logs/baseline-traced-events.log",
+      "raw_private_transcript_sha256": "4034221aa5c7b48a1a74768f0ba48c5b1a536c5970df63503594749c82dc05dc",
+      "raw_private_bytes": 172275,
+      "raw_published": false
+    },
+    {
+      "case": "escape-queue-control",
+      "result": "PASS_INCONCLUSIVE_FOR_CI",
+      "test_log": "logs/escape-queue-control-test.log",
+      "events": "logs/escape-queue-control-events.log",
+      "raw_private_transcript_sha256": "8b7779402ca89c338e02c3c5f2b411fdfdc2d4e14e9ab7893285564dc31a33a5",
+      "raw_private_bytes": 158400,
+      "raw_published": false
+    },
+    {
+      "case": "enter-queue-reproduction",
+      "result": "FAIL",
+      "test_log": "logs/enter-queue-reproduction-test.log",
+      "events": "logs/enter-queue-reproduction-events.log",
+      "raw_private_transcript_sha256": "1556903ec91f158bc2f4862bd1775e46f354717381f6151d35d1c0f650cd3b90",
+      "raw_private_bytes": 51651,
+      "raw_published": false
+    },
+    {
+      "case": "timed-old",
+      "result": "FAIL",
+      "test_log": "logs/timed-old-test.log",
+      "events": "logs/timed-old-events.log",
+      "raw_private_transcript_sha256": "279e0336cd90608865be1016ab34a8de99b4ed06a25062c8424a2e9dd7e3063b",
+      "raw_private_bytes": 51679,
+      "raw_published": false
+    },
+    {
+      "case": "timed-fixed",
+      "result": "PASS",
+      "test_log": "logs/timed-fixed-test.log",
+      "events": "logs/timed-fixed-events.log",
+      "raw_private_transcript_sha256": "fb10a39b604959228738bd546fa0c489ba9219177c7a2a637572f4be51506600",
+      "raw_private_bytes": 176687,
+      "raw_published": false
+    }
+  ],
+  "mechanism": "When owned TUI is paused before second slash, slash and Enter queue before autocomplete consumes the slash. Upon resume the menu appears after Enter and the IVOAI panel never opens. Independent timed500ms pause causes old FAIL18.25s; same pause with menu-ready barrier gives PASS12.30s. This demonstrates the synchronization defect; it does not reconstruct CI scheduling.",
+  "fix": {
+    "path": "internal/opencodebridge/tui_interaction_test.go",
+    "sha256": "cd5f84685105164223c4852ff2780030ac982dc4a62b903ae5e80ae036e89a76",
+    "delta": "Wait for this command unique description Executors, quotas in the fresh suffix after slash and before Enter; comment explains ordering.",
+    "unchanged": [
+      "12-second per-state deadline",
+      "90-second fixture context",
+      "2-minute go-test deadline",
+      "250ms send delay",
+      "Permissions/source-A assertions",
+      "native clipboard/multiline/model/effort assertions",
+      "four scenario list",
+      "all product code, managed .3 sources/pins/patches"
+    ],
+    "source_delta_sha256": "4095029ae2c0a795df7a0f09ef33139cead3feb268d8852777766f89ef485586"
+  },
+  "validation": {
+    "actual_pinned_keyboard_clipboard_scenarios": {
+      "success_mouse_csi_u": "PASS",
+      "success_multiline_csi_u": "PASS",
+      "failure_mouse_xterm": "PASS",
+      "failure_message_xterm": "PASS"
+    },
+    "affected_go_race": "PASS internal/opencodebridge16.548s; default opt-in skips are not integration successes",
+    "affected_vet": "PASS",
+    "gofmt": "PASS no output",
+    "diff_check": "PASS"
+  },
+  "resource_privacy_scope": [
+    "Only owned PTY/TUI/fixture clipboard process groups; no desktop clipboard scenario, real authentication, external provider/model inference or personal client config.",
+    "Private raw transcripts capped at4MiB; only labelled fixture test/timeline logs and raw hashes published.",
+    "Diagnostic SIGSTOP/SIGCONT targets the owned child PID; timed control resumes after500ms independently of input readiness.",
+    "Go overlays are evidence-only .go.txt and add no Go package or runtime instrumentation.",
+    "No noAVX/nativeARM rerun, runtime rebuild, release/tag/asset/body mutation or global product/TUI parity claim.",
+    "Old and new control diagnostics are not economic/performance benchmarks.",
+    "Latest combined PR51 CI remains required; no retry-only green interpretation."
+  ],
+  "public_file_sha256": {
+    "README.md": "8660551b8a4f0da44e03bcb9e5730e23440daaa155da95abe6ef090c78b5b615",
+    "logs/affected-race.log": "0e8c0d7e2c21ed680a78492ef0a9e883e164546303688dba20b3fda2e9c9090c",
+    "logs/affected-vet.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "logs/baseline-traced-events.log": "4f85b3ac24629bd08e05453f9e117680722d7d28d1fff889547063889901115d",
+    "logs/baseline-traced-test.log": "e811134998bf4e3ac5c6f54899b14e63f36719c70e8afc2d80499d576d37cab0",
+    "logs/construction-failures.txt": "553c35d8ab8364c2679595ac62f68a5889bd9c8b07189d02459217c00330fadf",
+    "logs/enter-queue-reproduction-events.log": "30d4cb787d4c4cac4d89add2ddd28f5a823dd49598a032f5eae36bfba2e3f3c8",
+    "logs/enter-queue-reproduction-test.log": "f40409ddedebb357bdc1f2cae4976aead9afcb7be3f556a0042faf2ef6d0aa46",
+    "logs/escape-queue-control-events.log": "d00379073802892ab621fb65a63bbf79d9bdbfe11b6d15ac8e69f186b8be4d82",
+    "logs/escape-queue-control-test.log": "1bb922cdc60da18db7124a8159d04f271397e136ead75a064fd833f39a0b555a",
+    "logs/final-failure-message-xterm.log": "4f994a2b977e9fdf592a4934c0942c738cc64befeb65f6ebbb63a44af03fee7c",
+    "logs/final-failure-mouse-xterm.log": "75aac9b727bc7a2429b6a6f78fcf75bf253da3439f702f26d19376ca63f8c37a",
+    "logs/final-success-mouse-csi-u.log": "56b73e1274efe10a489590307a4e658e8c6f38ba40e298b9acd4cc254476cb3f",
+    "logs/final-success-multiline-csi-u.log": "a205bd3c439d52bbad5e948b2162ffeab3dbf167875bd401c5ff3d1cabc4f513",
+    "logs/timed-fixed-events.log": "22461bfa1196336db6fa28c3bb46d60f3d2342c9f94256ec43d196ee0f348b5c",
+    "logs/timed-fixed-test.log": "e6b48074686e0ef2e938f7b38414658cc866649b78674622afe1b2833052b3dd",
+    "logs/timed-old-events.log": "19e69617661b123ed39b0804a03c37362ed0255d60bbdb66cbed6955b5b77e37",
+    "logs/timed-old-test.log": "84f3d3860c113a15c17459a53949e27e30cd3ae3b792ddbc4421a6dd055fc5d3",
+    "managed-opencode-amd64.json": "4870643e5ed08a5b1f09ddcd7b1d8d4d4a9fe07cc61374c9cb782f7c125fc751",
+    "probes/instrumented-tui_interaction_test.go.txt": "8272514a2cd59b9446e1c9a9d24100b89702fc855c288723c55f1fe087f55fcc",
+    "probes/paused-tui_interaction_test.go.txt": "371f10d1b956dcb65a18c401f8e63bbd118feffe91f457df6e4fbdc5461803bb",
+    "probes/queued-command-tui_interaction_test.go.txt": "4ab40ba1ba98e5c71d79e0f6aa6d957183f77c623d9f2cb084eb003bfed568cf",
+    "probes/timed-command-fixed-tui_interaction_test.go.txt": "f6b06b0bf2bb98f0f7f09ea1d33cc5d65104f78aa1fb91f5cc6564cc6427e232",
+    "probes/timed-command-tui_interaction_test.go.txt": "d63fbeb1d111d7bd5c5a43eed1b6f65c87c85cd83b3d75cb5e506ed9357df069"
+  }
+}

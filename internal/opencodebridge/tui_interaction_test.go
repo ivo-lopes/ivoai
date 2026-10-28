@@ -175,6 +175,10 @@ func TestLiveManagedOpenCodeResizeKeyboard(t *testing.T) {
 		start := mark()
 		resize(width)
 		send("/ivoai")
+		// The TUI may consume queued input after the send delay. Wait for this
+		// command's menu entry before Enter, rather than submitting before the
+		// autocomplete has processed the slash text.
+		wait(start, "Executors, quotas")
 		send("\r")
 		wait(start, "Permissions:")
 		wait(start, "source-A")

@@ -1,0 +1,1 @@
+Preparation1 FAIL: overly narrow archive shape assertion before extraction; no binary/test executed. Archive includes additional member(s), inspected next. Not an integration result.
