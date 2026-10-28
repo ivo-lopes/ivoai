@@ -1,0 +1,107 @@
+{
+  "schema_version": 1,
+  "evidence_generation": 3,
+  "catalog_schema_version": 2,
+  "scope": "edit_snapshot_special_permission_integrity_correction_and_offline_freeze",
+  "plane_tasks": [
+    "IVOAI-198",
+    "IVOAI-138"
+  ],
+  "initial_source_commit": "3c2183714199c98189674814cc28446acaa44d0f",
+  "runtime_baseline": "3ff6db8bb0174b1ae6f781f6754e2653a6dae5db",
+  "runtime_candidate": "c6fb6675672cb85e1dea6704af68c6886553911b",
+  "new_runtime_production_code": false,
+  "source_sha256": {
+    "internal/benchmarkfixtures/edit_oracle.go": "8f907857f8a2c91bc4464ae55ad8b0728e3b11621ade776808e953a7f7b85514",
+    "internal/benchmarkfixtures/edit_oracle_test.go": "ccc79f8f1bdb2b19b0741d0708b1680fc404f3b2c8b0b78cf189b99c7f48fd60",
+    "internal/app/primary_prefetch_live_test.go": "9251e37c616461cbd4f0bc3e0b18e5c25da22d06723fa6f5841d0d808e6247ad",
+    "scripts/benchmark-economic-runtime.py": "5fd2455d1b12cf5ac0dc3c94e9fcdb2045f4c9fd18bbde32eef1ff94cb3448ba",
+    "scripts/benchmark_catalog.py": "05050ae988d479dc7f1ac639380ce92a3fba00fa70e788b3d387db27180223fb"
+  },
+  "original_artifacts_modified": false,
+  "retained_failure": {
+    "test": "TestEditSnapshotRejectsSpecialPermissionBits",
+    "before": "FAIL",
+    "mutations_applied_and_accepted": 6,
+    "unsafe_edited_code_executed": false,
+    "before_log_sha256": "7006f83478e61e27868d583146595cf00cc4540c3781390aa264f94266df90bc",
+    "cases": [
+      "regular_setuid",
+      "regular_setgid",
+      "regular_sticky",
+      "directory_setuid",
+      "directory_setgid",
+      "directory_sticky"
+    ]
+  },
+  "fix": "reject special permission flags before capturing regular files or directories",
+  "after": {
+    "test": "PASS",
+    "all_six_mutations_rejected": true,
+    "race_packages": 2,
+    "fixture_package_seconds": 1.236,
+    "app_package_seconds": 1.21,
+    "python_tests": 33,
+    "python_seconds": 5.771,
+    "vet_packages": 2,
+    "amd64_v1_common_builds": "PASS",
+    "arm64_cross_compile": "PASS",
+    "arm64_runtime_executed": false
+  },
+  "binaries": {
+    "baseline": {
+      "sha256": "b2ff934c421d2776be1ac76f54215cf564544e3bf42577c4ada4b0e23134ef92",
+      "bytes": 26409217
+    },
+    "candidate": {
+      "sha256": "ad1bb4545ce4074442d30e92bc14e7ce102cb6e8c0b67b9678d8cb45ab011443",
+      "bytes": 27839869
+    },
+    "shared_code_sandbox": {
+      "sha256": "16894a928d8b454c4256ed7fb4b6108974446e9c3f5c52b6671234dafb7928be",
+      "bytes": 74608962
+    }
+  },
+  "arm64_binary_sha256": "cf572347760e26dc7d0b99d5a4859ea0b3a444b126c9c6e83a89370d341fc298",
+  "preflight": {
+    "READY": 9,
+    "UNSUPPORTED": 5,
+    "BLOCKED": 2,
+    "scope": "real_reviewed_local_runtime_inputs_no_client_execution",
+    "client_execution": "NOT_RUN",
+    "provider_attempts": 0,
+    "two_edit_selection_exit_code": 0
+  },
+  "compiled_host_fake_fixture_with_real_graft": {
+    "scope": "FAKE_PROVIDER_PROCESS_ONLY_NO_NATIVE_CLIENT_OR_INFERENCE",
+    "attempts": 4,
+    "correct": 4,
+    "order": [
+      "A",
+      "B",
+      "B",
+      "A"
+    ],
+    "usage": "FABRICATED_NOT_ECONOMIC",
+    "rows_sha256": "0507adad48c7ec762f461076571bcb9be74a277aa5a05e026d8d1e55e811c743"
+  },
+  "provider_attempts": 0,
+  "historical_real_comparative_attempts": 114,
+  "global_economic_gate": "INCOMPLETE",
+  "economic_comparison": null,
+  "native_workers": "UNKNOWN_NOT_INSTRUMENTED",
+  "native_delegations": "UNKNOWN_NOT_INSTRUMENTED",
+  "model_backend_cache_quota_equivalence": "UNKNOWN",
+  "later_admin_and_release_patches_attributed": false,
+  "timing_scope": {
+    "TotalMS": "prefetch, provider and validation after snapshot/oracle identity/probe admission",
+    "LocalElapsedMS": "App subprocess wall time including its admission/probes, measured by wait4 driver",
+    "whole_native_session": "NOT_MEASURED"
+  },
+  "limitations": [
+    "No real inference, official-client task, auth/model/quota equivalence or economic proof in this artifact",
+    "Narrow synthetic contract; no general hostile filesystem or privileged same-user adversary guarantee",
+    "No ARM or no-AVX runtime execution on this host",
+    "V2 reports remain historical and are not rescored"
+  ]
+}

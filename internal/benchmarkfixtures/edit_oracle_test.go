@@ -152,6 +152,36 @@ func TestEditSnapshotAndOutputAreBounded(t *testing.T) {
 	}
 }
 
+func TestEditSnapshotRejectsSpecialPermissionBits(t *testing.T) {
+	for _, directory := range []bool{false, true} {
+		for _, special := range []os.FileMode{os.ModeSetuid, os.ModeSetgid, os.ModeSticky} {
+			name := "file_" + special.String()
+			if directory {
+				name = "directory_" + special.String()
+			}
+			t.Run(name, func(t *testing.T) {
+				root, before := editFixture(t, "small_known_file_correction")
+				applyReviewedEdit(t, "small_known_file_correction", root)
+				path, permissions := filepath.Join(root, "mathpkg/clamp.go"), os.FileMode(0600)
+				if directory {
+					path, permissions = filepath.Join(root, "mathpkg"), 0700
+				}
+				if err := os.Chmod(path, permissions|special); err != nil {
+					t.Fatal(err)
+				}
+				info, err := os.Stat(path)
+				if err != nil || info.Mode()&special == 0 {
+					t.Fatal("special permission mutation was not applied")
+				}
+				after, err := SnapshotEditTree(root)
+				if err == nil && ValidateEdit("small_known_file_correction", before, after) {
+					t.Fatal("special permission mutation accepted by edit contract")
+				}
+			})
+		}
+	}
+}
+
 // NOT_RUN unless the host supplies existing reviewed sandbox/toolchain inputs.
 // This executes only reviewed synthetic edits, never an agent or inference.
 func TestBenchmarkSandboxedEditOracles(t *testing.T) {

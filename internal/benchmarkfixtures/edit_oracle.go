@@ -45,7 +45,7 @@ func SnapshotEditTree(root string) (EditSnapshot, error) {
 		if entry.IsDir() {
 			info, err := entry.Info()
 			rel, relErr := filepath.Rel(root, path)
-			if err != nil || relErr != nil || len(s.dirs) >= 128 {
+			if err != nil || relErr != nil || info.Mode()&(fs.ModeSetuid|fs.ModeSetgid|fs.ModeSticky) != 0 || len(s.dirs) >= 128 {
 				return ErrEditContract
 			}
 			s.dirs[filepath.ToSlash(rel)] = info.Mode().Perm()
@@ -57,7 +57,7 @@ func SnapshotEditTree(root string) (EditSnapshot, error) {
 		}
 		file := os.NewFile(uintptr(fd), path)
 		info, err := file.Stat()
-		if err != nil || !info.Mode().IsRegular() || info.Size() > 1<<20 || len(s.files) >= 128 {
+		if err != nil || !info.Mode().IsRegular() || info.Mode()&(fs.ModeSetuid|fs.ModeSetgid|fs.ModeSticky) != 0 || info.Size() > 1<<20 || len(s.files) >= 128 {
 			file.Close()
 			return ErrEditContract
 		}

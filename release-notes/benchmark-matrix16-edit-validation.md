@@ -1,5 +1,14 @@
 # Matrix16 edit contracts — IVOAI-198 / IVOAI-138
 
+Follow-up integrity correction: the initial snapshot recorded permission bits
+but omitted setuid/setgid/sticky flags. Six static mutations reproduced this
+acceptance gap without executing altered source. Snapshots now reject all three
+flags on regular files and directories, including their initial state. Evidence
+is appended separately in [special-mode validation](evidence/backend-first/matrix16-special-modes-v3/validation.json);
+the original v2 artifacts remain unchanged. The corrected common harness was
+rebuilt over both runtime revisions before a new offline discovery. The catalog
+and driver schema remain version 2; “v3” identifies this evidence generation.
+
 This increment adds executable workspace-edit contracts for the existing
 `small_known_file_correction` and `cross_module_refactor` IDs. The v2 catalog has
 nine supported contracts, five UNSUPPORTED cases and two BLOCKED cases. **No real
