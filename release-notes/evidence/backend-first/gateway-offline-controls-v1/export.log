@@ -1,0 +1,7 @@
+=== RUN   TestExportEvidenceGatewayOfflineControls
+=== RUN   TestExportEvidenceGatewayOfflineControls/OFF
+=== RUN   TestExportEvidenceGatewayOfflineControls/ON
+--- PASS: TestExportEvidenceGatewayOfflineControls (0.24s)
+    --- PASS: TestExportEvidenceGatewayOfflineControls/OFF (0.10s)
+    --- PASS: TestExportEvidenceGatewayOfflineControls/ON (0.14s)
+PASS
