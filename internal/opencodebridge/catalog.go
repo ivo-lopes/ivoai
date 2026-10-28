@@ -118,6 +118,22 @@ func safeDisplayText(value string) bool {
 
 func DefaultCatalog() ModelCatalog { return newCatalog(nil) }
 
+// RestrictedTo returns an immutable presentation view of a host's provider
+// scope. The original catalog (including legacy entries) remains untouched.
+func (c ModelCatalog) RestrictedTo(executors ...string) ModelCatalog {
+	allowed := map[string]bool{}
+	for _, executor := range executors {
+		allowed[executor] = true
+	}
+	entries := []ModelSpec{}
+	for _, entry := range c.Entries() {
+		if entry.Mode == "auto" || allowed[entry.Executor] {
+			entries = append(entries, entry)
+		}
+	}
+	return newCatalog(entries)
+}
+
 // StrongPrimary resolves only observed capabilities. Model IDs and versions
 // never determine strength, and a weak/client default is not a silent fallback.
 func (c ModelCatalog) StrongPrimary(executor string) (ModelSpec, bool) {

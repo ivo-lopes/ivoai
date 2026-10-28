@@ -13,8 +13,8 @@ de `VERSION` e RTK estão excluídos.
 | Comando | Admissão e execução |
 | --- | --- |
 | `ivoai codex` | TUI nativa Codex; admissão IVOAI; primary Codex preferencial |
-| `ivoai opencode` | TUI OpenCode gerenciada; primary resolvido pela policy |
-| `ivoai auto` | Alias deprecated de `ivoai opencode` durante v0.10.x |
+| `ivoai opencode` | TUI OpenCode legada explícita e descontinuada; primary resolvido pela policy |
+| `ivoai auto` | Alias legado explícito e descontinuado; use `ivoai codex` para sessões nativas gerenciadas |
 | `ivoai codex --direct` | Cliente oficial Codex, sem Prompt Gate/DAG |
 | `ivoai opencode --direct` | OpenCode standalone, sem Prompt Gate/DAG |
 | `ivoai claude` | Interface direta opcional existente |
@@ -22,6 +22,15 @@ de `VERSION` e RTK estão excluídos.
 Coloque `--direct` antes de `--`; argumentos depois de `--` pertencem ao cliente
 oficial. `session start --executor codex|opencode --mode direct` continua disponível;
 `--mode orchestrated` entra no core nativo compartilhado.
+
+Sessões nativas Codex e workers gerenciados Codex/Claude excluem OpenCode de
+discovery, catálogos em cache, quotas, retries e dispatch mesmo quando instalado.
+Os comandos legados continuam explícitos. Tarefas ou checkpoints OpenCode
+retidos bloqueiam resume/recovery nativo com mensagem de migração, sem reescrita
+ou replay. Handoff AUTO nativo para Claude e o planner inicial
+`ivoai codex --planner claude` são recusados antes de iniciar outro frontend.
+As decisões aprovadas de roteamento Codex/Claude continuam separadas do aceite
+do plano; este incremento não certifica uma TUI nativa Claude.
 
 ## Terminal Codex
 

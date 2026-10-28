@@ -2,6 +2,7 @@ package orchestrator
 
 import (
 	"context"
+	"fmt"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -135,7 +136,15 @@ func TestPrimaryOnlyPlanLowQuotaIsVisibleWithoutSpawningWorkers(t *testing.T) {
 			}
 			select {
 			case <-ctx.Done():
-				t.Fatal("missing primary-only quota alert")
+				ackState := "pending"
+				select {
+				case err := <-done:
+					ackState = "returned:" + fmt.Sprint(err)
+				default:
+				}
+				snapshot, snapshotErr := s.Quota.Store.Load()
+				observed := snapshot.Providers[quota.ProviderCodex]
+				t.Fatalf("missing primary-only quota alert: callback=%s providers=%v allows_codex=%t cache_error=%v authenticated=%t eligible=%t windows=%+v", ackState, s.Quota.Providers(), s.Quota.Allows(quota.ProviderCodex), snapshotErr, observed.Authenticated, observed.Eligible, observed.Windows)
 			case <-time.After(10 * time.Millisecond):
 			}
 		}

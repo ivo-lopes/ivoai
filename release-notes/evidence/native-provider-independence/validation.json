@@ -1,0 +1,160 @@
+{
+  "schema_version": 1,
+  "recorded_at_utc": "2026-10-28T15:27:34.062491+00:00",
+  "base_commit": "2bf9f94358aa54c22e0cc8d839e3a108774811c6",
+  "source_status": "Uncommitted runtime/documentation snapshot before this evidence artifact; subsequent commit binds these files. No production installation or release.",
+  "plane_tasks": {
+    "195": "partial operational OpenCode removal",
+    "192": "shared provider-neutral backend",
+    "194": "documented native Claude frontend limitation, not parity"
+  },
+  "implementation": {
+    "native_provider_scope": [
+      "codex",
+      "claude"
+    ],
+    "global_legacy_provider_contract_preserved": true,
+    "provider_scope_checked_before_cache": true,
+    "original_probe_map_and_catalog_preserved": true,
+    "retained_quota_cache_not_deleted": true,
+    "native_managed_opencode_factory_disabled": true,
+    "retained_opencode_task_checkpoint_migration": "fail closed before providers or replay",
+    "default_client_setup_installs_opencode": false,
+    "legacy_setup_opt_in": "ivoai setup --mode client --legacy-opencode",
+    "explicit_legacy_commands_retained": true,
+    "admin_surface_preserved": true,
+    "new_database_or_scheduler": false,
+    "public_json_toml_schema_changed": false,
+    "new_dependencies": []
+  },
+  "checks": {
+    "preliminary_six_package_runtime_suite": "PASS_BEFORE_SETUP_AND_ADMIN_INTEGRATION",
+    "first_full_parallel_suite": "FAIL_RETAINED_THREE_CASES",
+    "nine_package_race_before_admin_merge": "PASS",
+    "combined_full_go_suite_p2": "PASS_59_PACKAGES; package results may use standard Go test cache; optional opt-in tests are not integration PASS",
+    "combined_focused_race_seven_packages": "PASS",
+    "combined_full_go_vet": "PASS",
+    "cli_reference_en_pt": "PASS",
+    "docusaurus_en_pt_build_and_embedded_consistency_after_admin_merge": "PASS",
+    "combined_linux_amd64_goamd64_v1_cgo0_build": "PASS",
+    "combined_linux_arm64_cgo0_build": "PASS_NOT_EXECUTED",
+    "combined_amd64_help_temporary_home": "PASS_NATIVE_LEGACY_FLAG_AND_ADMIN_RETAINED",
+    "v050_client_server_and_unversioned_v060_upgrade_rollback_matrix": "PASS_FIRST_PARTY_FIXTURES_NO_REAL_PROVIDER_INSTALL",
+    "git_diff_check": "PASS",
+    "final_ci": "PENDING_ON_FUTURE_PR"
+  },
+  "adverse_outcomes": [
+    {
+      "case": "first full parallel suite CLI deprecation",
+      "outcome": "FAIL_EXPECTATION_FIXED_FOR_NEW_EXPLICIT_LEGACY_WARNING; disabled-core/direct assertions retained"
+    },
+    {
+      "case": "first full parallel suite background writer",
+      "outcome": "FAIL_OLD_TIME_BASED_ORACLE_AMBIGUOUS; no runtime cleanup defect asserted"
+    },
+    {
+      "case": "old writer fixture causal diagnostic",
+      "outcome": "MARKER_ALREADY_EXISTS_BEFORE_CLOSE_WITH_DELAY; source/log hashes retained"
+    },
+    {
+      "case": "replacement writer handshake",
+      "outcome": "LIVE_CONTROL_WRITES_AFTER_TRIGGER; CLOSED_CHILD_NOT_RUNNING_BEFORE_POST_CLOSE_TRIGGER; PASS_UNDER_RACE; no timeout increase"
+    },
+    {
+      "case": "first full parallel suite primary-only low quota alert",
+      "outcome": "FAIL_CAUSE_INCONCLUSIVE; nil provider scope; original oracle unchanged; failure-only diagnostics added; isolated original and scoped approval tests PASS"
+    },
+    {
+      "case": "new-test construction preflights",
+      "outcome": "wrong snapshot fixture filename, missing required tier, unused import, noncomparable ownership struct; corrected without weakening runtime assertions; zero real provider attempts"
+    }
+  ],
+  "official_client_fixture": {
+    "version": "0.162.1",
+    "codex_executable_sha256": "628e35487d888a28f0427fc37501da529dd3d81fcbad7a2c3421c1e8670d92e1",
+    "companion_executable_sha256": "ec71830690a7c0024916ee0c99fbdc635bc6e747ff665ea4f03a8389bbcb6b30",
+    "core_executor_fixture_calls": 1,
+    "official_tui_intake_approval_synthesis_and_owned_resume": "PASS",
+    "oversized_input_starts_executor": false,
+    "resume_replays_completed_turn": false,
+    "opencode_on_fixture_path": false,
+    "real_provider_inference": false,
+    "real_subscription_authentication": "NOT_RUN",
+    "native_claude_tui": "NOT_RUN_UNAVAILABLE",
+    "antigravity": "NOT_RUN_OUT_OF_SCOPE",
+    "provider_tokens": null,
+    "quota_or_money_measurement": null
+  },
+  "limitations": [
+    "Global OpenCode removal is incomplete; release assets/build jobs remain.",
+    "Updater retains historical managed component/pointer transaction participants for rollback; inconsistent legacy state can block update; optional doctor version probe remains.",
+    "Setup tests use first-party test mode, not real third-party installation.",
+    "Current official native integration proof uses a real pinned client with synthetic Core, not an authenticated task or whole-session benchmark.",
+    "Normal parallel CI remains a separate gate; first local parallel failures were not erased or rescored.",
+    "No ARM/no-AVX runtime certification or performance/economic claim.",
+    "Diagnostic Native Evidence Runner production guard remains unchanged."
+  ],
+  "build_sha256": {
+    "ivoai-amd64v1": "9df18c30dff2d564960dc0b32c757df565c7a36899d1c011e76881356b66cc10",
+    "ivoai-arm64": "ac18fb38be17cf1a94769159dbb9810acb022e142636fc082b73d906a2d7e73e"
+  },
+  "log_sha256": {
+    "focused-suite.log": "b11febda55aa59aac71c87bfe5c659346f6a00b19a9310e08ffcb591cca36d35",
+    "final-full-go.log": "e4ed59b2f1d3a1c1419642208e37ab129d4549d8836e3da71bdfc414ed70405a",
+    "unchanged-failure-case-isolated.log": "c2dd897d156473739f86bc9b9d8ff280613c9e47894e99fd763e80b229cd3f2f",
+    "old-writer-order-causal-probe.log": "cf4d92628ed2d6321f90ac1073815eb840224522284df0db9a957ebfa39eed46",
+    "failure-regressions-final.log": "96e014fc45ab129e0b5446e2d732984805cccc39ddca7483d360df9e68473e43",
+    "final-focused-race.log": "2207ac46cd19864cafb7318f0628526146640f9055764cd8d3cf45c7add3cc27",
+    "final-vet.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "combined-final-full-go-p2.log": "6e281f3ed32a9452f2640009143fb18f39f96e2f663273dcb47ef1e4873466ed",
+    "combined-final-targeted-race.log": "dba82048600dd23bfcd722698c769c4a3121766a19a0cd991778ce52d49e2f6d",
+    "combined-final-vet.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "combined-final-official-tui.log": "e7d302c7f3c1615c4e446fb65937fbe1b2891b82864c899a02f60b9097413fb2",
+    "combined-docs-build.log": "f312f1161646db959e5e41b7a97f421740f8c213ac7ab3a016d4658f4cc11eca",
+    "combined-docs-check.log": "2bedbabc52fab545396c835849022d5fc32d2364f639c789d22743d7c0713e13",
+    "combined-final-cli-check.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "combined-upgrade-matrix.log": "477d21d5554ddddb5a829dfd14e8ea1078caa530639c4f67cdc81a85d2e060da",
+    "combined-binary-help.log": "112885f1cdcab1d5b06dcac38a4dd50b26e6824e1e95f26952446f1384cffced"
+  },
+  "old_fixture_diagnostic_source_sha256": "daeaf63900d34e012e53940b2aad4470ea155001d6147faabc2207321dbb0db2",
+  "source_sha256": {
+    "docs/cli-reference.md": "acb47607ecff7919b8fa0e2fe5d06a590f93d9b712447a0a47a69e5fe9636f3d",
+    "docs/installation.md": "7c9389273c916623496b4b1cdfa96a31d5d088dfe47480d4826f5dbe1f3bb213",
+    "docs/known-limitations.md": "636e09ac78133fef2bf4850c7a5ed6580579e95a3aa739d4ef54a7fd06978694",
+    "docs/orchestrated-frontends.md": "f6bcf4ee36295303122c0b6999231ab592357aba0c299639207395eda855bf6c",
+    "internal/app/app.go": "e8cc39edd099d80794646321c22eb33a186de2c6957972c06fb493fa1a989336",
+    "internal/app/auto.go": "95cc2c22c9a1b44513178594a00f7c053d102d07ec9bf0aa765f1fa6ebc15ba7",
+    "internal/app/auto_turn.go": "7b9cfaacf64612d6e382a6c83986a29490022eee54d91efaed1dd86a945301fe",
+    "internal/app/conversation_handoff.go": "9f6c5673c3c262005a460738eaadadc3021d5ce3981cbf1e9c7c5afc809e871d",
+    "internal/app/conversation_resume.go": "b2220fc3d38564cdaa717c5651d7e8476594a271436ca1d6c1071bf122c0c52f",
+    "internal/app/native_providers.go": "0d82f98d472a6923e2fc05935a17591d12cf66c2308b78e8cdf5cc369a744b9b",
+    "internal/app/native_providers_test.go": "61d40d55b470d4118e1c0c7a26fd26b82956e1710fe9652bf8749ae8cdfbf44c",
+    "internal/app/session.go": "a226ab52531e2dbbbcdd56ce75b6de67700a1853c1f0c49647760d847ab05972",
+    "internal/cli/cli.go": "0ec0e07539ff5bc4ee71bfbb77f035b806b9e2f3daf1181dc66df7e98ddbe846",
+    "internal/cli/frontends_test.go": "cdd59ad0f46341d05512be38505af284f5340c542b0442fbe99dbb3d3c553601",
+    "internal/cli/legacy_setup_test.go": "63701fae1f6550648998e971d5afa2f971f3117d78ec3f7e94454c973f8b1437",
+    "internal/codexfrontend/facade_test.go": "200bb742692c2c55a64afbab805ee7ec6269f1e76874b4f73cbd33dd7d78fa19",
+    "internal/components/client_catalog_test.go": "013cc11faf96cf0557d0d22e6456648a901dae88a7050df39af68842063b6239",
+    "internal/components/components.go": "147f8813a5712b75deda6406fb8e7878c1a410030acbfcfcaffb7ab6ff87bbd8",
+    "internal/opencodebridge/catalog.go": "0b3e616a7eec4e48a82876afbad65f4b2ec9f87b6c8f899c4ee88b30cc4a2c4d",
+    "internal/orchestrator/conservation.go": "0139c278295565ba28c62fdf2a6290918b9a885a9f2161c42e96ed7beffc10a0",
+    "internal/orchestrator/conservation_test.go": "6e62074be5ba8526ded96195a4b7e4d20a263a5e660f4ac5bed9eb2e0ac120bc",
+    "internal/orchestrator/provider_scope.go": "3d3f3bf1a2ed803a76b96c3e440feb567190d49e77ce80dfceb789d4f1faf092",
+    "internal/orchestrator/provider_scope_test.go": "b859a70d3b3f97f43974f95e7c2467e46458d481f32eeac32813cd489d15afcc",
+    "internal/orchestrator/recovery.go": "d48927bb222938eaf3f00947300b8457298e9bd0bde2b22e60d6265e25843cd2",
+    "internal/orchestrator/scheduler.go": "760ac88f3bb037f8fdfd202b52b8d1e67996f80e777051762f0d43212bb7625b",
+    "internal/orchestrator/server.go": "78443ce1c71750c557d8a3b21721ea554865b4eb3269bcf70cb648684596a987",
+    "internal/quota/manager.go": "56d6571d095c7cbce4571fea62d9c2c90d9531029223e0476c77e698b372fc59",
+    "internal/quota/scope_test.go": "657d55d6a0b6a126f80562c543cac85f02c0f2a0e4c2d3409b2ee7fe21da52c2",
+    "internal/session/checkpoint.go": "2acce350bc2c2b2d62dac0a26f8f213f8c9e4e5137ad0a8fc367ef9436f6f20e",
+    "internal/session/native_providers.go": "f6568887dc190bdaa12a91177f1190bafad9d04c20e142e67c2e3eeecaf81328",
+    "internal/session/native_providers_test.go": "94e4b2cc9c18cdb0a71914fbccdd72b6520c955d4c41dcf609cbc09c92f5a3bd",
+    "release-notes/native-provider-independence.md": "1dc1dcbdf9c1ac0a56266f2a0da62711d2986bf2d8d7ba5668b9114417e9e4d1",
+    "website/i18n/pt-BR/docusaurus-plugin-content-docs/current/cli-reference.md": "89c6b298b34810e99415d300dc21e84afdcfd388cf39598b5903d78204f31ac9",
+    "website/i18n/pt-BR/docusaurus-plugin-content-docs/current/installation.md": "9807f0be22956e75a88ccc9216e7ee66dd460f66fb0f264e52744a28bf8dc0c1",
+    "website/i18n/pt-BR/docusaurus-plugin-content-docs/current/known-limitations.md": "878e6165e218066015f7c862f074dc240715f664364eb22478f84a1d256898e3",
+    "website/i18n/pt-BR/docusaurus-plugin-content-docs/current/orchestrated-frontends.md": "b98321ecdd8ff0b3d8d2a0db5a2e278405eae4fc9a5192003d43e76b4805f0f9",
+    "website/static/build-input.sha256": "4b4559cc905a1f2a7c73c0861df9c3e3a6df08fdf1d2da143d4d128cef6184c9"
+  },
+  "embedded_input_sha256": "1d7d9c1b2d3c72e1e669d9b97c0f4b1ad1f6099fc05d530ab955a32248f295fb"
+}

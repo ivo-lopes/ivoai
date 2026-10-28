@@ -18,12 +18,51 @@ type Manager struct {
 	Probes map[Provider]Probe
 	TTL    time.Duration
 	Now    func() time.Time
+	// nil preserves the legacy provider set. RestrictedTo owns this immutable
+	// map; scope admission precedes even a cached quota read.
+	providerScope map[Provider]bool
+}
+
+var ErrProviderNotAllowed = errors.New("PROVIDER_UNAVAILABLE: executor is outside this session's provider scope")
+
+// RestrictedTo returns a session-local copy. It never widens an existing scope,
+// changes the original probe map, or deletes shared quota history.
+func (m Manager) RestrictedTo(providers ...Provider) *Manager {
+	result := m
+	result.providerScope = map[Provider]bool{}
+	result.Probes = map[Provider]Probe{}
+	for _, provider := range providers {
+		if Supported(provider) && m.Allows(provider) {
+			result.providerScope[provider] = true
+			if probe := m.Probes[provider]; probe != nil {
+				result.Probes[provider] = probe
+			}
+		}
+	}
+	return &result
+}
+
+func (m Manager) Allows(provider Provider) bool {
+	return m.providerScope == nil || m.providerScope[provider]
+}
+
+func (m Manager) Providers() []Provider {
+	result := []Provider{}
+	for _, provider := range Providers() {
+		if m.Allows(provider) {
+			result = append(result, provider)
+		}
+	}
+	return result
 }
 
 // AuthenticationChanged invalidates provider-local quota before optionally
 // probing the official client in the new authentication context. No provider
 // credentials or account fingerprints are inspected.
 func (m Manager) AuthenticationChanged(ctx context.Context, provider Provider, reprobe bool) (ProviderQuota, error) {
+	if !m.Allows(provider) {
+		return ProviderQuota{Provider: provider}, ErrProviderNotAllowed
+	}
 	if err := m.Store.Invalidate(provider); err != nil {
 		return ProviderQuota{Provider: provider}, err
 	}
@@ -37,6 +76,9 @@ func (m Manager) AuthenticationChanged(ctx context.Context, provider Provider, r
 // is not treated as zero; only authentication, hard limits, or an exact
 // authoritative model window can block dispatch.
 func (m Manager) CanDispatch(ctx context.Context, provider Provider, model string, force bool) (ProviderQuota, bool, error) {
+	if !m.Allows(provider) {
+		return ProviderQuota{Provider: provider}, false, ErrProviderNotAllowed
+	}
 	value, err := m.Probe(ctx, provider, force)
 	if checker, ok := m.Probes[provider].(interface{ CanModel(string) bool }); ok && !checker.CanModel(model) {
 		return value, false, err
@@ -48,6 +90,9 @@ func (m Manager) CanDispatch(ctx context.Context, provider Provider, model strin
 }
 
 func (m Manager) Probe(ctx context.Context, provider Provider, force bool) (ProviderQuota, error) {
+	if !m.Allows(provider) {
+		return ProviderQuota{Provider: provider}, ErrProviderNotAllowed
+	}
 	now := m.now()
 	if !force {
 		if snapshot, err := m.Store.Load(); err == nil {
@@ -118,7 +163,7 @@ func (m Manager) ResolveCandidates(ctx context.Context, requested Provider, mode
 	var failures []error
 	var unavailable []ProviderQuota
 	for _, provider := range Priority(requested) {
-		if excluded[provider] || m.Probes[provider] == nil {
+		if !m.Allows(provider) || excluded[provider] || m.Probes[provider] == nil {
 			continue
 		}
 		value, eligible, err := m.CanDispatch(ctx, provider, model, force)
@@ -165,6 +210,9 @@ func reason(value ProviderQuota) string {
 }
 
 func (m Manager) MarkExhausted(provider Provider, reason string) error {
+	if !m.Allows(provider) {
+		return ErrProviderNotAllowed
+	}
 	value := ProviderQuota{Provider: provider, HardLimitReached: true, Authenticated: true, Eligible: false, Reason: reason, Source: "runtime limit signal", ObservedAt: m.now()}
 	if snapshot, err := m.Store.Load(); err == nil {
 		if current, ok := snapshot.Providers[provider]; ok {

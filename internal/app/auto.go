@@ -147,7 +147,7 @@ func (a *App) autoBridgeArgs(executor string, existing []string, id, runtimeDir,
 	return args, nil
 }
 
-// stripManagedSelectionArgs keeps the OpenCode model picker authoritative for
+// stripManagedSelectionArgs keeps the frontend model picker authoritative for
 // managed AUTO sessions. Other official-client flags remain untouched.
 func stripManagedSelectionArgs(executor string, input []string) []string {
 	result := make([]string, 0, len(input))
@@ -364,6 +364,20 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 	if frontendName != "codex" && frontendName != "opencode" {
 		return errors.New("orchestrated frontend must be codex or opencode")
 	}
+	legacy := frontendName == "opencode"
+	if resumeID, _ := ctx.Value(resumeSessionKey{}).(string); !legacy && resumeID != "" {
+		store := session.Store{Root: a.Store.Paths.SessionsDir}
+		previous, err := store.Get(resumeID)
+		if err != nil {
+			return err
+		}
+		// An explicit native frontend selection narrows the existing session;
+		// inspect it under that target before any provider resolution.
+		previous.Frontend = frontendName
+		if err := store.CheckNativeProviders(previous); err != nil {
+			return err
+		}
+	}
 	explicitPlanner := strings.TrimSpace(planner) != ""
 	if frontendName == "codex" && planner == "" {
 		// A preference can be changed only through the shared routing decision;
@@ -379,6 +393,12 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 	}
 	if !cfg.Orchestration.Auto.Quota.Enabled {
 		return errors.New("automatic quota routing is disabled")
+	}
+	if !legacy && strings.EqualFold(strings.TrimSpace(planner), "opencode") {
+		return session.ErrOpenCodeManagedDeprecated
+	}
+	if !legacy && strings.EqualFold(strings.TrimSpace(planner), "claude") {
+		return errClaudeNativeManagedFrontend
 	}
 	if planner == "" {
 		planner = cfg.Orchestration.Auto.DefaultPlanner
@@ -515,21 +535,24 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 	binding := newConversationBinding(store, value, lease)
 	defer binding.Close()
 	currentID := binding.ID
-	manager := a.automaticQuotaManager(cfg, state)
+	manager := a.scopedQuotaManager(cfg, state, legacy)
 	// Legacy or newly created picker conversations may not have a snapshot.
 	// Resume always probes current quota instead of restoring historical truth.
 	value.Quota = map[quota.Provider]quota.ProviderQuota{}
-	native := a.nativeOpenCode(cfg, state, cwd, filepath.Join(a.Store.Paths.CacheDir, "native-discovery", currentID()), nil, false)
+	var native *agents.NativeOpenCode
+	if legacy {
+		native = a.nativeOpenCode(cfg, state, cwd, filepath.Join(a.Store.Paths.CacheDir, "native-discovery", currentID()), nil, false)
+	}
 	if native != nil && manager.Probes[quota.ProviderOpenCode] == nil {
 		manager.Probes[quota.ProviderOpenCode] = native
 	}
-	for _, provider := range quota.Providers() {
+	for _, provider := range manager.Providers() {
 		current, _ := manager.Probe(ctx, provider, true)
 		value.Quota[provider] = current
 	}
 	_, _ = store.Update(currentID(), func(current *session.Session) error {
 		current.Quota = value.Quota
-		for _, provider := range quota.Providers() {
+		for _, provider := range manager.Providers() {
 			for _, event := range quotaObservations(provider, value.Quota[provider]) {
 				if err := session.AppendObservation(current, event); err != nil {
 					return err
@@ -601,9 +624,12 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 		return err
 	}
 	defer knowledge.close()
-	resumeFrontendID, err := resumableOpenCodeSession(store, currentID(), cwd, scopeID)
-	if err != nil {
-		return err
+	resumeFrontendID := ""
+	if legacy {
+		resumeFrontendID, err = resumableOpenCodeSession(store, currentID(), cwd, scopeID)
+		if err != nil {
+			return err
+		}
 	}
 	if resumeID != "" {
 		resumeFrontendID = value.FrontendSessionID
@@ -745,6 +771,9 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 			registry.Providers["opencode"] = native.Capability()
 		}
 		modelCatalog = opencodebridge.CatalogFromRegistry(registry)
+	}
+	if !legacy {
+		modelCatalog = modelCatalog.RestrictedTo("codex", "claude")
 	}
 	turnState := &autoTurnState{knowledge: knowledge}
 	initialModel, initialEffort, err := frontendSelection(modelCatalog, planner, agentArgs)
@@ -1556,7 +1585,7 @@ For the first substantive user request, do not immediately begin large work. Fol
 3. inspect orchestration_quota and orchestration_capabilities;
 4. decompose the request into the smallest useful non-overlapping tasks, their dependencies and parallel groups. Every task needs local acceptance criteria and one role: research, implementation, review, security, documentation, ops, synthesis. Include only relevant context_references, knowledge_sources (selected aliases), constraints, skills, allowed_mcps, allowed_mcp_tools (server alias to exact tool names), and write_paths; A server name alone grants no external tools. Empty exact scope denies every tool. Explicit mutating/unknown tools require plan approval even in Full; immediate start still requires explicit approval for non-read tools. Primary tasks also need exact tool grants, and never inherit worker grants. All writes belong to implementation/documentation workers with explicit relative write_paths. Include a dependency-aware validation task for implementation acceptance;
 5. score every task from 0..100 for complexity, risk, reasoning_depth, context_breadth, verification_need, parallel_value, and latency_sensitivity;
-6. call orchestration_plan. IvoAI calculates the capability score and has final authority over provider, model, effort, and quota. Unless immediate execution is configured, this call waits for the user's plan approval in OpenCode. Do not perform planned work before it succeeds. Tool permission Full does not approve a plan;
+6. call orchestration_plan. IvoAI calculates the capability score and has final authority over provider, model, effort, and quota. Unless immediate execution is configured, this call waits for the user's plan approval in the current client. Do not perform planned work before it succeeds. Tool permission Full does not approve a plan;
 7. keep trivial work in the primary when delegation overhead exceeds expected benefit;
 8. IVOAI automatically queues delegated work after plan and quota approval. Do not manually create agents. orchestration_spawn_batch remains idempotent for compatibility, but is not required to start workers. IVOAI respects dependencies, host capacity and isolated writer worktrees. Continue useful read-only primary work while workers run;
 9. call orchestration_primary_complete after each primary-owned task so dependent work may start, then use orchestration_wait without busy-looping. Never wait on your own unfinished task. If waiting_for_primary is returned, perform and verify those primary_task_ids before marking them complete; do not checkpoint or end the turn with primary work outstanding;

@@ -75,6 +75,7 @@ func runCommand(ctx context.Context, a *app.App, args []string) error {
 		fs := flag.NewFlagSet("setup", flag.ContinueOnError)
 		fs.SetOutput(a.Err)
 		mode := fs.String("mode", "client", "client or server")
+		legacyOpenCode := fs.Bool("legacy-opencode", false, "explicitly install/repair the deprecated legacy OpenCode component")
 		if err := fs.Parse(args[1:]); err != nil {
 			return err
 		}
@@ -91,16 +92,25 @@ func runCommand(ctx context.Context, a *app.App, args []string) error {
 				return err
 			}
 			if serverInstall {
+				if *legacyOpenCode {
+					return errors.New("--legacy-opencode is supported only by explicit client setup")
+				}
 				return runServer(ctx, append([]string{"setup"}, fs.Args()...), a)
 			}
 		}
 		if *mode == "server" {
+			if *legacyOpenCode {
+				return errors.New("--legacy-opencode is supported only by client setup")
+			}
 			return runServer(ctx, append([]string{"setup"}, fs.Args()...), a)
 		}
 		if *mode != "client" {
 			return fmt.Errorf("invalid setup mode %q", *mode)
 		}
-		return a.Setup(ctx)
+		if *legacyOpenCode {
+			fmt.Fprintln(a.Err, "OpenCode managed integration is deprecated; explicitly installing legacy compatibility only.")
+		}
+		return a.SetupWithLegacyOpenCode(ctx, *legacyOpenCode)
 	case "status":
 		if len(args) == 2 && args[1] == "--json" {
 			return runDoctor(ctx, a, []string{"--json"})
@@ -179,9 +189,12 @@ func runCommand(ctx context.Context, a *app.App, args []string) error {
 			return err
 		}
 		frontend := args[0]
+		if frontend == "opencode" {
+			fmt.Fprintln(a.Err, "`ivoai opencode` is deprecated; native managed sessions use `ivoai codex`. Explicit legacy setup remains available with `ivoai setup --mode client --legacy-opencode`.")
+		}
 		if frontend == "auto" {
 			frontend = "opencode"
-			fmt.Fprintln(a.Err, "`ivoai auto` is deprecated; use `ivoai opencode`.")
+			fmt.Fprintln(a.Err, "`ivoai auto` is deprecated and retains the explicit legacy OpenCode path; use `ivoai codex` for native managed sessions.")
 		}
 		// --direct must precede --; everything after -- belongs to the
 		// official client and is not reinterpreted as an IVOAI mode switch.
@@ -828,7 +841,7 @@ Usage:
   ivoai admin serve [--listen 127.0.0.1:7781]
   ivoai admin access create [--ttl 10m] | list | revoke <id>
   ivoai status [--json]
-  ivoai setup [--mode client|server]
+  ivoai setup [--mode client|server] [--legacy-opencode]
   ivoai doctor [--json] [--inventory]
   ivoai update [--dry-run] | update --rollback [--force]
   ivoai update --codex [--rollback]

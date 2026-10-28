@@ -38,7 +38,7 @@ func TestOrchestratedEntrypointsAndDeprecatedAlias(t *testing.T) {
 		if out.Len() != 0 {
 			t.Fatal("alias or mode polluted stdout")
 		}
-		if (strings.Count(diagnostic.String(), "deprecated") == 1) != (command == "auto") {
+		if (strings.Count(diagnostic.String(), "deprecated") == 1) != (command == "auto" || command == "opencode") {
 			t.Fatalf("incorrect deprecation: %s", command)
 		}
 	}

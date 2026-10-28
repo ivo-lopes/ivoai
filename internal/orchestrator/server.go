@@ -154,6 +154,9 @@ func (s *Server) authorized() error {
 	if err != nil {
 		return err
 	}
+	if err := s.Store.CheckNativeProviders(value); err != nil {
+		return err
+	}
 	safeCoordinator := value.Coordinator == "native" && value.Mode == session.ModeAuto && value.SwarmID == "native_"+value.SessionID
 	if value.Coordinator == "" || value.Coordinator == "ruflo" {
 		safeCoordinator = value.SwarmID != "" && value.RufloHealthy && value.RufloSafeMode
@@ -172,7 +175,7 @@ func (s *Server) addTools(server *mcp.Server) {
 	server.AddTool(&mcp.Tool{Name: "orchestration_delegate", Description: "Run a bounded task through an official Codex or Claude Code worker. Ruflo only records lifecycle.", InputSchema: object(map[string]any{
 		"role":               map[string]any{"type": "string", "pattern": `^[A-Za-z][A-Za-z0-9_-]{0,63}$`},
 		"task":               map[string]any{"type": "string", "minLength": 1, "maxLength": workers.MaxTaskBytes},
-		"preferred_executor": map[string]any{"type": "string", "enum": quota.ProviderNames()},
+		"preferred_executor": map[string]any{"type": "string", "enum": s.providerNames()},
 		"model":              map[string]any{"type": "string", "minLength": 1, "maxLength": 128},
 	}, "role", "task"), Annotations: write}, s.delegate)
 	server.AddTool(&mcp.Tool{Name: "orchestration_result", Description: "Read a bounded structured WorkerResult; only opaque evidence references survive primary failover.", InputSchema: object(map[string]any{"worker_id": map[string]any{"type": "string"}}, "worker_id"), Annotations: read}, s.result)
@@ -223,6 +226,9 @@ func (s *Server) delegate(ctx context.Context, request *mcp.CallToolRequest) (*m
 	}
 	if !quota.Supported(quota.Provider(args.Executor)) {
 		return nil, errors.New("preferred_executor must be codex, claude or opencode")
+	}
+	if err := s.providerAllowed(args.Executor); err != nil {
+		return nil, err
 	}
 	requestedExecutor := args.Executor
 	fallbackReason := ""
@@ -375,7 +381,7 @@ func (s *Server) quotaStatus(ctx context.Context, _ *mcp.CallToolRequest) (*mcp.
 		return nil, errors.New("quota routing is available only in automatic sessions")
 	}
 	result := map[string]quota.ProviderQuota{}
-	for _, provider := range quota.Providers() {
+	for _, provider := range s.Quota.Providers() {
 		current, _ := s.Quota.Probe(ctx, provider, false)
 		result[string(provider)] = current
 	}

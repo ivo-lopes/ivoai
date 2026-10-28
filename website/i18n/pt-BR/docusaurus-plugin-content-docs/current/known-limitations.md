@@ -1,8 +1,9 @@
 # Limitações conhecidas
 
-- O OpenCode é o frontend gerenciado do AUTO e um executor/worker nativo opcional
-  quando sua autenticação oficial e capabilities de ferramentas estão disponíveis.
-  Codex/Claude preservam a prioridade; a telemetria de quota nativa pode continuar unknown.
+- O OpenCode permanece como frontend/executor legado explícito e descontinuado.
+  Sessões nativas Codex e workers Codex/Claude o excluem mesmo quando instalado.
+  Assets legados de release e participantes de rollback do updater permanecem;
+  a remoção global continua pendente.
   Configurações pessoais customizadas de provider/plugin/MCP não são importadas em
   sessões controladas. Subagentes nativos e diálogos separados de perguntas são desabilitados.
 - A bridge gerenciada exibe o streaming de texto do executor e o estado da sessão. A
@@ -13,6 +14,9 @@
 - O Headroom permanece disponível para compatibilidade e rollback.
 - [Conversation Continuity](conversation-continuity.md) oferece retomada nativa,
   recovery limitado e handoff explícito. Históricos já apagados não são recriados.
-  A Full Console continua planejada para v0.10.4.
+  Handoff AUTO nativo para Claude e `ivoai codex --planner claude` falham fechado
+  até existir contrato verificado de frontend nativo gerenciado. Claude direto
+  continua disponível; não há alegação de paridade da TUI nativa Claude. O console
+  OpenCode legado não é requisito dos clientes nativos.
 - O MCP Web remoto exige uma origem HTTPS publicamente acessível ou o túnel seguro
   compatível da plataforma.
