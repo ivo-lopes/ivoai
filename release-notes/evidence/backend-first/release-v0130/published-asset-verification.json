@@ -1,0 +1,105 @@
+{
+  "tag": "v0.13.0",
+  "source_commit": "49445919f745157e3c8aa1c717161e49cb5f50d5",
+  "release_run": 40604246722,
+  "assets": [
+    {
+      "name": "checksums.txt",
+      "bytes": 1037,
+      "sha256": "755f77842cf411da8a41e46ebd7da79d1310978f3648247d06e0eedec3505af0",
+      "github_digest_verified": true
+    },
+    {
+      "name": "ivoai-graft_linux_amd64.tar.gz",
+      "bytes": 7689763,
+      "sha256": "85cd3b4f5a06e99a683739aa6fe7325951d3343834ef5ad18a37e30e9bfac441",
+      "github_digest_verified": true
+    },
+    {
+      "name": "ivoai-graft_linux_arm64.tar.gz",
+      "bytes": 7643836,
+      "sha256": "cb8253465889f48af8d0a63a10ac1115215542eb8674aa4090e529506e00af93",
+      "github_digest_verified": true
+    },
+    {
+      "name": "ivoai-memory-context.zip",
+      "bytes": 3480,
+      "sha256": "6e5bc28cb02d5557dbe16b2e2ffae7fc954c5e783c14a4dcd0fb6c08c364b378",
+      "github_digest_verified": true
+    },
+    {
+      "name": "ivoai-opencode_linux_amd64.tar.gz",
+      "bytes": 60747298,
+      "sha256": "3c66c3987b99b3bd2875775e6d601bdce17f4727e4da133ee69575439a1128a3",
+      "github_digest_verified": true
+    },
+    {
+      "name": "ivoai-opencode_linux_arm64.tar.gz",
+      "bytes": 60565984,
+      "sha256": "cd971625479d27375b3932834ccf7b67a19689dcdcd3127dbf504041ad67edcc",
+      "github_digest_verified": true
+    },
+    {
+      "name": "ivoai_linux_amd64.tar.gz",
+      "bytes": 19451172,
+      "sha256": "5f5ed6efdf0f966fb1b108edb426ce15766945451cbe95d47cea790b46457e45",
+      "github_digest_verified": true
+    },
+    {
+      "name": "ivoai_linux_arm64.tar.gz",
+      "bytes": 18723987,
+      "sha256": "743a256697fd1d801726592c80da736303a24b45665425fd9d086d1429c6dcdb",
+      "github_digest_verified": true
+    },
+    {
+      "name": "managed-graft-amd64.json",
+      "bytes": 626,
+      "sha256": "6fc5af54dd963e8d0af58b6a8dc051a52fef9e0447ef25630da669f394b6f6d7",
+      "github_digest_verified": true
+    },
+    {
+      "name": "managed-graft-arm64.json",
+      "bytes": 626,
+      "sha256": "ea612e7e9e8c5e352f78a91fe3c597dec2530eb023b00346087c24a91390a106",
+      "github_digest_verified": true
+    },
+    {
+      "name": "managed-opencode-amd64.json",
+      "bytes": 626,
+      "sha256": "c42d957dc45734a70af18897aacdd874b89ad30699252b17cbe04b446f0006ce",
+      "github_digest_verified": true
+    },
+    {
+      "name": "managed-opencode-arm64.json",
+      "bytes": 626,
+      "sha256": "9a447b4f69e2fe6ea5adee7a36dd955d0b1a437e2b9f7d832d1d3487c9877535",
+      "github_digest_verified": true
+    }
+  ],
+  "core_binaries": [
+    {
+      "architecture": "amd64",
+      "sha256": "7a0729bedb85c96a0860910e295617138d6a7f8acaa76d56bd54aa71d49ad304",
+      "source_revision_verified": true,
+      "go": "1.27.3",
+      "runtime_executed": true,
+      "version_verified": true,
+      "help_exit_code": 0,
+      "baseline_cpu_build": true
+    },
+    {
+      "architecture": "arm64",
+      "sha256": "ea94e8bacdc460a2bc7d8b76b111113485ecad80502bcebe77d558a96d40cd1c",
+      "source_revision_verified": true,
+      "go": "1.27.3",
+      "runtime_executed": false
+    }
+  ],
+  "production_deployment": false,
+  "global_economic_gate": "INCOMPLETE",
+  "checksum_manifest_verified": true,
+  "status": "VERIFIED_PUBLISHED_ASSETS",
+  "checksums_manifest_sha256": "755f77842cf411da8a41e46ebd7da79d1310978f3648247d06e0eedec3505af0",
+  "verification_scope": "public release bytes and metadata; local amd64 version/help only; full release gates in linked CI",
+  "release_url": "https://github.com/ivo-lopes/ivoai/releases/tag/v0.13.0"
+}
