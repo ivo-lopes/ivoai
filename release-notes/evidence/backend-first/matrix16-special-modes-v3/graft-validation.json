@@ -1,0 +1,67 @@
+{
+  "scope": "reused_published_v0130_graft_no_inference",
+  "archive_sha256": "85cd3b4f5a06e99a683739aa6fe7325951d3343834ef5ad18a37e30e9bfac441",
+  "metadata_sha256": "6fc5af54dd963e8d0af58b6a8dc051a52fef9e0447ef25630da669f394b6f6d7",
+  "checksum_manifest_sha256": "755f77842cf411da8a41e46ebd7da79d1310978f3648247d06e0eedec3505af0",
+  "inventory_sha256": "4c405568d9fd2d3bf78f7831d4b536a460bde13cb2a8724332e61ff4b6228c43",
+  "inventory_file_count": 2376,
+  "inventory_all_bytes_verified": true,
+  "native_binding_count": 10,
+  "native_requirements": {
+    "node_modules/tree-sitter/build/Release/tree_sitter_runtime_binding.node": {
+      "GLIBC": "2.17",
+      "GLIBCXX": "3.4.29",
+      "CXXABI": "1.3.9"
+    },
+    "node_modules/tree-sitter-go/build/Release/tree_sitter_go_binding.node": {
+      "GLIBC": "2.14",
+      "CXXABI": "1.3.9",
+      "GLIBCXX": "3.4"
+    },
+    "node_modules/tree-sitter-java/build/Release/tree_sitter_java_binding.node": {
+      "GLIBC": "2.14",
+      "CXXABI": "1.3.9",
+      "GLIBCXX": "3.4"
+    },
+    "node_modules/tree-sitter-javascript/build/Release/tree_sitter_javascript_binding.node": {
+      "GLIBC": "2.14",
+      "CXXABI": "1.3.9",
+      "GLIBCXX": "3.4"
+    },
+    "node_modules/tree-sitter-kotlin/build/Release/tree_sitter_kotlin_binding.node": {
+      "GLIBC": "2.14",
+      "CXXABI": "1.3.9",
+      "GLIBCXX": "3.4"
+    },
+    "node_modules/tree-sitter-php/build/Release/tree_sitter_php_binding.node": {
+      "GLIBC": "2.14",
+      "CXXABI": "1.3.9",
+      "GLIBCXX": "3.4"
+    },
+    "node_modules/tree-sitter-python/build/Release/tree_sitter_python_binding.node": {
+      "GLIBC": "2.14",
+      "CXXABI": "1.3.9",
+      "GLIBCXX": "3.4"
+    },
+    "node_modules/tree-sitter-r/build/Release/tree_sitter_r_binding.node": {
+      "GLIBC": "2.14",
+      "CXXABI": "1.3.9",
+      "GLIBCXX": "3.4"
+    },
+    "node_modules/tree-sitter-swift/build/Release/tree_sitter_swift_binding.node": {
+      "GLIBC": "2.14",
+      "CXXABI": "1.3.9",
+      "GLIBCXX": "3.4"
+    },
+    "node_modules/tree-sitter-typescript/build/Release/tree_sitter_typescript_binding.node": {
+      "GLIBC": "2.14",
+      "CXXABI": "1.3.9",
+      "GLIBCXX": "3.4"
+    }
+  },
+  "node_version_required": "26.11.1",
+  "node_archive_sha256_required": "15fc043a51a5783f2f4b634561091658f5a7f0e3db03f997dca3a8033a33e45b",
+  "platform": "linux/amd64",
+  "installer_executed": false,
+  "personal_state": false
+}

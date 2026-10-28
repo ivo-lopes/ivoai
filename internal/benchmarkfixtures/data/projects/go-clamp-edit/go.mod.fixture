@@ -1,0 +1,3 @@
+module clampfixture
+
+go 1.27

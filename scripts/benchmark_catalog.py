@@ -29,17 +29,18 @@ class Scenario:
     prompt: str
     expected: dict | None
     structural: str
+    execution: str
 
 
 def load_catalog():
     raw = json.loads(CATALOG.read_bytes())
-    if set(raw) != {"schema_version", "scope", "global_economic_gate", "scenarios"} or raw["schema_version"] != 1 or raw["global_economic_gate"] != "INCOMPLETE":
+    if set(raw) != {"schema_version", "scope", "global_economic_gate", "scenarios"} or raw["schema_version"] != 2 or raw["global_economic_gate"] != "INCOMPLETE":
         raise ValueError("invalid_catalog")
     cases = []
     for item in raw["scenarios"]:
         if set(item) != set(Scenario.__annotations__) or type(item["runner_supported"]) is not bool:
             raise ValueError("invalid_scenario_fields")
-        for key in ("id", "label", "fixture", "blocker", "task", "prompt", "structural"):
+        for key in ("id", "label", "fixture", "blocker", "task", "prompt", "structural", "execution"):
             if type(item[key]) is not str:
                 raise ValueError("invalid_scenario_type")
         if not TOKEN.fullmatch(item["id"]) or item["fixture"] and not TOKEN.fullmatch(item["fixture"]):
@@ -49,8 +50,10 @@ def load_catalog():
         if item["structural"] not in ("allowed", "required", "forbidden"):
             raise ValueError("invalid_structural_policy")
         supported = item["runner_supported"]
+        if supported and item["execution"] not in ("read_only", "workspace_edit") or not supported and item["execution"] != "unavailable":
+            raise ValueError("invalid_execution_contract")
         if supported and (item["blocker"] or not all(item[x] for x in ("task", "prompt", "fixture")) or type(item["expected"]) is not dict):
-            raise ValueError("incomplete_read_only_contract")
+            raise ValueError("incomplete_execution_contract")
         if not supported and not item["blocker"]:
             raise ValueError("missing_blocker")
         if item["fixture"] and not (DATA / "projects" / item["fixture"]).is_dir():
@@ -81,10 +84,33 @@ def fixture_digest(name):
     return result.hexdigest()
 
 
+def contract_digest():
+    result = hashlib.sha256()
+    for name in ("fixtures.go", "edit_oracle.go", "exec_observation.go"):
+        result.update(name.encode() + b"\0" + (ROOT / "internal/benchmarkfixtures" / name).read_bytes() + b"\0")
+    return result.hexdigest()
+
+
+def oracle_identity(scenario, go, node, bwrap):
+    tool = go if scenario.id == "small_known_file_correction" else node
+    if scenario.execution != "workspace_edit" or not tool or not bwrap:
+        return None
+    try:
+        paths = (Path(tool), Path(bwrap), Path("/usr/bin/prlimit"))
+        if any(not p.is_absolute() or not p.is_file() or not os.access(p, os.X_OK) or p.stat().st_size > 512 << 20 for p in paths):
+            return None
+        result = hashlib.sha256(scenario.id.encode() + b"\0")
+        for path in paths:
+            result.update(digest(path).encode() + b"\0")
+        return result.hexdigest()
+    except OSError:
+        return None
+
+
 def expected_capabilities(harness):
     cases = [s for s in load_catalog() if s.runner_supported]
-    return {"schema_version": 1, "catalog_sha256": digest(CATALOG),
-            "fixture_contract_sha256": digest(ROOT / "internal/benchmarkfixtures/fixtures.go"),
+    return {"schema_version": 3, "catalog_sha256": digest(CATALOG),
+            "fixture_contract_sha256": contract_digest(),
             "harness_sha256": digest(harness), "supported_scenarios": sorted(s.id for s in cases),
             "fixtures": {s.fixture: fixture_digest(s.fixture) for s in cases}}
 
@@ -159,7 +185,7 @@ def main(argv=None):
     cases = load_catalog()
     result = {"scope": "offline_catalog_and_synthetic_fixtures", "global_economic_gate": "INCOMPLETE",
               "provider_attempts": 0, "catalog_sha256": digest(CATALOG),
-              "fixture_contract_sha256": digest(ROOT / "internal/benchmarkfixtures/fixtures.go"),
+              "fixture_contract_sha256": contract_digest(),
               "harness_sha256": digest(ROOT / "internal/app/primary_prefetch_live_test.go"),
               "oracle_tools_sha256": {name: digest(path) if path and path.is_file() else None
                                        for name, path in (("go", args.go), ("node", args.node),

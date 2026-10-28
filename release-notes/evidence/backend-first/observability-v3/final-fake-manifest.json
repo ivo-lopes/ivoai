@@ -1,0 +1,51 @@
+{
+  "schema_version": 3,
+  "scope": "app_primary_prefetch_subset",
+  "repetitions": 1,
+  "driver_sha256": "2635e976c32f73b753693d16367fd239d97542c106d6fe1f1f3cafe1d523660d",
+  "catalog_loader_sha256": "c2d61962691373cc120f9fda9735f13ce7b1c9122f314ca31cfe5b1fa7091622",
+  "process_sampler_sha256": "5ebaaa4c8b18e4a24b85bd35b9c57fc992b972cbb529530e86e266ca15a5a3cd",
+  "process_sampling": {
+    "enabled": true,
+    "schema_version": 1,
+    "interval_ms": 100,
+    "window_budget_ms": 25,
+    "max_processes": 128,
+    "max_threads_per_process": 128,
+    "max_reads_per_sample": 512,
+    "max_samples": 3000,
+    "max_observed_identities": 4096
+  },
+  "native_event_observation_schema": 1,
+  "model_requested": "gpt-6.1-sol",
+  "effort_requested": "low",
+  "effective_model_observed": null,
+  "host_mcp_tools_exposed": 0,
+  "native_tools_exposed": null,
+  "native_tools_inventory": "UNVERIFIED",
+  "native_worker_observation": "PARTIAL_CLIENT_PROJECTION_TOTALS_UNKNOWN",
+  "common_native_worker_policy": "agents.enabled=false;features.multi_agent_v2=false",
+  "runtime_flags": {
+    "experimental_evidence_gateway": false
+  },
+  "baseline_test_sha256": "1bb8ac3760898dd7caaf6134541c6dd76b741a9da6137a1862e620f8f10953f2",
+  "candidate_test_sha256": "b6032f3efda6b33078cd7a12de43a6e156489c61c818bd764701ad26bc88f269",
+  "codex_sha256": "1898e3bd1088d5875c8e9a4559b1a58e6eba997ddba49b92b069b5df129689d2",
+  "node_sha256": "5a7b8a3cf5ccb57d297519754fd73238f64cf560afd0ef19a2f9bf7384cbb657",
+  "sandbox_sha256": "16894a928d8b454c4256ed7fb4b6108974446e9c3f5c52b6671234dafb7928be",
+  "oracle_go_sha256": "5f5eb6d0b2fb6aa0bb5d5f8c5f1c944e0de955c925f0111af92a9d8f79680b5b",
+  "oracle_bwrap_sha256": "573236e5328ac2ebb08f59ae3a9805b4f8d12bdef14be8af4450d5463294985f",
+  "oracle_prlimit_sha256": "06275e616ca2b721482aeb564260489be3fdc6d5f86836b4a78e96485845f060",
+  "distribution_inventory_sha256": "4c405568d9fd2d3bf78f7831d4b536a460bde13cb2a8724332e61ff4b6228c43",
+  "harness_sha256": "8a39b1ef6f9c4efc5a95a115adac7104bc51d330c9eb3e6b2f592555f3f4fe08",
+  "requested_scenarios": [
+    "cross_module_refactor"
+  ],
+  "catalog_sha256": "395f77bc5154c3df42cc7897feb7206bb38963a9441741ea24dbf290b08a9d7e",
+  "fixture_contract_sha256": "79cbdc665d4e301bc6057fb15dabb73cc08964e50eae1a1558b8c5e20a93678b",
+  "edit_oracle_identities": {
+    "cross_module_refactor": "16b7713d9ebd220e5fff739682ac691fc622488d762c814c9c98a079b7f2bbeb"
+  },
+  "preflight_only": false,
+  "cache_policy": "cold_private_local_caches_provider_cache_unverified"
+}

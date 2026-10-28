@@ -1,0 +1,166 @@
+{
+  "schema_version": 1,
+  "scope": "test_only_benchmark_observability_v3",
+  "plane_tasks": [
+    "IVOAI-138",
+    "IVOAI-198"
+  ],
+  "base_commit": "99fe07a93e242d2163116bf6dd8d265c3c8f9d8c",
+  "production_runtime_changed": false,
+  "historical_real_comparative_turns": 126,
+  "historical_turns_reexecuted_or_rescored": 0,
+  "new_real_model_inferences": 0,
+  "global_economic_gate": "INCOMPLETE",
+  "context_sync": "BLOCKED",
+  "context_task": "IVOAI-175",
+  "schema_versions": {
+    "harness_discovery": 3,
+    "driver": 3,
+    "catalog": 2,
+    "native_events": 1,
+    "process_sampling": 1
+  },
+  "source_sha256": {
+    "internal/app/primary_prefetch_live_test.go": "8a39b1ef6f9c4efc5a95a115adac7104bc51d330c9eb3e6b2f592555f3f4fe08",
+    "internal/benchmarkfixtures/fixtures.go": "36d96121f59a734f25989db9d43f6d4c39e0a0160bbb676f82d7c5bea1a5fc86",
+    "internal/benchmarkfixtures/exec_observation.go": "6188106799ed44eeb260d322f46f1d9e1e4fcdbbcd4c69e759a18137fba977e3",
+    "internal/benchmarkfixtures/exec_observation_test.go": "3af8a54f9e2cff361ac86c32e7cff8cf0db4880bb489ff2ec3f2159824e798ff",
+    "internal/workers/managed_codex_live_test.go": "6819555acd167286c2dfb7da69d659a06631e7298799a5eb83917fe2292ba811",
+    "scripts/benchmark-economic-runtime.py": "2635e976c32f73b753693d16367fd239d97542c106d6fe1f1f3cafe1d523660d",
+    "scripts/benchmark_catalog.py": "c2d61962691373cc120f9fda9735f13ce7b1c9122f314ca31cfe5b1fa7091622",
+    "scripts/benchmark_process_sampler.py": "5ebaaa4c8b18e4a24b85bd35b9c57fc992b972cbb529530e86e266ca15a5a3cd",
+    "scripts/test_benchmark_economic_runtime.py": "602858676bdfcab0519d38667234f69657c3da00c3d1fb66ff0d3b34669037cb",
+    "scripts/test_benchmark_catalog.py": "9d2d1badc7eb799b556cfffb4c5f8adeee82254dee83161b1eca6fb64c424b62",
+    "scripts/test_benchmark_process_sampler.py": "1533e24174a74b56e9b189880d15d9778d0c35baba787a9737dffe45637351fe"
+  },
+  "historical_evidence_tree_at_base": "da7e872e2c9a4e30b590f8d7f0488f9bef3fc04d",
+  "existing_evidence_files_changed_before_append": false,
+  "checks": {
+    "python": {
+      "tests": 39,
+      "status": "PASS",
+      "seconds": 7.677
+    },
+    "focused_go_race": {
+      "packages": 2,
+      "status": "PASS",
+      "fixture_seconds": 1.194,
+      "app_seconds": 1.22
+    },
+    "go_vet": {
+      "packages": 3,
+      "status": "PASS"
+    },
+    "official_protocol": {
+      "client": "0.162.1",
+      "cases": 6,
+      "status": "PASS",
+      "race_package_seconds": 6.555,
+      "homes": "DISPOSABLE",
+      "authentication": false,
+      "provider": "LOOPBACK_SYNTHETIC",
+      "model_inferences": 0,
+      "positive_controls": 4,
+      "managed_negative_controls": 2,
+      "http_fixture_requests": 16,
+      "positive_child_fixture_requests": 4,
+      "jsonl_collab_terminal_events": 0,
+      "actual_native_worker_delegation_retry_totals": "UNKNOWN",
+      "omission_root_cause": "NOT_ESTABLISHED"
+    },
+    "common_baseline_compile": "PASS",
+    "candidate_amd64_v1_compile": "PASS",
+    "candidate_arm64_cross_compile": "PASS",
+    "candidate_arm64_runtime": "NOT_RUN",
+    "matrix_preflight": "9READY/5UNSUPPORTED/2BLOCKED zero client attempts",
+    "fake_controls": {
+      "complete_sampled_four_turns": 4,
+      "incomplete_missing_terminal_four_turns_rejected": 4,
+      "final_source_sampled_two_turns": 2,
+      "usage_and_tool_events": "FABRICATED_NOT_ECONOMIC",
+      "os_samples": "REAL_LOCAL_PROCESS_OBSERVATIONS_NOT_NATIVE_AGENT_TOTALS"
+    }
+  },
+  "binaries": {
+    "baseline": "1bb8ac3760898dd7caaf6134541c6dd76b741a9da6137a1862e620f8f10953f2",
+    "candidate": "b6032f3efda6b33078cd7a12de43a6e156489c61c818bd764701ad26bc88f269",
+    "arm64_cross_compile": "8806bc66713086a603800f8e1773f7b26ff94406d42082757b9be7b4ae281115"
+  },
+  "native_scope": {
+    "terminal_tool_types": [
+      "command_execution",
+      "mcp_tool_call",
+      "file_change",
+      "web_search",
+      "collab_tool_call"
+    ],
+    "repetition_types": [
+      "command_execution",
+      "mcp_tool_call"
+    ],
+    "payload_fingerprints_persisted": false,
+    "ids_arguments_paths_prompts_persisted": false,
+    "real_totals_absence_converted_to_zero": false,
+    "unknown_items_or_bounds": "PARTIAL_OR_INVALID_NEVER_SUCCESSFUL_QUALITY"
+  },
+  "sampler": {
+    "default": "OFF",
+    "flag": "--sample-processes",
+    "source": "linux_procfs_bounded_task_children_stat",
+    "coverage": "ALWAYS_PARTIAL_NOT_ATOMIC",
+    "maximum_processes_per_window": 128,
+    "maximum_tasks_per_process": 128,
+    "maximum_reads_per_window": 512,
+    "target_interval_ms": 100,
+    "cooperative_window_budget_ms": 25,
+    "maximum_samples": 3000,
+    "maximum_identities": 4096,
+    "maximum_read_bytes": 8192,
+    "raw_pids_argv_env_comm_paths_persisted": false,
+    "unrelated_host_processes_scanned": false,
+    "actual_process_total": null,
+    "exact_peak_rss": null,
+    "observer_overhead": "wall and process CPU recorded, not subtracted",
+    "known_limits": [
+      "children enumeration may omit surviving children during exit races",
+      "stat RSS is itself approximate",
+      "RSS sums double-count shared pages and sequential windows are not atomic",
+      "short-lived/reparented/inaccessible/capped processes can be missed",
+      "cooperative budget is not a hard scheduling deadline",
+      "not a whole-host, unique physical RAM, native worker or session total"
+    ]
+  },
+  "primary_sources": [
+    {
+      "url": "https://github.com/openai/codex/blob/rust-v0.162.1/codex-rs/exec/src/exec_events.rs",
+      "git_blob_sha1": "06565c097b28d3bf2ad592943cc30c776b45e236"
+    },
+    {
+      "url": "https://github.com/openai/codex/blob/rust-v0.162.1/codex-rs/exec/src/event_processor_with_jsonl_output.rs",
+      "git_blob_sha1": "73e0c9d911c82aae67c44e6b1a4ce54c7092b6be"
+    },
+    {
+      "url": "https://man7.org/linux/man-pages/man5/proc_pid_stat.5.html"
+    },
+    {
+      "url": "https://man7.org/linux/man-pages/man5/proc_tid_children.5.html"
+    }
+  ],
+  "limitations": [
+    "No new actual provider usage, economic gain, complete16case certification or new native-version parity",
+    "Counts are the partial reviewed client projection; stream framing complete is not full native coverage",
+    "Four-turn smoke predates final sampler-only discovery guard; final two-turn smoke and unit regression use final source",
+    "No ARM runtime or real no-AVX execution in this increment",
+    "Future comparisons require common source/pin/flag freeze and observer cost review"
+  ],
+  "data_sha256": {
+    "fake-controls.json": "0a52a2a9f2cde43afc4fa0956807fe602a0d8c862504aca4a2481aa41c699750",
+    "fake_protocol_fixture.py": "1898e3bd1088d5875c8e9a4559b1a58e6eba997ddba49b92b069b5df129689d2",
+    "final-fake-manifest.json": "cfea526903ece81bfcfe8671b41a44d5c96f2b8edebddcd5b1fddaf4c477401d",
+    "final-focused-race.log": "80cda1cd58913ad99f22a2050ea7c7ab3c7fd8ed1e8b8cd4812bc34fc720300f",
+    "final-official-jsonl-projection.log": "277b0fbda72ad4b28cb0e5298b211739d0f14633d38371d31b7284eb16ee39c9",
+    "final-python-after-preflight-guard.log": "0186e8a9639f6c6057374abdaebe4880371c2df160b3860c0df6ecdd8820be0f",
+    "final-vet.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "preflight.json": "cfe9b1b70eaed42f68088210586c4eb964294b6b2c498b2ce5c20004d10f3cbe"
+  }
+}
