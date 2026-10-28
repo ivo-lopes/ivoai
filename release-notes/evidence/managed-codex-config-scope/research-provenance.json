@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "research_intent": "IVOAI Codex config scope ignore-user-config isolation",
+  "memory": "One query-based page read returned prior project history; it was insufficient for new guard behavior.",
+  "context": "One same-intent search returned no results.",
+  "official_documentation": {
+    "url": "https://learn.chatgpt.com/docs/config-file/config-basic",
+    "checked_utc": "2026-10-28T23:16:30.956696+00:00",
+    "use": "Current context for configuration layers/precedence and project trust; not an attestation of pinned0.162.1 behavior or equivalent ignore scopes."
+  },
+  "runtime_evidence": "Frozen source, explicit private no-auth fixture and actual approved pinned executable; separate from current documentation.",
+  "shared_memory_or_context_written": false
+}

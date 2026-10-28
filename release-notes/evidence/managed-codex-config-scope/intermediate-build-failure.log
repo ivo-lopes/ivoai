@@ -1,0 +1,4 @@
+# github.com/ivo-lopes/ivoai/internal/app [github.com/ivo-lopes/ivoai/internal/app.test]
+internal/app/auto.go:103:13: undefined: codexresolver
+FAIL	github.com/ivo-lopes/ivoai/internal/app [build failed]
+FAIL

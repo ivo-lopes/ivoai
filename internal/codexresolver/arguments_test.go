@@ -99,7 +99,7 @@ func TestManagedAgentPolicyWinsCallerConfigAndPreservesLiteralBoundary(t *testin
 }
 
 func TestManagedAgentPolicyRejectsFeatureToggles(t *testing.T) {
-	for _, input := range [][]string{{"--enable", "multi_agent_v2"}, {"--enable=multi_agent_v2"}, {"exec", "--enable", "multi_agent"}, {"--enable=plugins"}} {
+	for _, input := range [][]string{{"--enable", "multi_agent_v2"}, {"--enable=multi_agent_v2"}, {"exec", "--enable", "multi_agent"}, {"--enable=plugins"}, {"--output-schema", "--", "--enable", "multi_agent_v2"}} {
 		if _, err := ManagedAgentArgs(input); err == nil {
 			t.Fatalf("feature toggle can override host policy: %q", input)
 		}

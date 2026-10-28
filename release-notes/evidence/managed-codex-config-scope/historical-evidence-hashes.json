@@ -1,0 +1,9 @@
+{
+  "schema_version": 1,
+  "scope": "Only these new historical evidence projections; future root final-source receipt is separate.",
+  "sha256": {
+    "offline-public-stage-summary.json": "83520ff60c76a5ecd14620afee1607f9eebc11b80c9278122af7d86f55c8c4de",
+    "historical-causal-receipt.json": "af5c86752871f6a722f63c5e9e2419d26adc1372f7ec667f72eec227bd2387f0",
+    "research-provenance.json": "98c29ab20bab0bc3ed111af64864fe0edf1d37b9a8ee035a80fb2841ff8a35a4"
+  }
+}

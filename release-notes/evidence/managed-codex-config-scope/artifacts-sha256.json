@@ -1,0 +1,16 @@
+{
+  "affected-race.log": "7ab13f52d641d6f058c76964a069994c1f94154449303a3a28232ceac40bea63",
+  "app-policy-race.log": "b5e46f4c056effd20f4bf37c80fc8a25cacc2f085a16ba1d9d6996ff09cdb649",
+  "before-admission-fix.log": "9029ea7a5370e5509f5f62ad59861903bdeecabf2995389eb6405bc566ca1ed3",
+  "before-boundary-fix.log": "b0154ceb7e8adc31e664ca78cc91a747bc2ad16fed43efaf78f1ca17cd1de428",
+  "before-startup-diagnostic.log": "75ffd2268212b59bab905ca96a98dbeeede9d2a9804a63094c081e4ddd329ec3",
+  "full-go.log": "963ea07cdcfaa2f220f98609c6742675ab7f210e074f137670fa53b7de9532e7",
+  "historical-causal-receipt.json": "af5c86752871f6a722f63c5e9e2419d26adc1372f7ec667f72eec227bd2387f0",
+  "historical-evidence-hashes.json": "329d94ab2fd954bb7c5de6cb7350377734b806daff4071bdc9fb00a96a25702d",
+  "intermediate-build-failure.log": "23f30cd40d22c5321dc66e199f790e5aa33d6a4f51c4c89a841687f9bc9f65ac",
+  "local-validation.json": "69c755844d16f77cb8478e21efbfdda3ae7a614e0f75e4412815c2e8e064a672",
+  "offline-public-stage-summary.json": "83520ff60c76a5ecd14620afee1607f9eebc11b80c9278122af7d86f55c8c4de",
+  "research-provenance.json": "98c29ab20bab0bc3ed111af64864fe0edf1d37b9a8ee035a80fb2841ff8a35a4",
+  "source-manifest.json": "5fb444e90861f5adc401a4a10e1709ef43e8f3e31a31744014b964dcf0063645",
+  "vet.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+}

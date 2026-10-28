@@ -1,0 +1,51 @@
+{
+  "status": "LOCAL_APPLICABLE_GATES_PASS_CI_PENDING",
+  "base": "6421f2c43f41c2bc8257a0ed49196e47ea55cb93",
+  "identity": "base plus six-file source-manifest.json; no other Go/module/dependency/pin/workflow change",
+  "full_go": {
+    "exit": 0,
+    "passed_packages": 59,
+    "no_test_packages": 3,
+    "cached_packages": 56,
+    "app_seconds": 86.0
+  },
+  "vet_all": {
+    "exit": 0
+  },
+  "app_policy_race": {
+    "exit": 0,
+    "test_selection": "^TestAuto(RejectsControlPlaneConfigOverrides|ReportsUnsupportedCodexConfigScopeBeforeFrontend)$",
+    "seconds": 1.038
+  },
+  "affected_race": {
+    "exit": 0,
+    "packages": [
+      "codexresolver",
+      "workers",
+      "opencodebridge"
+    ],
+    "epoch": "before final App import correction; these dependency closures are unchanged in final source",
+    "app_excluded_from_dependency_closures": true,
+    "changed_file_outside_closures": "internal/app/auto.go import only"
+  },
+  "retained_adverse": {
+    "initial_admission": "FAIL: four unsupported spellings accepted and inventory subprocess reached",
+    "initial_startup_diagnostic": "FAIL: argument construction opened instructions path instead of migration diagnostic",
+    "original_boundary_overlay": "FAIL with original base production arguments/invocation and current rejection test; unit admission only, not proof of an official-client worker bypass",
+    "intermediate_build": "FAIL: missing codexresolver import in auto.go, corrected; not a runtime failure"
+  },
+  "new_client_provider_auth_status_calls": 0,
+  "official_full_runtime_canary": "NOT_RUN_FOR_FIX; original canary remains FAIL/UNKNOWN",
+  "official_offline_causal_experiments": "historical separately bound; all overall FAIL retained",
+  "ci": "PENDING_FRESH_HEAD",
+  "release": "NOT_PUBLISHED",
+  "rollback": "Git revert; no data/config/credential migration",
+  "compatibility": "explicit managed-only rejection of unsupported --ignore-user-config; official direct CLI unchanged; no scope equivalence",
+  "limitations": [
+    "final local full Go result includes 56 cached package outcomes",
+    "race App proof selects policy tests, not full App race suite",
+    "opt-in live tests are not counted as executed integrations",
+    "no local ARM/no-AVX/client/model/token/economic certification",
+    "diagnostic appears before frontend/inventory, not before all App preflight effects"
+  ]
+}

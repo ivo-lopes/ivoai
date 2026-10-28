@@ -17,6 +17,7 @@ import (
 
 	"github.com/ivo-lopes/ivoai/internal/agents"
 	"github.com/ivo-lopes/ivoai/internal/codexfrontend"
+	"github.com/ivo-lopes/ivoai/internal/codexresolver"
 	"github.com/ivo-lopes/ivoai/internal/config"
 	"github.com/ivo-lopes/ivoai/internal/connections"
 	"github.com/ivo-lopes/ivoai/internal/core"
@@ -99,6 +100,11 @@ func resumableOpenCodeSession(store session.Store, currentID, cwd, scopeID strin
 }
 
 func (a *App) autoBridgeArgs(executor string, existing []string, id, runtimeDir, instructionsPath string, cfg config.Config) ([]string, error) {
+	if executor == "codex" {
+		if err := codexresolver.ValidateManagedConfigScope(existing); err != nil {
+			return nil, fmt.Errorf("AUTO primary configuration: %w", err)
+		}
+	}
 	for i, arg := range existing {
 		key, _, _ := strings.Cut(arg, "=")
 		for _, short := range []string{"-p", "-s", "-C"} {
