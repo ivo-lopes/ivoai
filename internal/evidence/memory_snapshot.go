@@ -81,7 +81,9 @@ func (g *Gateway) IssueMemoryPageSnapshot(ctx context.Context, snapshot knowledg
 	}
 	meta := snapshot.Metadata()
 	scope := policy.Scope
-	scope.Permissions = Digest(scope.Permissions, meta.Source, decision.PolicyDigest, decision.TTL)
+	// Cached bytes retain their classification, so every retention attribute
+	// must participate in the domain used to issue a new recipient's artifact.
+	scope.Permissions = Digest(scope.Permissions, meta.Source, decision)
 	// This identifies already captured immutable bytes, not the current version
 	// of a live Memory page. Every LIVE call happened before this nonce existed.
 	generation := Digest("immutable-memory-response-v1", meta.ID, meta.SHA256, meta.Source)

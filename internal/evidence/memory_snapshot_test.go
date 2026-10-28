@@ -232,6 +232,63 @@ func TestMemorySnapshotLocalGrantAndRetentionRevocationDenyBeforeStoreRead(t *te
 	}
 }
 
+func TestMemorySnapshotCacheBindsClassificationAcrossRecipientReissue(t *testing.T) {
+	for _, transition := range []struct {
+		name          string
+		before, after workingcontext.Sensitivity
+	}{
+		{"internal_to_restricted", workingcontext.SensitivityInternal, workingcontext.SensitivityRestricted},
+		{"restricted_to_internal", workingcontext.SensitivityRestricted, workingcontext.SensitivityInternal},
+	} {
+		t.Run(transition.name, func(t *testing.T) {
+			f := newMemorySnapshotFixture(t)
+			var classification atomic.Value
+			classification.Store(transition.before)
+			original := f.policy.Retain
+			f.policy.Retain = func(ctx context.Context, input MemoryRetentionRequest) (MemoryRetentionDecision, error) {
+				decision, err := original(ctx, input)
+				decision.Sensitivity = classification.Load().(workingcontext.Sensitivity)
+				return decision, err // Policy revision and TTL intentionally unchanged.
+			}
+			issue := func(policy MemorySnapshotPolicy, want workingcontext.Sensitivity, hit bool) Packet {
+				t.Helper()
+				packet, err := f.host.gateway.IssueMemoryPageSnapshot(context.Background(), f.snapshot, policy)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if packet.Ref.Result.Artifact.Sensitivity != want || packet.CacheHit != hit || packet.Ref.Result.Artifact.Owner != policy.Owner || packet.Ref.Result.Artifact.SHA256 != f.snapshot.Metadata().SHA256 {
+					t.Fatalf("wanted=%s actual=%s cache_hit=%v expected_hit=%v owner=%v", want, packet.Ref.Result.Artifact.Sensitivity, packet.CacheHit, hit, packet.Ref.Result.Artifact.Owner)
+				}
+				return packet
+			}
+			first := issue(f.policy, transition.before, false)
+			workerPolicy := f.policy
+			workerPolicy.Owner = workingcontext.Ownership{SessionID: f.policy.Owner.SessionID, TaskID: "same_reader", WorkerID: "worker_" + strings.Repeat("a", 32)}
+			firstWorker := issue(workerPolicy, transition.before, true)
+			if firstWorker.Ref.Result.Artifact.ID == first.Ref.Result.Artifact.ID {
+				t.Fatal("recipient borrowed original artifact")
+			}
+			classification.Store(transition.after)
+			f.host.store.reads.Store(0)
+			if _, _, err := f.host.gateway.RecoverBound(context.Background(), f.policy.Owner, first.Ref.Result.Artifact.ID); !errors.Is(err, ErrChanged) || f.host.store.reads.Load() != 0 {
+				t.Fatal("classification change did not revoke the old binding before reading", err)
+			}
+			second := issue(f.policy, transition.after, false)
+			workerPolicy.Owner.TaskID = "new_reader"
+			workerPolicy.Owner.WorkerID = "worker_" + strings.Repeat("b", 32)
+			secondWorker := issue(workerPolicy, transition.after, true)
+			if secondWorker.Ref.Result.Artifact.ID == second.Ref.Result.Artifact.ID || f.calls.Load() != 1 {
+				t.Fatal("reissue borrowed identity or replayed LIVE")
+			}
+			f.host.allowed.Store(false)
+			f.host.store.reads.Store(0)
+			if _, _, err := f.host.gateway.RecoverBound(context.Background(), workerPolicy.Owner, secondWorker.Ref.Result.Artifact.ID); !errors.Is(err, ErrChanged) || f.host.store.reads.Load() != 0 {
+				t.Fatal("local grant revocation bypassed cache domain checks", err)
+			}
+		})
+	}
+}
+
 func TestMemorySnapshotPolicyChangeDuringPersistenceReturnsNoBinding(t *testing.T) {
 	f := newMemorySnapshotFixture(t)
 	f.host.store.afterPut = func() { f.host.allowed.Store(false) }
