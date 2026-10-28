@@ -1,0 +1,4 @@
+=== RUN   TestReviewNativePickerDoesNotExposeSharedClaudeCatalog
+--- PASS: TestReviewNativePickerDoesNotExposeSharedClaudeCatalog (0.00s)
+PASS
+ok  	github.com/ivo-lopes/ivoai/internal/codexfrontend	1.023s
