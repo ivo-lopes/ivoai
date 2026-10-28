@@ -1,0 +1,104 @@
+{
+  "schema_version": 1,
+  "purpose": "Later documentation-only publication verification; not contained in v0.14.0 tag/assets.",
+  "source_base": "6d99e320912f3f7325c3009209a10e9df86610d4",
+  "checks": {
+    "docs-build-final.log": {
+      "command": "scripts/build-docs.sh",
+      "exit_code": 0,
+      "sha256": "ea4b2f3b7aa75d8180d4a0093e067e6ba4c7fb41495205c4002e009ffd8c0ac2"
+    },
+    "docs-check-final.log": {
+      "command": "scripts/build-docs.sh --check",
+      "exit_code": 0,
+      "sha256": "ca84ca47d7f1f9a2998f36ec1c659773940c1bfae66717e7dfb569712ae42d34"
+    },
+    "full-go-final.log": {
+      "command": "go test ./...",
+      "exit_code": 0,
+      "sha256": "b820f9069efebe048bdc2592e4c690a198a82986bfff36d9159a19f1a00ce1ea"
+    },
+    "full-vet-final.log": {
+      "command": "go vet ./...",
+      "exit_code": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "cli-reference-final.log": {
+      "command": "scripts/generate-cli-reference.sh --check",
+      "exit_code": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "verifier-repro.log": {
+      "command": "26 unchanged-source portable verifier tests",
+      "exit_code": 0,
+      "sha256": "afbac226739e9a1f836a1b760421852a4a9ed578845e6fe508ef1bce2c1415d1"
+    },
+    "docs-audit.log": {
+      "command": "pnpm --dir website audit --prod --audit-level high",
+      "exit_code": 0,
+      "sha256": "45d6c7916c6920d22de5ed9470d6d337c3f708e2d4d3707f98ace05b05467a06"
+    }
+  },
+  "go_test_packages": {
+    "passed": 59,
+    "no_test_files": 3
+  },
+  "gofmt_tracked_go": "PASS; no output; no new .go evidence package",
+  "runtime_source_workflows_dependencies_unchanged": true,
+  "own_frozen_website_dependencies": {
+    "node": "26.11.1",
+    "pnpm": "12.11.2",
+    "cross_worktree_node_modules": false
+  },
+  "docs_audit": {
+    "threshold": "high; unchanged",
+    "exit": 0,
+    "low_detail_exit": 1,
+    "low": 1,
+    "moderate": 0,
+    "high": 0,
+    "critical": 0,
+    "triage": "needs_review; static reachability not demonstrated; no PoC/source/dependency change"
+  },
+  "integrity_checks": {
+    "filtered_verification": "Exact equality to original after removing only top-level absolute output path",
+    "runtime_smoke": "Byte-identical to original",
+    "assets": "All12 names/IDs/sizes/digests match original release API; 11 payload checksums",
+    "github_jobs": "5 Release and 16 main jobs successful",
+    "archived_verifier": "Original six source/fixture/log manifest hashes verified"
+  },
+  "public_input_sha256": {
+    "docs/architecture.md": "f87fda00052c92c55f3f8cfa6fdb473e3a6913107dd2a6633fa0085abf72d2d7",
+    "docs/releases.md": "dda940d93bd5deb933f1ad4faef17b9501db30575c9e661011607eed907e01db",
+    "release-notes/evidence/v0.14.0-publication/deepmerge-low-triage.json": "108a508ece5e26cda14bd42121af5d77e419444c6a3a8291f3fbe6093e8dc6f8",
+    "release-notes/evidence/v0.14.0-publication/deepmerge-why.json": "a5a1526a622764f903b80a6199e5f0a5588549d1baeecb33aa07d36d349c5d1b",
+    "release-notes/evidence/v0.14.0-publication/docs-audit-high.json": "ffffa99c7e8e322f071c31baf5be2fc6194a35d942176dfbba80c4355140abe0",
+    "release-notes/evidence/v0.14.0-publication/github-gates.json": "cca653ea121ca6d3675f4d5fae14bafb869b3801e591f9b6afc3984eabc14992",
+    "release-notes/evidence/v0.14.0-publication/publication.json": "c55cc6c4117308f0a188fcbd7c8af415be9aa88768f05b674ae9595a55ea245a",
+    "release-notes/evidence/v0.14.0-publication/runtime-smoke.json": "6d5025a006d3f5e7848cc5765833985d9d48648e14fb1faf7dd6eeaaee129b5c",
+    "release-notes/evidence/v0.14.0-publication/verification.json": "52a2b6eff67617f7057d5bf8df614ce377f53c91a805da48c5d2118ac2ea6f85",
+    "release-notes/evidence/v0.14.0-publication/verifier/README.md": "4428cdfa61ce1af9f477ae5f42137999d39c08e850f41cf35242c447d3101693",
+    "release-notes/evidence/v0.14.0-publication/verifier/buildinfo_reader.go.txt": "ed9718c5e503d11c70ebbc25fe887ce7ae5abf578faadbe450e334d0503e0eb1",
+    "release-notes/evidence/v0.14.0-publication/verifier/fixtures/old-pax-4MiB-fixture.tar.gz": "e2ab494487248ca04e3008b627722636ad7d76c188888e6ceb033036dc4726e6",
+    "release-notes/evidence/v0.14.0-publication/verifier/fixtures/old-pax-limit-observation.json": "e7876ce231f87a2c960ad20dd9e2f58fac462724d898dbbcd6bed48d27ebbdcb",
+    "release-notes/evidence/v0.14.0-publication/verifier/source-manifest.sha256": "ab00246a08c8bf85e2f942d297d2674583b88807dcf1d239bd40615b300f6456",
+    "release-notes/evidence/v0.14.0-publication/verifier/test_verifier.py": "515e3211777db477b54f9e3fa929e9c801aa88c1e2f01be15dacd668c9ef7fa1",
+    "release-notes/evidence/v0.14.0-publication/verifier/unit-tests.log": "f61772852685e9fb91c31468b0058e3501fff1c8bad7c8c4f99ce3fddb4e43a6",
+    "release-notes/evidence/v0.14.0-publication/verifier/verify_release014.py": "15c166f204ddaaf776a0b5a891dcb5fba06fc37bd82e9a39d81bd30e49763976",
+    "release-notes/v0.14.0-publication-verification.md": "4644690ca0db4b7b220c608b14e94128490362f3f4e1b79bfa270d0be51f24e0",
+    "website/i18n/pt-BR/docusaurus-plugin-content-docs/current/architecture.md": "712c9c0f32e5ab8bcaa515fb058f885c588edcc47e324ee16ceeccadae24b027",
+    "website/i18n/pt-BR/docusaurus-plugin-content-docs/current/releases.md": "162273ecb0c3943e8a5ef679d3646e53aa6e7e825e61e861d0d89573a415802f"
+  },
+  "embedded_site": {
+    "file_count": 1128,
+    "sorted_path_sha256_list_digest": "c6f0119c44d470f1608924f618adb33f1b50231d17c63a2c0c85c7f26dd169c4",
+    "build_input_sha256": "ba870252bd6ff935775d087a3666e3104683281bfc5cc00799f2d91952ebbae4"
+  },
+  "limits": [
+    "No upload/tag/release-body/production mutation by this documentation task.",
+    "No new model/inference/authentication/client parity/economic result.",
+    "Local ARM not run; native ARM and noAVX scopes remain tagged CI evidence.",
+    "Current high audit gate is not a zero-vulnerability claim.",
+    "126 counts six backend-first cohorts only; separate PR30 prefetch18/schema-pilot24 and earlier MCP series are not aggregated."
+  ]
+}

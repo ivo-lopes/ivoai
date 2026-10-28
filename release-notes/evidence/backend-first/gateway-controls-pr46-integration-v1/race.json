@@ -1,0 +1,24 @@
+{
+  "check": "race",
+  "started_utc": "2026-10-28T19:52:40.922187+00:00",
+  "ended_utc": "2026-10-28T19:55:15.956848+00:00",
+  "exit_code": 0,
+  "args": [
+    "test",
+    "-race",
+    "-count=1",
+    "-timeout",
+    "20m",
+    "./internal/app",
+    "./internal/benchmarkfixtures",
+    "./internal/nativecodex",
+    "./internal/observability",
+    "./internal/codeintel",
+    "./internal/evidence",
+    "./internal/workingcontext",
+    "./internal/orchestrator"
+  ],
+  "environment_basis": "explicit private HOME, pinned Go/Node PATH, no auth/provider opt-ins, GOPROXY/GOSUMDBoff; shared content-addressed Go caches",
+  "provider_turns": 0,
+  "context_sync": "BLOCKED IVOAI-175"
+}

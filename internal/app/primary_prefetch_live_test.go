@@ -426,8 +426,15 @@ func prefetchLiveHost(t *testing.T, root, taskText string) (*App, session.Store,
 }
 func prefetchLiveRepository(t *testing.T) string {
 	t.Helper()
+	return prefetchLiveRepositoryWithGit(t, func(args ...string) error { return exec.Command("git", args...).Run() })
+}
+
+// Controls can reuse the identical corpus with a fully isolated Git process
+// environment, without changing the established callers' fixture behavior.
+func prefetchLiveRepositoryWithGit(t *testing.T, runGit func(...string) error) string {
+	t.Helper()
 	root := t.TempDir()
-	if err := exec.Command("git", "init", "-q", root).Run(); err != nil {
+	if err := runGit("init", "-q", root); err != nil {
 		t.Fatal(err)
 	}
 	for name, body := range map[string]string{"go.mod": "module fixture\n\ngo 1.27\n", "mathpkg/scale.go": "package mathpkg\nfunc Scale(x int) int { return x * 2 }\n", "app/entry.go": "package app\nimport \"fixture/mathpkg\"\nfunc Entry() int { return mathpkg.Scale(3) }\n", "service/process.go": "package service\nimport \"fixture/mathpkg\"\nfunc Process() int { return mathpkg.Scale(5) }\n"} {

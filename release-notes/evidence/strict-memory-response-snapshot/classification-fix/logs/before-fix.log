@@ -1,0 +1,11 @@
+=== RUN   TestMemorySnapshotCacheBindsClassificationAcrossRecipientReissue
+=== RUN   TestMemorySnapshotCacheBindsClassificationAcrossRecipientReissue/internal_to_restricted
+    memory_snapshot_test.go:276: wanted=restricted actual=internal cache_hit=true expected_hit=false owner={sess_11111111111111111111111111111111 primary }
+=== RUN   TestMemorySnapshotCacheBindsClassificationAcrossRecipientReissue/restricted_to_internal
+    memory_snapshot_test.go:276: wanted=internal actual=restricted cache_hit=true expected_hit=false owner={sess_11111111111111111111111111111111 primary }
+--- FAIL: TestMemorySnapshotCacheBindsClassificationAcrossRecipientReissue (0.04s)
+    --- FAIL: TestMemorySnapshotCacheBindsClassificationAcrossRecipientReissue/internal_to_restricted (0.02s)
+    --- FAIL: TestMemorySnapshotCacheBindsClassificationAcrossRecipientReissue/restricted_to_internal (0.02s)
+FAIL
+FAIL	github.com/ivo-lopes/ivoai/internal/evidence	0.041s
+FAIL

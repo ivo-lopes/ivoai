@@ -1,0 +1,12 @@
+{
+  "check": "rollback-after-merge",
+  "started_utc": "2026-10-28T19:58:58.895858+00:00",
+  "ended_utc": "2026-10-28T19:59:03.498968+00:00",
+  "exit_code": 0,
+  "args": [
+    "scripts/test-protected-evidence-rollback.sh"
+  ],
+  "environment_basis": "explicit private HOME, pinned Go/Node PATH, no auth/provider opt-ins, GOPROXY/GOSUMDBoff; shared content-addressed Go caches",
+  "provider_turns": 0,
+  "context_sync": "BLOCKED IVOAI-175"
+}

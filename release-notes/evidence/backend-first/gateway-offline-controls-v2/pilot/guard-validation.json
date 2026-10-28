@@ -1,0 +1,56 @@
+{
+  "schema": 1,
+  "condition": "offline-app-gateway-v2",
+  "checks": [
+    {
+      "name": "reject-git_config_parameters",
+      "result": "PASS",
+      "actual_exit": 1,
+      "basis": "refused before any arm/Git; controlled marker unchanged"
+    },
+    {
+      "name": "reject-git_exec_path",
+      "result": "PASS",
+      "actual_exit": 1,
+      "basis": "refused before any arm/Git; controlled marker unchanged"
+    },
+    {
+      "name": "reject-git_config",
+      "result": "PASS",
+      "actual_exit": 1,
+      "basis": "refused before any arm/Git; controlled marker unchanged"
+    },
+    {
+      "name": "filtered-execution-env",
+      "result": "PASS",
+      "actual_exit": 0,
+      "receipt_rows": 12,
+      "basis": "real fixture Git processes created no trace or marker change; no editor/pager/network/diff operations requested; not independent execution proof of unused clients"
+    },
+    {
+      "name": "reject-existing-output",
+      "result": "PASS",
+      "actual_exit": 1,
+      "basis": "refused before any arm; clean receipt unchanged"
+    },
+    {
+      "name": "reject-nonprivate-output",
+      "result": "PASS",
+      "actual_exit": 1,
+      "basis": "refused before any arm; clean receipt unchanged"
+    },
+    {
+      "name": "new-receipts-allowlist-bound-mode",
+      "result": "PASS",
+      "receipt_rows_each": 12,
+      "mode": "0600",
+      "size_bound": 32768
+    },
+    {
+      "name": "post-run-source-and-binary-freeze",
+      "result": "PASS"
+    }
+  ],
+  "controlled_marker_lines_before_and_after": 2,
+  "fresh_clean_receipt_sha256": "65c4cf1f6bf8936fd63be27468c5853b79c52247e9634a3a9c5d0f4bf89b1a16"
+}

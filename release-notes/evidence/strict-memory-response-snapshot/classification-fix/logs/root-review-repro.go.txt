@@ -1,0 +1,32 @@
+package evidence
+import (
+ "context"
+ "testing"
+ "github.com/ivo-lopes/ivoai/internal/workingcontext"
+)
+func TestReviewMemorySnapshotRestrictedWithoutReuse(t *testing.T) {
+ f := newMemorySnapshotFixture(t)
+ p,err := f.host.gateway.IssueMemoryPageSnapshot(context.Background(), f.snapshot, f.policy)
+ if err != nil {t.Fatal(err)}
+ if p.Ref.Result.Artifact.Sensitivity != workingcontext.SensitivityRestricted || p.CacheHit {t.Fatal("fresh control failed")}
+}
+func TestReviewMemorySnapshotCachePreservesRecipientSensitivity(t *testing.T) {
+ f := newMemorySnapshotFixture(t)
+ firstPolicy := f.policy
+ originalRetain := f.policy.Retain
+ firstPolicy.Retain = func(ctx context.Context, in MemoryRetentionRequest) (MemoryRetentionDecision,error) {
+  d,err := originalRetain(ctx,in); d.Sensitivity = workingcontext.SensitivityInternal; return d,err
+ }
+ first,err := f.host.gateway.IssueMemoryPageSnapshot(context.Background(), f.snapshot, firstPolicy)
+ if err != nil {t.Fatal(err)}
+ if first.Ref.Result.Artifact.Sensitivity != workingcontext.SensitivityInternal {t.Fatal("control wrong")}
+ // The independent second host policy declares this recipient Restricted.
+ // Its same policy revision and TTL are otherwise unchanged.
+ secondPolicy := f.policy
+ secondPolicy.Owner = workingcontext.Ownership{SessionID:f.policy.Owner.SessionID,TaskID:"reader",WorkerID:"worker_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}
+ second,err := f.host.gateway.IssueMemoryPageSnapshot(context.Background(), f.snapshot, secondPolicy)
+ if err != nil {t.Fatal(err)}
+ if second.Ref.Result.Artifact.Sensitivity != workingcontext.SensitivityRestricted {
+  t.Fatalf("approved=%s actual=%s cache_hit=%v first=%s live_calls=%d", workingcontext.SensitivityRestricted, second.Ref.Result.Artifact.Sensitivity, second.CacheHit,first.Ref.Result.Artifact.Sensitivity,f.calls.Load())
+ }
+}

@@ -1,0 +1,42 @@
+=== RUN   TestPrimaryCodeEvidenceUsesScopedExactArtifactAndAdmission
+--- PASS: TestPrimaryCodeEvidenceUsesScopedExactArtifactAndAdmission (0.10s)
+=== RUN   TestPrimaryCodeTaskAdmissionChecksExactTask
+--- PASS: TestPrimaryCodeTaskAdmissionChecksExactTask (0.00s)
+=== RUN   TestPrimaryPrefetchBenchmarkCatalog
+--- PASS: TestPrimaryPrefetchBenchmarkCatalog (0.00s)
+=== RUN   TestPrimaryPrefetchMatrixReadOnlyFixtures
+=== RUN   TestPrimaryPrefetchMatrixReadOnlyFixtures/small_known_file_correction
+=== RUN   TestPrimaryPrefetchMatrixReadOnlyFixtures/implementation
+=== RUN   TestPrimaryPrefetchMatrixReadOnlyFixtures/cross_module_refactor
+=== RUN   TestPrimaryPrefetchMatrixReadOnlyFixtures/dependencies
+=== RUN   TestPrimaryPrefetchMatrixReadOnlyFixtures/multi_module_callers
+=== RUN   TestPrimaryPrefetchMatrixReadOnlyFixtures/api
+=== RUN   TestPrimaryPrefetchMatrixReadOnlyFixtures/monorepo
+=== RUN   TestPrimaryPrefetchMatrixReadOnlyFixtures/unsupported_parser
+=== RUN   TestPrimaryPrefetchMatrixReadOnlyFixtures/non_code
+--- PASS: TestPrimaryPrefetchMatrixReadOnlyFixtures (0.15s)
+    --- PASS: TestPrimaryPrefetchMatrixReadOnlyFixtures/small_known_file_correction (0.03s)
+    --- PASS: TestPrimaryPrefetchMatrixReadOnlyFixtures/implementation (0.01s)
+    --- PASS: TestPrimaryPrefetchMatrixReadOnlyFixtures/cross_module_refactor (0.03s)
+    --- PASS: TestPrimaryPrefetchMatrixReadOnlyFixtures/dependencies (0.02s)
+    --- PASS: TestPrimaryPrefetchMatrixReadOnlyFixtures/multi_module_callers (0.01s)
+    --- PASS: TestPrimaryPrefetchMatrixReadOnlyFixtures/api (0.01s)
+    --- PASS: TestPrimaryPrefetchMatrixReadOnlyFixtures/monorepo (0.01s)
+    --- PASS: TestPrimaryPrefetchMatrixReadOnlyFixtures/unsupported_parser (0.01s)
+    --- PASS: TestPrimaryPrefetchMatrixReadOnlyFixtures/non_code (0.01s)
+=== RUN   TestPrimaryPrefetchMatrixHostPrefetch
+    primary_prefetch_live_test.go:379: NOT_RUN: explicit managed host-prefetch artifact inputs required
+--- SKIP: TestPrimaryPrefetchMatrixHostPrefetch (0.00s)
+=== RUN   TestPrimaryPrefetchSubscriptionEnvironment
+--- PASS: TestPrimaryPrefetchSubscriptionEnvironment (0.00s)
+=== RUN   TestPrimaryPrefetchLiveFinalMessage
+--- PASS: TestPrimaryPrefetchLiveFinalMessage (0.00s)
+=== RUN   TestPrimaryPrefetchLiveMeasurementContract
+--- PASS: TestPrimaryPrefetchLiveMeasurementContract (0.03s)
+=== RUN   TestPrimaryPrefetchLiveExactQuality
+--- PASS: TestPrimaryPrefetchLiveExactQuality (0.00s)
+=== RUN   TestPrimaryPrefetchBenchmarkEditPreflight
+    primary_prefetch_live_test.go:721: offline edit preflight requires an explicit output
+--- SKIP: TestPrimaryPrefetchBenchmarkEditPreflight (0.00s)
+PASS
+ok  	github.com/ivo-lopes/ivoai/internal/app	1.329s

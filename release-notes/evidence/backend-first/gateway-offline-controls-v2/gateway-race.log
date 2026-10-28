@@ -1,0 +1,27 @@
+=== RUN   TestEvidenceGatewayOfflineControls
+=== RUN   TestEvidenceGatewayOfflineControls/OFF
+=== RUN   TestEvidenceGatewayOfflineControls/ON
+--- PASS: TestEvidenceGatewayOfflineControls (0.85s)
+    --- PASS: TestEvidenceGatewayOfflineControls/OFF (0.37s)
+    --- PASS: TestEvidenceGatewayOfflineControls/ON (0.48s)
+=== RUN   TestGatewayControlRejectsInheritedGitExecution
+=== RUN   TestGatewayControlRejectsInheritedGitExecution/GIT_CONFIG_PARAMETERS
+=== RUN   TestGatewayControlRejectsInheritedGitExecution/GIT_CONFIG
+=== RUN   TestGatewayControlRejectsInheritedGitExecution/GIT_EXEC_PATH
+--- PASS: TestGatewayControlRejectsInheritedGitExecution (0.09s)
+    --- PASS: TestGatewayControlRejectsInheritedGitExecution/GIT_CONFIG_PARAMETERS (0.04s)
+    --- PASS: TestGatewayControlRejectsInheritedGitExecution/GIT_CONFIG (0.03s)
+    --- PASS: TestGatewayControlRejectsInheritedGitExecution/GIT_EXEC_PATH (0.02s)
+=== RUN   TestExportEvidenceGatewayOfflineControls
+    evidence_gateway_control_test.go:336: NOT_RUN: explicit receipt output required
+--- SKIP: TestExportEvidenceGatewayOfflineControls (0.00s)
+=== RUN   TestEvidenceGatewayCodeReuseInvalidationAndAdmission
+--- PASS: TestEvidenceGatewayCodeReuseInvalidationAndAdmission (0.32s)
+=== RUN   TestExperimentalGatewayPreservesPrimaryContract
+--- PASS: TestExperimentalGatewayPreservesPrimaryContract (0.16s)
+=== RUN   TestGatewayImmediatePlanRetainsApprovalBoundary
+--- PASS: TestGatewayImmediatePlanRetainsApprovalBoundary (0.09s)
+=== RUN   TestGatewayWorkerMonorepoDirectoryAndRevocation
+--- PASS: TestGatewayWorkerMonorepoDirectoryAndRevocation (0.10s)
+PASS
+ok  	github.com/ivo-lopes/ivoai/internal/app	2.662s

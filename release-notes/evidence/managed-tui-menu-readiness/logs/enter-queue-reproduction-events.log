@@ -1,0 +1,16 @@
+28.32µs WAIT "OpenCode frontend" output=0
+2.577270442s FOUND "OpenCode frontend" output=18877
+2.577295261s RESIZE "100" output=18877
+2.577364101s SEND "/ivoai" output=18877
+2.828442382s SEND "\r" output=27026
+3.079040287s WAIT "Permissions:" output=37577
+3.081663337s FOUND "Permissions:" output=37577
+3.081681597s WAIT "source-A" output=37577
+3.083589285s FOUND "source-A" output=37577
+3.083597774s SEND "\x1b" output=37577
+3.334086253s RESIZE "60" output=45136
+3.33432451s FAULT "owned TUI paused before second slash" output=45136
+3.33433197s SEND "/ivoai" output=45136
+3.584730648s SEND "\r" output=45136
+3.584769117s FAULT "resume after slash and Enter queued" output=45136
+3.835626161s WAIT "Permissions:" output=51531

@@ -57,18 +57,19 @@ type Options struct {
 }
 
 type Router struct {
-	selection serverpool.Selection
-	creds     map[string]secrets.ClientCredential
-	client    *http.Client
-	timeout   time.Duration
-	now       func() time.Time
-	observe   func(Event)
-	server    *http.Server
-	listener  net.Listener
-	token     string
-	baseURL   string
-	mu        sync.Mutex
-	failures  map[string]failureState
+	selection   serverpool.Selection
+	creds       map[string]secrets.ClientCredential
+	client      *http.Client
+	timeout     time.Duration
+	now         func() time.Time
+	observe     func(Event)
+	server      *http.Server
+	listener    net.Listener
+	token       string
+	baseURL     string
+	mu          sync.Mutex
+	failures    map[string]failureState
+	memoryReads chan struct{}
 }
 
 type failureState struct {
@@ -98,6 +99,9 @@ func Start(options Options) (*Router, error) {
 	client := *options.Client
 	previousRedirect := client.CheckRedirect
 	client.CheckRedirect = func(request *http.Request, via []*http.Request) error {
+		if request.Context().Value(memoryReadRedirectKey{}) == true {
+			return errors.New("host memory reads do not follow redirects")
+		}
 		if len(via) == 0 || len(via) > 3 || request.URL.Scheme != via[0].URL.Scheme || !strings.EqualFold(request.URL.Host, via[0].URL.Host) {
 			return errors.New("cross-origin redirect refused")
 		}
@@ -396,6 +400,14 @@ type upstreamResponse struct {
 }
 
 func (r *Router) callGroup(ctx context.Context, group serverpool.SourceGroup, kind string, body []byte, write, expectsResponse bool, headers http.Header, responseLimit int64) (upstreamResponse, config.ServerProfile, bool, error) {
+	return r.callGroupValidated(ctx, group, kind, body, write, headers, responseLimit, func(response upstreamResponse) error {
+		return validateRPCResponse(response.body, response.header.Get("Content-Type"), expectsResponse)
+	})
+}
+
+// Host readers may require a narrower response contract. The shared transport,
+// credentials, circuit and provenance remain here; validation precedes success.
+func (r *Router) callGroupValidated(ctx context.Context, group serverpool.SourceGroup, kind string, body []byte, write bool, headers http.Header, responseLimit int64, validate func(upstreamResponse) error) (upstreamResponse, config.ServerProfile, bool, error) {
 	var last error
 	for index, profile := range group.Profiles {
 		if r.circuitOpen(profile.ID) {
@@ -408,7 +420,7 @@ func (r *Router) callGroup(ctx context.Context, group serverpool.SourceGroup, ki
 		}
 		response, err := r.call(ctx, profile, endpoint, http.MethodPost, body, "application/json", headers, responseLimit)
 		if err == nil && response.status >= 200 && response.status < 300 {
-			if validationErr := validateRPCResponse(response.body, response.header.Get("Content-Type"), expectsResponse); validationErr == nil {
+			if validationErr := validate(response); validationErr == nil {
 				r.recordSuccess(profile.ID)
 				return response, profile, index > 0, nil
 			} else {
