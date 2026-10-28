@@ -1,0 +1,20 @@
+package mathpkg_test
+
+import (
+ "testing"
+ "clampfixture/mathpkg"
+)
+
+func TestClampOracle(t *testing.T) {
+ for low := -12; low <= 12; low += 3 {
+  for width := 0; width <= 12; width += 2 {
+   high := low + width
+   for value := low-5; value <= high+5; value++ {
+    want := value
+    if want < low { want = low }
+    if want > high { want = high }
+    if got := mathpkg.Clamp(value,low,high); got != want { t.Fatalf("clamp mismatch at %d/%d/%d",value,low,high) }
+   }
+  }
+ }
+}

@@ -1,0 +1,11 @@
+ok  	github.com/ivo-lopes/ivoai/internal/app	151.057s
+ok  	github.com/ivo-lopes/ivoai/internal/benchmarkfixtures	1.469s
+ok  	github.com/ivo-lopes/ivoai/internal/nativecodex	3.684s
+ok  	github.com/ivo-lopes/ivoai/internal/observability	1.041s
+ok  	github.com/ivo-lopes/ivoai/internal/workers	1.077s
+ok  	github.com/ivo-lopes/ivoai/internal/session	2.723s
+ok  	github.com/ivo-lopes/ivoai/internal/admin	1.576s
+ok  	github.com/ivo-lopes/ivoai/internal/webauth	1.505s
+ok  	github.com/ivo-lopes/ivoai/internal/opencodebridge	15.323s
+ok  	github.com/ivo-lopes/ivoai/internal/components	10.350s
+ok  	github.com/ivo-lopes/ivoai/internal/cli	41.024s

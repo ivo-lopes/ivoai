@@ -1,0 +1,90 @@
+=== RUN   TestEditContractsRejectUnauthorisedChanges
+=== RUN   TestEditContractsRejectUnauthorisedChanges/small_known_file_correction
+=== RUN   TestEditContractsRejectUnauthorisedChanges/small_known_file_correction/extra
+=== RUN   TestEditContractsRejectUnauthorisedChanges/small_known_file_correction/metadata
+=== RUN   TestEditContractsRejectUnauthorisedChanges/small_known_file_correction/permission
+=== RUN   TestEditContractsRejectUnauthorisedChanges/small_known_file_correction/directory
+=== RUN   TestEditContractsRejectUnauthorisedChanges/small_known_file_correction/oracle
+=== RUN   TestEditContractsRejectUnauthorisedChanges/cross_module_refactor
+=== RUN   TestEditContractsRejectUnauthorisedChanges/cross_module_refactor/extra
+=== RUN   TestEditContractsRejectUnauthorisedChanges/cross_module_refactor/metadata
+=== RUN   TestEditContractsRejectUnauthorisedChanges/cross_module_refactor/permission
+=== RUN   TestEditContractsRejectUnauthorisedChanges/cross_module_refactor/directory
+=== RUN   TestEditContractsRejectUnauthorisedChanges/cross_module_refactor/oracle
+--- PASS: TestEditContractsRejectUnauthorisedChanges (0.07s)
+    --- PASS: TestEditContractsRejectUnauthorisedChanges/small_known_file_correction (0.03s)
+        --- PASS: TestEditContractsRejectUnauthorisedChanges/small_known_file_correction/extra (0.00s)
+        --- PASS: TestEditContractsRejectUnauthorisedChanges/small_known_file_correction/metadata (0.00s)
+        --- PASS: TestEditContractsRejectUnauthorisedChanges/small_known_file_correction/permission (0.00s)
+        --- PASS: TestEditContractsRejectUnauthorisedChanges/small_known_file_correction/directory (0.00s)
+        --- PASS: TestEditContractsRejectUnauthorisedChanges/small_known_file_correction/oracle (0.01s)
+    --- PASS: TestEditContractsRejectUnauthorisedChanges/cross_module_refactor (0.04s)
+        --- PASS: TestEditContractsRejectUnauthorisedChanges/cross_module_refactor/extra (0.01s)
+        --- PASS: TestEditContractsRejectUnauthorisedChanges/cross_module_refactor/metadata (0.01s)
+        --- PASS: TestEditContractsRejectUnauthorisedChanges/cross_module_refactor/permission (0.01s)
+        --- PASS: TestEditContractsRejectUnauthorisedChanges/cross_module_refactor/directory (0.01s)
+        --- PASS: TestEditContractsRejectUnauthorisedChanges/cross_module_refactor/oracle (0.01s)
+=== RUN   TestPureEditShapeRefusesExecutableInjection
+--- PASS: TestPureEditShapeRefusesExecutableInjection (0.00s)
+=== RUN   TestEditSnapshotAndOutputAreBounded
+--- PASS: TestEditSnapshotAndOutputAreBounded (0.00s)
+=== RUN   TestEditSnapshotRejectsSpecialPermissionBits
+=== RUN   TestEditSnapshotRejectsSpecialPermissionBits/file_u---------
+=== RUN   TestEditSnapshotRejectsSpecialPermissionBits/file_g---------
+=== RUN   TestEditSnapshotRejectsSpecialPermissionBits/file_t---------
+=== RUN   TestEditSnapshotRejectsSpecialPermissionBits/directory_u---------
+=== RUN   TestEditSnapshotRejectsSpecialPermissionBits/directory_g---------
+=== RUN   TestEditSnapshotRejectsSpecialPermissionBits/directory_t---------
+--- PASS: TestEditSnapshotRejectsSpecialPermissionBits (0.02s)
+    --- PASS: TestEditSnapshotRejectsSpecialPermissionBits/file_u--------- (0.00s)
+    --- PASS: TestEditSnapshotRejectsSpecialPermissionBits/file_g--------- (0.00s)
+    --- PASS: TestEditSnapshotRejectsSpecialPermissionBits/file_t--------- (0.00s)
+    --- PASS: TestEditSnapshotRejectsSpecialPermissionBits/directory_u--------- (0.00s)
+    --- PASS: TestEditSnapshotRejectsSpecialPermissionBits/directory_g--------- (0.00s)
+    --- PASS: TestEditSnapshotRejectsSpecialPermissionBits/directory_t--------- (0.00s)
+=== RUN   TestMatrixCoverageAndStructuredOracles
+--- PASS: TestMatrixCoverageAndStructuredOracles (0.10s)
+=== RUN   TestMaterializedBytesAndNoncodeMutation
+=== RUN   TestMaterializedBytesAndNoncodeMutation/go-core
+=== RUN   TestMaterializedBytesAndNoncodeMutation/python-deps
+=== RUN   TestMaterializedBytesAndNoncodeMutation/monorepo-ts
+=== RUN   TestMaterializedBytesAndNoncodeMutation/rules-shell
+=== RUN   TestMaterializedBytesAndNoncodeMutation/non-code
+=== RUN   TestMaterializedBytesAndNoncodeMutation/go-clamp-edit
+=== RUN   TestMaterializedBytesAndNoncodeMutation/monorepo-refactor-ts
+--- PASS: TestMaterializedBytesAndNoncodeMutation (0.01s)
+    --- PASS: TestMaterializedBytesAndNoncodeMutation/go-core (0.00s)
+    --- PASS: TestMaterializedBytesAndNoncodeMutation/python-deps (0.00s)
+    --- PASS: TestMaterializedBytesAndNoncodeMutation/monorepo-ts (0.00s)
+    --- PASS: TestMaterializedBytesAndNoncodeMutation/rules-shell (0.00s)
+    --- PASS: TestMaterializedBytesAndNoncodeMutation/non-code (0.00s)
+    --- PASS: TestMaterializedBytesAndNoncodeMutation/go-clamp-edit (0.00s)
+    --- PASS: TestMaterializedBytesAndNoncodeMutation/monorepo-refactor-ts (0.00s)
+=== RUN   TestOracleRejectsWrongNumericTypesAndOrder
+--- PASS: TestOracleRejectsWrongNumericTypesAndOrder (0.01s)
+PASS
+ok  	github.com/ivo-lopes/ivoai/internal/benchmarkfixtures	1.236s
+=== RUN   TestPrimaryPrefetchMatrixReadOnlyFixtures
+=== RUN   TestPrimaryPrefetchMatrixReadOnlyFixtures/small_known_file_correction
+=== RUN   TestPrimaryPrefetchMatrixReadOnlyFixtures/implementation
+=== RUN   TestPrimaryPrefetchMatrixReadOnlyFixtures/cross_module_refactor
+=== RUN   TestPrimaryPrefetchMatrixReadOnlyFixtures/dependencies
+=== RUN   TestPrimaryPrefetchMatrixReadOnlyFixtures/multi_module_callers
+=== RUN   TestPrimaryPrefetchMatrixReadOnlyFixtures/api
+=== RUN   TestPrimaryPrefetchMatrixReadOnlyFixtures/monorepo
+=== RUN   TestPrimaryPrefetchMatrixReadOnlyFixtures/unsupported_parser
+=== RUN   TestPrimaryPrefetchMatrixReadOnlyFixtures/non_code
+--- PASS: TestPrimaryPrefetchMatrixReadOnlyFixtures (0.13s)
+    --- PASS: TestPrimaryPrefetchMatrixReadOnlyFixtures/small_known_file_correction (0.02s)
+    --- PASS: TestPrimaryPrefetchMatrixReadOnlyFixtures/implementation (0.01s)
+    --- PASS: TestPrimaryPrefetchMatrixReadOnlyFixtures/cross_module_refactor (0.02s)
+    --- PASS: TestPrimaryPrefetchMatrixReadOnlyFixtures/dependencies (0.01s)
+    --- PASS: TestPrimaryPrefetchMatrixReadOnlyFixtures/multi_module_callers (0.01s)
+    --- PASS: TestPrimaryPrefetchMatrixReadOnlyFixtures/api (0.01s)
+    --- PASS: TestPrimaryPrefetchMatrixReadOnlyFixtures/monorepo (0.02s)
+    --- PASS: TestPrimaryPrefetchMatrixReadOnlyFixtures/unsupported_parser (0.01s)
+    --- PASS: TestPrimaryPrefetchMatrixReadOnlyFixtures/non_code (0.01s)
+=== RUN   TestPrimaryPrefetchLiveExactQuality
+--- PASS: TestPrimaryPrefetchLiveExactQuality (0.00s)
+PASS
+ok  	github.com/ivo-lopes/ivoai/internal/app	1.210s

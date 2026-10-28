@@ -1,0 +1,656 @@
+{
+  "arms": {
+    "A": {
+      "CachedInputTokens": {
+        "observed_rows": 6,
+        "sum": 201600
+      },
+      "EvidenceBytes": {
+        "observed_rows": 6,
+        "sum": 0
+      },
+      "InputTokens": {
+        "observed_rows": 6,
+        "sum": 286352
+      },
+      "LocalElapsedMS": {
+        "observed_rows": 6,
+        "sum": 134523
+      },
+      "LocalPeakRSSBytes": {
+        "maximum": 265293824,
+        "observed_rows": 6,
+        "scope": "maximum_individual_process_not_simultaneous_sum",
+        "sum": null
+      },
+      "LocalSystemCPUMS": {
+        "observed_rows": 6,
+        "sum": 13638
+      },
+      "LocalUserCPUMS": {
+        "observed_rows": 6,
+        "sum": 70161
+      },
+      "OutputTokens": {
+        "observed_rows": 6,
+        "sum": 2181
+      },
+      "PrefetchMS": {
+        "observed_rows": 6,
+        "sum": 0
+      },
+      "PromptBytes": {
+        "observed_rows": 6,
+        "sum": 6009
+      },
+      "ProviderMS": {
+        "observed_rows": 6,
+        "sum": 99620
+      },
+      "SourceBytes": {
+        "observed_rows": 6,
+        "sum": 0
+      },
+      "ToolCalls": {
+        "observed_rows": 6,
+        "sum": 17
+      },
+      "TotalMS": {
+        "observed_rows": 6,
+        "sum": 133587
+      },
+      "ValidationMS": {
+        "observed_rows": 6,
+        "sum": 33955
+      },
+      "attempts": 6,
+      "correct": 6,
+      "measurement_valid": 6
+    },
+    "B": {
+      "CachedInputTokens": {
+        "observed_rows": 6,
+        "sum": 173952
+      },
+      "EvidenceBytes": {
+        "observed_rows": 6,
+        "sum": 0
+      },
+      "InputTokens": {
+        "observed_rows": 6,
+        "sum": 286316
+      },
+      "LocalElapsedMS": {
+        "observed_rows": 6,
+        "sum": 131207
+      },
+      "LocalPeakRSSBytes": {
+        "maximum": 265015296,
+        "observed_rows": 6,
+        "scope": "maximum_individual_process_not_simultaneous_sum",
+        "sum": null
+      },
+      "LocalSystemCPUMS": {
+        "observed_rows": 6,
+        "sum": 14451
+      },
+      "LocalUserCPUMS": {
+        "observed_rows": 6,
+        "sum": 70505
+      },
+      "OutputTokens": {
+        "observed_rows": 6,
+        "sum": 2332
+      },
+      "PrefetchMS": {
+        "observed_rows": 6,
+        "sum": 0
+      },
+      "PromptBytes": {
+        "observed_rows": 6,
+        "sum": 6009
+      },
+      "ProviderMS": {
+        "observed_rows": 6,
+        "sum": 97958
+      },
+      "SourceBytes": {
+        "observed_rows": 6,
+        "sum": 0
+      },
+      "ToolCalls": {
+        "observed_rows": 6,
+        "sum": 18
+      },
+      "TotalMS": {
+        "observed_rows": 6,
+        "sum": 130540
+      },
+      "ValidationMS": {
+        "observed_rows": 6,
+        "sum": 32574
+      },
+      "attempts": 6,
+      "correct": 6,
+      "measurement_valid": 6
+    }
+  },
+  "causal_savings_claim": false,
+  "cost": null,
+  "driver_summary_sha256": "0cc5efe6e03bc7b25df6462aae0cd2855bff25a06c97083be29008677c217a08",
+  "effective_model_backend_cache_quota_equivalence": "UNKNOWN",
+  "global_economic_gate": "INCOMPLETE",
+  "historical_114_attempts_included_in_this_aggregate": false,
+  "input_rows_sha256": "79fd13624a3e49ea78c91a3a8577cfc84d5dc8221bf0eff308e9d261ce946c19",
+  "new_gate_defined_after_results": false,
+  "observed_reduction_percent": {
+    "InputTokens": 0.012571939431189585,
+    "LocalElapsedMS": 2.465005984106807,
+    "TotalMS": 2.2809105676450554
+  },
+  "original_phase_subset_diagnostic": "FAIL",
+  "per_pair": [
+    {
+      "both_correct": true,
+      "observed_reduction_percent": {
+        "InputTokens": -0.20020939331043477,
+        "LocalElapsedMS": 17.951534936279742,
+        "TotalMS": 18.062851929912863
+      },
+      "repetition": 0,
+      "scenario": "small_known_file_correction"
+    },
+    {
+      "both_correct": true,
+      "observed_reduction_percent": {
+        "InputTokens": -33.55380372440388,
+        "LocalElapsedMS": -12.381576595364356,
+        "TotalMS": -14.481660645398323
+      },
+      "repetition": 0,
+      "scenario": "cross_module_refactor"
+    },
+    {
+      "both_correct": true,
+      "observed_reduction_percent": {
+        "InputTokens": 0.044349175844482225,
+        "LocalElapsedMS": -5.556527061292297,
+        "TotalMS": -5.5256123745672845
+      },
+      "repetition": 1,
+      "scenario": "small_known_file_correction"
+    },
+    {
+      "both_correct": true,
+      "observed_reduction_percent": {
+        "InputTokens": 25.241638399533137,
+        "LocalElapsedMS": 11.354523227383863,
+        "TotalMS": 11.429697507143562
+      },
+      "repetition": 1,
+      "scenario": "cross_module_refactor"
+    },
+    {
+      "both_correct": true,
+      "observed_reduction_percent": {
+        "InputTokens": 0.458154604362508,
+        "LocalElapsedMS": 2.061558422835724,
+        "TotalMS": 2.040521506735527
+      },
+      "repetition": 2,
+      "scenario": "small_known_file_correction"
+    },
+    {
+      "both_correct": true,
+      "observed_reduction_percent": {
+        "InputTokens": -0.532776822980604,
+        "LocalElapsedMS": -13.151498784769107,
+        "TotalMS": -13.32969506787639
+      },
+      "repetition": 2,
+      "scenario": "cross_module_refactor"
+    }
+  ],
+  "per_repetition": [
+    {
+      "arms": {
+        "A": {
+          "CachedInputTokens": {
+            "observed_rows": 2,
+            "sum": 67072
+          },
+          "EvidenceBytes": {
+            "observed_rows": 2,
+            "sum": 0
+          },
+          "InputTokens": {
+            "observed_rows": 2,
+            "sum": 95416
+          },
+          "LocalElapsedMS": {
+            "observed_rows": 2,
+            "sum": 48641
+          },
+          "LocalPeakRSSBytes": {
+            "maximum": 265293824,
+            "observed_rows": 2,
+            "scope": "maximum_individual_process_not_simultaneous_sum",
+            "sum": null
+          },
+          "LocalSystemCPUMS": {
+            "observed_rows": 2,
+            "sum": 4962
+          },
+          "LocalUserCPUMS": {
+            "observed_rows": 2,
+            "sum": 25982
+          },
+          "OutputTokens": {
+            "observed_rows": 2,
+            "sum": 752
+          },
+          "PrefetchMS": {
+            "observed_rows": 2,
+            "sum": 0
+          },
+          "PromptBytes": {
+            "observed_rows": 2,
+            "sum": 2003
+          },
+          "ProviderMS": {
+            "observed_rows": 2,
+            "sum": 33955
+          },
+          "SourceBytes": {
+            "observed_rows": 2,
+            "sum": 0
+          },
+          "ToolCalls": {
+            "observed_rows": 2,
+            "sum": 6
+          },
+          "TotalMS": {
+            "observed_rows": 2,
+            "sum": 48120
+          },
+          "ValidationMS": {
+            "observed_rows": 2,
+            "sum": 14161
+          },
+          "attempts": 2,
+          "correct": 2,
+          "measurement_valid": 2
+        },
+        "B": {
+          "CachedInputTokens": {
+            "observed_rows": 2,
+            "sum": 53248
+          },
+          "EvidenceBytes": {
+            "observed_rows": 2,
+            "sum": 0
+          },
+          "InputTokens": {
+            "observed_rows": 2,
+            "sum": 109273
+          },
+          "LocalElapsedMS": {
+            "observed_rows": 2,
+            "sum": 45000
+          },
+          "LocalPeakRSSBytes": {
+            "maximum": 264593408,
+            "observed_rows": 2,
+            "scope": "maximum_individual_process_not_simultaneous_sum",
+            "sum": null
+          },
+          "LocalSystemCPUMS": {
+            "observed_rows": 2,
+            "sum": 5248
+          },
+          "LocalUserCPUMS": {
+            "observed_rows": 2,
+            "sum": 24930
+          },
+          "OutputTokens": {
+            "observed_rows": 2,
+            "sum": 770
+          },
+          "PrefetchMS": {
+            "observed_rows": 2,
+            "sum": 0
+          },
+          "PromptBytes": {
+            "observed_rows": 2,
+            "sum": 2003
+          },
+          "ProviderMS": {
+            "observed_rows": 2,
+            "sum": 32768
+          },
+          "SourceBytes": {
+            "observed_rows": 2,
+            "sum": 0
+          },
+          "ToolCalls": {
+            "observed_rows": 2,
+            "sum": 7
+          },
+          "TotalMS": {
+            "observed_rows": 2,
+            "sum": 44743
+          },
+          "ValidationMS": {
+            "observed_rows": 2,
+            "sum": 11972
+          },
+          "attempts": 2,
+          "correct": 2,
+          "measurement_valid": 2
+        }
+      },
+      "observed_reduction_percent": {
+        "InputTokens": -14.522721556133144,
+        "LocalElapsedMS": 7.4854546575933885,
+        "TotalMS": 7.017871986699917
+      },
+      "repetition": 0
+    },
+    {
+      "arms": {
+        "A": {
+          "CachedInputTokens": {
+            "observed_rows": 2,
+            "sum": 67328
+          },
+          "EvidenceBytes": {
+            "observed_rows": 2,
+            "sum": 0
+          },
+          "InputTokens": {
+            "observed_rows": 2,
+            "sum": 95421
+          },
+          "LocalElapsedMS": {
+            "observed_rows": 2,
+            "sum": 43324
+          },
+          "LocalPeakRSSBytes": {
+            "maximum": 260530176,
+            "observed_rows": 2,
+            "scope": "maximum_individual_process_not_simultaneous_sum",
+            "sum": null
+          },
+          "LocalSystemCPUMS": {
+            "observed_rows": 2,
+            "sum": 4321
+          },
+          "LocalUserCPUMS": {
+            "observed_rows": 2,
+            "sum": 22788
+          },
+          "OutputTokens": {
+            "observed_rows": 2,
+            "sum": 772
+          },
+          "PrefetchMS": {
+            "observed_rows": 2,
+            "sum": 0
+          },
+          "PromptBytes": {
+            "observed_rows": 2,
+            "sum": 2003
+          },
+          "ProviderMS": {
+            "observed_rows": 2,
+            "sum": 32935
+          },
+          "SourceBytes": {
+            "observed_rows": 2,
+            "sum": 0
+          },
+          "ToolCalls": {
+            "observed_rows": 2,
+            "sum": 6
+          },
+          "TotalMS": {
+            "observed_rows": 2,
+            "sum": 43119
+          },
+          "ValidationMS": {
+            "observed_rows": 2,
+            "sum": 10180
+          },
+          "attempts": 2,
+          "correct": 2,
+          "measurement_valid": 2
+        },
+        "B": {
+          "CachedInputTokens": {
+            "observed_rows": 2,
+            "sum": 53632
+          },
+          "EvidenceBytes": {
+            "observed_rows": 2,
+            "sum": 0
+          },
+          "InputTokens": {
+            "observed_rows": 2,
+            "sum": 81562
+          },
+          "LocalElapsedMS": {
+            "observed_rows": 2,
+            "sum": 42273
+          },
+          "LocalPeakRSSBytes": {
+            "maximum": 257810432,
+            "observed_rows": 2,
+            "scope": "maximum_individual_process_not_simultaneous_sum",
+            "sum": null
+          },
+          "LocalSystemCPUMS": {
+            "observed_rows": 2,
+            "sum": 4473
+          },
+          "LocalUserCPUMS": {
+            "observed_rows": 2,
+            "sum": 22307
+          },
+          "OutputTokens": {
+            "observed_rows": 2,
+            "sum": 799
+          },
+          "PrefetchMS": {
+            "observed_rows": 2,
+            "sum": 0
+          },
+          "PromptBytes": {
+            "observed_rows": 2,
+            "sum": 2003
+          },
+          "ProviderMS": {
+            "observed_rows": 2,
+            "sum": 32019
+          },
+          "SourceBytes": {
+            "observed_rows": 2,
+            "sum": 0
+          },
+          "ToolCalls": {
+            "observed_rows": 2,
+            "sum": 5
+          },
+          "TotalMS": {
+            "observed_rows": 2,
+            "sum": 42060
+          },
+          "ValidationMS": {
+            "observed_rows": 2,
+            "sum": 10039
+          },
+          "attempts": 2,
+          "correct": 2,
+          "measurement_valid": 2
+        }
+      },
+      "observed_reduction_percent": {
+        "InputTokens": 14.524056549396883,
+        "LocalElapsedMS": 2.425907118456283,
+        "TotalMS": 2.4559938774090306
+      },
+      "repetition": 1
+    },
+    {
+      "arms": {
+        "A": {
+          "CachedInputTokens": {
+            "observed_rows": 2,
+            "sum": 67200
+          },
+          "EvidenceBytes": {
+            "observed_rows": 2,
+            "sum": 0
+          },
+          "InputTokens": {
+            "observed_rows": 2,
+            "sum": 95515
+          },
+          "LocalElapsedMS": {
+            "observed_rows": 2,
+            "sum": 42558
+          },
+          "LocalPeakRSSBytes": {
+            "maximum": 261758976,
+            "observed_rows": 2,
+            "scope": "maximum_individual_process_not_simultaneous_sum",
+            "sum": null
+          },
+          "LocalSystemCPUMS": {
+            "observed_rows": 2,
+            "sum": 4355
+          },
+          "LocalUserCPUMS": {
+            "observed_rows": 2,
+            "sum": 21391
+          },
+          "OutputTokens": {
+            "observed_rows": 2,
+            "sum": 657
+          },
+          "PrefetchMS": {
+            "observed_rows": 2,
+            "sum": 0
+          },
+          "PromptBytes": {
+            "observed_rows": 2,
+            "sum": 2003
+          },
+          "ProviderMS": {
+            "observed_rows": 2,
+            "sum": 32730
+          },
+          "SourceBytes": {
+            "observed_rows": 2,
+            "sum": 0
+          },
+          "ToolCalls": {
+            "observed_rows": 2,
+            "sum": 5
+          },
+          "TotalMS": {
+            "observed_rows": 2,
+            "sum": 42348
+          },
+          "ValidationMS": {
+            "observed_rows": 2,
+            "sum": 9614
+          },
+          "attempts": 2,
+          "correct": 2,
+          "measurement_valid": 2
+        },
+        "B": {
+          "CachedInputTokens": {
+            "observed_rows": 2,
+            "sum": 67072
+          },
+          "EvidenceBytes": {
+            "observed_rows": 2,
+            "sum": 0
+          },
+          "InputTokens": {
+            "observed_rows": 2,
+            "sum": 95481
+          },
+          "LocalElapsedMS": {
+            "observed_rows": 2,
+            "sum": 43934
+          },
+          "LocalPeakRSSBytes": {
+            "maximum": 265015296,
+            "observed_rows": 2,
+            "scope": "maximum_individual_process_not_simultaneous_sum",
+            "sum": null
+          },
+          "LocalSystemCPUMS": {
+            "observed_rows": 2,
+            "sum": 4730
+          },
+          "LocalUserCPUMS": {
+            "observed_rows": 2,
+            "sum": 23268
+          },
+          "OutputTokens": {
+            "observed_rows": 2,
+            "sum": 763
+          },
+          "PrefetchMS": {
+            "observed_rows": 2,
+            "sum": 0
+          },
+          "PromptBytes": {
+            "observed_rows": 2,
+            "sum": 2003
+          },
+          "ProviderMS": {
+            "observed_rows": 2,
+            "sum": 33171
+          },
+          "SourceBytes": {
+            "observed_rows": 2,
+            "sum": 0
+          },
+          "ToolCalls": {
+            "observed_rows": 2,
+            "sum": 6
+          },
+          "TotalMS": {
+            "observed_rows": 2,
+            "sum": 43737
+          },
+          "ValidationMS": {
+            "observed_rows": 2,
+            "sum": 10563
+          },
+          "attempts": 2,
+          "correct": 2,
+          "measurement_valid": 2
+        }
+      },
+      "observed_reduction_percent": {
+        "InputTokens": 0.035596503167041826,
+        "LocalElapsedMS": -3.233234644485173,
+        "TotalMS": -3.2799659960328706
+      },
+      "repetition": 2
+    }
+  ],
+  "phase_gate_modified": false,
+  "scope": "observed_scalar_metrics_shared_host_two_synthetic_edit_contracts",
+  "time_scope": {
+    "LocalElapsedMS": "App subprocess including admission/probes measured by wait4",
+    "TotalMS": "prefetch/provider/validation after edit admission",
+    "whole_session": "NOT_MEASURED"
+  },
+  "workers_retries_delegations": "UNKNOWN_NOT_INSTRUMENTED"
+}

@@ -28,7 +28,7 @@ func TestMatrixCoverageAndStructuredOracles(t *testing.T) {
 			}
 		}
 	}
-	if supported != 7 {
+	if supported != 9 {
 		t.Fatalf("supported=%d", supported)
 	}
 	if _, correct := CheckAnswer("small_known_file_correction", `{}`); correct {
@@ -37,7 +37,7 @@ func TestMatrixCoverageAndStructuredOracles(t *testing.T) {
 }
 
 func TestMaterializedBytesAndNoncodeMutation(t *testing.T) {
-	for _, fixture := range []string{"go-core", "python-deps", "monorepo-ts", "rules-shell", "non-code"} {
+	for _, fixture := range []string{"go-core", "python-deps", "monorepo-ts", "rules-shell", "non-code", "go-clamp-edit", "monorepo-refactor-ts"} {
 		t.Run(fixture, func(t *testing.T) {
 			root := t.TempDir()
 			if err := Materialize(root, fixture); err != nil {

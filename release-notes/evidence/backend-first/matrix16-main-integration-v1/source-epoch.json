@@ -1,0 +1,101 @@
+{
+  "schema": 1,
+  "epoch": "pr46-main6d99-integration-v1",
+  "parents": {
+    "pr46": "16f4e42f3528a71522023ed61bc2406ca6ab8d2a",
+    "main": "6d99e320912f3f7325c3009209a10e9df86610d4"
+  },
+  "merged_runtime_index_tree": "90ea1487df5c640a84e849201a670a80f58aeceb",
+  "merge": "automatic, no conflicts, no manual runtime changes",
+  "source_file_count": 547,
+  "source_inventory_sha256": "e791050ff4408e2f45b937781d2fa88f0f081a6313afbe0f0f7f96fa1af70e35",
+  "protocol3_capabilities": {
+    "schema_version": 3,
+    "catalog_sha256": "395f77bc5154c3df42cc7897feb7206bb38963a9441741ea24dbf290b08a9d7e",
+    "fixture_contract_sha256": "79cbdc665d4e301bc6057fb15dabb73cc08964e50eae1a1558b8c5e20a93678b",
+    "harness_sha256": "8a39b1ef6f9c4efc5a95a115adac7104bc51d330c9eb3e6b2f592555f3f4fe08",
+    "supported_scenarios": [
+      "api",
+      "cross_module_refactor",
+      "dependencies",
+      "implementation",
+      "monorepo",
+      "multi_module_callers",
+      "non_code",
+      "small_known_file_correction",
+      "unsupported_parser"
+    ],
+    "fixtures": {
+      "go-clamp-edit": "17989e8cf9573521b9a364538b3e9f0288bf50e7f2302d7f53d201c0957dc0c8",
+      "go-core": "94339e5800d550aaa5284ae452fef04b9c425c02dd079be54234b1bb8feb5188",
+      "monorepo-refactor-ts": "f74e0669fe05021dd8747393440d2fe5445ff0677bda2e7eb2989885a8a191ef",
+      "python-deps": "4dfd2279a45f4f1485e482743672d52a362aeb41d9dd0a671efdfa98a21847aa",
+      "monorepo-ts": "01ade0e8a5dbe64fb80ceb1210c2d0f056ed43462e9a1e86f1f9b24000feb656",
+      "rules-shell": "2650c62f41cfe3d5d0dce157cf45e35a6237605a564be2326bcd9646e123ac72",
+      "non-code": "4e5d45339ffb829146a641b9a6460879c4ab1e741f45820c00f3f3c2bb4f5cd9"
+    }
+  },
+  "protocol_files_unchanged_vs_pr46": {
+    "internal/app/primary_prefetch_live_test.go": "8a39b1ef6f9c4efc5a95a115adac7104bc51d330c9eb3e6b2f592555f3f4fe08",
+    "scripts/benchmark-economic-runtime.py": "f3d88a3bfb4117606648a2d58ec2b4bc62a549bc41660c75c9c0192807a94e60",
+    "scripts/benchmark_catalog.py": "c2d61962691373cc120f9fda9735f13ce7b1c9122f314ca31cfe5b1fa7091622",
+    "scripts/benchmark_process_sampler.py": "5ebaaa4c8b18e4a24b85bd35b9c57fc992b972cbb529530e86e266ca15a5a3cd",
+    "internal/benchmarkfixtures/fixtures.go": "36d96121f59a734f25989db9d43f6d4c39e0a0160bbb676f82d7c5bea1a5fc86",
+    "internal/benchmarkfixtures/edit_oracle.go": "8f907857f8a2c91bc4464ae55ad8b0728e3b11621ade776808e953a7f7b85514",
+    "internal/benchmarkfixtures/exec_observation.go": "6188106799ed44eeb260d322f46f1d9e1e4fcdbbcd4c69e759a18137fba977e3",
+    "internal/benchmarkfixtures/data/catalog.json": "395f77bc5154c3df42cc7897feb7206bb38963a9441741ea24dbf290b08a9d7e"
+  },
+  "historical_artifacts": {
+    "files": 140,
+    "all_hashes_unchanged": true,
+    "cohorts": {
+      "control-v0121": {
+        "rows": 18,
+        "sha256": "d9ac036e7557c4def068e09bfc119d545f09cac50b5308b4bac5a112c7fbca6c"
+      },
+      "candidate-gateway": {
+        "rows": 18,
+        "sha256": "79aba17ec1e6a201eb24c9330295f2edff20ffe0e0b2711bea5f2fa932db9d39"
+      },
+      "candidate-gateway-v2": {
+        "rows": 18,
+        "sha256": "c703f0962989e9c34a6238488eb6e0043381b278db09775b1513a9eb33e0789c"
+      },
+      "candidate-gateway-v3": {
+        "rows": 18,
+        "sha256": "de3e1156a48fc42fa6eba3a2e0efb0310e9818f86a8de620b2144fe5e3a87bc9"
+      },
+      "matrix16-v1": {
+        "rows": 42,
+        "sha256": "0b0ce3f04c5af447ce5c389aa0fb51d7f1835c1d8574bd54ac49782d6b822056"
+      },
+      "matrix16-edit-live-v1": {
+        "rows": 12,
+        "sha256": "79fd13624a3e49ea78c91a3a8577cfc84d5dc8221bf0eff308e9d261ce946c19"
+      }
+    },
+    "total_actual_rows_unchanged": 126
+  },
+  "builds": {
+    "amd64": {
+      "sha256": "3f0887f373233f10707ae79fe222f6bda27a463839d98336f566b4cab92394ba",
+      "execution": "version smokePASS on AMD64 host"
+    },
+    "arm64": {
+      "sha256": "2df1419abc578a16e74cc0eeea03492969113ed9e2b469ae46c3a195e866b53b",
+      "execution": "cross-compiled only; NOT_EXECUTED"
+    }
+  },
+  "tool_sha256": {
+    "go": "5f5eb6d0b2fb6aa0bb5d5f8c5f1c944e0de955c925f0111af92a9d8f79680b5b",
+    "node": "5a7b8a3cf5ccb57d297519754fd73238f64cf560afd0ef19a2f9bf7384cbb657",
+    "bwrap": "573236e5328ac2ebb08f59ae3a9805b4f8d12bdef14be8af4450d5463294985f",
+    "prlimit": "06275e616ca2b721482aeb564260489be3fdc6d5f86836b4a78e96485845f060",
+    "git": "356db14e102d68a1a37d8a1ac577dfd678d45d46e92f468bef8b7154e7bfdc60",
+    "python3": "889c603f0d17cb54060951bcf4c4f9b8c9ebd9e52b392c70209bbb9755d797d9"
+  },
+  "provider_turns": 0,
+  "economic_gate": "INCOMPLETE; no new comparison or rescore",
+  "future_comparison": "both runtime arms must rebuild the identical final common harness and pass strict discovery; old frozen binaries/results cannot describe this combined runtime",
+  "context_sync": "BLOCKED IVOAI-175"
+}

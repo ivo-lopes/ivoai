@@ -1,0 +1,332 @@
+{
+  "schema_version": 1,
+  "scope": "public_allowlisted_projection_of_private_freeze",
+  "original_private_manifest_sha256": "95150cfae4dc5ae46c1cf15b946706ac89f3a8e0fc73f6088834a2d0cd4fd4e9",
+  "private_verifier_sha256": "a0f02d4808806cb98030a3b9b9f8ee7e581d35472a9b6b134be5ed3b323c8f9c",
+  "comparison_command_sha256": "01e569f8a4a2c19e5e91fd1bfba9945354bc537ca45bf7f44d4319a428f10877",
+  "preflight_command_sha256": "268689f6a765cecbe627fc852ff9607a3619e67697e48c15559c130a9757f71f",
+  "supervisor_sha256": "5a6952401969fc55e994931cf1416a4c4ac1989a07ba8c7ce5105a465b4dcd16",
+  "frozen_source_commit": "6294172995385849154cc6ec6d106b4448c0f56c",
+  "runtime_baseline": "3ff6db8bb0174b1ae6f781f6754e2653a6dae5db",
+  "runtime_candidate": "c6fb6675672cb85e1dea6704af68c6886553911b",
+  "candidate_excludes_later_admin_and_release_patches": true,
+  "shared_code_sandbox_runtime": "C6 production code, build from tree with test-only changes",
+  "pins": {
+    "bin/baseline-special-modes.test": {
+      "sha256": "b2ff934c421d2776be1ac76f54215cf564544e3bf42577c4ada4b0e23134ef92",
+      "bytes": 26409217
+    },
+    "bin/candidate-special-modes.test": {
+      "sha256": "ad1bb4545ce4074442d30e92bc14e7ce102cb6e8c0b67b9678d8cb45ab011443",
+      "bytes": 27839869
+    },
+    "bin/codex": {
+      "sha256": "628e35487d888a28f0427fc37501da529dd3d81fcbad7a2c3421c1e8670d92e1",
+      "bytes": 294415048
+    },
+    "bin/codex-code-mode-host": {
+      "sha256": "ec71830690a7c0024916ee0c99fbdc635bc6e747ff665ea4f03a8389bbcb6b30",
+      "bytes": 74036112
+    },
+    "bin/ivoai-code-sandbox": {
+      "sha256": "16894a928d8b454c4256ed7fb4b6108974446e9c3f5c52b6671234dafb7928be",
+      "bytes": 74608962
+    },
+    "go/bin/go": {
+      "sha256": "5f5eb6d0b2fb6aa0bb5d5f8c5f1c944e0de955c925f0111af92a9d8f79680b5b",
+      "bytes": 17164222
+    },
+    "node/bin/node": {
+      "sha256": "5a7b8a3cf5ccb57d297519754fd73238f64cf560afd0ef19a2f9bf7384cbb657",
+      "bytes": 150047368
+    },
+    "bwrap": {
+      "sha256": "573236e5328ac2ebb08f59ae3a9805b4f8d12bdef14be8af4450d5463294985f",
+      "bytes": 80248
+    },
+    "prlimit": {
+      "sha256": "06275e616ca2b721482aeb564260489be3fdc6d5f86836b4a78e96485845f060",
+      "bytes": 43928
+    },
+    "node-graft-pinned.tar.gz": {
+      "sha256": "15fc043a51a5783f2f4b634561091658f5a7f0e3db03f997dca3a8033a33e45b",
+      "bytes": 62798625
+    },
+    "go.tar.gz": {
+      "sha256": "65efbc80fdc1fa2cd2631cad5b481777a68e8725f34e89f50fc6ac714e379b40",
+      "bytes": 70588678
+    },
+    "graft-v0130/ivoai-graft_linux_amd64.tar.gz": {
+      "sha256": "85cd3b4f5a06e99a683739aa6fe7325951d3343834ef5ad18a37e30e9bfac441",
+      "bytes": 7689763
+    },
+    "graft-v0130/managed-graft-amd64.json": {
+      "sha256": "6fc5af54dd963e8d0af58b6a8dc051a52fef9e0447ef25630da669f394b6f6d7",
+      "bytes": 626
+    },
+    "graft-v0130/checksums.txt": {
+      "sha256": "755f77842cf411da8a41e46ebd7da79d1310978f3648247d06e0eedec3505af0",
+      "bytes": 1037
+    },
+    "graft-v0130/payload/files.json": {
+      "sha256": "4c405568d9fd2d3bf78f7831d4b536a460bde13cb2a8724332e61ff4b6228c43",
+      "bytes": 389597
+    },
+    "source/internal/app/primary_prefetch_live_test.go": {
+      "sha256": "9251e37c616461cbd4f0bc3e0b18e5c25da22d06723fa6f5841d0d808e6247ad",
+      "bytes": 35802
+    },
+    "source/internal/benchmarkfixtures/data/catalog.json": {
+      "sha256": "395f77bc5154c3df42cc7897feb7206bb38963a9441741ea24dbf290b08a9d7e",
+      "bytes": 9672
+    },
+    "source/internal/benchmarkfixtures/data/projects/go-clamp-edit/go.mod.fixture": {
+      "sha256": "47e08c5a0f243770f6e12f2fe7e0872cd2f8f243430f7076fecf30d32411303c",
+      "bytes": 29
+    },
+    "source/internal/benchmarkfixtures/data/projects/go-clamp-edit/mathpkg/clamp.go.fixture": {
+      "sha256": "86d0a577ae59ce899f177fd7360863614b05d6bbb8e8088cad68f6da7f49cb0d",
+      "bytes": 133
+    },
+    "source/internal/benchmarkfixtures/data/projects/go-clamp-edit/mathpkg/clamp_test.go.fixture": {
+      "sha256": "78f5baec1b0e8eeef0d5b6d73eb7553bc6b9d464dd187f23f098de21c5cb4f15",
+      "bytes": 477
+    },
+    "source/internal/benchmarkfixtures/data/projects/go-core/app/entry.go.fixture": {
+      "sha256": "8d07e7f055b835cd913738773ee29ff11359ed65340922d83f78680fd7798cf5",
+      "bytes": 82
+    },
+    "source/internal/benchmarkfixtures/data/projects/go-core/go.mod.fixture": {
+      "sha256": "aa8d5076537e2c5ed8c4fcf9a62e75c8606f68903b146f0d7dd8598db424b368",
+      "bytes": 24
+    },
+    "source/internal/benchmarkfixtures/data/projects/go-core/mathpkg/scale.go.fixture": {
+      "sha256": "0b39a55bd9f0549873f965d8a04beee24504f957d2e5bdcf36c1b78e760a10e0",
+      "bytes": 55
+    },
+    "source/internal/benchmarkfixtures/data/projects/go-core/service/process.go.fixture": {
+      "sha256": "37b920af11be7357a21f7541fa4182af6674ee1e0d010dc27f0b3f552f34ec4f",
+      "bytes": 88
+    },
+    "source/internal/benchmarkfixtures/data/projects/monorepo-refactor-ts/package.json": {
+      "sha256": "77e06860a055d3673dae242b95e40456c9b5cd821ccc50796cc3eb80119b9986",
+      "bytes": 65
+    },
+    "source/internal/benchmarkfixtures/data/projects/monorepo-refactor-ts/packages/admin/src/report.ts": {
+      "sha256": "67142c9f2cb92bf5d111d35126854d3324e4834a99da85a4d5f0f9f795f86f1a",
+      "bytes": 123
+    },
+    "source/internal/benchmarkfixtures/data/projects/monorepo-refactor-ts/packages/shared/src/discount.ts": {
+      "sha256": "b38aaa2e1eace7b5124af69ed40b7e2e3eba9d32e1d27dd032c60d90da1aad96",
+      "bytes": 77
+    },
+    "source/internal/benchmarkfixtures/data/projects/monorepo-refactor-ts/packages/shop/src/main.ts": {
+      "sha256": "1f2371b007f1dc9a3cec224748dc7cb47372e55cf40f99f07497026122fd97d2",
+      "bytes": 123
+    },
+    "source/internal/benchmarkfixtures/data/projects/monorepo-ts/check.sh": {
+      "sha256": "ba1f43cf7a1a412f817c3d2566ba9dbdd4ef7234cedb775333b127cfb2714a16",
+      "bytes": 54
+    },
+    "source/internal/benchmarkfixtures/data/projects/monorepo-ts/package.json": {
+      "sha256": "a90fc33418afa2b9cbf4768524b021135b965ecdf993457505bfae3ac44a8428",
+      "bytes": 33
+    },
+    "source/internal/benchmarkfixtures/data/projects/monorepo-ts/packages/shared/src/discount.ts": {
+      "sha256": "b38aaa2e1eace7b5124af69ed40b7e2e3eba9d32e1d27dd032c60d90da1aad96",
+      "bytes": 77
+    },
+    "source/internal/benchmarkfixtures/data/projects/monorepo-ts/packages/shop/src/main.ts": {
+      "sha256": "fecb0a42c532600a59fce2a5139f35bb159096240c166e1f9d262dfbd5654891",
+      "bytes": 185
+    },
+    "source/internal/benchmarkfixtures/data/projects/non-code/milestones.json": {
+      "sha256": "316f57d7c1a7cf0d05200ac987464ec98c56a66b07d0d1357056030697449c40",
+      "bytes": 118
+    },
+    "source/internal/benchmarkfixtures/data/projects/python-deps/app/checkout.py": {
+      "sha256": "c999dd62569e22fff6f1c3ecf83cfefec63bd86cc87f91563653c216eed38b23",
+      "bytes": 121
+    },
+    "source/internal/benchmarkfixtures/data/projects/python-deps/pricing/__init__.py": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "source/internal/benchmarkfixtures/data/projects/python-deps/pricing/tax.py": {
+      "sha256": "7577a91dd1b998cf5752319d148d313ea205a717db8ee28a8ebe1061a15c01f1",
+      "bytes": 58
+    },
+    "source/internal/benchmarkfixtures/data/projects/python-deps/pricing/totals.py": {
+      "sha256": "f433f238ba483a6e1d8e9f2e6b785504bde3e3eeda5a44557698b15b5490b939",
+      "bytes": 92
+    },
+    "source/internal/benchmarkfixtures/data/projects/rules-shell/check.sh": {
+      "sha256": "8ba53660e4c5c4d510c633796f2385d1e4e4b778af473183139d76053d0e9e44",
+      "bytes": 264
+    },
+    "source/internal/benchmarkfixtures/data/projects/rules-shell/policy/discount.ivo-fixture": {
+      "sha256": "a1dadd390a9c51ee61d5e7e37cb6999423095f0b34bb8d25020e89127b4327ad",
+      "bytes": 30
+    },
+    "source/internal/benchmarkfixtures/edit_oracle.go": {
+      "sha256": "8f907857f8a2c91bc4464ae55ad8b0728e3b11621ade776808e953a7f7b85514",
+      "bytes": 13797
+    },
+    "source/internal/benchmarkfixtures/edit_oracle_test.go": {
+      "sha256": "ccc79f8f1bdb2b19b0741d0708b1680fc404f3b2c8b0b78cf189b99c7f48fd60",
+      "bytes": 7733
+    },
+    "source/internal/benchmarkfixtures/fixtures.go": {
+      "sha256": "0ba1f5d95a7dfec2bbce9e82de17e571bdc95da9a0aa16f3a00fa7a654476204",
+      "bytes": 9127
+    },
+    "source/internal/benchmarkfixtures/fixtures_test.go": {
+      "sha256": "40434624cd0b3c6699e9a8eebddc93c32557d543b25858cf55825b7cc1403b3d",
+      "bytes": 3025
+    },
+    "source/scripts/benchmark-economic-runtime.py": {
+      "sha256": "5fd2455d1b12cf5ac0dc3c94e9fcdb2045f4c9fd18bbde32eef1ff94cb3448ba",
+      "bytes": 29784
+    },
+    "source/scripts/benchmark_catalog.py": {
+      "sha256": "05050ae988d479dc7f1ac639380ce92a3fba00fa70e788b3d387db27180223fb",
+      "bytes": 10464
+    }
+  },
+  "embedded_capabilities": {
+    "schema_version": 2,
+    "catalog_sha256": "395f77bc5154c3df42cc7897feb7206bb38963a9441741ea24dbf290b08a9d7e",
+    "fixture_contract_sha256": "b1be89410849de350fcb334424780ce44417361806f1eba2d61522db3cbcdf73",
+    "harness_sha256": "9251e37c616461cbd4f0bc3e0b18e5c25da22d06723fa6f5841d0d808e6247ad",
+    "supported_scenarios": [
+      "api",
+      "cross_module_refactor",
+      "dependencies",
+      "implementation",
+      "monorepo",
+      "multi_module_callers",
+      "non_code",
+      "small_known_file_correction",
+      "unsupported_parser"
+    ],
+    "fixtures": {
+      "go-clamp-edit": "17989e8cf9573521b9a364538b3e9f0288bf50e7f2302d7f53d201c0957dc0c8",
+      "go-core": "94339e5800d550aaa5284ae452fef04b9c425c02dd079be54234b1bb8feb5188",
+      "monorepo-refactor-ts": "f74e0669fe05021dd8747393440d2fe5445ff0677bda2e7eb2989885a8a191ef",
+      "python-deps": "4dfd2279a45f4f1485e482743672d52a362aeb41d9dd0a671efdfa98a21847aa",
+      "monorepo-ts": "01ade0e8a5dbe64fb80ceb1210c2d0f056ed43462e9a1e86f1f9b24000feb656",
+      "rules-shell": "2650c62f41cfe3d5d0dce157cf45e35a6237605a564be2326bcd9646e123ac72",
+      "non-code": "4e5d45339ffb829146a641b9a6460879c4ab1e741f45820c00f3f3c2bb4f5cd9"
+    }
+  },
+  "toolchain": {
+    "go": "1.27.3",
+    "node": "26.11.1",
+    "codex": "0.162.1",
+    "CGO_ENABLED": "0",
+    "GOAMD64": "v1",
+    "build_flags": [
+      "-trimpath",
+      "-buildvcs=false"
+    ]
+  },
+  "codex_pair_sha256": {
+    "cli": "628e35487d888a28f0427fc37501da529dd3d81fcbad7a2c3421c1e8670d92e1",
+    "companion": "ec71830690a7c0024916ee0c99fbdc635bc6e747ff665ea4f03a8389bbcb6b30"
+  },
+  "official_codex_archives": {
+    "cli": "86f268d81b898f3e144c5ecff2ad2fda2c5802e042d6195b72538fe0fa125057",
+    "companion": "458239ea45c1fc508d89695f180ab352f2834709a8a46929a4466f4f04399ada"
+  },
+  "provenance": {
+    "codex_url": "https://github.com/openai/codex/releases/tag/rust-v0.162.1",
+    "graft_url": "https://github.com/ivo-lopes/ivoai/releases/tag/v0.13.0",
+    "graft_inventory_files": 2376,
+    "graft_native_bindings_abi_verified": 10,
+    "graft_library_smoke": "PASS isolated no-network native/WASM/queries/viewer",
+    "node_graft_metadata_archive_verified": true,
+    "node_binary_matches_that_archive": true,
+    "go_archive_sha256": "65efbc80fdc1fa2cd2631cad5b481777a68e8725f34e89f50fc6ac714e379b40",
+    "system_packages": [
+      "bubblewrap=0.12.0-1~deb13u1",
+      "libc6=2.41-12+deb13u4",
+      "libc6=2.41-12+deb13u4",
+      "libstdc++6=14.2.0-19",
+      "libstdc++6=14.2.0-19",
+      "util-linux=2.41.5-0+deb13u1"
+    ]
+  },
+  "authentication": {
+    "official_client_owned_existing_subscription": true,
+    "probe_before_run": "CHATGPT_SUBSCRIPTION_CLIENT_REPORTED_read_only_status",
+    "credentials_copied": false,
+    "credentials_extracted_by_agent": false,
+    "raw_status_output_retained": false,
+    "api_key_environment_forwarded": false,
+    "paid_api_fallback": false,
+    "scope_values_and_scope_fingerprint": "PRIVATE_NOT_PUBLISHED"
+  },
+  "planned": {
+    "scenarios": [
+      "small_known_file_correction",
+      "cross_module_refactor"
+    ],
+    "repetitions": 3,
+    "turns": 12,
+    "arm_orders_by_repetition": [
+      [
+        "A",
+        "B",
+        "B",
+        "A"
+      ],
+      [
+        "B",
+        "A",
+        "A",
+        "B"
+      ],
+      [
+        "A",
+        "B",
+        "B",
+        "A"
+      ]
+    ],
+    "model_requested": "gpt-6.1-sol",
+    "effort_requested": "low",
+    "native_retries_and_http_requests": "UNKNOWN_NOT_BOUNDED_TO_TURN_COUNT",
+    "experimental_evidence_gateway": false,
+    "host_common_controls": [
+      "agents.enabled=false",
+      "features.multi_agent_v2=false",
+      "features.multi_agent=false",
+      "features.plugins=false",
+      "features.hooks=false",
+      "features.apps=false",
+      "features.remote_plugin=false",
+      "sandbox_workspace_write.network_access=false"
+    ],
+    "benchmark_exit_is_execution_quality_only": true
+  },
+  "measurement": {
+    "TotalMS": "prefetch/provider/validation after edit admission",
+    "LocalElapsedMS": "App subprocess wall time including edit admission/probes; wait4 measurements retained",
+    "CPU": "wait4 user/system including reaped children, not all host CPU",
+    "peak_RSS": "maximum process RSS, not simultaneous aggregate",
+    "native_workers": "UNKNOWN_NOT_INSTRUMENTED",
+    "native_delegations": "UNKNOWN_NOT_INSTRUMENTED",
+    "effective_model_backend_cache_quota_equivalence": "UNKNOWN",
+    "monetary_cost": null,
+    "whole_session_economics": "NOT_MEASURED",
+    "host_exclusively_reserved": false,
+    "host_load_average_at_freeze": [
+      2.6943359375,
+      4.23828125,
+      3.86279296875
+    ],
+    "host_logical_cpu_count": 12
+  },
+  "global_economic_gate": "INCOMPLETE",
+  "host_paths_and_auth_scope_values": "OMITTED"
+}
