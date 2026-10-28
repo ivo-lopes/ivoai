@@ -57,6 +57,8 @@ const (
 // QueryDigest includes the normalized operation, arguments and retrieval budget.
 // CurrentGeneration must observe additions, edits, renames and deletions.
 type Request struct {
+	// ProtectedRecovery opts into host-bound recovery and durable ID marking.
+	ProtectedRecovery bool
 	Owner             workingcontext.Ownership
 	Scope             Scope
 	Source            string
@@ -112,20 +114,22 @@ type flight struct{ done chan struct{} }
 // checks. Each recipient receives its own artifact under its existing grants;
 // sharing retrieval never widens ArtifactStore ownership.
 type Gateway struct {
-	store   workingcontext.ArtifactStore
-	now     func() time.Time
-	mu      sync.Mutex
-	entries map[string]cached
-	flights map[string]*flight
-	bytes   int
-	sealKey [32]byte
+	store           workingcontext.ArtifactStore
+	now             func() time.Time
+	mu              sync.Mutex
+	entries         map[string]cached
+	flights         map[string]*flight
+	bytes           int
+	sealKey         [32]byte
+	bindings        map[string]recoveryBinding
+	pendingBindings int
 }
 
 func New(store workingcontext.ArtifactStore) (*Gateway, error) {
 	if store == nil {
 		return nil, errors.New("evidence requires an artifact store")
 	}
-	g := &Gateway{store: store, now: time.Now, entries: map[string]cached{}, flights: map[string]*flight{}}
+	g := &Gateway{store: store, now: time.Now, entries: map[string]cached{}, flights: map[string]*flight{}, bindings: map[string]recoveryBinding{}}
 	if _, err := rand.Read(g.sealKey[:]); err != nil {
 		return nil, errors.New("evidence integrity key unavailable")
 	}
@@ -211,9 +215,18 @@ func (g *Gateway) packet(ctx context.Context, r Request, generation string, doc 
 	if err != nil || current != generation {
 		return Packet{}, ErrChanged
 	}
-	artifact, err := g.store.Put(ctx, workingcontext.PutRequest{Kind: workingcontext.ArtifactStdout, MediaType: doc.MediaType, Owner: r.Owner, Sensitivity: doc.Sensitivity, Truncated: !doc.SourceComplete}, bytes.NewReader(doc.Raw))
+	if r.ProtectedRecovery {
+		if err := g.reserveBinding(); err != nil {
+			return Packet{}, err
+		}
+		defer func() { g.mu.Lock(); g.pendingBindings--; g.mu.Unlock() }()
+	}
+	artifact, err := g.store.Put(ctx, workingcontext.PutRequest{ProtectedRecovery: r.ProtectedRecovery, Kind: workingcontext.ArtifactStdout, MediaType: doc.MediaType, Owner: r.Owner, Sensitivity: doc.Sensitivity, Truncated: !doc.SourceComplete}, bytes.NewReader(doc.Raw))
 	if err != nil {
 		return Packet{}, err
+	}
+	if r.ProtectedRecovery && !workingcontext.ProtectedArtifactID(artifact.ID) {
+		return Packet{}, ErrDenied
 	}
 	current, err = check(ctx, r)
 	if err != nil || current != generation {
@@ -221,6 +234,11 @@ func (g *Gateway) packet(ctx context.Context, r Request, generation string, doc 
 	}
 	ref := Ref{Result: workingcontext.ResultRef{Artifact: artifact, Role: workingcontext.EvidencePrimary}, Scope: r.Scope, Source: r.Source, Generation: generation, QueryDigest: r.QueryDigest, Basis: doc.Basis, SourceComplete: doc.SourceComplete, Untrusted: true, Fidelity: core.CompressionExactRequired}
 	ref.Seal = g.seal(ref)
+	if r.ProtectedRecovery {
+		g.mu.Lock()
+		g.bindings[artifact.ID] = recoveryBinding{request: r, ref: ref}
+		g.mu.Unlock()
+	}
 	p := Packet{Ref: ref, CacheHit: hit, Representation: "exact", Sufficiency: "requires_task_validation"}
 	if len(doc.Raw) <= r.BudgetBytes {
 		p.Text = string(doc.Raw)

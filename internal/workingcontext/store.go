@@ -7,12 +7,15 @@ import (
 )
 
 type PutRequest struct {
-	Kind        ArtifactKind
-	MediaType   string
-	Owner       Ownership
-	Sensitivity Sensitivity
-	TTL         time.Duration
-	Truncated   bool
+	// ProtectedRecovery is host policy, never an artifact ID supplied by a tool.
+	// Zero retains the historical artifact_ storage and recovery contract.
+	ProtectedRecovery bool
+	Kind              ArtifactKind
+	MediaType         string
+	Owner             Ownership
+	Sensitivity       Sensitivity
+	TTL               time.Duration
+	Truncated         bool
 }
 
 type ArtifactWriter interface {

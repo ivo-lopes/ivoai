@@ -122,8 +122,11 @@ func (s *LocalStore) Put(ctx context.Context, request PutRequest, input io.Reade
 		return ArtifactRef{}, errors.New("artifact count quota exceeded")
 	}
 	id, err := s.id()
-	if err != nil || !opaqueIDPattern.MatchString(id) {
+	if err != nil || !legacyIDPattern.MatchString(id) {
 		return ArtifactRef{}, errors.New("generate opaque artifact identity")
+	}
+	if request.ProtectedRecovery {
+		id = "evidence_" + strings.TrimPrefix(id, "artifact_")
 	}
 	objects := filepath.Join(s.root, "objects")
 	staging, err := os.MkdirTemp(objects, ".staging-")
