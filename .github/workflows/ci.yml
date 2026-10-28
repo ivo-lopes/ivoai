@@ -73,6 +73,10 @@ jobs:
             printf '::error title=Unit test failure::%s\n' "$annotation"
           fi
           exit "$status"
+      - name: Protected evidence recovery rollback against pinned legacy Core
+        # Full history above supplies the exact ancestor; the preceding tests
+        # warm checksummed modules. This gate is offline and rejects skips.
+        run: scripts/test-protected-evidence-rollback.sh
       - name: Non-executing intake and documentation comparison fixtures
         run: |
           python3 -m unittest discover -s scripts -p 'test_*.py'
