@@ -9,9 +9,12 @@ from that approved implementation, not introduced as a benchmark optimization.
 
 **All 193 previously tracked evidence files remain byte-identical**, including
 the original 140 files, the preceding epoch's 22 indexed artifacts and their
-manifest/imported main proofs. The six historical comparison arrays still retain
-126 actual rows; no source identity, outcome, failure or economic result was
-rescored. The previous integration report stays unchanged. Its local checks
+manifest/imported main proofs. The six comparison arrays under
+`release-notes/evidence/backend-first/` still retain 126 actual rows; no source
+identity, outcome, failure or economic result was rescored. This count describes
+only that lineage, not the repository's total historical runs. Older PR30
+`economic-runtime` cohorts and the separate projection pilot are also preserved
+but lie outside this tally; heterogeneous cohorts are not aggregated. The previous integration report stays unchanged. Its local checks
 describe its own a137 source, not this newer epoch. No real client/provider turn,
 new benchmark, calibration or optimization occurred here. The global economic
 gate remains INCOMPLETE.
