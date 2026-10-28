@@ -446,3 +446,42 @@ func TestLiveNativeAppServerAdmission(t *testing.T) {
 }
 
 var _ io.WriteCloser = (*writeBuffer)(nil)
+
+func TestNativePickerIsolatesSharedClaudeCatalog(t *testing.T) {
+	catalog := opencodebridge.CatalogFromRegistry(routing.Registry{Providers: map[string]routing.ProviderCapability{
+		"codex":  {Authenticated: true, Models: []routing.ModelCapability{{Name: "fixture-codex-boundary", CapabilityTier: routing.TierStrong, Source: routing.SourceRuntimeVerified}}},
+		"claude": {Authenticated: true, Models: []routing.ModelCapability{{Name: "fixture-claude-boundary", CapabilityTier: routing.TierStrong, Source: routing.SourceRuntimeVerified}}},
+	}}).RestrictedTo("codex", "claude")
+	bridge, err := opencodebridge.Start(opencodebridge.Options{Catalog: catalog, Runner: &fixtureRunner{}, Select: func(context.Context, string) (string, error) { return "codex", nil }, Status: func() opencodebridge.Status { return opencodebridge.Status{} }})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer bridge.Close(context.Background())
+	model, ok := catalog.StrongPrimary("codex")
+	if !ok {
+		t.Fatal("control model missing")
+	}
+	var hasClaude bool
+	for _, entry := range catalog.Entries() {
+		hasClaude = hasClaude || entry.Executor == "claude"
+	}
+	if !hasClaude {
+		t.Fatal("shared control lost Claude")
+	}
+	upstream := &writeBuffer{}
+	f := &Facade{ctx: context.Background(), options: Options{Bridge: bridge}, upstream: upstream, threads: map[string]bool{"fixture": true}, model: model.ID}
+	list, _ := json.Marshal(f.models())
+	if strings.Contains(string(list), "fixture-claude-boundary") || !strings.Contains(string(list), "fixture-codex-boundary") {
+		t.Fatal("native picker exposed other executor")
+	}
+	for _, m := range []string{"fixture-claude-boundary", "fixture-codex-boundary"} {
+		params, _ := json.Marshal(map[string]any{"threadId": "fixture", "input": []map[string]string{{"type": "text", "text": "Inspect the fixture"}}, "model": m})
+		f.handle(rpc{ID: json.RawMessage(`1`), Method: "turn/start", Params: params})
+		if m == "fixture-claude-boundary" && (f.active != nil || upstream.Len() != 0) {
+			t.Fatal("non-Codex model reached native admission")
+		}
+		if m == "fixture-codex-boundary" && (f.active == nil || upstream.Len() == 0) {
+			t.Fatal("Codex positive control failed")
+		}
+	}
+}

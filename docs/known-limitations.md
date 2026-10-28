@@ -16,5 +16,8 @@
   See [continuity limits](conversation-continuity.md). Native AUTO handoff to Claude
   and initial `ivoai codex --planner claude` fail closed until a managed native
   frontend contract is verified. Direct Claude remains available; no native Claude
-  TUI parity is claimed. The legacy OpenCode console is not a native-client requirement.
+  TUI parity is claimed. Shared Core headless/worker contracts remain; the native
+  Codex picker and turn admission accept Codex models only. A shared catalog does
+  not certify Claude selection through that TUI. The legacy OpenCode console is
+  not a native-client requirement.
 - Remote Web MCP requires a publicly reachable HTTPS origin or the platform's supported secure tunnel.

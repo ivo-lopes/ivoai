@@ -17,6 +17,9 @@
   Handoff AUTO nativo para Claude e `ivoai codex --planner claude` falham fechado
   até existir contrato verificado de frontend nativo gerenciado. Claude direto
   continua disponível; não há alegação de paridade da TUI nativa Claude. O console
-  OpenCode legado não é requisito dos clientes nativos.
+  OpenCode legado não é requisito dos clientes nativos. Os contratos headless e
+  de workers do Core permanecem; picker e admissão de turnos da TUI Codex aceitam
+  somente modelos Codex. O catálogo compartilhado não certifica seleção Claude
+  nessa TUI.
 - O MCP Web remoto exige uma origem HTTPS publicamente acessível ou o túnel seguro
   compatível da plataforma.

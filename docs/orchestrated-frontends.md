@@ -31,6 +31,14 @@ not rewritten or replayed. Native AUTO handoff to Claude and initial
 frontend. Existing approved Codex/Claude routing decisions remain separate from
 plan approval; this increment does not certify a native Claude TUI.
 
+The shared Core retains official Claude headless execution and Claude worker
+contracts under existing grants and routing decisions. The native Codex picker
+exposes Codex models, and its turn admission rejects Claude selections even when
+the shared catalog contains them. Internal alternate-route callbacks do not
+establish a Claude-primary path through that native presentation. The refused
+initial planner/handoff modes and the retained Core contracts have distinct
+boundaries; no Codex-presentation/Claude-primary parity is certified here.
+
 ## Native Codex terminal
 
 Enter the first prompt directly in the official Codex composer. Use its native

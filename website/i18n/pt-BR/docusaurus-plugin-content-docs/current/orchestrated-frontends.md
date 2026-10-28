@@ -32,6 +32,15 @@ ou replay. Handoff AUTO nativo para Claude e o planner inicial
 As decisões aprovadas de roteamento Codex/Claude continuam separadas do aceite
 do plano; este incremento não certifica uma TUI nativa Claude.
 
+O Core compartilhado preserva execução headless oficial Claude e contratos de
+workers Claude sob os grants e decisões de roteamento existentes. O picker
+nativo Codex apresenta modelos Codex, e a admissão de turnos recusa seleções
+Claude mesmo quando constam no catálogo compartilhado. Callbacks internos de
+rota alternativa não comprovam um caminho de primary Claude nessa apresentação
+nativa. Os modos iniciais de planner/handoff recusados e os contratos preservados
+do Core possuem limites distintos; não há certificação de paridade entre
+apresentação Codex e primary Claude nesta entrega.
+
 ## Terminal Codex
 
 Digite o primeiro prompt diretamente no composer oficial Codex. Use seus
