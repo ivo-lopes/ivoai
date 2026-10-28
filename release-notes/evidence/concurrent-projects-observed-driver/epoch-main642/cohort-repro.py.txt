@@ -1,0 +1,26 @@
+# Adverse synthetic protocol fixture only: no provider, auth, network or personal config.
+import importlib.util,json,pathlib,shutil,sys
+from types import SimpleNamespace
+root=pathlib.Path.cwd();sys.path.insert(0,str(root/'scripts'))
+import benchmark_concurrent_runtime as runtime
+p=pathlib.Path('/var/tmp/ivoai-driver-main642-current.path').read_text().strip();p=pathlib.Path(p)
+spec=importlib.util.spec_from_file_location('review_cohort_driver',root/'scripts/benchmark-economic-runtime.py');driver=importlib.util.module_from_spec(spec);sys.modules[spec.name]=driver;spec.loader.exec_module(driver)
+client=p/'cohort-client-copy-fixed';shutil.copyfile(pathlib.Path('/var/tmp/ivoai-concurrent-driver.GLeqqW0w/final/synthetic-client'),client);client.chmod(0o700)
+args=SimpleNamespace(baseline=p/'app-amd64.test',candidate=p/'app-amd64.test',codex=client,node=pathlib.Path('/bin/true'),sandbox_binary=pathlib.Path('/bin/true'),distribution=p/'distribution',oracle_go=pathlib.Path('/var/tmp/ivoai-validation-toolchain-20261028/go/bin/go'),output=p/'adverse-cohort-substitution',repetitions=1,preflight_only=False,sample_processes=False,harness=root/'internal/app/primary_prefetch_live_test.go')
+original=runtime.run_pair;count=0
+first_hash=driver.sha256(client)
+def pair(*pos,**kw):
+ global count
+ result=original(*pos,**kw);count+=1
+ if count==1:
+  with client.open('ab') as f:f.write(b'\nIVOAI_SYNTHETIC_BENIGN_ELF_TAIL\n')
+ return result
+runtime.run_pair=pair
+code=runtime.run(args,driver)
+rows=json.loads((args.output/'runtime-comparison.json').read_bytes());manifest=json.loads((args.output/'manifest.json').read_bytes())
+values=[child['ClientLifecycle']['identity']['client_sha256'] for row in rows for child in row['children'] if 'ClientLifecycle' in child]
+print(json.dumps({'scope':'SYNTHETIC_ADVERSE_COHORT_PIN_REPRO_NO_PROVIDER','exit':code,'pair_verdicts':[row['correct'] for row in rows],'pair_execution':[row.get('client_execution','EXECUTED') for row in rows],'child_verdicts':[[child['Correct'] for child in row['children']] for row in rows],'initial_client_sha256':first_hash,'manifest_client_sha256':manifest['client_sha256'],'final_client_sha256':driver.sha256(client),'observed_child_client_sha256':values},indent=2))
+assert code == 1 and rows[1]['client_execution'] == 'NOT_RUN' and len(rows[1]['children']) == 2
+assert all(child['Correct'] for child in rows[0]['children'])
+assert len(values)==2 and set(values)=={first_hash}
+assert json.loads((args.output/'cohort-final.json').read_bytes())['cohort_pins_stable'] is False
