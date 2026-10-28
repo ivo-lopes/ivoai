@@ -5,7 +5,7 @@ na v0.5.0, e registra separadamente o estado incremental atual abaixo. As versõ
 exatas estão em `manifest/components.yaml`; comportamento entregue e limites da
 migração pertencem às evidências versionadas de implementação e validação.
 
-## Candidata atual: v0.14.0
+## Release atual: v0.14.0
 
 O mesmo Core agora fornece um [console administrativo local de consulta](admin-console.md).
 Ele reutiliza App, stores de sessões/OAuth e DTOs limitados; JavaScript não cria
@@ -21,13 +21,14 @@ de contas.
 O frontend legado privado `.3` dispensa instalação do SDK npm em runtime sob
 o opt-in gerenciado e restringe plugins a entrypoints privados canônicos.
 Builds antigos exigem atualização revisada antes de iniciar esse backend; a
-dependência legada permanece. Consulte os limites de migração nas notas.
+dependência legada permanece. Consulte os limites de migração nas notas da tag e
+a [verificação pós-publicação](https://github.com/ivo-lopes/ivoai/blob/main/release-notes/v0.14.0-publication-verification.md).
 
 Os pilotos opcionais de evidências/código mantêm referências exatas e admissão
 explícita pelo host. Não constituem um gateway universal das ferramentas nativas.
 Execução geral somente no primary e remoção operacional do OpenCode não fazem
-parte desta candidata. Os pilotos posteriores de independência nativa, benchmark
-de edição e adaptação dos PRs 45/46/47 continuam excluídos. O gate econômico global continua INCOMPLETE, e o último
+parte desta release. Os trabalhos posteriores de independência nativa, benchmark,
+adaptação e evidências dos PRs 45/46/47/50/51 continuam excluídos. O gate econômico global continua INCOMPLETE, e o último
 subconjunto real reprovou as metas. Consulte [releases](releases.md) e as evidências.
 
 ## Incremento anterior: v0.13.0

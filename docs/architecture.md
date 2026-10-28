@@ -5,7 +5,7 @@ v0.5.0 and records the current incremental status separately below. Exact pins
 live in `manifest/components.yaml`; delivered behavior and migration limits belong
 to versioned implementation and validation evidence.
 
-## Current candidate: v0.14.0
+## Current release: v0.14.0
 
 The same Core now supplies a [local read-only admin console](admin-console.md).
 It reuses the App, session/OAuth stores and bounded DTOs; JavaScript adds no
@@ -21,13 +21,14 @@ TUI mediation or account parity.
 The private legacy frontend `.3` skips runtime plugin SDK installation under the
 managed opt-in and restricts plugin entrypoints to private canonical files.
 Older builds require a reviewed update before managed backend launch; the legacy
-dependency is still present. See the migration limits in the candidate notes.
+dependency is still present. See the migration limits in the tagged notes and
+the [post-publication verification](https://github.com/ivo-lopes/ivoai/blob/main/release-notes/v0.14.0-publication-verification.md).
 
 The optional evidence/code pilots retain exact references and explicit host
 admission. They do not establish a universal native-tool gateway. General
-primary-only execution and operational OpenCode removal are not in this candidate.
-The later native-independence, edit benchmark and adaptive pilots in PRs 45/46/47
-are excluded. The global economic gate remains INCOMPLETE, with the latest live subset failing
+primary-only execution and operational OpenCode removal are not in this release.
+The later native-independence, benchmark, adaptive and evidence work in PRs
+45/46/47/50/51 is excluded. The global economic gate remains INCOMPLETE, with the latest live subset failing
 the predeclared targets. See [releases](releases.md) and the linked evidence.
 
 ## Earlier increment: v0.13.0
