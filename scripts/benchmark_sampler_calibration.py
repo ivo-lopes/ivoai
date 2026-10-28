@@ -56,6 +56,42 @@ def emit(value):
     print(json.dumps(value, separators=(',', ':')), flush=True)
 
 
+class ProtocolFailure(ValueError):
+    """Fixed diagnostic labels only; never retain input or exception text."""
+    REASONS = ('eof', 'oversize', 'invalid_json', 'shape', 'ready_mismatch', 'oracle_mismatch')
+
+    def __init__(self, reason):
+        if reason not in self.REASONS:
+            raise ValueError('unknown diagnostic reason')
+        self.reason = reason
+        super().__init__(reason)
+
+
+class ProtocolDeadline(TimeoutError):
+    def __init__(self):
+        super().__init__('deadline')
+
+
+def failure_details(error, exit_code):
+    # wait4's owned-group deadline sentinel is an observed outcome, not an
+    # errno inferred from a signal. Keep protocol details for zero/unknown exit.
+    if exit_code == 124:
+        reason = 'deadline'
+    elif exit_code is not None and exit_code != 0:
+        reason = 'nonzero_exit'
+    elif isinstance(error, ProtocolFailure):
+        reason = error.reason
+    elif isinstance(error, (TimeoutError, subprocess.TimeoutExpired)):
+        reason = 'deadline'
+    elif isinstance(error, OSError):
+        reason = 'os_error'
+    else:
+        reason = 'value_error'
+    number = error.errno if isinstance(error, OSError) else None
+    number = number if type(number) is int and 0 <= number <= 4095 else None
+    return reason, number
+
+
 def read_message(fd, deadline):
     body = bytearray()
     while time.monotonic() < deadline:
@@ -63,16 +99,19 @@ def read_message(fd, deadline):
             continue
         byte = os.read(fd, 1)
         if not byte:
-            raise ValueError('protocol')
+            raise ProtocolFailure('eof')
         body.extend(byte)
         if len(body) > MAX_MESSAGE:
-            raise ValueError('protocol')
+            raise ProtocolFailure('oversize')
         if byte == b'\n':
-            value = json.loads(body)
+            try:
+                value = json.loads(body)
+            except ValueError:
+                raise ProtocolFailure('invalid_json') from None
             if type(value) is not dict:
-                raise ValueError('protocol')
+                raise ProtocolFailure('shape')
             return value
-    raise TimeoutError('protocol')
+    raise ProtocolDeadline()
 
 
 def private_env(home):
@@ -179,7 +218,7 @@ def waiter():
 
 def run_one(item, home, wait4):
     row = {**item, 'status': 'FAILED', 'correct': False, 'error': None,
-           'failure_phase': 'launch',
+           'failure_phase': 'launch', 'failure_reason': None, 'failure_errno': None,
            'fixture_known': expected(item['case']), 'actual_fixture': None,
            'process_observation': None, 'barrier_observed_processes': None,
            'known_identities_not_observed': None, 'exit_code': None,
@@ -199,7 +238,7 @@ def run_one(item, home, wait4):
         row['failure_phase'] = 'ready'
         ready = read_message(process.stdout.fileno(), deadline)
         if ready != {'kind': 'ready', 'ready_children': expected(item['case'])['ready_children']}:
-            raise ValueError('protocol')
+            raise ProtocolFailure('ready_mismatch')
         barrier_started = time.monotonic_ns()
         if item['arm'] == 'ON':
             row['failure_phase'] = 'sample'
@@ -219,11 +258,12 @@ def run_one(item, home, wait4):
         keys = ('started_children', 'completed_children', 'child_failures', 'checksum', 'touched_pages')
         row['failure_phase'] = 'oracle' if code == 0 else 'wait4'
         if code != 0 or done.get('kind') != 'done' or any(type(done.get(k)) is not int or done[k] != known[k] for k in keys):
-            raise ValueError('fixture')
+            raise ProtocolFailure('oracle_mismatch')
         row['actual_fixture'] = {k: done[k] for k in keys + ('reported_coordinator_cpu_ms', 'reported_waited_children_cpu_ms')}
         row['status'], row['correct'], row['failure_phase'] = 'PASS', True, None
-    except (OSError, ValueError, TimeoutError, subprocess.TimeoutExpired):
+    except (OSError, ValueError, TimeoutError, subprocess.TimeoutExpired) as error:
         row['error'] = 'fixture_or_protocol_failed'
+        row['failure_reason'], row['failure_errno'] = failure_details(error, row['exit_code'])
     finally:
         if process is not None and process.returncode is None:
             try:
@@ -287,7 +327,7 @@ def main(output):
     started, rows, wait4 = time.monotonic(), [], waiter()
     for item in workload_plan:
         if sources() != frozen or time.monotonic() - started > TOTAL_SECONDS - ATTEMPT_SECONDS - 1:
-            row = {**item, 'status': 'NOT_RUN', 'correct': False, 'error': 'source_changed_or_total_budget', 'failure_phase': None}
+            row = {**item, 'status': 'NOT_RUN', 'correct': False, 'error': 'source_changed_or_total_budget', 'failure_phase': None, 'failure_reason': None, 'failure_errno': None}
         else:
             with tempfile.TemporaryDirectory(prefix='sampler-offline-', dir=output) as home:
                 row = run_one(item, Path(home), wait4)

@@ -1,0 +1,46 @@
+{
+  "base": "d7bd3a04f0bd8c1192ee7abc1d56fc972ac0e3c3",
+  "normalized_existing_functions_identical": [
+    "plan",
+    "expected",
+    "emit",
+    "read_message",
+    "private_env",
+    "worker",
+    "waiter",
+    "run_one",
+    "write_new",
+    "sources",
+    "main"
+  ],
+  "constants_identical": [
+    "ROOT",
+    "CASES",
+    "REPETITIONS",
+    "ATTEMPT_SECONDS",
+    "TOTAL_SECONDS",
+    "HOLD_SECONDS",
+    "CPU_ITERATIONS",
+    "MEMORY_CHILDREN",
+    "MEMORY_BYTES",
+    "CHURN_CHILDREN",
+    "CHURN_HOLD_SECONDS",
+    "MAX_MESSAGE"
+  ],
+  "diagnostic_whitelist": [
+    "nullable row reason/errno fields",
+    "typed ValueError/TimeoutError replacements preserving predicates",
+    "one ValueError JSON wrapper mapping invalid_json",
+    "exception binding and failure_details assignment"
+  ],
+  "sampler_driver_bytes_identical": true,
+  "source_sha256": {
+    "scripts/benchmark_sampler_calibration.py": "11a4f2089b5086a1ddb8f5de5246650d49afb64878e5125a109e78954581a65b",
+    "scripts/test_benchmark_sampler_calibration.py": "23c78e36d04e417119258271b42293d5e68f883265888b86fc4f8552cba4f121",
+    "scripts/benchmark_process_sampler.py": "5ebaaa4c8b18e4a24b85bd35b9c57fc992b972cbb529530e86e266ca15a5a3cd",
+    "scripts/benchmark-economic-runtime.py": "f3d88a3bfb4117606648a2d58ec2b4bc62a549bc41660c75c9c0192807a94e60"
+  },
+  "verifier_sha256": "f525724818235b0cb69500ceb002369fe3aee15b2483c9d6586f272d4c701533",
+  "no_new_workload_cohort": true,
+  "original_cause": "INCONCLUSIVE/DRAFT"
+}

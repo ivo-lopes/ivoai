@@ -1,0 +1,9 @@
+{
+  "control": "wait4_already_exited_unreaped",
+  "result": "PASS_EXPECTED_BEHAVIOR",
+  "detail": {
+    "outcome": "already-exited child reaped once",
+    "exit_code": 0
+  },
+  "elapsed_ms": 16.679518997989362
+}

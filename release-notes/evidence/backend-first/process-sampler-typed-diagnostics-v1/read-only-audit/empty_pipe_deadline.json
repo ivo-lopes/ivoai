@@ -1,0 +1,8 @@
+{
+  "control": "empty_pipe_deadline",
+  "result": "PASS_EXPECTED_BEHAVIOR",
+  "detail": {
+    "outcome": "expected timeout; no workload attempt deadline changed"
+  },
+  "elapsed_ms": 20.09205000285874
+}

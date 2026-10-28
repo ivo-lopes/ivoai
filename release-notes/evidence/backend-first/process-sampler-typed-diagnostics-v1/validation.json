@@ -1,0 +1,71 @@
+{
+  "schema": 1,
+  "epoch": "sampler-typed-diagnostics-v1",
+  "base": "d7bd3a04f0bd8c1192ee7abc1d56fc972ac0e3c3",
+  "readiness": "DRAFT; original independent failure causeINCONCLUSIVE",
+  "change": "additive nullable failure_reason and failure_errno only; legacy error/status/measurements/schema1 unchanged",
+  "reasons": [
+    "eof",
+    "deadline",
+    "oversize",
+    "invalid_json",
+    "shape",
+    "ready_mismatch",
+    "nonzero_exit",
+    "oracle_mismatch",
+    "os_error",
+    "value_error"
+  ],
+  "errno": "integer0..4095 only from caughtOSError.errno; otherwise null; never inferred from exit/signal",
+  "semantics": "reason describes observed failure; wait4 deadline124 and known nonzero outcomes take priority; not original rootcause",
+  "source_identity": {
+    "normalized_existing_function_AST": "PASS all existing functions; explicit whitelist in source-freeze.json/verify_ast.py",
+    "all_existing_constants": "unchanged",
+    "read_loop": "same predicates/order/read size/deadlines; typed ValueError/TimeoutError and one JSON error wrapper only",
+    "workloads_oracles_wait4_sampler": "unchanged; driver/sampler byte-identical",
+    "source_frozen_before_tests_and_after": "PASS"
+  },
+  "tests": {
+    "typed_tests": {
+      "run": 6,
+      "passed": 5,
+      "not_run": 1,
+      "seconds": 0.14,
+      "not_run_reason": "real memory/churn opt-in deliberately not enabled"
+    },
+    "deterministic_pipe_cases": "EOF/oversize/invalidJSON/shape/readyMismatch/done failures/nonzero exit/deadline sentinel/oracleMismatch; phase+exit+errno/privacy assertions",
+    "faults_are_synthetic": "pipes are real; Popen/waiter simulate owned outcome with real signal/reap forbidden; no calibration worker launched",
+    "existing_python_package": {
+      "run": 71,
+      "passed": 70,
+      "not_run": 1,
+      "seconds": 10.452
+    },
+    "actual_errno_test": "injected OSErrorEMFILE reports24; raw message/filename omitted; non-OSError spoofederrno and out-of-bound values remainnull"
+  },
+  "archived_audit": {
+    "path": "read-only-audit",
+    "original_manifest_sha256": "86a5e47ab9e9ae89db0562c40bd23ec26d4b8e6580745f397dd7ba3504ebf31b",
+    "original_files": 19,
+    "all_original_hashes_verified": true,
+    "copy_safety": "manifest allowlisted flat names; bounded regular-file reads O_NOFOLLOW/O_NONBLOCK; new exclusive outputs; source unchanged",
+    "scope": "eight predeclared helper controls plus forced-fragmentation supplement; zero calibration workloads; no cause inferred"
+  },
+  "preservation": {
+    "all_prior_evidence_files_checked": 343,
+    "all_prior_bytes_unchanged": true,
+    "original32cohort": "unchanged; no rescore",
+    "original_initial_failure": "immutable in prior evidence; case/stage/errno unknown, not backfilled",
+    "audit_inputs": "unchanged byte for byte"
+  },
+  "cohort_runs": 0,
+  "provider_turns": 0,
+  "no_version_or_default_or_dependency_change": true,
+  "limits": [
+    "Newdiagnostics do not identify or fix originalfailure",
+    "No hard-real-time or complete lifecycle/RSS claim",
+    "Real calibration workload opt-in not rerun; no rerun-until-green",
+    "No merge with newer currentmain/c182 in this increment",
+    "EconomicgateINCOMPLETE; CONTEXT_SYNC BLOCKED IVOAI-175"
+  ]
+}

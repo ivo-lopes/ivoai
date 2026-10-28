@@ -1,0 +1,9 @@
+{
+  "control": "complete_frame",
+  "result": "PASS_EXPECTED_BEHAVIOR",
+  "detail": {
+    "messages": 1,
+    "outcome": "exact JSON accepted"
+  },
+  "elapsed_ms": 0.11643899779301137
+}

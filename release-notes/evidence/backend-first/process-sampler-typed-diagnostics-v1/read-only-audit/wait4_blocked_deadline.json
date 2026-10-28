@@ -1,0 +1,9 @@
+{
+  "control": "wait4_blocked_deadline",
+  "result": "PASS_EXPECTED_BEHAVIOR",
+  "detail": {
+    "outcome": "expected deadline kill and exact reap",
+    "exit_code": 124
+  },
+  "elapsed_ms": 21.071718001621775
+}
