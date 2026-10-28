@@ -1,0 +1,12 @@
+{
+  "source_stage": "rollback before completing merge",
+  "head": "10f00639591c03d1daba21806c92d87ef2368627",
+  "incoming": "54eb54edb9a08e732c45ed7a996b538741294a87",
+  "pinned_legacy": "3be82befea6ed3875373afcb1bfaa450710310ac",
+  "exit_codes": {
+    "lookup": 0,
+    "ancestor_old_head": 1,
+    "ancestor_incoming": 0
+  },
+  "failed_gate_preserved": "rollback.log/rollback.json; not a runtime-test failure or a skip"
+}

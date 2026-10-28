@@ -1,0 +1,8 @@
+ok  	github.com/ivo-lopes/ivoai/internal/app	147.709s
+ok  	github.com/ivo-lopes/ivoai/internal/benchmarkfixtures	1.488s
+ok  	github.com/ivo-lopes/ivoai/internal/nativecodex	3.550s
+ok  	github.com/ivo-lopes/ivoai/internal/observability	1.034s
+ok  	github.com/ivo-lopes/ivoai/internal/codeintel	21.486s
+ok  	github.com/ivo-lopes/ivoai/internal/evidence	58.277s
+ok  	github.com/ivo-lopes/ivoai/internal/workingcontext	72.026s
+ok  	github.com/ivo-lopes/ivoai/internal/orchestrator	111.272s

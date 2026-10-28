@@ -1,0 +1,9 @@
+=== RUN   TestLiveManagedOpenCodeResizeKeyboard
+    tui_interaction_test.go:221: resize=100 panel visible; Escape returned
+    tui_interaction_test.go:221: resize=60 panel visible; Escape returned
+    tui_interaction_test.go:221: resize=100 panel visible; Escape returned
+    tui_interaction_test.go:221: resize=160 panel visible; Escape returned
+    tui_interaction_test.go:279: native mouse selection fixture row=7 column=6
+--- PASS: TestLiveManagedOpenCodeResizeKeyboard (12.30s)
+PASS
+ok  	github.com/ivo-lopes/ivoai/internal/opencodebridge	12.306s

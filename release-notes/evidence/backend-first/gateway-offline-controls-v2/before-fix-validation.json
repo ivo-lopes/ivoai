@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "base_commit": "ad42d70dc6b6398811a40ec76b41ffc17d5c2315",
+  "before_fix_binary_sha256": "a0f45bef2ba49965f5fa5bf9c49e8f459555ac52d99fb3c8a2da687f512a2965",
+  "adverse_outcome": "inherited GIT_CONFIG_PARAMETERS core.hooksPath reached git worktree add; private controlled post-checkout executed once per arm",
+  "hook_side_effect": "two constant controlled-post-checkout marker lines only; no network/config/credential access",
+  "test_exit": 0,
+  "marker_lines": 2,
+  "marker_sha256": "413751bedbef9121a8773e455f327fd0c30317bc823839c23795846a1143de66",
+  "historical_receipt_untouched": true,
+  "before_fix_receipt_sha256": "dbff9229ad4d3bedadefb7223bf81e10775711383afa35a990ab79ac8929d198"
+}
