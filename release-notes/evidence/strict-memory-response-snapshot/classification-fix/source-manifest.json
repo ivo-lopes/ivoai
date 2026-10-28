@@ -1,0 +1,26 @@
+{
+  "base_revision": "8b6861aba0e2b7474f71e18fa2c578432e5c5140",
+  "scope": "Changed Memory snapshot issuer/test and unchanged module manifests; all other source fixed by base revision.",
+  "files": [
+    {
+      "path": "internal/evidence/memory_snapshot.go",
+      "bytes": 4356,
+      "sha256": "01b756a347f75ce4abe5158106dfd000a89388fe57286ea58fe7ba11eac06927"
+    },
+    {
+      "path": "internal/evidence/memory_snapshot_test.go",
+      "bytes": 18528,
+      "sha256": "8fe4b98edf745998dfa1dcab5d6c7221be08ecc2d90ad21c53de0457405ea891"
+    },
+    {
+      "path": "go.mod",
+      "bytes": 568,
+      "sha256": "d1c486bcfb3a5e1127b4f47de7e62001c768ee744c42b6f96627f6895d026705"
+    },
+    {
+      "path": "go.sum",
+      "bytes": 2537,
+      "sha256": "44f145c4f9477395f29442a17757c7de7b24df282e19c7e6ffddb58662e2553c"
+    }
+  ]
+}
