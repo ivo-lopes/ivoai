@@ -284,14 +284,20 @@ func (a Adapter) IsolateCodexMCPs(ctx context.Context, executable string, args [
 func (a Adapter) isolateMCPs(ctx context.Context, executable, executor string, args []string) ([]string, error) {
 	switch executor {
 	case "codex":
+		managedArgs, err := codexresolver.ManagedAgentArgs(args)
+		if err != nil {
+			return nil, err
+		}
 		if a.Runner == nil {
 			return nil, errors.New("isolate Codex worker MCPs: runner is unavailable")
 		}
 		// Inventory and execution must use the same feature restrictions. Plugin
 		// MCPs disappear when plugins are disabled; overriding those stale names
 		// would create transport-less MCP tables that Codex rejects at startup.
-		restrictions := []string{"-c", "features.apps=false", "-c", "features.hooks=false", "-c", "features.multi_agent=false", "-c", "features.plugins=false", "-c", "features.remote_plugin=false"}
-		inventoryArgs := append([]string{"mcp", "list", "--json"}, restrictions...)
+		inventoryArgs, err := codexresolver.ManagedAgentArgs([]string{"mcp", "list", "--json"})
+		if err != nil {
+			return nil, err
+		}
 		result, err := a.Runner.Run(ctx, executable, inventoryArgs, platform.RunOptions{Timeout: 15 * time.Second})
 		if err != nil {
 			return nil, fmt.Errorf("isolate Codex worker MCPs: inspect configured servers: %w", err)
@@ -310,8 +316,10 @@ func (a Adapter) isolateMCPs(ctx context.Context, executable, executor string, a
 		if err := decoder.Decode(&trailing); !errors.Is(err, io.EOF) {
 			return nil, errors.New("isolate Codex worker MCPs: invalid trailing data")
 		}
-		// Provider-side apps, hooks and native sub-agents cannot create another
-		// tool path outside the IVOAI task grant. These are process-local flags.
+		// Keep per-server denials before the host's managed projections, which
+		// may re-enable Core-owned MCP endpoints. Feature/agent restrictions stay
+		// last so an earlier caller config cannot re-enable native workers.
+		restrictions := []string{}
 		seen := map[string]bool{}
 		for _, server := range servers {
 			if !codexServerIdentifier.MatchString(server.Name) || seen[server.Name] {
@@ -329,7 +337,7 @@ func (a Adapter) isolateMCPs(ctx context.Context, executable, executor string, a
 			}
 			restrictions = append(restrictions, "-c", key+".enabled_tools="+tomlStringArray(tools))
 		}
-		return append(restrictions, args...), nil
+		return append(restrictions, managedArgs...), nil
 	case "claude":
 		configuration, err := a.claudeKnowledgeConfig()
 		if err != nil {

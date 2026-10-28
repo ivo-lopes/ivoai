@@ -101,6 +101,11 @@ func resumableOpenCodeSession(store session.Store, currentID, cwd, scopeID strin
 func (a *App) autoBridgeArgs(executor string, existing []string, id, runtimeDir, instructionsPath string, cfg config.Config) ([]string, error) {
 	for i, arg := range existing {
 		key, _, _ := strings.Cut(arg, "=")
+		for _, short := range []string{"-p", "-s", "-C"} {
+			if strings.HasPrefix(arg, short) && len(arg) > len(short) {
+				key = short
+			}
+		}
 		switch key {
 		case "--sandbox", "-s", "--full-auto", "--dangerously-bypass-approvals-and-sandbox", "--yolo", "--dangerously-skip-permissions", "--allow-dangerously-skip-permissions", "--permission-mode", "--tools", "--disallowedTools", "--allowedTools", "--mcp-config", "--strict-mcp-config", "--settings", "--setting-sources", "--system-prompt", "--system-prompt-file", "--append-system-prompt", "--append-system-prompt-file", "--agents", "--agent", "--add-dir", "--add-directory", "--enable", "--disable", "--profile", "-p", "--cd", "-C":
 			return nil, errors.New("AUTO primary write policy is controlled by IVOAI; use planned worker write paths")
@@ -111,11 +116,11 @@ func (a *App) autoBridgeArgs(executor string, existing []string, id, runtimeDir,
 		} else if strings.HasPrefix(arg, "--config=") {
 			setting = strings.TrimPrefix(arg, "--config=")
 		} else if strings.HasPrefix(arg, "-c") && len(arg) > 2 {
-			setting = strings.TrimPrefix(arg, "-c")
+			setting = strings.TrimPrefix(strings.TrimPrefix(arg, "-c"), "=")
 		}
 		configKey, _, _ := strings.Cut(setting, "=")
 		configKey = strings.Trim(strings.TrimSpace(configKey), `"'`)
-		for _, protected := range []string{"mcp_servers", "sandbox", "permissions", "approval_policy", "developer_instructions", "instructions", "model_provider", "features", "profiles"} {
+		for _, protected := range []string{"mcp_servers", "sandbox", "permissions", "approval_policy", "developer_instructions", "instructions", "model_provider", "features", "agents", "profile"} {
 			if strings.HasPrefix(configKey, protected) {
 				return nil, errors.New("AUTO control-plane configuration cannot be overridden")
 			}
