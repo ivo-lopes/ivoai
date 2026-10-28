@@ -1,5 +1,45 @@
 # Releases
 
+## Candidata v0.14.0
+
+Adiciona o [console administrativo local de consulta](admin-console.md), controles
+de workers nativos do Codex gerenciado, métricas estritas de uma execução e
+correções da política de compressão. Workers Claude readonly passam a expor
+somente `Read,Glob,Grep` e negar `Agent`/`Task`; pesquisa adicional usa capacidades
+Core/MCP aprovadas e o contrato de escrita permanece. Isso delimita delegação,
+sem provar paridade da TUI ou da conta. O frontend legado privado `.3` dispensa
+instalação do SDK npm em runtime e exige atualização revisada de builds antigos.
+VERSION, RTK-OSS e Codebase continuam pilotos
+opcionais limitados; o runner nativo de evidências ainda recusa produção.
+
+Os PRs [41](https://github.com/ivo-lopes/ivoai/pull/41),
+[42](https://github.com/ivo-lopes/ivoai/pull/42),
+[43](https://github.com/ivo-lopes/ivoai/pull/43) e
+[44](https://github.com/ivo-lopes/ivoai/pull/44) passaram em 15/15 verificações cada.
+O PR [48](https://github.com/ivo-lopes/ivoai/pull/48) passou em 15/15 no seu fonte
+revisado ([CI](https://github.com/ivo-lopes/ivoai/actions/runs/40729664838)); o
+combinado Claude/admin/`.3` exige CI próprio e a prova Claude de cinco casos.
+Release também deve executar version/help do Core exato com HOME/XDG privados em
+ARM nativo e Nehalem amd64 antes de empacotar.
+A publicação ainda depende dos gates do fonte final e de Release. Isso não
+representa implantação em produção ou migração concluída.
+
+A nova comparação de sete casos preservou 42 tentativas reais corretas: entrada
++2,85% e tempo −1,44%; as metas de 10%/5% foram reprovadas. As 72 tentativas
+anteriores continuam preservadas. Outros [12 turnos de edição](https://github.com/ivo-lopes/ivoai/blob/99fe07a93e242d2163116bf6dd8d265c3c8f9d8c/release-notes/benchmark-matrix16-edit-live-validation.md)
+passaram nos oráculos declarados, mas reprovaram as mesmas metas: entrada −0,01257%,
+tempo das fases −2,28091% e processo −2,46501%. Ambos usaram leitura direta, sem
+prefetch/Graft/Gateway. Os 126 turnos históricos possuem condições diferentes e
+não são agregados como economia causal. O novo harness não integra esta release.
+Os PRs [45](https://github.com/ivo-lopes/ivoai/pull/45),
+[46](https://github.com/ivo-lopes/ivoai/pull/46) e
+[47](https://github.com/ivo-lopes/ivoai/pull/47) continuam excluídos.
+A matriz global é INCOMPLETE. Essas medições
+antecedem as mudanças posteriores e não comprovam seu efeito econômico. Remoção
+OpenCode, execução adaptativa geral, equivalência Claude, Antigravity e ingestão
+Context continuam pendentes. Consulte as [notas bilíngues da candidata](https://github.com/ivo-lopes/ivoai/blob/main/release-notes/v0.14.0.md)
+para evidências ligadas ao fonte, compatibilidade e limites de rollback.
+
 ## v0.13.0
 
 Entrega backend-first incremental: evidências de benchmark que falham de forma

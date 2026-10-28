@@ -1,0 +1,184 @@
+{
+  "schema_version": 1,
+  "scope": "local_owner_read_only_admin_backend",
+  "recorded_at_utc": "2026-10-28T14:08:40.420070+00:00",
+  "source_base": "573c31cbeaedb79d3b6029d3f89af8b8a08e98ea",
+  "source_basis": "Uncommitted worktree on stated base; hashes observed after checks, not an immutable-commit or compilation attestation. Backend/auth Go source was unchanged between the successful focused/race checks and current browser proofs; documentation embedding was regenerated after Go checks. Post-merge exact-head CI remains required.",
+  "source_sha256": {
+    "internal/admin/server.go": "5e21c06f1648cf072a3fe576d11f355052d8b6fcfe563747d24b106f57fd9925",
+    "internal/admin/read.go": "0260c51900c34138aa3734dae149c5bf721f669a27919ec9071065861225282b",
+    "internal/admin/server_test.go": "1b3f5cf77c5e97136f095a5dae43f7c542c1b12c419132250545481429bb9627",
+    "internal/cli/cli.go": "860428e27a62b5e8c85cfc297498ca74ddabcdc15865b8a435120b4f0bfcb1f4",
+    "internal/cli/admin.go": "c96d0144f5b2d8fe035f64fcd4c63a1085dfbe93a63fd2c1895cbd033b1aab96",
+    "internal/cli/admin_audit.go": "0deb4526256ab9331c6b55a43f2affefd17dc170a5d647dd78c4ee984e8de951",
+    "internal/cli/admin_test.go": "f152b3f7d346afe6f9f8fe04c93c56a45619bac21247fb793344db9d4335f8e9",
+    "internal/cli/cli_reference_test.go": "32857aa7131377729743d240e92c091b7b87b920ebbcab70e2bcb8889059ee2a",
+    "internal/session/store.go": "fa985353715219a5b3dd5873adfee200a49b0ee45745182f4462f961dae6b387",
+    "internal/session/bounded.go": "02a04159083dc4bf516e4a7b67087fbb1622cda0ad6c35941bffcab55e314916",
+    "internal/session/bounded_test.go": "97848b21a8053a384452db85ab81ee51f78f21f9a12d139398da071b8d7570f9",
+    "internal/webauth/http.go": "5a35629f90661470289003984459c46ba01b319e73a0524513b579f9944d7162",
+    "internal/webauth/store.go": "006e97847deb0541b8028e6f27bd3e916ee88c4263a6d8033040bd02a0c9c3a7",
+    "internal/webauth/scope_policy_test.go": "4e3e69475e3115cdcd2aa81506b06ed0d20e2cff657410e03f491b06e59fa79d"
+  },
+  "runtime": {
+    "go": "go1.27.3 linux/amd64",
+    "go_official_archive_sha256": "65efbc80fdc1fa2cd2631cad5b481777a68e8725f34e89f50fc6ac714e379b40",
+    "node": "v26.11.1",
+    "node_binary_sha256": "5a7b8a3cf5ccb57d297519754fd73238f64cf560afd0ef19a2f9bf7384cbb657",
+    "corepack": "0.36.0",
+    "pnpm": "12.11.2",
+    "scratch_filesystem": "ext4",
+    "production_state": false,
+    "provider_inference": false,
+    "personal_client_configuration_changed": false
+  },
+  "checks": [
+    {
+      "id": "focused",
+      "command": "go test ./internal/admin ./internal/webauth ./internal/session ./internal/cli",
+      "exit_code": 0,
+      "status": "PASS",
+      "private_log_sha256": "4616cc9dfcbfc1308900f5266dbbfb67d8959a346210223a5cf22ef844c7d080",
+      "private_log_bytes": 219,
+      "go_cached_package_results": 0
+    },
+    {
+      "id": "race",
+      "command": "go test -race ./internal/admin ./internal/webauth ./internal/session ./internal/cli",
+      "exit_code": 0,
+      "status": "PASS",
+      "private_log_sha256": "ac77fb3741156a14db6fc31c0fe7d2390481078893e264bfc99f3be954569024",
+      "private_log_bytes": 221,
+      "go_cached_package_results": 0
+    },
+    {
+      "id": "vet",
+      "command": "go vet ./internal/admin ./internal/webauth ./internal/session ./internal/cli",
+      "exit_code": 0,
+      "status": "PASS",
+      "private_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "private_log_bytes": 0,
+      "go_cached_package_results": 0
+    },
+    {
+      "id": "full_first",
+      "command": "go test ./...",
+      "exit_code": 1,
+      "status": "FAIL",
+      "private_log_sha256": "84b2a52af9056d1802255329e184034a036382ecf602277e32436cecf7ac05ce",
+      "private_log_bytes": 3927,
+      "go_cached_package_results": 4
+    },
+    {
+      "id": "isolate_existing_failure",
+      "command": "go test ./internal/orchestrator -run ^TestNativeLowQuotaRequiresConfirmationAndPreservesExplicitRoute$ -count=1",
+      "exit_code": 0,
+      "status": "PASS",
+      "private_log_sha256": "414e326a871006790ba9e1b0d6cd97d3313bf38831f505fe29d130838e237341",
+      "private_log_bytes": 61,
+      "go_cached_package_results": 0
+    },
+    {
+      "id": "full_serial_retry",
+      "command": "go test -p 1 ./...",
+      "exit_code": 0,
+      "status": "PASS",
+      "private_log_sha256": "118b2f0ebee35b428f56c63c2a0a8a2965098db8f852162e1d5fce3b8793fcd8",
+      "private_log_bytes": 3636,
+      "go_cached_package_results": 56
+    },
+    {
+      "id": "cli_reference",
+      "command": "scripts/generate-cli-reference.sh --check",
+      "exit_code": 0,
+      "status": "PASS",
+      "private_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "private_log_bytes": 0,
+      "go_cached_package_results": 0
+    },
+    {
+      "id": "cross_amd64",
+      "command": "CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOAMD64=v1 go build -trimpath ./cmd/ivoai",
+      "exit_code": 0,
+      "status": "PASS",
+      "private_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "private_log_bytes": 0,
+      "go_cached_package_results": 0
+    },
+    {
+      "id": "cross_arm64",
+      "command": "CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -trimpath ./cmd/ivoai",
+      "exit_code": 0,
+      "status": "PASS",
+      "private_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "private_log_bytes": 0,
+      "go_cached_package_results": 0
+    },
+    {
+      "id": "docs_build",
+      "command": "scripts/build-docs.sh",
+      "exit_code": 0,
+      "status": "PASS",
+      "private_log_sha256": "8b3bf521d3d92a8248caf9ef89c3ecaf343b5931b938635e2a7fb38b60c388ac",
+      "private_log_bytes": 2154,
+      "go_cached_package_results": 0
+    },
+    {
+      "id": "docs_check",
+      "command": "scripts/build-docs.sh --check",
+      "exit_code": 0,
+      "status": "PASS",
+      "private_log_sha256": "bbae0fac23d039637b2bfcee233da3749a45cce858e25c858759218527330018",
+      "private_log_bytes": 1123,
+      "go_cached_package_results": 0
+    }
+  ],
+  "adverse_results": {
+    "full_first": {
+      "failed_test": "TestNativeLowQuotaRequiresConfirmationAndPreservesExplicitRoute/opencode/nine_approve_conservation",
+      "message": "routing approval not requested",
+      "subcase_seconds": 5.6,
+      "context_deadline_seconds": 5,
+      "cause": "UNVERIFIED; occurred during concurrent validation",
+      "test_source_or_timeout_modified": false,
+      "retry_policy": "Original FAIL retained; isolated test and full serial retry are separate results, not rescored original."
+    },
+    "historical_preflights": {
+      "status": "REPORTED_IN_PREVIOUS_INTERRUPTED_SESSION_NOT_REVALIDATED",
+      "observations": [
+        "Full /tmp prevented a generator build and a rollback archive extraction.",
+        "CLI Skills integrity failed with NTFS scratch while the same test passed on tmpfs.",
+        "Temporary original artifacts were lost when /tmp was cleared; current checks used private ext4 scratch."
+      ],
+      "counted_as_pass": false
+    }
+  },
+  "wip_binaries": {
+    "amd64": {
+      "sha256": "73f5c3c3434f5aa0d26bb0c8d35619a03b60baa82223f0d1b8b8ee11df5e8da3",
+      "CGO_ENABLED": 0,
+      "GOAMD64": "v1",
+      "help_executed": true,
+      "no_avx_runtime_certified": false
+    },
+    "arm64": {
+      "sha256": "2986c62208f727983d7a6aec7d09eba88602e7942e7321edb2553d10515c3c5e",
+      "CGO_ENABLED": 0,
+      "GOARM64": "v8.0",
+      "executed": false
+    },
+    "vcs_revision": "573c31cbeaedb79d3b6029d3f89af8b8a08e98ea",
+    "vcs_modified": true,
+    "published": false
+  },
+  "related_evidence": {
+    "ui_validation_sha256": "d0b168c01815cb4e4c7a10a525f25fae1b85047702956831fae601aea3f5b767",
+    "administrative_parity_sha256": "50d3205c28f158a843472b7a90c6ba27801aeb6907c3bc0e7a373b63439598e6"
+  },
+  "limits": [
+    "Full Go commands can skip explicitly opt-in external integration tests; a package PASS is not a claim that unavailable providers ran.",
+    "Browser integration uses the real local App/OAuth/Store with seeded synthetic session metadata, not a production executor session.",
+    "No complete administrative parity, security certification, organization RBAC, no-AVX runtime certification or performance/economic improvement is claimed.",
+    "Filesystem operations and shared OAuth locking are cooperative, not forcibly preempted by request deadlines."
+  ]
+}

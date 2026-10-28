@@ -108,6 +108,8 @@ type Store struct {
 	Clock  func() time.Time
 	Random io.Reader
 	mu     sync.Mutex
+	// scopePolicy is immutable per store; nil preserves the Web MCP contract.
+	scopePolicy *scopePolicy
 }
 
 func NewStore(path string) *Store { return &Store{Path: path, Clock: time.Now, Random: rand.Reader} }
@@ -147,6 +149,66 @@ func contains(ss []string, s string) bool {
 	}
 	return false
 }
+
+type scopePolicy struct{ defaults, supported []string }
+
+// NewScopedStore reuses OAuth persistence and grant revocation with a separate,
+// immutable scope namespace. It does not change the default Web MCP scopes.
+func NewScopedStore(path string, defaults, supported []string) (*Store, error) {
+	if len(defaults) == 0 || len(supported) == 0 || len(supported) > 16 {
+		return nil, errors.New("invalid OAuth scope policy")
+	}
+	seen := map[string]bool{}
+	for _, scope := range supported {
+		if len(scope) == 0 || len(scope) > 64 || seen[scope] {
+			return nil, errors.New("invalid OAuth scope policy")
+		}
+		for _, c := range scope {
+			if !(c >= 'a' && c <= 'z' || c >= '0' && c <= '9' || strings.ContainsRune(":._-", c)) {
+				return nil, errors.New("invalid OAuth scope policy")
+			}
+		}
+		seen[scope] = true
+	}
+	defaultsSeen := map[string]bool{}
+	for _, scope := range defaults {
+		if !seen[scope] || defaultsSeen[scope] {
+			return nil, errors.New("invalid OAuth default scope")
+		}
+		defaultsSeen[scope] = true
+	}
+	store := NewStore(path)
+	store.scopePolicy = &scopePolicy{append([]string(nil), defaults...), append([]string(nil), supported...)}
+	return store, nil
+}
+
+// DefaultScopeNames returns a copy, never a mutable policy shared by instances.
+func (s *Store) DefaultScopeNames() []string {
+	if s != nil && s.scopePolicy != nil {
+		return append([]string(nil), s.scopePolicy.defaults...)
+	}
+	return append([]string(nil), DefaultScopes...)
+}
+func (s *Store) normalizeScopes(scopes []string) ([]string, error) {
+	if s.scopePolicy == nil {
+		return normalizeScopes(scopes)
+	}
+	if len(scopes) == 0 {
+		scopes = s.scopePolicy.defaults
+	}
+	seen := map[string]bool{}
+	out := []string{}
+	for _, scope := range scopes {
+		scope = strings.TrimSpace(scope)
+		if !contains(s.scopePolicy.supported, scope) || seen[scope] {
+			return nil, errors.New("invalid OAuth scope")
+		}
+		seen[scope] = true
+		out = append(out, scope)
+	}
+	return out, nil
+}
+
 func validScope(s string) bool { return contains(SupportedScopes, s) }
 func normalizeScopes(scopes []string) ([]string, error) {
 	if len(scopes) == 0 {
@@ -375,7 +437,7 @@ func (s *Store) CreateActivation(ttl time.Duration, scopes []string) (CreatedAct
 	if ttl <= 0 || ttl > 24*time.Hour {
 		return CreatedActivation{}, errors.New("web access TTL must be between zero and 24 hours")
 	}
-	scopes, err := normalizeScopes(scopes)
+	scopes, err := s.normalizeScopes(scopes)
 	if err != nil {
 		return CreatedActivation{}, err
 	}
@@ -507,7 +569,7 @@ func (s *Store) BeginAuthorization(clientID, redirect, challenge, oauthState, re
 	if len(challenge) < 43 || len(challenge) > 128 {
 		return "", errors.New("PKCE S256 challenge is required")
 	}
-	scopes, err := normalizeScopes(scopes)
+	scopes, err := s.normalizeScopes(scopes)
 	if err != nil {
 		return "", err
 	}

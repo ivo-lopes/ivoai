@@ -36,6 +36,11 @@ jobs:
         run: |
           corepack pnpm --dir website exec playwright install --with-deps chromium
           corepack pnpm --dir website test:a11y
+      - name: Administrative console UI and real App OAuth integration
+        timeout-minutes: 8
+        env:
+          IVOAI_ADMIN_UI_NODE_MODULES: ${{ github.workspace }}/website/node_modules
+        run: scripts/test-admin-console-ci.sh
       - name: Runtime dependency audit
         run: npm audit --omit=dev --audit-level=high --prefix internal/components/assets
       - name: Patched braces regression fixtures
@@ -72,6 +77,11 @@ jobs:
         run: |
           python3 -m unittest discover -s scripts -p 'test_*.py'
           python3 scripts/test-smoke-native-auto.py
+      - name: Admit the existing sandbox launcher for offline managed plugin tests
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends bubblewrap apparmor python3
+          scripts/setup-ci-graft-sandbox.sh
       - name: Managed OpenCode HTTP and attach integration
         run: scripts/test-managed-opencode.sh
       - name: Native Codex TUI and fail-closed App Server admission
@@ -90,6 +100,30 @@ jobs:
           govulncheck ./...
       - name: v0.5.0 upgrade and rollback matrix
         run: scripts/upgrade-matrix.sh
+
+  claude-worker-boundary:
+    name: Official Claude readonly worker boundary (amd64)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Install isolated protocol proof dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends bubblewrap apparmor python3 curl
+      - name: Admit only the CI sandbox launcher to user namespaces
+        run: scripts/setup-ci-graft-sandbox.sh
+      - name: Official pinned client with synthetic provider and no external network
+        run: scripts/test-claude-worker-tools.sh --output "$PWD/dist/claude-worker-proof"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: claude-worker-boundary-amd64
+          path: dist/claude-worker-proof/summary.json
+          if-no-files-found: error
 
   managed-frontend:
     name: Patched managed frontend (${{ matrix.arch }})
@@ -112,6 +146,11 @@ jobs:
       - name: Install non-AVX CPU smoke dependency
         if: matrix.arch == 'amd64'
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends qemu-user
+      - name: Admit the existing sandbox launcher for offline managed plugin tests
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends bubblewrap apparmor python3
+          scripts/setup-ci-graft-sandbox.sh
       - name: Build pinned source patch without dependency hooks
         run: scripts/build-managed-opencode.sh "$PWD/dist/managed-frontend"
       - name: Native TUI success and failure feedback

@@ -1,0 +1,628 @@
+{
+  "schema_version": 1,
+  "scope": "first_read_only_local_admin_console_browser_validation",
+  "global_admin_parity": "INCOMPLETE",
+  "native_client_execution": false,
+  "production_state_used": false,
+  "personal_configuration_used": false,
+  "authentication_basis": "Disposable test activation issued by real existing webauth Store; browser follows real PKCE/state/form/callback and receives HttpOnly Strict access cookie.",
+  "session_basis": "Single synthetic session and observation seeded into the real IVOAI Session Store. The 100 input / 2 output / 60 cache report is a fixture, not measured model consumption.",
+  "network_basis": "Page requests are restricted by the test to the disposable loopback origin; zero external page requests observed. This is not a claim of OS-wide browser network containment.",
+  "source_basis": "Runtime/source hashes observed after each successful live run matched each other and the files at artifact generation. No binary/build attestation or independently observed pre/post source snapshot is claimed.",
+  "tooling": {
+    "chromium_executable": "system Chromium",
+    "dependencies": "Existing reviewed repository node_modules reused; no package install performed.",
+    "node": "Official pinned Node 26.11.1 restored by the parent; exact executable provenance recorded separately by parent.",
+    "go": "Official pinned Go 1.27.3 restored by parent; test fixture uses real App/OAuth/Store."
+  },
+  "current_resume_attempts": [
+    {
+      "id": "fixture-browser-preflight-node20-long-tmp",
+      "status": "FAIL",
+      "classification": "preflight_browser_launch",
+      "node": "v20.19.2",
+      "reason": "Chromium SingletonSocket path exceeded Unix socket path length because TMPDIR was nested too deeply. No browser validation completed.",
+      "original_private_log_sha256": "1980fb6a805989567ef9c0073d5323223f24de9aaed79854f4363fd9bd2a607e",
+      "correction": "Run the unchanged fixture with short TMPDIR=/var/tmp and pinned Node26.11.1; no assertion weakened."
+    },
+    {
+      "id": "fixture-browser-node26",
+      "status": "PASS",
+      "classification": "hermetic_ui_only",
+      "original_private_report_sha256": "83f9cfdca6fc627eafbc60d3788322575b896a93d120123d4a23c268fd1d171b",
+      "assertions": [
+        "filters, unknown usage, text-only injection defense, keyboard dialog and focus restoration PASS",
+        "viewport 375: sessions/components/connections/dialog overflow + axe PASS",
+        "viewport 768: sessions/components/connections/dialog overflow + axe PASS",
+        "viewport 1024: sessions/components/connections/dialog overflow + axe PASS",
+        "viewport 1440: sessions/components/connections/dialog overflow + axe PASS",
+        "unavailability preserves stale snapshot explicitly, revocation clears data, logout only permitted mutation, no browser storage PASS"
+      ],
+      "screenshots": [
+        {
+          "name": "access-required.png",
+          "sha256": "787ac02023226d2b22edaf43245425fb447a7bac7d353587bd4fbd7a0128f663",
+          "bytes": 57444
+        },
+        {
+          "name": "components-1024.png",
+          "sha256": "192f9071b590ae7df0fe1e6b8fff621d531bea94a9a15decfc2f0a4497a847f5",
+          "bytes": 77109
+        },
+        {
+          "name": "components-1440.png",
+          "sha256": "865d2e03d300b5eb133379cd051f922952342bb7786f7d97ebc88f33a6b4c7dd",
+          "bytes": 80942
+        },
+        {
+          "name": "components-375.png",
+          "sha256": "34fe1fb90cdc9a580a3c2c90bae6b89768b3ac047136df3cefc15907ee6a2bac",
+          "bytes": 59262
+        },
+        {
+          "name": "components-768.png",
+          "sha256": "9ab3de9937e936ca427d4726c23aed7c527062d3c0887211175dcfe17adf087f",
+          "bytes": 62256
+        },
+        {
+          "name": "connections-1024.png",
+          "sha256": "29db456af85d0e3a1a710d75fd02185d26ee86780b813341e724c291ca8eaa06",
+          "bytes": 87167
+        },
+        {
+          "name": "connections-1440.png",
+          "sha256": "ad6e883f28f4d0c610084d117e49458ee5c85687ef7d260b43b1f66b07bc831a",
+          "bytes": 90349
+        },
+        {
+          "name": "connections-375.png",
+          "sha256": "ca32a633f0337bcd56781cedff01c124c9fbfb1963c4134ba027e64c00b614b0",
+          "bytes": 66877
+        },
+        {
+          "name": "connections-768.png",
+          "sha256": "2f26a0abd5533fb119ad40bd75b1eb3a3de998d98c37c4a73d2dbf2b1fbc6478",
+          "bytes": 71436
+        },
+        {
+          "name": "detail-1024.png",
+          "sha256": "8a3b4211eab7993a3476c8565d8c6b226629be561b0606df652bf2f2bf47eb41",
+          "bytes": 113713
+        },
+        {
+          "name": "detail-1440.png",
+          "sha256": "cd9d270d87c93428c6bb9117ac0c940899fac7ddfb80856e27de48ffaa08962c",
+          "bytes": 134768
+        },
+        {
+          "name": "detail-375.png",
+          "sha256": "57461d05d96887a7de86b56e346248ce256aa8e2a2758e0e423733a3780c2daa",
+          "bytes": 85716
+        },
+        {
+          "name": "detail-768.png",
+          "sha256": "3808d4c598c86c0f08f528d405af53ced3b08621233d75dcfb844924493160ce",
+          "bytes": 121502
+        },
+        {
+          "name": "sessions-1024.png",
+          "sha256": "11f94185b73e626b128bbfe1bde7951317868a5bce15fc6c3a1d34a595f031d1",
+          "bytes": 98698
+        },
+        {
+          "name": "sessions-1440.png",
+          "sha256": "f053fefc27dfea5653bbf7d4b17e9ca44df9b2d9807c8e5aeab78278d8be802d",
+          "bytes": 102544
+        },
+        {
+          "name": "sessions-375.png",
+          "sha256": "fb075696206e5145c9f42d96ced3ef8a6fc729591509908373387aca3f74ff27",
+          "bytes": 84803
+        },
+        {
+          "name": "sessions-768.png",
+          "sha256": "b10887b084e0b40c6e9b07b90348174ef59232d4918ff40a8678d4c9581ba157",
+          "bytes": 89782
+        }
+      ]
+    },
+    {
+      "id": "live-browser-first-report",
+      "status": "FAIL",
+      "classification": "harness_provenance_collection",
+      "stage_recorded_by_initial_harness": "logout",
+      "reason": "After all browser assertions and logout completed, importing the non-exported @axe-core/playwright/package.json subpath failed. FAIL is retained and is not rescored as a successful proof.",
+      "original_private_report_sha256": "41aeef264fc0258eda7252c6b47e81a183110be48b93906ff7ad83ad95d8fffe",
+      "original_fixture_server_log_sha256": "e5b61021f4cb7fd092cb307a1de006742db3695cec49f826584eb4084b59c8ea",
+      "completed_assertions_before_failure": [
+        "Unauthenticated real API denies protected snapshots; UI exposes only access gate.",
+        "Real browser PKCE/state/form/callback exchange passes; access cookie is HttpOnly/Strict, no JS cookies/storage or token URL.",
+        "Seeded Store session, filters, reported invocation usage 100/2/60, real event projection and keyboard drawer pass.",
+        "Real authenticated sessions/components/connections at 375/768/1024/1440 pass overflow and WCAG A/AA checks.",
+        "Real logout revokes access and clears all administrative DOM snapshots."
+      ],
+      "correction": "Read the existing adjacent installed manifest through the supported entry point path; rerun the full browser flow."
+    },
+    {
+      "id": "live-browser-logout",
+      "status": "PASS",
+      "classification": "real_local_app_oauth_store_seeded_session",
+      "proof": {
+        "status": "PASS",
+        "mode": "logout",
+        "scope": "real_local_app_oauth_store_with_seeded_session",
+        "original_private_report_sha256": "6f56ad317d4a43100286a2b565b7b4949579d3331b5db07c685c8c4b888d1562",
+        "fixture_server_log_sha256": "1f42f1b3c5e6d977a746d3b72dd1ebe9148e5fabc9a52c4b32a9020c8bd911bc",
+        "versions": {
+          "node": "v26.11.1",
+          "playwright": "1.64.0",
+          "axe": "4.13.0",
+          "browser": "156.0.8078.47"
+        },
+        "actual_provider_execution": false,
+        "production_state": false,
+        "source_sha256_observed_after_run": {
+          "internal/admin/assets/index.html": "36f484de01f0374d28f183af5cdc57e80801731f50399ea6b26d4b630ed80e8e",
+          "internal/admin/assets/admin.css": "19217284754b85ab902afebb6eba476493280eea30506004913ec3dcd314dac4",
+          "internal/admin/assets/admin.js": "daa20598657460747c3976e7a43761be19db122c587c1c3891d732783745ca3d",
+          "internal/admin/server.go": "5e21c06f1648cf072a3fe576d11f355052d8b6fcfe563747d24b106f57fd9925",
+          "internal/admin/read.go": "0260c51900c34138aa3734dae149c5bf721f669a27919ec9071065861225282b",
+          "internal/admin/server_test.go": "1b3f5cf77c5e97136f095a5dae43f7c542c1b12c419132250545481429bb9627",
+          "internal/webauth/http.go": "5a35629f90661470289003984459c46ba01b319e73a0524513b579f9944d7162",
+          "internal/webauth/store.go": "006e97847deb0541b8028e6f27bd3e916ee88c4263a6d8033040bd02a0c9c3a7"
+        },
+        "assertions": [
+          "Unauthenticated real API denies protected snapshots; UI exposes only access gate.",
+          "Real browser PKCE/state/form/callback exchange passes; access cookie is HttpOnly/Strict, no JS cookies/storage or token URL.",
+          "Seeded Store session, filters, reported invocation usage 100/2/60, real event projection and keyboard drawer pass.",
+          "Real authenticated sessions/components/connections at 375/768/1024/1440 pass overflow and WCAG A/AA checks.",
+          "Real logout revokes access and clears all administrative DOM snapshots."
+        ],
+        "routes": [
+          {
+            "method": "GET",
+            "path": "/",
+            "status": 200
+          },
+          {
+            "method": "GET",
+            "path": "/assets/admin.css",
+            "status": 200
+          },
+          {
+            "method": "GET",
+            "path": "/assets/admin.js",
+            "status": 200
+          },
+          {
+            "method": "GET",
+            "path": "/api/admin/v1/meta",
+            "status": 200
+          },
+          {
+            "method": "GET",
+            "path": "/api/admin/v1/overview",
+            "status": 401
+          },
+          {
+            "method": "GET",
+            "path": "/api/admin/v1/sessions",
+            "status": 401
+          },
+          {
+            "method": "GET",
+            "path": "/api/admin/v1/components",
+            "status": 401
+          },
+          {
+            "method": "GET",
+            "path": "/api/admin/v1/connections",
+            "status": 401
+          },
+          {
+            "method": "GET",
+            "path": "/auth/start",
+            "status": 303
+          },
+          {
+            "method": "GET",
+            "path": "/oauth/authorize",
+            "status": 200
+          },
+          {
+            "method": "POST",
+            "path": "/oauth/authorize",
+            "status": 303
+          },
+          {
+            "method": "GET",
+            "path": "/auth/callback",
+            "status": 303
+          },
+          {
+            "method": "GET",
+            "path": "/",
+            "status": 200
+          },
+          {
+            "method": "GET",
+            "path": "/assets/admin.css",
+            "status": 200
+          },
+          {
+            "method": "GET",
+            "path": "/assets/admin.js",
+            "status": 200
+          },
+          {
+            "method": "GET",
+            "path": "/api/admin/v1/meta",
+            "status": 200
+          },
+          {
+            "method": "GET",
+            "path": "/api/admin/v1/overview",
+            "status": 200
+          },
+          {
+            "method": "GET",
+            "path": "/api/admin/v1/sessions",
+            "status": 200
+          },
+          {
+            "method": "GET",
+            "path": "/api/admin/v1/components",
+            "status": 200
+          },
+          {
+            "method": "GET",
+            "path": "/api/admin/v1/connections",
+            "status": 200
+          },
+          {
+            "method": "GET",
+            "path": "/api/admin/v1/sessions/{id}/events",
+            "status": 200
+          },
+          {
+            "method": "POST",
+            "path": "/auth/logout",
+            "status": 200
+          }
+        ],
+        "denied_external_page_requests": 0,
+        "screenshots": [
+          {
+            "name": "oauth-form.png",
+            "sha256": "77855e1145827424bae0a1eca90430f29cd997860124aa2887eba217e4aadfd0",
+            "bytes": 29588
+          },
+          {
+            "name": "real-components-1024.png",
+            "sha256": "cdfd213639993b31e1eb5e0c01c8d780bbf3954172f0c3007c82b97394926ab1",
+            "bytes": 62096
+          },
+          {
+            "name": "real-components-1440.png",
+            "sha256": "047d947899fb78765fac2ae44934a43274dc25798b3b89233ea997594b3782c9",
+            "bytes": 66501
+          },
+          {
+            "name": "real-components-375.png",
+            "sha256": "4113b4fc95046dde9b0ebd60d2e2ed36fadb7684511df888abdfe63b345e4a69",
+            "bytes": 46449
+          },
+          {
+            "name": "real-components-768.png",
+            "sha256": "cb1095b762f3eb4a2e8184f389cd00e2236dc5dfc7b6195f70df6fc75fd95d6b",
+            "bytes": 50021
+          },
+          {
+            "name": "real-connections-1024.png",
+            "sha256": "aa9eb6d9694ce0a2137d79d58ede6fc2b3ef47cfdc9487017568cddcda17cc88",
+            "bytes": 100035
+          },
+          {
+            "name": "real-connections-1440.png",
+            "sha256": "af7c69e1352e5997d9736db4b582f48b961a009618ed6d9dde19c7570aea1e71",
+            "bytes": 103749
+          },
+          {
+            "name": "real-connections-375.png",
+            "sha256": "49c455df6627c520871095ebb7a9577549e3b1348c4493b56e60da3869307a9c",
+            "bytes": 78734
+          },
+          {
+            "name": "real-connections-768.png",
+            "sha256": "f852aa3087a30403dfb904aa8b553cc7482b19d9892ed0b753e11605918393a8",
+            "bytes": 82851
+          },
+          {
+            "name": "real-session-detail.png",
+            "sha256": "050a17907b32486b75d0d6ce622ee5de149a36f627aa369db310e584730aaffe",
+            "bytes": 127799
+          },
+          {
+            "name": "real-sessions-1024.png",
+            "sha256": "3eec1784411e3287cb64d874979ab081be6485b6810f70207acf6c92eac8c862",
+            "bytes": 81384
+          },
+          {
+            "name": "real-sessions-1440.png",
+            "sha256": "9e58ff9392de5da1bdf967e68cc517cfc2f8040c740a116d69b1e79d73a05108",
+            "bytes": 85793
+          },
+          {
+            "name": "real-sessions-375.png",
+            "sha256": "98ae86a8d76cf1fbf37c6bfdedc7f63d14f8da20a25ff8abfab05481acd22d2d",
+            "bytes": 63357
+          },
+          {
+            "name": "real-sessions-768.png",
+            "sha256": "cb57320099b625dbf94d5acb5273d5afbfdc21bcab6e1b6bf340ab14ad8d30d1",
+            "bytes": 67297
+          }
+        ]
+      }
+    },
+    {
+      "id": "live-browser-grant-revocation",
+      "status": "PASS",
+      "classification": "real_local_app_oauth_store_seeded_session",
+      "proof": {
+        "status": "PASS",
+        "mode": "revoke",
+        "scope": "real_local_app_oauth_store_with_seeded_session",
+        "original_private_report_sha256": "471d98ba63b21076a1a3231cfa6509aab7e2c145697a11fc4cb07f3e80f17b72",
+        "fixture_server_log_sha256": "0237d5346490ff56080866510857a39b0edf4e7ae02fe718bfcc1498752cff11",
+        "versions": {
+          "node": "v26.11.1",
+          "playwright": "1.64.0",
+          "axe": "4.13.0",
+          "browser": "156.0.8078.47"
+        },
+        "actual_provider_execution": false,
+        "production_state": false,
+        "source_sha256_observed_after_run": {
+          "internal/admin/assets/index.html": "36f484de01f0374d28f183af5cdc57e80801731f50399ea6b26d4b630ed80e8e",
+          "internal/admin/assets/admin.css": "19217284754b85ab902afebb6eba476493280eea30506004913ec3dcd314dac4",
+          "internal/admin/assets/admin.js": "daa20598657460747c3976e7a43761be19db122c587c1c3891d732783745ca3d",
+          "internal/admin/server.go": "5e21c06f1648cf072a3fe576d11f355052d8b6fcfe563747d24b106f57fd9925",
+          "internal/admin/read.go": "0260c51900c34138aa3734dae149c5bf721f669a27919ec9071065861225282b",
+          "internal/admin/server_test.go": "1b3f5cf77c5e97136f095a5dae43f7c542c1b12c419132250545481429bb9627",
+          "internal/webauth/http.go": "5a35629f90661470289003984459c46ba01b319e73a0524513b579f9944d7162",
+          "internal/webauth/store.go": "006e97847deb0541b8028e6f27bd3e916ee88c4263a6d8033040bd02a0c9c3a7"
+        },
+        "assertions": [
+          "Unauthenticated real API denies protected snapshots; UI exposes only access gate.",
+          "Real browser PKCE/state/form/callback exchange passes; access cookie is HttpOnly/Strict, no JS cookies/storage or token URL.",
+          "Seeded Store session, filters, reported invocation usage 100/2/60, real event projection and keyboard drawer pass.",
+          "Real authenticated sessions/components/connections at 375/768/1024/1440 pass overflow and WCAG A/AA checks.",
+          "External grant revocation is observed on refresh and clears all administrative DOM snapshots."
+        ],
+        "routes": [
+          {
+            "method": "GET",
+            "path": "/",
+            "status": 200
+          },
+          {
+            "method": "GET",
+            "path": "/assets/admin.css",
+            "status": 200
+          },
+          {
+            "method": "GET",
+            "path": "/assets/admin.js",
+            "status": 200
+          },
+          {
+            "method": "GET",
+            "path": "/api/admin/v1/meta",
+            "status": 200
+          },
+          {
+            "method": "GET",
+            "path": "/api/admin/v1/overview",
+            "status": 401
+          },
+          {
+            "method": "GET",
+            "path": "/api/admin/v1/sessions",
+            "status": 401
+          },
+          {
+            "method": "GET",
+            "path": "/api/admin/v1/components",
+            "status": 401
+          },
+          {
+            "method": "GET",
+            "path": "/api/admin/v1/connections",
+            "status": 401
+          },
+          {
+            "method": "GET",
+            "path": "/auth/start",
+            "status": 303
+          },
+          {
+            "method": "GET",
+            "path": "/oauth/authorize",
+            "status": 200
+          },
+          {
+            "method": "POST",
+            "path": "/oauth/authorize",
+            "status": 303
+          },
+          {
+            "method": "GET",
+            "path": "/auth/callback",
+            "status": 303
+          },
+          {
+            "method": "GET",
+            "path": "/",
+            "status": 200
+          },
+          {
+            "method": "GET",
+            "path": "/assets/admin.css",
+            "status": 200
+          },
+          {
+            "method": "GET",
+            "path": "/assets/admin.js",
+            "status": 200
+          },
+          {
+            "method": "GET",
+            "path": "/api/admin/v1/meta",
+            "status": 200
+          },
+          {
+            "method": "GET",
+            "path": "/api/admin/v1/overview",
+            "status": 200
+          },
+          {
+            "method": "GET",
+            "path": "/api/admin/v1/sessions",
+            "status": 200
+          },
+          {
+            "method": "GET",
+            "path": "/api/admin/v1/components",
+            "status": 200
+          },
+          {
+            "method": "GET",
+            "path": "/api/admin/v1/connections",
+            "status": 200
+          },
+          {
+            "method": "GET",
+            "path": "/api/admin/v1/sessions/{id}/events",
+            "status": 200
+          },
+          {
+            "method": "GET",
+            "path": "/api/admin/v1/sessions",
+            "status": 401
+          },
+          {
+            "method": "GET",
+            "path": "/api/admin/v1/overview",
+            "status": 401
+          },
+          {
+            "method": "GET",
+            "path": "/api/admin/v1/connections",
+            "status": 401
+          },
+          {
+            "method": "GET",
+            "path": "/api/admin/v1/components",
+            "status": 401
+          }
+        ],
+        "denied_external_page_requests": 0,
+        "screenshots": [
+          {
+            "name": "oauth-form.png",
+            "sha256": "77855e1145827424bae0a1eca90430f29cd997860124aa2887eba217e4aadfd0",
+            "bytes": 29588
+          },
+          {
+            "name": "real-components-1024.png",
+            "sha256": "8c5847da078757be1dbfdb52d773afd3d7e54dcc5eb76b8cb4a25af6611d17a3",
+            "bytes": 62224
+          },
+          {
+            "name": "real-components-1440.png",
+            "sha256": "6f21602279b0771f9bc9ff679395bd934582e676a819eb7f4c737e83ad891943",
+            "bytes": 66628
+          },
+          {
+            "name": "real-components-375.png",
+            "sha256": "f632579a51beecc2577783921a4d2f7ee50d5cfea24744d5fbd6f295e09b779a",
+            "bytes": 46579
+          },
+          {
+            "name": "real-components-768.png",
+            "sha256": "cd597bc604e96a94e48cf451fd6968407ed29cdd9be80844c34411b4ebde24c6",
+            "bytes": 50168
+          },
+          {
+            "name": "real-connections-1024.png",
+            "sha256": "fe9445e307ea856e05340cde6f059ba7f45a18e14a8c89a31a7e5b6fb4dbaa74",
+            "bytes": 100160
+          },
+          {
+            "name": "real-connections-1440.png",
+            "sha256": "aa1daf436d606633811907edfe839d3c30c65f003246bbc0d893754ca1151a9d",
+            "bytes": 103879
+          },
+          {
+            "name": "real-connections-375.png",
+            "sha256": "4440e36b26777b5ae7ae3ebff1ef7f421948c3a9dbc7a72515a19ce823049522",
+            "bytes": 78865
+          },
+          {
+            "name": "real-connections-768.png",
+            "sha256": "f8ae046d8a03a2e891d81c86c6923ff7eb7274bd8a4f060cb7d187c8d6a15e13",
+            "bytes": 82979
+          },
+          {
+            "name": "real-session-detail.png",
+            "sha256": "3e1c6b57a0b5d921bf337dcf8c29a25f9ae5ea36b8f3326b0674dacc562e37d2",
+            "bytes": 126157
+          },
+          {
+            "name": "real-sessions-1024.png",
+            "sha256": "09829ba38b97154891ae0dd5efa10d02123750f323502f4945cd5998bf445621",
+            "bytes": 81091
+          },
+          {
+            "name": "real-sessions-1440.png",
+            "sha256": "e1bf6371841d4d806a9d725be709d49ed22df784399700736b586dbe11a33c38",
+            "bytes": 85472
+          },
+          {
+            "name": "real-sessions-375.png",
+            "sha256": "4223449219829bdc0cf687ead7194c3a918cd2652bf60edaab5e6456c52da2e1",
+            "bytes": 63007
+          },
+          {
+            "name": "real-sessions-768.png",
+            "sha256": "96d79fa4b7863ece60d4e88ab999e4dabcddaef2f0787f56bf1a4bc662cafc9c",
+            "bytes": 66561
+          }
+        ]
+      }
+    }
+  ],
+  "historical_observation_not_recounted": {
+    "status": "PREVIOUS_FAILURE_REPORTED_ARTIFACT_UNAVAILABLE_AFTER_REBOOT",
+    "description": "Earlier browser POST /oauth/authorize received403 with Origin:null under Referrer-Policy:no-referrer. Current implementation sets same-origin only on GET OAuth form, retains no-referrer elsewhere and denies Origin:null. The current successful browser flows validate the corrected real exchange. Earlier private artifacts were lost when /tmp was reset; no hash or rerun of the original policy is claimed."
+  },
+  "harness_sha256": {
+    "scripts/test-admin-console.mjs": "84b0d5bd5c92914862ca7f1e2cc2d614630df525ab60c29c15e33a7c8e599112",
+    "scripts/test-admin-console-live.mjs": "78945eb5588d8c61a0c1c4f5cb584a36425fa847d5c956a0ef90c57816ec0c97"
+  },
+  "reproduction": {
+    "fixture_ui": "TMPDIR=/var/tmp IVOAI_ADMIN_UI_NODE_MODULES=<existing-reviewed-node_modules> <pinned-node> scripts/test-admin-console.mjs",
+    "live_server": "In terminal A set IVOAI_ADMIN_BROWSER_FIXTURE=/tmp/<fresh-private-test-rendezvous>.json, private ext4 TMPDIR/GOTMPDIR, then <pinned-go> test ./internal/admin -run ^TestLiveAdminBrowserFixture$ -count=1 -v. The test creates its own temporary App roots and writes a0600 disposable rendezvous; do not print it.",
+    "live_browser": "In terminal B set the same IVOAI_ADMIN_BROWSER_FIXTURE and existing-reviewed IVOAI_ADMIN_UI_NODE_MODULES; run TMPDIR=/var/tmp IVOAI_ADMIN_BROWSER_PROOF_MODE=logout <pinned-node> scripts/test-admin-console-live.mjs. Repeat with a fresh server fixture and mode=revoke. The script writes .stop; the revocation fixture accepts only test-control .revoke and returns .revoked acknowledgement.",
+    "limitations": "Use short browser temp paths to avoid the Chromium Unix socket limit. Fresh fixtures are necessary because the activation code is single-use. Do not use production or personal state."
+  },
+  "limits": [
+    "No complete administrative TUI parity.",
+    "No provider login, inference, paid API, real quota or benchmark economy validation.",
+    "No native CLI/TUI certification.",
+    "Cookie Secure=false is expected only because this explicitly HTTP loopback fixture does not use TLS.",
+    "Accessibility automated WCAG2/2.1 A/AA and visual inspection do not replace assistive-technology testing.",
+    "Session and usage values are seeded fixtures even though HTTP, OAuth persistence, projection and browser behavior are real."
+  ]
+}

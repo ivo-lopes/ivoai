@@ -1,0 +1,12 @@
+{
+  "version": "1.19.0-ivoai.3",
+  "platform": "linux/amd64",
+  "revision": "5e62ffb502a579587a962a6cb9354f60ff7e5d564b80c8bee06fcdc27de64c8b",
+  "sha256": "8ea481d8a2c2d1f11417a78a3a8121e3d790630b9ed3c99b010b2cb4d24999a2",
+  "archive": "ivoai-opencode_linux_amd64.tar.gz",
+  "upstream_revision": "733b2c627e5aec39cb33cc22373bdce33053ef2c",
+  "source_sha256": "ab433f7a5fc9e54c90da18bd3457298009f426424805f043aa32c03543b4a192",
+  "patch_sha256": "29ab6030f52f4b95d582ce95ae001566b7b0f3bc3bfece6a1355dce4faa2e4ec",
+  "bun_version": "1.3.14",
+  "bun_sha256": "951ee2aee855f08595aeec6225226a298d3fea83a3dcd6465c09cbccdf7e848f"
+}
