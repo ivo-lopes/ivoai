@@ -1,0 +1,53 @@
+{
+  "base_revision": "bd1be254a73a9ac9ec9d8705c7b7ae9935b2d8a4",
+  "equivalent_main_merge": "064edc3ad6972bf8bfd2d95f738c9732d1102396",
+  "base_tree": "ab83e4aaa626963e431882b2a98cc0298fc731f0",
+  "scope": "Changed/new Go files and module manifests; all other source fixed by base revision. No runtime wiring.",
+  "files": [
+    {
+      "path": "go.mod",
+      "bytes": 568,
+      "sha256": "d1c486bcfb3a5e1127b4f47de7e62001c768ee744c42b6f96627f6895d026705"
+    },
+    {
+      "path": "go.sum",
+      "bytes": 2537,
+      "sha256": "44f145c4f9477395f29442a17757c7de7b24df282e19c7e6ffddb58662e2553c"
+    },
+    {
+      "path": "internal/evidence/gateway.go",
+      "bytes": 13219,
+      "sha256": "51e5dac4157fbf26bd1702fa16e68e911f9e627c3a8e6595c2b46dc5d6a46b2e"
+    },
+    {
+      "path": "internal/evidence/memory_snapshot.go",
+      "bytes": 4231,
+      "sha256": "f6ff5084a8983e5bd2adf4a22c7f0ed4f3bd4397ada6f00da216433ab09408e7"
+    },
+    {
+      "path": "internal/evidence/memory_snapshot_test.go",
+      "bytes": 15436,
+      "sha256": "9a441ec0e98135f7ec0b922a12685875aef0aa07f2206c8b6548a95308c0cf05"
+    },
+    {
+      "path": "internal/knowledgerouter/memory_page.go",
+      "bytes": 8556,
+      "sha256": "e32dd803d966156fbf5b2a063774c097877c078adf8bcf2754f6268f91a84344"
+    },
+    {
+      "path": "internal/knowledgerouter/memory_page_test.go",
+      "bytes": 15171,
+      "sha256": "1f5fb925d20042a11f236ff449f4caa9e98c72157db27f7de929089b87624ce6"
+    },
+    {
+      "path": "internal/knowledgerouter/memory_response.go",
+      "bytes": 6983,
+      "sha256": "189ecce7e8608f7a1a43f77bb45bf899e6cf2faa1bac5213c1e87356bc12f031"
+    },
+    {
+      "path": "internal/knowledgerouter/router.go",
+      "bytes": 25414,
+      "sha256": "d73a01a052023accb3cde1051e1e8a17119937a5ccf6d604681397ac8f01bfa6"
+    }
+  ]
+}
