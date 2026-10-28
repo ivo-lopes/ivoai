@@ -1,0 +1,3 @@
+2026-10-28T20:15:22.1823685Z --- FAIL: TestLiveManagedOpenCodeResizeKeyboard (18.01s)
+2026-10-28T20:15:22.1826528Z     tui_interaction_test.go:182: resize=100 panel visible; Escape returned
+2026-10-28T20:15:22.1827398Z     tui_interaction_test.go:179: missing keyboard/resize state "Permissions:" (raw transcript not logged)

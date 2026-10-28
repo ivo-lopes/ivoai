@@ -3,7 +3,11 @@
 The PR51 AMD64 job [40761236991 / 123073413304](https://github.com/ivo-lopes/ivoai/actions/runs/40761236991/job/123073413304)
 failed `TestLiveManagedOpenCodeResizeKeyboard` after its first resize to 100,
 then missed `Permissions:` at the next width of 60. That adverse result remains
-valid; the original test did not retain its raw transcript. Its actual CI
+valid; the original test did not retain its raw transcript. A downloaded,
+tool-decoded job log independently confirms the three failure lines preserved
+in the [bounded excerpt](evidence/managed-tui-menu-readiness/logs/ci-failure-excerpt.log).
+The receipt binds that decoded file by hash, with possible final-newline
+normalization; it does not claim a binary-exact server log stream. Its actual CI
 scheduling is unknown.
 
 At source `96cf9c7a44c84c8ad5bf854b394f5ffb3741d93a`, the complete bridge, TUI

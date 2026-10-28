@@ -11,12 +11,27 @@
     "run": 40761236991,
     "job": 123073413304,
     "url": "https://github.com/ivo-lopes/ivoai/actions/runs/40761236991/job/123073413304",
-    "source": "Owner-reported actual GitHub job facts; full CI log not independently downloaded by this diagnostic task.",
+    "source": "Independently verified against the downloaded tool-decoded GitHub job log; full decoded log remains private.",
     "test": "TestLiveManagedOpenCodeResizeKeyboard",
     "result": "FAIL18.01s after first resize100 log; missing Permissions at next resize60",
     "raw_ci_transcript": "not logged by original test",
     "upstream_version_archive_and_no_avx_checks": "Owner reported PASS; not rerun or broadened here.",
-    "failure_preserved": true
+    "failure_preserved": true,
+    "downloaded_decoded_log": {
+      "sha256": "ad3641c38a282b79d1733ce2c6d795ad3735cfd92718a3bf9154aa18b8522e6c",
+      "bytes": 213232,
+      "observed_file_characters": 211070,
+      "original_tool_structuredContent_content_characters_reported_by_owner": 211069,
+      "provenance": "Owner downloaded the tool structuredContent.content and preserved a decoded UTF-8 file; final newline may have been normalized. Hash binds that decoded file, not a binary-exact GitHub server stream.",
+      "published_full_log": false,
+      "safe_excerpt": "logs/ci-failure-excerpt.log",
+      "source_line_numbers": [
+        1426,
+        1427,
+        1428
+      ],
+      "review": "Only three failure/test-source lines were selected; no credential, arbitrary subprocess output or raw PTY content published."
+    }
   },
   "reviewed_fixture": {
     "metadata": {
@@ -129,6 +144,7 @@
     "logs/affected-vet.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "logs/baseline-traced-events.log": "4f85b3ac24629bd08e05453f9e117680722d7d28d1fff889547063889901115d",
     "logs/baseline-traced-test.log": "e811134998bf4e3ac5c6f54899b14e63f36719c70e8afc2d80499d576d37cab0",
+    "logs/ci-failure-excerpt.log": "4d34c12cbc8d4a5505e0e55019ecc00ff72255845c49370a1062526b76e0b4bb",
     "logs/construction-failures.txt": "553c35d8ab8364c2679595ac62f68a5889bd9c8b07189d02459217c00330fadf",
     "logs/enter-queue-reproduction-events.log": "30d4cb787d4c4cac4d89add2ddd28f5a823dd49598a032f5eae36bfba2e3f3c8",
     "logs/enter-queue-reproduction-test.log": "f40409ddedebb357bdc1f2cae4976aead9afcb7be3f556a0042faf2ef6d0aa46",
