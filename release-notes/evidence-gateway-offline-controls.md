@@ -1,5 +1,14 @@
 # Evidence Gateway offline App controls — IVOAI-138 / IVOAI-198
 
+**Fixture integrity correction:** the initial Git environment omitted
+`GIT_CONFIG_PARAMETERS`; a controlled private post-checkout hook demonstrated
+that inherited hooksPath could run during worktree creation. The original
+artifacts remain unchanged. The [v2 correction and new receipts](evidence-gateway-offline-controls-env-fix.md)
+record the adverse reproduction, explicit Git environments and executable
+rejection tests. The original statement below about disabled hooks was incomplete and does not
+establish isolation from hostile inherited configuration.
+
+
 This test-only increment proves activated App/Gateway reuse and invalidation on
 one small, executable offline fixture. It does not measure agent economics.
 **No LLM/native-client turn, actual worker dispatch, or Graft execution occurred.

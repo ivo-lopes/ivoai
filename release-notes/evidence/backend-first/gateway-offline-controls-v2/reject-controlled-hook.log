@@ -1,0 +1,4 @@
+=== RUN   TestEvidenceGatewayOfflineControls
+    evidence_gateway_control_test.go:305: inherited Git redirection is outside the offline control
+--- FAIL: TestEvidenceGatewayOfflineControls (0.00s)
+FAIL

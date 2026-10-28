@@ -140,18 +140,29 @@ func runGatewayOfflineControls(t *testing.T) gatewayControlReceipt {
 	t.Helper()
 	// Refuse inherited Git redirection before creating a fixture; never operate
 	// on a caller's index/object store or run a caller's init template hooks.
-	for _, key := range []string{"GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_OBJECT_DIRECTORY", "GIT_ALTERNATE_OBJECT_DIRECTORIES", "GIT_COMMON_DIR"} {
+	for _, key := range []string{"GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_OBJECT_DIRECTORY", "GIT_ALTERNATE_OBJECT_DIRECTORIES", "GIT_COMMON_DIR", "GIT_CONFIG_PARAMETERS", "GIT_CONFIG", "GIT_EXEC_PATH"} {
 		if os.Getenv(key) != "" {
 			t.Fatal("inherited Git redirection is outside the offline control")
 		}
 	}
-	t.Setenv("HOME", t.TempDir())
-	t.Setenv("GIT_TEMPLATE_DIR", t.TempDir())
+	home, templates := t.TempDir(), t.TempDir()
+	t.Setenv("HOME", home)
+	t.Setenv("GIT_TEMPLATE_DIR", templates)
 	t.Setenv("GIT_CONFIG_COUNT", "0")
 	t.Setenv("GIT_CONFIG_NOSYSTEM", "1")
 	t.Setenv("GIT_CONFIG_GLOBAL", os.DevNull)
 	t.Setenv("GIT_TERMINAL_PROMPT", "0")
-	receipt := gatewayControlReceipt{Schema: 1, Condition: "offline-app-gateway-v1", Provider: "actual CodeIntel direct small-file read; no Graft or model provider", CodeIntelCache: "normal CacheRoot enabled in both arms; direct fixture does not exercise structural result cache", WorkerBasis: "host metadata fixture; NOT_ACTUAL_DISPATCH; real workers UNKNOWN", RecoveryBasis: "ArtifactStore exact read under issued owner; not native-client or sealed Gateway recovery", TimingBasis: "single sequential OFF/ON diagnostic; retrieval includes host work; no equivalent-load or causal timing claim", Economy: "NOT_EVALUATED"}
+	// All fixture Git operations (including the shared corpus initialization)
+	// use an absolute executable and a small explicit environment. Editor,
+	// pager, SSH/askpass, external-diff and trace variables are never inherited;
+	// no network, interactive, diff or editor operation is requested here.
+	runGit := func(args ...string) error {
+		fixed := []string{"-c", "core.hooksPath=/dev/null", "-c", "core.fsmonitor=false", "-c", "core.untrackedCache=false", "-c", "commit.gpgsign=false"}
+		command := exec.Command("/usr/bin/git", append(fixed, args...)...)
+		command.Env = []string{"PATH=/usr/bin:/bin", "HOME=" + home, "GIT_TEMPLATE_DIR=" + templates, "GIT_CONFIG_COUNT=0", "GIT_CONFIG_NOSYSTEM=1", "GIT_CONFIG_GLOBAL=/dev/null", "GIT_TERMINAL_PROMPT=0", "LC_ALL=C"}
+		return command.Run()
+	}
+	receipt := gatewayControlReceipt{Schema: 1, Condition: "offline-app-gateway-v2", Provider: "actual CodeIntel direct small-file read; no Graft or model provider", CodeIntelCache: "normal CacheRoot enabled in both arms; direct fixture does not exercise structural result cache", WorkerBasis: "host metadata fixture; NOT_ACTUAL_DISPATCH; real workers UNKNOWN", RecoveryBasis: "ArtifactStore exact read under issued owner; not native-client or sealed Gateway recovery", TimingBasis: "single sequential OFF/ON diagnostic; retrieval includes host work; no equivalent-load or causal timing claim", Economy: "NOT_EVALUATED"}
 	for _, arm := range []string{"OFF", "ON"} {
 		t.Run(arm, func(t *testing.T) {
 			flag := "0"
@@ -159,14 +170,14 @@ func runGatewayOfflineControls(t *testing.T) gatewayControlReceipt {
 				flag = "1"
 			}
 			t.Setenv("IVOAI_EXPERIMENTAL_EVIDENCE_GATEWAY", flag)
-			root := prefetchLiveRepository(t)
+			root := prefetchLiveRepositoryWithGit(t, runGit)
 			for _, args := range [][]string{{"-C", root, "add", "."}, {"-C", root, "-c", "user.name=fixture", "-c", "user.email=fixture@example.invalid", "-c", "commit.gpgsign=false", "-c", "core.hooksPath=/dev/null", "commit", "-qm", "offline control fixture"}} {
-				if exec.Command("git", args...).Run() != nil {
+				if runGit(args...) != nil {
 					t.Fatal("fixture commit failed")
 				}
 			}
 			other := filepath.Join(t.TempDir(), "owned")
-			if exec.Command("git", "-C", root, "worktree", "add", "--detach", "-q", other, "HEAD").Run() != nil {
+			if runGit("-C", root, "worktree", "add", "--detach", "-q", other, "HEAD") != nil {
 				t.Fatal("fixture worktree failed")
 			}
 			a, store, id, task := prefetchLiveHost(t, root, "Inspect API mathpkg/scale.go")
@@ -292,6 +303,30 @@ func runGatewayOfflineControls(t *testing.T) gatewayControlReceipt {
 }
 
 func TestEvidenceGatewayOfflineControls(t *testing.T) { runGatewayOfflineControls(t) }
+
+// Run the real entry point in a bounded child so refusal must precede the OFF
+// subtest and every Git operation. Values refer only to nonexistent private
+// fixture paths; no caller hook or configuration can be executed by this test.
+func TestGatewayControlRejectsInheritedGitExecution(t *testing.T) {
+	for _, key := range []string{"GIT_CONFIG_PARAMETERS", "GIT_CONFIG", "GIT_EXEC_PATH"} {
+		t.Run(key, func(t *testing.T) {
+			home := t.TempDir()
+			value := filepath.Join(home, "must-not-use")
+			if key == "GIT_CONFIG_PARAMETERS" {
+				value = "'core.hooksPath=" + value + "'"
+			}
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
+			command := exec.CommandContext(ctx, os.Args[0], "-test.run=^TestEvidenceGatewayOfflineControls$", "-test.count=1", "-test.v")
+			command.Env = []string{"PATH=/usr/bin:/bin", "HOME=" + home, "TMPDIR=" + home, key + "=" + value}
+			output, err := command.CombinedOutput()
+			exit, exited := err.(*exec.ExitError)
+			if !exited || exit.ExitCode() != 1 || ctx.Err() != nil || len(output) > 4096 || !strings.Contains(string(output), "inherited Git redirection is outside the offline control") || strings.Contains(string(output), "/OFF") {
+				t.Fatal("inherited Git execution setting was not refused before the first arm")
+			}
+		})
+	}
+}
 
 // Export requires an explicit new file in a private directory. Never overwrite
 // historical evidence; no dynamic paths, owners, source bodies or errors escape.
