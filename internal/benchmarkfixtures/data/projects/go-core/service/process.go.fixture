@@ -1,0 +1,3 @@
+package service
+import "fixture/mathpkg"
+func Process() int { return mathpkg.Scale(5) }

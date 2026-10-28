@@ -1,0 +1,159 @@
+{
+  "scope": "offline_catalog_and_synthetic_fixtures",
+  "global_economic_gate": "INCOMPLETE",
+  "provider_attempts": 0,
+  "catalog_sha256": "13779e11784adfbc314e733738bfb06a9a60787979127f5ba07647ba1e72fa52",
+  "fixture_contract_sha256": "8891b0280ffbb27887c642ff89a87f3c46cfc31570d6dc964b7a2039e946632a",
+  "harness_sha256": "5895f5cab19164f5beac1033c83978a2f6d5062bf8ecc77ea15892ad1c636276",
+  "oracle_tools_sha256": {
+    "go": "5f5eb6d0b2fb6aa0bb5d5f8c5f1c944e0de955c925f0111af92a9d8f79680b5b",
+    "node": "5a7b8a3cf5ccb57d297519754fd73238f64cf560afd0ef19a2f9bf7384cbb657",
+    "python": "889c603f0d17cb54060951bcf4c4f9b8c9ebd9e52b392c70209bbb9755d797d9",
+    "shell": "a6f559e00b69a4aa4d8cb607be18d9386c5aee55c509e2c075549dcf00e00fc7"
+  },
+  "scenarios": [
+    {
+      "id": "small_known_file_correction",
+      "status": "UNSUPPORTED",
+      "blocker": "read_only_runner_cannot_apply_and_validate_edits",
+      "client_execution": "NOT_RUN"
+    },
+    {
+      "id": "implementation",
+      "status": "NOT_RUN",
+      "blocker": "",
+      "client_execution": "NOT_RUN"
+    },
+    {
+      "id": "cross_module_refactor",
+      "status": "UNSUPPORTED",
+      "blocker": "read_only_runner_cannot_refactor_or_run_post_edit_oracles",
+      "client_execution": "NOT_RUN"
+    },
+    {
+      "id": "dependencies",
+      "status": "NOT_RUN",
+      "blocker": "",
+      "client_execution": "NOT_RUN"
+    },
+    {
+      "id": "multi_module_callers",
+      "status": "NOT_RUN",
+      "blocker": "",
+      "client_execution": "NOT_RUN"
+    },
+    {
+      "id": "api",
+      "status": "NOT_RUN",
+      "blocker": "",
+      "client_execution": "NOT_RUN"
+    },
+    {
+      "id": "large_project",
+      "status": "UNSUPPORTED",
+      "blocker": "representative_large_project_fixture_and_boundaries_not_frozen",
+      "client_execution": "NOT_RUN"
+    },
+    {
+      "id": "monorepo",
+      "status": "NOT_RUN",
+      "blocker": "",
+      "client_execution": "NOT_RUN"
+    },
+    {
+      "id": "unsupported_parser",
+      "status": "NOT_RUN",
+      "blocker": "",
+      "client_execution": "NOT_RUN"
+    },
+    {
+      "id": "institutional_documentation",
+      "status": "BLOCKED",
+      "blocker": "context_ingestion_and_retrieval_unavailable_IVOAI_175",
+      "client_execution": "NOT_RUN"
+    },
+    {
+      "id": "ai_memory_history",
+      "status": "BLOCKED",
+      "blocker": "canonical_history_dataset_and_live_memory_contract_not_frozen",
+      "client_execution": "NOT_RUN"
+    },
+    {
+      "id": "non_code",
+      "status": "NOT_RUN",
+      "blocker": "",
+      "client_execution": "NOT_RUN"
+    },
+    {
+      "id": "multiple_workers",
+      "status": "UNSUPPORTED",
+      "blocker": "primary_only_runner_has_no_worker_or_reuse_lifecycle",
+      "client_execution": "NOT_RUN"
+    },
+    {
+      "id": "reuse_between_turns",
+      "status": "UNSUPPORTED",
+      "blocker": "ephemeral_single_turn_runner_has_no_warm_session",
+      "client_execution": "NOT_RUN"
+    },
+    {
+      "id": "interrupted_continuity",
+      "status": "UNSUPPORTED",
+      "blocker": "ephemeral_runner_has_no_interrupt_resume_comparison",
+      "client_execution": "NOT_RUN"
+    },
+    {
+      "id": "concurrent_distinct_projects",
+      "status": "UNSUPPORTED",
+      "blocker": "sequential_driver_has_no_concurrent_project_lifecycle",
+      "client_execution": "NOT_RUN"
+    }
+  ],
+  "fixture_oracles": [
+    {
+      "fixture": "go-core",
+      "fixture_sha256": "94339e5800d550aaa5284ae452fef04b9c425c02dd079be54234b1bb8feb5188",
+      "scope": "offline_synthetic_program_oracle",
+      "provider_attempts": 0,
+      "status": "VERIFIED",
+      "correct": true,
+      "exit_code": 0
+    },
+    {
+      "fixture": "python-deps",
+      "fixture_sha256": "4dfd2279a45f4f1485e482743672d52a362aeb41d9dd0a671efdfa98a21847aa",
+      "scope": "offline_synthetic_program_oracle",
+      "provider_attempts": 0,
+      "status": "VERIFIED",
+      "correct": true,
+      "exit_code": 0
+    },
+    {
+      "fixture": "monorepo-ts",
+      "fixture_sha256": "01ade0e8a5dbe64fb80ceb1210c2d0f056ed43462e9a1e86f1f9b24000feb656",
+      "scope": "offline_synthetic_program_oracle",
+      "provider_attempts": 0,
+      "status": "VERIFIED",
+      "correct": true,
+      "exit_code": 0
+    },
+    {
+      "fixture": "rules-shell",
+      "fixture_sha256": "2650c62f41cfe3d5d0dce157cf45e35a6237605a564be2326bcd9646e123ac72",
+      "scope": "offline_synthetic_program_oracle",
+      "provider_attempts": 0,
+      "status": "VERIFIED",
+      "correct": true,
+      "exit_code": 0
+    },
+    {
+      "fixture": "non-code",
+      "fixture_sha256": "4e5d45339ffb829146a641b9a6460879c4ab1e741f45820c00f3f3c2bb4f5cd9",
+      "scope": "offline_synthetic_program_oracle",
+      "provider_attempts": 0,
+      "status": "VERIFIED",
+      "correct": true,
+      "exit_code": 0
+    }
+  ]
+}
