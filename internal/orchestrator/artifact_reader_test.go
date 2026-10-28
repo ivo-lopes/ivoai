@@ -11,8 +11,10 @@ import (
 	"sync/atomic"
 	"testing"
 
+	"github.com/ivo-lopes/ivoai/internal/core"
 	"github.com/ivo-lopes/ivoai/internal/evidence"
 	"github.com/ivo-lopes/ivoai/internal/externalmcp"
+	"github.com/ivo-lopes/ivoai/internal/session"
 	"github.com/ivo-lopes/ivoai/internal/workers"
 	"github.com/ivo-lopes/ivoai/internal/workingcontext"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -60,17 +62,34 @@ func protectedReaderFixture(t *testing.T) (*evidence.Gateway, *artifactReadTripw
 	return g, trip, p, r, allowed
 }
 
+// The full reader is an active Core server, unlike the intentionally Store-less
+// worker projection. Retain the fixture owner while using real session checks.
+func fullArtifactReaderFixture(t *testing.T, id string, store workingcontext.ArtifactStore, recover EvidenceRecovery) *Server {
+	t.Helper()
+	s := primaryEvidenceServer(t)
+	v, err := s.Store.Get(s.SessionID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	v.SessionID, v.SwarmID = id, "native_"+id
+	if err := s.Store.Create(v); err != nil {
+		t.Fatal(err)
+	}
+	s.SessionID, s.WorkingContext, s.RecoverEvidence = id, store, recover
+	return s
+}
+
 func TestProtectedArtifactRoutesNeverFallBackAfterRestartOrFlagoff(t *testing.T) {
 	g, store, packet, r, allowed := protectedReaderFixture(t)
 	id := packet.Ref.Result.Artifact.ID
-	s := &Server{SessionID: r.Owner.SessionID, WorkingContext: store, RecoverEvidence: g.RecoverBound}
+	s := fullArtifactReaderFixture(t, r.Owner.SessionID, store, g.RecoverBound)
 	if result, err := s.artifactRead(context.Background(), toolRequest(map[string]any{"artifact_id": id})); err != nil || !strings.Contains(resultText(t, result), base64.StdEncoding.EncodeToString([]byte("exact protected snapshot"))) {
 		t.Fatal("bound primary read failed", err)
 	}
 	for _, mode := range []string{"restart", "missing_callback", "revoked"} {
 		t.Run(mode, func(t *testing.T) {
 			t.Setenv("IVOAI_EXPERIMENTAL_EVIDENCE_RECOVERY", "")
-			reader := &Server{SessionID: r.Owner.SessionID, WorkingContext: store}
+			reader := fullArtifactReaderFixture(t, r.Owner.SessionID, store, nil)
 			if mode == "restart" {
 				fresh, err := evidence.New(store)
 				if err != nil {
@@ -100,7 +119,7 @@ func TestProtectedArtifactRoutesNeverFallBackAfterRestartOrFlagoff(t *testing.T)
 	if err != nil {
 		t.Fatal(err)
 	}
-	legacyServer := &Server{SessionID: r.Owner.SessionID, WorkingContext: store}
+	legacyServer := fullArtifactReaderFixture(t, r.Owner.SessionID, store, nil)
 	if _, err := legacyServer.artifactRead(context.Background(), toolRequest(map[string]any{"artifact_id": legacy.ID})); err != nil {
 		t.Fatal("legacy read changed", err)
 	}
@@ -192,5 +211,109 @@ func TestProtectedWorkerProjectionUsesActualMCPAccessWithoutSchedulerTools(t *te
 	allowed.Store(false)
 	if result, err := call(tools[0], worker.Ref.Result.Artifact.ID, nil); err == nil && !result.IsError {
 		t.Fatal("worker reader survived grant revocation")
+	}
+}
+
+// Exercise registered RPC handlers as well as the recovery callback. A real
+// protected snapshot is issued to this admitted primary; bytes must never be
+// delivered after its Core/turn authority is lost during recovery.
+func TestAdmittedPrimaryProtectedReadersRecheckAuthority(t *testing.T) {
+	for _, tool := range []string{"orchestration_artifact_read", "orchestration_artifact_read_range"} {
+		for _, mode := range []string{"valid", "closed_before", "stale_before", "identity_missing", "closed_during", "replaced_during", "host_revoked_during", "core_revoked_during"} {
+			t.Run(tool+"/"+mode, func(t *testing.T) {
+				g, _, _, request, _ := protectedReaderFixture(t)
+				s := admittedPrimaryServer(t)
+				request.Owner = workingcontext.Ownership{SessionID: s.SessionID, TaskID: "inspect"}
+				packet, err := g.Retrieve(context.Background(), request, func(context.Context) (evidence.Document, error) {
+					return evidence.Document{Raw: []byte("exact protected snapshot"), MediaType: "text/plain", Basis: evidence.Extracted, SourceComplete: true, Sensitivity: workingcontext.SensitivityRestricted}, nil
+				})
+				if err != nil {
+					t.Fatal(err)
+				}
+				hostAllowed := true
+				s.AuthorizePrimaryTurn = func(context.Context) error {
+					if !hostAllowed {
+						return errors.New("host revoked")
+					}
+					return nil
+				}
+				if mode == "identity_missing" {
+					s.PrimaryTurnIdentity = nil
+				}
+				mutate := func() {
+					_, err := s.Store.Update(s.SessionID, func(v *session.Session) error {
+						switch mode {
+						case "closed_before", "closed_during":
+							v.PrimaryTurn.Mode = core.PrimaryClosed
+						case "stale_before", "replaced_during":
+							v.PrimaryTurn.ID = "replacement_receipt"
+						case "core_revoked_during":
+							v.ProviderExecution = true
+						}
+						return nil
+					})
+					if err != nil {
+						t.Fatal(err)
+					}
+				}
+				if strings.HasSuffix(mode, "_before") {
+					mutate()
+				}
+				calls := 0
+				s.RecoverEvidence = func(ctx context.Context, owner workingcontext.Ownership, id string) ([]byte, workingcontext.ArtifactRef, error) {
+					calls++
+					raw, ref, err := g.RecoverBound(ctx, owner, id)
+					if strings.HasSuffix(mode, "_during") {
+						mutate()
+						if mode == "host_revoked_during" {
+							hostAllowed = false
+						}
+					}
+					return raw, ref, err
+				}
+				st, ct := mcp.NewInMemoryTransports()
+				ss, err := s.protocolServer().Connect(context.Background(), st, nil)
+				if err != nil {
+					t.Fatal(err)
+				}
+				defer ss.Close()
+				cs, err := mcp.NewClient(&mcp.Implementation{Name: "primary-reader-test", Version: "1"}, nil).Connect(context.Background(), ct, nil)
+				if err != nil {
+					t.Fatal(err)
+				}
+				defer cs.Close()
+				args := map[string]any{"artifact_id": packet.Ref.Result.Artifact.ID}
+				if tool == "orchestration_artifact_read_range" {
+					args["offset"], args["length"] = 1, 3
+				}
+				result, err := cs.CallTool(context.Background(), &mcp.CallToolParams{Name: tool, Arguments: args})
+				if mode == "valid" {
+					if err != nil || result.IsError || calls != 1 {
+						t.Fatalf("authorized recovery unavailable: calls=%d err=%v result=%+v", calls, err, result)
+					}
+					expected := "exact protected snapshot"
+					if tool == "orchestration_artifact_read_range" {
+						expected = "xac"
+					}
+					if !strings.Contains(resultText(t, result), base64.StdEncoding.EncodeToString([]byte(expected))) {
+						t.Fatal("exact protected bytes unavailable")
+					}
+				} else {
+					if err == nil && !result.IsError {
+						t.Fatal("revoked primary received protected evidence")
+					}
+					want := 1
+					if strings.HasSuffix(mode, "_before") || mode == "identity_missing" {
+						want = 0
+					}
+					if calls != want {
+						t.Fatalf("recovery calls=%d want=%d", calls, want)
+					}
+					if result != nil && strings.Contains(resultText(t, result), base64.StdEncoding.EncodeToString([]byte("xac"))) {
+						t.Fatal("denial exposed protected bytes")
+					}
+				}
+			})
+		}
 	}
 }

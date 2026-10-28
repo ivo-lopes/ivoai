@@ -1,0 +1,23 @@
+# github.com/ivo-lopes/ivoai/internal/orchestrator [github.com/ivo-lopes/ivoai/internal/orchestrator.test]
+internal/orchestrator/artifact_reader_test.go:228:72: unknown field Fidelity in struct literal of type evidence.Document
+internal/orchestrator/artifact_reader_test.go:228:91: undefined: evidence.FidelityExactRequired
+FAIL	github.com/ivo-lopes/ivoai/internal/orchestrator [build failed]
+=== RUN   TestProtectedWorkerProjectionRequiresHostOwnershipAndSameWorktree
+--- PASS: TestProtectedWorkerProjectionRequiresHostOwnershipAndSameWorktree (0.00s)
+=== RUN   TestNativeCompatibilityDenialPrecedesReceiptRetirement
+=== RUN   TestNativeCompatibilityDenialPrecedesReceiptRetirement/explicit_legacy
+    native_providers_test.go:273: invalid primary turn identity
+=== RUN   TestNativeCompatibilityDenialPrecedesReceiptRetirement/retained_legacy
+    native_providers_test.go:273: invalid primary turn identity
+=== RUN   TestNativeCompatibilityDenialPrecedesReceiptRetirement/fifo_current
+    native_providers_test.go:273: invalid primary turn identity
+=== RUN   TestNativeCompatibilityDenialPrecedesReceiptRetirement/fifo_legacy
+    native_providers_test.go:273: invalid primary turn identity
+--- FAIL: TestNativeCompatibilityDenialPrecedesReceiptRetirement (0.01s)
+    --- FAIL: TestNativeCompatibilityDenialPrecedesReceiptRetirement/explicit_legacy (0.00s)
+    --- FAIL: TestNativeCompatibilityDenialPrecedesReceiptRetirement/retained_legacy (0.00s)
+    --- FAIL: TestNativeCompatibilityDenialPrecedesReceiptRetirement/fifo_current (0.00s)
+    --- FAIL: TestNativeCompatibilityDenialPrecedesReceiptRetirement/fifo_legacy (0.00s)
+FAIL
+FAIL	github.com/ivo-lopes/ivoai/internal/app	0.030s
+FAIL

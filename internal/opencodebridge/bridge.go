@@ -686,7 +686,7 @@ func (b *Bridge) chat(w http.ResponseWriter, r *http.Request) {
 					error
 					RateLimited() bool
 				}
-				if outcome.value.ConfigurationSource != core.LocalMetadataSource && selection.Mode == "auto" && !emitted.Load() && attempt < b.maxFailovers && errors.As(outcome.err, &limitError) && limitError.RateLimited() {
+				if !outcome.value.Policy.NoAutomaticFailover && outcome.value.ConfigurationSource != core.LocalMetadataSource && selection.Mode == "auto" && !emitted.Load() && attempt < b.maxFailovers && errors.As(outcome.err, &limitError) && limitError.RateLimited() {
 					if next, selectErr := chooseAlternate(); selectErr == nil {
 						advance(next, "native provider reported a rate limit")
 						continue
@@ -720,6 +720,15 @@ func (b *Bridge) chat(w http.ResponseWriter, r *http.Request) {
 			cancel()
 			if !finishedReceived {
 				outcome = <-finished
+			}
+			if outcome.value.Policy.NoAutomaticFailover {
+				b.storeCompletion(requestKey, cachedCompletion{failed: true, selection: selectionKey})
+				if stream {
+					_ = writeStreamError(w, "IVOAI stopped the admitted turn after a quota change", "admitted_turn_quota_changed")
+					return
+				}
+				writeOpenAIErrorCode(w, http.StatusServiceUnavailable, "IVOAI stopped the admitted turn after a quota change", "admitted_turn_quota_changed")
+				return
 			}
 			if outcome.value.ConfigurationSource == core.LocalMetadataSource {
 				// Admission bound this operation to local evidence and a live
@@ -787,7 +796,7 @@ func (b *Bridge) chat(w http.ResponseWriter, r *http.Request) {
 	// Local evidence is admitted against a live turn/source/config receipt.
 	// Replaying its prose would skip those checks. Retain the completed claim
 	// so duplicates fail with 409; never retry them through a CLI.
-	b.storeCompletion(requestKey, cachedCompletion{content: content, replayable: result.ConfigurationSource != core.LocalMetadataSource && len(content) <= 1<<20, selection: selectionKey})
+	b.storeCompletion(requestKey, cachedCompletion{content: content, replayable: !result.Policy.NoReplay && result.ConfigurationSource != core.LocalMetadataSource && len(content) <= 1<<20, selection: selectionKey})
 	if stream {
 		_ = writeFinish(w, request.Model)
 		_, _ = io.WriteString(w, "data: [DONE]\n\n")

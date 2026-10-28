@@ -1,0 +1,17 @@
+=== RUN   TestNativeCompatibilityDenialPrecedesReceiptRetirement
+=== RUN   TestNativeCompatibilityDenialPrecedesReceiptRetirement/explicit_legacy
+    native_providers_test.go:346: denial retired receipt or rewrote session
+=== RUN   TestNativeCompatibilityDenialPrecedesReceiptRetirement/retained_legacy
+    native_providers_test.go:346: denial retired receipt or rewrote session
+=== RUN   TestNativeCompatibilityDenialPrecedesReceiptRetirement/fifo_current
+    native_providers_test.go:346: denial retired receipt or rewrote session
+=== RUN   TestNativeCompatibilityDenialPrecedesReceiptRetirement/fifo_legacy
+    native_providers_test.go:346: denial retired receipt or rewrote session
+--- FAIL: TestNativeCompatibilityDenialPrecedesReceiptRetirement (0.01s)
+    --- FAIL: TestNativeCompatibilityDenialPrecedesReceiptRetirement/explicit_legacy (0.00s)
+    --- FAIL: TestNativeCompatibilityDenialPrecedesReceiptRetirement/retained_legacy (0.00s)
+    --- FAIL: TestNativeCompatibilityDenialPrecedesReceiptRetirement/fifo_current (0.00s)
+    --- FAIL: TestNativeCompatibilityDenialPrecedesReceiptRetirement/fifo_legacy (0.00s)
+FAIL
+FAIL	github.com/ivo-lopes/ivoai/internal/app	0.017s
+FAIL

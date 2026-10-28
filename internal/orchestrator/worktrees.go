@@ -265,7 +265,7 @@ func (s *Server) integrate(ctx context.Context, request *mcp.CallToolRequest) (*
 		}
 	}
 	plan.integrated = true
-	if err := s.Store.UpdateCheckpoint(s.SessionID, func(checkpoint *session.Checkpoint) error {
+	if err := s.updateCheckpoint(func(checkpoint *session.Checkpoint) error {
 		if checkpoint.Recovery != nil {
 			checkpoint.Recovery.Integrated = true
 		}

@@ -350,6 +350,11 @@ func (s Store) withLock(operation func() error) error {
 }
 
 func validate(value Session) error {
+	if value.PrimaryTurn != nil {
+		if err := value.PrimaryTurn.Validate(); err != nil {
+			return err
+		}
+	}
 	if value.ConcurrencyLimit < 0 || value.ConcurrencyLimit > MaxNativeWorkers {
 		return errors.New("invalid concurrency admission limit")
 	}
