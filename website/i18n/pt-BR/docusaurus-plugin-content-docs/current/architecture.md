@@ -5,7 +5,22 @@ na v0.5.0, e registra separadamente o estado incremental atual abaixo. As versõ
 exatas estão em `manifest/components.yaml`; comportamento entregue e limites da
 migração pertencem às evidências versionadas de implementação e validação.
 
-## Entrega incremental atual: v0.13.0
+## Candidata atual: v0.14.0
+
+O mesmo Core agora fornece um [console administrativo local de consulta](admin-console.md).
+Ele reutiliza App, stores de sessões/OAuth e DTOs limitados; JavaScript não cria
+scheduler, executor, store de credenciais ou autoridade de autorização. Os
+controles de workers nativos do Codex preservam a delegação do Core, e as métricas
+continuam limitadas a uma execução CLI. O wrapper Headroom opcional inseguro é
+recusado; a seleção Caveman/Direct permanece compatível.
+
+Os pilotos opcionais de evidências/código mantêm referências exatas e admissão
+explícita pelo host. Não constituem um gateway universal das ferramentas nativas.
+Execução geral somente no primary e remoção operacional do OpenCode não fazem
+parte desta candidata. O gate econômico global continua INCOMPLETE, e o último
+subconjunto real reprovou as metas. Consulte [releases](releases.md) e as evidências.
+
+## Incremento anterior: v0.13.0
 
 Este incremento amplia a v0.12.1. Os [PRs #31](https://github.com/ivo-lopes/ivoai/pull/31) e
 [#32](https://github.com/ivo-lopes/ivoai/pull/32) foram incorporados como `c475d2a3`
