@@ -1,0 +1,5 @@
+--- FAIL: TestManagedAgentPolicyRejectsFeatureToggles (0.00s)
+    arguments_test.go:104: feature toggle can override host policy: ["--output-schema" "--" "--enable" "multi_agent_v2"]
+FAIL
+FAIL	github.com/ivo-lopes/ivoai/internal/codexresolver	0.004s
+FAIL

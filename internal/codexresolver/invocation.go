@@ -17,22 +17,23 @@ var execOptions = map[string]bool{
 	"--thread-source": true, "--color": true, "--json": false,
 }
 
+var globalValueOptions = map[string]bool{
+	"-c": true, "--config": true, "--enable": true, "--disable": true,
+	"--model": true, "-m": true, "--profile": true, "-p": true,
+	"--sandbox": true, "-s": true, "--ask-for-approval": true, "-a": true,
+	"--cd": true, "-C": true, "--add-dir": true, "--image": true, "-i": true,
+	"--local-provider": true,
+}
+
 // SplitExecArguments adapts legacy mixed CLI options at the managed boundary.
 // Values are consumed with their option so a value spelling an exec flag is
 // never mistaken for an option. Unknown options retain the previous root scope.
 func SplitExecArguments(input []string) ExecInvocation {
 	var result ExecInvocation
-	valueOptions := map[string]bool{
-		"-c": true, "--config": true, "--enable": true, "--disable": true,
-		"--model": true, "-m": true, "--profile": true, "-p": true,
-		"--sandbox": true, "-s": true, "--ask-for-approval": true, "-a": true,
-		"--cd": true, "-C": true, "--add-dir": true, "--image": true, "-i": true,
-		"--local-provider": true,
-	}
 	for i := 0; i < len(input); i++ {
 		option, _, inline := strings.Cut(input[i], "=")
 		target := &result.GlobalArgs
-		needsValue := valueOptions[option]
+		needsValue := globalValueOptions[option]
 		if takesValue, ok := execOptions[option]; ok {
 			target, needsValue = &result.ExecArgs, takesValue
 		}

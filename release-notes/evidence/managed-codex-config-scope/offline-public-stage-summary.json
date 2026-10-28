@@ -1,0 +1,41 @@
+{
+  "schema_version": 1,
+  "source_git": "0bab9b3409a287917f73a5c0620a3758a4be5c36",
+  "Core_binary_sha256": "578e790f0a037cd29117f72b14be82e14b176a9c0a5ba5576d1d6b787bab804f",
+  "pair_version": "0.162.1 linux-amd64",
+  "codex_sha256": "628e35487d888a28f0427fc37501da529dd3d81fcbad7a2c3421c1e8670d92e1",
+  "host_sha256": "ec71830690a7c0024916ee0c99fbdc635bc6e747ff665ea4f03a8389bbcb6b30",
+  "fixture_scope": "Exactly one syntactically valid stdio MCP defined only in fresh CODEX_HOME/config.toml; /etc empty and no project MCP config; no claim for system/project/cloud equivalent inventory.",
+  "causal_conclusion": "Disabled-stub/config-scope mismatch causes offline startup configuration failure. Single-setting control clears that startup error without executing user MCP. Both overall tests remain FAIL; Core inventory assertion is not weakened or certified.",
+  "original_real_canary": {
+    "status": "FAIL_UNVERIFIED_INFERENCE",
+    "stderr_bytes": 72,
+    "raw_stderr": "NOT_RETAINED",
+    "cause": "UNKNOWN_NOT_ATTRIBUTED",
+    "limit": "78offline vs72real does not establish identity/cause; real effective inventory was not retained or newly inspected."
+  },
+  "real_provider_or_personal_auth_status_calls_after_canary": 0,
+  "root_fix_scope": "Separate proposed guard rejects --ignore-user-config before inventory; does not implement inventory equivalence or change configs/historical receipts.",
+  "stages": {
+    "baseline": {
+      "overall": "FAIL",
+      "code": "CONFIG_INVALID_TRANSPORT",
+      "synthetic_requests": 0,
+      "stdout_events": 0,
+      "stderr_bytes": 78
+    },
+    "control": {
+      "overall": "FAIL_CORE_INVENTORY_EXPECTATION",
+      "code": "CLI_FINAL_RESPONSE_REACHED",
+      "synthetic_requests": 1,
+      "stdout_events": 4,
+      "stderr_bytes": 0,
+      "user_MCP_executed": false
+    }
+  },
+  "private_receipt_sha256": "9cffed8ccfa1970f8e968b754cbf7e4093eaa1ad04a1f8f3565bbac38985952a",
+  "private_arg_sha256": {
+    "captures/baseline.argv.json": "938439d0169a62d6d4de922468924c458a2f4ac80477edfd2c8251b075469a9a",
+    "captures/control.argv.json": "72b395b3d763152090b152819b7d4ef9920f0d9f2c34949c121bfb7bb2ed4dae"
+  }
+}

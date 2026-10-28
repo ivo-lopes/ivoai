@@ -61,16 +61,15 @@ func ConfigurationArgs(args []string) []string {
 // overrides regardless of their textual order. Callers keep ConfigurationArgs
 // at the final exec boundary, including compact -c overrides.
 func ManagedAgentArgs(args []string) ([]string, error) {
-	boundary := len(args)
-	for index, arg := range args {
-		if arg == "--" {
-			boundary = index
-			break
-		}
+	boundary := managedArgumentBoundary(args)
+	for _, arg := range args[:boundary] {
 		key, _, _ := strings.Cut(arg, "=")
 		if key == "--enable" {
 			return nil, errors.New("managed Codex feature toggles are controlled by IVOAI")
 		}
+	}
+	if err := ValidateManagedConfigScope(args[:boundary]); err != nil {
+		return nil, err
 	}
 	out := append([]string(nil), args[:boundary]...)
 	out = append(out,
@@ -79,4 +78,43 @@ func ManagedAgentArgs(args []string) ([]string, error) {
 		"-c", "features.remote_plugin=false", "-c", "agents.enabled=false",
 		"-c", "features.multi_agent_v2=false")
 	return append(out, args[boundary:]...), nil
+}
+
+// ValidateManagedConfigScope rejects configuration scopes that the managed MCP
+// inventory cannot reproduce. Call it before starting the frontend so the fixed
+// migration diagnostic reaches the user, and again before inventory as a guard.
+// Denying names from a different scope can create transport-less tables; simply
+// skipping inventory could instead admit system/cloud MCP servers.
+func ValidateManagedConfigScope(args []string) error {
+	if managedIgnoresUserConfig(args[:managedArgumentBoundary(args)]) {
+		return errors.New("CODEX_MANAGED_CONFIG_SCOPE_UNSUPPORTED: managed MCP isolation cannot safely honor --ignore-user-config; omit that flag; IVOAI does not modify personal configuration files")
+	}
+	return nil
+}
+
+func managedArgumentBoundary(args []string) int {
+	for index := 0; index < len(args); index++ {
+		if args[index] == "--" {
+			return index
+		}
+		option, _, inline := strings.Cut(args[index], "=")
+		if !inline && (execOptions[option] || globalValueOptions[option]) && index+1 < len(args) {
+			index++
+		}
+	}
+	return len(args)
+}
+
+func managedIgnoresUserConfig(args []string) bool {
+	execArgs := SplitExecArguments(args).ExecArgs
+	for index := 0; index < len(execArgs); index++ {
+		option, _, inline := strings.Cut(execArgs[index], "=")
+		if option == "--ignore-user-config" {
+			return true
+		}
+		if execOptions[option] && !inline && index+1 < len(execArgs) {
+			index++
+		}
+	}
+	return false
 }
