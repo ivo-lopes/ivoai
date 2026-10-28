@@ -1,0 +1,147 @@
+{
+  "base_revision": "6d99e320912f3f7325c3009209a10e9df86610d4",
+  "merge_commit": "04245f18886195c0bbd7c33c037742a71a372d40",
+  "scope": "Changed Go/test/script/workflow files versus named main plus module manifests and inherited Claude boundary files; other code/assets fixed by base revision.",
+  "files": [
+    {
+      "path": ".github/workflows/ci.yml",
+      "bytes": 16948,
+      "sha256": "9956246b4cfe1a19c0621c42c7c10eaafdda906375abded2ae0bf0fb204ec6b9"
+    },
+    {
+      "path": ".github/workflows/release.yml",
+      "bytes": 11497,
+      "sha256": "1d0475f7c5d09255200924eba03f08c2edbc3eef382b344ab64469fb34948df7"
+    },
+    {
+      "path": "go.mod",
+      "bytes": 568,
+      "sha256": "d1c486bcfb3a5e1127b4f47de7e62001c768ee744c42b6f96627f6895d026705"
+    },
+    {
+      "path": "go.sum",
+      "bytes": 2537,
+      "sha256": "44f145c4f9477395f29442a17757c7de7b24df282e19c7e6ffddb58662e2553c"
+    },
+    {
+      "path": "internal/app/evidence_gateway.go",
+      "bytes": 7419,
+      "sha256": "fb66085b68b400db7cc199f5fde1353cb25c01024b88cffb3c9941874e1490f4"
+    },
+    {
+      "path": "internal/app/evidence_recovery.go",
+      "bytes": 3893,
+      "sha256": "e70567784bc3d129f00208b210cb48349e6ed7883b8a2b180304b459380c307a"
+    },
+    {
+      "path": "internal/app/evidence_recovery_test.go",
+      "bytes": 5288,
+      "sha256": "edf60ad4492ef5985321ed810333fdb15a31887707c715ad578446b18b50ed10"
+    },
+    {
+      "path": "internal/app/session.go",
+      "bytes": 25105,
+      "sha256": "dc2c163400f7e48dc7ec6ffe339d14595f08eceb719f35eb6bc3c46aa274705e"
+    },
+    {
+      "path": "internal/app/worker_access.go",
+      "bytes": 10250,
+      "sha256": "e6edb3285cb7391709b5bd28c4afb642f8e705a5e2ad43e99f4c5bbefa48f382"
+    },
+    {
+      "path": "internal/evidence/gateway.go",
+      "bytes": 12789,
+      "sha256": "5a2e7f9518519c6904c202f1fc090ca553731da779714852b9915ce42701ec8a"
+    },
+    {
+      "path": "internal/evidence/recovery.go",
+      "bytes": 1948,
+      "sha256": "3af741abb14d9bb2f0dfd79231475c1d52bc33a28855277b6e8286b391a4a179"
+    },
+    {
+      "path": "internal/evidence/recovery_test.go",
+      "bytes": 4407,
+      "sha256": "093b5bbe2e336242b7e54e4ef0bcf8027126a243431211bad4c3f584732d3c3c"
+    },
+    {
+      "path": "internal/orchestrator/artifact_reader.go",
+      "bytes": 2744,
+      "sha256": "9d4dadce58fdc937733de4a25201f0cd411db7d73d05db89c9646ccb9fb0a1ca"
+    },
+    {
+      "path": "internal/orchestrator/artifact_reader_test.go",
+      "bytes": 8898,
+      "sha256": "d9bdb46f8b1ba036c14a8e326973e832393f6abb9b75717f1a06bec7116abcc9"
+    },
+    {
+      "path": "internal/orchestrator/server.go",
+      "bytes": 27141,
+      "sha256": "dbb7022df5465ca969f6f0581db186567612d5a38859612d5c3154d98fb59d65"
+    },
+    {
+      "path": "internal/workers/adapter.go",
+      "bytes": 23905,
+      "sha256": "eb75ea7c5e6a7b241e7c9448ed34e2e1c05a109871adc8d6e8fe6a81c4c8be15"
+    },
+    {
+      "path": "internal/workers/claude_official_test.go",
+      "bytes": 1922,
+      "sha256": "170ec631b365b787bd009a6958fcd4d335d505e59c59bb7573f46a4205d4f85b"
+    },
+    {
+      "path": "internal/workers/claude_tools_test.go",
+      "bytes": 2666,
+      "sha256": "d71649c060951a11711d6aefbe3df0d8d514cc9c03fe1450628fdf840068c755"
+    },
+    {
+      "path": "internal/workingcontext/local.go",
+      "bytes": 12905,
+      "sha256": "5e4f50dc19b4344a34bf2b4e683b5d247dc8ec603e1eeeb86b27b4aea0619405"
+    },
+    {
+      "path": "internal/workingcontext/model.go",
+      "bytes": 9890,
+      "sha256": "a0f8db3b2795705712b3f0f669ed78086cf63d68804de56b93ec53939ce2258b"
+    },
+    {
+      "path": "internal/workingcontext/protected_rollback_live_test.go",
+      "bytes": 2395,
+      "sha256": "aaee6aa7be01d12428cbefe948e0056ebb3067a3711b6c1beae1d17577efd47c"
+    },
+    {
+      "path": "internal/workingcontext/protected_test.go",
+      "bytes": 2318,
+      "sha256": "1a829819c52dc8c46321ff30b8164b238cc77258a8234fcabb8479d4a70691b7"
+    },
+    {
+      "path": "internal/workingcontext/store.go",
+      "bytes": 965,
+      "sha256": "0af5f58a024590f9964ab9cb664977a75c391887929af441aca77f3d94da3418"
+    },
+    {
+      "path": "scripts/test-claude-worker-tools.sh",
+      "bytes": 2348,
+      "sha256": "3ddbd635a9849f6872a77df682da5d287acaa3ff82fa6b0fd312122b6c90d6b7"
+    },
+    {
+      "path": "scripts/test-protected-evidence-rollback.sh",
+      "bytes": 6286,
+      "sha256": "31e66d74314ee59609ba6e37a52e8cab9b07ed9b685274723be1287d80a2e882"
+    },
+    {
+      "path": "scripts/test_claude_worker_tools.py",
+      "bytes": 11941,
+      "sha256": "46f4c0f1e86a851291d78a972affee82a42607c5bd8c29abc57337eee413a37e"
+    },
+    {
+      "path": "scripts/test_protected_evidence_rollback.py",
+      "bytes": 2461,
+      "sha256": "6fe45a5b12311230c52b498e79f039641aa46d86d232504338c12d05d3552432"
+    },
+    {
+      "path": "scripts/validate-protected-evidence-rollback.py",
+      "bytes": 2327,
+      "sha256": "8dae280ffe5e107f47120211aba61cf7699a025ec65f8df67cb07550562720b3"
+    }
+  ]
+}

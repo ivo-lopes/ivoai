@@ -1,0 +1,7 @@
+ffc0ea8615e35c9176264be9847960fa8e182ae97a87dbf10cab8b23658cb2bc  /var/tmp/ivoai-evidence-source-map-azkn6ggi/ivoai-evidence-rollback.oFu9mQzm/legacy-core.test
+=== RUN   TestLiveProtectedArtifactsDoNotPoisonLegacyCoreRollback
+    protected_rollback_live_test.go:60: LEGACY_CORE_ROLLBACK=PASS old_full_and_range_denied legacy_put_read_gc_worked protected_bytes_preserved; old_inventory_excludes_protected_disk
+--- PASS: TestLiveProtectedArtifactsDoNotPoisonLegacyCoreRollback (0.14s)
+PASS
+ok  	github.com/ivo-lopes/ivoai/internal/workingcontext	0.145s
+Protected evidence rollback proof: /var/tmp/ivoai-evidence-source-map-azkn6ggi/ivoai-evidence-rollback.oFu9mQzm

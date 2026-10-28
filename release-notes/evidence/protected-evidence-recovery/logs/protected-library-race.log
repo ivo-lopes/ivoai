@@ -1,0 +1,14 @@
+=== RUN   TestProtectedNamespaceCountsTowardExistingQuotasAndGC
+--- PASS: TestProtectedNamespaceCountsTowardExistingQuotasAndGC (0.02s)
+=== RUN   TestProtectedIDCannotBeSelectedByIDGeneratorWithoutHostPolicy
+--- PASS: TestProtectedIDCannotBeSelectedByIDGeneratorWithoutHostPolicy (0.00s)
+PASS
+ok  	github.com/ivo-lopes/ivoai/internal/workingcontext	1.047s
+=== RUN   TestProtectedRecoveryRequiresLiveBindingAndRecipientOwnership
+    recovery_test.go:46: revoked grant was accepted evidence source or authorization changed
+--- FAIL: TestProtectedRecoveryRequiresLiveBindingAndRecipientOwnership (0.01s)
+=== RUN   TestProtectedRecoveryGenerationAndBoundedBindingAdmission
+--- PASS: TestProtectedRecoveryGenerationAndBoundedBindingAdmission (0.75s)
+FAIL
+FAIL	github.com/ivo-lopes/ivoai/internal/evidence	0.784s
+FAIL

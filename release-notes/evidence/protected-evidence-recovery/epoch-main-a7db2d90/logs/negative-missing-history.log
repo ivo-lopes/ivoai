@@ -1,0 +1,4 @@
+fatal: Needed a single revision
+Pinned legacy ancestor unavailable: full local Git history is required; no fetch fallback.
+PROTECTED_EVIDENCE_ROLLBACK_GATE=FAIL stage=source-provenance exit=1
+Protected evidence rollback proof: /tmp/ivoai-evidence-rollback.bn3j62JH

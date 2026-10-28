@@ -1,0 +1,5 @@
+{"Time":"2026-10-28T15:08:04.759303191-03:00","Action":"start","Package":"github.com/ivo-lopes/ivoai/internal/workingcontext"}
+{"Time":"2026-10-28T15:08:04.761822443-03:00","Action":"output","Package":"github.com/ivo-lopes/ivoai/internal/workingcontext","Output":"testing: warning: no tests to run\n"}
+{"Time":"2026-10-28T15:08:04.761892223-03:00","Action":"output","Package":"github.com/ivo-lopes/ivoai/internal/workingcontext","Output":"PASS\n","OutputType":"frame"}
+{"Time":"2026-10-28T15:08:04.762267399-03:00","Action":"output","Package":"github.com/ivo-lopes/ivoai/internal/workingcontext","Output":"ok  \tgithub.com/ivo-lopes/ivoai/internal/workingcontext\t0.003s [no tests to run]\n"}
+{"Time":"2026-10-28T15:08:04.762283418-03:00","Action":"pass","Package":"github.com/ivo-lopes/ivoai/internal/workingcontext","Elapsed":0.003}
