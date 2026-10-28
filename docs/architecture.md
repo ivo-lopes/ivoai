@@ -13,6 +13,10 @@ scheduler, executor, credential store or authorization authority. Native Codex
 worker controls preserve Core delegation, while reported usage remains scoped
 to a CLI invocation. The unsafe optional Headroom wrapper is refused; Caveman and
 Direct selection remains compatible.
+The private legacy frontend `.3` skips runtime plugin SDK installation under the
+managed opt-in and restricts plugin entrypoints to private canonical files.
+Older builds require a reviewed update before managed backend launch; the legacy
+dependency is still present. See the migration limits in the candidate notes.
 
 The optional evidence/code pilots retain exact references and explicit host
 admission. They do not establish a universal native-tool gateway. General
