@@ -1,0 +1,9 @@
+# Concurrent composition: reviewed runtime composition epoch
+
+Merge `995d000ad0f1602d2fe806b136a2f1dccb3867fb` composes reviewed source `c182a954accbc69ca3dee25356af7a6b14ccb568` into offline-contract commit `a9d1917548d14a96611d300b1a45e107b840b562`. It had no conflicts. All eight original source-manifest entries and every original concurrent-contract receipt/log remain byte-for-byte unchanged.
+
+The composed source inherits the reviewed Gateway controls, unwired Memory snapshot SPI, TUI test changes and publication documentation from the named base. Its live benchmark harness and native runner match that base exactly. The concurrent composition adds no provider driver, client invocation, policy, authorization path or scheduler. Its typed source digest remains the original Go/Python digest. Matrix16 still has nine supported contracts, five UNSUPPORTED and two BLOCKED; concurrent client execution and overlap remain NOT_RUN.
+
+The [new receipt](evidence/concurrent-projects-contract/epoch-c182/validation.json) records checks against this combined source: regular full Go suite, Python discovery, full benchmark-fixtures race, vet, required source-pinned rollback and both offline executable fixture oracles. Historical checks stay assigned to their original epochs. Embedded website/docs assets are inherited byte-for-byte from the reviewed base; no Node rebuild is claimed or needed for this composition.
+
+This remains local validation of an offline prerequisite. It does not certify real clients, provider concurrency, quotas, economics, production ingestion or a release. Exact final-head hosted CI and review remain required. The future executable composite-row and actual-client overlap contracts described in [the original design](concurrent-projects-offline-contract.md) require separate review; they are not implemented here.
