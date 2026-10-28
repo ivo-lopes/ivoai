@@ -1,0 +1,94 @@
+{
+  "schema": 1,
+  "epoch": "pr51-pr46-g0-integration-v1",
+  "result": "PASS combined-source local gates after actual merge; original precommit rollbackFAIL preserved",
+  "source_merge": "ab83f98a56e3c6b413de445d92b3608f04398fa6",
+  "parents": {
+    "controls": "10f00639591c03d1daba21806c92d87ef2368627",
+    "PR46": "54eb54edb9a08e732c45ed7a996b538741294a87"
+  },
+  "remotePR46": "exact public ref54eb independently checked before merge; maina1 tree-equal checked locally afterward",
+  "composition": {
+    "conflicts": 0,
+    "callback_same_as10f": true,
+    "production_changes_beyond_incomingPR46": 0,
+    "test_only_compatibility": "protected creation flag pinned0 for host-control, namespace assertion; G0 own tests not disabled"
+  },
+  "checks": {
+    "full_go": {
+      "exit": 0,
+      "packages_passed": 59,
+      "no_tests": 3,
+      "uncached": true
+    },
+    "python": {
+      "exit": 0,
+      "tests": 65,
+      "seconds": 10.5
+    },
+    "race": {
+      "exit": 0,
+      "packages": 8,
+      "app_seconds": 147.709,
+      "uncached": true
+    },
+    "ambient_recovery_flag1_control": {
+      "exit": 0,
+      "result": "host-control remains explicit0 and legacy namespace as asserted",
+      "provider_attempts": 0
+    },
+    "vet_all": "PASS",
+    "gofmt": "PASS",
+    "amd64v1": "build/versionPASS; not noAVXhardware certification",
+    "ARM64": "crosscompilePASS; NOT_EXECUTED"
+  },
+  "rollback": {
+    "precommit": {
+      "exit": 1,
+      "stage": "source-provenance",
+      "HEAD": "10f00639",
+      "old_ancestor_exit": 1,
+      "incoming_ancestor_exit": 0,
+      "probe_executed": false,
+      "record": "rollback.log/json"
+    },
+    "after_actual_local_merge": {
+      "exit": 0,
+      "HEAD": "ab83f98a",
+      "named_tests": 1,
+      "skips": 0,
+      "legacy_revision": "3be82befea6ed3875373afcb1bfaa450710310ac",
+      "record": "rollback-after-merge.log/json"
+    },
+    "interpretation": "separate graph states; failed guard not relabeledPASS, bypassed or replaced; same gate after real commit",
+    "scope": "legacy full/range rejects protected namespace; legacy put/read/GC and protected bytes preserved; old inventory ignores protected disk"
+  },
+  "preservation": {
+    "previous_controls_artifacts": 184,
+    "byte_identical": true,
+    "incoming_PR46_artifacts": 293,
+    "incoming_byte_identical": true,
+    "old_v1_v2_pilots_hook_failure_and_negative_proofs": "unchanged",
+    "original_timing_rows_not_rescored": true,
+    "new_control_exports": 0,
+    "new_timing_cohort": false,
+    "new_LLM_turns": 0,
+    "native_workers": "UNKNOWN; only metadata fixtures",
+    "row_scope": "126 refers only to six backend-first cohorts; olderPR30/economic-runtime and separateprojectionpilot remain outside this tally"
+  },
+  "protocol": {
+    "version": 3,
+    "driver_catalog_sampler_oracles_unchanged_vsPR46": true,
+    "common_harness_callback_same_vs10f_but_differs_fromPR46": true,
+    "future_comparison": "both arms require rebuilt identical final harness and strict discovery"
+  },
+  "limits": [
+    "Integration gates do not evaluate economy, authenticated client parity or live G0 client consumption",
+    "Default export test remainsNOT_RUN; existing control tests execute assertions but discard per-operation times; no newtimingreceipt",
+    "No repeat of hostedCI/browser/official-client/nativeARM/noAVXcertification; remoteCI required before merge",
+    "Separate sampler draft retains unresolvedindependent failure; untouched in this task",
+    "No release/config/credential/migration change; v014 remains immutable6d99",
+    "CONTEXT_SYNC BLOCKED IVOAI-175"
+  ],
+  "pr_diff_check_against54eb": "PASS exit0"
+}

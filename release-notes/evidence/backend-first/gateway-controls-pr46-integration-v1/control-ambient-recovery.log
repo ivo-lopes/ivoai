@@ -1,0 +1,8 @@
+=== RUN   TestEvidenceGatewayOfflineControls
+=== RUN   TestEvidenceGatewayOfflineControls/OFF
+=== RUN   TestEvidenceGatewayOfflineControls/ON
+--- PASS: TestEvidenceGatewayOfflineControls (0.90s)
+    --- PASS: TestEvidenceGatewayOfflineControls/OFF (0.36s)
+    --- PASS: TestEvidenceGatewayOfflineControls/ON (0.54s)
+PASS
+ok  	github.com/ivo-lopes/ivoai/internal/app	1.935s
