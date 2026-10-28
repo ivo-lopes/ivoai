@@ -71,6 +71,14 @@ jobs:
           scripts/test-managed-opencode.sh
       - name: Native Codex TUI and fail-closed App Server admission
         run: scripts/test-native-codex.sh
+      - name: Install isolated Claude worker proof dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends bubblewrap apparmor python3 curl
+      - name: Admit only the CI sandbox launcher to user namespaces
+        run: scripts/setup-ci-graft-sandbox.sh
+      - name: Official Claude readonly worker delegation boundary
+        run: scripts/test-claude-worker-tools.sh --output "$PWD/dist/claude-worker-proof"
       - name: ShellCheck
         run: shellcheck install.sh scripts/*.sh
       - name: Vulnerability scan
