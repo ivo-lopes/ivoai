@@ -1,0 +1,9 @@
+test_actual_fixture_failure_is_retained_not_quality_pass (test_benchmark_sampler_calibration.CalibrationTests.test_actual_fixture_failure_is_retained_not_quality_pass) ... ok
+test_fixed_balanced_plan_and_independent_cpu_oracle (test_benchmark_sampler_calibration.CalibrationTests.test_fixed_balanced_plan_and_independent_cpu_oracle) ... ok
+test_private_bounded_no_overwrite_and_child_environment (test_benchmark_sampler_calibration.CalibrationTests.test_private_bounded_no_overwrite_and_child_environment) ... ok
+test_real_memory_and_churn_have_known_counts_and_partial_observation (test_benchmark_sampler_calibration.CalibrationTests.test_real_memory_and_churn_have_known_counts_and_partial_observation) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 1.372s
+
+OK

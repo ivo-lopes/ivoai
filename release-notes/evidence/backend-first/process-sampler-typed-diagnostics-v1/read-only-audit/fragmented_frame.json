@@ -1,0 +1,8 @@
+{
+  "control": "fragmented_frame",
+  "result": "PASS_EXPECTED_BEHAVIOR",
+  "detail": {
+    "outcome": "fragmentation preserved, writer joined"
+  },
+  "elapsed_ms": 0.2936269993369933
+}

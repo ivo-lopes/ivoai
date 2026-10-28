@@ -1,0 +1,8 @@
+{
+  "control": "closed_pipe_eof",
+  "result": "PASS_EXPECTED_BEHAVIOR",
+  "detail": {
+    "outcome": "expected bounded malformed/EOF rejection"
+  },
+  "elapsed_ms": 0.019589999283198267
+}

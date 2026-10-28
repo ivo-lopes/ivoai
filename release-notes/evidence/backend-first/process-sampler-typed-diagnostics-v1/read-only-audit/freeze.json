@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "source_head": "d7bd3a04f0bd8c1192ee7abc1d56fc972ac0e3c3",
+  "source_sha256": {
+    "scripts/benchmark_sampler_calibration.py": "bb08f9e2a02689a0ae42df14358d4f87b7db735b54303d06db836dc7ed82aef5",
+    "scripts/benchmark_process_sampler.py": "5ebaaa4c8b18e4a24b85bd35b9c57fc992b972cbb529530e86e266ca15a5a3cd",
+    "scripts/benchmark-economic-runtime.py": "f3d88a3bfb4117606648a2d58ec2b4bc62a549bc41660c75c9c0192807a94e60",
+    "scripts/test_benchmark_sampler_calibration.py": "9172ad025e0dd48b5a3fe8fbea981187b08c364be27d3bfb009a0721d6418804"
+  },
+  "control_sha256": "2ba823210fdfaccf0700fc46d6473cb9207e8103684886f0027872dfb4ec3de8",
+  "python_binary_sha256": "889c603f0d17cb54060951bcf4c4f9b8c9ebd9e52b392c70209bbb9755d797d9",
+  "plan": [
+    "complete_frame",
+    "fragmented_frame",
+    "two_buffered_messages",
+    "closed_pipe_eof",
+    "oversize_frame",
+    "empty_pipe_deadline",
+    "wait4_already_exited_unreaped",
+    "wait4_blocked_deadline"
+  ],
+  "scope": "one deterministic IPC/reaping matrix, not real calibration workloads, not original failure reproduction",
+  "root_original_failure": "case/phase/interpreter/exit/stdout/stderr UNKNOWN; no retrospective inference",
+  "workload_deadlines_or_oracles_changed": false
+}

@@ -1,0 +1,262 @@
+{
+  "schema": 1,
+  "condition": "offline-process-sampler-calibration-v1",
+  "sources_sha256": {
+    "benchmark_sampler_calibration.py": "1ddb45d456b9b3587b526ab652807dde7842ebe3ddcc8b176d7761513ca41502",
+    "benchmark_process_sampler.py": "5ebaaa4c8b18e4a24b85bd35b9c57fc992b972cbb529530e86e266ca15a5a3cd",
+    "benchmark-economic-runtime.py": "f3d88a3bfb4117606648a2d58ec2b4bc62a549bc41660c75c9c0192807a94e60",
+    "benchmark_catalog.py": "c2d61962691373cc120f9fda9735f13ce7b1c9122f314ca31cfe5b1fa7091622",
+    "test_benchmark_sampler_calibration.py": "d4b681d5dad38163ad3070fd9966555516e1bd122e27a7e908f2b9d1b6201d0b"
+  },
+  "python_binary_sha256": "889c603f0d17cb54060951bcf4c4f9b8c9ebd9e52b392c70209bbb9755d797d9",
+  "python_version": "3.13.5",
+  "plan": [
+    {
+      "case": "wait",
+      "repetition": 0,
+      "arm": "OFF",
+      "order": "AB",
+      "ordinal": 0
+    },
+    {
+      "case": "wait",
+      "repetition": 0,
+      "arm": "ON",
+      "order": "AB",
+      "ordinal": 1
+    },
+    {
+      "case": "wait",
+      "repetition": 1,
+      "arm": "ON",
+      "order": "BA",
+      "ordinal": 2
+    },
+    {
+      "case": "wait",
+      "repetition": 1,
+      "arm": "OFF",
+      "order": "BA",
+      "ordinal": 3
+    },
+    {
+      "case": "wait",
+      "repetition": 2,
+      "arm": "OFF",
+      "order": "AB",
+      "ordinal": 4
+    },
+    {
+      "case": "wait",
+      "repetition": 2,
+      "arm": "ON",
+      "order": "AB",
+      "ordinal": 5
+    },
+    {
+      "case": "wait",
+      "repetition": 3,
+      "arm": "ON",
+      "order": "BA",
+      "ordinal": 6
+    },
+    {
+      "case": "wait",
+      "repetition": 3,
+      "arm": "OFF",
+      "order": "BA",
+      "ordinal": 7
+    },
+    {
+      "case": "cpu",
+      "repetition": 0,
+      "arm": "OFF",
+      "order": "AB",
+      "ordinal": 8
+    },
+    {
+      "case": "cpu",
+      "repetition": 0,
+      "arm": "ON",
+      "order": "AB",
+      "ordinal": 9
+    },
+    {
+      "case": "cpu",
+      "repetition": 1,
+      "arm": "ON",
+      "order": "BA",
+      "ordinal": 10
+    },
+    {
+      "case": "cpu",
+      "repetition": 1,
+      "arm": "OFF",
+      "order": "BA",
+      "ordinal": 11
+    },
+    {
+      "case": "cpu",
+      "repetition": 2,
+      "arm": "OFF",
+      "order": "AB",
+      "ordinal": 12
+    },
+    {
+      "case": "cpu",
+      "repetition": 2,
+      "arm": "ON",
+      "order": "AB",
+      "ordinal": 13
+    },
+    {
+      "case": "cpu",
+      "repetition": 3,
+      "arm": "ON",
+      "order": "BA",
+      "ordinal": 14
+    },
+    {
+      "case": "cpu",
+      "repetition": 3,
+      "arm": "OFF",
+      "order": "BA",
+      "ordinal": 15
+    },
+    {
+      "case": "touched_memory_children",
+      "repetition": 0,
+      "arm": "OFF",
+      "order": "AB",
+      "ordinal": 16
+    },
+    {
+      "case": "touched_memory_children",
+      "repetition": 0,
+      "arm": "ON",
+      "order": "AB",
+      "ordinal": 17
+    },
+    {
+      "case": "touched_memory_children",
+      "repetition": 1,
+      "arm": "ON",
+      "order": "BA",
+      "ordinal": 18
+    },
+    {
+      "case": "touched_memory_children",
+      "repetition": 1,
+      "arm": "OFF",
+      "order": "BA",
+      "ordinal": 19
+    },
+    {
+      "case": "touched_memory_children",
+      "repetition": 2,
+      "arm": "OFF",
+      "order": "AB",
+      "ordinal": 20
+    },
+    {
+      "case": "touched_memory_children",
+      "repetition": 2,
+      "arm": "ON",
+      "order": "AB",
+      "ordinal": 21
+    },
+    {
+      "case": "touched_memory_children",
+      "repetition": 3,
+      "arm": "ON",
+      "order": "BA",
+      "ordinal": 22
+    },
+    {
+      "case": "touched_memory_children",
+      "repetition": 3,
+      "arm": "OFF",
+      "order": "BA",
+      "ordinal": 23
+    },
+    {
+      "case": "churn",
+      "repetition": 0,
+      "arm": "OFF",
+      "order": "AB",
+      "ordinal": 24
+    },
+    {
+      "case": "churn",
+      "repetition": 0,
+      "arm": "ON",
+      "order": "AB",
+      "ordinal": 25
+    },
+    {
+      "case": "churn",
+      "repetition": 1,
+      "arm": "ON",
+      "order": "BA",
+      "ordinal": 26
+    },
+    {
+      "case": "churn",
+      "repetition": 1,
+      "arm": "OFF",
+      "order": "BA",
+      "ordinal": 27
+    },
+    {
+      "case": "churn",
+      "repetition": 2,
+      "arm": "OFF",
+      "order": "AB",
+      "ordinal": 28
+    },
+    {
+      "case": "churn",
+      "repetition": 2,
+      "arm": "ON",
+      "order": "AB",
+      "ordinal": 29
+    },
+    {
+      "case": "churn",
+      "repetition": 3,
+      "arm": "ON",
+      "order": "BA",
+      "ordinal": 30
+    },
+    {
+      "case": "churn",
+      "repetition": 3,
+      "arm": "OFF",
+      "order": "BA",
+      "ordinal": 31
+    }
+  ],
+  "limits": {
+    "attempt_seconds": 3.0,
+    "total_seconds": 110.0,
+    "per_workload_process_address_space_bytes": 134217728,
+    "child_max_cpu_seconds": 8,
+    "touched_bytes_per_child": 4194304,
+    "memory_children": 2
+  },
+  "sampler_caps": {
+    "INTERVAL": 0.1,
+    "WINDOW_SECONDS": 0.025,
+    "MAX_PROCESSES": 128,
+    "MAX_THREADS": 128,
+    "MAX_READS": 512,
+    "MAX_SAMPLES": 3000,
+    "MAX_IDENTITIES": 4096
+  },
+  "scope": "offline known subprocess trees; initial sample after READY barrier, then common driver10ms wait4 polling",
+  "provenance": "wait4 owned coordinator plus reaped descendants; controller process CPU; sampler tick CPU/wall subset; no whole-host accounting",
+  "rss": "sampled kernel approximate sum includes shared pages; no exact or unique physical peak",
+  "model_calls": 0,
+  "economy": "NOT_EVALUATED",
+  "mechanical_subtraction": false
+}
