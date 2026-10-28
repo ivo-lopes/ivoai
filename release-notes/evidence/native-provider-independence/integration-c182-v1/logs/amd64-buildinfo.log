@@ -1,6 +1,6 @@
 <private-validation-root>/ivoai-amd64v1: go1.27.3
 	path	github.com/ivo-lopes/ivoai/cmd/ivoai
-	mod	github.com/ivo-lopes/ivoai	v0.14.1-0.20261028204904-5d4092d04a2c	
+	mod	github.com/ivo-lopes/ivoai	v0.14.1-0.20261028204904-5d4092d04a2c
 	dep	github.com/coder/websocket	v1.8.15	h1:6B2JPeOGlpff2Uz6vOEH1Vzpi0iUz20A+lPVhPHtNUA=
 	dep	github.com/google/jsonschema-go	v0.4.3	h1:/DBOLZTfDow7pe2GmaJNhltueGTtDKICi8V8p+DQPd0=
 	dep	github.com/modelcontextprotocol/go-sdk	v1.8.0	h1:KIvahhYqwtbeniWVPs3TcXEA7b8jEtwfBpOTAI+Urx4=

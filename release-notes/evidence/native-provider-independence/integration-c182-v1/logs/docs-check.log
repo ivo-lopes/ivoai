@@ -4,7 +4,7 @@ Done in 624ms using pnpm v12.11.2
 $ node scripts/check-i18n.mjs
 DOCS_I18N_PARITY=PASS current=51 release=0.9.2:44
 $ docusaurus build
-[INFO] Website will be built for all these locales: 
+[INFO] Website will be built for all these locales:
 - en
 - pt-BR
 [INFO] [en] Creating an optimized production build...

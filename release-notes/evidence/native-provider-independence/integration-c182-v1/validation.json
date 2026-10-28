@@ -1103,7 +1103,7 @@
     "facade-boundary-vet.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "rollback.log": "d84aa2d2eee811425b5623c6591953879a67fdb2fb796ef04fc6ec6a91412162"
   },
-  "public_filter": "Log text replaces only repository/private-validation roots with labelled placeholders; rollback final absolute proof path is replaced. Raw hashes retain original private inputs. Source files/hashes and fixture-only logs contain no credential material; limited pattern scan had0 matches, not universal certification.",
+  "public_filter": "Log text replaces repository/private-validation roots with labelled placeholders and strips trailing horizontal whitespace per line. Rollback final absolute proof path is replaced. Raw private hashes retain original unmodified tool outputs. Source files/hashes and fixture-only logs contain no credential material; limited pattern scan had0 matches, not universal certification.",
   "limits": [
     "No real client/provider activation, inference, authentication, personal config/history/credential deletion or production mutation.",
     "Default native setup/isolation and explicit deprecated legacy remain PR45 scope. Updater snapshot/rollback/doctor and release assets still contain legacy OpenCode; global removal is not delivered.",
@@ -1125,12 +1125,12 @@
       "sha256": "84973e08cfc9ea58780d064c7843c56d72bc93045759ded542a0df787212661d"
     },
     "logs/amd64-buildinfo.log": {
-      "bytes": 1481,
-      "sha256": "3e5b70e5c2ac86c530d0ddedb5487436110d60bf9cf2419286f834323b3970d7"
+      "bytes": 1480,
+      "sha256": "bdfc783f82a858fbfa5715accb3d9dd3486b479fbd8e99f18b32e6eb75662ab0"
     },
     "logs/arm64-buildinfo.log": {
-      "bytes": 1481,
-      "sha256": "b5c8b97204ec94046ab503184c9b905f4017c6f69d9403ec14458ac95348daf8"
+      "bytes": 1480,
+      "sha256": "d539853def522d1c6c92a345704183520a1f45e37780476f32bfc74aca74e08b"
     },
     "logs/build-amd64.log": {
       "bytes": 0,
@@ -1149,20 +1149,20 @@
       "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     },
     "logs/docs-boundary-build.log": {
-      "bytes": 1123,
-      "sha256": "5ff00849e02265d7ad55b4fb41c680a59f914f4f071fefe63b0fccfb874764b0"
+      "bytes": 1122,
+      "sha256": "e0eabda04bfb739d9cb68c4901bd3a20bea016af4efbff9a9c57301bc21ecba1"
     },
     "logs/docs-boundary-check.log": {
-      "bytes": 1124,
-      "sha256": "f21327890ecbb6ddffd09eb972e2a2ce266dbd9a2af956ddbf87e0468b507675"
+      "bytes": 1123,
+      "sha256": "24875f38442e75c5cf5ee284f23a1284ccab81d5dc363e958d4cd066c0bcd715"
     },
     "logs/docs-build.log": {
-      "bytes": 2156,
-      "sha256": "f0693b1985f4d7a21b03a96023faac154c060ecb32955fdaa302ae4aa3bb77ab"
+      "bytes": 2155,
+      "sha256": "dbf673aa98d41d82985e1861a318af6e5a40e52ba5e86b56347db6ab22fa5e03"
     },
     "logs/docs-check.log": {
-      "bytes": 1123,
-      "sha256": "aa96afad796653165586b1445346c9a5470a98c7ff3254cf137a296aad0ce2b7"
+      "bytes": 1122,
+      "sha256": "03b287791cff11751f4ea8c14d8c2083e6f24020b099f662d95177ba731ced50"
     },
     "logs/facade-boundary-final-race.jsonl.gz": {
       "bytes": 2092,
@@ -1208,5 +1208,18 @@
       "bytes": 0,
       "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     }
+  },
+  "evidence_formatting_correction": {
+    "initial_public_diff_check": "FAIL: six copied Go/Docusaurus log lines contained original trailing tabs/spaces; raw private outputs/hashes preserved.",
+    "affected_public_logs": [
+      "logs/amd64-buildinfo.log",
+      "logs/arm64-buildinfo.log",
+      "logs/docs-boundary-build.log",
+      "logs/docs-boundary-check.log",
+      "logs/docs-build.log",
+      "logs/docs-check.log"
+    ],
+    "correction": "Normalize trailing horizontal whitespace only in this new public evidence; no source/runtime/pinned patch or test/gate behavior changed.",
+    "final_actual_PR_delta_diff_check": "PASS after correction"
   }
 }
