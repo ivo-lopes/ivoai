@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "source_parent": "43ed3844256acbdaaab1d0ab5235934a43f649ef",
+  "failure": {
+    "ci_run": 40738249519,
+    "quality_job": 122992537919,
+    "code": "SC2174",
+    "original_wrapper_sha256": "b97a82173df51cb0f1945f2c0e55a1eb0e6185be174c650689786aa19c7e5d4d",
+    "local_original_shellcheck_exit": 1
+  },
+  "correction": {
+    "umask": "077",
+    "create": "mkdir -p under restrictive umask",
+    "canonical_output": "pwd -P",
+    "existing_output": "require current owner and 0700; reject without chmod",
+    "source_sha256": {
+      "scripts/test-claude-worker-tools.sh": "3ddbd635a9849f6872a77df682da5d287acaa3ff82fa6b0fd312122b6c90d6b7"
+    }
+  },
+  "checks": {
+    "all_install_and_script_shellcheck": {
+      "version": "0.10.0",
+      "exit": 0
+    },
+    "bash_syntax": {
+      "exit": 0
+    },
+    "official_wrapper": {
+      "version": "2.1.296",
+      "cases": 5,
+      "passed": 5,
+      "skipped": 0,
+      "elapsed_go_seconds": 3.41,
+      "external_network": false,
+      "real_inference": false,
+      "authentication": false
+    },
+    "nested_output_modes": [
+      "0700",
+      "0700",
+      "0700"
+    ],
+    "existing_0755_output": {
+      "exit": 1,
+      "unchanged_mode": "0755",
+      "contents_empty": true,
+      "client_executed": false
+    }
+  },
+  "tool_provenance": {
+    "distribution": "Debian trixie main amd64",
+    "package": "shellcheck",
+    "version": "0.10.0-1",
+    "archive_sha256": "8b207f7d4421a46cec9e377c74d450e1717092b58ae3e7151cd5f85f639065cd",
+    "archive_matches_local_apt_metadata": true,
+    "elf_sha256": "03c66fc2bb5ee853c98a9d8759043d1b49a49cd4622fea81ac4bd6fdc8714152",
+    "license": "GPL-3.0",
+    "installation": "unpacked in private temporary directory; no system install or runtime dependency"
+  },
+  "scope": {
+    "production_go_or_embedded_site_changed": false,
+    "previous_receipts_rewritten": false,
+    "fresh_exact_head_ci_required": true,
+    "release_or_tag_created": false
+  },
+  "data_sha256": {
+    "after-shellcheck.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "before-shellcheck.log": "602f98a4c89c925e94783272848d76e4f3d047689742382d1ef9688a2324cc81",
+    "failed-ci-43ed.json": "b7d5f5b6f8e4e3c3ea4029662d754d794702d86f81af63ff5300b6c2c1e18cd2",
+    "official-2.1.296-amd64.json": "1a5c49023e8bc6ba142893eda3d245734c9790258560dc424d227c9ddf9d2614"
+  }
+}

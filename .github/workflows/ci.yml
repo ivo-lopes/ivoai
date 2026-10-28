@@ -105,6 +105,30 @@ jobs:
       - name: v0.5.0 upgrade and rollback matrix
         run: scripts/upgrade-matrix.sh
 
+  claude-worker-boundary:
+    name: Official Claude readonly worker boundary (amd64)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Install isolated protocol proof dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends bubblewrap apparmor python3 curl
+      - name: Admit only the CI sandbox launcher to user namespaces
+        run: scripts/setup-ci-graft-sandbox.sh
+      - name: Official pinned client with synthetic provider and no external network
+        run: scripts/test-claude-worker-tools.sh --output "$PWD/dist/claude-worker-proof"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: claude-worker-boundary-amd64
+          path: dist/claude-worker-proof/summary.json
+          if-no-files-found: error
+
   managed-frontend:
     name: Patched managed frontend (${{ matrix.arch }})
     runs-on: ${{ matrix.runner }}
