@@ -1,0 +1,43 @@
+{
+  "schema": 1,
+  "condition": "offline-process-sampler-calibration-v1",
+  "base_commit": "a137d693ebd7f48eb3701b1e019c734e6264425c",
+  "scope": "test/harness Python only; existing ProcessSampler and driver unchanged",
+  "source_freeze_before_cohort_and_after_tests": "PASS exact hashes",
+  "calibration": {
+    "rows": 32,
+    "correct": 32,
+    "pairs_per_case": 4,
+    "orders": "AB/BA/AB/BA; AOFF/BON",
+    "elapsed_seconds": 14.564814331999514,
+    "budget_seconds": 110,
+    "largest_per_row_seconds": 0.872646254,
+    "observations": 16,
+    "all_partial": true,
+    "exclusions": 0
+  },
+  "tests": {
+    "initial_unit": "3PASS/1explicitNOT_RUN; not added to full-suite counts",
+    "full_python": "65PASS11.647s with explicit real offline memory/churn fixtures; no skip",
+    "new_output": "O_EXCL0600 and32KiB per receipt bound verified",
+    "failed_launch": "row preserves failure and unknowns; not a quality success",
+    "independent_cpu_oracle": "loop compared with closed-form sum-of-squares mod104729"
+  },
+  "adverse_or_limiting_observations": [
+    "Churn started13known fixture processes per execution; sampler observed8\u20139identities and missed4\u20135, despite no read-failure/partial-sample/cap flags",
+    "Nine paired external-wall differences were positive and seven negative; no factor was fitted or subtracted",
+    "Four positive controls per case are small single-host observations; no reserved CPUs, host load before UNKNOWN",
+    "Startup is excluded from sampling until the READY barrier; real client lifecycle coverage may be worse",
+    "RSS sum maximum71180288bytes observed only inside workload subtree, includes shared pages; controller RAM/wholehost/exactphysicalpeak not measured",
+    "Caps were unchanged and not reached by these small workloads; no stress/large-thread-tree calibration"
+  ],
+  "limits": [
+    "No nativeclients/providers/credentials/network; all processes fixed Python stdlib in privateHOME/explicitEnv",
+    "Wait4 CPU scope includes owned coordinator and its waited descendants/interpreter startup; not wholehost CPU",
+    "Sampler tick CPU/wall is a subset of controller CPU/wall; do not add or mechanically subtract",
+    "Fixture-known counts do not fill original sampler actual_process_total/exact_peak_rss, which staynull; actual_native_workersUNKNOWN",
+    "No existing schema/default/version/dataset changes; no rescore of126historicalattempts or catalogpromotion",
+    "Context remainsBLOCKED IVOAI-175; branchesPR46/51 untouched"
+  ],
+  "economic_gate": "INCOMPLETE; no LLM benefit evaluated"
+}
