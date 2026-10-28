@@ -6,6 +6,13 @@ bounded Linux process sampler. **No new model inference was performed. The 126
 historical comparative turns and their results remain unchanged.** It is not a
 new runtime observability stack, scheduler, daemon, database or client configuration.
 
+A subsequent [default-discovery correction](evidence/backend-first/observability-v3-default-discovery/validation.json)
+closes a driver admission gap found in the initial f9 epoch: without selection
+flags, mismatched compiled contracts could reach a client turn. The current
+driver always discovers both contracts before any turn, including its unchanged
+three-case default. The earlier observability artifacts remain historical and
+are not relabeled or rescored.
+
 ## Client projection and privacy
 
 `NativeEventMetrics` schema1 counts terminal items by five fixed types:
@@ -85,8 +92,10 @@ unchanged16-case catalog remains version2; event/process observations each use
 schema1. The embedded contract hash now covers the observation decoder source.
 Both runtime arms must be rebuilt with the same final harness/package/data.
 Freeze the driver, catalog loader **and** sampler module, whose SHA is recorded.
-Use explicit `--scenarios`/`--matrix16` discovery; the sampler flag itself also
-forces discovery before any client starts. Old reports are not silently upgraded
+Discovery is mandatory for every invocation. `--scenarios`/`--matrix16` select
+cases, and omitting them retains the same three default cases with the same
+admission checks. Both compiled capabilities must match before any client starts.
+Old reports are not silently upgraded
 or rescored; their original frozen readers/derivations remain available.
 
 Tests cover enum/payload privacy, duplicate/conflicting/unknown/incomplete streams,

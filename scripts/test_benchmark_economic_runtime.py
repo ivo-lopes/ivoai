@@ -234,8 +234,17 @@ class DriverTests(unittest.TestCase):
                     mock.patch.object(BENCHMARK, "run_attempt", side_effect=capture):
                 status, _ = self.execute("valid")
             self.assertEqual(status, 0)  # Synthetic test processes, no client.
-            self.assertEqual(len(captured), 6)
-            for environment in captured:
+            self.assertEqual(len(captured), 8)
+            discovery = [env for env in captured if "IVOAI_BENCHMARK_CATALOG_OUTPUT" in env]
+            execution = [env for env in captured if "IVOAI_ECONOMIC_RUNTIME_ARM" in env]
+            self.assertEqual(len(discovery), 2)
+            self.assertEqual(len(execution), 6)
+            for environment in discovery:
+                self.assertNotIn("CODEX_HOME", environment)
+                self.assertNotEqual(environment["HOME"], str(home))
+                self.assertFalse(set(blocked) & environment.keys())
+                self.assertNotIn("PRIVATE_ENV_SENTINEL", environment.values())
+            for environment in execution:
                 for key, value in safe.items():
                     if key != "TMPDIR":  # Driver owns each comparison's private temporary root.
                         self.assertEqual(environment[key], value)
@@ -251,15 +260,22 @@ class DriverTests(unittest.TestCase):
         self.addCleanup(temporary.cleanup)
         root = Path(temporary.name)
         fake = root / "fake-test"
+        capabilities = BENCHMARK.benchmark_catalog.expected_capabilities(
+            BENCHMARK.benchmark_catalog.ROOT / "internal/app/primary_prefetch_live_test.go")
+        fixture_names = {s.id: s.fixture for s in BENCHMARK.benchmark_catalog.load_catalog()}
         # This test program prints a secret sentinel to prove output suppression.
         fake.write_text("#!/usr/bin/python3\nimport os,sys,json,hashlib\nfrom pathlib import Path\n"
                         "print('SECRET')\nprint('SECRET',file=sys.stderr)\n"
+                        f"capabilities={capabilities!r}\nfixtures={fixture_names!r}\n"
+                        "if any('TestPrimaryPrefetchBenchmarkCatalog' in arg for arg in sys.argv):\n"
+                        " Path(os.environ['IVOAI_BENCHMARK_CATALOG_OUTPUT']).write_text(json.dumps(capabilities));sys.exit(0)\n"
                         "arm=os.environ['IVOAI_ECONOMIC_RUNTIME_ARM']\n"
                         "scenario=next(x for x in sys.argv if x.startswith('-test.run=')).split('/')[1]\n"
                         "output=Path(os.environ['IVOAI_GRAFT_PREFETCH_OUTPUT'])\n"
                         f"mode={mode!r}\n"
                         f"row={valid_row()!r}\n" +
                         "row.update(Scenario=scenario,Arm=arm,Private='SECRET',Error='SECRET')\n"
+                        "row.update(CatalogSHA256=capabilities['catalog_sha256'],HarnessSHA256=capabilities['harness_sha256'],FixtureSHA256=capabilities['fixtures'][fixtures[scenario]])\n"
                         "row['DistributionInventorySHA256']=hashlib.sha256((Path(os.environ['IVOAI_GRAFT_TEST_DIST'])/'files.json').read_bytes()).hexdigest()\n"
                         "if mode=='no_test': sys.exit(0)\n"
                         "if mode=='empty_failed': output.write_text('[]'); sys.exit(7)\n"

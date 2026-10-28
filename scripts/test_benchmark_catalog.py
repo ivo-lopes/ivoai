@@ -100,7 +100,7 @@ class PreflightTests(unittest.TestCase):
         args += ["--distribution", str(distribution), "--output", str(output), "--repetitions", "1"]
         if oracles:
             args += ["--oracle-go", str(fake), "--oracle-bwrap", str(fake)]
-        args += selection or ["--matrix16"]
+        args += ["--matrix16"] if selection is None else selection
         if preflight:
             args += ["--preflight-only"]
         captured = io.StringIO()
@@ -134,6 +134,37 @@ class PreflightTests(unittest.TestCase):
         manifest = json.loads((output / "manifest.json").read_text())
         self.assertTrue(manifest["process_sampling"]["enabled"])
         self.assertEqual(len(manifest["process_sampler_sha256"]), 64)
+
+    def test_default_scenarios_require_discovery_before_any_client_turn(self):
+        for mode in ("mismatch", "skipped", "bool_version", "duplicate", "bad_exit"):
+            with self.subTest(mode=mode):
+                code, output, marker = self.execute(mode, selection=[], preflight=False)
+                attempts = len(marker.read_text().splitlines()) if marker.exists() else 0
+                self.assertEqual(attempts, 0, "default path invoked client turns before validating binary contracts")
+                self.assertEqual(code, 1)
+                report = json.loads((output / "preflight.json").read_text())
+                self.assertEqual([row["scenario"] for row in report["scenarios"]], list(DRIVER.SCENARIOS))
+                self.assertTrue(all(row["status"] == "BLOCKED" for row in report["scenarios"]))
+
+    def test_valid_default_selection_binds_both_contracts_and_preserves_order(self):
+        code, output, marker = self.execute(selection=[], preflight=False)
+        self.assertEqual(code, 0)  # Fabricated fixture mechanics, never economic acceptance.
+        self.assertEqual(len(marker.read_text().splitlines()), 6)
+        preflight = json.loads((output / "preflight.json").read_text())
+        self.assertTrue(all(value["status"] == "READY" for value in preflight["discovery"].values()))
+        self.assertEqual([row["scenario"] for row in preflight["scenarios"]], list(DRIVER.SCENARIOS))
+        rows = json.loads((output / "runtime-comparison.json").read_text())
+        self.assertEqual([row["Arm"] for row in rows], ["A", "B", "B", "A", "A", "B"])
+        expected = CATALOG.expected_capabilities(CATALOG.ROOT / "internal/app/primary_prefetch_live_test.go")
+        self.assertTrue(all(row["Correct"] and row["HarnessSHA256"] == expected["harness_sha256"] for row in rows))
+
+    def test_default_preflight_only_never_starts_client(self):
+        code, output, marker = self.execute(selection=[], preflight=True)
+        self.assertEqual(code, 0)
+        self.assertFalse(marker.exists())
+        report = json.loads((output / "preflight.json").read_text())
+        self.assertEqual([row["scenario"] for row in report["scenarios"]], list(DRIVER.SCENARIOS))
+        self.assertTrue(all(row["status"] == "READY" for row in report["scenarios"]))
 
     def test_missing_skipped_wrong_or_unbounded_discovery_blocks_client(self):
         for mode in ("skipped", "mismatch", "bool_version", "oversized", "duplicate", "bad_exit"):

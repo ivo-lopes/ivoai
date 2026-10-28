@@ -504,10 +504,10 @@ def main(argv=None):
         env["IVOAI_BENCHMARK_ORACLE_GO"] = str(args.oracle_go.resolve())
     env["IVOAI_BENCHMARK_BWRAP"] = str(args.oracle_bwrap.resolve())
     inventory_hash = sha256(args.distribution / "files.json")
-    preflight, capabilities = None, None
-    if args.matrix16 or args.scenarios or args.preflight_only or args.sample_processes:
-        preflight, capabilities = matrix_preflight(args, scenarios, inventory_hash, temporary)
-        write_json(args.output / "preflight.json", preflight)
+    # Every v3 invocation verifies both compiled contracts before admitting a
+    # client turn, including the historical three-scenario default selection.
+    preflight, capabilities = matrix_preflight(args, scenarios, inventory_hash, temporary)
+    write_json(args.output / "preflight.json", preflight)
     manifest = {"schema_version": 3, "scope": "app_primary_prefetch_subset", "repetitions": args.repetitions,
                 "driver_sha256": sha256(Path(__file__)), "catalog_loader_sha256": sha256(Path(benchmark_catalog.__file__)),
                 "process_sampler_sha256": sha256(Path(sys.modules[ProcessSampler.__module__].__file__)),
@@ -522,16 +522,15 @@ def main(argv=None):
                 "candidate_test_sha256": sha256(args.candidate), "codex_sha256": sha256(args.codex),
                 "node_sha256": sha256(args.node), "sandbox_sha256": sha256(args.sandbox_binary), "oracle_go_sha256": sha256(args.oracle_go) if args.oracle_go else None, "oracle_bwrap_sha256": sha256(args.oracle_bwrap), "oracle_prlimit_sha256": sha256(Path("/usr/bin/prlimit")),
                 "distribution_inventory_sha256": inventory_hash, "harness_sha256": sha256(args.harness)}
-    if preflight is not None:
-        manifest.update(requested_scenarios=list(scenarios), catalog_sha256=benchmark_catalog.digest(benchmark_catalog.CATALOG),
-                        fixture_contract_sha256=capabilities.get("fixture_contract_sha256") if capabilities else None, edit_oracle_identities=capabilities.get("oracle_tools", {}) if capabilities else {},
-                        preflight_only=args.preflight_only, cache_policy="cold_private_local_caches_provider_cache_unverified")
+    manifest.update(requested_scenarios=list(scenarios), catalog_sha256=benchmark_catalog.digest(benchmark_catalog.CATALOG),
+                    fixture_contract_sha256=capabilities.get("fixture_contract_sha256") if capabilities else None, edit_oracle_identities=capabilities.get("oracle_tools", {}) if capabilities else {},
+                    preflight_only=args.preflight_only, cache_policy="cold_private_local_caches_provider_cache_unverified")
     write_json(args.output / "manifest.json", manifest)
     rows = []
     if args.preflight_only:
         write_json(args.output / "summary.json", summarize([], args.repetitions, scenarios))
         return int(any(row["status"] != "READY" for row in preflight["scenarios"]))
-    ready = {row["scenario"] for row in preflight["scenarios"] if row["status"] == "READY"} if preflight else set(scenarios)
+    ready = {row["scenario"] for row in preflight["scenarios"] if row["status"] == "READY"}
     for repetition in range(args.repetitions):
         for index, scenario in enumerate(scenarios):
             if scenario not in ready:
