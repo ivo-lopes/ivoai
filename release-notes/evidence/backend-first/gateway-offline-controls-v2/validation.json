@@ -1,0 +1,91 @@
+{
+  "schema": 1,
+  "condition": "offline-app-gateway-v2",
+  "base_commit": "ad42d70dc6b6398811a40ec76b41ffc17d5c2315",
+  "scope": "test fixtures only; no production changes",
+  "result": "PASS mechanism and environment rejection controls; economy NOT_EVALUATED/globalINCOMPLETE",
+  "before_fix": {
+    "old_binary_adverse": "GIT_CONFIG_PARAMETERS overrides hooksPath for worktree add; old test exited0 while private hook wrote fixed marker twice",
+    "controlled_side_effect": "constant marker only; no network/personal configuration/credentials",
+    "proof": "before-fix-validation.json",
+    "old_v1_artifacts": "unchanged; old receipt retained, not rescored"
+  },
+  "fix": [
+    "reject inherited GIT_CONFIG_PARAMETERS/GIT_CONFIG/GIT_EXEC_PATH and existing redirections before first fixture",
+    "all new-control Git init/add/commit/worktree use /usr/bin/git, explicit environment and per-command hooks/fsmonitor/untrackedCache/signing overrides",
+    "reuse corpus via small init-runner callback; default fixture callers keep prior behavior",
+    "CodeIntel Inventory already sanitizes its subprocess environment; unchanged"
+  ],
+  "executions": {
+    "gateway_race": {
+      "result": "PASS",
+      "seconds": 2.662,
+      "top_level_passed": 6,
+      "export": "NOT_RUN in generic suite; separately executed frozen exportPASS"
+    },
+    "shared_fixture_primary_prefetch_race": {
+      "result": "PASS",
+      "seconds": 1.329,
+      "top_level_passed": 8,
+      "not_run": [
+        "managed host-prefetch opt-in",
+        "edit-preflight output opt-in"
+      ],
+      "basis": "same callback refactor source; before later addition of new rejection test only"
+    },
+    "vet": "PASS final source",
+    "amd64_v1": "compiled and executed frozen binary",
+    "arm64": "final source cross-compiled; NOT_EXECUTED",
+    "executable_refusal_regression": "three bounded child test processes reject PARAMETERS/CONFIG/EXEC_PATH before OFF",
+    "controlled_hook_final_negative": "exit1 beforeOFF; old two-line controlled marker unchanged",
+    "pilot_controls": "separate preserved receipts before adding Go refusal regression; explicit-environment Git execution dropped trace/config/editor/pager/SSH/askpass/external-diff variables; did not request or certify those unused clients",
+    "receipt": "12rows,10reads,2expecteddenials; bounded0600; source/binary freeze reverified",
+    "python_catalog_driver": {
+      "result": "PASS",
+      "tests": 42,
+      "seconds": 9.481
+    }
+  },
+  "arms": {
+    "OFF": {
+      "code_inspections": 5,
+      "codeintel_cache_hits": 0,
+      "gateway_retrievals": 0,
+      "gateway_cache_hits": 0
+    },
+    "ON": {
+      "code_inspections": 3,
+      "codeintel_cache_hits": 0,
+      "gateway_retrievals": 5,
+      "gateway_cache_hits": 2
+    }
+  },
+  "adverse_outcomes": [
+    {
+      "epoch": "old-ad42 hostile controlled config",
+      "result": "undesired private post-checkout ran twice despite old testPASS",
+      "resolution": "fixed before push; old result preserved"
+    },
+    {
+      "epoch": "v2pilot clean",
+      "result": "ON slower in4of5positive reads; counts stillcorrect; preserved not rescored"
+    },
+    {
+      "epoch": "v2pilot filteredenv",
+      "result": "ON slower in5of5positive reads; preserved separately"
+    },
+    {
+      "epoch": "v2final clean",
+      "result": "ON slower in5of5positive reads; no inferred token/time economy"
+    }
+  ],
+  "limits": [
+    "All controls offline; no LLM/native client/Graft or actual worker dispatch",
+    "CodeIntel direct small-file fixture; normal cache enabled but structural cache not exercised",
+    "Host ArtifactStore.Read under exactowner, not protected Core/MCP G0 certification",
+    "Single sequential OFF/ON in each development epoch, shared host, not ABBA or causal performance experiment; epochs not aggregated",
+    "No126historicalattempts rescore/catalogpromotion/samplercalibration; ContextBLOCKED175",
+    "Explicit Git environment is scoped to the new control, not a certification of every pre-existing test fixture or a general host sandbox"
+  ],
+  "compatibility": "Shared fixture callback changes embedded common-harness SHA; stale binaries must fail discovery, future baseline/candidate need identical rebuilt harness. No historical identity or result updated."
+}

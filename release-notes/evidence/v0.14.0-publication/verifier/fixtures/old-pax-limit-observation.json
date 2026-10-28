@@ -1,0 +1,8 @@
+{
+  "synthetic_fixture": true,
+  "old_verifier_sha256": "7e4b0e8c5da4e04d4d25f1b8d2d350520b93bd77bf4c4de353221935d4274f29",
+  "old_parser_accepted_hidden_pax_bytes": 4194304,
+  "compressed_bytes": 4231,
+  "declared_core_bytes": 64,
+  "release_artifacts_tested": false
+}

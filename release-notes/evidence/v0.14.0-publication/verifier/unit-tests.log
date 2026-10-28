@@ -1,0 +1,31 @@
+test_api_all_digests (__main__.VerifierTests.test_api_all_digests) ... ok
+test_api_missing_digest_unknown (__main__.VerifierTests.test_api_missing_digest_unknown) ... ok
+test_bounded_reader_prevents_overread (__main__.VerifierTests.test_bounded_reader_prevents_overread) ... ok
+test_component_and_embedded_association (__main__.VerifierTests.test_component_and_embedded_association) ... ok
+test_compressed_core_cap_before_parser (__main__.VerifierTests.test_compressed_core_cap_before_parser) ... ok
+test_duplicate_json_rejected (__main__.VerifierTests.test_duplicate_json_rejected) ... ok
+test_manifest_duplicate (__main__.VerifierTests.test_manifest_duplicate) ... ok
+test_manifest_positive (__main__.VerifierTests.test_manifest_positive) ... ok
+test_manifest_symlink (__main__.VerifierTests.test_manifest_symlink) ... ok
+test_manifest_traversal (__main__.VerifierTests.test_manifest_traversal) ... ok
+test_module_mutations (__main__.VerifierTests.test_module_mutations) ... ok
+test_module_positive (__main__.VerifierTests.test_module_positive) ... ok
+test_safe_core_extra (__main__.VerifierTests.test_safe_core_extra) ... ok
+test_safe_core_link (__main__.VerifierTests.test_safe_core_link) ... ok
+test_safe_core_positive (__main__.VerifierTests.test_safe_core_positive) ... ok
+test_safe_core_traversal (__main__.VerifierTests.test_safe_core_traversal) ... ok
+test_safe_core_wrong_arch (__main__.VerifierTests.test_safe_core_wrong_arch) ... ok
+test_skill_positive (__main__.VerifierTests.test_skill_positive) ... ok
+test_small_asset_cap_before_hashing (__main__.VerifierTests.test_small_asset_cap_before_hashing) ... ok
+test_tar_gnu_extension_refused (__main__.VerifierTests.test_tar_gnu_extension_refused) ... ok
+test_tar_oversized_header_refused (__main__.VerifierTests.test_tar_oversized_header_refused) ... ok
+test_tar_pax_refused_before_body_read (__main__.VerifierTests.test_tar_pax_refused_before_body_read) ... ok
+test_zip_count_before_parser (__main__.VerifierTests.test_zip_count_before_parser) ... ok
+test_zip_deflate_refused_before_member_read (__main__.VerifierTests.test_zip_deflate_refused_before_member_read) ... ok
+test_zip_directory_budget_before_parser (__main__.VerifierTests.test_zip_directory_budget_before_parser) ... ok
+test_zip_size_before_parser (__main__.VerifierTests.test_zip_size_before_parser) ... ok
+
+----------------------------------------------------------------------
+Ran 26 tests in 0.130s
+
+OK

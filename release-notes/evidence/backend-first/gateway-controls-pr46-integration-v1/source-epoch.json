@@ -1,0 +1,71 @@
+{
+  "schema": 1,
+  "epoch": "pr51-pr46-g0-integration-v1",
+  "parents": {
+    "controls": "10f00639591c03d1daba21806c92d87ef2368627",
+    "PR46": "54eb54edb9a08e732c45ed7a996b538741294a87"
+  },
+  "pre_reporting_source_merge_head": "ab83f98a56e3c6b413de445d92b3608f04398fa6",
+  "runtime_source_tree": "ca8dbed9256a03bc289d05bd18eddd1289feff47",
+  "source_inputs": 556,
+  "source_inventory_sha256": "4c04b9c57ec21f8ca18aae862d1daee289c84f8e5692230ddea995918d280ce4",
+  "remote_PR46": {
+    "verified_ref": "54eb54edb9a08e732c45ed7a996b538741294a87\trefs/heads/feat/economic-matrix-completion",
+    "method": "Git ls-remote public repository; private HOME/system/global config disabled; exact expected SHA checked"
+  },
+  "main_after_PR46": {
+    "root_reported": "a1ccf4ca33a1e1f748810add9e03fe61fb963831",
+    "locally_checked_tree_equal_to54eb": true,
+    "no_SHA_only_merge_required": true
+  },
+  "merge": "automatic, no conflicts; callback byte-identical to10f",
+  "test_only_compatibility": "explicit protectedEvidenceFlag0 and namespace assertion preserve established host-store control; G0 public readers tested separately",
+  "common_harness": {
+    "sha256": "6c1a9c062fae6b4903fd477fd4957debce016be793e0da072ad3bd50d06435f6",
+    "same_as10f": true,
+    "differs_from_PR46": "fixture Git-runner callback; future both-arm harness rebuild/discovery required",
+    "protocol": 3
+  },
+  "other_contract_hashes_unchanged": {
+    "scripts/benchmark-economic-runtime.py": "f3d88a3bfb4117606648a2d58ec2b4bc62a549bc41660c75c9c0192807a94e60",
+    "scripts/benchmark_catalog.py": "c2d61962691373cc120f9fda9735f13ce7b1c9122f314ca31cfe5b1fa7091622",
+    "scripts/benchmark_process_sampler.py": "5ebaaa4c8b18e4a24b85bd35b9c57fc992b972cbb529530e86e266ca15a5a3cd",
+    "internal/benchmarkfixtures/data/catalog.json": "395f77bc5154c3df42cc7897feb7206bb38963a9441741ea24dbf290b08a9d7e",
+    "internal/benchmarkfixtures/fixtures.go": "36d96121f59a734f25989db9d43f6d4c39e0a0160bbb676f82d7c5bea1a5fc86",
+    "internal/benchmarkfixtures/edit_oracle.go": "8f907857f8a2c91bc4464ae55ad8b0728e3b11621ade776808e953a7f7b85514",
+    "internal/benchmarkfixtures/exec_observation.go": "6188106799ed44eeb260d322f46f1d9e1e4fcdbbcd4c69e759a18137fba977e3"
+  },
+  "preservation": {
+    "old_controls_artifacts": 184,
+    "all_bytes_unchanged": true,
+    "incoming_PR46_artifacts": 293,
+    "all_incoming_bytes_unchanged": true,
+    "no_new_exported_control_receipt": true,
+    "no_timing_cohort": true
+  },
+  "rollback": {
+    "source_revision": "3be82befea6ed3875373afcb1bfaa450710310ac",
+    "source_manifest_sha256": "28eeb86068f75de7d60ca7a0702723c63519dc844a8b593bab8441f986050389",
+    "probe_source_sha256": "37c26f467d5472bad3650e0e6ee2460c7929cd78332174d87958ca86243ef860",
+    "legacy_binary_sha256": "fc913780355621826b49aa03455cdf0b743294acfccaf6dbfc10db755bee27e2",
+    "current_test_sha256": "cc7ca999eae5a1bd1c5ed1b8f0a23c700c35c4d8c660f4345ff9514267a55299",
+    "observed_pre_reporting_head": "ab83f98a56e3c6b413de445d92b3608f04398fa6",
+    "named_tests": 1,
+    "skips": 0,
+    "precommit_failure": "rollback.log/json preserved; ancestry absent at10f, guard stopped before probe",
+    "postcommit_result": "PASS after actual merge completed, unchanged gate; no bypass/fetch"
+  },
+  "builds": {
+    "amd64": {
+      "sha256": "70634f31ae06d31924d02b845f6602d77a42419abedddc88cc9de8dd8e7a9603",
+      "execution": "version smokePASS"
+    },
+    "arm64": {
+      "sha256": "cee14568947216e14721e859af44dda6daccf5f19103eda59612ae349714b7b1",
+      "execution": "NOT_EXECUTED crosscompileonly"
+    }
+  },
+  "provider_turns": 0,
+  "economic_gate": "INCOMPLETE; not evaluated by code-integration gates",
+  "context_sync": "BLOCKED IVOAI-175"
+}

@@ -1,6 +1,13 @@
 # Releases
 
-## v0.14.0 candidate
+## v0.14.0
+
+Published [v0.14.0](https://github.com/ivo-lopes/ivoai/releases/tag/v0.14.0) on
+2026-10-28 at 19:10:11 UTC from `6d99e320`. All 12 public assets were downloaded
+and matched GitHub sizes/digests; all 11 payload checksums passed. Core module,
+VCS/dependency/component metadata and the skill matched the reviewed source.
+The [post-publication report](https://github.com/ivo-lopes/ivoai/blob/main/release-notes/v0.14.0-publication-verification.md)
+is a later documentation commit, not content added to the published tag/assets.
 
 Adds the [local read-only administrative console](admin-console.md), managed
 Codex native-worker controls, strict invocation usage reports and compression
@@ -17,28 +24,40 @@ PRs [41](https://github.com/ivo-lopes/ivoai/pull/41),
 [43](https://github.com/ivo-lopes/ivoai/pull/43) and
 [44](https://github.com/ivo-lopes/ivoai/pull/44) each passed 15/15 checks.
 PR [48](https://github.com/ivo-lopes/ivoai/pull/48) passed 15/15 at its reviewed
-source ([run](https://github.com/ivo-lopes/ivoai/actions/runs/40729664838)); the
-combined Claude/admin/`.3` candidate requires its own CI and official five-case
-Claude protocol proof. Release must also execute the exact Core version/help
-under private HOME/XDG on native ARM and amd64 Nehalem before archiving.
-Publication still requires the exact final source and Release gates. No production
-deployment or completed migration is implied.
+source ([run](https://github.com/ivo-lopes/ivoai/actions/runs/40729664838)). The
+released main then passed [16/16 jobs](https://github.com/ivo-lopes/ivoai/actions/runs/40746711281),
+and all five [Release jobs](https://github.com/ivo-lopes/ivoai/actions/runs/40746774761)
+passed, including the official five-case Claude protocol proof and exact Core
+version/help under private HOME/XDG on native ARM and amd64 Nehalem before
+archiving. A separate local downloaded-Core smoke passed AMD64 version/help;
+local ARM execution was not performed. No provider/model calls, local
+installation or production deployment occurred in that post-download check.
 
 The new seven-case comparison retained 42 correct real attempts: input +2.85%,
 elapsed −1.44%; the 10%/5% targets failed. All 72 prior attempts remain preserved.
 Another [12 edit turns](https://github.com/ivo-lopes/ivoai/blob/99fe07a93e242d2163116bf6dd8d265c3c8f9d8c/release-notes/benchmark-matrix16-edit-live-validation.md)
 passed the declared oracles but missed the same targets: input −0.01257%, phase
 time −2.28091%, process time −2.46501%. Both arms used direct inspection, with no
-prefetch/Graft/Gateway. The 126 historical attempts span different conditions and
-are not aggregated as causal savings. The new edit harness is outside this release.
+prefetch/Graft/Gateway. The 126 tally covers six backend-first cohorts only (18×4+42+12), not all
+repository attempts; PR30 prefetch/schema pilots and earlier MCP research remain
+separate. No grand total or heterogeneous causal saving is computed. The new edit harness is outside this release.
 PRs [45](https://github.com/ivo-lopes/ivoai/pull/45),
-[46](https://github.com/ivo-lopes/ivoai/pull/46) and
-[47](https://github.com/ivo-lopes/ivoai/pull/47) remain excluded.
+[46](https://github.com/ivo-lopes/ivoai/pull/46),
+[47](https://github.com/ivo-lopes/ivoai/pull/47),
+[50](https://github.com/ivo-lopes/ivoai/pull/50) and
+[51](https://github.com/ivo-lopes/ivoai/pull/51) remain excluded.
 The global matrix is INCOMPLETE. These measurements predate the later changes
 and do not establish their economic effect. OpenCode removal, general adaptive
 execution, Claude equivalence, Antigravity and Context ingestion remain pending.
-See the [bilingual candidate notes](https://github.com/ivo-lopes/ivoai/blob/main/release-notes/v0.14.0.md)
-for source-bound evidence, compatibility and rollback limits.
+See the [tagged bilingual notes](https://github.com/ivo-lopes/ivoai/blob/v0.14.0/release-notes/v0.14.0.md)
+for scope, compatibility and rollback limits. Their pre-publication candidate
+language is preserved; the separate report above records actual publication.
+
+The documentation follow-up audit passed the unchanged high-severity threshold
+with one residual low advisory in transitive deepmerge 4.3.1. Scoped review found
+a Node/SVGR build dependency, not a demonstrated Go HTTP/browser exploit path;
+no zero-vulnerability or universal-safety claim follows. Details and the retained
+low-threshold exit 1 are in the post-publication report above.
 
 ## v0.13.0
 

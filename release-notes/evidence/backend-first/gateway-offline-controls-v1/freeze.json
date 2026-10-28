@@ -1,0 +1,25 @@
+{
+  "condition": "offline-app-gateway-v1",
+  "schema": 1,
+  "base_commit": "16f4e42f3528a71522023ed61bc2406ca6ab8d2a",
+  "frozen_at_utc": "2026-10-28T18:28:39.246352+00:00",
+  "source_file_count": 535,
+  "source_inventory_sha256": "4944abf7949a8876257b4b955a7dfa86d0cc1e525bb04032a423d359c4f7099c",
+  "changed_source_files": {
+    "internal/app/evidence_gateway_control_test.go": "5dd1599a2e8125c73967fadec34e2937c423bc11dc65ec7c668dbaf681f32e9d",
+    "internal/app/evidence_gateway_test.go": "8be9d14296f7f11b83249ea3f384f6403d079d7fa0f7a79df9f3642e787d67e8"
+  },
+  "test_binary_sha256": "a0f45bef2ba49965f5fa5bf9c49e8f459555ac52d99fb3c8a2da687f512a2965",
+  "tool_binary_sha256": {
+    "go": "5f5eb6d0b2fb6aa0bb5d5f8c5f1c944e0de955c925f0111af92a9d8f79680b5b",
+    "git": "356db14e102d68a1a37d8a1ac577dfd678d45d46e92f468bef8b7154e7bfdc60"
+  },
+  "binary_build": "GOAMD64=v1(default), -trimpath -buildvcs=false; Go1.27.3 linux/amd64; not whole-toolchain provenance",
+  "execution": "same immutable test binary, sequential OFF/ON, one App/session/cache per arm retained across six operations",
+  "inference": "NONE; no native client launched; no network dependency",
+  "timing": "single shared-host diagnostic; not a model/cache/quota equivalent LLM cohort",
+  "api_boundary": "ArtifactStore host Read with exact issued owner; base predates G0 protected Core/MCP reader",
+  "adverse_outcomes": [],
+  "historical_attempts": "126 attempts unchanged; not remeasured/rescored; catalog9READY/5UNSUPPORTED/2BLOCKED unchanged",
+  "context_sync": "BLOCKED IVOAI-175"
+}

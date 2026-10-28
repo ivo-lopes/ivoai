@@ -1,0 +1,12 @@
+=== RUN   TestEvidenceGatewayOfflineControls
+=== RUN   TestEvidenceGatewayOfflineControls/OFF
+=== RUN   TestEvidenceGatewayOfflineControls/ON
+--- PASS: TestEvidenceGatewayOfflineControls (0.25s)
+    --- PASS: TestEvidenceGatewayOfflineControls/OFF (0.12s)
+    --- PASS: TestEvidenceGatewayOfflineControls/ON (0.14s)
+=== RUN   TestEvidenceGatewayCodeReuseInvalidationAndAdmission
+--- PASS: TestEvidenceGatewayCodeReuseInvalidationAndAdmission (0.11s)
+=== RUN   TestExperimentalGatewayPreservesPrimaryContract
+--- PASS: TestExperimentalGatewayPreservesPrimaryContract (0.06s)
+PASS
+ok  	github.com/ivo-lopes/ivoai/internal/app	0.444s

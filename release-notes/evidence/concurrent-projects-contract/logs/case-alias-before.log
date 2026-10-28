@@ -1,0 +1,30 @@
+=== RUN   TestConcurrentCompositionRejectsUnboundedMutableOrUnknownChildren
+=== RUN   TestConcurrentCompositionRejectsUnboundedMutableOrUnknownChildren/unknown_field
+=== RUN   TestConcurrentCompositionRejectsUnboundedMutableOrUnknownChildren/case_alias
+    concurrent_test.go:46: unsafe composition admitted
+=== RUN   TestConcurrentCompositionRejectsUnboundedMutableOrUnknownChildren/three_clients
+=== RUN   TestConcurrentCompositionRejectsUnboundedMutableOrUnknownChildren/mutable
+=== RUN   TestConcurrentCompositionRejectsUnboundedMutableOrUnknownChildren/duplicate_key
+=== RUN   TestConcurrentCompositionRejectsUnboundedMutableOrUnknownChildren/wrong_fixture
+=== RUN   TestConcurrentCompositionRejectsUnboundedMutableOrUnknownChildren/unknown_child
+=== RUN   TestConcurrentCompositionRejectsUnboundedMutableOrUnknownChildren/same_child
+=== RUN   TestConcurrentCompositionRejectsUnboundedMutableOrUnknownChildren/no_overlap
+=== RUN   TestConcurrentCompositionRejectsUnboundedMutableOrUnknownChildren/nested_dup_key
+=== RUN   TestConcurrentCompositionRejectsUnboundedMutableOrUnknownChildren/trailing_JSON
+=== RUN   TestConcurrentCompositionRejectsUnboundedMutableOrUnknownChildren/oversized
+--- FAIL: TestConcurrentCompositionRejectsUnboundedMutableOrUnknownChildren (0.00s)
+    --- PASS: TestConcurrentCompositionRejectsUnboundedMutableOrUnknownChildren/unknown_field (0.00s)
+    --- FAIL: TestConcurrentCompositionRejectsUnboundedMutableOrUnknownChildren/case_alias (0.00s)
+    --- PASS: TestConcurrentCompositionRejectsUnboundedMutableOrUnknownChildren/three_clients (0.00s)
+    --- PASS: TestConcurrentCompositionRejectsUnboundedMutableOrUnknownChildren/mutable (0.00s)
+    --- PASS: TestConcurrentCompositionRejectsUnboundedMutableOrUnknownChildren/duplicate_key (0.00s)
+    --- PASS: TestConcurrentCompositionRejectsUnboundedMutableOrUnknownChildren/wrong_fixture (0.00s)
+    --- PASS: TestConcurrentCompositionRejectsUnboundedMutableOrUnknownChildren/unknown_child (0.00s)
+    --- PASS: TestConcurrentCompositionRejectsUnboundedMutableOrUnknownChildren/same_child (0.00s)
+    --- PASS: TestConcurrentCompositionRejectsUnboundedMutableOrUnknownChildren/no_overlap (0.00s)
+    --- PASS: TestConcurrentCompositionRejectsUnboundedMutableOrUnknownChildren/nested_dup_key (0.00s)
+    --- PASS: TestConcurrentCompositionRejectsUnboundedMutableOrUnknownChildren/trailing_JSON (0.00s)
+    --- PASS: TestConcurrentCompositionRejectsUnboundedMutableOrUnknownChildren/oversized (0.00s)
+FAIL
+FAIL	github.com/ivo-lopes/ivoai/internal/benchmarkfixtures	0.005s
+FAIL

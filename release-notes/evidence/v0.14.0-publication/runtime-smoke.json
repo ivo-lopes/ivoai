@@ -1,0 +1,27 @@
+{
+  "pass": true,
+  "source_commit": "6d99e320912f3f7325c3009209a10e9df86610d4",
+  "binary_sha256": "36ad384bae3fc023386a831a356a9837f002d674e20b65bf99701d67e3106977",
+  "scope": "actual downloaded Linux amd64 Core startup/version/help; local host CPU, not no-AVX emulation",
+  "private_home_xdg_tmp": true,
+  "environment": "explicit allowlist; no client authentication/configuration variables",
+  "installed_or_production_deployed": false,
+  "arm64_local_execution": "NOT_RUN; tagged CI native ARM startup succeeded independently",
+  "provider_or_model_calls": 0,
+  "checks": [
+    {
+      "command": "version",
+      "exit": 0,
+      "stdout_bytes": 7,
+      "stderr_bytes": 0,
+      "elapsed_ms_diagnostic": 11.245
+    },
+    {
+      "command": "help",
+      "exit": 0,
+      "stdout_bytes": 3702,
+      "stderr_bytes": 0,
+      "elapsed_ms_diagnostic": 5.199
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+=== RUN   TestMemorySnapshotIssuanceRequiresExplicitHostRetentionAndOriginalScope
+=== RUN   TestMemorySnapshotIssuanceRequiresExplicitHostRetentionAndOriginalScope/nil_retention
+=== RUN   TestMemorySnapshotIssuanceRequiresExplicitHostRetentionAndOriginalScope/unknown
+=== RUN   TestMemorySnapshotIssuanceRequiresExplicitHostRetentionAndOriginalScope/secret
+=== RUN   TestMemorySnapshotIssuanceRequiresExplicitHostRetentionAndOriginalScope/credential
+=== RUN   TestMemorySnapshotIssuanceRequiresExplicitHostRetentionAndOriginalScope/raw_auth
+=== RUN   TestMemorySnapshotIssuanceRequiresExplicitHostRetentionAndOriginalScope/missing_policy_digest
+=== RUN   TestMemorySnapshotIssuanceRequiresExplicitHostRetentionAndOriginalScope/missing_ttl
+=== RUN   TestMemorySnapshotIssuanceRequiresExplicitHostRetentionAndOriginalScope/short_ttl
+=== RUN   TestMemorySnapshotIssuanceRequiresExplicitHostRetentionAndOriginalScope/scope
+=== RUN   TestMemorySnapshotIssuanceRequiresExplicitHostRetentionAndOriginalScope/session
+=== RUN   TestMemorySnapshotIssuanceRequiresExplicitHostRetentionAndOriginalScope/zero_snapshot
+--- PASS: TestMemorySnapshotIssuanceRequiresExplicitHostRetentionAndOriginalScope (0.01s)
+    --- PASS: TestMemorySnapshotIssuanceRequiresExplicitHostRetentionAndOriginalScope/nil_retention (0.00s)
+    --- PASS: TestMemorySnapshotIssuanceRequiresExplicitHostRetentionAndOriginalScope/unknown (0.00s)
+    --- PASS: TestMemorySnapshotIssuanceRequiresExplicitHostRetentionAndOriginalScope/secret (0.00s)
+    --- PASS: TestMemorySnapshotIssuanceRequiresExplicitHostRetentionAndOriginalScope/credential (0.00s)
+    --- PASS: TestMemorySnapshotIssuanceRequiresExplicitHostRetentionAndOriginalScope/raw_auth (0.00s)
+    --- PASS: TestMemorySnapshotIssuanceRequiresExplicitHostRetentionAndOriginalScope/missing_policy_digest (0.00s)
+    --- PASS: TestMemorySnapshotIssuanceRequiresExplicitHostRetentionAndOriginalScope/missing_ttl (0.00s)
+    --- PASS: TestMemorySnapshotIssuanceRequiresExplicitHostRetentionAndOriginalScope/short_ttl (0.00s)
+    --- PASS: TestMemorySnapshotIssuanceRequiresExplicitHostRetentionAndOriginalScope/scope (0.00s)
+    --- PASS: TestMemorySnapshotIssuanceRequiresExplicitHostRetentionAndOriginalScope/session (0.00s)
+    --- PASS: TestMemorySnapshotIssuanceRequiresExplicitHostRetentionAndOriginalScope/zero_snapshot (0.00s)
+=== RUN   TestMemorySnapshotProtectedExactRecoveryAndRecipientReuseNeverReplayLive
+--- PASS: TestMemorySnapshotProtectedExactRecoveryAndRecipientReuseNeverReplayLive (0.03s)
+=== RUN   TestMemorySnapshotLocalGrantAndRetentionRevocationDenyBeforeStoreRead
+=== RUN   TestMemorySnapshotLocalGrantAndRetentionRevocationDenyBeforeStoreRead/grant
+=== RUN   TestMemorySnapshotLocalGrantAndRetentionRevocationDenyBeforeStoreRead/retention
+=== RUN   TestMemorySnapshotLocalGrantAndRetentionRevocationDenyBeforeStoreRead/policy_revision
+--- PASS: TestMemorySnapshotLocalGrantAndRetentionRevocationDenyBeforeStoreRead (0.03s)
+    --- PASS: TestMemorySnapshotLocalGrantAndRetentionRevocationDenyBeforeStoreRead/grant (0.01s)
+    --- PASS: TestMemorySnapshotLocalGrantAndRetentionRevocationDenyBeforeStoreRead/retention (0.01s)
+    --- PASS: TestMemorySnapshotLocalGrantAndRetentionRevocationDenyBeforeStoreRead/policy_revision (0.01s)
+=== RUN   TestMemorySnapshotCacheBindsClassificationAcrossRecipientReissue
+=== RUN   TestMemorySnapshotCacheBindsClassificationAcrossRecipientReissue/internal_to_restricted
+=== RUN   TestMemorySnapshotCacheBindsClassificationAcrossRecipientReissue/restricted_to_internal
+--- PASS: TestMemorySnapshotCacheBindsClassificationAcrossRecipientReissue (0.05s)
+    --- PASS: TestMemorySnapshotCacheBindsClassificationAcrossRecipientReissue/internal_to_restricted (0.03s)
+    --- PASS: TestMemorySnapshotCacheBindsClassificationAcrossRecipientReissue/restricted_to_internal (0.03s)
+=== RUN   TestMemorySnapshotPolicyChangeDuringPersistenceReturnsNoBinding
+--- PASS: TestMemorySnapshotPolicyChangeDuringPersistenceReturnsNoBinding (0.01s)
+=== RUN   TestMemorySnapshotUpstreamAnnotationsCannotApproveRetentionAndKnownSecretChecksRemain
+--- PASS: TestMemorySnapshotUpstreamAnnotationsCannotApproveRetentionAndKnownSecretChecksRemain (0.01s)
+=== RUN   TestMemorySnapshotRecoversOriginalCRLFSSEFramesWithoutNormalization
+--- PASS: TestMemorySnapshotRecoversOriginalCRLFSSEFramesWithoutNormalization (0.01s)
+PASS
+ok  	github.com/ivo-lopes/ivoai/internal/evidence	1.170s

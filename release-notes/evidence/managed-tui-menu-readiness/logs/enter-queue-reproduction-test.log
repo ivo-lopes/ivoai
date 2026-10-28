@@ -1,0 +1,7 @@
+=== RUN   TestLiveManagedOpenCodeResizeKeyboard
+    tui_interaction_test.go:220: resize=100 panel visible; Escape returned
+    tui_interaction_test.go:217: missing keyboard/resize state "Permissions:" (raw transcript not logged)
+--- FAIL: TestLiveManagedOpenCodeResizeKeyboard (18.28s)
+FAIL
+FAIL	github.com/ivo-lopes/ivoai/internal/opencodebridge	18.281s
+FAIL

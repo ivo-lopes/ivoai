@@ -1,0 +1,10 @@
+{
+  "pinned_source": "3be82befea6ed3875373afcb1bfaa450710310ac",
+  "source_manifest_sha256": "28eeb86068f75de7d60ca7a0702723c63519dc844a8b593bab8441f986050389",
+  "probe_source_sha256": "37c26f467d5472bad3650e0e6ee2460c7929cd78332174d87958ca86243ef860",
+  "binary_sha256": "fc913780355621826b49aa03455cdf0b743294acfccaf6dbfc10db755bee27e2",
+  "current_jsonl_sha256": "9a5ce40e8e2b6af967f1777df860380c76128b2c5d201b826a6a9f6f0a1ef772",
+  "named_tests": 1,
+  "skips": 0,
+  "result": "PASS; oldfull/range rejectprotected, oldput/read/GC work and protectedbytespreserved; no protecteddiskinventoryclaim"
+}

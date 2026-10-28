@@ -1,0 +1,14 @@
+{
+  "check": "full-go",
+  "started_utc": "2026-10-28T21:23:45.316582+00:00",
+  "ended_utc": "2026-10-28T21:25:11.250841+00:00",
+  "exit_code": 0,
+  "args": [
+    "test",
+    "-count=1",
+    "./..."
+  ],
+  "environment_basis": "explicit private HOME, pinned Go/Node PATH, no auth/provider opt-ins, GOPROXY/GOSUMDBoff; shared content-addressed Go caches",
+  "provider_turns": 0,
+  "context_sync": "BLOCKED IVOAI-175"
+}

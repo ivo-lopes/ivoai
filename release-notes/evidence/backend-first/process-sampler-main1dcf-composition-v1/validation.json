@@ -1,0 +1,55 @@
+{
+  "schema": 1,
+  "epoch": "pr54-main1dcf-source-composition-v1",
+  "readiness": "DRAFT; originalindependentfailureINCONCLUSIVE unchanged",
+  "source": "main1dcf composed with reviewed057; no conflict/implementation/deadline/oracle/condition change",
+  "checks": {
+    "full_go": {
+      "exit": 0,
+      "uncached": true,
+      "packages_passed": 59,
+      "packages_no_tests": 3
+    },
+    "python": {
+      "exit": 0,
+      "total": 79,
+      "passed": 78,
+      "not_run": "real calibration memory/churn opt-in deliberately absent",
+      "seconds": 15.988
+    },
+    "vet": {
+      "exit": 0,
+      "scope": "all packages"
+    },
+    "required_rollback": {
+      "exit": 0,
+      "named_test": 1,
+      "skips": 0,
+      "pinned_source": "3be82befea6ed3875373afcb1bfaa450710310ac"
+    },
+    "Nodebuild": "NOT_RUN; docs/website/embeddedsite markers and trackedtrees identicalmain"
+  },
+  "preservation": {
+    "old_evidence_files": 368,
+    "all_bytes_unchanged": true,
+    "sampler_driver": "unchangedvsd7",
+    "calibration_and_diagnostics": "unchangedvs057",
+    "original32cohort_and_audit_and_failure": "immutable; not reclassified",
+    "all_Go_files": "byte-identicalactualmain1dcf"
+  },
+  "execution": {
+    "calibration32_runs": 0,
+    "real_calibration_fixture_runs": 0,
+    "provider_turns": 0,
+    "runtime_defaults_or_version_changes": 0
+  },
+  "limits": [
+    "Successful composition does not identify or fix originalfailure",
+    "No new performance/economiccomparison; physicalRSS/lifecycle remains approximate/partial",
+    "Go genericopt-ins do not establish liveclients; only namedrollback executed asrequired",
+    "No newNativeARM/noAVX/officialclient/browser/Node recertification; hostedexactheadCI remainsrequired",
+    "No merge with any latermain than1dcf inthisepoch",
+    "EconomicgateINCOMPLETE; ContextBLOCKED175"
+  ],
+  "diff_check_against_main": "PASS exit0"
+}

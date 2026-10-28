@@ -1,0 +1,15 @@
+{
+  "condition": "offline-app-gateway-v2",
+  "checks": [
+    "post-run source and binary unchanged",
+    "bounded12row private receipt; no model calls or catalog promotion",
+    "receipt row allowlist verified",
+    "ad42/v1 receipt unchanged"
+  ],
+  "controlled_hook_negative": {
+    "actual_exit": 1,
+    "marker_lines_unchanged": 2,
+    "before_first_arm": true
+  },
+  "receipt_sha256": "46199d40233ae6af93a970a75efd8d0fdd7d919051839c06dd62882cff5fa52e"
+}
