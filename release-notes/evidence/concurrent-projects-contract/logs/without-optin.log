@@ -1,0 +1,3 @@
+usage: benchmark_concurrent_contract.py [-h] --preflight-offline [--go GO]
+                                        --output OUTPUT
+benchmark_concurrent_contract.py: error: the following arguments are required: --preflight-offline
