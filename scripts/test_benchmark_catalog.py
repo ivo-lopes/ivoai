@@ -23,16 +23,16 @@ class CatalogTests(unittest.TestCase):
             "Cross-module refactor", "Dependencies", "Impact", "APIs", "Large project / IVOAI", "Monorepo",
             "Unsupported parser", "Institutional documentation", "ai-memory history", "Non-code tasks",
             "Multiple workers", "Reuse between turns", "Interrupted continuity", "Concurrent distinct projects"])
-        self.assertEqual(sum(s.runner_supported for s in cases), 7)
+        self.assertEqual(sum(s.runner_supported for s in cases), 9)
         self.assertEqual(sum(CATALOG.planned_status(s) == "BLOCKED" for s in cases), 2)
-        self.assertEqual(sum(CATALOG.planned_status(s) == "UNSUPPORTED" for s in cases), 7)
+        self.assertEqual(sum(CATALOG.planned_status(s) == "UNSUPPORTED" for s in cases), 5)
         self.assertEqual(DRIVER.SCENARIOS, ("api", "implementation", "multi_module_callers"))
         self.assertTrue(all(s.expected is None for s in cases if not s.runner_supported))
 
     def test_hashes_bind_every_project_format(self):
         capabilities = CATALOG.expected_capabilities(CATALOG.ROOT / "internal/app/primary_prefetch_live_test.go")
-        self.assertEqual(len(capabilities["supported_scenarios"]), 7)
-        self.assertEqual(len(capabilities["fixtures"]), 5)
+        self.assertEqual(len(capabilities["supported_scenarios"]), 9)
+        self.assertEqual(len(capabilities["fixtures"]), 7)
         self.assertTrue(all(len(value) == 64 for value in capabilities["fixtures"].values()))
         with self.assertRaises(ValueError):
             CATALOG.fixture_digest("../go-core")
@@ -47,7 +47,7 @@ class CatalogTests(unittest.TestCase):
 
 
 class PreflightTests(unittest.TestCase):
-    def execute(self, mode="valid", selection=None, preflight=True):
+    def execute(self, mode="valid", selection=None, preflight=True, oracles=False):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         root = Path(temporary.name)
@@ -65,6 +65,19 @@ class PreflightTests(unittest.TestCase):
             " if mode=='oversized': output.write_text('x'*32769);sys.exit(0)\n"
             " if mode=='duplicate': output.write_text('{\"schema_version\":1,\"schema_version\":1}');sys.exit(0)\n"
             " output.write_text(json.dumps(capabilities));sys.exit(7 if mode=='bad_exit' else 0)\n"
+            "def oracle_identity(scenario):\n"
+            " tool=Path(os.environ.get('IVOAI_BENCHMARK_ORACLE_GO') if scenario=='small_known_file_correction' else os.environ['IVOAI_GRAFT_TEST_NODE'])\n"
+            " paths=[tool,Path(os.environ['IVOAI_BENCHMARK_BWRAP']),Path('/usr/bin/prlimit')]\n"
+            " h=hashlib.sha256((scenario+'\\0').encode())\n"
+            " for p in paths: h.update(hashlib.sha256(p.read_bytes()).hexdigest().encode()+b'\\0')\n"
+            " return h.hexdigest()\n"
+            "if any('TestPrimaryPrefetchBenchmarkEditPreflight' in a for a in sys.argv):\n"
+            " if not mode.startswith('edit_probe_') or mode=='edit_probe_skipped':sys.exit(0)\n"
+            " scenario=os.environ['IVOAI_BENCHMARK_EDIT_SCENARIO']\n"
+            " identity=oracle_identity(scenario) if mode!='edit_probe_wrong' else 'f'*64\n"
+            " output={'schema_version':2,'scenario':scenario,'oracle_tools_sha256':identity,'ready':True,'provider_attempts':0}\n"
+            " Path(os.environ['IVOAI_BENCHMARK_EDIT_PREFLIGHT_OUTPUT']).write_text(json.dumps(output)+(' '*4097 if mode=='edit_probe_oversized' else ''))\n"
+            " sys.exit(7 if mode=='edit_probe_failed_exit' else 0)\n"
             "scenario=next(a for a in sys.argv if a.startswith('-test.run=')).split('/')[1]\n"
             "with marker.open('a') as stream: stream.write(scenario+'\\n')\n"
             "base.update(Scenario=scenario,Arm=os.environ['IVOAI_ECONOMIC_RUNTIME_ARM'])\n"
@@ -73,6 +86,8 @@ class PreflightTests(unittest.TestCase):
             f"fixtures={dict((s.id,s.fixture) for s in CATALOG.load_catalog())!r}\n"
             "base['FixtureSHA256']=capabilities['fixtures'][fixtures[scenario]]\n"
             "if mode=='wrong_fixture': base['FixtureSHA256']='f'*64\n"
+            "if scenario in ('small_known_file_correction','cross_module_refactor'):\n"
+            " base.update(Execution='workspace_edit',EditValidated=True,EditFiles=1 if scenario=='small_known_file_correction' else 3,OracleToolsSHA256=oracle_identity(scenario))\n"
             "Path(os.environ['IVOAI_GRAFT_PREFETCH_OUTPUT']).write_text(json.dumps([base]))\n")
         fake.chmod(0o700)
         distribution = root / "distribution"
@@ -83,6 +98,8 @@ class PreflightTests(unittest.TestCase):
         for key in ("baseline", "candidate", "codex", "node", "sandbox-binary"):
             args += ["--" + key, str(fake)]
         args += ["--distribution", str(distribution), "--output", str(output), "--repetitions", "1"]
+        if oracles:
+            args += ["--oracle-go", str(fake), "--oracle-bwrap", str(fake)]
         args += selection or ["--matrix16"]
         if preflight:
             args += ["--preflight-only"]
@@ -137,6 +154,27 @@ class PreflightTests(unittest.TestCase):
         self.assertEqual(summary["all_attempts"]["A"]["attempts"], 7)
         self.assertEqual(len(summary["requested_scenarios"]), 16)
         self.assertEqual(len(summary["measured_scenarios"]), 7)
+
+    def test_edit_probes_require_real_output_not_missing_skip_or_failed_exit(self):
+        selection = ["--scenarios", "small_known_file_correction", "cross_module_refactor"]
+        for mode in ("edit_probe_skipped", "edit_probe_wrong", "edit_probe_failed_exit", "edit_probe_oversized"):
+            with self.subTest(mode=mode):
+                code, output, marker = self.execute(mode, selection, preflight=False, oracles=True)
+                self.assertEqual(code, 1)
+                self.assertFalse(marker.exists())
+                rows = json.loads((output / "preflight.json").read_text())["scenarios"]
+                self.assertEqual([r["status"] for r in rows], ["BLOCKED", "BLOCKED"])
+
+    def test_synthetic_edit_contract_preserves_abba_and_oracle_receipts(self):
+        selection = ["--scenarios", "small_known_file_correction", "cross_module_refactor"]
+        code, output, marker = self.execute("edit_probe_valid", selection, preflight=False, oracles=True)
+        self.assertEqual(code, 0)
+        self.assertEqual(len(marker.read_text().splitlines()), 4)
+        rows = json.loads((output / "runtime-comparison.json").read_text())
+        self.assertEqual([r["Arm"] for r in rows], ["A", "B", "B", "A"])
+        self.assertTrue(all(r["MeasurementValid"] and r["Correct"] and r["EditValidated"] for r in rows))
+        self.assertTrue(all(len(r["OracleToolsSHA256"]) == 64 for r in rows))
+        self.assertEqual(json.loads((output / "summary.json").read_text())["global_economic_gate"], "INCOMPLETE")
 
     def test_runtime_fixture_mismatch_is_retained_as_invalid(self):
         code, output, marker = self.execute("wrong_fixture", ["--scenarios", "dependencies"], preflight=False)

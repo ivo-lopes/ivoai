@@ -25,7 +25,7 @@ SCENARIOS = ("api", "implementation", "multi_module_callers")
 MAX_EVIDENCE_BYTES = 64 << 10
 MAX_INTEGER = (1 << 53) - 1
 COUNTS = ("TotalMS", "ProviderMS", "PrefetchMS", "PromptBytes", "EvidenceBytes",
-          "SourceBytes", "ToolCalls", "ToolResultBytes", "PrefetchCalls",
+          "ValidationMS", "EditFiles", "SourceBytes", "ToolCalls", "ToolResultBytes", "PrefetchCalls",
           "StructuralCalls", "CacheHits")
 OPTIONAL_COUNTS = ("InputTokens", "CachedInputTokens", "OutputTokens", "ReasoningTokens",
                    "ToolDescriptionTokens", "NativeCPUMS", "NativePeakMemoryBytes")
@@ -123,13 +123,26 @@ def read_evidence(path, scenario, arm, repetition, code, inventory_hash, capabil
         if row.get("CachedInputTokens") is not None and (
                 row.get("InputTokens") is None or row["CachedInputTokens"] > row["InputTokens"]):
             raise ValueError("cache is a subset of input")
-        if row["ProviderMS"] + row["PrefetchMS"] > row["TotalMS"]:
+        if row["ProviderMS"] + row["PrefetchMS"] + row["ValidationMS"] > row["TotalMS"]:
             raise ValueError("inconsistent phase durations")
         if row["Correct"] and (not row["JSONDecoded"] or row["TotalMS"] <= 0 or
                                any(row.get(key) is None for key in
                                    ("InputTokens", "CachedInputTokens", "OutputTokens"))):
             raise ValueError("missing successful execution measurements")
+        definition = next(s for s in benchmark_catalog.load_catalog() if s.id == scenario)
+        if row.get("Execution") != definition.execution or type(row.get("EditValidated")) is not bool or row.get("NativeWorkerObservation") != "UNVERIFIED_NATIVE_EVENTS_NOT_INSTRUMENTED":
+            raise ValueError("invalid execution contract")
+        if definition.execution == "workspace_edit":
+            expected_oracle = capabilities.get("oracle_tools", {}).get(scenario) if capabilities else None
+            if not expected_oracle or row.get("OracleToolsSHA256") != expected_oracle:
+                raise ValueError("unbound edit oracle")
+            expected_files = 1 if scenario == "small_known_file_correction" else 3
+            if row["Correct"] and (not row["EditValidated"] or row["EditFiles"] != expected_files):
+                raise ValueError("answer without validated patch")
+        elif row["EditValidated"] or row["EditFiles"] != 0 or row.get("OracleToolsSHA256") != "":
+            raise ValueError("unexpected edit verdict")
         clean = {key: row.get(key) for key in COUNTS + OPTIONAL_COUNTS}
+        clean.update(Execution=definition.execution, EditValidated=row["EditValidated"], OracleToolsSHA256=row["OracleToolsSHA256"], NativeWorkerObservation=row["NativeWorkerObservation"])
         clean.update({key: row[key] for key in ("Model", "Effort", "DistributionInventorySHA256", "JSONDecoded")})
         clean.update(base, Correct=row["Correct"] and code == 0, MeasurementValid=True)
         if capabilities is not None:
@@ -292,7 +305,7 @@ def summarize(rows, repetitions, scenarios=None):
     targets = change["InputTokens"] is not None and change["TotalMS"] is not None and change["InputTokens"] >= 10 and change["TotalMS"] >= 5
     diagnostic = "INCOMPLETE" if not complete or repetitions < 3 else (
         "PASS" if targets and improved * 3 >= repetitions * 2 else "FAIL")
-    return {"schema_version": 1, "scope": "app_primary_prefetch_subset",
+    return {"schema_version": 2, "scope": "app_primary_prefetch_subset",
             "global_economic_gate": "INCOMPLETE", "required_scenarios": 16,
             "measured_scenarios": sorted({row["Scenario"] for row in rows if row["MeasurementValid"]}),
             "requested_scenarios": list(scenarios), "all_attempts": all_arms,
@@ -305,7 +318,9 @@ def summarize(rows, repetitions, scenarios=None):
             "provider_usage": "reported_by_client_event_protocol",
             "effective_model_observed": None, "monetary_cost": None,
             "cache_accounting": "cached_input_tokens_are_subset_of_input_tokens",
-            "workers": "not_applicable_primary_only", "delegations": "not_applicable_primary_only",
+            "core_workers": "not_applicable_primary_only",
+            "workers": None, "delegations": None,
+            "native_worker_observation": "UNVERIFIED_NATIVE_EVENTS_NOT_INSTRUMENTED",
             "quota_consumption": None}
 
 
@@ -335,6 +350,35 @@ def discover_capabilities(binary, directory, expected):
                 "test_exit_code": code}
 
 
+def discover_edit_oracle(binary, scenario, args, directory, identity):
+    if not identity:
+        return {"status": "BLOCKED", "reason": "explicit_oracle_tool_inputs_unavailable"}
+    directory.mkdir(mode=0o700)
+    output = directory / "oracle.json"
+    env = {"PATH": "/usr/bin:/bin", "HOME": str(directory), "TMPDIR": str(directory), "LANG": "C.UTF-8",
+           "IVOAI_BENCHMARK_EDIT_PREFLIGHT_OUTPUT": str(output.resolve()), "IVOAI_BENCHMARK_EDIT_SCENARIO": scenario.id,
+           "IVOAI_BENCHMARK_BWRAP": str(args.oracle_bwrap.resolve()), "IVOAI_GRAFT_TEST_NODE": str(args.node.resolve())}
+    if args.oracle_go:
+        env["IVOAI_BENCHMARK_ORACLE_GO"] = str(args.oracle_go.resolve())
+    code, _ = run_attempt([str(binary.resolve()), "-test.run=^TestPrimaryPrefetchBenchmarkEditPreflight$", "-test.timeout=20s"],
+                          env, directory / "resources.json", timeout=25, cwd=directory)
+    try:
+        descriptor = os.open(output, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+        with os.fdopen(descriptor, "rb") as stream:
+            if not stat.S_ISREG(os.fstat(stream.fileno()).st_mode):
+                raise ValueError("nonregular probe")
+            body = stream.read(4097)
+        if len(body) > 4096:
+            raise ValueError("oversized probe")
+        value = json.loads(body, object_pairs_hook=unique_object)
+        expected = {"schema_version": 2, "scenario": scenario.id, "oracle_tools_sha256": identity, "ready": True, "provider_attempts": 0}
+        if code != 0 or type(value) is not dict or json.dumps(value, sort_keys=True) != json.dumps(expected, sort_keys=True):
+            raise ValueError("unproven sandbox")
+        return {"status": "READY", "test_exit_code": code}
+    except (OSError, ValueError, TypeError):
+        return {"status": "BLOCKED", "reason": "oracle_sandbox_probe_missing_invalid_or_failed", "test_exit_code": code}
+
+
 def matrix_preflight(args, scenarios, inventory_hash, temporary):
     catalog = {s.id: s for s in benchmark_catalog.load_catalog()}
     try:
@@ -346,6 +390,7 @@ def matrix_preflight(args, scenarios, inventory_hash, temporary):
     paths = (args.baseline, args.candidate, args.codex, args.node, args.sandbox_binary)
     prerequisites = bool(inventory_hash) and all(p.is_file() and os.access(p, os.X_OK) and sha256(p) for p in paths)
     equivalent = all(row["status"] == "READY" for row in discovery.values())
+    oracle_probes, oracle_hashes = {}, {}
     rows = []
     for name in scenarios:
         scenario = catalog[name]
@@ -354,11 +399,22 @@ def matrix_preflight(args, scenarios, inventory_hash, temporary):
         if scenario.runner_supported:
             status = "READY" if prerequisites and equivalent else "BLOCKED"
             reason = "" if status == "READY" else ("runtime_artifact_inputs_unavailable" if not prerequisites else "binary_contract_equivalence_unconfirmed")
-        rows.append({"scenario": name, "status": status, "reason": reason, "client_execution": "NOT_RUN"})
-    return {"schema_version": 1, "scope": "matrix16_discovery_preflight_no_inference",
+        if status == "READY" and scenario.execution == "workspace_edit":
+            identity = benchmark_catalog.oracle_identity(scenario, args.oracle_go, args.node, args.oracle_bwrap)
+            probes = {arm: discover_edit_oracle(binary, scenario, args, temporary / ("oracle-"+name+"-"+arm), identity)
+                      for arm, binary in (("A",args.baseline),("B",args.candidate))}
+            oracle_probes[name] = probes
+            if all(p["status"] == "READY" for p in probes.values()):
+                oracle_hashes[name] = identity
+            else:
+                status, reason = "BLOCKED", "edit_oracle_inputs_or_containment_unavailable"
+        rows.append({"scenario": name, "status": status, "reason": reason, "execution": scenario.execution, "client_execution": "NOT_RUN"})
+    if expected is not None:
+        expected = {**expected, "oracle_tools": oracle_hashes}
+    return {"schema_version": 2, "scope": "matrix16_discovery_preflight_no_inference",
             "global_economic_gate": "INCOMPLETE", "provider_attempts": 0,
             "provider_cache_equivalence": "UNVERIFIED", "effective_model_observed": None,
-            "discovery": discovery, "scenarios": rows}, expected
+            "discovery": discovery, "edit_oracle_probes": oracle_probes, "scenarios": rows}, expected
 
 
 def main(argv=None):
@@ -368,6 +424,8 @@ def main(argv=None):
     parser.add_argument("--repetitions", type=int, default=3, choices=range(1, 6))
     parser.add_argument("--harness", type=Path, default=Path(__file__).resolve().parents[1] / "internal/app/primary_prefetch_live_test.go",
                         help="source harness to hash when accessible (must be identical in both builds)")
+    parser.add_argument("--oracle-go", type=Path, help="explicit reviewed Go toolchain executable for the Go edit oracle")
+    parser.add_argument("--oracle-bwrap", type=Path, default=Path("/usr/bin/bwrap"), help="existing local sandbox executable; no installation is performed")
     selection = parser.add_mutually_exclusive_group()
     selection.add_argument("--matrix16", action="store_true", help="plan all 16; unsupported/blocked cases cannot pass")
     selection.add_argument("--scenarios", nargs="+", choices=[s.id for s in benchmark_catalog.load_catalog()])
@@ -385,23 +443,28 @@ def main(argv=None):
                IVOAI_LIVE_CODEX_PATH=str(args.codex.resolve()), IVOAI_GRAFT_TEST_NODE=str(args.node.resolve()),
                IVOAI_GRAFT_TEST_DIST=str(args.distribution.resolve()),
                IVOAI_GRAFT_SMOKE_BINARY=str(args.sandbox_binary.resolve()))
+    if args.oracle_go:
+        env["IVOAI_BENCHMARK_ORACLE_GO"] = str(args.oracle_go.resolve())
+    env["IVOAI_BENCHMARK_BWRAP"] = str(args.oracle_bwrap.resolve())
     inventory_hash = sha256(args.distribution / "files.json")
     preflight, capabilities = None, None
     if args.matrix16 or args.scenarios or args.preflight_only:
         preflight, capabilities = matrix_preflight(args, scenarios, inventory_hash, temporary)
         write_json(args.output / "preflight.json", preflight)
-    manifest = {"schema_version": 1, "scope": "app_primary_prefetch_subset", "repetitions": args.repetitions,
+    manifest = {"schema_version": 2, "scope": "app_primary_prefetch_subset", "repetitions": args.repetitions,
+                "driver_sha256": sha256(Path(__file__)), "catalog_loader_sha256": sha256(Path(benchmark_catalog.__file__)),
                 "model_requested": "gpt-6.1-sol", "effort_requested": "low", "effective_model_observed": None,
                 "host_mcp_tools_exposed": 0, "native_tools_exposed": None,
-                "native_tools_inventory": "UNVERIFIED",
+                "native_tools_inventory": "UNVERIFIED", "native_worker_observation": "UNVERIFIED_NATIVE_EVENTS_NOT_INSTRUMENTED",
+                "common_native_worker_policy": "agents.enabled=false;features.multi_agent_v2=false",
                 "runtime_flags": {"experimental_evidence_gateway": os.environ.get("IVOAI_EXPERIMENTAL_EVIDENCE_GATEWAY") == "1"},
                 "baseline_test_sha256": sha256(args.baseline),
                 "candidate_test_sha256": sha256(args.candidate), "codex_sha256": sha256(args.codex),
-                "node_sha256": sha256(args.node), "sandbox_sha256": sha256(args.sandbox_binary),
+                "node_sha256": sha256(args.node), "sandbox_sha256": sha256(args.sandbox_binary), "oracle_go_sha256": sha256(args.oracle_go) if args.oracle_go else None, "oracle_bwrap_sha256": sha256(args.oracle_bwrap), "oracle_prlimit_sha256": sha256(Path("/usr/bin/prlimit")),
                 "distribution_inventory_sha256": inventory_hash, "harness_sha256": sha256(args.harness)}
     if preflight is not None:
         manifest.update(requested_scenarios=list(scenarios), catalog_sha256=benchmark_catalog.digest(benchmark_catalog.CATALOG),
-                        fixture_contract_sha256=capabilities.get("fixture_contract_sha256") if capabilities else None,
+                        fixture_contract_sha256=capabilities.get("fixture_contract_sha256") if capabilities else None, edit_oracle_identities=capabilities.get("oracle_tools", {}) if capabilities else {},
                         preflight_only=args.preflight_only, cache_policy="cold_private_local_caches_provider_cache_unverified")
     write_json(args.output / "manifest.json", manifest)
     rows = []

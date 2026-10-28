@@ -1,5 +1,6 @@
-// Package benchmarkfixtures contains synthetic, versioned benchmark inputs.
-// It grants no tools, executes no project code and does not certify economics.
+// Package benchmarkfixtures contains synthetic inputs, structured fact checks
+// and explicitly admitted sandboxed edit oracles. It grants no production
+// permissions, starts no provider and does not certify economics.
 package benchmarkfixtures
 
 import (
@@ -20,8 +21,8 @@ import (
 //go:embed all:data
 var inputs embed.FS
 
-//go:embed fixtures.go
-var contractSource []byte
+//go:embed fixtures.go edit_oracle.go
+var contractSources embed.FS
 
 type Scenario struct {
 	ID              string          `json:"id"`
@@ -34,6 +35,7 @@ type Scenario struct {
 	Prompt          string          `json:"prompt"`
 	Expected        json.RawMessage `json:"expected"`
 	Structural      string          `json:"structural"`
+	Execution       string          `json:"execution"`
 }
 
 func Catalog() ([]Scenario, error) {
@@ -46,7 +48,7 @@ func Catalog() ([]Scenario, error) {
 	}
 	decoder := json.NewDecoder(strings.NewReader(string(body)))
 	decoder.DisallowUnknownFields()
-	if decoder.Decode(&catalog) != nil || catalog.Version != 1 || catalog.Gate != "INCOMPLETE" || len(catalog.Scenarios) != 16 {
+	if decoder.Decode(&catalog) != nil || catalog.Version != 2 || catalog.Gate != "INCOMPLETE" || len(catalog.Scenarios) != 16 {
 		return nil, errors.New("invalid benchmark catalog")
 	}
 	seen := map[string]bool{}
@@ -55,6 +57,9 @@ func Catalog() ([]Scenario, error) {
 			return nil, errors.New("invalid benchmark scenario")
 		}
 		seen[s.ID] = true
+		if s.RunnerSupported && s.Execution != "read_only" && s.Execution != "workspace_edit" || !s.RunnerSupported && s.Execution != "unavailable" {
+			return nil, errors.New("invalid benchmark execution contract")
+		}
 		if s.Structural != "allowed" && s.Structural != "required" && s.Structural != "forbidden" {
 			return nil, errors.New("invalid structural policy")
 		}
@@ -80,9 +85,18 @@ func Lookup(id string) (Scenario, bool) {
 	return Scenario{}, false
 }
 
-func catalogBytes() []byte   { body, _ := inputs.ReadFile("data/catalog.json"); return body }
-func CatalogSHA256() string  { sum := sha256.Sum256(catalogBytes()); return hex.EncodeToString(sum[:]) }
-func ContractSHA256() string { sum := sha256.Sum256(contractSource); return hex.EncodeToString(sum[:]) }
+func catalogBytes() []byte  { body, _ := inputs.ReadFile("data/catalog.json"); return body }
+func CatalogSHA256() string { sum := sha256.Sum256(catalogBytes()); return hex.EncodeToString(sum[:]) }
+func ContractSHA256() string {
+	hash := sha256.New()
+	for _, name := range []string{"fixtures.go", "edit_oracle.go"} {
+		body, _ := contractSources.ReadFile(name)
+		hash.Write([]byte(name + "\x00"))
+		hash.Write(body)
+		hash.Write([]byte{0})
+	}
+	return hex.EncodeToString(hash.Sum(nil))
+}
 
 func ProjectSHA256(name string) (string, error) {
 	if name == "" || filepath.Base(name) != name {

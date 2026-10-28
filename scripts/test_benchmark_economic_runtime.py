@@ -22,7 +22,7 @@ def valid_row(scenario="api", arm="A", **changes):
     row.update(Scenario=scenario, Arm=arm, Model="gpt-6.1-sol", Effort="low",
                DistributionInventorySHA256="a" * 64, TotalMS=100, ProviderMS=90,
                PrefetchMS=10, InputTokens=100, CachedInputTokens=60, OutputTokens=5,
-               Correct=True, JSONDecoded=True)
+               Correct=True, JSONDecoded=True, Execution="read_only", EditValidated=False, OracleToolsSHA256="", NativeWorkerObservation="UNVERIFIED_NATIVE_EVENTS_NOT_INSTRUMENTED")
     row.update(changes)
     return row
 
@@ -92,6 +92,24 @@ class EvidenceTests(unittest.TestCase):
         self.assertIsNone(row["InputTokens"])
         self.assertEqual(row["Error"], "correctness_failed")
 
+    def test_edit_answer_requires_bound_executable_patch_verdict(self):
+        scenario = "small_known_file_correction"
+        capabilities = {"catalog_sha256": "1"*64, "harness_sha256": "2"*64,
+                        "fixtures": {"go-clamp-edit": "3"*64}, "oracle_tools": {scenario: "4"*64}}
+        good = valid_row(scenario, Execution="workspace_edit", EditValidated=True, EditFiles=1,
+                         OracleToolsSHA256="4"*64, CatalogSHA256="1"*64,
+                         HarnessSHA256="2"*64, FixtureSHA256="3"*64,
+                         ValidationMS=20, TotalMS=120)
+        for changes in ({}, {"EditValidated": False}, {"EditFiles": 0}, {"EditFiles": 3},
+                        {"OracleToolsSHA256": "SECRET"}, {"Execution": "read_only"},
+                        {"ValidationMS": 1000}):
+            with self.subTest(changes=changes):
+                self.path.write_text(json.dumps([{**good, **changes}]))
+                row = BENCHMARK.read_evidence(self.path, scenario, "A", 0, 0, "a"*64, capabilities)
+                self.assertEqual(row["Correct"], not changes)
+                self.assertEqual(row["MeasurementValid"], not changes)
+                self.assertNotIn("SECRET", json.dumps(row))
+
 
 class SummaryTests(unittest.TestCase):
     def rows(self):
@@ -115,6 +133,9 @@ class SummaryTests(unittest.TestCase):
         self.assertEqual(summary["all_attempts"]["A"]["InputTokens"]["sum"], 900)
         self.assertEqual(summary["all_attempts"]["A"]["CachedInputTokens"]["sum"], 450)
         self.assertIsNone(summary["monetary_cost"])
+        self.assertIsNone(summary["workers"])
+        self.assertIsNone(summary["delegations"])
+        self.assertEqual(summary["native_worker_observation"], "UNVERIFIED_NATIVE_EVENTS_NOT_INSTRUMENTED")
 
     def test_failures_remain_in_all_attempts_and_out_of_matched_pairs(self):
         rows = self.rows()
