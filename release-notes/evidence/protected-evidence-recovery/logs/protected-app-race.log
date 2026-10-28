@@ -1,0 +1,4 @@
+=== RUN   TestProtectedCodePrefetchCreationFlagAndRestartRecoveryBoundary
+--- PASS: TestProtectedCodePrefetchCreationFlagAndRestartRecoveryBoundary (0.09s)
+PASS
+ok  	github.com/ivo-lopes/ivoai/internal/app	1.118s

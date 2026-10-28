@@ -1,0 +1,38 @@
+=== RUN   TestProviderReadinessReportsBoundedObservedState
+=== RUN   TestProviderReadinessReportsBoundedObservedState/loading
+=== RUN   TestProviderReadinessReportsBoundedObservedState/unavailable
+=== RUN   TestProviderReadinessReportsBoundedObservedState/empty
+=== RUN   TestProviderReadinessReportsBoundedObservedState/partial
+=== RUN   TestProviderReadinessReportsBoundedObservedState/malformed
+--- PASS: TestProviderReadinessReportsBoundedObservedState (1.41s)
+    --- PASS: TestProviderReadinessReportsBoundedObservedState/loading (0.28s)
+    --- PASS: TestProviderReadinessReportsBoundedObservedState/unavailable (0.28s)
+    --- PASS: TestProviderReadinessReportsBoundedObservedState/empty (0.28s)
+    --- PASS: TestProviderReadinessReportsBoundedObservedState/partial (0.28s)
+    --- PASS: TestProviderReadinessReportsBoundedObservedState/malformed (0.28s)
+=== RUN   TestProviderReadinessReportsBoundedObservedState
+=== RUN   TestProviderReadinessReportsBoundedObservedState/loading
+=== RUN   TestProviderReadinessReportsBoundedObservedState/unavailable
+=== RUN   TestProviderReadinessReportsBoundedObservedState/empty
+=== RUN   TestProviderReadinessReportsBoundedObservedState/partial
+=== RUN   TestProviderReadinessReportsBoundedObservedState/malformed
+--- PASS: TestProviderReadinessReportsBoundedObservedState (1.41s)
+    --- PASS: TestProviderReadinessReportsBoundedObservedState/loading (0.28s)
+    --- PASS: TestProviderReadinessReportsBoundedObservedState/unavailable (0.28s)
+    --- PASS: TestProviderReadinessReportsBoundedObservedState/empty (0.28s)
+    --- PASS: TestProviderReadinessReportsBoundedObservedState/partial (0.28s)
+    --- PASS: TestProviderReadinessReportsBoundedObservedState/malformed (0.28s)
+=== RUN   TestProviderReadinessReportsBoundedObservedState
+=== RUN   TestProviderReadinessReportsBoundedObservedState/loading
+=== RUN   TestProviderReadinessReportsBoundedObservedState/unavailable
+=== RUN   TestProviderReadinessReportsBoundedObservedState/empty
+=== RUN   TestProviderReadinessReportsBoundedObservedState/partial
+=== RUN   TestProviderReadinessReportsBoundedObservedState/malformed
+--- PASS: TestProviderReadinessReportsBoundedObservedState (1.41s)
+    --- PASS: TestProviderReadinessReportsBoundedObservedState/loading (0.28s)
+    --- PASS: TestProviderReadinessReportsBoundedObservedState/unavailable (0.28s)
+    --- PASS: TestProviderReadinessReportsBoundedObservedState/empty (0.28s)
+    --- PASS: TestProviderReadinessReportsBoundedObservedState/partial (0.28s)
+    --- PASS: TestProviderReadinessReportsBoundedObservedState/malformed (0.28s)
+PASS
+ok  	github.com/ivo-lopes/ivoai/internal/opencodebridge	4.228s

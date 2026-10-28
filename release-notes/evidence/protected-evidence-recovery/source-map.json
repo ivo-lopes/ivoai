@@ -1,0 +1,1183 @@
+{
+  "source_commit": "3be82befea6ed3875373afcb1bfaa450710310ac",
+  "mode": "read_only_source_investigation_no_runtime_test_no_external_research",
+  "files": [
+    {
+      "path": "internal/evidence/gateway.go",
+      "sha256": "a95704131da036207d0154b7e7bb085ba578fb227da00098018c6e465f5aa807",
+      "declarations": [
+        {
+          "line": 42,
+          "declaration": "type Scope struct {"
+        },
+        {
+          "line": 59,
+          "declaration": "type Request struct {"
+        },
+        {
+          "line": 81,
+          "declaration": "type Ref struct {"
+        },
+        {
+          "line": 94,
+          "declaration": "type Packet struct {"
+        },
+        {
+          "line": 114,
+          "declaration": "type Gateway struct {"
+        },
+        {
+          "line": 124,
+          "declaration": "func New(store workingcontext.ArtifactStore) (*Gateway, error) {"
+        },
+        {
+          "line": 137,
+          "declaration": "func (g *Gateway) Retrieve(ctx context.Context, r Request, fetch func(context.Context) (Document, error)) (Packet, error) {"
+        },
+        {
+          "line": 183,
+          "declaration": "func (g *Gateway) retrieve(ctx context.Context, r Request, generation, key string, fetch func(context.Context) (Document, error)) (Packet, error) {"
+        },
+        {
+          "line": 209,
+          "declaration": "func (g *Gateway) packet(ctx context.Context, r Request, generation string, doc Document, hit bool) (Packet, error) {"
+        },
+        {
+          "line": 244,
+          "declaration": "func (g *Gateway) Recover(ctx context.Context, r Request, ref Ref) ([]byte, error) {"
+        },
+        {
+          "line": 274,
+          "declaration": "func validate(r Request) error {"
+        },
+        {
+          "line": 289,
+          "declaration": "func check(ctx context.Context, r Request) (string, error) {"
+        },
+        {
+          "line": 303,
+          "declaration": "func clone(doc Document) Document { doc.Raw = bytes.Clone(doc.Raw); return doc }"
+        },
+        {
+          "line": 307,
+          "declaration": "func (g *Gateway) seal(ref Ref) string {"
+        },
+        {
+          "line": 315,
+          "declaration": "func (g *Gateway) pruneLocked() {"
+        },
+        {
+          "line": 325,
+          "declaration": "func Digest(values ...any) string {"
+        },
+        {
+          "line": 334,
+          "declaration": "func isDigest(value string) bool {"
+        },
+        {
+          "line": 346,
+          "declaration": "func safeMediaType(value string) bool {"
+        }
+      ]
+    },
+    {
+      "path": "internal/evidence/output_view.go",
+      "sha256": "d287142508cdd35f9f5c7e51eb4af45266a2ad1f5b407e6860fa96ef58c68c7b",
+      "declarations": [
+        {
+          "line": 51,
+          "declaration": "func (g *Gateway) ViewOutput(ctx context.Context, r Request, ref Ref, p OutputViewProvider, options OutputViewOptions) (OutputView, error) {"
+        },
+        {
+          "line": 107,
+          "declaration": "func viewFilter(filter string) bool {"
+        },
+        {
+          "line": 113,
+          "declaration": "func safeView(body []byte) bool {"
+        }
+      ]
+    },
+    {
+      "path": "internal/app/evidence_gateway.go",
+      "sha256": "4b1a7aa6f1e8890206e5d007bbeceb7c4752889df8d88fac95a1d9d8dc467b79",
+      "declarations": [
+        {
+          "line": 24,
+          "declaration": "func (a *App) gatewayCodeEvidence(ctx context.Context, provider *codeintel.Provider, id, taskID, workerID string, query core.CodeQuery) (json.RawMessage, error) {"
+        }
+      ]
+    },
+    {
+      "path": "internal/app/code_intelligence.go",
+      "sha256": "214acac3ad3c1a13bfe6f3df54ca558821bdc7e8d2277af253e47da1c7cd6d7d",
+      "declarations": [
+        {
+          "line": 30,
+          "declaration": "func (a *App) CodeIntelligenceProvider(ctx context.Context, root, scope string) (*codeintel.Provider, error) {"
+        },
+        {
+          "line": 39,
+          "declaration": "func (a *App) codeIntelligenceProvider(ctx context.Context, root, scope string, spec components.Spec) (*codeintel.Provider, error) {"
+        },
+        {
+          "line": 84,
+          "declaration": "func nativeCodeTool(name string) bool { return slices.Contains(codeintel.ToolNames(), name) }"
+        },
+        {
+          "line": 88,
+          "declaration": "func processLocalMCPNames(cfg config.Config) []string {"
+        },
+        {
+          "line": 97,
+          "declaration": "func nativeCodeEnvironment(environment []string, cfg config.Config) ([]string, error) {"
+        },
+        {
+          "line": 123,
+          "declaration": "func (a *App) prefetchWorkerCode(ctx context.Context, provider *codeintel.Provider, id string, task routing.Task, request workers.Request) (workers.Request, error) {"
+        },
+        {
+          "line": 157,
+          "declaration": "func (a *App) prefetchCodeEvidence(ctx context.Context, provider *codeintel.Provider, id, taskID, workerID string, query core.CodeQuery) (json.RawMessage, error) {"
+        }
+      ]
+    },
+    {
+      "path": "internal/app/session.go",
+      "sha256": "952eebfd18e71e6b60c82e8f5b0b9434cc68c3bfd4530d7839d190dffe97bccd",
+      "declarations": [
+        {
+          "line": 31,
+          "declaration": "func (a *App) SessionStart(ctx context.Context, executor string, mode session.Mode, args []string) error {"
+        },
+        {
+          "line": 35,
+          "declaration": "func (a *App) SessionStartWithKnowledge(ctx context.Context, executor string, mode session.Mode, args, selectors []string) error {"
+        },
+        {
+          "line": 319,
+          "declaration": "func (a *App) SessionList() ([]session.Session, error) {"
+        },
+        {
+          "line": 323,
+          "declaration": "func (a *App) SessionShow(id string) (session.Session, error) {"
+        },
+        {
+          "line": 327,
+          "declaration": "func (a *App) SessionStop(id string) error {"
+        },
+        {
+          "line": 362,
+          "declaration": "func (a *App) OrchestratorServe(ctx context.Context, id string) error {"
+        },
+        {
+          "line": 456,
+          "declaration": "func routingOverrides(value config.AutoProfilesConfig) map[string]map[routing.Tier]routing.ProfileOverride {"
+        },
+        {
+          "line": 468,
+          "declaration": "func (a *App) orchestratedAgentArgs(executor string, existing []string, id, runtimeDir string) ([]string, error) {"
+        },
+        {
+          "line": 508,
+          "declaration": "func (a *App) cleanupSession(store session.Store, id string, control core.Orchestrator) error {"
+        },
+        {
+          "line": 539,
+          "declaration": "func (a *App) finishSession(store session.Store, id string, final session.State, exitCode int) {"
+        },
+        {
+          "line": 558,
+          "declaration": "func (a *App) printSessionSummary(value session.Session, orchestrated bool) {"
+        },
+        {
+          "line": 567,
+          "declaration": "func agentModelConfig(executor string) string {"
+        },
+        {
+          "line": 591,
+          "declaration": "func contextStatus(cfg config.Config) string {"
+        },
+        {
+          "line": 606,
+          "declaration": "func memoryStatus(cfg config.Config, state config.State) string {"
+        },
+        {
+          "line": 616,
+          "declaration": "func serverStatus(cfg config.Config) string {"
+        }
+      ]
+    },
+    {
+      "path": "internal/app/primary_code_evidence.go",
+      "sha256": "9b1415c839b825e6f076319232fb88ff7d7fa35c6361f183fd7652a2b101cb8e",
+      "declarations": [
+        {
+          "line": 23,
+          "declaration": "func (a *App) preparePrimaryCodeEvidence(ctx context.Context, store session.Store, id string, task routing.Task, budget int, factory codeProviderFactory) (json.RawMessage, error) {"
+        },
+        {
+          "line": 95,
+          "declaration": "func primaryCodeTaskAdmitted(value session.Session, cfg config.Config, task routing.Task) bool {"
+        }
+      ]
+    },
+    {
+      "path": "internal/app/worker_access.go",
+      "sha256": "cf3b80b2740a0786c584f11928ebd51f3cda50ae171d874187b9fb817485450e",
+      "declarations": [
+        {
+          "line": 31,
+          "declaration": "func (a *App) prepareWorkerAccess(ctx context.Context, cfg config.Config, store session.Store, id string, task routing.Task, request workers.Request) (workers.Request, error) {"
+        }
+      ]
+    },
+    {
+      "path": "internal/app/knowledge_router.go",
+      "sha256": "733d03214300d3af43d9b0ec2b6e70482d040663f2e58869917bdb85a832a3bb",
+      "declarations": [
+        {
+          "line": 40,
+          "declaration": "func (k sessionKnowledge) healthFor(alias, fallback string) string {"
+        },
+        {
+          "line": 55,
+          "declaration": "func (a *App) prepareKnowledgeRouter(ctx context.Context, cfg config.Config, selectors []string, executor, runtimeDir string, existingEnvironment []string, observe func(observability.Event)) (sessionKnowledge, error) {"
+        },
+        {
+          "line": 67,
+          "declaration": "func (a *App) prepareKnowledgeSelection(ctx context.Context, cfg config.Config, selection serverpool.Selection, executor, runtimeDir string, existingEnvironment []string, observe func(observability.Event)) (sessionKnowledge, error) {"
+        },
+        {
+          "line": 148,
+          "declaration": "func coreComponentForKnowledge(operation string) core.ComponentID {"
+        },
+        {
+          "line": 155,
+          "declaration": "func (k sessionKnowledge) close() {"
+        },
+        {
+          "line": 164,
+          "declaration": "func (k sessionKnowledge) aliases() []string {"
+        },
+        {
+          "line": 171,
+          "declaration": "func processLocalKnowledgeArgs(executor, runtimeDir string, cfg config.Config) ([]string, error) {"
+        },
+        {
+          "line": 224,
+          "declaration": "func hasSelectedFeature(selection serverpool.Selection, feature string) bool {"
+        },
+        {
+          "line": 235,
+          "declaration": "func cleanKnowledgeEnvironment(environment []string) []string {"
+        },
+        {
+          "line": 255,
+          "declaration": "func runtimeKnowledgeServers(fallback map[string]config.MCPServer) map[string]config.MCPServer {"
+        },
+        {
+          "line": 271,
+          "declaration": "func parseKnowledgeSelectors(values []string) ([]string, error) {"
+        }
+      ]
+    },
+    {
+      "path": "internal/app/external_mcp.go",
+      "sha256": "147ce761921a4afafe1e91b23857e5216dabf751b1a89d15a465709f0b390786",
+      "declarations": [
+        {
+          "line": 27,
+          "declaration": "func (a *App) prepareSessionKnowledge(ctx context.Context, cfg config.Config, selectors []string, executor, runtimeDir, cwd string, environment []string, observe func(observability.Event)) (sessionKnowledge, error) {"
+        },
+        {
+          "line": 31,
+          "declaration": "func (a *App) prepareSessionKnowledgeWithApprovals(ctx context.Context, cfg config.Config, selectors []string, executor, runtimeDir, cwd string, environment []string, observe func(observability.Event), managed bool) (sessionKnowledge, error) {"
+        },
+        {
+          "line": 39,
+          "declaration": "func (a *App) prepareSessionKnowledgeSelection(ctx context.Context, cfg config.Config, selectors []string, selection *serverpool.Selection, executor, runtimeDir, cwd, scope string, environment []string, observe func(observability.Event), managed bool, codeProjection ...[]string) (sessionKnowledge, error) {"
+        },
+        {
+          "line": 157,
+          "declaration": "func externalMCPNames(cfg config.Config) []string {"
+        },
+        {
+          "line": 168,
+          "declaration": "func processLocalExternalMCPArgs(executor, runtimeDir string, cfg config.Config) ([]string, error) {"
+        },
+        {
+          "line": 213,
+          "declaration": "func (a *App) MCPSetBearer(name, token string) error {"
+        },
+        {
+          "line": 216,
+          "declaration": "func (a *App) MCPSetHeader(name, header, value string) error {"
+        },
+        {
+          "line": 219,
+          "declaration": "func (a *App) MCPClearAuth(name string) error {"
+        },
+        {
+          "line": 222,
+          "declaration": "func (a *App) MCPTest(ctx context.Context, name string) error {"
+        },
+        {
+          "line": 239,
+          "declaration": "func resolvedMCPAuth(entry config.MCPServer) string {"
+        },
+        {
+          "line": 246,
+          "declaration": "func safeMCPDisplayURL(raw string) string {"
+        }
+      ]
+    },
+    {
+      "path": "internal/knowledgerouter/router.go",
+      "sha256": "a20b2001533808f97f8029e6ad5519989de9bcf0560c6ba3b454fb55ccc7bd6c",
+      "declarations": [
+        {
+          "line": 50,
+          "declaration": "type Options struct {"
+        },
+        {
+          "line": 59,
+          "declaration": "type Router struct {"
+        },
+        {
+          "line": 94,
+          "declaration": "func Start(options Options) (*Router, error) {"
+        },
+        {
+          "line": 138,
+          "declaration": "func (r *Router) BaseURL() string { return r.baseURL }"
+        },
+        {
+          "line": 139,
+          "declaration": "func (r *Router) Token() string   { return r.token }"
+        },
+        {
+          "line": 141,
+          "declaration": "func (r *Router) Close(ctx context.Context) error {"
+        },
+        {
+          "line": 148,
+          "declaration": "func (r *Router) authorize(next http.HandlerFunc) http.HandlerFunc {"
+        },
+        {
+          "line": 162,
+          "declaration": "func (r *Router) handleContext(w http.ResponseWriter, request *http.Request) {"
+        },
+        {
+          "line": 166,
+          "declaration": "func (r *Router) handleMemory(w http.ResponseWriter, request *http.Request) {"
+        },
+        {
+          "line": 170,
+          "declaration": "func (r *Router) handleMCP(w http.ResponseWriter, request *http.Request, kind string) {"
+        },
+        {
+          "line": 240,
+          "declaration": "func (r *Router) initializeFederation(w http.ResponseWriter, request *http.Request, rpc rpcRequest, kind string, body []byte, groups []serverpool.SourceGroup) {"
+        },
+        {
+          "line": 293,
+          "declaration": "func (r *Router) federate(w http.ResponseWriter, request *http.Request, rpc rpcRequest, kind string, body []byte, groups []serverpool.SourceGroup) {"
+        },
+        {
+          "line": 365,
+          "declaration": "func (r *Router) handleMemoryHook(w http.ResponseWriter, request *http.Request) {"
+        },
+        {
+          "line": 398,
+          "declaration": "func (r *Router) callGroup(ctx context.Context, group serverpool.SourceGroup, kind string, body []byte, write, expectsResponse bool, headers http.Header, responseLimit int64) (upstreamResponse, config.ServerProfile, bool, error) {"
+        },
+        {
+          "line": 439,
+          "declaration": "func validateRPCResponse(body []byte, contentType string, expectsResponse bool) error {"
+        },
+        {
+          "line": 447,
+          "declaration": "func rpcResponsePayload(body []byte, contentType string) ([]byte, error) {"
+        },
+        {
+          "line": 481,
+          "declaration": "func validateJSONRPCResponse(body []byte) error {"
+        },
+        {
+          "line": 493,
+          "declaration": "func (r *Router) call(ctx context.Context, profile config.ServerProfile, endpoint, method string, body []byte, contentType string, mcpHeaders http.Header, responseLimit int64) (upstreamResponse, error) {"
+        },
+        {
+          "line": 541,
+          "declaration": "func (r *Router) groupsFor(kind string) []serverpool.SourceGroup {"
+        },
+        {
+          "line": 558,
+          "declaration": "func (r *Router) circuitOpen(id string) bool {"
+        },
+        {
+          "line": 564,
+          "declaration": "func (r *Router) recordFailure(id string) {"
+        },
+        {
+          "line": 575,
+          "declaration": "func (r *Router) recordSuccess(id string) {"
+        },
+        {
+          "line": 581,
+          "declaration": "func (r *Router) emit(event Event) {"
+        },
+        {
+          "line": 587,
+          "declaration": "func isWriteTool(method, name string) bool {"
+        },
+        {
+          "line": 603,
+          "declaration": "func memoryToolRequiresSingleDestination(method, name string) bool {"
+        },
+        {
+          "line": 615,
+          "declaration": "func sourceMetadata(profile config.ServerProfile) map[string]any {"
+        },
+        {
+          "line": 619,
+          "declaration": "func readBounded(reader io.Reader, limit int64) ([]byte, error) {"
+        },
+        {
+          "line": 630,
+          "declaration": "func writeRPCError(w http.ResponseWriter, id json.RawMessage, code int, message string) {"
+        },
+        {
+          "line": 634,
+          "declaration": "func hasResponseID(id json.RawMessage) bool {"
+        },
+        {
+          "line": 639,
+          "declaration": "func hasMediaType(header, target string) bool {"
+        },
+        {
+          "line": 644,
+          "declaration": "func acceptsMediaType(header, target string) bool {"
+        },
+        {
+          "line": 672,
+          "declaration": "func writeJSON(w http.ResponseWriter, value any) {"
+        },
+        {
+          "line": 677,
+          "declaration": "func copyResponse(w http.ResponseWriter, response upstreamResponse) {"
+        },
+        {
+          "line": 683,
+          "declaration": "func copyMCPResponse(w http.ResponseWriter, response upstreamResponse) {"
+        },
+        {
+          "line": 693,
+          "declaration": "func state(err error) string {"
+        },
+        {
+          "line": 700,
+          "declaration": "func boundedReason(err error) string {"
+        },
+        {
+          "line": 729,
+          "declaration": "func randomToken() (string, error) {"
+        },
+        {
+          "line": 738,
+          "declaration": "func (r *Router) SortedSourceAliases() []string {"
+        }
+      ]
+    },
+    {
+      "path": "internal/core/contracts.go",
+      "sha256": "0679548cce527fac99dc6ebb6f3294a369b5b741f7924596add205de910ddf8a",
+      "declarations": [
+        {
+          "line": 60,
+          "declaration": "func (s CapabilitySet) Supports(capability Capability) bool {"
+        },
+        {
+          "line": 64,
+          "declaration": "func (s CapabilitySet) Clone() CapabilitySet {"
+        },
+        {
+          "line": 134,
+          "declaration": "func (s ComponentStatus) Validate() error {"
+        },
+        {
+          "line": 186,
+          "declaration": "type MemoryBackend interface {"
+        },
+        {
+          "line": 192,
+          "declaration": "type ContextDocument struct {"
+        },
+        {
+          "line": 225,
+          "declaration": "type ContextBackend interface {"
+        },
+        {
+          "line": 324,
+          "declaration": "func (e *UnsupportedError) Error() string {"
+        },
+        {
+          "line": 333,
+          "declaration": "func (e *UnavailableError) Error() string {"
+        },
+        {
+          "line": 345,
+          "declaration": "func (e *IncompatibleError) Error() string {"
+        },
+        {
+          "line": 352,
+          "declaration": "func safeLabel(value string) bool {"
+        },
+        {
+          "line": 364,
+          "declaration": "func validSupport(value SupportState) bool {"
+        },
+        {
+          "line": 368,
+          "declaration": "func validHealth(value HealthState) bool {"
+        },
+        {
+          "line": 372,
+          "declaration": "func validCompatibility(value CompatibilityState) bool {"
+        },
+        {
+          "line": 376,
+          "declaration": "func validLifecycle(value LifecycleState) bool {"
+        }
+      ]
+    },
+    {
+      "path": "internal/context/mcp.go",
+      "sha256": "ed6fc711551a248c992fcd7ee8f2a0fd4deaf2ba6762eb15c414c052ce9611eb",
+      "declarations": [
+        {
+          "line": 36,
+          "declaration": "func (h MCPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {"
+        },
+        {
+          "line": 60,
+          "declaration": "func (h MCPHandler) dispatch(r *http.Request, request rpcRequest) (any, error) {"
+        },
+        {
+          "line": 138,
+          "declaration": "func toolDefinitions() []map[string]any {"
+        }
+      ]
+    },
+    {
+      "path": "internal/context/backend.go",
+      "sha256": "0825b3febbcfd0b175da27588d2e32bb0683aef191e3b3d64db8d92def877e79",
+      "declarations": [
+        {
+          "line": 18,
+          "declaration": "func (b *LegacyQdrantContextBackend) ID() core.ComponentID { return core.ComponentContext }"
+        },
+        {
+          "line": 20,
+          "declaration": "func (b *LegacyQdrantContextBackend) Probe(ctx context.Context) core.ComponentStatus {"
+        },
+        {
+          "line": 52,
+          "declaration": "func (b *LegacyQdrantContextBackend) Initialize(ctx context.Context) error {"
+        },
+        {
+          "line": 55,
+          "declaration": "func (b *LegacyQdrantContextBackend) Search(ctx context.Context, query string, limit int) ([]SearchResult, error) {"
+        },
+        {
+          "line": 58,
+          "declaration": "func (b *LegacyQdrantContextBackend) GetDocument(id string) (Document, bool, error) {"
+        },
+        {
+          "line": 61,
+          "declaration": "func (b *LegacyQdrantContextBackend) Recent(limit int) ([]Document, error) {"
+        },
+        {
+          "line": 64,
+          "declaration": "func (b *LegacyQdrantContextBackend) Status(ctx context.Context) Status {"
+        },
+        {
+          "line": 67,
+          "declaration": "func (b *LegacyQdrantContextBackend) AddConnector(connector Connector) error {"
+        },
+        {
+          "line": 70,
+          "declaration": "func (b *LegacyQdrantContextBackend) RemoveConnector(name string) bool {"
+        },
+        {
+          "line": 73,
+          "declaration": "func (b *LegacyQdrantContextBackend) ConnectorNames() []string {"
+        },
+        {
+          "line": 76,
+          "declaration": "func (b *LegacyQdrantContextBackend) Ingest(ctx context.Context, connector string) (int, error) {"
+        },
+        {
+          "line": 79,
+          "declaration": "func (b *LegacyQdrantContextBackend) PurgeSource(ctx context.Context, source string) error {"
+        }
+      ]
+    },
+    {
+      "path": "internal/memory/backend.go",
+      "sha256": "d1f53922d4e6231d9bc9400ef80013ecf7cc08c216d18ba76bf7983a79e6f55d",
+      "declarations": [
+        {
+          "line": 20,
+          "declaration": "func (b AIMemoryBackend) ID() core.ComponentID { return core.ComponentMemory }"
+        },
+        {
+          "line": 22,
+          "declaration": "func (b AIMemoryBackend) Probe(ctx context.Context) core.ComponentStatus {"
+        },
+        {
+          "line": 47,
+          "declaration": "func (b AIMemoryBackend) Configure(ctx context.Context, value core.MemoryConfiguration) error {"
+        },
+        {
+          "line": 54,
+          "declaration": "func (b AIMemoryBackend) Disable(ctx context.Context) error { return b.Manager.Disable(ctx) }"
+        },
+        {
+          "line": 55,
+          "declaration": "func (b AIMemoryBackend) Status(ctx context.Context) (string, error) {"
+        }
+      ]
+    },
+    {
+      "path": "internal/workingcontext/model.go",
+      "sha256": "3c4bfc22aa2f35ba40e6b76ea6542dd9c39f7bbbd0294e7b7bc4c8d2a3e2aa85",
+      "declarations": [
+        {
+          "line": 41,
+          "declaration": "func (s Sensitivity) Persistable() bool {"
+        },
+        {
+          "line": 45,
+          "declaration": "type Ownership struct {"
+        },
+        {
+          "line": 51,
+          "declaration": "func (o Ownership) Validate() error {"
+        },
+        {
+          "line": 75,
+          "declaration": "type ArtifactRef struct {"
+        },
+        {
+          "line": 89,
+          "declaration": "func (r ArtifactRef) Validate() error {"
+        },
+        {
+          "line": 110,
+          "declaration": "type ResultRef struct {"
+        },
+        {
+          "line": 116,
+          "declaration": "func (r ResultRef) Validate() error {"
+        },
+        {
+          "line": 159,
+          "declaration": "func (f Finding) Validate() error {"
+        },
+        {
+          "line": 198,
+          "declaration": "func (d StateDelta) Validate() error {"
+        },
+        {
+          "line": 228,
+          "declaration": "func (r WorkerResult) Validate() error {"
+        },
+        {
+          "line": 253,
+          "declaration": "func validFidelity(value core.CompressionFidelity) bool {"
+        },
+        {
+          "line": 257,
+          "declaration": "func validKind(value ArtifactKind) bool {"
+        },
+        {
+          "line": 265,
+          "declaration": "func validImportance(value Importance) bool {"
+        },
+        {
+          "line": 273,
+          "declaration": "func validChangeKind(value ChangeKind) bool {"
+        },
+        {
+          "line": 281,
+          "declaration": "func validResultStatus(value ResultStatus) bool {"
+        },
+        {
+          "line": 289,
+          "declaration": "func boundedText(value string, limit int) bool {"
+        }
+      ]
+    },
+    {
+      "path": "internal/workingcontext/store.go",
+      "sha256": "098da3eb0bf0cf2cd151c1fe0c78f0cd23575146ffadca7b3de40dd8d14f67ae",
+      "declarations": [
+        {
+          "line": 22,
+          "declaration": "type ArtifactReader interface {"
+        },
+        {
+          "line": 32,
+          "declaration": "type ArtifactStore interface {"
+        }
+      ]
+    },
+    {
+      "path": "internal/workingcontext/local.go",
+      "sha256": "40599b86f5bb1516b09ff080fecdc62938c1a73c6f9011388e4118b1005c679a",
+      "declarations": [
+        {
+          "line": 36,
+          "declaration": "func DefaultLimits() Limits {"
+        },
+        {
+          "line": 59,
+          "declaration": "func NewLocalStore(root string, options LocalOptions) (*LocalStore, error) {"
+        },
+        {
+          "line": 85,
+          "declaration": "func (l Limits) validate() error {"
+        },
+        {
+          "line": 92,
+          "declaration": "func (s *LocalStore) Root() string { return s.root }"
+        },
+        {
+          "line": 94,
+          "declaration": "func (s *LocalStore) Put(ctx context.Context, request PutRequest, input io.Reader) (ArtifactRef, error) {"
+        },
+        {
+          "line": 187,
+          "declaration": "func (s *LocalStore) Stat(ctx context.Context, owner Ownership, id string) (ArtifactRef, error) {"
+        },
+        {
+          "line": 192,
+          "declaration": "func (s *LocalStore) Read(ctx context.Context, owner Ownership, id string) (io.ReadCloser, ArtifactRef, error) {"
+        },
+        {
+          "line": 200,
+          "declaration": "func (s *LocalStore) ReadRange(ctx context.Context, owner Ownership, id string, offset, length int64) ([]byte, ArtifactRef, error) {"
+        },
+        {
+          "line": 214,
+          "declaration": "func (s *LocalStore) readVerified(ctx context.Context, owner Ownership, id string) ([]byte, ArtifactRef, error) {"
+        },
+        {
+          "line": 248,
+          "declaration": "func (s *LocalStore) GC(ctx context.Context) (int, error) {"
+        },
+        {
+          "line": 316,
+          "declaration": "func (s *LocalStore) usageLocked() (usage, error) {"
+        },
+        {
+          "line": 338,
+          "declaration": "func (s *LocalStore) loadMetadata(dir string) (ArtifactRef, error) {"
+        },
+        {
+          "line": 362,
+          "declaration": "func (s *LocalStore) artifactDir(id string) (string, error) {"
+        },
+        {
+          "line": 375,
+          "declaration": "func (s *LocalStore) ensureRoot() error {"
+        },
+        {
+          "line": 389,
+          "declaration": "func rejectSymlinkChain(path string) error {"
+        },
+        {
+          "line": 413,
+          "declaration": "func ownerAllows(stored, requester Ownership) bool {"
+        },
+        {
+          "line": 426,
+          "declaration": "func randomArtifactID() (string, error) {"
+        }
+      ]
+    },
+    {
+      "path": "internal/workingcontext/projector.go",
+      "sha256": "f92d4d341b80f4c87389a69e5b8fef957f17175b94c0e18277dc9419d6e990fc",
+      "declarations": [
+        {
+          "line": 39,
+          "declaration": "func ContextBudgetForTier(tier string) int {"
+        },
+        {
+          "line": 52,
+          "declaration": "type ProjectionInput struct {"
+        },
+        {
+          "line": 73,
+          "declaration": "func (p Projector) Project(ctx context.Context, input ProjectionInput) WorkerResult {"
+        },
+        {
+          "line": 152,
+          "declaration": "func (p Projector) emitCompression(owner Ownership, provider string, payloadType compression.PayloadType, fidelity core.CompressionFidelity, before, after, tokensBefore, tokensAfter int, basis string, recovery bool, duration time.Duration, state observability.State, reason observability.Reason, result string) {"
+        },
+        {
+          "line": 177,
+          "declaration": "func compactSummary(representation string, status ResultStatus, exitCode int, important []string, artifactID string, budget, originalSize int) (string, bool) {"
+        },
+        {
+          "line": 196,
+          "declaration": "func (p Projector) storeUnavailable(owner Ownership, status ResultStatus, cause error) WorkerResult {"
+        },
+        {
+          "line": 206,
+          "declaration": "func projectSummary(raw []byte, status ResultStatus, exitCode int, important []string, artifactID string, budget int, mediaType string) (string, bool) {"
+        },
+        {
+          "line": 231,
+          "declaration": "func importantErrors(status ResultStatus, exitCode int, failure error, raw []byte) []string {"
+        },
+        {
+          "line": 259,
+          "declaration": "func findings(raw []byte, evidence ResultRef) []Finding {"
+        },
+        {
+          "line": 285,
+          "declaration": "func statusSummary(status ResultStatus, exitCode int) string {"
+        },
+        {
+          "line": 289,
+          "declaration": "func boundedLine(value string, limit int) string {"
+        },
+        {
+          "line": 297,
+          "declaration": "func containsString(values []string, wanted string) bool {"
+        },
+        {
+          "line": 306,
+          "declaration": "func maxInt(a, b int) int {"
+        },
+        {
+          "line": 313,
+          "declaration": "func (p Projector) emit(owner Ownership, operation observability.Operation, state observability.State, reason observability.Reason, ref ArtifactRef, findings, references int, truncated bool) {"
+        }
+      ]
+    },
+    {
+      "path": "internal/orchestrator/server.go",
+      "sha256": "26c4606361d30e31ba820dfaaf3250880aa244c1eab252bed700f4d768d85eae",
+      "declarations": [
+        {
+          "line": 89,
+          "declaration": "func (s *Server) Run(ctx context.Context) error {"
+        },
+        {
+          "line": 97,
+          "declaration": "func (s *Server) initialize() {"
+        },
+        {
+          "line": 101,
+          "declaration": "func (s *Server) initializeContext(ctx context.Context) {"
+        },
+        {
+          "line": 142,
+          "declaration": "func (s *Server) protocolServer() *mcp.Server {"
+        },
+        {
+          "line": 152,
+          "declaration": "func (s *Server) authorized() error {"
+        },
+        {
+          "line": 167,
+          "declaration": "func (s *Server) addTools(server *mcp.Server) {"
+        },
+        {
+          "line": 192,
+          "declaration": "func (s *Server) status(_ context.Context, _ *mcp.CallToolRequest) (*mcp.CallToolResult, error) {"
+        },
+        {
+          "line": 200,
+          "declaration": "func (s *Server) agents(_ context.Context, _ *mcp.CallToolRequest) (*mcp.CallToolResult, error) {"
+        },
+        {
+          "line": 208,
+          "declaration": "func (s *Server) delegate(ctx context.Context, request *mcp.CallToolRequest) (*mcp.CallToolResult, error) {"
+        },
+        {
+          "line": 359,
+          "declaration": "func quotaLimitError(executor, message string) bool {"
+        },
+        {
+          "line": 369,
+          "declaration": "func (s *Server) quotaStatus(ctx context.Context, _ *mcp.CallToolRequest) (*mcp.CallToolResult, error) {"
+        },
+        {
+          "line": 385,
+          "declaration": "func (s *Server) checkpoint(_ context.Context, request *mcp.CallToolRequest) (*mcp.CallToolResult, error) {"
+        },
+        {
+          "line": 418,
+          "declaration": "func (s *Server) result(_ context.Context, request *mcp.CallToolRequest) (*mcp.CallToolResult, error) {"
+        },
+        {
+          "line": 432,
+          "declaration": "func (s *Server) artifactRead(ctx context.Context, request *mcp.CallToolRequest) (*mcp.CallToolResult, error) {"
+        },
+        {
+          "line": 457,
+          "declaration": "func (s *Server) artifactReadRange(ctx context.Context, request *mcp.CallToolRequest) (*mcp.CallToolResult, error) {"
+        },
+        {
+          "line": 478,
+          "declaration": "func (s *Server) cancel(_ context.Context, request *mcp.CallToolRequest) (*mcp.CallToolResult, error) {"
+        },
+        {
+          "line": 493,
+          "declaration": "func (s *Server) finish(id string, state session.State, exitCode int, result workingcontext.WorkerResult) {"
+        },
+        {
+          "line": 521,
+          "declaration": "func (s *Server) projectWorkerResult(taskID, workerID string, state session.State, raw workers.Result, runErr error, budget int) workingcontext.WorkerResult {"
+        },
+        {
+          "line": 535,
+          "declaration": "func artifactIDArgument(request *mcp.CallToolRequest) (string, error) {"
+        },
+        {
+          "line": 545,
+          "declaration": "func (s *Server) observeArtifactAccess(id string, ranged bool, size int64, accessErr error) {"
+        },
+        {
+          "line": 558,
+          "declaration": "func findWorker(value *session.Session, id string) *session.Worker {"
+        },
+        {
+          "line": 567,
+          "declaration": "func workerIDArgument(request *mcp.CallToolRequest) (string, error) {"
+        },
+        {
+          "line": 577,
+          "declaration": "func newWorkerID() (string, error) {"
+        },
+        {
+          "line": 585,
+          "declaration": "func object(properties map[string]any, required ...string) map[string]any {"
+        },
+        {
+          "line": 596,
+          "declaration": "func checkpointSchema() map[string]any {"
+        },
+        {
+          "line": 607,
+          "declaration": "func toolResult(value any) (*mcp.CallToolResult, error) {"
+        },
+        {
+          "line": 615,
+          "declaration": "func boolp(value bool) *bool { return &value }"
+        },
+        {
+          "line": 617,
+          "declaration": "func (s *Server) String() string { return fmt.Sprintf(\"ivoai-orchestrator(%s)\", s.SessionID) }"
+        }
+      ]
+    },
+    {
+      "path": "internal/orchestrator/primary_evidence.go",
+      "sha256": "c97d601beec0b61a7856f4c811a3b52e5b40d59a07ebbf35e8ade3229ffaf66f",
+      "declarations": [
+        {
+          "line": 15,
+          "declaration": "func (s *Server) primaryEvidence(ctx context.Context, planID string, response map[string]any) map[string]any {"
+        },
+        {
+          "line": 73,
+          "declaration": "func (s *Server) primaryEvidenceAdmitted(planID string) bool {"
+        }
+      ]
+    },
+    {
+      "path": "internal/workers/adapter.go",
+      "sha256": "1115032c227747fee2286dc29bbea9c98e4b939bb0fd8ab6c28579ab9b6468de",
+      "declarations": [
+        {
+          "line": 46,
+          "declaration": "type Request struct {"
+        },
+        {
+          "line": 97,
+          "declaration": "func (a Adapter) Capability(ctx context.Context, executor string) error {"
+        },
+        {
+          "line": 123,
+          "declaration": "func (a Adapter) Run(ctx context.Context, request Request, observe func(Observation)) (Result, error) {"
+        },
+        {
+          "line": 247,
+          "declaration": "func authoritativeKnowledgeActive(servers map[string]config.MCPServer) bool {"
+        },
+        {
+          "line": 259,
+          "declaration": "func (r Result) Evidence() []byte {"
+        },
+        {
+          "line": 263,
+          "declaration": "func (r Result) evidenceSize() int {"
+        },
+        {
+          "line": 279,
+          "declaration": "func (a Adapter) IsolateCodexMCPs(ctx context.Context, executable string, args []string) ([]string, error) {"
+        },
+        {
+          "line": 284,
+          "declaration": "func (a Adapter) isolateMCPs(ctx context.Context, executable, executor string, args []string) ([]string, error) {"
+        },
+        {
+          "line": 352,
+          "declaration": "func (a Adapter) enabledKnowledgeServer(name string) ([]string, bool) {"
+        },
+        {
+          "line": 361,
+          "declaration": "func (a Adapter) claudeKnowledgeConfig() (string, error) {"
+        },
+        {
+          "line": 387,
+          "declaration": "func tomlStringArray(values []string) string {"
+        },
+        {
+          "line": 395,
+          "declaration": "func workerArgs(request Request) ([]string, string, error) {"
+        },
+        {
+          "line": 448,
+          "declaration": "func validEffort(value string) bool {"
+        },
+        {
+          "line": 457,
+          "declaration": "func (a Adapter) binary(executor string) (string, error) {"
+        },
+        {
+          "line": 486,
+          "declaration": "func (b *limitedBuffer) Write(value []byte) (int, error) {"
+        },
+        {
+          "line": 501,
+          "declaration": "func run(ctx context.Context, command string, args []string, request Request, direct string, headroomUsed bool, observe func(Observation)) (Result, error) {"
+        },
+        {
+          "line": 556,
+          "declaration": "func workerEnvironment(agentPath, executor string) []string {"
+        },
+        {
+          "line": 578,
+          "declaration": "func readBounded(path string, limit int) (string, error) {"
+        },
+        {
+          "line": 597,
+          "declaration": "func resultBudget(value int) int {"
+        },
+        {
+          "line": 604,
+          "declaration": "func ResultBudgetForTier(tier string) int {"
+        },
+        {
+          "line": 619,
+          "declaration": "func claudeResult(value string) string {"
+        },
+        {
+          "line": 629,
+          "declaration": "func safeDiagnostic(value string) string {"
+        },
+        {
+          "line": 637,
+          "declaration": "func isStartError(err error) bool { return strings.Contains(err.Error(), \"start worker:\") }"
+        },
+        {
+          "line": 639,
+          "declaration": "func requestID() string {"
+        }
+      ]
+    },
+    {
+      "path": "internal/nativecodex/registry.go",
+      "sha256": "70e2c54c56378b28f352c69d5c364bf28dda68631893d0f8d58e1f1ca541649e",
+      "declarations": [
+        {
+          "line": 28,
+          "declaration": "type Binding struct {"
+        },
+        {
+          "line": 46,
+          "declaration": "func NewRegistry(ctx context.Context, owner workingcontext.Ownership, bindings []Binding) (*Registry, error) {"
+        },
+        {
+          "line": 70,
+          "declaration": "func (r *Registry) IDs() []string {"
+        },
+        {
+          "line": 77,
+          "declaration": "func (r *Registry) spec() any {"
+        },
+        {
+          "line": 83,
+          "declaration": "func evidenceArguments(arguments json.RawMessage) (selection, error) {"
+        },
+        {
+          "line": 129,
+          "declaration": "func (r *Registry) start(ctx context.Context, id, representation string) (<-chan preparedResult, error) {"
+        },
+        {
+          "line": 153,
+          "declaration": "func (r *Registry) prepare(ctx context.Context, id, representation string) (preparedEvidence, error) {"
+        },
+        {
+          "line": 214,
+          "declaration": "func (r *Registry) validate(ctx context.Context, ids map[string]bool) error {"
+        },
+        {
+          "line": 227,
+          "declaration": "func contextError(ctx context.Context, fallback error) error {"
+        }
+      ]
+    },
+    {
+      "path": "internal/nativecodex/runner.go",
+      "sha256": "1ee0bac880be42e00104f72b85e84e96f7de407476a39a640c9f837b6bfb4ed0",
+      "declarations": [
+        {
+          "line": 27,
+          "declaration": "type Options struct {"
+        },
+        {
+          "line": 49,
+          "declaration": "func New(options Options) *Runner {"
+        },
+        {
+          "line": 56,
+          "declaration": "func failed(class string) error { return &core.ExecutorFailure{Class: class, ExitCode: -1} }"
+        }
+      ]
+    }
+  ],
+  "proposal_sha256": "d6a058dfe5727ff0b80ab10ae01fff89840735049bf8ad2460cfb9bc675bca3d",
+  "not_implemented": true,
+  "contracts_not_assumed": [
+    "remote_corpus_generation",
+    "remote_current_authorization_epoch",
+    "cross_process_Gateway_seals",
+    "worker_ResultRef_reader_already_delivered",
+    "all_artifact_routes_already_use_Recover"
+  ],
+  "open_root_decisions": [
+    "snapshot_retention_semantics_under_current_Core_grants",
+    "optional_approved_selector_and_knowledge_result_contract",
+    "protected_ID_namespace_and_legacy_pre_marker_policy",
+    "strict_recovery_primary_and_worker_same_process_same_worktree_only"
+  ]
+}

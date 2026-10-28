@@ -128,7 +128,7 @@ func (a *App) gatewayCodeEvidence(ctx context.Context, provider *codeintel.Provi
 		}
 		return evidence.ErrDenied
 	}
-	request := evidence.Request{Owner: workingcontext.Ownership{SessionID: id, TaskID: taskID, WorkerID: workerID}, Source: "code", ReadOnly: true, BudgetBytes: query.BudgetBytes,
+	request := evidence.Request{ProtectedRecovery: protectCodeEvidence(initial, expected, workerID, root), Owner: workingcontext.Ownership{SessionID: id, TaskID: taskID, WorkerID: workerID}, Source: "code", ReadOnly: true, BudgetBytes: query.BudgetBytes,
 		Scope:       evidence.Scope{Organization: evidence.Digest(provider.Scope), Repository: evidence.Digest(root), Worktree: identity, Permissions: permissionDigest},
 		QueryDigest: evidence.Digest(query, codeintel.Version, provider.Distribution, provider.Node), Authorize: authorize,
 		CurrentGeneration: func(ctx context.Context) (string, error) {
