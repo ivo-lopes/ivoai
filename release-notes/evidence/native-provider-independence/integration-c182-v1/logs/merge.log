@@ -1,0 +1,937 @@
+Auto-merging internal/app/session.go
+Auto-merging internal/docsserver/site/404.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/404.html
+Auto-merging internal/docsserver/site/assets/js/5328.c2617737.js
+CONFLICT (rename/rename): internal/docsserver/site/assets/js/5328.c2617737.js renamed to internal/docsserver/site/assets/js/5328.7ac0ef20.js in HEAD and to internal/docsserver/site/assets/js/5328.b6fb23a6.js in c182a954accbc69ca3dee25356af7a6b14ccb568.
+Auto-merging internal/docsserver/site/assets/js/bf1307fc.cc33ddb0.js
+CONFLICT (rename/rename): internal/docsserver/site/assets/js/bf1307fc.cc33ddb0.js renamed to internal/docsserver/site/assets/js/bf1307fc.45b030ea.js in HEAD and to internal/docsserver/site/assets/js/bf1307fc.9a74ae2d.js in c182a954accbc69ca3dee25356af7a6b14ccb568.
+CONFLICT (rename/delete): internal/docsserver/site/assets/js/runtime~main.33c3f7ed.js renamed to internal/docsserver/site/assets/js/runtime~main.64a9a0a9.js in HEAD, but deleted in c182a954accbc69ca3dee25356af7a6b14ccb568.
+CONFLICT (modify/delete): internal/docsserver/site/assets/js/runtime~main.64a9a0a9.js deleted in c182a954accbc69ca3dee25356af7a6b14ccb568 and modified in HEAD.  Version HEAD of internal/docsserver/site/assets/js/runtime~main.64a9a0a9.js left in tree.
+Auto-merging internal/docsserver/site/build-input.sha256
+CONFLICT (content): Merge conflict in internal/docsserver/site/build-input.sha256
+Auto-merging internal/docsserver/site/docs.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs.html
+Auto-merging internal/docsserver/site/docs/0.8.0.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.8.0.html
+Auto-merging internal/docsserver/site/docs/0.8.0/adrs.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.8.0/adrs.html
+Auto-merging internal/docsserver/site/docs/0.8.0/advanced-usage.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.8.0/advanced-usage.html
+Auto-merging internal/docsserver/site/docs/0.8.0/architecture.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.8.0/architecture.html
+Auto-merging internal/docsserver/site/docs/0.8.0/auto-orchestration.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.8.0/auto-orchestration.html
+Auto-merging internal/docsserver/site/docs/0.8.0/auto-scheduler.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.8.0/auto-scheduler.html
+Auto-merging internal/docsserver/site/docs/0.8.0/backup-restore.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.8.0/backup-restore.html
+Auto-merging internal/docsserver/site/docs/0.8.0/basic-usage.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.8.0/basic-usage.html
+Auto-merging internal/docsserver/site/docs/0.8.0/canary-rollout.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.8.0/canary-rollout.html
+Auto-merging internal/docsserver/site/docs/0.8.0/caveman-canary.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.8.0/caveman-canary.html
+Auto-merging internal/docsserver/site/docs/0.8.0/cli-reference.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.8.0/cli-reference.html
+Auto-merging internal/docsserver/site/docs/0.8.0/client.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.8.0/client.html
+Auto-merging internal/docsserver/site/docs/0.8.0/compression-provider.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.8.0/compression-provider.html
+Auto-merging internal/docsserver/site/docs/0.8.0/concepts.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.8.0/concepts.html
+Auto-merging internal/docsserver/site/docs/0.8.0/connections.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.8.0/connections.html
+Auto-merging internal/docsserver/site/docs/0.8.0/context-guide.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.8.0/context-guide.html
+Auto-merging internal/docsserver/site/docs/0.8.0/contributing.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.8.0/contributing.html
+Auto-merging internal/docsserver/site/docs/0.8.0/cookbook.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.8.0/cookbook.html
+Auto-merging internal/docsserver/site/docs/0.8.0/development.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.8.0/development.html
+Auto-merging internal/docsserver/site/docs/0.8.0/executors.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.8.0/executors.html
+Auto-merging internal/docsserver/site/docs/0.8.0/faq.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.8.0/faq.html
+Auto-merging internal/docsserver/site/docs/0.8.0/installation.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.8.0/installation.html
+Auto-merging internal/docsserver/site/docs/0.8.0/known-limitations.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.8.0/known-limitations.html
+Auto-merging internal/docsserver/site/docs/0.8.0/mcp-web.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.8.0/mcp-web.html
+Auto-merging internal/docsserver/site/docs/0.8.0/memory.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.8.0/memory.html
+Auto-merging internal/docsserver/site/docs/0.8.0/multi-server.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.8.0/multi-server.html
+Auto-merging internal/docsserver/site/docs/0.8.0/operations.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.8.0/operations.html
+Auto-merging internal/docsserver/site/docs/0.8.0/orchestration.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.8.0/orchestration.html
+Auto-merging internal/docsserver/site/docs/0.8.0/production-compatibility.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.8.0/production-compatibility.html
+Auto-merging internal/docsserver/site/docs/0.8.0/production-inventory.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.8.0/production-inventory.html
+Auto-merging internal/docsserver/site/docs/0.8.0/quickstart.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.8.0/quickstart.html
+Auto-merging internal/docsserver/site/docs/0.8.0/quota-routing.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.8.0/quota-routing.html
+Auto-merging internal/docsserver/site/docs/0.8.0/relatorio-executivo.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.8.0/relatorio-executivo.html
+Auto-merging internal/docsserver/site/docs/0.8.0/relatorio-tecnico.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.8.0/relatorio-tecnico.html
+Auto-merging internal/docsserver/site/docs/0.8.0/releases.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.8.0/releases.html
+Auto-merging internal/docsserver/site/docs/0.8.0/security.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.8.0/security.html
+Auto-merging internal/docsserver/site/docs/0.8.0/server.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.8.0/server.html
+Auto-merging internal/docsserver/site/docs/0.8.0/setup.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.8.0/setup.html
+Auto-merging internal/docsserver/site/docs/0.8.0/skill-control-plane-threat-model.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.8.0/skill-control-plane-threat-model.html
+Auto-merging internal/docsserver/site/docs/0.8.0/skill-control-plane.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.8.0/skill-control-plane.html
+Auto-merging internal/docsserver/site/docs/0.8.0/troubleshooting.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.8.0/troubleshooting.html
+Auto-merging internal/docsserver/site/docs/0.8.0/update-rollback.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.8.0/update-rollback.html
+Auto-merging internal/docsserver/site/docs/0.8.0/working-context.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.8.0/working-context.html
+Auto-merging internal/docsserver/site/docs/0.9.0.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.0.html
+Auto-merging internal/docsserver/site/docs/0.9.0/adrs.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.0/adrs.html
+Auto-merging internal/docsserver/site/docs/0.9.0/advanced-usage.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.0/advanced-usage.html
+Auto-merging internal/docsserver/site/docs/0.9.0/architecture.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.0/architecture.html
+Auto-merging internal/docsserver/site/docs/0.9.0/auto-orchestration.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.0/auto-orchestration.html
+Auto-merging internal/docsserver/site/docs/0.9.0/auto-scheduler.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.0/auto-scheduler.html
+Auto-merging internal/docsserver/site/docs/0.9.0/backup-restore.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.0/backup-restore.html
+Auto-merging internal/docsserver/site/docs/0.9.0/basic-usage.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.0/basic-usage.html
+Auto-merging internal/docsserver/site/docs/0.9.0/canary-rollout.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.0/canary-rollout.html
+Auto-merging internal/docsserver/site/docs/0.9.0/caveman-canary.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.0/caveman-canary.html
+Auto-merging internal/docsserver/site/docs/0.9.0/cli-reference.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.0/cli-reference.html
+Auto-merging internal/docsserver/site/docs/0.9.0/client.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.0/client.html
+Auto-merging internal/docsserver/site/docs/0.9.0/compression-provider.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.0/compression-provider.html
+Auto-merging internal/docsserver/site/docs/0.9.0/concepts.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.0/concepts.html
+Auto-merging internal/docsserver/site/docs/0.9.0/connections.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.0/connections.html
+Auto-merging internal/docsserver/site/docs/0.9.0/context-guide.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.0/context-guide.html
+Auto-merging internal/docsserver/site/docs/0.9.0/contributing.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.0/contributing.html
+Auto-merging internal/docsserver/site/docs/0.9.0/cookbook.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.0/cookbook.html
+Auto-merging internal/docsserver/site/docs/0.9.0/development.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.0/development.html
+Auto-merging internal/docsserver/site/docs/0.9.0/executors.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.0/executors.html
+Auto-merging internal/docsserver/site/docs/0.9.0/faq.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.0/faq.html
+Auto-merging internal/docsserver/site/docs/0.9.0/installation.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.0/installation.html
+Auto-merging internal/docsserver/site/docs/0.9.0/known-limitations.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.0/known-limitations.html
+Auto-merging internal/docsserver/site/docs/0.9.0/mcp-web.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.0/mcp-web.html
+Auto-merging internal/docsserver/site/docs/0.9.0/memory.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.0/memory.html
+Auto-merging internal/docsserver/site/docs/0.9.0/multi-server.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.0/multi-server.html
+Auto-merging internal/docsserver/site/docs/0.9.0/operations.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.0/operations.html
+Auto-merging internal/docsserver/site/docs/0.9.0/orchestration.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.0/orchestration.html
+Auto-merging internal/docsserver/site/docs/0.9.0/production-compatibility.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.0/production-compatibility.html
+Auto-merging internal/docsserver/site/docs/0.9.0/production-inventory.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.0/production-inventory.html
+Auto-merging internal/docsserver/site/docs/0.9.0/quickstart.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.0/quickstart.html
+Auto-merging internal/docsserver/site/docs/0.9.0/quota-routing.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.0/quota-routing.html
+Auto-merging internal/docsserver/site/docs/0.9.0/relatorio-executivo.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.0/relatorio-executivo.html
+Auto-merging internal/docsserver/site/docs/0.9.0/relatorio-tecnico.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.0/relatorio-tecnico.html
+Auto-merging internal/docsserver/site/docs/0.9.0/releases.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.0/releases.html
+Auto-merging internal/docsserver/site/docs/0.9.0/security.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.0/security.html
+Auto-merging internal/docsserver/site/docs/0.9.0/server.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.0/server.html
+Auto-merging internal/docsserver/site/docs/0.9.0/setup.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.0/setup.html
+Auto-merging internal/docsserver/site/docs/0.9.0/skill-control-plane-threat-model.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.0/skill-control-plane-threat-model.html
+Auto-merging internal/docsserver/site/docs/0.9.0/skill-control-plane.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.0/skill-control-plane.html
+Auto-merging internal/docsserver/site/docs/0.9.0/troubleshooting.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.0/troubleshooting.html
+Auto-merging internal/docsserver/site/docs/0.9.0/update-rollback.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.0/update-rollback.html
+Auto-merging internal/docsserver/site/docs/0.9.0/ux-audit.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.0/ux-audit.html
+Auto-merging internal/docsserver/site/docs/0.9.0/working-context.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.0/working-context.html
+Auto-merging internal/docsserver/site/docs/0.9.1.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.1.html
+Auto-merging internal/docsserver/site/docs/0.9.1/adrs.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.1/adrs.html
+Auto-merging internal/docsserver/site/docs/0.9.1/advanced-usage.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.1/advanced-usage.html
+Auto-merging internal/docsserver/site/docs/0.9.1/architecture.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.1/architecture.html
+Auto-merging internal/docsserver/site/docs/0.9.1/auto-orchestration.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.1/auto-orchestration.html
+Auto-merging internal/docsserver/site/docs/0.9.1/auto-scheduler.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.1/auto-scheduler.html
+Auto-merging internal/docsserver/site/docs/0.9.1/backup-restore.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.1/backup-restore.html
+Auto-merging internal/docsserver/site/docs/0.9.1/basic-usage.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.1/basic-usage.html
+Auto-merging internal/docsserver/site/docs/0.9.1/canary-rollout.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.1/canary-rollout.html
+Auto-merging internal/docsserver/site/docs/0.9.1/caveman-canary.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.1/caveman-canary.html
+Auto-merging internal/docsserver/site/docs/0.9.1/cli-reference.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.1/cli-reference.html
+Auto-merging internal/docsserver/site/docs/0.9.1/client.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.1/client.html
+Auto-merging internal/docsserver/site/docs/0.9.1/compression-provider.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.1/compression-provider.html
+Auto-merging internal/docsserver/site/docs/0.9.1/concepts.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.1/concepts.html
+Auto-merging internal/docsserver/site/docs/0.9.1/connections.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.1/connections.html
+Auto-merging internal/docsserver/site/docs/0.9.1/context-guide.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.1/context-guide.html
+Auto-merging internal/docsserver/site/docs/0.9.1/contributing.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.1/contributing.html
+Auto-merging internal/docsserver/site/docs/0.9.1/cookbook.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.1/cookbook.html
+Auto-merging internal/docsserver/site/docs/0.9.1/development.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.1/development.html
+Auto-merging internal/docsserver/site/docs/0.9.1/executors.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.1/executors.html
+Auto-merging internal/docsserver/site/docs/0.9.1/faq.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.1/faq.html
+Auto-merging internal/docsserver/site/docs/0.9.1/installation.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.1/installation.html
+Auto-merging internal/docsserver/site/docs/0.9.1/known-limitations.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.1/known-limitations.html
+Auto-merging internal/docsserver/site/docs/0.9.1/mcp-web.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.1/mcp-web.html
+Auto-merging internal/docsserver/site/docs/0.9.1/memory.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.1/memory.html
+Auto-merging internal/docsserver/site/docs/0.9.1/multi-server.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.1/multi-server.html
+Auto-merging internal/docsserver/site/docs/0.9.1/operations.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.1/operations.html
+Auto-merging internal/docsserver/site/docs/0.9.1/orchestration.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.1/orchestration.html
+Auto-merging internal/docsserver/site/docs/0.9.1/production-compatibility.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.1/production-compatibility.html
+Auto-merging internal/docsserver/site/docs/0.9.1/production-inventory.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.1/production-inventory.html
+Auto-merging internal/docsserver/site/docs/0.9.1/quickstart.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.1/quickstart.html
+Auto-merging internal/docsserver/site/docs/0.9.1/quota-routing.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.1/quota-routing.html
+Auto-merging internal/docsserver/site/docs/0.9.1/relatorio-executivo.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.1/relatorio-executivo.html
+Auto-merging internal/docsserver/site/docs/0.9.1/relatorio-tecnico.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.1/relatorio-tecnico.html
+Auto-merging internal/docsserver/site/docs/0.9.1/releases.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.1/releases.html
+Auto-merging internal/docsserver/site/docs/0.9.1/security.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.1/security.html
+Auto-merging internal/docsserver/site/docs/0.9.1/server.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.1/server.html
+Auto-merging internal/docsserver/site/docs/0.9.1/setup.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.1/setup.html
+Auto-merging internal/docsserver/site/docs/0.9.1/skill-control-plane-threat-model.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.1/skill-control-plane-threat-model.html
+Auto-merging internal/docsserver/site/docs/0.9.1/skill-control-plane.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.1/skill-control-plane.html
+Auto-merging internal/docsserver/site/docs/0.9.1/troubleshooting.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.1/troubleshooting.html
+Auto-merging internal/docsserver/site/docs/0.9.1/update-rollback.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.1/update-rollback.html
+Auto-merging internal/docsserver/site/docs/0.9.1/ux-audit.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.1/ux-audit.html
+Auto-merging internal/docsserver/site/docs/0.9.1/working-context.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/0.9.1/working-context.html
+Auto-merging internal/docsserver/site/docs/adrs.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/adrs.html
+Auto-merging internal/docsserver/site/docs/advanced-usage.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/advanced-usage.html
+Auto-merging internal/docsserver/site/docs/architecture.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/architecture.html
+Auto-merging internal/docsserver/site/docs/auto-orchestration.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/auto-orchestration.html
+Auto-merging internal/docsserver/site/docs/auto-scheduler.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/auto-scheduler.html
+Auto-merging internal/docsserver/site/docs/backup-restore.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/backup-restore.html
+Auto-merging internal/docsserver/site/docs/basic-usage.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/basic-usage.html
+Auto-merging internal/docsserver/site/docs/canary-rollout.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/canary-rollout.html
+Auto-merging internal/docsserver/site/docs/caveman-canary.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/caveman-canary.html
+Auto-merging internal/docsserver/site/docs/cli-reference.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/cli-reference.html
+Auto-merging internal/docsserver/site/docs/client.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/client.html
+Auto-merging internal/docsserver/site/docs/compression-provider.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/compression-provider.html
+Auto-merging internal/docsserver/site/docs/concepts.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/concepts.html
+Auto-merging internal/docsserver/site/docs/connections.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/connections.html
+Auto-merging internal/docsserver/site/docs/context-guide.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/context-guide.html
+Auto-merging internal/docsserver/site/docs/contributing.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/contributing.html
+Auto-merging internal/docsserver/site/docs/cookbook.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/cookbook.html
+Auto-merging internal/docsserver/site/docs/development.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/development.html
+Auto-merging internal/docsserver/site/docs/executors.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/executors.html
+Auto-merging internal/docsserver/site/docs/faq.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/faq.html
+Auto-merging internal/docsserver/site/docs/installation.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/installation.html
+Auto-merging internal/docsserver/site/docs/known-limitations.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/known-limitations.html
+Auto-merging internal/docsserver/site/docs/mcp-web.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/mcp-web.html
+Auto-merging internal/docsserver/site/docs/memory.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/memory.html
+Auto-merging internal/docsserver/site/docs/multi-server.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/multi-server.html
+Auto-merging internal/docsserver/site/docs/next.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/next.html
+Auto-merging internal/docsserver/site/docs/next/adrs.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/next/adrs.html
+Auto-merging internal/docsserver/site/docs/next/advanced-usage.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/next/advanced-usage.html
+Auto-merging internal/docsserver/site/docs/next/architecture.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/next/architecture.html
+Auto-merging internal/docsserver/site/docs/next/auto-orchestration.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/next/auto-orchestration.html
+Auto-merging internal/docsserver/site/docs/next/auto-scheduler.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/next/auto-scheduler.html
+Auto-merging internal/docsserver/site/docs/next/backend-first-migration.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/next/backend-first-migration.html
+Auto-merging internal/docsserver/site/docs/next/backup-restore.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/next/backup-restore.html
+Auto-merging internal/docsserver/site/docs/next/basic-usage.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/next/basic-usage.html
+Auto-merging internal/docsserver/site/docs/next/canary-rollout.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/next/canary-rollout.html
+Auto-merging internal/docsserver/site/docs/next/caveman-canary.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/next/caveman-canary.html
+Auto-merging internal/docsserver/site/docs/next/cli-reference.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/next/cli-reference.html
+Auto-merging internal/docsserver/site/docs/next/client.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/next/client.html
+Auto-merging internal/docsserver/site/docs/next/compression-provider.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/next/compression-provider.html
+Auto-merging internal/docsserver/site/docs/next/concepts.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/next/concepts.html
+Auto-merging internal/docsserver/site/docs/next/connections.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/next/connections.html
+Auto-merging internal/docsserver/site/docs/next/context-guide.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/next/context-guide.html
+Auto-merging internal/docsserver/site/docs/next/contributing.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/next/contributing.html
+Auto-merging internal/docsserver/site/docs/next/conversation-continuity.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/next/conversation-continuity.html
+Auto-merging internal/docsserver/site/docs/next/cookbook.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/next/cookbook.html
+Auto-merging internal/docsserver/site/docs/next/development.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/next/development.html
+Auto-merging internal/docsserver/site/docs/next/evidence-gateway.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/next/evidence-gateway.html
+Auto-merging internal/docsserver/site/docs/next/executors.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/next/executors.html
+Auto-merging internal/docsserver/site/docs/next/faq.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/next/faq.html
+Auto-merging internal/docsserver/site/docs/next/installation.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/next/installation.html
+Auto-merging internal/docsserver/site/docs/next/known-limitations.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/next/known-limitations.html
+Auto-merging internal/docsserver/site/docs/next/mcp-web.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/next/mcp-web.html
+Auto-merging internal/docsserver/site/docs/next/memory.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/next/memory.html
+Auto-merging internal/docsserver/site/docs/next/multi-server.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/next/multi-server.html
+Auto-merging internal/docsserver/site/docs/next/native-graft.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/next/native-graft.html
+Auto-merging internal/docsserver/site/docs/next/native-provider-capabilities.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/next/native-provider-capabilities.html
+Auto-merging internal/docsserver/site/docs/next/operations.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/next/operations.html
+Auto-merging internal/docsserver/site/docs/next/orchestrated-frontends.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/next/orchestrated-frontends.html
+Auto-merging internal/docsserver/site/docs/next/orchestration.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/next/orchestration.html
+Auto-merging internal/docsserver/site/docs/next/production-compatibility.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/next/production-compatibility.html
+Auto-merging internal/docsserver/site/docs/next/production-inventory.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/next/production-inventory.html
+Auto-merging internal/docsserver/site/docs/next/quickstart.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/next/quickstart.html
+Auto-merging internal/docsserver/site/docs/next/quota-routing.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/next/quota-routing.html
+Auto-merging internal/docsserver/site/docs/next/relatorio-executivo.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/next/relatorio-executivo.html
+Auto-merging internal/docsserver/site/docs/next/relatorio-tecnico.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/next/relatorio-tecnico.html
+Auto-merging internal/docsserver/site/docs/next/releases.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/next/releases.html
+Auto-merging internal/docsserver/site/docs/next/search-index.json
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/next/search-index.json
+Auto-merging internal/docsserver/site/docs/next/security.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/next/security.html
+Auto-merging internal/docsserver/site/docs/next/server.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/next/server.html
+Auto-merging internal/docsserver/site/docs/next/setup.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/next/setup.html
+Auto-merging internal/docsserver/site/docs/next/skill-control-plane-threat-model.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/next/skill-control-plane-threat-model.html
+Auto-merging internal/docsserver/site/docs/next/skill-control-plane.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/next/skill-control-plane.html
+Auto-merging internal/docsserver/site/docs/next/troubleshooting.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/next/troubleshooting.html
+Auto-merging internal/docsserver/site/docs/next/update-rollback.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/next/update-rollback.html
+Auto-merging internal/docsserver/site/docs/next/ux-audit.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/next/ux-audit.html
+Auto-merging internal/docsserver/site/docs/next/working-context.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/next/working-context.html
+Auto-merging internal/docsserver/site/docs/operations.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/operations.html
+Auto-merging internal/docsserver/site/docs/orchestration.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/orchestration.html
+Auto-merging internal/docsserver/site/docs/production-compatibility.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/production-compatibility.html
+Auto-merging internal/docsserver/site/docs/production-inventory.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/production-inventory.html
+Auto-merging internal/docsserver/site/docs/quickstart.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/quickstart.html
+Auto-merging internal/docsserver/site/docs/quota-routing.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/quota-routing.html
+Auto-merging internal/docsserver/site/docs/relatorio-executivo.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/relatorio-executivo.html
+Auto-merging internal/docsserver/site/docs/relatorio-tecnico.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/relatorio-tecnico.html
+Auto-merging internal/docsserver/site/docs/releases.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/releases.html
+Auto-merging internal/docsserver/site/docs/security.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/security.html
+Auto-merging internal/docsserver/site/docs/server.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/server.html
+Auto-merging internal/docsserver/site/docs/setup.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/setup.html
+Auto-merging internal/docsserver/site/docs/skill-control-plane-threat-model.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/skill-control-plane-threat-model.html
+Auto-merging internal/docsserver/site/docs/skill-control-plane.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/skill-control-plane.html
+Auto-merging internal/docsserver/site/docs/troubleshooting.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/troubleshooting.html
+Auto-merging internal/docsserver/site/docs/update-rollback.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/update-rollback.html
+Auto-merging internal/docsserver/site/docs/ux-audit.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/ux-audit.html
+Auto-merging internal/docsserver/site/docs/working-context.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/docs/working-context.html
+Auto-merging internal/docsserver/site/index.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/index.html
+Auto-merging internal/docsserver/site/pt-BR/404.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/404.html
+Auto-merging internal/docsserver/site/pt-BR/assets/js/5328.891ba043.js
+CONFLICT (rename/rename): internal/docsserver/site/pt-BR/assets/js/5328.891ba043.js renamed to internal/docsserver/site/pt-BR/assets/js/5328.88675332.js in HEAD and to internal/docsserver/site/pt-BR/assets/js/5328.2f5c5257.js in c182a954accbc69ca3dee25356af7a6b14ccb568.
+CONFLICT (rename/delete): internal/docsserver/site/pt-BR/assets/js/c002b5c6.91f792ee.js renamed to internal/docsserver/site/pt-BR/assets/js/c002b5c6.fc084d4a.js in HEAD, but deleted in c182a954accbc69ca3dee25356af7a6b14ccb568.
+CONFLICT (modify/delete): internal/docsserver/site/pt-BR/assets/js/c002b5c6.fc084d4a.js deleted in c182a954accbc69ca3dee25356af7a6b14ccb568 and modified in HEAD.  Version HEAD of internal/docsserver/site/pt-BR/assets/js/c002b5c6.fc084d4a.js left in tree.
+CONFLICT (rename/delete): internal/docsserver/site/pt-BR/assets/js/runtime~main.7a8d967b.js renamed to internal/docsserver/site/pt-BR/assets/js/runtime~main.b422482f.js in HEAD, but deleted in c182a954accbc69ca3dee25356af7a6b14ccb568.
+CONFLICT (modify/delete): internal/docsserver/site/pt-BR/assets/js/runtime~main.b422482f.js deleted in c182a954accbc69ca3dee25356af7a6b14ccb568 and modified in HEAD.  Version HEAD of internal/docsserver/site/pt-BR/assets/js/runtime~main.b422482f.js left in tree.
+Auto-merging internal/docsserver/site/pt-BR/build-input.sha256
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/build-input.sha256
+Auto-merging internal/docsserver/site/pt-BR/docs.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.8.0.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.8.0.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.8.0/adrs.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.8.0/adrs.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.8.0/advanced-usage.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.8.0/advanced-usage.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.8.0/architecture.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.8.0/architecture.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.8.0/auto-orchestration.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.8.0/auto-orchestration.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.8.0/auto-scheduler.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.8.0/auto-scheduler.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.8.0/backup-restore.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.8.0/backup-restore.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.8.0/basic-usage.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.8.0/basic-usage.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.8.0/canary-rollout.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.8.0/canary-rollout.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.8.0/caveman-canary.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.8.0/caveman-canary.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.8.0/cli-reference.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.8.0/cli-reference.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.8.0/client.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.8.0/client.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.8.0/compression-provider.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.8.0/compression-provider.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.8.0/concepts.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.8.0/concepts.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.8.0/connections.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.8.0/connections.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.8.0/context-guide.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.8.0/context-guide.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.8.0/contributing.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.8.0/contributing.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.8.0/cookbook.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.8.0/cookbook.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.8.0/development.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.8.0/development.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.8.0/executors.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.8.0/executors.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.8.0/faq.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.8.0/faq.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.8.0/installation.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.8.0/installation.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.8.0/known-limitations.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.8.0/known-limitations.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.8.0/mcp-web.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.8.0/mcp-web.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.8.0/memory.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.8.0/memory.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.8.0/multi-server.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.8.0/multi-server.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.8.0/operations.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.8.0/operations.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.8.0/orchestration.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.8.0/orchestration.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.8.0/production-compatibility.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.8.0/production-compatibility.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.8.0/production-inventory.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.8.0/production-inventory.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.8.0/quickstart.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.8.0/quickstart.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.8.0/quota-routing.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.8.0/quota-routing.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.8.0/relatorio-executivo.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.8.0/relatorio-executivo.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.8.0/relatorio-tecnico.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.8.0/relatorio-tecnico.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.8.0/releases.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.8.0/releases.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.8.0/security.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.8.0/security.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.8.0/server.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.8.0/server.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.8.0/setup.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.8.0/setup.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.8.0/skill-control-plane-threat-model.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.8.0/skill-control-plane-threat-model.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.8.0/skill-control-plane.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.8.0/skill-control-plane.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.8.0/troubleshooting.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.8.0/troubleshooting.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.8.0/update-rollback.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.8.0/update-rollback.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.8.0/working-context.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.8.0/working-context.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.0.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.0.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.0/adrs.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.0/adrs.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.0/advanced-usage.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.0/advanced-usage.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.0/architecture.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.0/architecture.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.0/auto-orchestration.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.0/auto-orchestration.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.0/auto-scheduler.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.0/auto-scheduler.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.0/backup-restore.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.0/backup-restore.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.0/basic-usage.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.0/basic-usage.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.0/canary-rollout.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.0/canary-rollout.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.0/caveman-canary.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.0/caveman-canary.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.0/cli-reference.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.0/cli-reference.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.0/client.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.0/client.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.0/compression-provider.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.0/compression-provider.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.0/concepts.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.0/concepts.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.0/connections.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.0/connections.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.0/context-guide.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.0/context-guide.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.0/contributing.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.0/contributing.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.0/cookbook.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.0/cookbook.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.0/development.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.0/development.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.0/executors.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.0/executors.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.0/faq.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.0/faq.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.0/installation.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.0/installation.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.0/known-limitations.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.0/known-limitations.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.0/mcp-web.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.0/mcp-web.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.0/memory.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.0/memory.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.0/multi-server.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.0/multi-server.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.0/operations.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.0/operations.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.0/orchestration.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.0/orchestration.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.0/production-compatibility.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.0/production-compatibility.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.0/production-inventory.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.0/production-inventory.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.0/quickstart.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.0/quickstart.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.0/quota-routing.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.0/quota-routing.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.0/relatorio-executivo.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.0/relatorio-executivo.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.0/relatorio-tecnico.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.0/relatorio-tecnico.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.0/releases.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.0/releases.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.0/security.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.0/security.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.0/server.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.0/server.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.0/setup.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.0/setup.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.0/skill-control-plane-threat-model.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.0/skill-control-plane-threat-model.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.0/skill-control-plane.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.0/skill-control-plane.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.0/troubleshooting.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.0/troubleshooting.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.0/update-rollback.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.0/update-rollback.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.0/ux-audit.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.0/ux-audit.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.0/working-context.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.0/working-context.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.1.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.1.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.1/adrs.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.1/adrs.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.1/advanced-usage.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.1/advanced-usage.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.1/architecture.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.1/architecture.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.1/auto-orchestration.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.1/auto-orchestration.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.1/auto-scheduler.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.1/auto-scheduler.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.1/backup-restore.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.1/backup-restore.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.1/basic-usage.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.1/basic-usage.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.1/canary-rollout.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.1/canary-rollout.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.1/caveman-canary.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.1/caveman-canary.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.1/cli-reference.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.1/cli-reference.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.1/client.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.1/client.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.1/compression-provider.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.1/compression-provider.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.1/concepts.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.1/concepts.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.1/connections.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.1/connections.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.1/context-guide.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.1/context-guide.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.1/contributing.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.1/contributing.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.1/cookbook.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.1/cookbook.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.1/development.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.1/development.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.1/executors.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.1/executors.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.1/faq.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.1/faq.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.1/installation.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.1/installation.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.1/known-limitations.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.1/known-limitations.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.1/mcp-web.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.1/mcp-web.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.1/memory.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.1/memory.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.1/multi-server.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.1/multi-server.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.1/operations.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.1/operations.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.1/orchestration.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.1/orchestration.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.1/production-compatibility.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.1/production-compatibility.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.1/production-inventory.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.1/production-inventory.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.1/quickstart.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.1/quickstart.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.1/quota-routing.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.1/quota-routing.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.1/relatorio-executivo.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.1/relatorio-executivo.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.1/relatorio-tecnico.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.1/relatorio-tecnico.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.1/releases.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.1/releases.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.1/security.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.1/security.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.1/server.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.1/server.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.1/setup.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.1/setup.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.1/skill-control-plane-threat-model.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.1/skill-control-plane-threat-model.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.1/skill-control-plane.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.1/skill-control-plane.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.1/troubleshooting.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.1/troubleshooting.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.1/update-rollback.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.1/update-rollback.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.1/ux-audit.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.1/ux-audit.html
+Auto-merging internal/docsserver/site/pt-BR/docs/0.9.1/working-context.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/0.9.1/working-context.html
+Auto-merging internal/docsserver/site/pt-BR/docs/adrs.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/adrs.html
+Auto-merging internal/docsserver/site/pt-BR/docs/advanced-usage.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/advanced-usage.html
+Auto-merging internal/docsserver/site/pt-BR/docs/architecture.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/architecture.html
+Auto-merging internal/docsserver/site/pt-BR/docs/auto-orchestration.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/auto-orchestration.html
+Auto-merging internal/docsserver/site/pt-BR/docs/auto-scheduler.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/auto-scheduler.html
+Auto-merging internal/docsserver/site/pt-BR/docs/backup-restore.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/backup-restore.html
+Auto-merging internal/docsserver/site/pt-BR/docs/basic-usage.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/basic-usage.html
+Auto-merging internal/docsserver/site/pt-BR/docs/canary-rollout.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/canary-rollout.html
+Auto-merging internal/docsserver/site/pt-BR/docs/caveman-canary.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/caveman-canary.html
+Auto-merging internal/docsserver/site/pt-BR/docs/cli-reference.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/cli-reference.html
+Auto-merging internal/docsserver/site/pt-BR/docs/client.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/client.html
+Auto-merging internal/docsserver/site/pt-BR/docs/compression-provider.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/compression-provider.html
+Auto-merging internal/docsserver/site/pt-BR/docs/concepts.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/concepts.html
+Auto-merging internal/docsserver/site/pt-BR/docs/connections.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/connections.html
+Auto-merging internal/docsserver/site/pt-BR/docs/context-guide.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/context-guide.html
+Auto-merging internal/docsserver/site/pt-BR/docs/contributing.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/contributing.html
+Auto-merging internal/docsserver/site/pt-BR/docs/cookbook.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/cookbook.html
+Auto-merging internal/docsserver/site/pt-BR/docs/development.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/development.html
+Auto-merging internal/docsserver/site/pt-BR/docs/executors.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/executors.html
+Auto-merging internal/docsserver/site/pt-BR/docs/faq.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/faq.html
+Auto-merging internal/docsserver/site/pt-BR/docs/installation.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/installation.html
+Auto-merging internal/docsserver/site/pt-BR/docs/known-limitations.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/known-limitations.html
+Auto-merging internal/docsserver/site/pt-BR/docs/mcp-web.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/mcp-web.html
+Auto-merging internal/docsserver/site/pt-BR/docs/memory.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/memory.html
+Auto-merging internal/docsserver/site/pt-BR/docs/multi-server.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/multi-server.html
+Auto-merging internal/docsserver/site/pt-BR/docs/next.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/next.html
+Auto-merging internal/docsserver/site/pt-BR/docs/next/adrs.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/next/adrs.html
+Auto-merging internal/docsserver/site/pt-BR/docs/next/advanced-usage.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/next/advanced-usage.html
+Auto-merging internal/docsserver/site/pt-BR/docs/next/architecture.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/next/architecture.html
+Auto-merging internal/docsserver/site/pt-BR/docs/next/auto-orchestration.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/next/auto-orchestration.html
+Auto-merging internal/docsserver/site/pt-BR/docs/next/auto-scheduler.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/next/auto-scheduler.html
+Auto-merging internal/docsserver/site/pt-BR/docs/next/backend-first-migration.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/next/backend-first-migration.html
+Auto-merging internal/docsserver/site/pt-BR/docs/next/backup-restore.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/next/backup-restore.html
+Auto-merging internal/docsserver/site/pt-BR/docs/next/basic-usage.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/next/basic-usage.html
+Auto-merging internal/docsserver/site/pt-BR/docs/next/canary-rollout.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/next/canary-rollout.html
+Auto-merging internal/docsserver/site/pt-BR/docs/next/caveman-canary.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/next/caveman-canary.html
+Auto-merging internal/docsserver/site/pt-BR/docs/next/cli-reference.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/next/cli-reference.html
+Auto-merging internal/docsserver/site/pt-BR/docs/next/client.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/next/client.html
+Auto-merging internal/docsserver/site/pt-BR/docs/next/compression-provider.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/next/compression-provider.html
+Auto-merging internal/docsserver/site/pt-BR/docs/next/concepts.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/next/concepts.html
+Auto-merging internal/docsserver/site/pt-BR/docs/next/connections.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/next/connections.html
+Auto-merging internal/docsserver/site/pt-BR/docs/next/context-guide.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/next/context-guide.html
+Auto-merging internal/docsserver/site/pt-BR/docs/next/contributing.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/next/contributing.html
+Auto-merging internal/docsserver/site/pt-BR/docs/next/conversation-continuity.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/next/conversation-continuity.html
+Auto-merging internal/docsserver/site/pt-BR/docs/next/cookbook.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/next/cookbook.html
+Auto-merging internal/docsserver/site/pt-BR/docs/next/development.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/next/development.html
+Auto-merging internal/docsserver/site/pt-BR/docs/next/evidence-gateway.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/next/evidence-gateway.html
+Auto-merging internal/docsserver/site/pt-BR/docs/next/executors.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/next/executors.html
+Auto-merging internal/docsserver/site/pt-BR/docs/next/faq.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/next/faq.html
+Auto-merging internal/docsserver/site/pt-BR/docs/next/installation.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/next/installation.html
+Auto-merging internal/docsserver/site/pt-BR/docs/next/known-limitations.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/next/known-limitations.html
+Auto-merging internal/docsserver/site/pt-BR/docs/next/mcp-web.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/next/mcp-web.html
+Auto-merging internal/docsserver/site/pt-BR/docs/next/memory.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/next/memory.html
+Auto-merging internal/docsserver/site/pt-BR/docs/next/multi-server.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/next/multi-server.html
+Auto-merging internal/docsserver/site/pt-BR/docs/next/native-graft.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/next/native-graft.html
+Auto-merging internal/docsserver/site/pt-BR/docs/next/native-provider-capabilities.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/next/native-provider-capabilities.html
+Auto-merging internal/docsserver/site/pt-BR/docs/next/operations.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/next/operations.html
+Auto-merging internal/docsserver/site/pt-BR/docs/next/orchestrated-frontends.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/next/orchestrated-frontends.html
+Auto-merging internal/docsserver/site/pt-BR/docs/next/orchestration.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/next/orchestration.html
+Auto-merging internal/docsserver/site/pt-BR/docs/next/production-compatibility.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/next/production-compatibility.html
+Auto-merging internal/docsserver/site/pt-BR/docs/next/production-inventory.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/next/production-inventory.html
+Auto-merging internal/docsserver/site/pt-BR/docs/next/quickstart.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/next/quickstart.html
+Auto-merging internal/docsserver/site/pt-BR/docs/next/quota-routing.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/next/quota-routing.html
+Auto-merging internal/docsserver/site/pt-BR/docs/next/relatorio-executivo.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/next/relatorio-executivo.html
+Auto-merging internal/docsserver/site/pt-BR/docs/next/relatorio-tecnico.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/next/relatorio-tecnico.html
+Auto-merging internal/docsserver/site/pt-BR/docs/next/releases.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/next/releases.html
+Auto-merging internal/docsserver/site/pt-BR/docs/next/search-index.json
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/next/search-index.json
+Auto-merging internal/docsserver/site/pt-BR/docs/next/security.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/next/security.html
+Auto-merging internal/docsserver/site/pt-BR/docs/next/server.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/next/server.html
+Auto-merging internal/docsserver/site/pt-BR/docs/next/setup.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/next/setup.html
+Auto-merging internal/docsserver/site/pt-BR/docs/next/skill-control-plane-threat-model.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/next/skill-control-plane-threat-model.html
+Auto-merging internal/docsserver/site/pt-BR/docs/next/skill-control-plane.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/next/skill-control-plane.html
+Auto-merging internal/docsserver/site/pt-BR/docs/next/troubleshooting.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/next/troubleshooting.html
+Auto-merging internal/docsserver/site/pt-BR/docs/next/update-rollback.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/next/update-rollback.html
+Auto-merging internal/docsserver/site/pt-BR/docs/next/ux-audit.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/next/ux-audit.html
+Auto-merging internal/docsserver/site/pt-BR/docs/next/working-context.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/next/working-context.html
+Auto-merging internal/docsserver/site/pt-BR/docs/operations.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/operations.html
+Auto-merging internal/docsserver/site/pt-BR/docs/orchestration.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/orchestration.html
+Auto-merging internal/docsserver/site/pt-BR/docs/production-compatibility.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/production-compatibility.html
+Auto-merging internal/docsserver/site/pt-BR/docs/production-inventory.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/production-inventory.html
+Auto-merging internal/docsserver/site/pt-BR/docs/quickstart.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/quickstart.html
+Auto-merging internal/docsserver/site/pt-BR/docs/quota-routing.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/quota-routing.html
+Auto-merging internal/docsserver/site/pt-BR/docs/relatorio-executivo.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/relatorio-executivo.html
+Auto-merging internal/docsserver/site/pt-BR/docs/relatorio-tecnico.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/relatorio-tecnico.html
+Auto-merging internal/docsserver/site/pt-BR/docs/releases.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/releases.html
+Auto-merging internal/docsserver/site/pt-BR/docs/security.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/security.html
+Auto-merging internal/docsserver/site/pt-BR/docs/server.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/server.html
+Auto-merging internal/docsserver/site/pt-BR/docs/setup.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/setup.html
+Auto-merging internal/docsserver/site/pt-BR/docs/skill-control-plane-threat-model.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/skill-control-plane-threat-model.html
+Auto-merging internal/docsserver/site/pt-BR/docs/skill-control-plane.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/skill-control-plane.html
+Auto-merging internal/docsserver/site/pt-BR/docs/troubleshooting.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/troubleshooting.html
+Auto-merging internal/docsserver/site/pt-BR/docs/update-rollback.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/update-rollback.html
+Auto-merging internal/docsserver/site/pt-BR/docs/ux-audit.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/ux-audit.html
+Auto-merging internal/docsserver/site/pt-BR/docs/working-context.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/docs/working-context.html
+Auto-merging internal/docsserver/site/pt-BR/index.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/index.html
+Auto-merging internal/docsserver/site/pt-BR/search.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/pt-BR/search.html
+Auto-merging internal/docsserver/site/search.html
+CONFLICT (content): Merge conflict in internal/docsserver/site/search.html
+Auto-merging internal/orchestrator/server.go
+Auto-merging website/static/build-input.sha256
+CONFLICT (content): Merge conflict in website/static/build-input.sha256
+Automatic merge failed; fix conflicts and then commit the result.

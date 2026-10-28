@@ -27,6 +27,9 @@ func (s *Server) acknowledgePlanQuota(ctx context.Context) error {
 	}
 	snapshot := map[quota.Provider]quota.ProviderQuota{}
 	for name := range s.Registry.Providers {
+		if s.providerAllowed(name) != nil {
+			continue
+		}
 		q, _ := s.Quota.Probe(ctx, quota.Provider(name), false)
 		snapshot[quota.Provider(name)] = q
 	}
@@ -68,6 +71,11 @@ func (s *Server) acknowledgePlanQuota(ctx context.Context) error {
 // is stable until a fresh probe proves it unavailable or the operator approves
 // conservation. A material route change always has its own UI decision.
 func (s *Server) refreshNativeRoute(ctx context.Context, task routing.Task) (routing.ExecutionProfile, error) {
+	for _, provider := range []string{task.Profile.Provider, task.Executor, task.PreferredExecutor} {
+		if err := s.providerAllowed(provider); err != nil {
+			return task.Profile, err
+		}
+	}
 	s.routingMu.Lock()
 	defer s.routingMu.Unlock()
 	if s.Quota == nil {
@@ -76,6 +84,9 @@ func (s *Server) refreshNativeRoute(ctx context.Context, task routing.Task) (rou
 	registry := routing.Registry{Providers: map[string]routing.ProviderCapability{}}
 	snapshot := map[quota.Provider]quota.ProviderQuota{}
 	for name, capability := range s.Registry.Providers {
+		if s.providerAllowed(name) != nil {
+			continue
+		}
 		q, _ := s.Quota.Probe(ctx, quota.Provider(name), false)
 		capability.Authenticated = q.Authenticated
 		registry.Providers[name], snapshot[quota.Provider(name)] = capability, q

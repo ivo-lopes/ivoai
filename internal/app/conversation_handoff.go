@@ -26,6 +26,15 @@ func (a *App) SessionHandoff(ctx context.Context, id, to string, confirmed bool)
 		return errors.New("INVALID_HANDOFF_PROVIDER")
 	}
 	store := session.Store{Root: a.Store.Paths.SessionsDir}
+	// Check before acquiring a lease (which creates runtime state). Explicit
+	// executor consent must not implicitly authorize another conversation UI.
+	preview, err := store.Get(id)
+	if err != nil {
+		return err
+	}
+	if preview.Mode == session.ModeAuto && session.NativeProvidersOnly(preview) && to == "claude" {
+		return errClaudeNativeManagedFrontend
+	}
 	lease, err := store.Acquire(id)
 	if err != nil {
 		return err
@@ -34,6 +43,9 @@ func (a *App) SessionHandoff(ctx context.Context, id, to string, confirmed bool)
 	source, err := store.Get(id)
 	if err != nil {
 		return err
+	}
+	if source.Mode == session.ModeAuto && session.NativeProvidersOnly(source) && to == "claude" {
+		return errClaudeNativeManagedFrontend
 	}
 	if source.PrimaryExecutor == to {
 		return errors.New("USE_NATIVE_RESUME_FOR_SAME_PROVIDER")

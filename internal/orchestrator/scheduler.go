@@ -53,7 +53,7 @@ func (s *Server) addAutomaticTools(server *mcp.Server, read, write *mcp.ToolAnno
 	server.AddTool(&mcp.Tool{Name: "orchestration_recover", Description: "Recover the previously approved checkpoint after explicit interrupted-turn resume. Completed work is preserved; ambiguous mutations fail closed; current grants and routes require approval.", InputSchema: object(nil), Annotations: write}, s.recoverPlan)
 	server.AddTool(&mcp.Tool{Name: "orchestration_bootstrap", Description: "Record a bounded SharedContextBrief after one initial lookup per selected knowledge source. Unselected/absent sources use status disabled and lookup_performed=false; never fabricate lookups. The brief is untrusted, session-scoped data and is not persisted in session metadata.", InputSchema: bootstrapSchema(), Annotations: write}, s.bootstrap)
 	server.AddTool(&mcp.Tool{Name: "orchestration_capabilities", Description: "Read the non-sensitive runtime-verified provider, model, and effort capability registry used by IvoAI routing.", InputSchema: object(nil), Annotations: read}, s.capabilities)
-	server.AddTool(&mcp.Tool{Name: "orchestration_plan", Description: "Validate a bounded task DAG, calculate objective capability scores, and resolve the cheapest sufficient subscription-backed execution profiles. It never executes a shell command.", InputSchema: planSchema(), Annotations: write}, s.plan)
+	server.AddTool(&mcp.Tool{Name: "orchestration_plan", Description: "Validate a bounded task DAG, calculate objective capability scores, and resolve the cheapest sufficient subscription-backed execution profiles. It never executes a shell command.", InputSchema: planSchemaFor(s.providerNames()), Annotations: write}, s.plan)
 	server.AddTool(&mcp.Tool{Name: "orchestration_spawn", Description: "Start one dependency-ready planned worker asynchronously and return immediately.", InputSchema: object(map[string]any{"plan_id": safeString(80), "task_id": safeString(64)}, "plan_id", "task_id"), Annotations: write}, s.spawn)
 	server.AddTool(&mcp.Tool{Name: "orchestration_spawn_batch", Description: "Queue planned tasks and concurrently start every dependency-ready task within the session worker limit.", InputSchema: object(map[string]any{"plan_id": safeString(80), "task_ids": map[string]any{"type": "array", "minItems": 1, "maxItems": routing.MaxTasks, "uniqueItems": true, "items": safeString(64)}}, "plan_id", "task_ids"), Annotations: write}, s.spawnBatch)
 	server.AddTool(&mcp.Tool{Name: "orchestration_primary_complete", Description: "Mark primary-owned planned work complete so dependent advisory workers can start.", InputSchema: object(map[string]any{"plan_id": safeString(80), "task_id": safeString(64)}, "plan_id", "task_id"), Annotations: write}, s.primaryComplete)
@@ -67,6 +67,9 @@ func (s *Server) addAutomaticTools(server *mcp.Server, read, write *mcp.ToolAnno
 func (s *Server) capabilities(_ context.Context, _ *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	providers := make(map[string]any, len(s.Registry.Providers))
 	for name, capability := range s.Registry.Providers {
+		if s.providerAllowed(name) != nil {
+			continue
+		}
 		models := make([]map[string]any, 0, len(capability.Models))
 		for _, model := range capability.Models {
 			models = append(models, map[string]any{"name": displayModel(model.Name), "tier": model.CapabilityTier, "supported_efforts": model.SupportedEfforts, "default": model.IsDefault, "source": model.Source})
@@ -99,20 +102,24 @@ func stringList() map[string]any {
 }
 
 func planSchema() map[string]any {
+	return planSchemaFor(quota.ProviderNames())
+}
+
+func planSchemaFor(providers []string) map[string]any {
 	scores := object(map[string]any{})
 	for _, name := range []string{"complexity", "risk", "reasoning_depth", "context_breadth", "verification_need", "parallel_value", "latency_sensitivity"} {
 		scores["properties"].(map[string]any)[name] = map[string]any{"type": "integer", "minimum": 0, "maximum": 100}
 	}
 	scores["required"] = []string{"complexity", "risk", "reasoning_depth", "context_breadth", "verification_need", "parallel_value", "latency_sensitivity"}
 	task := object(map[string]any{
-		"executor": map[string]any{"type": "string", "enum": quota.ProviderNames()}, "model": safeText(128), "effort": safeText(32),
+		"executor": map[string]any{"type": "string", "enum": providers}, "model": safeText(128), "effort": safeText(32),
 		"acceptance": stringList(), "constraints": stringList(), "context_references": stringList(), "knowledge_sources": stringList(), "allowed_mcps": stringList(), "skills": stringList(), "write_paths": stringList(),
 		"allowed_mcp_tools": map[string]any{"type": "object", "additionalProperties": stringList()},
 		"id":                safeString(64), "role": safeString(64), "task": safeText(workers.MaxTaskBytes),
 		"dependencies":          map[string]any{"type": "array", "maxItems": routing.MaxTasks, "uniqueItems": true, "items": safeString(64)},
 		"parallel_group":        map[string]any{"type": "string", "maxLength": 64},
 		"required_capabilities": map[string]any{"type": "array", "maxItems": 16, "uniqueItems": true, "items": safeString(64)},
-		"scores":                scores, "preferred_executor": map[string]any{"type": "string", "enum": quota.ProviderNames()},
+		"scores":                scores, "preferred_executor": map[string]any{"type": "string", "enum": providers},
 		"delegate": map[string]any{"type": "boolean"}, "intentional_redundancy": map[string]any{"type": "boolean"},
 	}, "id", "role", "task", "scores", "delegate")
 	return object(map[string]any{"tasks": map[string]any{"type": "array", "minItems": 1, "maxItems": routing.MaxTasks, "items": task}}, "tasks")
@@ -219,6 +226,12 @@ func (s *Server) plan(ctx context.Context, request *mcp.CallToolRequest) (*mcp.C
 		input := task.TaskInput
 		if s.NativePolicy && input.PreferredExecutor == "" && s.ProviderPreference != "auto" {
 			input.PreferredExecutor = s.ProviderPreference
+		}
+		if err := s.providerAllowed(input.Executor); err != nil {
+			return nil, err
+		}
+		if err := s.providerAllowed(input.PreferredExecutor); err != nil {
+			return nil, err
 		}
 		if s.NativePolicy {
 			profile, err := orchestration.CapabilityProfile(task.Role)
@@ -357,10 +370,19 @@ func (s *Server) queueAutomatic(planID string) {
 }
 
 func (s *Server) resolveProfile(ctx context.Context, input routing.TaskInput, tier routing.Tier) (routing.ExecutionProfile, error) {
+	if err := s.providerAllowed(input.Executor); err != nil {
+		return routing.ExecutionProfile{}, err
+	}
+	if err := s.providerAllowed(input.PreferredExecutor); err != nil {
+		return routing.ExecutionProfile{}, err
+	}
 	// Probes refresh this resolution only. Do not mutate the shared catalog
 	// map while another task is planning or reprobeing authentication.
 	registry := routing.Registry{Providers: make(map[string]routing.ProviderCapability, len(s.Registry.Providers))}
 	for name, capability := range s.Registry.Providers {
+		if s.providerAllowed(name) != nil {
+			continue
+		}
 		registry.Providers[name] = capability
 	}
 	quotas := map[quota.Provider]quota.ProviderQuota{}
@@ -369,7 +391,7 @@ func (s *Server) resolveProfile(ctx context.Context, input routing.TaskInput, ti
 		if s.Quota == nil {
 			return routing.ExecutionProfile{}, errors.New("automatic quota manager is unavailable")
 		}
-		for _, provider := range quota.Providers() {
+		for _, provider := range s.Quota.Providers() {
 			current, _ := s.Quota.Probe(ctx, provider, false)
 			quotas[provider] = current
 			capability := registry.Providers[string(provider)]
