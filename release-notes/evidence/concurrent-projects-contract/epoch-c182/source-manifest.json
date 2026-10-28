@@ -1,0 +1,52 @@
+{
+  "base_revision": "c182a954accbc69ca3dee25356af7a6b14ccb568",
+  "scope": "Eight unchanged contract/oracle Go+Python sources and module manifests; all other source pinned by named reviewed base",
+  "files": [
+    {
+      "path": "internal/benchmarkfixtures/concurrent.go",
+      "bytes": 4182,
+      "sha256": "0a9196070967e0fb166a57c2f1664bf18dcd769746f05574059343e399961207"
+    },
+    {
+      "path": "internal/benchmarkfixtures/concurrent_test.go",
+      "bytes": 2414,
+      "sha256": "ab5105c18db04f09fdcc2b688c77b381eb60fcce514223048863540caf428b2b"
+    },
+    {
+      "path": "internal/benchmarkfixtures/data/concurrent-projects.json",
+      "bytes": 293,
+      "sha256": "e3e3e059d320b2110bb7f5a1a2cf8805db8107b5b243abc3159a650664c72c4b"
+    },
+    {
+      "path": "scripts/benchmark_catalog.py",
+      "bytes": 10781,
+      "sha256": "4611c0f0ca6d05ecc4854caf8f79be9fbdac0f85313864cfe8426cb5dfbf9e95"
+    },
+    {
+      "path": "scripts/benchmark_concurrent_contract.py",
+      "bytes": 6266,
+      "sha256": "d99397132cd1c7399af5f3dca7cd57f17f64ded936f7718d4450fc0bd960fded"
+    },
+    {
+      "path": "scripts/test_benchmark_concurrent_contract.py",
+      "bytes": 6240,
+      "sha256": "f27b358ef3789c1a5d4993f91a0c1977b58140dd7b9edb6f0a55d724f100721c"
+    },
+    {
+      "path": "go.mod",
+      "bytes": 568,
+      "sha256": "d1c486bcfb3a5e1127b4f47de7e62001c768ee744c42b6f96627f6895d026705"
+    },
+    {
+      "path": "go.sum",
+      "bytes": 2537,
+      "sha256": "44f145c4f9477395f29442a17757c7de7b24df282e19c7e6ffddb58662e2553c"
+    }
+  ],
+  "merge_commit": "995d000ad0f1602d2fe806b136a2f1dccb3867fb",
+  "identity": {
+    "original_contract_commit": "a9d1917548d14a96611d300b1a45e107b840b562",
+    "harness_sha256": "6c1a9c062fae6b4903fd477fd4957debce016be793e0da072ad3bd50d06435f6",
+    "catalog_sha256": "395f77bc5154c3df42cc7897feb7206bb38963a9441741ea24dbf290b08a9d7e"
+  }
+}

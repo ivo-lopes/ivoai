@@ -123,7 +123,7 @@ def planned_status(scenario):
     return "UNSUPPORTED"
 
 
-def verify_fixtures(go=None, node=None):
+def verify_fixtures(go=None, node=None, fixtures=None):
     """Execute only reviewed synthetic programs, in disposable private roots.
 
     Go has no external module dependencies; Python uses its standard library;
@@ -144,6 +144,10 @@ def verify_fixtures(go=None, node=None):
             "rules-shell": (["/bin/sh", "check.sh"], cases["unsupported_parser"].expected),
             "non-code": ([sys.executable, "-I", "-c", 'import json;from pathlib import Path;x=json.loads(Path("milestones.json").read_text());print(json.dumps({"order":[v["id"] for v in sorted(x,key=lambda v:v["priority"])],"total_days":sum(v["days"] for v in x)}))'], cases["non_code"].expected),
         }
+        if fixtures is not None:
+            if not fixtures or len(set(fixtures)) != len(fixtures) or any(name not in commands for name in fixtures):
+                raise ValueError("invalid_oracle_selection")
+            commands = {name: commands[name] for name in fixtures}
         for fixture, (command, expected) in commands.items():
             row = {"fixture": fixture, "fixture_sha256": fixture_digest(fixture),
                    "scope": "offline_synthetic_program_oracle", "provider_attempts": 0,

@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "scenario": "concurrent_distinct_projects",
+  "execution": "read_only",
+  "max_clients": 2,
+  "client_overlap_required": true,
+  "children": [
+    {"scenario": "implementation", "fixture": "go-core"},
+    {"scenario": "dependencies", "fixture": "python-deps"}
+  ]
+}
