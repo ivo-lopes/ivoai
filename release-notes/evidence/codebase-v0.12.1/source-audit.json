@@ -1,0 +1,94 @@
+{
+  "source_commit": "a7158ac2f48ca646b4527341b76f930f2aeff87e",
+  "tag_commit": "a7158ac2f48ca646b4527341b76f930f2aeff87e",
+  "top_license": "MIT",
+  "license_sha256": "1f58f9911dc5e3bcb96de28bb28e7b6bb7eb323952d29569c5d7214a152146bb",
+  "archive": "8c3d0341064301e78ecc84cf7348d4e2c6562a0f57448243ea560aaa34de36c1",
+  "extracted": [
+    {
+      "name": "codebase-memory-mcp",
+      "bytes": 330641600,
+      "sha256": "77745491f0a9c346d6da23eed4d92b5feaa31a27a883c9faa4fa9f47c8183705"
+    },
+    {
+      "name": "LICENSE",
+      "bytes": 1107,
+      "sha256": "1f58f9911dc5e3bcb96de28bb28e7b6bb7eb323952d29569c5d7214a152146bb"
+    },
+    {
+      "name": "THIRD_PARTY_NOTICES.md",
+      "bytes": 690430,
+      "sha256": "85ba0e25610a3d1a71df75c46425141644b416f290de5c8d985ae5d2d02092e4"
+    }
+  ],
+  "stateless_probes": [
+    {
+      "operation": "--version",
+      "exit_code": 0,
+      "elapsed_ms": 8.215,
+      "stdout_bytes": 27,
+      "stderr_bytes": 0,
+      "facts": {
+        "exact_version": true
+      }
+    },
+    {
+      "operation": "--help",
+      "exit_code": 0,
+      "elapsed_ms": 7.64,
+      "stdout_bytes": 2426,
+      "stderr_bytes": 0,
+      "facts": {
+        "--tool-profile": true,
+        "--skip-config": true,
+        "--ui": true,
+        "search_graph": true,
+        "trace_path": true,
+        "get_architecture": true,
+        "index_repository": true,
+        "get_file_outline": true
+      }
+    }
+  ],
+  "vendored_local_manifest": {
+    "kind": "local_source_manifest_verification",
+    "source_commit": "a7158ac2f48ca646b4527341b76f930f2aeff87e",
+    "entries": 1083,
+    "bytes_hashed": 1333763500,
+    "mismatches": [],
+    "elapsed_seconds": 1.106,
+    "upstream_identity_independently_verified": false
+  },
+  "registered_tools": [
+    "index_repository",
+    "search_graph",
+    "query_graph",
+    "trace_path",
+    "get_code_snippet",
+    "get_file_outline",
+    "get_graph_schema",
+    "compare_graphs",
+    "get_architecture",
+    "search_code",
+    "list_projects",
+    "delete_project",
+    "index_status",
+    "check_index_coverage",
+    "detect_changes",
+    "manage_adr",
+    "ingest_traces"
+  ],
+  "ui_notice_package_sections": 194,
+  "ui_notice_unknown_headings": [
+    "webgl-constants@1.1.1"
+  ],
+  "source_built": false,
+  "installer_executed": false,
+  "mcp_initialized": false,
+  "repository_indexed": false,
+  "query_benchmark_run": false,
+  "paid_api_calls": 0,
+  "no_avx_certified": false,
+  "arm64_runtime_certified": false,
+  "source_code_read_only": true
+}

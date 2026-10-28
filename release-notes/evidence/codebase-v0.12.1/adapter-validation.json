@@ -1,0 +1,113 @@
+{
+  "base_commit": "49445919f745157e3c8aa1c717161e49cb5f50d5",
+  "go_version": "1.27.3",
+  "source_go_sha256": {
+    "internal/codebase/provenance_test.go": "7322720bbfc57e8cdecebe4cc532507353f566e58e4ece6b0cd282f78473d315",
+    "internal/codebase/provider.go": "7a3ceeca77f94430f50f10c6a123028c03c39f213fd08c68935f3ef4df7b6544",
+    "internal/codebase/provider_test.go": "8565836fe37caf37e43d7add12c04a4ccf4446f1dbcdd2110a8aee70734573e6",
+    "internal/codebase/real_linux_test.go": "abe47f0049059954a0bd1ba3223509f5a08145301a65d6ca705c43ddfa12271d",
+    "internal/codebase/response.go": "078762936f1cbc8aa820aa669c662f1518bbdd0d96293e586b2769c9a85edb84",
+    "internal/codebase/response_test.go": "e9f6b86265ca5f61ceec5c1f36e0f755a265a5bee7d098f1bf8d7a4a84624051"
+  },
+  "steps": [
+    {
+      "step": "last-unit",
+      "exit_code": 0,
+      "elapsed_seconds": 0.405
+    },
+    {
+      "step": "last-vet",
+      "exit_code": 0,
+      "elapsed_seconds": 0.188
+    },
+    {
+      "step": "last-race",
+      "exit_code": 0,
+      "elapsed_seconds": 2.072
+    },
+    {
+      "step": "last-cross-compile-linux-amd64-v1",
+      "exit_code": 0,
+      "elapsed_seconds": 0.728
+    },
+    {
+      "step": "last-cross-compile-linux-arm64",
+      "exit_code": 0,
+      "elapsed_seconds": 0.73
+    }
+  ],
+  "new_inference_invocations": 0,
+  "app_wiring": false,
+  "full_suite_run": false,
+  "real_reader_after_final_partial_projection_change": "NOT_RERUN: only incomplete-receipt projection changed; real complete-index schema/lifecycle already passed under race. See retained approved-host-checks report.",
+  "real_reader_before_final_partial_projection_change": {
+    "base_commit": "49445919f745157e3c8aa1c717161e49cb5f50d5",
+    "source_go_sha256": {
+      "internal/codebase/provenance_test.go": "7322720bbfc57e8cdecebe4cc532507353f566e58e4ece6b0cd282f78473d315",
+      "internal/codebase/provider.go": "5937a4c7691bfd3e033f77af379715eb609925e56e2d7dd689d7e61be7a57bb2",
+      "internal/codebase/provider_test.go": "e3f5ea2456c4371cd7f607e62fc20dff45e639ac1d8dcd9f09b05855d5b9bc6e",
+      "internal/codebase/real_linux_test.go": "abe47f0049059954a0bd1ba3223509f5a08145301a65d6ca705c43ddfa12271d",
+      "internal/codebase/response.go": "078762936f1cbc8aa820aa669c662f1518bbdd0d96293e586b2769c9a85edb84",
+      "internal/codebase/response_test.go": "e9f6b86265ca5f61ceec5c1f36e0f755a265a5bee7d098f1bf8d7a4a84624051"
+    },
+    "steps": [
+      {
+        "step": "approved-unit",
+        "exit_code": 0,
+        "elapsed_seconds": 0.407
+      },
+      {
+        "step": "approved-vet",
+        "exit_code": 0,
+        "elapsed_seconds": 0.192
+      },
+      {
+        "step": "approved-race-real-reader",
+        "exit_code": 0,
+        "elapsed_seconds": 3.512
+      },
+      {
+        "step": "approved-cross-compile-linux-amd64-v1",
+        "exit_code": 0,
+        "elapsed_seconds": 0.706
+      },
+      {
+        "step": "approved-cross-compile-linux-arm64",
+        "exit_code": 0,
+        "elapsed_seconds": 0.726
+      }
+    ],
+    "new_inference_invocations": 0,
+    "app_wiring": false,
+    "full_suite_run": false,
+    "host_runtime_check": "full binary SHA before/after real session; SameFile/size/mode/mtime/ctime nonfollowing checks between calls; source/index hashed every receipt check",
+    "query_budget_includes_initial_admission": true,
+    "approved-codebase-amd64.test_sha256": "82106cbdea9b52e8d206d3e91706736bf0fc31add17f0929045820f2ba0f444a",
+    "approved-codebase-arm64.test_sha256": "cb86d3e6b3420559f87438abe2fc2b93357dff5c9184143f474be3f7b21080ac"
+  },
+  "unmeasured_provider_cpu_rss": null,
+  "last-codebase-amd64.test_sha256": "22b463b4c6defff95fcdecac90de4190d56a8753d37816c3c9f6430ba14e2860",
+  "last-codebase-arm64.test_sha256": "28fcf017ac4eeaf6dbad03438170ab445c35beae7c07b7907d5ecf86a51bf4da",
+  "test_counts": {
+    "last-unit": {
+      "top_level_passed": 15,
+      "top_level_skipped": 1,
+      "opt_in_real_reader_passed": false
+    },
+    "last-race": {
+      "top_level_passed": 15,
+      "top_level_skipped": 1,
+      "opt_in_real_reader_passed": false
+    },
+    "approved-race-real-reader": {
+      "top_level_passed": 16,
+      "top_level_skipped": 0,
+      "opt_in_real_reader_passed": true
+    }
+  },
+  "last_partial_delta_validation": {
+    "host_incomplete_symbols_json_matches_code_result": true,
+    "host_incomplete_callers_json_matches_code_result": true,
+    "complete_receipt_real_transport_path_changed": false
+  }
+}
