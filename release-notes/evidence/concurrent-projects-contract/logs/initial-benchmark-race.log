@@ -1,0 +1,124 @@
+=== RUN   TestConcurrentCompositionContractKeepsMatrixUnsupported
+    concurrent_test.go:22: CONCURRENT_CONTRACT_SHA256=0c89f1e4b62cd154e6e6b942dd3976221470344aba18243cb07163597d9598de
+--- PASS: TestConcurrentCompositionContractKeepsMatrixUnsupported (0.02s)
+=== RUN   TestConcurrentCompositionRejectsUnboundedMutableOrUnknownChildren
+=== RUN   TestConcurrentCompositionRejectsUnboundedMutableOrUnknownChildren/no_overlap
+=== RUN   TestConcurrentCompositionRejectsUnboundedMutableOrUnknownChildren/mutable
+=== RUN   TestConcurrentCompositionRejectsUnboundedMutableOrUnknownChildren/wrong_fixture
+=== RUN   TestConcurrentCompositionRejectsUnboundedMutableOrUnknownChildren/unknown_child
+=== RUN   TestConcurrentCompositionRejectsUnboundedMutableOrUnknownChildren/trailing_JSON
+=== RUN   TestConcurrentCompositionRejectsUnboundedMutableOrUnknownChildren/oversized
+=== RUN   TestConcurrentCompositionRejectsUnboundedMutableOrUnknownChildren/unknown_field
+=== RUN   TestConcurrentCompositionRejectsUnboundedMutableOrUnknownChildren/three_clients
+=== RUN   TestConcurrentCompositionRejectsUnboundedMutableOrUnknownChildren/duplicate_key
+=== RUN   TestConcurrentCompositionRejectsUnboundedMutableOrUnknownChildren/same_child
+=== RUN   TestConcurrentCompositionRejectsUnboundedMutableOrUnknownChildren/nested_dup_key
+--- PASS: TestConcurrentCompositionRejectsUnboundedMutableOrUnknownChildren (0.04s)
+    --- PASS: TestConcurrentCompositionRejectsUnboundedMutableOrUnknownChildren/no_overlap (0.00s)
+    --- PASS: TestConcurrentCompositionRejectsUnboundedMutableOrUnknownChildren/mutable (0.00s)
+    --- PASS: TestConcurrentCompositionRejectsUnboundedMutableOrUnknownChildren/wrong_fixture (0.01s)
+    --- PASS: TestConcurrentCompositionRejectsUnboundedMutableOrUnknownChildren/unknown_child (0.01s)
+    --- PASS: TestConcurrentCompositionRejectsUnboundedMutableOrUnknownChildren/trailing_JSON (0.00s)
+    --- PASS: TestConcurrentCompositionRejectsUnboundedMutableOrUnknownChildren/oversized (0.00s)
+    --- PASS: TestConcurrentCompositionRejectsUnboundedMutableOrUnknownChildren/unknown_field (0.00s)
+    --- PASS: TestConcurrentCompositionRejectsUnboundedMutableOrUnknownChildren/three_clients (0.00s)
+    --- PASS: TestConcurrentCompositionRejectsUnboundedMutableOrUnknownChildren/duplicate_key (0.00s)
+    --- PASS: TestConcurrentCompositionRejectsUnboundedMutableOrUnknownChildren/same_child (0.01s)
+    --- PASS: TestConcurrentCompositionRejectsUnboundedMutableOrUnknownChildren/nested_dup_key (0.00s)
+=== RUN   TestEditContractsRejectUnauthorisedChanges
+=== RUN   TestEditContractsRejectUnauthorisedChanges/small_known_file_correction
+=== RUN   TestEditContractsRejectUnauthorisedChanges/small_known_file_correction/extra
+=== RUN   TestEditContractsRejectUnauthorisedChanges/small_known_file_correction/metadata
+=== RUN   TestEditContractsRejectUnauthorisedChanges/small_known_file_correction/permission
+=== RUN   TestEditContractsRejectUnauthorisedChanges/small_known_file_correction/directory
+=== RUN   TestEditContractsRejectUnauthorisedChanges/small_known_file_correction/oracle
+=== RUN   TestEditContractsRejectUnauthorisedChanges/cross_module_refactor
+=== RUN   TestEditContractsRejectUnauthorisedChanges/cross_module_refactor/extra
+=== RUN   TestEditContractsRejectUnauthorisedChanges/cross_module_refactor/metadata
+=== RUN   TestEditContractsRejectUnauthorisedChanges/cross_module_refactor/permission
+=== RUN   TestEditContractsRejectUnauthorisedChanges/cross_module_refactor/directory
+=== RUN   TestEditContractsRejectUnauthorisedChanges/cross_module_refactor/oracle
+--- PASS: TestEditContractsRejectUnauthorisedChanges (0.11s)
+    --- PASS: TestEditContractsRejectUnauthorisedChanges/small_known_file_correction (0.05s)
+        --- PASS: TestEditContractsRejectUnauthorisedChanges/small_known_file_correction/extra (0.01s)
+        --- PASS: TestEditContractsRejectUnauthorisedChanges/small_known_file_correction/metadata (0.01s)
+        --- PASS: TestEditContractsRejectUnauthorisedChanges/small_known_file_correction/permission (0.01s)
+        --- PASS: TestEditContractsRejectUnauthorisedChanges/small_known_file_correction/directory (0.01s)
+        --- PASS: TestEditContractsRejectUnauthorisedChanges/small_known_file_correction/oracle (0.01s)
+    --- PASS: TestEditContractsRejectUnauthorisedChanges/cross_module_refactor (0.06s)
+        --- PASS: TestEditContractsRejectUnauthorisedChanges/cross_module_refactor/extra (0.01s)
+        --- PASS: TestEditContractsRejectUnauthorisedChanges/cross_module_refactor/metadata (0.01s)
+        --- PASS: TestEditContractsRejectUnauthorisedChanges/cross_module_refactor/permission (0.01s)
+        --- PASS: TestEditContractsRejectUnauthorisedChanges/cross_module_refactor/directory (0.01s)
+        --- PASS: TestEditContractsRejectUnauthorisedChanges/cross_module_refactor/oracle (0.01s)
+=== RUN   TestPureEditShapeRefusesExecutableInjection
+--- PASS: TestPureEditShapeRefusesExecutableInjection (0.00s)
+=== RUN   TestEditSnapshotAndOutputAreBounded
+--- PASS: TestEditSnapshotAndOutputAreBounded (0.01s)
+=== RUN   TestEditSnapshotRejectsSpecialPermissionBits
+=== RUN   TestEditSnapshotRejectsSpecialPermissionBits/file_u---------
+=== RUN   TestEditSnapshotRejectsSpecialPermissionBits/file_g---------
+=== RUN   TestEditSnapshotRejectsSpecialPermissionBits/file_t---------
+=== RUN   TestEditSnapshotRejectsSpecialPermissionBits/directory_u---------
+=== RUN   TestEditSnapshotRejectsSpecialPermissionBits/directory_g---------
+=== RUN   TestEditSnapshotRejectsSpecialPermissionBits/directory_t---------
+--- PASS: TestEditSnapshotRejectsSpecialPermissionBits (0.04s)
+    --- PASS: TestEditSnapshotRejectsSpecialPermissionBits/file_u--------- (0.00s)
+    --- PASS: TestEditSnapshotRejectsSpecialPermissionBits/file_g--------- (0.01s)
+    --- PASS: TestEditSnapshotRejectsSpecialPermissionBits/file_t--------- (0.00s)
+    --- PASS: TestEditSnapshotRejectsSpecialPermissionBits/directory_u--------- (0.00s)
+    --- PASS: TestEditSnapshotRejectsSpecialPermissionBits/directory_g--------- (0.01s)
+    --- PASS: TestEditSnapshotRejectsSpecialPermissionBits/directory_t--------- (0.01s)
+=== RUN   TestBenchmarkSandboxedEditOracles
+    edit_oracle_test.go:189: NOT_RUN: explicit reviewed Go/Node/bwrap inputs required
+--- SKIP: TestBenchmarkSandboxedEditOracles (0.00s)
+=== RUN   TestExecObservationCountsWithoutPersistingPayloads
+--- PASS: TestExecObservationCountsWithoutPersistingPayloads (0.00s)
+=== RUN   TestExecObservationCollaborationIsOnlyReportedLowerBound
+--- PASS: TestExecObservationCollaborationIsOnlyReportedLowerBound (0.00s)
+=== RUN   TestExecObservationRejectsIncompleteAndAmbiguousStreams
+=== RUN   TestExecObservationRejectsIncompleteAndAmbiguousStreams/fractional_usage
+=== RUN   TestExecObservationRejectsIncompleteAndAmbiguousStreams/wrong_cache
+=== RUN   TestExecObservationRejectsIncompleteAndAmbiguousStreams/missing_terminal
+=== RUN   TestExecObservationRejectsIncompleteAndAmbiguousStreams/duplicate_terminal
+=== RUN   TestExecObservationRejectsIncompleteAndAmbiguousStreams/malformed_line
+=== RUN   TestExecObservationRejectsIncompleteAndAmbiguousStreams/invalid_utf8
+=== RUN   TestExecObservationRejectsIncompleteAndAmbiguousStreams/incomplete_tool
+=== RUN   TestExecObservationRejectsIncompleteAndAmbiguousStreams/conflicting_id
+=== RUN   TestExecObservationRejectsIncompleteAndAmbiguousStreams/duplicate_key
+--- PASS: TestExecObservationRejectsIncompleteAndAmbiguousStreams (0.01s)
+    --- PASS: TestExecObservationRejectsIncompleteAndAmbiguousStreams/fractional_usage (0.00s)
+    --- PASS: TestExecObservationRejectsIncompleteAndAmbiguousStreams/wrong_cache (0.00s)
+    --- PASS: TestExecObservationRejectsIncompleteAndAmbiguousStreams/missing_terminal (0.00s)
+    --- PASS: TestExecObservationRejectsIncompleteAndAmbiguousStreams/duplicate_terminal (0.00s)
+    --- PASS: TestExecObservationRejectsIncompleteAndAmbiguousStreams/malformed_line (0.00s)
+    --- PASS: TestExecObservationRejectsIncompleteAndAmbiguousStreams/invalid_utf8 (0.00s)
+    --- PASS: TestExecObservationRejectsIncompleteAndAmbiguousStreams/incomplete_tool (0.00s)
+    --- PASS: TestExecObservationRejectsIncompleteAndAmbiguousStreams/conflicting_id (0.00s)
+    --- PASS: TestExecObservationRejectsIncompleteAndAmbiguousStreams/duplicate_key (0.00s)
+=== RUN   TestExecObservationUnknownAndErrorsRemainPartial
+--- PASS: TestExecObservationUnknownAndErrorsRemainPartial (0.00s)
+=== RUN   TestExecObservationBounds
+--- PASS: TestExecObservationBounds (0.23s)
+=== RUN   TestMatrixCoverageAndStructuredOracles
+--- PASS: TestMatrixCoverageAndStructuredOracles (0.13s)
+=== RUN   TestMaterializedBytesAndNoncodeMutation
+=== RUN   TestMaterializedBytesAndNoncodeMutation/go-core
+=== RUN   TestMaterializedBytesAndNoncodeMutation/python-deps
+=== RUN   TestMaterializedBytesAndNoncodeMutation/monorepo-ts
+=== RUN   TestMaterializedBytesAndNoncodeMutation/rules-shell
+=== RUN   TestMaterializedBytesAndNoncodeMutation/non-code
+=== RUN   TestMaterializedBytesAndNoncodeMutation/go-clamp-edit
+=== RUN   TestMaterializedBytesAndNoncodeMutation/monorepo-refactor-ts
+--- PASS: TestMaterializedBytesAndNoncodeMutation (0.03s)
+    --- PASS: TestMaterializedBytesAndNoncodeMutation/go-core (0.00s)
+    --- PASS: TestMaterializedBytesAndNoncodeMutation/python-deps (0.00s)
+    --- PASS: TestMaterializedBytesAndNoncodeMutation/monorepo-ts (0.00s)
+    --- PASS: TestMaterializedBytesAndNoncodeMutation/rules-shell (0.00s)
+    --- PASS: TestMaterializedBytesAndNoncodeMutation/non-code (0.01s)
+    --- PASS: TestMaterializedBytesAndNoncodeMutation/go-clamp-edit (0.00s)
+    --- PASS: TestMaterializedBytesAndNoncodeMutation/monorepo-refactor-ts (0.01s)
+=== RUN   TestOracleRejectsWrongNumericTypesAndOrder
+--- PASS: TestOracleRejectsWrongNumericTypesAndOrder (0.01s)
+PASS
+ok  	github.com/ivo-lopes/ivoai/internal/benchmarkfixtures	1.655s

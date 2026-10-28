@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "scope": "offline_composition_contract_and_fixture_oracles",
+  "scenario": "concurrent_distinct_projects",
+  "scenario_status": "UNSUPPORTED",
+  "reason": "client_overlap_executor_not_implemented",
+  "client_execution": "NOT_RUN",
+  "client_overlap": "NOT_RUN",
+  "provider_attempts": 0,
+  "client_attempts": 0,
+  "global_economic_gate": "INCOMPLETE",
+  "contract_sha256": "21af6cc58cc9bdf27f2a5ddf4990fb5ac7ca77a1addb7fc4af0baded74f8f33b",
+  "source_pins_stable": true,
+  "preflight_status": "OFFLINE_ORACLES_VERIFIED",
+  "children": [
+    {
+      "scenario": "implementation",
+      "fixture": "go-core",
+      "fixture_sha256": "94339e5800d550aaa5284ae452fef04b9c425c02dd079be54234b1bb8feb5188",
+      "scope": "offline_synthetic_program_oracle",
+      "provider_attempts": 0,
+      "status": "VERIFIED",
+      "correct": true,
+      "exit_code": 0
+    },
+    {
+      "scenario": "dependencies",
+      "fixture": "python-deps",
+      "fixture_sha256": "4dfd2279a45f4f1485e482743672d52a362aeb41d9dd0a671efdfa98a21847aa",
+      "scope": "offline_synthetic_program_oracle",
+      "provider_attempts": 0,
+      "status": "VERIFIED",
+      "correct": true,
+      "exit_code": 0
+    }
+  ],
+  "source_pins": {
+    "preflight_sha256": "d99397132cd1c7399af5f3dca7cd57f17f64ded936f7718d4450fc0bd960fded",
+    "oracle_runner_sha256": "4611c0f0ca6d05ecc4854caf8f79be9fbdac0f85313864cfe8426cb5dfbf9e95",
+    "go_sha256": "5f5eb6d0b2fb6aa0bb5d5f8c5f1c944e0de955c925f0111af92a9d8f79680b5b",
+    "python_sha256": "889c603f0d17cb54060951bcf4c4f9b8c9ebd9e52b392c70209bbb9755d797d9"
+  }
+}
