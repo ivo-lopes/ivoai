@@ -1,0 +1,290 @@
+{
+  "source_commit": "6d99e320912f3f7325c3009209a10e9df86610d4",
+  "release": {
+    "run_id": 40746774761,
+    "url": "https://github.com/ivo-lopes/ivoai/actions/runs/40746774761",
+    "jobs_api": "https://api.github.com/repos/ivo-lopes/ivoai/actions/runs/40746774761/jobs",
+    "conclusion": "success",
+    "jobs": [
+      {
+        "id": 123022534579,
+        "name": "verify",
+        "status": "completed",
+        "conclusion": "success",
+        "steps": [
+          {
+            "name": "Validate release tag",
+            "conclusion": "success"
+          },
+          {
+            "name": "Formatting",
+            "conclusion": "success"
+          },
+          {
+            "name": "Docusaurus production build and embedded-site consistency",
+            "conclusion": "success"
+          },
+          {
+            "name": "Docusaurus accessibility and responsive audit",
+            "conclusion": "success"
+          },
+          {
+            "name": "Administrative console UI and real App OAuth integration",
+            "conclusion": "success"
+          },
+          {
+            "name": "Runtime dependency audit",
+            "conclusion": "success"
+          },
+          {
+            "name": "Patched braces regression fixtures",
+            "conclusion": "success"
+          },
+          {
+            "name": "Reviewed Zod V3 compatibility security fixtures",
+            "conclusion": "success"
+          },
+          {
+            "name": "Non-executing intake and documentation comparison fixtures",
+            "conclusion": "success"
+          },
+          {
+            "name": "Reviewed Graft build and ABI fixtures",
+            "conclusion": "success"
+          },
+          {
+            "name": "Generated CLI reference is current",
+            "conclusion": "success"
+          },
+          {
+            "name": "Tests, race, and vet",
+            "conclusion": "success"
+          },
+          {
+            "name": "Prepare isolated OpenCode and Claude protocol gates",
+            "conclusion": "success"
+          },
+          {
+            "name": "Managed OpenCode HTTP and attach integration",
+            "conclusion": "success"
+          },
+          {
+            "name": "Native Codex TUI and fail-closed App Server admission",
+            "conclusion": "success"
+          },
+          {
+            "name": "Official Claude readonly worker delegation boundary",
+            "conclusion": "success"
+          },
+          {
+            "name": "ShellCheck",
+            "conclusion": "success"
+          },
+          {
+            "name": "Vulnerability scan",
+            "conclusion": "success"
+          },
+          {
+            "name": "Install idempotency smoke",
+            "conclusion": "success"
+          },
+          {
+            "name": "v0.5.0 upgrade and rollback gate",
+            "conclusion": "success"
+          }
+        ]
+      },
+      {
+        "id": 123036014445,
+        "name": "skill",
+        "status": "completed",
+        "conclusion": "success",
+        "steps": [
+          {
+            "name": "Package Web skill",
+            "conclusion": "success"
+          },
+          {
+            "name": "Validate skill archive",
+            "conclusion": "success"
+          }
+        ]
+      },
+      {
+        "id": 123036014453,
+        "name": "build (linux, amd64, ubuntu-24.04)",
+        "status": "completed",
+        "conclusion": "success",
+        "steps": [
+          {
+            "name": "Install non-AVX CPU smoke dependency",
+            "conclusion": "success"
+          },
+          {
+            "name": "Install reviewed Graft build dependencies",
+            "conclusion": "success"
+          },
+          {
+            "name": "Admit only the CI sandbox launcher to user namespaces",
+            "conclusion": "success"
+          },
+          {
+            "name": "Build and verify patched managed frontend",
+            "conclusion": "success"
+          },
+          {
+            "name": "Build compatible managed Graft and verify baseline CPU",
+            "conclusion": "success"
+          },
+          {
+            "name": "Build archive",
+            "conclusion": "success"
+          }
+        ]
+      },
+      {
+        "id": 123036014531,
+        "name": "build (linux, arm64, ubuntu-24.04-arm)",
+        "status": "completed",
+        "conclusion": "success",
+        "steps": [
+          {
+            "name": "Install non-AVX CPU smoke dependency",
+            "conclusion": "skipped"
+          },
+          {
+            "name": "Install reviewed Graft build dependencies",
+            "conclusion": "success"
+          },
+          {
+            "name": "Admit only the CI sandbox launcher to user namespaces",
+            "conclusion": "success"
+          },
+          {
+            "name": "Build and verify patched managed frontend",
+            "conclusion": "success"
+          },
+          {
+            "name": "Build compatible managed Graft and verify baseline CPU",
+            "conclusion": "success"
+          },
+          {
+            "name": "Build archive",
+            "conclusion": "success"
+          }
+        ]
+      },
+      {
+        "id": 123039972588,
+        "name": "publish",
+        "status": "completed",
+        "conclusion": "success",
+        "steps": [
+          {
+            "name": "Generate checksums",
+            "conclusion": "success"
+          },
+          {
+            "name": "Publish GitHub release",
+            "conclusion": "success"
+          }
+        ]
+      }
+    ]
+  },
+  "main_ci": {
+    "run_id": 40746711281,
+    "url": "https://github.com/ivo-lopes/ivoai/actions/runs/40746711281",
+    "jobs_api": "https://api.github.com/repos/ivo-lopes/ivoai/actions/runs/40746711281/jobs",
+    "conclusion": "success",
+    "successful_jobs": 16,
+    "jobs": [
+      {
+        "id": 123022309626,
+        "name": "Reviewed Graft runtime (arm64)",
+        "conclusion": "success"
+      },
+      {
+        "id": 123022310049,
+        "name": "Install smoke (Ubuntu 24.04)",
+        "conclusion": "success"
+      },
+      {
+        "id": 123022310103,
+        "name": "Real client install (Ubuntu 24.04)",
+        "conclusion": "success"
+      },
+      {
+        "id": 123022310121,
+        "name": "Install smoke (Ubuntu 22.04)",
+        "conclusion": "success"
+      },
+      {
+        "id": 123022310132,
+        "name": "Patched managed frontend (arm64)",
+        "conclusion": "success"
+      },
+      {
+        "id": 123022310172,
+        "name": "quality",
+        "conclusion": "success"
+      },
+      {
+        "id": 123022310208,
+        "name": "cross-build (linux, arm64)",
+        "conclusion": "success"
+      },
+      {
+        "id": 123022310213,
+        "name": "Patched managed frontend (amd64)",
+        "conclusion": "success"
+      },
+      {
+        "id": 123022310215,
+        "name": "Install smoke (Debian 12)",
+        "conclusion": "success"
+      },
+      {
+        "id": 123022310230,
+        "name": "cross-build (linux, amd64)",
+        "conclusion": "success"
+      },
+      {
+        "id": 123022310258,
+        "name": "Official Claude readonly worker boundary (amd64)",
+        "conclusion": "success"
+      },
+      {
+        "id": 123022310265,
+        "name": "Real client install (Ubuntu 22.04)",
+        "conclusion": "success"
+      },
+      {
+        "id": 123022310277,
+        "name": "Real client install (Debian 12)",
+        "conclusion": "success"
+      },
+      {
+        "id": 123022310383,
+        "name": "Reviewed Graft runtime (amd64)",
+        "conclusion": "success"
+      },
+      {
+        "id": 123035127295,
+        "name": "Real Ubuntu 24.04 server deployment",
+        "conclusion": "success"
+      },
+      {
+        "id": 123035127570,
+        "name": "Debian 12/LXC bootstrap contract",
+        "conclusion": "success"
+      }
+    ]
+  },
+  "interpretation": {
+    "x86_only_probe_on_arm": "The ARM job skips x86 qemu dependency installation; baseline helper returns without x86 execution. Native ARM frontend/Graft/Core gates passed separately.",
+    "required_offline_tests": "The frontend build invokes the mandatory offline eight-test/policy gate, which rejects SKIP; the platform-specific skip above is not an executed no-AVX test.",
+    "publication_is_not_production_deployment": true,
+    "postpublication_download_verification": "separate receipts in this directory"
+  }
+}
