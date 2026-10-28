@@ -1,0 +1,111 @@
+{
+  "status": "LOCAL_CANDIDATE",
+  "version": "0.15.0",
+  "base": "0bab9b3409a287917f73a5c0620a3758a4be5c36",
+  "tested_source": "324827a9945436e37f7a2b7f928650a4493f23f0",
+  "branch": "release/v0.15.0-candidate",
+  "publication": false,
+  "tag_created": false,
+  "deployment": false,
+  "real_canary": "NOT_RUN_BY_THIS_PREPARATION",
+  "economics": "INCOMPLETE",
+  "context_sync": "BLOCKED_IVOAI_175",
+  "excluded_prs": [
+    54,
+    56
+  ],
+  "scope": "documentation/metadata and embedded-site candidate only; Go runtime source, workflows and dependency bytes unchanged from base",
+  "checks": {
+    "full_go": {
+      "status": "PASS",
+      "passing_packages": 59,
+      "no_test_packages": 3,
+      "source": "324827a9945436e37f7a2b7f928650a4493f23f0"
+    },
+    "python": {
+      "status": "PASS",
+      "tests": 73,
+      "scope": "standard package suite, no provider opt-ins",
+      "source": "324827a9945436e37f7a2b7f928650a4493f23f0"
+    },
+    "vet": "PASS",
+    "generated_cli_reference": "PASS",
+    "docs_build_en_pt": "PASS",
+    "docs_embedded_check": "PASS",
+    "i18n": {
+      "status": "PASS",
+      "current_documents": 51,
+      "versioned_release": "0.9.2",
+      "versioned_documents": 44
+    },
+    "docs_audit": {
+      "threshold": "high",
+      "exit_code": 0,
+      "reported_low": 1,
+      "deepmerge_disposition": "needs_review",
+      "threshold_changed": false
+    },
+    "amd64_v1_build": "PASS",
+    "arm64_build": "PASS",
+    "amd64_version_help": "PASS",
+    "arm64_execution": "NOT_RUN",
+    "no_avx_emulated_execution": "NOT_RUN",
+    "new_race_run": "NOT_RUN_DOCUMENTATION_ONLY",
+    "new_browser_a11y_run": "NOT_RUN",
+    "source47_exact_head_ci": "EXTERNAL_GATE_NOT_ASSERTED",
+    "release_pipeline": "NOT_RUN"
+  },
+  "node_materialization": {
+    "node": "26.11.1",
+    "pnpm": "12.11.2",
+    "lockfile_sha256": "64931d224f2bd8128d94f7dd447cbf958d8f8cec322c22a8465970d99f96226e",
+    "own_frozen_install": true,
+    "offline_attempt": "FAILED_MISSING_METADATA",
+    "online_frozen_fallback": "PASS",
+    "copied_other_worktree_modules_used": false,
+    "dependency_changes": false,
+    "offline_after_own_materialization": "PASS_WITH_NEWLY_POPULATED_CACHE_NOT_REPLACEMENT_FOR_ORIGINAL_FAILURE"
+  },
+  "builds": {
+    "amd64": {
+      "sha256": "3d846ea49bd5fb42a15b588e06fc03c3d452d0faf29bc48cb05d62a8bfbdf08f",
+      "version": "0.15.0",
+      "vcs_revision": "324827a9945436e37f7a2b7f928650a4493f23f0",
+      "vcs_modified": false,
+      "CGO_ENABLED": "0",
+      "executed_locally": true,
+      "packaged_release_asset": false,
+      "release_managed_component_metadata_injected": false
+    },
+    "arm64": {
+      "sha256": "117575178120e695346c7960a6e12f55e141ae7cd639df1ccfbba87a4c3b8819",
+      "version": "0.15.0",
+      "vcs_revision": "324827a9945436e37f7a2b7f928650a4493f23f0",
+      "vcs_modified": false,
+      "CGO_ENABLED": "0",
+      "executed_locally": false,
+      "packaged_release_asset": false,
+      "release_managed_component_metadata_injected": false
+    }
+  },
+  "preservation": {
+    "prior_evidence_files": 563,
+    "prior_evidence_changed": 0,
+    "prior_release_note_files": 634,
+    "prior_release_notes_changed": 0,
+    "v014_tag": "3943e54ecbecf380429b89ad5a28a0500d138891",
+    "v014_source": "6d99e320912f3f7325c3009209a10e9df86610d4",
+    "workflow_and_pins_unchanged": true,
+    "historical_results_rescored": false
+  },
+  "limitations": [
+    "no global economics or model/cache/quota equivalence",
+    "no new provider/authentication/native-client turn",
+    "no general model/TUI/Claude/Antigravity/admin parity",
+    "G0 code prefetch wired behind default-OFF flag; protected creation separate opt-in",
+    "G1 Memory host SPI remains unwired to App/scheduler/client",
+    "PR55 preflight is not real concurrent execution",
+    "previous LOW docs advisory needs_review",
+    "actual canary/exact final CI and distribution availability remain independent publication gates"
+  ]
+}
