@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
+	_ "embed"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -16,6 +17,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ivo-lopes/ivoai/internal/benchmarkfixtures"
 	"github.com/ivo-lopes/ivoai/internal/codeintel"
 	"github.com/ivo-lopes/ivoai/internal/codexresolver"
 	"github.com/ivo-lopes/ivoai/internal/config"
@@ -26,6 +28,7 @@ import (
 )
 
 type prefetchLiveRow struct {
+	CatalogSHA256, HarnessSHA256, FixtureSHA256                                                                    string
 	Scenario, Arm, Model, Effort, DistributionInventorySHA256                                                      string
 	TotalMS, ProviderMS, PrefetchMS                                                                                int64
 	PromptBytes, EvidenceBytes, SourceBytes, ToolCalls, ToolResultBytes, PrefetchCalls, StructuralCalls, CacheHits int
@@ -73,6 +76,13 @@ func TestLivePrimaryCodePrefetchBenchmark(t *testing.T) {
 		cases[2].task = "Identify the function that directly calls Scale"
 	}
 
+	for _, name := range []string{"dependencies", "monorepo", "unsupported_parser", "non_code"} {
+		definition, ok := benchmarkfixtures.Lookup(name)
+		if !ok || !definition.RunnerSupported {
+			t.Fatal("invalid frozen benchmark scenario")
+		}
+		cases = append(cases, struct{ name, task, prompt string }{definition.ID, definition.Task, definition.Prompt})
+	}
 	var rows []prefetchLiveRow
 	persist := func() {
 		if path := os.Getenv("IVOAI_GRAFT_PREFETCH_OUTPUT"); path != "" {
@@ -92,10 +102,17 @@ func TestLivePrimaryCodePrefetchBenchmark(t *testing.T) {
 				continue
 			}
 			t.Run(scenario.name+"/"+arm, func(t *testing.T) {
-				root := prefetchLiveRepository(t)
+				root := prefetchScenarioRepository(t, scenario.name)
 				before := prefetchLiveSourceHash(t, root)
+				fixtureHash, hashErr := benchmarkfixtures.DirectorySHA256(root)
+				definition, supported := benchmarkfixtures.Lookup(scenario.name)
+				expectedHash, _ := benchmarkfixtures.ProjectSHA256(definition.Fixture)
+				if hashErr != nil || !supported || fixtureHash != expectedHash {
+					t.Fatal("fixture identity mismatch")
+				}
 				a, store, id, task := prefetchLiveHost(t, root, scenario.task)
 				row := prefetchLiveRow{Scenario: scenario.name, Arm: arm, Model: "gpt-6.1-sol", Effort: "low", DistributionInventorySHA256: hex.EncodeToString(inventoryHash[:])}
+				row.CatalogSHA256, row.HarnessSHA256, row.FixtureSHA256 = benchmarkfixtures.CatalogSHA256(), prefetchHarnessSHA256(), fixtureHash
 				defer func() {
 					if !row.Correct && row.Error == "" {
 						row.Error = "host_prefetch_or_fixture_failed"
@@ -115,7 +132,8 @@ func TestLivePrimaryCodePrefetchBenchmark(t *testing.T) {
 					})
 					cancel()
 					row.PrefetchMS = time.Since(start).Milliseconds()
-					if err != nil || len(evidence) == 0 && runtimeArm == "" || len(evidence) > 4094 {
+					requiredPrefetch := scenario.name == "api" || scenario.name == "implementation" || scenario.name == "multi_module_callers"
+					if err != nil || len(evidence) == 0 && runtimeArm == "" && requiredPrefetch || len(evidence) > 4094 {
 						t.Fatal("production primary prefetch failed or exceeded budget; private errors omitted")
 					}
 					if len(evidence) > 0 {
@@ -171,6 +189,9 @@ func TestLivePrimaryCodePrefetchBenchmark(t *testing.T) {
 					prompt += "\n" + string(envelope)
 				}
 				row.PromptBytes = len(prompt)
+				if definition.Structural == "forbidden" && row.StructuralCalls != 0 {
+					t.Fatal("non-structural scenario started a structural process")
+				}
 				args := []string{"exec", "--ignore-user-config", "--ephemeral", "--sandbox", "read-only", "--skip-git-repo-check", "--json", "--color", "never", "-m", row.Model, "-c", `model_reasoning_effort="low"`, "-C", root}
 				schemaPath := filepath.Join(t.TempDir(), "response-schema.json")
 				schema, _ := json.Marshal(prefetchLiveResponseSchema(scenario.name))
@@ -194,7 +215,8 @@ func TestLivePrimaryCodePrefetchBenchmark(t *testing.T) {
 				answer := prefetchLiveEvents(stdout.Bytes(), &row)
 				row.JSONDecoded, row.Correct = prefetchLiveCorrect(scenario.name, answer)
 				row.Correct = row.Correct && runErr == nil && !stdout.overflow && row.InputTokens != nil
-				if prefetchLiveSourceHash(t, root) != before {
+				afterFixtureHash, afterErr := benchmarkfixtures.DirectorySHA256(root)
+				if prefetchLiveSourceHash(t, root) != before || afterErr != nil || afterFixtureHash != fixtureHash {
 					row.Correct = false
 				}
 				if !row.Correct {
@@ -203,6 +225,137 @@ func TestLivePrimaryCodePrefetchBenchmark(t *testing.T) {
 				}
 			})
 		}
+	}
+}
+
+//go:embed primary_prefetch_live_test.go
+var prefetchHarnessSource []byte
+
+func prefetchHarnessSHA256() string {
+	sum := sha256.Sum256(prefetchHarnessSource)
+	return hex.EncodeToString(sum[:])
+}
+
+type prefetchBenchmarkCapabilities struct {
+	SchemaVersion  int               `json:"schema_version"`
+	CatalogSHA256  string            `json:"catalog_sha256"`
+	ContractSHA256 string            `json:"fixture_contract_sha256"`
+	HarnessSHA256  string            `json:"harness_sha256"`
+	Supported      []string          `json:"supported_scenarios"`
+	Fixtures       map[string]string `json:"fixtures"`
+}
+
+// This discovery test never reads HOME or authenticates/starts a client.
+func TestPrimaryPrefetchBenchmarkCatalog(t *testing.T) {
+	catalog, err := benchmarkfixtures.Catalog()
+	if err != nil {
+		t.Fatal(err)
+	}
+	value := prefetchBenchmarkCapabilities{SchemaVersion: 1, CatalogSHA256: benchmarkfixtures.CatalogSHA256(), ContractSHA256: benchmarkfixtures.ContractSHA256(), HarnessSHA256: prefetchHarnessSHA256(), Fixtures: map[string]string{}}
+	for _, scenario := range catalog {
+		if scenario.RunnerSupported {
+			value.Supported = append(value.Supported, scenario.ID)
+			hash, err := benchmarkfixtures.ProjectSHA256(scenario.Fixture)
+			if err != nil {
+				t.Fatal(err)
+			}
+			value.Fixtures[scenario.Fixture] = hash
+		}
+	}
+	sort.Strings(value.Supported)
+	if path := os.Getenv("IVOAI_BENCHMARK_CATALOG_OUTPUT"); path != "" {
+		if !filepath.IsAbs(path) {
+			t.Fatal("absolute private catalog path required")
+		}
+		body, err := json.Marshal(value)
+		if err != nil || len(body) > 32768 {
+			t.Fatal("catalog unavailable")
+		}
+		file, err := os.OpenFile(path, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0600)
+		if err != nil {
+			t.Fatal("catalog output unavailable")
+		}
+		_, err = file.Write(body)
+		closeErr := file.Close()
+		if err != nil || closeErr != nil {
+			t.Fatal("catalog output failed")
+		}
+	}
+}
+
+func prefetchScenarioRepository(t *testing.T, id string) string {
+	t.Helper()
+	if id == "api" || id == "implementation" || id == "multi_module_callers" {
+		return prefetchLiveRepository(t)
+	}
+	scenario, ok := benchmarkfixtures.Lookup(id)
+	if !ok || !scenario.RunnerSupported {
+		t.Fatal("unsupported benchmark fixture")
+	}
+	root := t.TempDir()
+	if err := benchmarkfixtures.Materialize(root, scenario.Fixture); err != nil {
+		t.Fatal(err)
+	}
+	if err := exec.Command("git", "init", "-q", root).Run(); err != nil {
+		t.Fatal(err)
+	}
+	return root
+}
+
+func TestPrimaryPrefetchMatrixReadOnlyFixtures(t *testing.T) {
+	cases, err := benchmarkfixtures.Catalog()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, definition := range cases {
+		if !definition.RunnerSupported {
+			continue
+		}
+		t.Run(definition.ID, func(t *testing.T) {
+			root := prefetchScenarioRepository(t, definition.ID)
+			actual, err := benchmarkfixtures.DirectorySHA256(root)
+			expected, _ := benchmarkfixtures.ProjectSHA256(definition.Fixture)
+			if err != nil || actual != expected || prefetchLiveSourceHash(t, root) == "" {
+				t.Fatalf("runner fixture mismatch: %v", err)
+			}
+			decoded, correct := prefetchLiveCorrect(definition.ID, string(definition.Expected))
+			if !decoded || !correct || prefetchLiveResponseSchema(definition.ID) == nil {
+				t.Fatal("runner oracle/schema missing")
+			}
+		})
+	}
+}
+
+// Exercises only the existing production host prefetch; no client or inference.
+func TestPrimaryPrefetchMatrixHostPrefetch(t *testing.T) {
+	if os.Getenv("IVOAI_BENCHMARK_OFFLINE_PREFLIGHT") != "1" {
+		t.Skip("NOT_RUN: explicit managed host-prefetch artifact inputs required")
+	}
+	for _, name := range []string{"dependencies", "monorepo", "unsupported_parser", "non_code"} {
+		t.Run(name, func(t *testing.T) {
+			definition, _ := benchmarkfixtures.Lookup(name)
+			root := prefetchScenarioRepository(t, name)
+			before, _ := benchmarkfixtures.DirectorySHA256(root)
+			a, store, id, task := prefetchLiveHost(t, root, definition.Task)
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
+			calls := 0
+			body, err := a.preparePrimaryCodeEvidence(ctx, store, id, task, 4094, func(_ context.Context, directory, scope string) (*codeintel.Provider, error) {
+				calls++
+				return &codeintel.Provider{Root: directory, Scope: scope, Permissions: "filesystem.read", Allowed: true, CacheRoot: filepath.Join(a.Store.Paths.CacheDir, "code-intelligence"), Node: os.Getenv("IVOAI_GRAFT_TEST_NODE"), Distribution: os.Getenv("IVOAI_GRAFT_TEST_DIST"), Executable: os.Getenv("IVOAI_GRAFT_SMOKE_BINARY")}, nil
+			})
+			if err != nil {
+				t.Fatal("host prefetch unavailable; no inference attempted")
+			}
+			if definition.Structural == "forbidden" && calls != 0 {
+				t.Fatal("non-structural case called code provider")
+			}
+			after, _ := benchmarkfixtures.DirectorySHA256(root)
+			if after != before {
+				t.Fatal("host prefetch mutated fixture")
+			}
+			t.Logf("offline_host_prefetch factory_calls=%d evidence_bytes=%d provider_inference_attempts=0", calls, len(body))
+		})
 	}
 }
 
@@ -401,6 +554,8 @@ func prefetchLiveResponseSchema(scenario string) map[string]any {
 	case "multi_module_callers":
 		props = map[string]any{"callers": map[string]any{"type": "array", "items": map[string]any{"type": "object", "additionalProperties": false, "properties": map[string]any{"symbol": text, "file": text}, "required": []string{"symbol", "file"}}}}
 		required = []string{"callers"}
+	default:
+		return benchmarkfixtures.Schema(scenario)
 	}
 	return map[string]any{"type": "object", "additionalProperties": false, "properties": props, "required": required}
 }
@@ -454,7 +609,7 @@ func prefetchLiveCorrect(scenario, text string) (bool, bool) {
 		sort.Slice(value.Callers, func(i, j int) bool { return value.Callers[i].Symbol < value.Callers[j].Symbol })
 		return true, len(value.Callers) == 2 && value.Callers[0] == (caller{"Entry", "app/entry.go"}) && value.Callers[1] == (caller{"Process", "service/process.go"})
 	}
-	return false, false
+	return benchmarkfixtures.CheckAnswer(scenario, text)
 }
 func TestPrimaryPrefetchLiveExactQuality(t *testing.T) {
 	for _, fixture := range []struct {

@@ -213,6 +213,10 @@ class DriverTests(unittest.TestCase):
         status, output = self.execute("valid")
         self.assertEqual(status, 0)
         manifest = json.loads((output / "manifest.json").read_text())
+        self.assertEqual(manifest["host_mcp_tools_exposed"], 0)
+        self.assertIsNone(manifest["native_tools_exposed"])
+        self.assertEqual(manifest["native_tools_inventory"], "UNVERIFIED")
+        self.assertNotIn("tools_exposed", manifest)
         self.assertEqual(manifest["runtime_flags"], {"experimental_evidence_gateway": os.environ.get("IVOAI_EXPERIMENTAL_EVIDENCE_GATEWAY") == "1"})
         for name in ("baseline_test_sha256", "candidate_test_sha256", "codex_sha256", "node_sha256",
                      "sandbox_sha256", "distribution_inventory_sha256", "harness_sha256"):
@@ -268,7 +272,7 @@ class DriverTests(unittest.TestCase):
                 while time.monotonic() < deadline:
                     try:
                         state = (Path("/proc") / str(child_pid) / "stat").read_text().rsplit(")", 1)[1].split()[0]
-                    except FileNotFoundError:
+                    except (FileNotFoundError, ProcessLookupError):
                         break
                     if state == "Z":  # killed orphan may await its init reaper
                         break

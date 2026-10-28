@@ -1,0 +1,150 @@
+"""Offline matrix/discovery regressions; subprocesses are synthetic, never LLMs."""
+import contextlib
+import importlib.util
+import io
+import json
+from pathlib import Path
+import tempfile
+import unittest
+
+import benchmark_catalog as CATALOG
+from test_benchmark_economic_runtime import valid_row
+
+SPEC = importlib.util.spec_from_file_location("matrix_driver", Path(__file__).with_name("benchmark-economic-runtime.py"))
+DRIVER = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(DRIVER)
+
+
+class CatalogTests(unittest.TestCase):
+    def test_exact_historical_matrix_and_explicit_limits(self):
+        cases = CATALOG.load_catalog()
+        self.assertEqual(len(cases), 16)
+        self.assertEqual([s.label for s in cases], ["Small known-file correction", "Function identification",
+            "Cross-module refactor", "Dependencies", "Impact", "APIs", "Large project / IVOAI", "Monorepo",
+            "Unsupported parser", "Institutional documentation", "ai-memory history", "Non-code tasks",
+            "Multiple workers", "Reuse between turns", "Interrupted continuity", "Concurrent distinct projects"])
+        self.assertEqual(sum(s.runner_supported for s in cases), 7)
+        self.assertEqual(sum(CATALOG.planned_status(s) == "BLOCKED" for s in cases), 2)
+        self.assertEqual(sum(CATALOG.planned_status(s) == "UNSUPPORTED" for s in cases), 7)
+        self.assertEqual(DRIVER.SCENARIOS, ("api", "implementation", "multi_module_callers"))
+        self.assertTrue(all(s.expected is None for s in cases if not s.runner_supported))
+
+    def test_hashes_bind_every_project_format(self):
+        capabilities = CATALOG.expected_capabilities(CATALOG.ROOT / "internal/app/primary_prefetch_live_test.go")
+        self.assertEqual(len(capabilities["supported_scenarios"]), 7)
+        self.assertEqual(len(capabilities["fixtures"]), 5)
+        self.assertTrue(all(len(value) == 64 for value in capabilities["fixtures"].values()))
+        with self.assertRaises(ValueError):
+            CATALOG.fixture_digest("../go-core")
+
+    def test_missing_tool_is_blocked_not_verified(self):
+        rows = CATALOG.verify_fixtures()
+        for name in ("go-core", "monorepo-ts"):
+            row = next(x for x in rows if x["fixture"] == name)
+            self.assertEqual(row["status"], "BLOCKED")
+            self.assertFalse(row["correct"])
+        self.assertTrue(all(row["provider_attempts"] == 0 for row in rows))
+
+
+class PreflightTests(unittest.TestCase):
+    def execute(self, mode="valid", selection=None, preflight=True):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        root = Path(temporary.name)
+        expected = CATALOG.expected_capabilities(CATALOG.ROOT / "internal/app/primary_prefetch_live_test.go")
+        fake = root / "test-binary"
+        marker = root / "client-attempts.txt"
+        fake.write_text("#!/usr/bin/python3\nimport os,sys,json,hashlib\nfrom pathlib import Path\n"
+            f"mode={mode!r}\ncapabilities={expected!r}\nbase={valid_row()!r}\nmarker=Path({str(marker)!r})\n"
+            "print('PRIVATE_SENTINEL')\nprint('PRIVATE_SENTINEL',file=sys.stderr)\n"
+            "if any('TestPrimaryPrefetchBenchmarkCatalog' in a for a in sys.argv):\n"
+            " output=Path(os.environ['IVOAI_BENCHMARK_CATALOG_OUTPUT'])\n"
+            " if mode=='skipped': sys.exit(0)\n"
+            " if mode=='mismatch': capabilities['harness_sha256']='b'*64\n"
+            " if mode=='bool_version': capabilities['schema_version']=True\n"
+            " if mode=='oversized': output.write_text('x'*32769);sys.exit(0)\n"
+            " if mode=='duplicate': output.write_text('{\"schema_version\":1,\"schema_version\":1}');sys.exit(0)\n"
+            " output.write_text(json.dumps(capabilities));sys.exit(7 if mode=='bad_exit' else 0)\n"
+            "scenario=next(a for a in sys.argv if a.startswith('-test.run=')).split('/')[1]\n"
+            "with marker.open('a') as stream: stream.write(scenario+'\\n')\n"
+            "base.update(Scenario=scenario,Arm=os.environ['IVOAI_ECONOMIC_RUNTIME_ARM'])\n"
+            "base['DistributionInventorySHA256']=hashlib.sha256((Path(os.environ['IVOAI_GRAFT_TEST_DIST'])/'files.json').read_bytes()).hexdigest()\n"
+            "base['CatalogSHA256']=capabilities['catalog_sha256'];base['HarnessSHA256']=capabilities['harness_sha256']\n"
+            f"fixtures={dict((s.id,s.fixture) for s in CATALOG.load_catalog())!r}\n"
+            "base['FixtureSHA256']=capabilities['fixtures'][fixtures[scenario]]\n"
+            "if mode=='wrong_fixture': base['FixtureSHA256']='f'*64\n"
+            "Path(os.environ['IVOAI_GRAFT_PREFETCH_OUTPUT']).write_text(json.dumps([base]))\n")
+        fake.chmod(0o700)
+        distribution = root / "distribution"
+        distribution.mkdir()
+        (distribution / "files.json").write_text("{}")
+        output = root / "evidence"
+        args = []
+        for key in ("baseline", "candidate", "codex", "node", "sandbox-binary"):
+            args += ["--" + key, str(fake)]
+        args += ["--distribution", str(distribution), "--output", str(output), "--repetitions", "1"]
+        args += selection or ["--matrix16"]
+        if preflight:
+            args += ["--preflight-only"]
+        captured = io.StringIO()
+        with contextlib.redirect_stdout(captured):
+            code = DRIVER.main(args)
+        self.assertNotIn("PRIVATE_SENTINEL", captured.getvalue())
+        for path in output.glob("*.json"):
+            self.assertNotIn("PRIVATE_SENTINEL", path.read_text())
+            self.assertEqual(path.stat().st_mode & 0o777, 0o600)
+        return code, output, marker
+
+    def test_complete_plan_is_not_complete_execution(self):
+        code, output, marker = self.execute()
+        self.assertEqual(code, 1)
+        self.assertFalse(marker.exists())
+        report = json.loads((output / "preflight.json").read_text())
+        self.assertEqual(report["provider_attempts"], 0)
+        self.assertEqual([row["status"] for row in report["scenarios"]].count("READY"), 7)
+        self.assertTrue(all(row["client_execution"] == "NOT_RUN" for row in report["scenarios"]))
+        summary = json.loads((output / "summary.json").read_text())
+        self.assertEqual(summary["global_economic_gate"], "INCOMPLETE")
+        self.assertEqual(summary["all_attempts"]["A"]["attempts"], 0)
+
+    def test_missing_skipped_wrong_or_unbounded_discovery_blocks_client(self):
+        for mode in ("skipped", "mismatch", "bool_version", "oversized", "duplicate", "bad_exit"):
+            with self.subTest(mode=mode):
+                code, output, marker = self.execute(mode, ["--scenarios", "dependencies"], preflight=False)
+                self.assertEqual(code, 1)
+                self.assertFalse(marker.exists())
+                report = json.loads((output / "preflight.json").read_text())
+                self.assertEqual(report["scenarios"][0]["status"], "BLOCKED")
+                self.assertEqual(json.loads((output / "summary.json").read_text())["all_attempts"]["A"]["attempts"], 0)
+
+    def test_new_subset_uses_existing_ab_ba_and_source_identities(self):
+        ids = ["dependencies", "monorepo", "unsupported_parser", "non_code"]
+        code, output, marker = self.execute(selection=["--scenarios", *ids], preflight=False)
+        self.assertEqual(code, 0)  # Synthetic runner mechanics, never economic acceptance.
+        self.assertEqual(len(marker.read_text().splitlines()), 8)
+        rows = json.loads((output / "runtime-comparison.json").read_text())
+        self.assertEqual([x["Arm"] for x in rows], ["A", "B", "B", "A", "A", "B", "B", "A"])
+        self.assertTrue(all(x["MeasurementValid"] and len(x["FixtureSHA256"]) == 64 for x in rows))
+        summary = json.loads((output / "summary.json").read_text())
+        self.assertEqual(summary["global_economic_gate"], "INCOMPLETE")
+
+    def test_unavailable_cases_never_become_fake_attempts_or_success(self):
+        code, output, marker = self.execute(preflight=False)
+        self.assertEqual(code, 1)
+        self.assertEqual(len(marker.read_text().splitlines()), 14)
+        summary = json.loads((output / "summary.json").read_text())
+        self.assertEqual(summary["subset_economic_diagnostic"], "INCOMPLETE")
+        self.assertEqual(summary["all_attempts"]["A"]["attempts"], 7)
+        self.assertEqual(len(summary["requested_scenarios"]), 16)
+        self.assertEqual(len(summary["measured_scenarios"]), 7)
+
+    def test_runtime_fixture_mismatch_is_retained_as_invalid(self):
+        code, output, marker = self.execute("wrong_fixture", ["--scenarios", "dependencies"], preflight=False)
+        self.assertEqual(code, 1)
+        self.assertEqual(len(marker.read_text().splitlines()), 2)
+        rows = json.loads((output / "runtime-comparison.json").read_text())
+        self.assertTrue(all(not x["Correct"] and not x["MeasurementValid"] and x["Error"] == "invalid_evidence" for x in rows))
+
+
+if __name__ == "__main__":
+    unittest.main()

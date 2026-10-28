@@ -1,0 +1,310 @@
+{
+  "corrected_discovery": {
+    "discovery": {
+      "A": {
+        "capabilities": {
+          "catalog_sha256": "13779e11784adfbc314e733738bfb06a9a60787979127f5ba07647ba1e72fa52",
+          "fixture_contract_sha256": "8891b0280ffbb27887c642ff89a87f3c46cfc31570d6dc964b7a2039e946632a",
+          "fixtures": {
+            "go-core": "94339e5800d550aaa5284ae452fef04b9c425c02dd079be54234b1bb8feb5188",
+            "monorepo-ts": "01ade0e8a5dbe64fb80ceb1210c2d0f056ed43462e9a1e86f1f9b24000feb656",
+            "non-code": "4e5d45339ffb829146a641b9a6460879c4ab1e741f45820c00f3f3c2bb4f5cd9",
+            "python-deps": "4dfd2279a45f4f1485e482743672d52a362aeb41d9dd0a671efdfa98a21847aa",
+            "rules-shell": "2650c62f41cfe3d5d0dce157cf45e35a6237605a564be2326bcd9646e123ac72"
+          },
+          "harness_sha256": "5895f5cab19164f5beac1033c83978a2f6d5062bf8ecc77ea15892ad1c636276",
+          "schema_version": 1,
+          "supported_scenarios": [
+            "api",
+            "dependencies",
+            "implementation",
+            "monorepo",
+            "multi_module_callers",
+            "non_code",
+            "unsupported_parser"
+          ]
+        },
+        "status": "READY",
+        "test_exit_code": 0
+      },
+      "B": {
+        "capabilities": {
+          "catalog_sha256": "13779e11784adfbc314e733738bfb06a9a60787979127f5ba07647ba1e72fa52",
+          "fixture_contract_sha256": "8891b0280ffbb27887c642ff89a87f3c46cfc31570d6dc964b7a2039e946632a",
+          "fixtures": {
+            "go-core": "94339e5800d550aaa5284ae452fef04b9c425c02dd079be54234b1bb8feb5188",
+            "monorepo-ts": "01ade0e8a5dbe64fb80ceb1210c2d0f056ed43462e9a1e86f1f9b24000feb656",
+            "non-code": "4e5d45339ffb829146a641b9a6460879c4ab1e741f45820c00f3f3c2bb4f5cd9",
+            "python-deps": "4dfd2279a45f4f1485e482743672d52a362aeb41d9dd0a671efdfa98a21847aa",
+            "rules-shell": "2650c62f41cfe3d5d0dce157cf45e35a6237605a564be2326bcd9646e123ac72"
+          },
+          "harness_sha256": "5895f5cab19164f5beac1033c83978a2f6d5062bf8ecc77ea15892ad1c636276",
+          "schema_version": 1,
+          "supported_scenarios": [
+            "api",
+            "dependencies",
+            "implementation",
+            "monorepo",
+            "multi_module_callers",
+            "non_code",
+            "unsupported_parser"
+          ]
+        },
+        "status": "READY",
+        "test_exit_code": 0
+      }
+    },
+    "effective_model_observed": null,
+    "global_economic_gate": "INCOMPLETE",
+    "provider_attempts": 0,
+    "provider_cache_equivalence": "UNVERIFIED",
+    "scenarios": [
+      {
+        "client_execution": "NOT_RUN",
+        "reason": "read_only_runner_cannot_apply_and_validate_edits",
+        "scenario": "small_known_file_correction",
+        "status": "UNSUPPORTED"
+      },
+      {
+        "client_execution": "NOT_RUN",
+        "reason": "runtime_artifact_inputs_unavailable",
+        "scenario": "implementation",
+        "status": "BLOCKED"
+      },
+      {
+        "client_execution": "NOT_RUN",
+        "reason": "read_only_runner_cannot_refactor_or_run_post_edit_oracles",
+        "scenario": "cross_module_refactor",
+        "status": "UNSUPPORTED"
+      },
+      {
+        "client_execution": "NOT_RUN",
+        "reason": "runtime_artifact_inputs_unavailable",
+        "scenario": "dependencies",
+        "status": "BLOCKED"
+      },
+      {
+        "client_execution": "NOT_RUN",
+        "reason": "runtime_artifact_inputs_unavailable",
+        "scenario": "multi_module_callers",
+        "status": "BLOCKED"
+      },
+      {
+        "client_execution": "NOT_RUN",
+        "reason": "runtime_artifact_inputs_unavailable",
+        "scenario": "api",
+        "status": "BLOCKED"
+      },
+      {
+        "client_execution": "NOT_RUN",
+        "reason": "representative_large_project_fixture_and_boundaries_not_frozen",
+        "scenario": "large_project",
+        "status": "UNSUPPORTED"
+      },
+      {
+        "client_execution": "NOT_RUN",
+        "reason": "runtime_artifact_inputs_unavailable",
+        "scenario": "monorepo",
+        "status": "BLOCKED"
+      },
+      {
+        "client_execution": "NOT_RUN",
+        "reason": "runtime_artifact_inputs_unavailable",
+        "scenario": "unsupported_parser",
+        "status": "BLOCKED"
+      },
+      {
+        "client_execution": "NOT_RUN",
+        "reason": "context_ingestion_and_retrieval_unavailable_IVOAI_175",
+        "scenario": "institutional_documentation",
+        "status": "BLOCKED"
+      },
+      {
+        "client_execution": "NOT_RUN",
+        "reason": "canonical_history_dataset_and_live_memory_contract_not_frozen",
+        "scenario": "ai_memory_history",
+        "status": "BLOCKED"
+      },
+      {
+        "client_execution": "NOT_RUN",
+        "reason": "runtime_artifact_inputs_unavailable",
+        "scenario": "non_code",
+        "status": "BLOCKED"
+      },
+      {
+        "client_execution": "NOT_RUN",
+        "reason": "primary_only_runner_has_no_worker_or_reuse_lifecycle",
+        "scenario": "multiple_workers",
+        "status": "UNSUPPORTED"
+      },
+      {
+        "client_execution": "NOT_RUN",
+        "reason": "ephemeral_single_turn_runner_has_no_warm_session",
+        "scenario": "reuse_between_turns",
+        "status": "UNSUPPORTED"
+      },
+      {
+        "client_execution": "NOT_RUN",
+        "reason": "ephemeral_runner_has_no_interrupt_resume_comparison",
+        "scenario": "interrupted_continuity",
+        "status": "UNSUPPORTED"
+      },
+      {
+        "client_execution": "NOT_RUN",
+        "reason": "sequential_driver_has_no_concurrent_project_lifecycle",
+        "scenario": "concurrent_distinct_projects",
+        "status": "UNSUPPORTED"
+      }
+    ],
+    "schema_version": 1,
+    "scope": "matrix16_discovery_preflight_no_inference"
+  },
+  "corrected_source_and_binary_identities": {
+    "baseline_test_sha256": "4cd718da06fa276f3e58ff2ad76df0bd5c50a162833ad57e3862b156f8a103cc",
+    "candidate_test_sha256": "4cd718da06fa276f3e58ff2ad76df0bd5c50a162833ad57e3862b156f8a103cc",
+    "catalog_sha256": "13779e11784adfbc314e733738bfb06a9a60787979127f5ba07647ba1e72fa52",
+    "distribution_inventory_sha256": "4c405568d9fd2d3bf78f7831d4b536a460bde13cb2a8724332e61ff4b6228c43",
+    "fixture_contract_sha256": "8891b0280ffbb27887c642ff89a87f3c46cfc31570d6dc964b7a2039e946632a",
+    "harness_sha256": "5895f5cab19164f5beac1033c83978a2f6d5062bf8ecc77ea15892ad1c636276",
+    "node_sha256": "5a7b8a3cf5ccb57d297519754fd73238f64cf560afd0ef19a2f9bf7384cbb657",
+    "sandbox_sha256": "f6a153d756f6f39f53718a7cfbd0776f8be0a55621c7f1b7304570032ddf19a1"
+  },
+  "global_economic_gate": "INCOMPLETE",
+  "initial_discovery": {
+    "discovery": {
+      "A": {
+        "reason": "capability_discovery_missing_invalid_or_mismatched",
+        "status": "BLOCKED",
+        "test_exit_code": 0
+      },
+      "B": {
+        "reason": "capability_discovery_missing_invalid_or_mismatched",
+        "status": "BLOCKED",
+        "test_exit_code": 0
+      }
+    },
+    "effective_model_observed": null,
+    "global_economic_gate": "INCOMPLETE",
+    "provider_attempts": 0,
+    "provider_cache_equivalence": "UNVERIFIED",
+    "scenarios": [
+      {
+        "client_execution": "NOT_RUN",
+        "reason": "read_only_runner_cannot_apply_and_validate_edits",
+        "scenario": "small_known_file_correction",
+        "status": "UNSUPPORTED"
+      },
+      {
+        "client_execution": "NOT_RUN",
+        "reason": "runtime_artifact_inputs_unavailable",
+        "scenario": "implementation",
+        "status": "BLOCKED"
+      },
+      {
+        "client_execution": "NOT_RUN",
+        "reason": "read_only_runner_cannot_refactor_or_run_post_edit_oracles",
+        "scenario": "cross_module_refactor",
+        "status": "UNSUPPORTED"
+      },
+      {
+        "client_execution": "NOT_RUN",
+        "reason": "runtime_artifact_inputs_unavailable",
+        "scenario": "dependencies",
+        "status": "BLOCKED"
+      },
+      {
+        "client_execution": "NOT_RUN",
+        "reason": "runtime_artifact_inputs_unavailable",
+        "scenario": "multi_module_callers",
+        "status": "BLOCKED"
+      },
+      {
+        "client_execution": "NOT_RUN",
+        "reason": "runtime_artifact_inputs_unavailable",
+        "scenario": "api",
+        "status": "BLOCKED"
+      },
+      {
+        "client_execution": "NOT_RUN",
+        "reason": "representative_large_project_fixture_and_boundaries_not_frozen",
+        "scenario": "large_project",
+        "status": "UNSUPPORTED"
+      },
+      {
+        "client_execution": "NOT_RUN",
+        "reason": "runtime_artifact_inputs_unavailable",
+        "scenario": "monorepo",
+        "status": "BLOCKED"
+      },
+      {
+        "client_execution": "NOT_RUN",
+        "reason": "runtime_artifact_inputs_unavailable",
+        "scenario": "unsupported_parser",
+        "status": "BLOCKED"
+      },
+      {
+        "client_execution": "NOT_RUN",
+        "reason": "context_ingestion_and_retrieval_unavailable_IVOAI_175",
+        "scenario": "institutional_documentation",
+        "status": "BLOCKED"
+      },
+      {
+        "client_execution": "NOT_RUN",
+        "reason": "canonical_history_dataset_and_live_memory_contract_not_frozen",
+        "scenario": "ai_memory_history",
+        "status": "BLOCKED"
+      },
+      {
+        "client_execution": "NOT_RUN",
+        "reason": "runtime_artifact_inputs_unavailable",
+        "scenario": "non_code",
+        "status": "BLOCKED"
+      },
+      {
+        "client_execution": "NOT_RUN",
+        "reason": "primary_only_runner_has_no_worker_or_reuse_lifecycle",
+        "scenario": "multiple_workers",
+        "status": "UNSUPPORTED"
+      },
+      {
+        "client_execution": "NOT_RUN",
+        "reason": "ephemeral_single_turn_runner_has_no_warm_session",
+        "scenario": "reuse_between_turns",
+        "status": "UNSUPPORTED"
+      },
+      {
+        "client_execution": "NOT_RUN",
+        "reason": "ephemeral_runner_has_no_interrupt_resume_comparison",
+        "scenario": "interrupted_continuity",
+        "status": "UNSUPPORTED"
+      },
+      {
+        "client_execution": "NOT_RUN",
+        "reason": "sequential_driver_has_no_concurrent_project_lifecycle",
+        "scenario": "concurrent_distinct_projects",
+        "status": "UNSUPPORTED"
+      }
+    ],
+    "schema_version": 1,
+    "scope": "matrix16_discovery_preflight_no_inference"
+  },
+  "initial_fixture_mismatch": {
+    "fixture": "python-deps",
+    "go_embedded_sha256": "a81da663fda8c461fe0cee73773be4f2886448106e8777dee06bcdeffae57f55",
+    "source_fixture_sha256": "4dfd2279a45f4f1485e482743672d52a362aeb41d9dd0a671efdfa98a21847aa"
+  },
+  "initial_source_and_binary_identities": {
+    "baseline_test_sha256": "f53e19d134861015d031aaf6c25a3665d35c044023c1d297843e13b99b7188b4",
+    "candidate_test_sha256": "f53e19d134861015d031aaf6c25a3665d35c044023c1d297843e13b99b7188b4",
+    "catalog_sha256": "13779e11784adfbc314e733738bfb06a9a60787979127f5ba07647ba1e72fa52",
+    "distribution_inventory_sha256": "4c405568d9fd2d3bf78f7831d4b536a460bde13cb2a8724332e61ff4b6228c43",
+    "fixture_contract_sha256": "99709960e89c58e66686e014ace00127909197ffac2fcde2dbd5dc7cd38df6a0",
+    "harness_sha256": "5895f5cab19164f5beac1033c83978a2f6d5062bf8ecc77ea15892ad1c636276",
+    "node_sha256": "5a7b8a3cf5ccb57d297519754fd73238f64cf560afd0ef19a2f9bf7384cbb657",
+    "sandbox_sha256": "f6a153d756f6f39f53718a7cfbd0776f8be0a55621c7f1b7304570032ddf19a1"
+  },
+  "manifest_subset_note": "Only source/binary identity allowlist retained from preflight manifests. Earlier tools_exposed=0 was not native-tool attestation; new manifests separate host MCP and unverified native inventory.",
+  "note": "Initial build omitted __init__.py under normal Go embed rules; fail-closed cross-language fixture hash check blocked both arms. all:data corrected inclusion. Corrected capability discovery is READY in both arms; runtime scenarios remain BLOCKED because no Codex artifact was supplied (/nonexistent). No client was executed.",
+  "provider_attempts": 0,
+  "scope": "offline_binary_discovery_no_client_or_inference"
+}

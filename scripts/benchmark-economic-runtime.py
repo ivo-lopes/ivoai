@@ -18,6 +18,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import benchmark_catalog
 
 
 SCENARIOS = ("api", "implementation", "multi_module_callers")
@@ -61,7 +62,7 @@ def unique_object(pairs):
     return value
 
 
-def read_evidence(path, scenario, arm, repetition, code, inventory_hash):
+def read_evidence(path, scenario, arm, repetition, code, inventory_hash, capabilities=None):
     """Return one allowlisted row, including a fixed-label failure for missing tests."""
     base = {"Scenario": scenario, "Arm": arm, "Repetition": repetition,
             "TestExitCode": code, "Correct": False, "MeasurementValid": False}
@@ -84,6 +85,13 @@ def read_evidence(path, scenario, arm, repetition, code, inventory_hash):
             raise ValueError("unexpected client selection")
         if not inventory_hash or row.get("DistributionInventorySHA256") != inventory_hash:
             raise ValueError("unexpected distribution")
+        if capabilities is not None:
+            definition = next(s for s in benchmark_catalog.load_catalog() if s.id == scenario)
+            identities = {"CatalogSHA256": capabilities["catalog_sha256"],
+                          "HarnessSHA256": capabilities["harness_sha256"],
+                          "FixtureSHA256": capabilities["fixtures"][definition.fixture]}
+            if any(row.get(key) != value for key, value in identities.items()):
+                raise ValueError("unexpected source or harness identity")
         for key in ("Correct", "JSONDecoded"):
             if type(row.get(key)) is not bool:
                 raise ValueError("nonboolean verdict")
@@ -105,6 +113,8 @@ def read_evidence(path, scenario, arm, repetition, code, inventory_hash):
         clean = {key: row.get(key) for key in COUNTS + OPTIONAL_COUNTS}
         clean.update({key: row[key] for key in ("Model", "Effort", "DistributionInventorySHA256", "JSONDecoded")})
         clean.update(base, Correct=row["Correct"] and code == 0, MeasurementValid=True)
+        if capabilities is not None:
+            clean.update(identities)
         if code != 0 or not row["Correct"]:
             clean["Error"] = "test_execution_failed" if code != 0 else "correctness_failed"
         return clean
@@ -147,7 +157,7 @@ def wait4_process(process, timeout):
         raise
 
 
-def run_attempt(command, env, resource_path, timeout=250):
+def run_attempt(command, env, resource_path, timeout=250, cwd=None):
     # GNU time reports wait4 usage for the command and its reaped descendants.
     # It is not whole-host attribution or an instantaneous process-tree RSS sum.
     resources = {key: None for key in ("LocalUserCPUMS", "LocalSystemCPUMS",
@@ -163,7 +173,7 @@ def run_attempt(command, env, resource_path, timeout=250):
     started = time.monotonic()
     try:
         process = subprocess.Popen(command, env=env, stdout=subprocess.DEVNULL,
-                                   stderr=subprocess.DEVNULL, start_new_session=True)
+                                   stderr=subprocess.DEVNULL, start_new_session=True, cwd=cwd)
         if not wrapped and sys.platform.startswith("linux") and hasattr(os, "wait4"):
             code, usage = wait4_process(process, timeout)
             resources.update(LocalUserCPUMS=round(usage.ru_utime * 1000),
@@ -239,11 +249,12 @@ def reductions(arms):
     return result
 
 
-def summarize(rows, repetitions):
+def summarize(rows, repetitions, scenarios=None):
+    scenarios = tuple(scenarios) if scenarios is not None else SCENARIOS
     all_arms = {arm: totals([row for row in rows if row["Arm"] == arm]) for arm in ("A", "B")}
     matched = []
     for repetition in range(repetitions):
-        for scenario in SCENARIOS:
+        for scenario in scenarios:
             pair = [row for row in rows if row["Repetition"] == repetition and row["Scenario"] == scenario]
             if len(pair) == 2 and {row["Arm"] for row in pair} == {"A", "B"} and all(row["Correct"] for row in pair):
                 matched.extend(pair)
@@ -255,16 +266,17 @@ def summarize(rows, repetitions):
         arms = {arm: totals([row for row in sample if row["Arm"] == arm]) for arm in ("A", "B")}
         per_repetition.append({"repetition": repetition, "matched_pairs": len(sample) // 2,
                                "reduction_percent": reductions(arms)})
-    improved = sum(item["matched_pairs"] == len(SCENARIOS) and
+    improved = sum(item["matched_pairs"] == len(scenarios) and
                    all(value is not None and value > 0 for value in item["reduction_percent"].values())
                    for item in per_repetition)
-    complete = len(rows) == repetitions * len(SCENARIOS) * 2 and all(row["Correct"] for row in rows)
+    complete = len(rows) == repetitions * len(scenarios) * 2 and all(row["Correct"] for row in rows)
     targets = change["InputTokens"] is not None and change["TotalMS"] is not None and change["InputTokens"] >= 10 and change["TotalMS"] >= 5
     diagnostic = "INCOMPLETE" if not complete or repetitions < 3 else (
         "PASS" if targets and improved * 3 >= repetitions * 2 else "FAIL")
     return {"schema_version": 1, "scope": "app_primary_prefetch_subset",
             "global_economic_gate": "INCOMPLETE", "required_scenarios": 16,
-            "measured_scenarios": list(SCENARIOS), "all_attempts": all_arms,
+            "measured_scenarios": sorted({row["Scenario"] for row in rows if row["MeasurementValid"]}),
+            "requested_scenarios": list(scenarios), "all_attempts": all_arms,
             "matched_pairs": {"count": len(matched) // 2, "arms": matched_arms,
                               "reduction_percent": change},
             "per_repetition": per_repetition, "improved_repetitions": improved,
@@ -278,6 +290,58 @@ def summarize(rows, repetitions):
             "quota_consumption": None}
 
 
+def discover_capabilities(binary, directory, expected):
+    """Run one offline test under private HOME/cwd with no client opt-in/auth."""
+    directory.mkdir(mode=0o700)
+    output = directory / "capabilities.json"
+    env = {"PATH": "/nonexistent", "HOME": str(directory), "TMPDIR": str(directory),
+           "GOMAXPROCS": "2", "LC_ALL": "C", "TZ": "UTC",
+           "IVOAI_BENCHMARK_CATALOG_OUTPUT": str(output.resolve())}
+    code, _ = run_attempt([str(binary.resolve()), "-test.run=^TestPrimaryPrefetchBenchmarkCatalog$",
+                          "-test.timeout=10s"], env, directory / "resources.json", timeout=15, cwd=directory)
+    try:
+        descriptor = os.open(output, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+        with os.fdopen(descriptor, "rb") as stream:
+            if not stat.S_ISREG(os.fstat(stream.fileno()).st_mode):
+                raise ValueError("nonregular discovery")
+            body = stream.read(32769)
+        if len(body) > 32768:
+            raise ValueError("oversized discovery")
+        value = json.loads(body, object_pairs_hook=unique_object)
+        if code != 0 or type(value) is not dict or json.dumps(value, sort_keys=True) != json.dumps(expected, sort_keys=True):
+            raise ValueError("different frozen contract")
+        return {"status": "READY", "test_exit_code": code, "capabilities": expected}
+    except (OSError, ValueError, TypeError, RecursionError):
+        return {"status": "BLOCKED", "reason": "capability_discovery_missing_invalid_or_mismatched",
+                "test_exit_code": code}
+
+
+def matrix_preflight(args, scenarios, inventory_hash, temporary):
+    catalog = {s.id: s for s in benchmark_catalog.load_catalog()}
+    try:
+        expected = benchmark_catalog.expected_capabilities(args.harness)
+        discovery = {arm: discover_capabilities(binary, temporary / ("discovery-" + arm), expected)
+                     for arm, binary in (("A", args.baseline), ("B", args.candidate))}
+    except (OSError, ValueError):
+        expected, discovery = None, {arm: {"status": "BLOCKED", "reason": "frozen_contract_unavailable"} for arm in ("A", "B")}
+    paths = (args.baseline, args.candidate, args.codex, args.node, args.sandbox_binary)
+    prerequisites = bool(inventory_hash) and all(p.is_file() and os.access(p, os.X_OK) and sha256(p) for p in paths)
+    equivalent = all(row["status"] == "READY" for row in discovery.values())
+    rows = []
+    for name in scenarios:
+        scenario = catalog[name]
+        status = benchmark_catalog.planned_status(scenario)
+        reason = scenario.blocker
+        if scenario.runner_supported:
+            status = "READY" if prerequisites and equivalent else "BLOCKED"
+            reason = "" if status == "READY" else ("runtime_artifact_inputs_unavailable" if not prerequisites else "binary_contract_equivalence_unconfirmed")
+        rows.append({"scenario": name, "status": status, "reason": reason, "client_execution": "NOT_RUN"})
+    return {"schema_version": 1, "scope": "matrix16_discovery_preflight_no_inference",
+            "global_economic_gate": "INCOMPLETE", "provider_attempts": 0,
+            "provider_cache_equivalence": "UNVERIFIED", "effective_model_observed": None,
+            "discovery": discovery, "scenarios": rows}, expected
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ("baseline", "candidate", "codex", "node", "distribution", "sandbox-binary", "output"):
@@ -285,7 +349,14 @@ def main(argv=None):
     parser.add_argument("--repetitions", type=int, default=3, choices=range(1, 6))
     parser.add_argument("--harness", type=Path, default=Path(__file__).resolve().parents[1] / "internal/app/primary_prefetch_live_test.go",
                         help="source harness to hash when accessible (must be identical in both builds)")
+    selection = parser.add_mutually_exclusive_group()
+    selection.add_argument("--matrix16", action="store_true", help="plan all 16; unsupported/blocked cases cannot pass")
+    selection.add_argument("--scenarios", nargs="+", choices=[s.id for s in benchmark_catalog.load_catalog()])
+    parser.add_argument("--preflight-only", action="store_true", help="discover frozen binary contracts without starting a client")
     args = parser.parse_args(argv)
+    scenarios = tuple(s.id for s in benchmark_catalog.load_catalog()) if args.matrix16 else tuple(args.scenarios or SCENARIOS)
+    if len(set(scenarios)) != len(scenarios):
+        parser.error("scenario selection must be distinct")
     # Refuse to overwrite existing evidence, including failed comparisons.
     args.output.mkdir(mode=0o700, parents=True, exist_ok=False)
     temporary = args.output / "tmp"
@@ -296,18 +367,33 @@ def main(argv=None):
                IVOAI_GRAFT_TEST_DIST=str(args.distribution.resolve()),
                IVOAI_GRAFT_SMOKE_BINARY=str(args.sandbox_binary.resolve()))
     inventory_hash = sha256(args.distribution / "files.json")
+    preflight, capabilities = None, None
+    if args.matrix16 or args.scenarios or args.preflight_only:
+        preflight, capabilities = matrix_preflight(args, scenarios, inventory_hash, temporary)
+        write_json(args.output / "preflight.json", preflight)
     manifest = {"schema_version": 1, "scope": "app_primary_prefetch_subset", "repetitions": args.repetitions,
                 "model_requested": "gpt-6.1-sol", "effort_requested": "low", "effective_model_observed": None,
-                "tools_exposed": 0,
+                "host_mcp_tools_exposed": 0, "native_tools_exposed": None,
+                "native_tools_inventory": "UNVERIFIED",
                 "runtime_flags": {"experimental_evidence_gateway": os.environ.get("IVOAI_EXPERIMENTAL_EVIDENCE_GATEWAY") == "1"},
                 "baseline_test_sha256": sha256(args.baseline),
                 "candidate_test_sha256": sha256(args.candidate), "codex_sha256": sha256(args.codex),
                 "node_sha256": sha256(args.node), "sandbox_sha256": sha256(args.sandbox_binary),
                 "distribution_inventory_sha256": inventory_hash, "harness_sha256": sha256(args.harness)}
+    if preflight is not None:
+        manifest.update(requested_scenarios=list(scenarios), catalog_sha256=benchmark_catalog.digest(benchmark_catalog.CATALOG),
+                        fixture_contract_sha256=capabilities.get("fixture_contract_sha256") if capabilities else None,
+                        preflight_only=args.preflight_only, cache_policy="cold_private_local_caches_provider_cache_unverified")
     write_json(args.output / "manifest.json", manifest)
     rows = []
+    if args.preflight_only:
+        write_json(args.output / "summary.json", summarize([], args.repetitions, scenarios))
+        return int(any(row["status"] != "READY" for row in preflight["scenarios"]))
+    ready = {row["scenario"] for row in preflight["scenarios"] if row["status"] == "READY"} if preflight else set(scenarios)
     for repetition in range(args.repetitions):
-        for index, scenario in enumerate(SCENARIOS):
+        for index, scenario in enumerate(scenarios):
+            if scenario not in ready:
+                continue  # Planned unavailable cases remain preflight rows, never fake successes/attempts.
             for arm in (("A", "B") if (repetition + index) % 2 == 0 else ("B", "A")):
                 output = args.output / f"{repetition}-{scenario}-{arm}.json"
                 env.update(IVOAI_ECONOMIC_RUNTIME_ARM=arm, IVOAI_GRAFT_PREFETCH_OUTPUT=str(output.resolve()))
@@ -315,15 +401,17 @@ def main(argv=None):
                 code, resources = run_attempt([str(binary.resolve()),
                     "-test.run=^TestLivePrimaryCodePrefetchBenchmark/" + scenario + "/",
                     "-test.timeout=4m"], env, temporary / f"{repetition}-{scenario}-{arm}-resources.json")
-                row = read_evidence(output, scenario, arm, repetition, code, inventory_hash)
+                row = read_evidence(output, scenario, arm, repetition, code, inventory_hash, capabilities)
                 row.update(resources)
                 # Raw subprocess output is never propagated; persist only fixed labels and scalar allowlist.
                 write_json(output, [row])
                 rows.append(row)
                 write_json(args.output / "runtime-comparison.json", rows)
-                write_json(args.output / "summary.json", summarize(rows, args.repetitions))
+                write_json(args.output / "summary.json", summarize(rows, args.repetitions, scenarios))
                 print(repetition, scenario, arm, "exit", code, "valid", row["MeasurementValid"], flush=True)
-    return int(any(not row["Correct"] for row in rows))
+    if not rows:
+        write_json(args.output / "summary.json", summarize([], args.repetitions, scenarios))
+    return int(len(ready) != len(scenarios) or any(not row["Correct"] for row in rows))
 
 
 if __name__ == "__main__":
