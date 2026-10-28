@@ -1,0 +1,51 @@
+=== RUN   TestAdmittedPrimaryProtectedReadersRecheckAuthority
+=== RUN   TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read/valid
+=== RUN   TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read/closed_before
+    artifact_reader_test.go:303: revoked primary received protected evidence
+=== RUN   TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read/stale_before
+    artifact_reader_test.go:303: revoked primary received protected evidence
+=== RUN   TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read/identity_missing
+    artifact_reader_test.go:303: revoked primary received protected evidence
+=== RUN   TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read/closed_during
+    artifact_reader_test.go:303: revoked primary received protected evidence
+=== RUN   TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read/replaced_during
+    artifact_reader_test.go:303: revoked primary received protected evidence
+=== RUN   TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read/host_revoked_during
+    artifact_reader_test.go:303: revoked primary received protected evidence
+=== RUN   TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read/core_revoked_during
+    artifact_reader_test.go:303: revoked primary received protected evidence
+=== RUN   TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read_range/valid
+=== RUN   TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read_range/closed_before
+    artifact_reader_test.go:303: revoked primary received protected evidence
+=== RUN   TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read_range/stale_before
+    artifact_reader_test.go:303: revoked primary received protected evidence
+=== RUN   TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read_range/identity_missing
+    artifact_reader_test.go:303: revoked primary received protected evidence
+=== RUN   TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read_range/closed_during
+    artifact_reader_test.go:303: revoked primary received protected evidence
+=== RUN   TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read_range/replaced_during
+    artifact_reader_test.go:303: revoked primary received protected evidence
+=== RUN   TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read_range/host_revoked_during
+    artifact_reader_test.go:303: revoked primary received protected evidence
+=== RUN   TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read_range/core_revoked_during
+    artifact_reader_test.go:303: revoked primary received protected evidence
+--- FAIL: TestAdmittedPrimaryProtectedReadersRecheckAuthority (0.06s)
+    --- PASS: TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read/valid (0.01s)
+    --- FAIL: TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read/closed_before (0.00s)
+    --- FAIL: TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read/stale_before (0.00s)
+    --- FAIL: TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read/identity_missing (0.00s)
+    --- FAIL: TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read/closed_during (0.00s)
+    --- FAIL: TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read/replaced_during (0.00s)
+    --- FAIL: TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read/host_revoked_during (0.00s)
+    --- FAIL: TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read/core_revoked_during (0.00s)
+    --- PASS: TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read_range/valid (0.00s)
+    --- FAIL: TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read_range/closed_before (0.00s)
+    --- FAIL: TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read_range/stale_before (0.00s)
+    --- FAIL: TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read_range/identity_missing (0.00s)
+    --- FAIL: TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read_range/closed_during (0.00s)
+    --- FAIL: TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read_range/replaced_during (0.00s)
+    --- FAIL: TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read_range/host_revoked_during (0.00s)
+    --- FAIL: TestAdmittedPrimaryProtectedReadersRecheckAuthority/orchestration_artifact_read_range/core_revoked_during (0.00s)
+FAIL
+FAIL	github.com/ivo-lopes/ivoai/internal/orchestrator	0.073s
+FAIL

@@ -1,0 +1,737 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-10-28T16:32:50.723290+00:00",
+  "tasks": [
+    "IVOAI-192",
+    "IVOAI-193"
+  ],
+  "delivery": "local_implementation_pending_independent_review_and_CI",
+  "base_commit": "2bf9f94358aa54c22e0cc8d839e3a108774811c6",
+  "source_manifest": {
+    "base_commit": "2bf9f94358aa54c22e0cc8d839e3a108774811c6",
+    "aggregate_sha256": "a204334ce20e5e0aaad7da401d11afd3efd82f8bdbe44411c4731383785a26d0",
+    "files": [
+      {
+        "path": "internal/app/adaptive_helper_norace_test.go",
+        "sha256": "3cdc76c6ebb05108f66862b32ea888e7d4dffca9a58298be7aae108f3e9c5502"
+      },
+      {
+        "path": "internal/app/adaptive_helper_race_test.go",
+        "sha256": "cb5937cb143786f74549a3ff88dacf06167e0da4aae8cf999ba163ab791a003a"
+      },
+      {
+        "path": "internal/app/adaptive_primary.go",
+        "sha256": "e5ec9146701d765af20e97b4dde8cb16afa0ffc3b1b1f6f04720e50679193d96"
+      },
+      {
+        "path": "internal/app/adaptive_primary_live_test.go",
+        "sha256": "cbc79c05c944ca03a9e22ae2c963147fb83cf594e01c3fe25077127644d670d8"
+      },
+      {
+        "path": "internal/app/adaptive_primary_test.go",
+        "sha256": "6f3c1a3de29d1fcdb84e47c7186752ab0dc0b271b35415eec3e9358867ffde79"
+      },
+      {
+        "path": "internal/app/app.go",
+        "sha256": "cb76e7ff5266e16782d11199d85ff4d0e4859b6f389edba72958abda9da827fe"
+      },
+      {
+        "path": "internal/app/auto_turn.go",
+        "sha256": "e5defce5d6a468a8337f9a55a07559c9114d03147129a8a04e9737ff24d9450c"
+      },
+      {
+        "path": "internal/app/session.go",
+        "sha256": "52c959f3d8c236cf8cd5b0452c3c03d58df7c49de7c4411810a52dff1b0edd13"
+      },
+      {
+        "path": "internal/core/primary_turn.go",
+        "sha256": "8707aff7ba974ac4970cc4b589ef00e6d261e11a76a0bfa363302232aa07dc5b"
+      },
+      {
+        "path": "internal/core/turn.go",
+        "sha256": "e2f80f3f8e166e77c135bc0eba027873eabf9b12516b4d769c575c6cbb23c8d0"
+      },
+      {
+        "path": "internal/externalmcp/gateway.go",
+        "sha256": "d8c6e7110b54d41b6e3b96a9349295e473b52d276f9e41d10afa25b5cb112563"
+      },
+      {
+        "path": "internal/externalmcp/inventory.go",
+        "sha256": "09c4a9bb5150ecc8617a870ae62c27ca2b762f1e7fd54aa8bf0c25e9b8ce6459"
+      },
+      {
+        "path": "internal/externalmcp/policy_json.go",
+        "sha256": "7288008f1e1c0c0bf5d842918f7539c2d1aafabf9902971bcab6fe7039f92cc6"
+      },
+      {
+        "path": "internal/externalmcp/policy_json_test.go",
+        "sha256": "ce2293e300e60d20188c27b9fffec48df681f87755a2cd2ed7f13a34fe283987"
+      },
+      {
+        "path": "internal/externalmcp/policy_transport_test.go",
+        "sha256": "e84238512d648e2a4b9f4bb1c033e8507dccd58c0c416fad95c211f1d7bbc3cf"
+      },
+      {
+        "path": "internal/knowledgerouter/policy.go",
+        "sha256": "51f7c16e3fdc046680cd4ed49f643e612ec5f14bee6c6db6d1e104dd97749c2f"
+      },
+      {
+        "path": "internal/knowledgerouter/policy_test.go",
+        "sha256": "99671e8b81611513a2139722ba96b748b08d8e1cb1cb0bb6f54edd0d76cb0a05"
+      },
+      {
+        "path": "internal/knowledgerouter/router.go",
+        "sha256": "5c5ea00d013291708f400a9fd46268143061c7c4fb2f6e914aa89f204b46c88e"
+      },
+      {
+        "path": "internal/opencodebridge/bridge.go",
+        "sha256": "39f2657d212c21615c7da297761dcdb3eaf0769946e4baba44a2e1cc0b1f756d"
+      },
+      {
+        "path": "internal/opencodebridge/execution_policy_test.go",
+        "sha256": "f7de6bcdf2264e092c6682859f44d41a923ba0bfe19dcd84a548baba43809c1c"
+      },
+      {
+        "path": "internal/orchestrator/checkpoint_policy.go",
+        "sha256": "6addc3e3f4ddae781f69306eed71d3df6f3588333ef96c00b6fdd7a154349ba7"
+      },
+      {
+        "path": "internal/orchestrator/primary_turn_test.go",
+        "sha256": "62097409416e712988d1fc82708ca0a85cd5a8677bab627444b652f2c254a0d1"
+      },
+      {
+        "path": "internal/orchestrator/recovery.go",
+        "sha256": "556075fd0bf26573416584a17c276a12200c4398db586635e8311b46a5026cf7"
+      },
+      {
+        "path": "internal/orchestrator/scheduler.go",
+        "sha256": "bbc12379533b91b6d431f3384a40c30e9c5d65f0ca1a74cde42742c36ee3853a"
+      },
+      {
+        "path": "internal/orchestrator/server.go",
+        "sha256": "27343e798c70f670c809e80bec8bd58cef868f39b228e11d6c06f383ecde1eed"
+      },
+      {
+        "path": "internal/orchestrator/worktrees.go",
+        "sha256": "7ded4ca65eb1aa1e336e7b0befd8e502b8a4d9134b100124b1ac9172e66d1cad"
+      },
+      {
+        "path": "internal/session/primary_turn.go",
+        "sha256": "909d95f2a240bb0c8ed1c0ced432a8b74a7e85ae6f43869d877ddb1f11c29e33"
+      },
+      {
+        "path": "internal/session/primary_turn_test.go",
+        "sha256": "dfe218fcc41318ffdf0de415b23fa6e47ae59241590920c39e21ebdc167fe7c1"
+      },
+      {
+        "path": "internal/session/store.go",
+        "sha256": "8b55c3022a7277a30a866a506475e518106b8ab88882a0d6bf163efaf0d5fe57"
+      },
+      {
+        "path": "internal/session/types.go",
+        "sha256": "3ee4abe70f245990d193860426b959951c3399309b2386b96409c010339b84ea"
+      }
+    ]
+  },
+  "report_generator_note": "Initial reporting assertion counted CLI subtests as top-level cases. Anchored line matching now counts3 top-level tests and2 CLI subtests; no runtime result was rescored or rerun for this reporting correction.",
+  "source_hash_algorithm": "SHA256 of compact JSON sorted-key array of path/sha256 entries, UTF-8; source bytes independently hashed",
+  "feature": {
+    "flag": "IVOAI_EXPERIMENTAL_ADAPTIVE_PRIMARY",
+    "enabled_by_default": false,
+    "admitted_value": "1",
+    "scope": "first literal message of a fresh managed Codex session only",
+    "language_classifier": false,
+    "existing_history_resume_and_checkpoint_admission": false,
+    "core_contract_provider_neutral": true,
+    "pilot_consumer": "codex",
+    "new_database_or_scheduler": false
+  },
+  "reviewed_runtime": {
+    "version": "0.162.1",
+    "os": "linux",
+    "arch": "amd64",
+    "codex_sha256": "628e35487d888a28f0427fc37501da529dd3d81fcbad7a2c3421c1e8670d92e1",
+    "companion_sha256": "ec71830690a7c0024916ee0c99fbdc635bc6e747ff665ea4f03a8389bbcb6b30",
+    "pin_provenance": "release-notes/managed-codex-worker-boundary.md",
+    "alternate_runtime_environment_bypass": false
+  },
+  "host_checks": [
+    "receipt identity and recorded turn/attempt/frontend",
+    "live config/state/scope and working directory identity",
+    "full pair SHA at admission/final and file identity/timestamps per call",
+    "monotonic plan request before effects",
+    "atomic stale identity checks on DAG admission, plan and bootstrap persistence",
+    "locked brief write after captured identity check",
+    "receipt consumed before final emit",
+    "checkpoint bytes and metadata require a live bound DAG under the same session lock",
+    "fresh pilot recovery denied and cancellation locked to a live DAG",
+    "late observations/trace/preparation metadata bound to active receipt",
+    "NoReplay and NoAutomaticFailover on success/preparation/validation/quota/emit errors",
+    "exact duplicate409",
+    "read-only institutional allowlist on discovery and invocation",
+    "no external annotations as read authority",
+    "finite strict tool result buffer and post-body recheck",
+    "legacy JSON compatibility and default-off DAG acceptance"
+  ],
+  "checks": [
+    {
+      "name": "full_go",
+      "result": "PASS",
+      "exit_code": 0,
+      "command": "go test -p 1 ./... -count=1",
+      "private_log_name": "final-source-full-go.log",
+      "log_sha256": "64650ae16e7f119d4c6d214bdb037eaa766f97fa9f4f1ac348bb31b0d8fdd10b"
+    },
+    {
+      "name": "vet",
+      "result": "PASS",
+      "exit_code": 0,
+      "command": "go vet ./...",
+      "private_log_name": "final-source-vet.log",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "orchestrator_full_race",
+      "result": "PASS",
+      "exit_code": 0,
+      "command": "go test -race ./internal/orchestrator -count=1",
+      "private_log_name": "final-source-orchestrator-race-2.log",
+      "log_sha256": "6e5ec50a02e1c9cdb69caf687c3b585cc2205d4331026ba2423b6d00cdfd059b"
+    },
+    {
+      "name": "pinned_protocol_race",
+      "result": "PASS",
+      "exit_code": 0,
+      "command": "IVOAI_ADAPTIVE_LIVE=1 IVOAI_ADAPTIVE_REAL_CODEX=<reviewed-codex> IVOAI_ADAPTIVE_REAL_COMPANION=<reviewed-companion> go test -race ./internal/app -run '^TestLiveAdaptivePrimary(CoreEscalationWithoutChildFlag|CoreReadBootstrapWithoutChildFlag|OfficialCLIWithoutDAG)$' -count=1 -v",
+      "private_log_name": "final-source-pinned-protocol-race.log",
+      "log_sha256": "6aa8aac447bb79df750e0e2954d7ec6391622327ebea4f5f1c52ff774f7dd7be"
+    },
+    {
+      "name": "linux_amd64_v1_build",
+      "result": "PASS",
+      "exit_code": 0,
+      "command": "CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOAMD64=v1 go build -trimpath -o <private-output> ./cmd/ivoai",
+      "private_log_name": "final-source-build-amd64.log",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "linux_arm64_build",
+      "result": "PASS",
+      "exit_code": 0,
+      "command": "CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -trimpath -o <private-output> ./cmd/ivoai",
+      "private_log_name": "final-source-build-arm64.log",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "full_go_packages_passed": 59,
+  "final_full_race_packages": [
+    "internal/orchestrator"
+  ],
+  "prior_pre_checkpoint_delta_full_race_packages_passed": 7,
+  "prior_app_full_race": {
+    "result": "PASS",
+    "duration_seconds": 213.925,
+    "source_scope": "PRE_CHECKPOINT_DELTA",
+    "log": "final-frozen-race.log",
+    "not_a_final_current_source_full_app_race_gate": true
+  },
+  "final_gate_scope": "Full Go59 and vet; full Orchestrator race;3 explicit pinned protocol race tests;AMD64v1/ARM64 builds. Full App race was earlier and pre-checkpoint delta. Full race CI on the final immutable head remains required.",
+  "toolchain": "go1.27.3 linux/amd64",
+  "explicit_pinned_protocol_tests": {
+    "top_level_pass": 3,
+    "skipped": 0,
+    "actual_core_child": true,
+    "child_admission_flag": false,
+    "same_turn_DAG_and_approval_and_integration": true,
+    "read_bootstrap_without_DAG": true,
+    "closed_and_stale_child_denied": true,
+    "actual_official_codex_exec": true,
+    "loopback_scripted_usage_modes": [
+      "absent",
+      "complete100input60cache2output"
+    ],
+    "requests_each_CLI_case": 1,
+    "workers_each_CLI_case": 0,
+    "DAG_each_CLI_case": false,
+    "duplicate_http_status": 409,
+    "real_model_inference": false,
+    "subscription_authentication": false,
+    "full_native_TUI_session": false
+  },
+  "instruction_measurement": {
+    "initial_utf8_bytes": 4114,
+    "legacy_utf8_bytes": 8313,
+    "DAG_protocol_on_bootstrap_utf8_bytes": 8313,
+    "token_or_cost_measurement": false
+  },
+  "historical_failures_preserved": [
+    {
+      "logs": [
+        "final-source-orchestrator-race.log"
+      ],
+      "result": "FAIL",
+      "finding": "Post-checkpoint full race suite timed out in legacy manual native DAG worktree test: context deadline exceeded at10.13s, full package136.829s.",
+      "resolution": "Same test and unchanged source/timeouts passed in isolation: manual6.35s, automatic5.37s, package12.744s. Full suite repetition is separately recorded. Root cause remains INCONCLUSIVE; neither absence of a regression nor end of flakiness is established."
+    },
+    {
+      "logs": [
+        "readonly-checkpoint-initial-before.log",
+        "readonly-checkpoint-before.log"
+      ],
+      "result": "FAIL",
+      "finding": "Independent review found a read-only primary could create checkpoint bytes and update availability/timestamp before a plan. The expanded proof observed all four violations.",
+      "resolution": "All orchestrator checkpoint writes now run under Store.Update after captured identity and DAG/plan binding checks. Load/SaveCheckpoint avoid recursive locks. Recovery is denied for this fresh pilot; cancel requires a live DAG and signals under the same lock; escalation checks DAG before profile resolution. Positive DAG and unchanged legacy recovery/checkpoint tests are retained."
+    },
+    {
+      "logs": [
+        "initial-focused.log"
+      ],
+      "result": "FAIL",
+      "finding": "Transient host ExecutionPolicy was initially serialized into legacy ExecutorResult JSON.",
+      "resolution": "Policy now has json:\"-\"; the original wire compatibility tests remain unchanged."
+    },
+    {
+      "logs": [
+        "adaptive-primary-tests-1.log",
+        "adaptive-primary-tests-2.log",
+        "focused-increment-4.log"
+      ],
+      "result": "FAIL",
+      "finding": "Early fixture admission/invalid plan IDs/assertions failed; Fatal from asynchronous runner caused a timed-out harness.",
+      "resolution": "Fixtures now use recorded observation identities and valid plan IDs; asynchronous runners return errors. Multiple WIP changes occurred; these are not rescored as successful runtime proofs."
+    },
+    {
+      "logs": [
+        "full-affected-main-c6fb.log"
+      ],
+      "result": "FAIL",
+      "finding": "New session fixture was rejected as invalid automatic session metadata.",
+      "resolution": "Fixture uses the existing valid native coordinator/swarm fields; production Store validation was not weakened."
+    },
+    {
+      "logs": [
+        "live-protocol-1.log"
+      ],
+      "result": "FAIL",
+      "finding": "First official CLI synthetic proof returned HTTP502 and six native requests within one invocation.",
+      "resolution": "Cause remains UNKNOWN. Later absent/complete synthetic usage cases passed with explicit zero client retries and multiple fixture changes; no attribution or erasure of the first attempt."
+    },
+    {
+      "logs": [
+        "focused-race-live-1.log",
+        "core-cleanup-classification.log"
+      ],
+      "result": "FAIL",
+      "finding": "Core protocol assertions passed but child Wait failed. One isolated repetition classified SIGPIPE signal13, exit -1 and empty stderr; the writer was not established.",
+      "resolution": "Intermediate test-only stdout redirection was rejected and removed. Dedicated private TestMain calls production OrchestratorServe, keeps stdout exclusively MCP and requires Wait exit0, retained stderr, unchanged cleanup deadline and explicit runtime.RaceErrors verdict."
+    },
+    {
+      "logs": [
+        "late-bootstrap-before.log"
+      ],
+      "result": "FAIL",
+      "finding": "Three cases reproduced an old server overwriting a shared brief after receipt replacement, removal or closure.",
+      "resolution": "SaveBrief is inside the checked Store.Update lock; brief and session metadata are now preserved for stale callers."
+    },
+    {
+      "logs": [
+        "late-policy-body-before.log"
+      ],
+      "result": "FAIL",
+      "finding": "A flushed finite SSE result was delivered after capability revocation because the initial recheck covered headers only.",
+      "resolution": "Strict policy calls buffer at most16MiB and recheck after the complete body before delivery. Finite JSON/SSE remain exact; oversize fails without partial delivery. Legacy transport behavior is retained."
+    }
+  ],
+  "interrupted_logs_not_counted_as_pass": [
+    "core-final-gates-race.log",
+    "final-session-orchestrator.log"
+  ],
+  "prior_rounds": {
+    "final-frozen-race.log": "7 full race packages PASS before the independent-review checkpoint delta; not the final current-source race gate",
+    "source-before-checkpoint-hardening.json": "Retains the previous source manifest. Its end-of-round source check failed after the intentional review delta; intermediate passing commands are not promoted as final source validation.",
+    "final-frozen-pinned-protocol-race.log": "3 opt-in protocol tests PASS during pre-checkpoint review iteration; replaced by final-source-pinned-protocol-race.log",
+    "review-full-go.log": "PASS before final App metadata/grant snapshot delta",
+    "final-frozen-full-go.log": "PASS before final App grant snapshot and independent-review checkpoint changes; final-source-full-go.log is the final whole-suite gate",
+    "core-cleanup-corrected-race.log": "INTERMEDIATE_ONLY: stdout redirection removed after review",
+    "core-dedicated-entry-race.log": "prior dedicated-entry proof before final atomic/body changes",
+    "official-cli-dedicated-entry-race.log": "prior CLI proof before final atomic/body changes"
+  },
+  "historical_private_log_manifest": [
+    {
+      "name": "adaptive-primary-tests-1.log",
+      "bytes": 9878,
+      "sha256": "cd75a0c9f5d642333404bc7a118c5d0dbe00e7c65de936bf52d66dc11648ed0a",
+      "scope": "private_historical_log_hash_only_not_a_provider_or_economic_pass"
+    },
+    {
+      "name": "adaptive-primary-tests-2.log",
+      "bytes": 2806,
+      "sha256": "cfdbec04f9f5783a91121dbb00eed1798e484b3c5c1610590cc16e9c546dae9b",
+      "scope": "private_historical_log_hash_only_not_a_provider_or_economic_pass"
+    },
+    {
+      "name": "app-bridge-tests-3.log",
+      "bytes": 4707,
+      "sha256": "8093c00eec4819c4730a528265bf75f538ac4c356beb99e75c7c229090f56b85",
+      "scope": "private_historical_log_hash_only_not_a_provider_or_economic_pass"
+    },
+    {
+      "name": "build-linux-amd64-v1.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "scope": "private_historical_log_hash_only_not_a_provider_or_economic_pass"
+    },
+    {
+      "name": "build-linux-arm64.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "scope": "private_historical_log_hash_only_not_a_provider_or_economic_pass"
+    },
+    {
+      "name": "checkpoint-hardening-focused-final.log",
+      "bytes": 61,
+      "sha256": "8e7759e3a40002fbb12ea9021949060dbac42153e6e8ee96d39c46e18d1bc883",
+      "scope": "private_historical_log_hash_only_not_a_provider_or_economic_pass"
+    },
+    {
+      "name": "checkpoint-hardening-focused-race.log",
+      "bytes": 2490,
+      "sha256": "c82b76f052188ee76283e5e62beb6818e2fdf695b8d992eaae7cf1b8a8cad8dd",
+      "scope": "private_historical_log_hash_only_not_a_provider_or_economic_pass"
+    },
+    {
+      "name": "core-cleanup-classification.log",
+      "bytes": 612,
+      "sha256": "90c7625fcbf6f1746c864bbedcead2a6369acdb81d16554f5eb94659c548839f",
+      "scope": "private_historical_log_hash_only_not_a_provider_or_economic_pass"
+    },
+    {
+      "name": "core-cleanup-corrected-race.log",
+      "bytes": 987,
+      "sha256": "2051b7dae31c61187bee8a376a7a876c4c3bdeece78e937473991b537ca28a88",
+      "scope": "private_historical_log_hash_only_not_a_provider_or_economic_pass"
+    },
+    {
+      "name": "core-dedicated-entry-race.log",
+      "bytes": 987,
+      "sha256": "87da10a643039ea65c5fbae99f481cda4566c00e2ffb853a08c2192dc2bd2169",
+      "scope": "private_historical_log_hash_only_not_a_provider_or_economic_pass"
+    },
+    {
+      "name": "core-final-gates-race.log",
+      "bytes": 64,
+      "sha256": "3cd624b6fef733007e0efc040898904373015638fd35795dffad4ae37ea9541a",
+      "scope": "private_historical_log_hash_only_not_a_provider_or_economic_pass"
+    },
+    {
+      "name": "final-atomic-guards-race.log",
+      "bytes": 1721,
+      "sha256": "640526fcccfa966798ad8e5253c1c7e513e1880b396ea77adcac6203f1567713",
+      "scope": "private_historical_log_hash_only_not_a_provider_or_economic_pass"
+    },
+    {
+      "name": "final-focused-race.log",
+      "bytes": 6928,
+      "sha256": "79fd48869c44f6ec2c5b4c724ccf6c95b1bdfea2fb81943f2ca233eb7247cf90",
+      "scope": "private_historical_log_hash_only_not_a_provider_or_economic_pass"
+    },
+    {
+      "name": "final-frozen-build-amd64.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "scope": "private_historical_log_hash_only_not_a_provider_or_economic_pass"
+    },
+    {
+      "name": "final-frozen-build-arm64.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "scope": "private_historical_log_hash_only_not_a_provider_or_economic_pass"
+    },
+    {
+      "name": "final-frozen-full-go.log",
+      "bytes": 3644,
+      "sha256": "900676e12c4e9f29274d026ff62dd57f3107506124fb4a483a836741f673a82c",
+      "scope": "private_historical_log_hash_only_not_a_provider_or_economic_pass"
+    },
+    {
+      "name": "final-frozen-pinned-protocol-race.log",
+      "bytes": 2304,
+      "sha256": "108f6ac92ac47ed0221bb820fc5a35b3df5d2c65c9b52af463424cfa2aaf86eb",
+      "scope": "private_historical_log_hash_only_not_a_provider_or_economic_pass"
+    },
+    {
+      "name": "final-frozen-race.log",
+      "bytes": 414,
+      "sha256": "57fec1fb86e19a0cefa33bb301597230064724d54717eb402533aa6565d5ac04",
+      "scope": "private_historical_log_hash_only_not_a_provider_or_economic_pass"
+    },
+    {
+      "name": "final-frozen-vet.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "scope": "private_historical_log_hash_only_not_a_provider_or_economic_pass"
+    },
+    {
+      "name": "final-policy-race-2.log",
+      "bytes": 124,
+      "sha256": "6daaec2022c4922845194ca873302783dcc7a1ab5b613531f8fa5c934ebc2b9e",
+      "scope": "private_historical_log_hash_only_not_a_provider_or_economic_pass"
+    },
+    {
+      "name": "final-policy-race.log",
+      "bytes": 124,
+      "sha256": "af2fdf351a71d355e00e6efed0075511a09a2bd9d37a8b00b00895de718eb8f0",
+      "scope": "private_historical_log_hash_only_not_a_provider_or_economic_pass"
+    },
+    {
+      "name": "final-session-orchestrator.log",
+      "bytes": 56,
+      "sha256": "baec2ac022c59b55fba3393e35986da64cb436e91152a85cf4e61a47d2ab18e1",
+      "scope": "private_historical_log_hash_only_not_a_provider_or_economic_pass"
+    },
+    {
+      "name": "final-source-build-amd64.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "scope": "private_historical_log_hash_only_not_a_provider_or_economic_pass"
+    },
+    {
+      "name": "final-source-build-arm64.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "scope": "private_historical_log_hash_only_not_a_provider_or_economic_pass"
+    },
+    {
+      "name": "final-source-full-go.log",
+      "bytes": 3645,
+      "sha256": "64650ae16e7f119d4c6d214bdb037eaa766f97fa9f4f1ac348bb31b0d8fdd10b",
+      "scope": "private_historical_log_hash_only_not_a_provider_or_economic_pass"
+    },
+    {
+      "name": "final-source-native-dag-isolated-race.log",
+      "bytes": 606,
+      "sha256": "3307fd2c3d117971821ed12b1d9bceb50af46aa54e15be126e0f9560746f4928",
+      "scope": "private_historical_log_hash_only_not_a_provider_or_economic_pass"
+    },
+    {
+      "name": "final-source-orchestrator-race-2.log",
+      "bytes": 63,
+      "sha256": "6e5ec50a02e1c9cdb69caf687c3b585cc2205d4331026ba2423b6d00cdfd059b",
+      "scope": "private_historical_log_hash_only_not_a_provider_or_economic_pass"
+    },
+    {
+      "name": "final-source-orchestrator-race.log",
+      "bytes": 319,
+      "sha256": "1f7eaedb12522e04982c9982db1d1ce1bad7173249a7ba7b05da1b909d74ca0b",
+      "scope": "private_historical_log_hash_only_not_a_provider_or_economic_pass"
+    },
+    {
+      "name": "final-source-pinned-protocol-race.log",
+      "bytes": 2304,
+      "sha256": "6aa8aac447bb79df750e0e2954d7ec6391622327ebea4f5f1c52ff774f7dd7be",
+      "scope": "private_historical_log_hash_only_not_a_provider_or_economic_pass"
+    },
+    {
+      "name": "final-source-vet.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "scope": "private_historical_log_hash_only_not_a_provider_or_economic_pass"
+    },
+    {
+      "name": "focused-increment-4.log",
+      "bytes": 14649,
+      "sha256": "8cf75d1e87b9b34211d0d1b8bbce45253611f87d4b403f1bde04357d306d0019",
+      "scope": "private_historical_log_hash_only_not_a_provider_or_economic_pass"
+    },
+    {
+      "name": "focused-increment-5.log",
+      "bytes": 6696,
+      "sha256": "1dff825a1083a32ac0bac23245598a7572e954a8572c729410978cae44ff1de5",
+      "scope": "private_historical_log_hash_only_not_a_provider_or_economic_pass"
+    },
+    {
+      "name": "focused-increment-6.log",
+      "bytes": 108,
+      "sha256": "1723791dfe3e0f1b4d8d1e0f6f7a1748a488e19885a631f1f27a1431dc0e6ff5",
+      "scope": "private_historical_log_hash_only_not_a_provider_or_economic_pass"
+    },
+    {
+      "name": "focused-race-live-1.log",
+      "bytes": 10460,
+      "sha256": "7c37c3e2ddb6524c342b0db5e8b303a98553d80213fe012aa4f68a91c5c18962",
+      "scope": "private_historical_log_hash_only_not_a_provider_or_economic_pass"
+    },
+    {
+      "name": "full-affected-main-c6fb-2.log",
+      "bytes": 419,
+      "sha256": "2f47a1fe43efba03d64297d62b7178f8570532696faba4a31416ccf98738d4fe",
+      "scope": "private_historical_log_hash_only_not_a_provider_or_economic_pass"
+    },
+    {
+      "name": "full-affected-main-c6fb.log",
+      "bytes": 550,
+      "sha256": "1fcbf0da21d770dff82a8adf474d9b4eef9b73a6112c9af7c72f1207ca06abc6",
+      "scope": "private_historical_log_hash_only_not_a_provider_or_economic_pass"
+    },
+    {
+      "name": "full-main2bf.log",
+      "bytes": 3653,
+      "sha256": "592dbbf346d1c1233c23876fc5ff539e885a6a17bec941dc36ab7892b3e3a64c",
+      "scope": "private_historical_log_hash_only_not_a_provider_or_economic_pass"
+    },
+    {
+      "name": "initial-focused.log",
+      "bytes": 1668,
+      "sha256": "1e2a453200dd9575e58256d68b01b1047abb4debfc0490f584dde5d0c2ed52b0",
+      "scope": "private_historical_log_hash_only_not_a_provider_or_economic_pass"
+    },
+    {
+      "name": "ivoai-adaptive-core-stderr-1473201905.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "scope": "private_historical_log_hash_only_not_a_provider_or_economic_pass"
+    },
+    {
+      "name": "ivoai-adaptive-core-stderr-157119065.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "scope": "private_historical_log_hash_only_not_a_provider_or_economic_pass"
+    },
+    {
+      "name": "ivoai-adaptive-core-stderr-2604939633.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "scope": "private_historical_log_hash_only_not_a_provider_or_economic_pass"
+    },
+    {
+      "name": "ivoai-adaptive-core-stderr-263473425.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "scope": "private_historical_log_hash_only_not_a_provider_or_economic_pass"
+    },
+    {
+      "name": "ivoai-adaptive-core-stderr-2769606904.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "scope": "private_historical_log_hash_only_not_a_provider_or_economic_pass"
+    },
+    {
+      "name": "ivoai-adaptive-core-stderr-3266380462.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "scope": "private_historical_log_hash_only_not_a_provider_or_economic_pass"
+    },
+    {
+      "name": "ivoai-adaptive-core-stderr-3810527381.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "scope": "private_historical_log_hash_only_not_a_provider_or_economic_pass"
+    },
+    {
+      "name": "ivoai-adaptive-core-stderr-3984839420.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "scope": "private_historical_log_hash_only_not_a_provider_or_economic_pass"
+    },
+    {
+      "name": "ivoai-adaptive-core-stderr-4096958630.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "scope": "private_historical_log_hash_only_not_a_provider_or_economic_pass"
+    },
+    {
+      "name": "ivoai-adaptive-core-stderr-4220161115.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "scope": "private_historical_log_hash_only_not_a_provider_or_economic_pass"
+    },
+    {
+      "name": "late-bootstrap-before.log",
+      "bytes": 693,
+      "sha256": "9a296ed75955b2b14c74d5d6a352a34bdf92ba7345d710c3fc1d8f13ccd0eb01",
+      "scope": "private_historical_log_hash_only_not_a_provider_or_economic_pass"
+    },
+    {
+      "name": "late-policy-body-before.log",
+      "bytes": 231,
+      "sha256": "1f4cf187b0b82fb1758810b4f919d165ff7d9cf03381a2df1a4d36de2ececf21",
+      "scope": "private_historical_log_hash_only_not_a_provider_or_economic_pass"
+    },
+    {
+      "name": "live-protocol-1.log",
+      "bytes": 685,
+      "sha256": "ed26c0759a9196025180fe23c93bd9d4051d45b1d22c1bcc1b5524cbe2681c3b",
+      "scope": "private_historical_log_hash_only_not_a_provider_or_economic_pass"
+    },
+    {
+      "name": "live-protocol-2.log",
+      "bytes": 811,
+      "sha256": "b962091e9dc7624ab743f345362a63f0cdde5f32992e4b8d838815e6e6a0085c",
+      "scope": "private_historical_log_hash_only_not_a_provider_or_economic_pass"
+    },
+    {
+      "name": "live-protocol-3.log",
+      "bytes": 1786,
+      "sha256": "724ffcb817a4e26fa00faf05bb788505934df5d599293f47ea557666e84154b3",
+      "scope": "private_historical_log_hash_only_not_a_provider_or_economic_pass"
+    },
+    {
+      "name": "official-cli-dedicated-entry-race.log",
+      "bytes": 1377,
+      "sha256": "68544f6035ee30274f2249928edf53969761d549d567c88ea714da2199182c10",
+      "scope": "private_historical_log_hash_only_not_a_provider_or_economic_pass"
+    },
+    {
+      "name": "policy-transport-tests-1.log",
+      "bytes": 828,
+      "sha256": "9bb3809f300d38ec4fb879bb03e6a8c3bce264c93e64aca4b017b16466ca76a2",
+      "scope": "private_historical_log_hash_only_not_a_provider_or_economic_pass"
+    },
+    {
+      "name": "readonly-checkpoint-before.log",
+      "bytes": 459,
+      "sha256": "ddeea6b61b1954abcc0a54a82d791ffd2849e88964072f454b8e20d63b9e57ed",
+      "scope": "private_historical_log_hash_only_not_a_provider_or_economic_pass"
+    },
+    {
+      "name": "readonly-checkpoint-initial-before.log",
+      "bytes": 234,
+      "sha256": "1420b20fa2253acfc43bcdbdfe598af648fbfa4441a8b6670775654cb27164ec",
+      "scope": "private_historical_log_hash_only_not_a_provider_or_economic_pass"
+    },
+    {
+      "name": "review-full-go.log",
+      "bytes": 3646,
+      "sha256": "6354885c0539dcecb03803c2235a3736d77ef2859b72acfb1df0f18be5c2093d",
+      "scope": "private_historical_log_hash_only_not_a_provider_or_economic_pass"
+    },
+    {
+      "name": "review-vet.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "scope": "private_historical_log_hash_only_not_a_provider_or_economic_pass"
+    },
+    {
+      "name": "vet-main2bf.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "scope": "private_historical_log_hash_only_not_a_provider_or_economic_pass"
+    }
+  ],
+  "limits": [
+    "Economic gate remains globally INCOMPLETE; previous adverse benchmark114 comparative attempts unchanged.",
+    "No new inference benchmark, dollar cost, quota usage, CPU/RAM comparison or savings claim.",
+    "The initial instruction byte reduction is not a session-token reduction.",
+    "Client transport retry policy differs from host replay/failover authority.",
+    "No Claude/Antigravity delivery or authentication/TUI parity claim.",
+    "No general historical/resume primary-only support.",
+    "Experimental institutional writes and REST hooks denied even after DAG escalation.",
+    "Dynamic primary tool-catalog expansion is not certified.",
+    "Cross-builds do not prove ARM64 or non-AVX runtime execution.",
+    "Source/runtime I/O cancellation is cooperative; no defense claimed against privileged host manipulation.",
+    "Formal independent security certification and exact-head CI are pending.",
+    "Context remains read-only from agent sessions; CONTEXT_SYNC=BLOCKED/IVOAI-175.",
+    "No release, production deployment, personal client configuration or credential changes."
+  ],
+  "rollback": "Unset the opt-in for subsequent launches. Finish/cancel admitted turns before downgrade; preserve receipts, request claims and evidence instead of deleting them to force replay."
+}

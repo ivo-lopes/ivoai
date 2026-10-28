@@ -21,6 +21,7 @@ type ExecutorRequest struct {
 }
 
 type ExecutorResult struct {
+	Policy              ExecutionPolicy `json:"-"`
 	AuthReference       string
 	Trace               *ExecutionTrace
 	ExecutorSessionID   string
@@ -32,6 +33,14 @@ type ExecutorResult struct {
 	Effort              string
 	CatalogRevision     string
 	ConfigurationSource string
+}
+
+// ExecutionPolicy is a host decision. An admitted operation can prohibit replay
+// or automatic failover without pretending its real model execution was local
+// metadata. Zero preserves the legacy execution contract.
+type ExecutionPolicy struct {
+	NoReplay            bool
+	NoAutomaticFailover bool
 }
 
 type ExecutorRunner interface {

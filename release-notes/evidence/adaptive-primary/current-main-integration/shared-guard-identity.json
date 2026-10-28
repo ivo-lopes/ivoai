@@ -1,0 +1,17 @@
+{
+  "source": "6fdd943ce447374568f76c698322c1b80f7b836e",
+  "compared_to": "edff3fc17f1c24c1035d03b613f3d44ca27ca5be",
+  "byte_exact_directories": [
+    "internal/evidence",
+    "internal/workingcontext",
+    "internal/quota",
+    "internal/agents",
+    "internal/workers"
+  ],
+  "files": {
+    "internal/session/checkpoint.go": "2acce350bc2c2b2d62dac0a26f8f213f8c9e4e5137ad0a8fc367ef9436f6f20e",
+    "internal/app/evidence_recovery.go": "e70567784bc3d129f00208b210cb48349e6ed7883b8a2b180304b459380c307a",
+    "internal/app/worker_access.go": "e6edb3285cb7391709b5bd28c4afb642f8e705a5e2ad43e99f4c5bbefa48f382"
+  },
+  "changed_paths": []
+}

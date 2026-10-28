@@ -1,0 +1,10 @@
+ok  	github.com/ivo-lopes/ivoai/internal/app	158.187s
+ok  	github.com/ivo-lopes/ivoai/internal/orchestrator	113.215s
+ok  	github.com/ivo-lopes/ivoai/internal/evidence	53.845s
+ok  	github.com/ivo-lopes/ivoai/internal/workingcontext	71.091s
+ok  	github.com/ivo-lopes/ivoai/internal/knowledgerouter	2.013s
+ok  	github.com/ivo-lopes/ivoai/internal/session	2.759s
+ok  	github.com/ivo-lopes/ivoai/internal/core	1.028s
+ok  	github.com/ivo-lopes/ivoai/internal/opencodebridge	15.937s
+ok  	github.com/ivo-lopes/ivoai/internal/nativecodex	3.506s
+ok  	github.com/ivo-lopes/ivoai/internal/externalmcp	1.214s

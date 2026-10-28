@@ -6,6 +6,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/ivo-lopes/ivoai/internal/core"
 	"github.com/ivo-lopes/ivoai/internal/observability"
 	"github.com/ivo-lopes/ivoai/internal/quota"
 	"github.com/ivo-lopes/ivoai/internal/workingcontext"
@@ -132,6 +133,7 @@ type ExecutorSessionMapping struct {
 }
 
 type Session struct {
+	PrimaryTurn           *core.PrimaryTurnReceipt               `json:"primary_turn,omitempty"`
 	RecoveryRequested     bool                                   `json:"recovery_requested,omitempty"`
 	ParallelWriteDegraded bool                                   `json:"parallel_write_degraded,omitempty"`
 	ConcurrencyLimit      int                                    `json:"concurrency_limit,omitempty"`

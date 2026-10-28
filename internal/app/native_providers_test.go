@@ -1,8 +1,10 @@
 package app
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
+	"encoding/json"
 	"errors"
 	"io/fs"
 	"os"
@@ -21,6 +23,7 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/quota"
 	"github.com/ivo-lopes/ivoai/internal/routing"
 	"github.com/ivo-lopes/ivoai/internal/session"
+	"golang.org/x/sys/unix"
 )
 
 type noOpenCodeRunner struct{ calls int }
@@ -248,4 +251,113 @@ func TestNativeTurnRejectsLegacyExecutorBeforePreparingKnowledge(t *testing.T) {
 		t.Fatal("legacy turn reached preparation", err)
 	}
 	assertNoOpenCode(t, marker, runner, probes)
+}
+
+// A closed prior receipt could otherwise be retired before native migration or
+// checkpoint inspection fails. Denial must preserve both the pointer and the
+// recorded bytes, including unsafe current/legacy FIFO checkpoint entries.
+func TestNativeCompatibilityDenialPrecedesReceiptRetirement(t *testing.T) {
+	for _, mode := range []string{"explicit_legacy", "retained_legacy", "fifo_current", "fifo_legacy"} {
+		t.Run(mode, func(t *testing.T) {
+			a, marker, runner, probes := nativeProviderTestApp(t)
+			store, value := nativeHistoryFixture(t, a)
+			_, err := store.Update(value.SessionID, func(v *session.Session) error {
+				v.State = session.StateRunning
+				v.TurnState = "running"
+				v.ObservationTurnID = "next_turn"
+				v.ObservationAttemptID = "next_attempt"
+				v.PrimaryTurn = &core.PrimaryTurnReceipt{ID: "closed_receipt", TurnID: "previous_turn", AttemptID: "prior_attempt", FrontendSessionID: "fixture-thread", Executor: "codex", Mode: core.PrimaryClosed, ConfigDigest: strings.Repeat("a", 64), StateDigest: strings.Repeat("a", 64), ScopeDigest: strings.Repeat("a", 64)}
+				return nil
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			checkpoint := filepath.Join(store.Root, "checkpoints", value.SessionID+".json")
+			if mode == "fifo_legacy" {
+				checkpoint = filepath.Join(store.Root, "runtime", value.SessionID, "checkpoint.json")
+			}
+			var checkpointBytes []byte
+			if mode == "retained_legacy" {
+				plan := routing.Plan{ID: "plan_fixture", Strategy: "efficient", CreatedAt: time.Now(), Tasks: []routing.Task{{TaskInput: routing.TaskInput{ID: "retained", Role: "research", Task: "Inspect the fixture", Acceptance: []string{"report findings"}}, Profile: routing.ExecutionProfile{Provider: "opencode", Tier: routing.TierLight}, Tier: routing.TierLight, State: "planned", ExecutionMode: "worker"}}}
+				if err := store.SaveCheckpoint(value.SessionID, session.Checkpoint{Recovery: &session.RecoveryPlan{Plan: plan, Directory: store.Root, Approved: true}}); err != nil {
+					t.Fatal(err)
+				}
+				checkpointBytes, err = os.ReadFile(checkpoint)
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
+			var fifo os.FileInfo
+			if strings.HasPrefix(mode, "fifo_") {
+				if err := os.MkdirAll(filepath.Dir(checkpoint), 0700); err != nil {
+					t.Fatal(err)
+				}
+				if err := unix.Mkfifo(checkpoint, 0600); err != nil {
+					t.Fatal(err)
+				}
+				fifo, err = os.Lstat(checkpoint)
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
+			before, err := store.Get(value.SessionID)
+			if err != nil {
+				t.Fatal(err)
+			}
+			beforeBytes, err := json.Marshal(before)
+			if err != nil {
+				t.Fatal(err)
+			}
+			cfg, _ := a.Store.Load()
+			state, _ := a.Store.LoadState()
+			called := false
+			base := turnRunnerFunc(func(context.Context, core.ExecutorRequest, func(string) error) (core.ExecutorResult, error) {
+				called = true
+				return core.ExecutorResult{}, nil
+			})
+			wrapped := a.scopeAutoRunner(base, cfg, state, store, value.SessionID, value.WorkingDirectory, t.TempDir(), "unused", nil, nil, &autoTurnState{}, *a.OpenCodeModelCatalog)
+			executor := "codex"
+			if mode == "explicit_legacy" {
+				executor = "opencode"
+			}
+			started := time.Now()
+			_, err = wrapped.Run(context.Background(), core.ExecutorRequest{Executor: executor, Prompt: "Inspect the fixture"}, func(string) error { return nil })
+			if err == nil || called {
+				t.Fatal("compatibility denial reached execution", err)
+			}
+			if mode == "explicit_legacy" && !errors.Is(err, session.ErrOpenCodeManagedDeprecated) {
+				t.Fatal(err)
+			}
+			if mode == "retained_legacy" && !errors.Is(err, session.ErrOpenCodeMigrationRequired) {
+				t.Fatal(err)
+			}
+			if strings.HasPrefix(mode, "fifo_") && (!strings.Contains(err.Error(), "NATIVE_CHECKPOINT_UNAVAILABLE") || time.Since(started) > time.Second) {
+				t.Fatal("unsafe checkpoint was not promptly denied", err)
+			}
+			after, err := store.Get(value.SessionID)
+			if err != nil {
+				t.Fatal(err)
+			}
+			afterBytes, err := json.Marshal(after)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if !bytes.Equal(beforeBytes, afterBytes) {
+				t.Fatal("denial retired receipt or rewrote session")
+			}
+			if checkpointBytes != nil {
+				after, err := os.ReadFile(checkpoint)
+				if err != nil || !bytes.Equal(checkpointBytes, after) {
+					t.Fatal("denial rewrote checkpoint", err)
+				}
+			}
+			if fifo != nil {
+				after, err := os.Lstat(checkpoint)
+				if err != nil || !os.SameFile(fifo, after) || after.Mode()&os.ModeNamedPipe == 0 {
+					t.Fatal("denial replaced FIFO", err)
+				}
+			}
+			assertNoOpenCode(t, marker, runner, probes)
+		})
+	}
 }
