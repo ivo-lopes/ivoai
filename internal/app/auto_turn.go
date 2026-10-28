@@ -16,6 +16,7 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/externalmcp"
 	"github.com/ivo-lopes/ivoai/internal/observability"
 	"github.com/ivo-lopes/ivoai/internal/opencodebridge"
+	"github.com/ivo-lopes/ivoai/internal/platform"
 	"github.com/ivo-lopes/ivoai/internal/promptgate"
 	"github.com/ivo-lopes/ivoai/internal/serverpool"
 	"github.com/ivo-lopes/ivoai/internal/session"
@@ -46,6 +47,7 @@ func (s *autoTurnState) set(k sessionKnowledge, n *agents.NativeOpenCode) {
 // policy. Run keeps this value local; a shared runner never stores a mutable
 // validation callback for another turn to replace.
 type preparedAutoTurn struct {
+	Policy   core.ExecutionPolicy
 	Runner   core.ExecutorRunner
 	Release  func()
 	Validate func() error
@@ -78,21 +80,29 @@ func (r autoTurnRunner) Run(ctx context.Context, request core.ExecutorRequest, e
 		defer prepared.Release()
 	}
 	if err != nil {
-		return core.ExecutorResult{}, err
+		return core.ExecutorResult{Policy: prepared.Policy}, err
 	}
 	if prepared.Validate == nil {
-		return prepared.Runner.Run(ctx, request, emit)
+		result, runErr := prepared.Runner.Run(ctx, request, emit)
+		result.Policy.NoReplay = result.Policy.NoReplay || prepared.Policy.NoReplay
+		result.Policy.NoAutomaticFailover = result.Policy.NoAutomaticFailover || prepared.Policy.NoAutomaticFailover
+		return result, runErr
 	}
 	// Operational progress comes from status/events. Buffer the final answer
 	// until the native DAG has completed; partial prose is not acceptance.
 	var final strings.Builder
 	result, err := prepared.Runner.Run(ctx, request, func(text string) error {
 		if final.Len()+len(text) > 1<<20 {
+			if prepared.Policy.NoReplay {
+				return &core.ExecutorFailure{Class: "FINAL_RESPONSE_TOO_LARGE", ExitCode: 1}
+			}
 			return errors.New("bounded final response exceeded")
 		}
 		_, err := final.WriteString(text)
 		return err
 	})
+	result.Policy.NoReplay = result.Policy.NoReplay || prepared.Policy.NoReplay
+	result.Policy.NoAutomaticFailover = result.Policy.NoAutomaticFailover || prepared.Policy.NoAutomaticFailover
 	if err != nil {
 		return result, err
 	}
@@ -141,22 +151,78 @@ type autoTurnOptions struct {
 func (a *App) scopeAutoRunner(base core.ExecutorRunner, original config.Config, state config.State, store session.Store, id, cwd, runtimeDir, instructionsPath string, agentArgs, selectors []string, current *autoTurnState, catalog opencodebridge.ModelCatalog, options ...autoTurnOptions) core.ExecutorRunner {
 	enforceDAG := a.OpenCodeBridgeRunner == nil
 	wrapped := autoTurnRunner{prepare: func(ctx context.Context, request core.ExecutorRequest) (preparedAutoTurn, error) {
+		if err := store.RetirePrimaryTurn(id); err != nil {
+			return preparedAutoTurn{Policy: core.ExecutionPolicy{NoReplay: true, NoAutomaticFailover: true}}, err
+		}
 		if len(options) == 1 && options[0].FreshLocalEvidenceSession {
 			if local, accepted, err := a.prepareLocalMetadataTurn(ctx, original, state, store, id, cwd, selectors, request); accepted {
 				return local, err
 			}
 		}
+		var adaptive *adaptivePrimaryTurn
+		var policy core.ExecutionPolicy
+		release := func() {}
+		fail := func(err error) (preparedAutoTurn, error) {
+			return preparedAutoTurn{Release: release, Policy: policy}, err
+		}
+		if len(options) == 1 && options[0].FreshLocalEvidenceSession {
+			var accepted bool
+			var err error
+			adaptive, accepted, err = a.admitAdaptivePrimary(ctx, original, state, store, id, cwd, selectors, request)
+			if accepted {
+				policy = core.ExecutionPolicy{NoReplay: true, NoAutomaticFailover: true}
+				release = adaptive.close
+			}
+			if err != nil {
+				return fail(err)
+			}
+		}
+		if adaptive != nil {
+			if _, err := adaptive.check(ctx); err != nil {
+				return fail(err)
+			}
+		}
 		k, err := a.prepareAutoPromptKnowledge(ctx, original, selectors, request.Prompt, request.Executor, runtimeDir, cwd, func(event observability.Event) {
-			_, _ = store.Update(id, func(value *session.Session) error { return session.AppendObservation(value, event) })
+			_, _ = store.Update(id, func(value *session.Session) error {
+				if adaptive != nil && !adaptive.boundTo(*value) {
+					return errors.New("ADAPTIVE_PRIMARY_DENIED")
+				}
+				return session.AppendObservation(value, event)
+			})
 		})
 		if err != nil {
-			return preparedAutoTurn{}, err
+			return fail(err)
+		}
+		release = func() {
+			k.close()
+			if adaptive != nil {
+				adaptive.close()
+			}
+		}
+		if adaptive != nil {
+			if err := platform.AtomicWritePrivate([]byte(adaptivePrimaryInstructions(original.Orchestration.Auto.CheckpointEnabled)), instructionsPath); err != nil {
+				return fail(err)
+			}
+			if k.router != nil {
+				k.router.SetToolPolicy(func(callCtx context.Context, kind, tool string) bool {
+					if !readOnlyInstitutionalTool(kind, tool) {
+						return false
+					}
+					_, err := adaptive.check(callCtx)
+					return err == nil
+				})
+			}
 		}
 		_, err = store.Update(id, func(value *session.Session) error {
+			if adaptive != nil && !adaptive.boundTo(*value) {
+				return errors.New("ADAPTIVE_PRIMARY_DENIED")
+			}
 			value.KnowledgeSources = k.aliases()
 			// Prompt-local purpose routing changes active sources, never the
 			// configured organization boundary used to reopen native history.
-			value.CurrentPhase = "planning"
+			if adaptive == nil {
+				value.CurrentPhase = "planning"
+			}
 			if !value.RecoveryRequested {
 				value.Tasks = nil
 			}
@@ -171,12 +237,15 @@ func (a *App) scopeAutoRunner(base core.ExecutorRunner, original config.Config, 
 			return nil
 		})
 		if err != nil {
-			k.close()
-			return preparedAutoTurn{}, err
+			return fail(err)
 		}
 		if k.external != nil {
+			selectedNativeTools := codeintel.ProjectTools(request.Prompt)
 			k.external.SetInventoryObserver(func(_ string, metrics externalmcp.InventoryMetrics) {
 				_, _ = store.Update(id, func(v *session.Session) error {
+					if adaptive != nil && !adaptive.boundTo(*v) {
+						return errors.New("ADAPTIVE_PRIMARY_DENIED")
+					}
 					return session.AppendObservation(v, observability.Event{Category: observability.CategoryCapability, Operation: observability.OperationCapabilityResolve, Component: "tools", Capability: "tool.projection", State: observability.StateCompleted, ToolsAvailable: &metrics.Available, ToolsPresented: &metrics.Presented, BytesBefore: int64(metrics.SchemaBytesBefore), BytesAfter: int64(metrics.SchemaBytesAfter), TokenBasis: "unavailable", RoutingReason: observability.ReasonContextBudgetApplied})
 				})
 			})
@@ -185,9 +254,58 @@ func (a *App) scopeAutoRunner(base core.ExecutorRunner, original config.Config, 
 				if err != nil {
 					return false, false
 				}
+				if adaptive != nil {
+					admitted, err := adaptive.check(ctx)
+					if err != nil {
+						return false, false
+					}
+					v = admitted // Resolve DAG grants from the same revalidated snapshot.
+					if admitted.PrimaryTurn.Mode == core.PrimaryReadOnly {
+						if server == nativeCodeMCP && nativeCodeTool(tool) {
+							for _, name := range selectedNativeTools {
+								if name == tool {
+									return true, false
+								}
+							}
+						}
+						return false, false
+					}
+				}
 				return primaryMCPGrant(v, original, server, tool)
 			})
+			if adaptive != nil {
+				k.external.RequirePolicyJSON()
+				// Native code projection was already narrowed to this query.
+				selected := selectedNativeTools
+				k.external.SetToolProjection(func(server, tool string) bool {
+					admitted, err := adaptive.check(ctx)
+					if err != nil {
+						return false
+					}
+					if admitted.PrimaryTurn.Mode == core.PrimaryDAG {
+						return true
+					}
+					if server != nativeCodeMCP || !nativeCodeTool(tool) {
+						return false
+					}
+					for _, name := range selected {
+						if name == tool {
+							return true
+						}
+					}
+					return false
+				})
+			}
 			k.external.SetAdmission(func() bool {
+				if adaptive != nil {
+					admitted, err := adaptive.check(ctx)
+					if err != nil {
+						return false
+					}
+					if admitted.PrimaryTurn.Mode == core.PrimaryReadOnly {
+						return true
+					}
+				}
 				v, err := store.Get(id)
 				if err != nil || !v.Active() || v.RecoveryRequested || len(v.Tasks) == 0 || v.PlanID == "" {
 					return false
@@ -213,8 +331,7 @@ func (a *App) scopeAutoRunner(base core.ExecutorRunner, original config.Config, 
 			for _, executor := range []string{"codex", "claude"} {
 				args, err := a.autoBridgeArgs(executor, agentArgs, id, runtimeDir, instructionsPath, k.config)
 				if err != nil {
-					k.close()
-					return preparedAutoTurn{}, err
+					return fail(err)
 				}
 				spec := &cli.Codex
 				if executor == "claude" {
@@ -223,15 +340,20 @@ func (a *App) scopeAutoRunner(base core.ExecutorRunner, original config.Config, 
 				if executor == "codex" && spec.Path != "" {
 					args, err = (workers.Adapter{Runner: a.Runner}).IsolateCodexMCPs(ctx, spec.Path, args)
 					if err != nil {
-						k.close()
-						return preparedAutoTurn{}, err
+						return fail(err)
 					}
 				}
 				spec.Args, spec.Env = args, inheritHookSessionEnvironment(executorBridgeEnvironment(k.environment), spec.Env)
 				spec.ObserveProgress = func(trace core.ExecutionTrace) {
 					encoded, err := json.Marshal(trace)
 					if err == nil {
-						_, _ = store.Update(id, func(v *session.Session) error { v.ExecutorTrace = encoded; return nil })
+						_, _ = store.Update(id, func(v *session.Session) error {
+							if adaptive != nil && !adaptive.boundTo(*v) {
+								return errors.New("ADAPTIVE_PRIMARY_DENIED")
+							}
+							v.ExecutorTrace = encoded
+							return nil
+						})
 					}
 				}
 				if executor == "claude" {
@@ -244,13 +366,11 @@ func (a *App) scopeAutoRunner(base core.ExecutorRunner, original config.Config, 
 		if request.Executor == "opencode" && managedCLI {
 			native = a.nativeOpenCode(k.config, state, cwd, filepath.Join(runtimeDir, "native-turn"), k.environment, false)
 			if native == nil {
-				k.close()
-				return preparedAutoTurn{}, errors.New("native OpenCode scoped transport unavailable")
+				return fail(errors.New("native OpenCode scoped transport unavailable"))
 			}
 			instructions, err := os.ReadFile(instructionsPath)
 			if err != nil {
-				k.close()
-				return preparedAutoTurn{}, err
+				return fail(err)
 			}
 			native.Options.Instructions = string(instructions) + "\n\n" + native.Options.Instructions
 			// Native primary follows the same read-only coordinator contract;
@@ -262,34 +382,26 @@ func (a *App) scopeAutoRunner(base core.ExecutorRunner, original config.Config, 
 			}
 			executable, err := os.Executable()
 			if err != nil {
-				k.close()
-				return preparedAutoTurn{}, err
+				return fail(err)
 			}
 			environment, err := opencodebridge.NativeControlPlaneEnvironment(executorBridgeEnvironment(k.environment))
 			if err != nil {
-				k.close()
-				return preparedAutoTurn{}, err
+				return fail(err)
 			}
 			native.Options.NativeMCP["ivoai-orchestrator"] = map[string]any{"type": "local", "command": []string{executable, "_orchestrator-serve", "--session", id}, "environment": environment}
 			runner = agents.RoutedRunner{Official: runner, Native: native}
 		}
 		current.set(k, native)
-		prepared := preparedAutoTurn{Runner: runner, Release: k.close}
-		if enforceDAG {
+		prepared := preparedAutoTurn{Runner: runner, Release: release, Policy: policy}
+		if adaptive != nil {
+			prepared.Validate = func() error { return adaptive.validate(ctx) }
+		} else if enforceDAG {
 			prepared.Validate = func() error {
 				v, err := store.Get(id)
 				if err != nil {
 					return err
 				}
-				if v.CurrentPhase != "synthesizing" || len(v.Tasks) == 0 {
-					return &core.ExecutorFailure{Class: "DAG_INCOMPLETE", ExitCode: 1}
-				}
-				for _, task := range v.Tasks {
-					if task.State != session.StateCompleted {
-						return &core.ExecutorFailure{Class: "ACCEPTANCE_INCOMPLETE", ExitCode: 1}
-					}
-				}
-				return nil
+				return validateAutoDAG(v)
 			}
 		}
 		return prepared, nil

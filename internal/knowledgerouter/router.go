@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/ivo-lopes/ivoai/internal/config"
+	"github.com/ivo-lopes/ivoai/internal/externalmcp"
 	"github.com/ivo-lopes/ivoai/internal/secrets"
 	"github.com/ivo-lopes/ivoai/internal/serverpool"
 )
@@ -57,18 +58,34 @@ type Options struct {
 }
 
 type Router struct {
-	selection serverpool.Selection
-	creds     map[string]secrets.ClientCredential
-	client    *http.Client
-	timeout   time.Duration
-	now       func() time.Time
-	observe   func(Event)
-	server    *http.Server
-	listener  net.Listener
-	token     string
-	baseURL   string
-	mu        sync.Mutex
-	failures  map[string]failureState
+	selection  serverpool.Selection
+	creds      map[string]secrets.ClientCredential
+	client     *http.Client
+	timeout    time.Duration
+	now        func() time.Time
+	observe    func(Event)
+	server     *http.Server
+	listener   net.Listener
+	token      string
+	baseURL    string
+	mu         sync.Mutex
+	failures   map[string]failureState
+	toolPolicy func(context.Context, string, string) bool
+}
+
+// SetToolPolicy installs a host callback, not an independent authorization
+// mechanism. It restricts both discovery and invocation; unknown tools and REST
+// hook endpoints cannot bypass an agent's read-only MCP capability.
+func (r *Router) SetToolPolicy(check func(context.Context, string, string) bool) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.toolPolicy = check
+}
+
+func (r *Router) policy() func(context.Context, string, string) bool {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return r.toolPolicy
 }
 
 type failureState struct {
@@ -186,9 +203,27 @@ func (r *Router) handleMCP(w http.ResponseWriter, request *http.Request, kind st
 		return
 	}
 	var rpc rpcRequest
+	policy := r.policy()
+	if policy != nil && !externalmcp.ValidPolicyRequest(body) {
+		writeRPCError(w, nil, -32600, "invalid policy-bound MCP request")
+		return
+	}
 	if err := json.Unmarshal(body, &rpc); err != nil || rpc.JSONRPC != "2.0" {
 		writeRPCError(w, rpc.ID, -32600, "invalid JSON-RPC request")
 		return
+	}
+	if policy != nil {
+		switch rpc.Method {
+		case "tools/call":
+			if !policy(request.Context(), kind, rpc.Params.Name) {
+				writeRPCError(w, rpc.ID, -32024, "MCP_DENIED: tool is outside the admitted turn capability")
+				return
+			}
+		case "initialize", "notifications/initialized", "notifications/cancelled", "ping", "tools/list":
+		default:
+			writeRPCError(w, rpc.ID, -32024, "MCP_DENIED: method is outside the admitted turn capability")
+			return
+		}
 	}
 	write := kind == "memory" && memoryToolRequiresSingleDestination(rpc.Method, rpc.Params.Name)
 	groups := r.groupsFor(kind)
@@ -217,7 +252,7 @@ func (r *Router) handleMCP(w http.ResponseWriter, request *http.Request, kind st
 			writeRPCError(w, rpc.ID, -32022, boundedReason(err))
 			return
 		}
-		copyMCPResponse(w, response)
+		r.copyPolicyResponse(w, request, rpc, kind, response)
 		return
 	}
 	if rpc.Method != "tools/call" {
@@ -226,7 +261,7 @@ func (r *Router) handleMCP(w http.ResponseWriter, request *http.Request, kind st
 			response, profile, failover, err := r.callGroup(request.Context(), group, kind, body, false, hasResponseID(rpc.ID), request.Header, maxResponseBytes)
 			r.emit(Event{Operation: kind, SourceID: profile.ID, SourceAlias: profile.Alias, Purpose: profile.Purpose, SelectedCount: len(groups), Failover: failover, Partial: err != nil, Duration: response.duration, State: state(err), Reason: boundedReason(err)})
 			if err == nil {
-				copyMCPResponse(w, response)
+				r.copyPolicyResponse(w, request, rpc, kind, response)
 				return
 			}
 			lastErr = err
@@ -355,6 +390,10 @@ func (r *Router) federate(w http.ResponseWriter, request *http.Request, rpc rpcR
 	// response type. Keep the machine-readable federation value as text: the
 	// upstream tool's output schema describes one source and therefore must not
 	// be paired with a different federated structuredContent shape.
+	if policy := r.policy(); policy != nil && !policy(request.Context(), kind, rpc.Params.Name) {
+		writeRPCError(w, rpc.ID, -32024, "MCP_DENIED: admitted turn capability expired")
+		return
+	}
 	writeJSON(w, map[string]any{
 		"jsonrpc": "2.0",
 		"id":      json.RawMessage(rpc.ID),
@@ -363,6 +402,10 @@ func (r *Router) federate(w http.ResponseWriter, request *http.Request, rpc rpcR
 }
 
 func (r *Router) handleMemoryHook(w http.ResponseWriter, request *http.Request) {
+	if r.policy() != nil {
+		http.Error(w, "MCP_DENIED: REST hooks are not part of this agent capability", http.StatusForbidden)
+		return
+	}
 	if r.selection.PurposeCount() != 1 || len(r.selection.Groups) != 1 {
 		http.Error(w, "memory hook requires exactly one knowledge purpose", http.StatusConflict)
 		return

@@ -29,6 +29,9 @@ import (
 var rolePattern = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9_-]{0,63}$`)
 
 type Server struct {
+	PrimaryTurnIdentity    *core.PrimaryTurnIdentity
+	AuthorizePrimaryTurn   func(context.Context) error
+	DAGProtocol            string // host-generated static instructions, never external text
 	PreparePrimaryEvidence func(context.Context, routing.Task, int) (json.RawMessage, error)
 
 	CheckMCPGrants        func(context.Context, []routing.TaskInput) (bool, error)
@@ -144,6 +147,9 @@ func (s *Server) protocolServer() *mcp.Server {
 	if s.NativePolicy {
 		instructions = "IVOAI owns native AUTO DAG lifecycle. Follow the approved plan's execution_mode: queue only worker tasks, complete primary tasks after their dependencies, wait for workers and integrate before synthesis. Never use legacy orchestration_delegate in native AUTO."
 	}
+	if s.PrimaryTurnIdentity != nil {
+		instructions = "IVOAI has bound this server to one admitted turn. Answer directly using the host's read-only capability when sufficient. Only when a task graph or mutation is necessary, call orchestration_bootstrap to receive the existing host DAG protocol, then submit an approved plan. Native delegation and unknown capabilities never bypass host admission."
+	}
 	server := mcp.NewServer(&mcp.Implementation{Name: "ivoai-orchestrator", Version: "1", Description: "Session-local delegation to official Codex and Claude Code workers"}, &mcp.ServerOptions{Instructions: instructions})
 	s.addTools(server)
 	return server
@@ -161,30 +167,71 @@ func (s *Server) authorized() error {
 	if !value.Active() || (value.Mode != session.ModeOrchestrated && value.Mode != session.ModeAuto) || !safeCoordinator || value.ProviderExecution {
 		return errors.New("orchestration bridge requires an active safe orchestrated session")
 	}
+	return s.checkPrimaryTurn(context.Background())
+}
+
+func (s *Server) checkPrimaryTurn(ctx context.Context) error {
+	v, err := s.Store.Get(s.SessionID)
+	if err != nil {
+		return err
+	}
+	if err := s.checkPrimaryIdentity(v); err != nil {
+		return err
+	}
+	if s.PrimaryTurnIdentity == nil {
+		return nil
+	}
+	if s.AuthorizePrimaryTurn == nil {
+		return errors.New("PRIMARY_TURN_DENIED: host callback unavailable")
+	}
+	return s.AuthorizePrimaryTurn(ctx)
+}
+
+// This pure check can also run under Store.Update without recursively taking
+// the store lock through the host callback.
+func (s *Server) checkPrimaryIdentity(v session.Session) error {
+	if s.PrimaryTurnIdentity == nil {
+		if v.PrimaryTurn != nil {
+			return errors.New("PRIMARY_TURN_DENIED: server has no admitted turn identity")
+		}
+		return nil
+	}
+	if !session.PrimaryTurnActive(v) || v.PrimaryTurn.Identity() != *s.PrimaryTurnIdentity {
+		return errors.New("PRIMARY_TURN_DENIED: stale server turn identity")
+	}
 	return nil
+}
+
+func (s *Server) guardTool(next func(context.Context, *mcp.CallToolRequest) (*mcp.CallToolResult, error)) func(context.Context, *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	return func(ctx context.Context, request *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		if err := s.checkPrimaryTurn(ctx); err != nil {
+			return nil, err
+		}
+		return next(ctx, request)
+	}
 }
 
 func (s *Server) addTools(server *mcp.Server) {
 	read := &mcp.ToolAnnotations{ReadOnlyHint: true, DestructiveHint: boolp(false), OpenWorldHint: boolp(false), IdempotentHint: true}
 	write := &mcp.ToolAnnotations{ReadOnlyHint: false, DestructiveHint: boolp(false), OpenWorldHint: boolp(false), IdempotentHint: false}
-	server.AddTool(&mcp.Tool{Name: "orchestration_status", Description: "Return non-sensitive status for the active session and Ruflo swarm.", InputSchema: object(nil), Annotations: read}, s.status)
-	server.AddTool(&mcp.Tool{Name: "orchestration_agents", Description: "List primary and worker lifecycle metadata; never returns prompts or credentials.", InputSchema: object(nil), Annotations: read}, s.agents)
+	server.AddTool(&mcp.Tool{Name: "orchestration_status", Description: "Return non-sensitive status for the active session and Ruflo swarm.", InputSchema: object(nil), Annotations: read}, s.guardTool(s.status))
+	server.AddTool(&mcp.Tool{Name: "orchestration_agents", Description: "List primary and worker lifecycle metadata; never returns prompts or credentials.", InputSchema: object(nil), Annotations: read}, s.guardTool(s.agents))
 	server.AddTool(&mcp.Tool{Name: "orchestration_delegate", Description: "Run a bounded task through an official Codex or Claude Code worker. Ruflo only records lifecycle.", InputSchema: object(map[string]any{
 		"role":               map[string]any{"type": "string", "pattern": `^[A-Za-z][A-Za-z0-9_-]{0,63}$`},
 		"task":               map[string]any{"type": "string", "minLength": 1, "maxLength": workers.MaxTaskBytes},
 		"preferred_executor": map[string]any{"type": "string", "enum": quota.ProviderNames()},
 		"model":              map[string]any{"type": "string", "minLength": 1, "maxLength": 128},
-	}, "role", "task"), Annotations: write}, s.delegate)
-	server.AddTool(&mcp.Tool{Name: "orchestration_result", Description: "Read a bounded structured WorkerResult; only opaque evidence references survive primary failover.", InputSchema: object(map[string]any{"worker_id": map[string]any{"type": "string"}}, "worker_id"), Annotations: read}, s.result)
-	server.AddTool(&mcp.Tool{Name: "orchestration_artifact_read", Description: "Explicitly recover exact private worker evidence by opaque ResultRef for the active session.", InputSchema: object(map[string]any{"artifact_id": map[string]any{"type": "string", "pattern": `^artifact_[0-9a-f]{32}$`}}, "artifact_id"), Annotations: read}, s.artifactRead)
-	server.AddTool(&mcp.Tool{Name: "orchestration_artifact_read_range", Description: "Explicitly recover a bounded byte range from private worker evidence by opaque ResultRef.", InputSchema: object(map[string]any{"artifact_id": map[string]any{"type": "string", "pattern": `^artifact_[0-9a-f]{32}$`}, "offset": map[string]any{"type": "integer", "minimum": 0}, "length": map[string]any{"type": "integer", "minimum": 1, "maximum": 1048576}}, "artifact_id", "offset", "length"), Annotations: read}, s.artifactReadRange)
-	server.AddTool(&mcp.Tool{Name: "orchestration_cancel", Description: "Cancel a worker owned by this active session.", InputSchema: object(map[string]any{"worker_id": map[string]any{"type": "string"}}, "worker_id"), Annotations: write}, s.cancel)
+	}, "role", "task"), Annotations: write}, s.guardTool(s.delegate))
+	server.AddTool(&mcp.Tool{Name: "orchestration_result", Description: "Read a bounded structured WorkerResult; only opaque evidence references survive primary failover.", InputSchema: object(map[string]any{"worker_id": map[string]any{"type": "string"}}, "worker_id"), Annotations: read}, s.guardTool(s.result))
+	server.AddTool(&mcp.Tool{Name: "orchestration_artifact_read", Description: "Explicitly recover exact private worker evidence by opaque ResultRef for the active session.", InputSchema: object(map[string]any{"artifact_id": map[string]any{"type": "string", "pattern": `^artifact_[0-9a-f]{32}$`}}, "artifact_id"), Annotations: read}, s.guardTool(s.artifactRead))
+	server.AddTool(&mcp.Tool{Name: "orchestration_artifact_read_range", Description: "Explicitly recover a bounded byte range from private worker evidence by opaque ResultRef.", InputSchema: object(map[string]any{"artifact_id": map[string]any{"type": "string", "pattern": `^artifact_[0-9a-f]{32}$`}, "offset": map[string]any{"type": "integer", "minimum": 0}, "length": map[string]any{"type": "integer", "minimum": 1, "maximum": 1048576}}, "artifact_id", "offset", "length"), Annotations: read}, s.guardTool(s.artifactReadRange))
+	server.AddTool(&mcp.Tool{Name: "orchestration_cancel", Description: "Cancel a worker owned by this active session.", InputSchema: object(map[string]any{"worker_id": map[string]any{"type": "string"}}, "worker_id"), Annotations: write}, s.guardTool(s.cancel))
 	value, _ := s.Store.Get(s.SessionID)
 	if value.Mode == session.ModeAuto {
 		s.addAutomaticTools(server, read, write)
-		server.AddTool(&mcp.Tool{Name: "orchestration_quota", Description: "Read authoritative or explicitly unavailable subscription quota telemetry. The model cannot change quota state.", InputSchema: object(nil), Annotations: read}, s.quotaStatus)
+		server.AddTool(&mcp.Tool{Name: "orchestration_quota", Description: "Read authoritative or explicitly unavailable subscription quota telemetry. The model cannot change quota state.", InputSchema: object(nil), Annotations: read}, s.guardTool(s.quotaStatus))
 		if s.CheckpointEnabled {
-			server.AddTool(&mcp.Tool{Name: "orchestration_checkpoint", Description: "Save a bounded, secret-free continuity checkpoint after a relevant completed turn. Do not include transcripts, prompts, credentials, tokens, or raw responses.", InputSchema: checkpointSchema(), Annotations: write}, s.checkpoint)
+			server.AddTool(&mcp.Tool{Name: "orchestration_checkpoint", Description: "Save a bounded, secret-free continuity checkpoint after a relevant completed turn. Do not include transcripts, prompts, credentials, tokens, or raw responses.", InputSchema: checkpointSchema(), Annotations: write}, s.guardTool(s.checkpoint))
 		}
 	}
 }
@@ -382,7 +429,10 @@ func (s *Server) quotaStatus(ctx context.Context, _ *mcp.CallToolRequest) (*mcp.
 	return toolResult(map[string]any{"providers": result, "policy": "quota manager has authority over provider selection"})
 }
 
-func (s *Server) checkpoint(_ context.Context, request *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func (s *Server) checkpoint(ctx context.Context, request *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	if err := s.checkPrimaryTurn(ctx); err != nil {
+		return nil, err
+	}
 	value, err := s.Store.Get(s.SessionID)
 	if err != nil {
 		return nil, err
@@ -394,7 +444,7 @@ func (s *Server) checkpoint(_ context.Context, request *mcp.CallToolRequest) (*m
 	if err := json.Unmarshal(request.Params.Arguments, &checkpoint); err != nil {
 		return nil, errors.New("invalid checkpoint")
 	}
-	if err := s.Store.UpdateCheckpoint(s.SessionID, func(saved *session.Checkpoint) error {
+	if err := s.updateCheckpoint(func(saved *session.Checkpoint) error {
 		// External arguments cannot replace the host's approved recovery DAG.
 		checkpoint.Recovery = saved.Recovery
 		*saved = checkpoint
@@ -406,12 +456,16 @@ func (s *Server) checkpoint(_ context.Context, request *mcp.CallToolRequest) (*m
 	if err != nil {
 		return nil, err
 	}
-	_, _ = s.Store.Update(s.SessionID, func(current *session.Session) error {
-		current.CheckpointAvailable = true
-		current.CheckpointUpdatedAt = &saved.UpdatedAt
+	_, err = s.Store.Update(s.SessionID, func(current *session.Session) error {
+		if err := s.checkPrimaryDAGIdentity(*current); err != nil {
+			return err
+		}
 		current.ConsecutiveFailovers = 0
 		return nil
 	})
+	if err != nil {
+		return nil, err
+	}
 	return toolResult(map[string]any{"saved": true, "updated_at": saved.UpdatedAt, "ai_memory": value.MemoryStatus})
 }
 
@@ -475,7 +529,10 @@ func (s *Server) artifactReadRange(ctx context.Context, request *mcp.CallToolReq
 	return toolResult(map[string]any{"ref": ref, "offset": args.Offset, "length": len(body), "encoding": "base64", "data": base64.StdEncoding.EncodeToString(body)})
 }
 
-func (s *Server) cancel(_ context.Context, request *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func (s *Server) cancel(ctx context.Context, request *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	if err := s.checkPrimaryTurn(ctx); err != nil {
+		return nil, err
+	}
 	id, err := workerIDArgument(request)
 	if err != nil {
 		return nil, err
@@ -486,7 +543,19 @@ func (s *Server) cancel(_ context.Context, request *mcp.CallToolRequest) (*mcp.C
 	if !ok {
 		return nil, errors.New("worker is not active")
 	}
-	cancel()
+	if s.PrimaryTurnIdentity != nil {
+		if _, err := s.Store.Update(s.SessionID, func(v *session.Session) error {
+			if err := s.checkPrimaryDAGIdentity(*v); err != nil {
+				return err
+			}
+			cancel()
+			return nil
+		}); err != nil {
+			return nil, err
+		}
+	} else {
+		cancel()
+	}
 	return toolResult(map[string]any{"worker_id": id, "cancelled": true})
 }
 

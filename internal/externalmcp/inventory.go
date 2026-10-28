@@ -27,6 +27,12 @@ func writeDenied(w http.ResponseWriter, id json.RawMessage, reason string) {
 // tools/list is finite JSON or finite SSE. No unauthorized schema is projected.
 // Unknown encodings and oversized inventories fail closed, never pass through.
 func filterInventory(response *http.Response, allowed map[string]bool, observers ...func(InventoryMetrics)) error {
+	return FilterInventory(response, func(name string) bool { return allowed[name] }, observers...)
+}
+
+// FilterInventory reuses the existing finite MCP inventory projection for other
+// host-owned transports. Filtering discovery never grants a tool invocation.
+func FilterInventory(response *http.Response, allowed func(string) bool, observers ...func(InventoryMetrics)) error {
 	body, err := io.ReadAll(io.LimitReader(response.Body, (4<<20)+1))
 	response.Body.Close()
 	if err != nil || len(body) > 4<<20 {
@@ -59,7 +65,7 @@ func filterInventory(response *http.Response, allowed map[string]bool, observers
 			if err := json.Unmarshal(tool, &identity); err != nil {
 				return nil, err
 			}
-			if allowed[identity.Name] {
+			if allowed != nil && allowed(identity.Name) {
 				selected = append(selected, tool)
 			}
 		}

@@ -41,16 +41,19 @@ import (
 )
 
 type App struct {
-	evidenceGateway  *evidence.Gateway
-	CodexResolution  func(context.Context, config.State) (config.State, codexresolver.Resolution, error)
-	Version          string
-	Store            *config.Store
-	Runner           platform.Runner
-	In               io.Reader
-	Out, Err         io.Writer
-	QuotaManager     *quota.Manager
-	AutoPollInterval time.Duration
-	HTTPClient       *http.Client
+	// Private test seam for disposable identity fixtures only. Production uses
+	// the exact reviewed managed pair; no environment bypass exists.
+	adaptiveRuntimeCheck func(config.State, session.Session) (adaptiveRuntime, error)
+	evidenceGateway      *evidence.Gateway
+	CodexResolution      func(context.Context, config.State) (config.State, codexresolver.Resolution, error)
+	Version              string
+	Store                *config.Store
+	Runner               platform.Runner
+	In                   io.Reader
+	Out, Err             io.Writer
+	QuotaManager         *quota.Manager
+	AutoPollInterval     time.Duration
+	HTTPClient           *http.Client
 	// Isolate App setup tests from component downloads while exercising memory
 	// hooks and diagnostics normally. Production always uses Installer.Setup.
 	setupComponents func(context.Context) error

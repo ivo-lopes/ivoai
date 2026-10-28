@@ -97,6 +97,12 @@ func ReconcileRecovery(ctx context.Context, store session.Store, id string) (Rec
 }
 
 func (s *Server) recoverPlan(ctx context.Context, request *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	if err := s.checkPrimaryTurn(ctx); err != nil {
+		return nil, err
+	}
+	if s.PrimaryTurnIdentity != nil {
+		return nil, errors.New("PRIMARY_TURN_DENIED: recovery is unavailable for the admitted fresh turn")
+	}
 	var args struct{}
 	if strictArguments(request, &args) != nil {
 		return nil, errors.New("invalid recovery request")
@@ -190,7 +196,7 @@ func (s *Server) recoverPlan(ctx context.Context, request *mcp.CallToolRequest) 
 	if err := s.acknowledgePlanQuota(ctx); err != nil {
 		return nil, err
 	}
-	if err := s.Store.UpdateCheckpoint(s.SessionID, func(c *session.Checkpoint) error {
+	if err := s.updateCheckpoint(func(c *session.Checkpoint) error {
 		if c.Recovery != nil {
 			c.Recovery.Approved = true
 		}

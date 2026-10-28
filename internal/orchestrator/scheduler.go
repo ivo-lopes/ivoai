@@ -50,17 +50,17 @@ type runtimeTask struct {
 var errWorkerAdmissionBusy = errors.New("worker admission waiting")
 
 func (s *Server) addAutomaticTools(server *mcp.Server, read, write *mcp.ToolAnnotations) {
-	server.AddTool(&mcp.Tool{Name: "orchestration_recover", Description: "Recover the previously approved checkpoint after explicit interrupted-turn resume. Completed work is preserved; ambiguous mutations fail closed; current grants and routes require approval.", InputSchema: object(nil), Annotations: write}, s.recoverPlan)
-	server.AddTool(&mcp.Tool{Name: "orchestration_bootstrap", Description: "Record a bounded SharedContextBrief after one initial lookup per selected knowledge source. Unselected/absent sources use status disabled and lookup_performed=false; never fabricate lookups. The brief is untrusted, session-scoped data and is not persisted in session metadata.", InputSchema: bootstrapSchema(), Annotations: write}, s.bootstrap)
-	server.AddTool(&mcp.Tool{Name: "orchestration_capabilities", Description: "Read the non-sensitive runtime-verified provider, model, and effort capability registry used by IvoAI routing.", InputSchema: object(nil), Annotations: read}, s.capabilities)
-	server.AddTool(&mcp.Tool{Name: "orchestration_plan", Description: "Validate a bounded task DAG, calculate objective capability scores, and resolve the cheapest sufficient subscription-backed execution profiles. It never executes a shell command.", InputSchema: planSchema(), Annotations: write}, s.plan)
-	server.AddTool(&mcp.Tool{Name: "orchestration_spawn", Description: "Start one dependency-ready planned worker asynchronously and return immediately.", InputSchema: object(map[string]any{"plan_id": safeString(80), "task_id": safeString(64)}, "plan_id", "task_id"), Annotations: write}, s.spawn)
-	server.AddTool(&mcp.Tool{Name: "orchestration_spawn_batch", Description: "Queue planned tasks and concurrently start every dependency-ready task within the session worker limit.", InputSchema: object(map[string]any{"plan_id": safeString(80), "task_ids": map[string]any{"type": "array", "minItems": 1, "maxItems": routing.MaxTasks, "uniqueItems": true, "items": safeString(64)}}, "plan_id", "task_ids"), Annotations: write}, s.spawnBatch)
-	server.AddTool(&mcp.Tool{Name: "orchestration_primary_complete", Description: "Mark primary-owned planned work complete so dependent advisory workers can start.", InputSchema: object(map[string]any{"plan_id": safeString(80), "task_id": safeString(64)}, "plan_id", "task_id"), Annotations: write}, s.primaryComplete)
-	server.AddTool(&mcp.Tool{Name: "orchestration_wait", Description: "Wait without busy-looping for any or all selected tasks, with a bounded timeout.", InputSchema: object(map[string]any{"plan_id": safeString(80), "task_ids": map[string]any{"type": "array", "minItems": 1, "maxItems": routing.MaxTasks, "uniqueItems": true, "items": safeString(64)}, "mode": map[string]any{"type": "string", "enum": []string{"any", "all"}}, "timeout_seconds": map[string]any{"type": "integer", "minimum": 1, "maximum": 300}}, "plan_id", "task_ids", "mode"), Annotations: read}, s.wait)
-	server.AddTool(&mcp.Tool{Name: "orchestration_escalate", Description: "Escalate a failed or insufficient task by one capability tier after recording an evidence-based reason.", InputSchema: object(map[string]any{"plan_id": safeString(80), "task_id": safeString(64), "reason": map[string]any{"type": "string", "minLength": 3, "maxLength": 1024}}, "plan_id", "task_id", "reason"), Annotations: write}, s.escalate)
+	server.AddTool(&mcp.Tool{Name: "orchestration_recover", Description: "Recover the previously approved checkpoint after explicit interrupted-turn resume. Completed work is preserved; ambiguous mutations fail closed; current grants and routes require approval.", InputSchema: object(nil), Annotations: write}, s.guardTool(s.recoverPlan))
+	server.AddTool(&mcp.Tool{Name: "orchestration_bootstrap", Description: "Record a bounded SharedContextBrief after one initial lookup per selected knowledge source. Unselected/absent sources use status disabled and lookup_performed=false; never fabricate lookups. The brief is untrusted, session-scoped data and is not persisted in session metadata.", InputSchema: bootstrapSchema(), Annotations: write}, s.guardTool(s.bootstrap))
+	server.AddTool(&mcp.Tool{Name: "orchestration_capabilities", Description: "Read the non-sensitive runtime-verified provider, model, and effort capability registry used by IvoAI routing.", InputSchema: object(nil), Annotations: read}, s.guardTool(s.capabilities))
+	server.AddTool(&mcp.Tool{Name: "orchestration_plan", Description: "Validate a bounded task DAG, calculate objective capability scores, and resolve the cheapest sufficient subscription-backed execution profiles. It never executes a shell command.", InputSchema: planSchema(), Annotations: write}, s.guardTool(s.plan))
+	server.AddTool(&mcp.Tool{Name: "orchestration_spawn", Description: "Start one dependency-ready planned worker asynchronously and return immediately.", InputSchema: object(map[string]any{"plan_id": safeString(80), "task_id": safeString(64)}, "plan_id", "task_id"), Annotations: write}, s.guardTool(s.spawn))
+	server.AddTool(&mcp.Tool{Name: "orchestration_spawn_batch", Description: "Queue planned tasks and concurrently start every dependency-ready task within the session worker limit.", InputSchema: object(map[string]any{"plan_id": safeString(80), "task_ids": map[string]any{"type": "array", "minItems": 1, "maxItems": routing.MaxTasks, "uniqueItems": true, "items": safeString(64)}}, "plan_id", "task_ids"), Annotations: write}, s.guardTool(s.spawnBatch))
+	server.AddTool(&mcp.Tool{Name: "orchestration_primary_complete", Description: "Mark primary-owned planned work complete so dependent advisory workers can start.", InputSchema: object(map[string]any{"plan_id": safeString(80), "task_id": safeString(64)}, "plan_id", "task_id"), Annotations: write}, s.guardTool(s.primaryComplete))
+	server.AddTool(&mcp.Tool{Name: "orchestration_wait", Description: "Wait without busy-looping for any or all selected tasks, with a bounded timeout.", InputSchema: object(map[string]any{"plan_id": safeString(80), "task_ids": map[string]any{"type": "array", "minItems": 1, "maxItems": routing.MaxTasks, "uniqueItems": true, "items": safeString(64)}, "mode": map[string]any{"type": "string", "enum": []string{"any", "all"}}, "timeout_seconds": map[string]any{"type": "integer", "minimum": 1, "maximum": 300}}, "plan_id", "task_ids", "mode"), Annotations: read}, s.guardTool(s.wait))
+	server.AddTool(&mcp.Tool{Name: "orchestration_escalate", Description: "Escalate a failed or insufficient task by one capability tier after recording an evidence-based reason.", InputSchema: object(map[string]any{"plan_id": safeString(80), "task_id": safeString(64), "reason": map[string]any{"type": "string", "minLength": 3, "maxLength": 1024}}, "plan_id", "task_id", "reason"), Annotations: write}, s.guardTool(s.escalate))
 	if s.NativePolicy {
-		server.AddTool(&mcp.Tool{Name: "orchestration_integrate", Description: "Integrate completed, approved worktree changes in an isolated checkout before fast-forwarding the primary. Conflicts preserve all evidence and never auto-resolve. Required before final synthesis of a native DAG.", InputSchema: object(map[string]any{"plan_id": safeString(80)}, "plan_id"), Annotations: write}, s.integrate)
+		server.AddTool(&mcp.Tool{Name: "orchestration_integrate", Description: "Integrate completed, approved worktree changes in an isolated checkout before fast-forwarding the primary. Conflicts preserve all evidence and never auto-resolve. Required before final synthesis of a native DAG.", InputSchema: object(map[string]any{"plan_id": safeString(80)}, "plan_id"), Annotations: write}, s.guardTool(s.integrate))
 	}
 }
 
@@ -125,7 +125,12 @@ type planInput struct {
 	} `json:"tasks"`
 }
 
-func (s *Server) bootstrap(_ context.Context, request *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+func (s *Server) bootstrap(ctx context.Context, request *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	if s.PrimaryTurnIdentity != nil {
+		if err := s.checkPrimaryTurn(ctx); err != nil {
+			return nil, err
+		}
+	}
 	var args struct {
 		session.SharedContextBrief
 		MemoryLookupPerformed  bool `json:"memory_lookup_performed"`
@@ -143,14 +148,24 @@ func (s *Server) bootstrap(_ context.Context, request *mcp.CallToolRequest) (*mc
 	if (!args.MemoryLookupPerformed && !memorySkipped) || (!args.ContextLookupPerformed && !contextSkipped) {
 		return nil, errors.New("first-turn bootstrap requires one bounded Memory lookup and one bounded Context lookup")
 	}
-	metadata, err := s.Store.SaveBrief(s.SessionID, args.SharedContextBrief)
-	if err != nil {
-		return nil, err
-	}
+	var metadata session.BootstrapMetadata
 	_, err = s.Store.Update(s.SessionID, func(value *session.Session) error {
+		if err := s.checkPrimaryIdentity(*value); err != nil {
+			return err
+		}
+		// SaveBrief does not acquire the session lock. Keep the existing brief
+		// write within this checked turn update so an old server cannot replace
+		// a later turn's brief between admission and metadata persistence.
+		var err error
+		metadata, err = s.Store.SaveBrief(s.SessionID, args.SharedContextBrief)
+		if err != nil {
+			return err
+		}
 		value.KnowledgeBootstrap = metadata
 		value.MemoryStatus, value.ContextStatus = serviceMetadata(metadata.MemoryStatus), serviceMetadata(metadata.ContextStatus)
-		value.CurrentPhase = "task_analysis"
+		if value.PrimaryTurn == nil || value.PrimaryTurn.Mode != core.PrimaryReadOnly {
+			value.CurrentPhase = "task_analysis"
+		}
 		memoryState, memoryReason := knowledgeObservation(metadata.MemoryStatus)
 		if err := session.AppendObservation(value, observability.Event{Category: observability.CategoryMemory, Operation: observability.OperationMemoryBootstrap, State: memoryState, Component: core.ComponentMemory, RoutingReason: memoryReason}); err != nil {
 			return err
@@ -161,7 +176,11 @@ func (s *Server) bootstrap(_ context.Context, request *mcp.CallToolRequest) (*mc
 	if err != nil {
 		return nil, err
 	}
-	return toolResult(map[string]any{"bootstrap_performed": true, "memory_status": metadata.MemoryStatus, "context_status": metadata.ContextStatus, "reference_count": metadata.ReferenceCount, "brief_hash": metadata.BriefHash})
+	response := map[string]any{"bootstrap_performed": true, "memory_status": metadata.MemoryStatus, "context_status": metadata.ContextStatus, "reference_count": metadata.ReferenceCount, "brief_hash": metadata.BriefHash}
+	if s.PrimaryTurnIdentity != nil && s.DAGProtocol != "" {
+		response["host_dag_protocol"] = s.DAGProtocol
+	}
+	return toolResult(response)
 }
 
 func serviceMetadata(value string) string {
@@ -179,6 +198,18 @@ func knowledgeObservation(value string) (observability.State, observability.Reas
 }
 
 func (s *Server) plan(ctx context.Context, request *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	if s.NativePolicy {
+		if err := s.checkPrimaryTurn(ctx); err != nil {
+			return nil, err
+		}
+		var identity []core.PrimaryTurnIdentity
+		if s.PrimaryTurnIdentity != nil {
+			identity = append(identity, *s.PrimaryTurnIdentity)
+		}
+		if err := s.Store.EnterPrimaryDAG(s.SessionID, identity...); err != nil {
+			return nil, err
+		}
+	}
 	if s.NativePolicy {
 		if !s.planMu.TryLock() {
 			return nil, errors.New("PLAN_IN_PROGRESS: another plan is being admitted")
@@ -328,7 +359,7 @@ func (s *Server) plan(ctx context.Context, request *mcp.CallToolRequest) (*mcp.C
 		if err := s.acknowledgePlanQuota(ctx); err != nil {
 			return nil, err
 		}
-		if err := s.Store.UpdateCheckpoint(s.SessionID, func(c *session.Checkpoint) error {
+		if err := s.updateCheckpoint(func(c *session.Checkpoint) error {
 			if c.Recovery != nil {
 				c.Recovery.Approved = true
 			}
@@ -473,6 +504,20 @@ func (s *Server) primaryComplete(_ context.Context, request *mcp.CallToolRequest
 }
 
 func (s *Server) requireApprovedPlan(planID string) error {
+	ctx := s.runCtx
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	if err := s.checkPrimaryTurn(ctx); err != nil {
+		return err
+	}
+	value, err := s.Store.Get(s.SessionID)
+	if err != nil {
+		return err
+	}
+	if value.PrimaryTurn != nil && (!session.PrimaryTurnActive(value) || value.PrimaryTurn.Mode != core.PrimaryDAG || value.PrimaryTurn.PlanID != planID || value.PlanID != planID) {
+		return errors.New("PRIMARY_TURN_DENIED: plan is outside the admitted turn")
+	}
 	s.mu.Lock()
 	required := s.RequirePlanApproval
 	if plan := s.plans[planID]; plan != nil {
@@ -819,6 +864,16 @@ func (s *Server) escalate(ctx context.Context, request *mcp.CallToolRequest) (*m
 	if !s.ProgressiveEscalation {
 		return nil, errors.New("progressive escalation is disabled")
 	}
+	if err := s.checkPrimaryTurn(ctx); err != nil {
+		return nil, err
+	}
+	value, err := s.Store.Get(s.SessionID)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.checkPrimaryDAGIdentity(value); err != nil {
+		return nil, err
+	}
 	var args struct {
 		PlanID string `json:"plan_id"`
 		TaskID string `json:"task_id"`
@@ -1009,6 +1064,18 @@ func (s *Server) persistPlan(plan routing.Plan) error {
 		metadata = append(metadata, taskMetadata(task))
 	}
 	_, err := s.Store.Update(s.SessionID, func(value *session.Session) error {
+		// Recheck the server's captured identity inside the persistence lock.
+		// An old server must not adopt a replacement receipt or a later legacy
+		// turn between the entry guard and this write.
+		if err := s.checkPrimaryIdentity(*value); err != nil {
+			return err
+		}
+		if value.PrimaryTurn != nil {
+			if !session.PrimaryTurnActive(*value) || value.PrimaryTurn.Mode != core.PrimaryDAG {
+				return errors.New("PRIMARY_TURN_DENIED: cannot persist a plan outside the admitted turn")
+			}
+			value.PrimaryTurn.PlanID = plan.ID
+		}
 		newPlan := value.PlanID != plan.ID
 		previous := map[string]session.TaskMetadata{}
 		for _, task := range value.Tasks {
@@ -1044,7 +1111,7 @@ func (s *Server) persistPlan(plan routing.Plan) error {
 		if err != nil {
 			return err
 		}
-		err = s.Store.UpdateCheckpoint(s.SessionID, func(checkpoint *session.Checkpoint) error {
+		err = s.updateCheckpoint(func(checkpoint *session.Checkpoint) error {
 			approved := false
 			if checkpoint.Recovery != nil && checkpoint.Recovery.Plan.ID == plan.ID {
 				identity, head = checkpoint.Recovery.RepositoryIdentity, checkpoint.Recovery.RepositoryHead
@@ -1060,13 +1127,7 @@ func (s *Server) persistPlan(plan routing.Plan) error {
 		if err != nil {
 			return err
 		}
-		_, err = s.Store.Update(s.SessionID, func(v *session.Session) error {
-			now := time.Now().UTC()
-			v.CheckpointAvailable = true
-			v.CheckpointUpdatedAt = &now
-			return nil
-		})
-		return err
+		return nil
 	}
 	return nil
 }

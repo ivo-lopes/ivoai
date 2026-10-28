@@ -54,7 +54,18 @@ type Gateway struct {
 	admission         func() bool
 	toolAdmission     func(server, tool string) (allowed, approved bool)
 	toolProjection    func(server, tool string) bool
+	strictPolicyJSON  bool
 	inventoryObserver func(string, InventoryMetrics)
+}
+
+type policyToolCallKey struct{}
+
+// RequirePolicyJSON narrows only an explicitly host-filtered transport. Legacy
+// integrations keep their existing parsing contract.
+func (g *Gateway) RequirePolicyJSON() {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	g.strictPolicyJSON = true
 }
 
 // SetInventoryObserver receives content-free measurements of actual discovery.
@@ -165,6 +176,38 @@ func Start(targets []Target, mode string) (*Gateway, error) {
 				http.Error(w, "external MCP transport failed", http.StatusBadGateway)
 			},
 			ModifyResponse: func(response *http.Response) error {
+				if tool, ok := response.Request.Context().Value(policyToolCallKey{}).(string); ok {
+					g.mu.Lock()
+					check := g.toolAdmission
+					g.mu.Unlock()
+					if check == nil {
+						response.Body.Close()
+						return errors.New("policy-bound MCP call is no longer admitted")
+					}
+					allowed, _ := check(target.Name, tool)
+					if !allowed {
+						response.Body.Close()
+						return errors.New("policy-bound MCP call is no longer admitted")
+					}
+					// A successful header check cannot authorize a later response
+					// body. This explicit policy boundary accepts finite results;
+					// buffer them within the existing size limit and recheck after
+					// the final byte before the proxy exposes any result to a client.
+					body, readErr := io.ReadAll(io.LimitReader(response.Body, (16<<20)+1))
+					response.Body.Close()
+					if readErr != nil || len(body) > 16<<20 {
+						return errors.New("policy-bound MCP result unavailable or too large")
+					}
+					allowed, _ = check(target.Name, tool)
+					if !allowed || response.Request.Context().Err() != nil {
+						return errors.New("policy-bound MCP call is no longer admitted")
+					}
+					response.Body = io.NopCloser(bytes.NewReader(body))
+					response.ContentLength = int64(len(body))
+					response.TransferEncoding = nil
+					response.Header.Del("Transfer-Encoding")
+					response.Header.Set("Content-Length", strconv.Itoa(len(body)))
+				}
 				if response.StatusCode >= 300 && response.StatusCode < 400 {
 					response.Body.Close()
 					return errors.New("external MCP redirect refused")
@@ -206,12 +249,26 @@ func Start(targets []Target, mode string) (*Gateway, error) {
 				http.Error(w, "invalid MCP origin or query", 403)
 				return
 			}
+			g.mu.Lock()
+			strictTransport := g.strictPolicyJSON
+			g.mu.Unlock()
+			if strictTransport && r.Method != http.MethodPost {
+				http.Error(w, "policy-bound MCP accepts finite POST only", http.StatusMethodNotAllowed)
+				return
+			}
 			requestCtx, done := context.WithTimeout(r.Context(), 3*time.Minute)
 			defer done()
 			r = r.WithContext(requestCtx)
 			if r.Method == http.MethodPost {
 				body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, 4<<20))
 				r.Body.Close()
+				g.mu.Lock()
+				strict := g.strictPolicyJSON
+				g.mu.Unlock()
+				if strict && !ValidPolicyRequest(body) {
+					http.Error(w, "invalid policy-bound MCP request", 400)
+					return
+				}
 				if err != nil {
 					http.Error(w, "MCP request too large", 413)
 					return
@@ -230,6 +287,9 @@ func Start(targets []Target, mode string) (*Gateway, error) {
 				}
 				switch message.Method {
 				case "tools/call":
+					if strict {
+						r = r.WithContext(context.WithValue(r.Context(), policyToolCallKey{}, message.Params.Name))
+					}
 					if len(message.ID) == 0 || !safeName(message.Params.Name) {
 						http.Error(w, "invalid MCP tool call", 400)
 						return
