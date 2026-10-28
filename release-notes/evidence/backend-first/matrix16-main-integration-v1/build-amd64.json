@@ -1,0 +1,17 @@
+{
+  "check": "build-amd64",
+  "started_utc": "2026-10-28T18:53:34.357961+00:00",
+  "ended_utc": "2026-10-28T18:53:36.854119+00:00",
+  "exit_code": 0,
+  "args": [
+    "build",
+    "-trimpath",
+    "-buildvcs=false",
+    "-o",
+    "/var/tmp/ivoai-pr46-main-integration-20261028/ivoai-linux-amd64",
+    "./cmd/ivoai"
+  ],
+  "environment_basis": "explicit private HOME, pinned Go/Node PATH, no auth/provider opt-ins, GOPROXY/GOSUMDBoff; shared content-addressed Go caches",
+  "provider_turns": 0,
+  "context_sync": "BLOCKED IVOAI-175"
+}

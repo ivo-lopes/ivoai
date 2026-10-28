@@ -1,0 +1,116 @@
+package benchmarkfixtures
+
+import (
+	"bytes"
+	"crypto/sha256"
+	_ "embed"
+	"encoding/hex"
+	"encoding/json"
+	"errors"
+	"io"
+)
+
+// ConcurrentContract is a benchmark composition, not an execution grant or a
+// scheduler. The matrix remains unsupported until a real client lifecycle and
+// its overlap can be verified. It never admits workers or mutable children.
+type ConcurrentContract struct {
+	SchemaVersion         int               `json:"schema_version"`
+	Scenario              string            `json:"scenario"`
+	Execution             string            `json:"execution"`
+	MaxClients            int               `json:"max_clients"`
+	ClientOverlapRequired bool              `json:"client_overlap_required"`
+	Children              []ConcurrentChild `json:"children"`
+}
+
+type ConcurrentChild struct {
+	Scenario string `json:"scenario"`
+	Fixture  string `json:"fixture"`
+}
+
+//go:embed concurrent.go
+var concurrentContractSource []byte
+
+func parseConcurrentContract(body []byte) (ConcurrentContract, error) {
+	var value ConcurrentContract
+	if len(body) > 4096 || uniqueConcurrentJSON(json.NewDecoder(bytes.NewReader(body)), 0) != nil {
+		return value, errors.New("invalid concurrent benchmark JSON")
+	}
+	decoder := json.NewDecoder(bytes.NewReader(body))
+	decoder.DisallowUnknownFields()
+	if decoder.Decode(&value) != nil || decoder.Decode(new(any)) != io.EOF || value.SchemaVersion != 1 || value.Scenario != "concurrent_distinct_projects" || value.Execution != "read_only" || value.MaxClients != 2 || !value.ClientOverlapRequired || len(value.Children) != 2 {
+		return ConcurrentContract{}, errors.New("invalid concurrent benchmark contract")
+	}
+	want := []ConcurrentChild{{"implementation", "go-core"}, {"dependencies", "python-deps"}}
+	for i, child := range value.Children {
+		definition, ok := Lookup(child.Scenario)
+		if child != want[i] || !ok || !definition.RunnerSupported || definition.Execution != "read_only" || definition.Fixture != child.Fixture {
+			return ConcurrentContract{}, errors.New("invalid concurrent benchmark child")
+		}
+	}
+	return value, nil
+}
+
+func uniqueConcurrentJSON(decoder *json.Decoder, depth int) error {
+	if depth > 8 {
+		return errors.New("concurrent benchmark JSON too deep")
+	}
+	token, err := decoder.Token()
+	if err != nil {
+		return err
+	}
+	if delimiter, ok := token.(json.Delim); ok {
+		seen := map[string]bool{}
+		for decoder.More() {
+			if delimiter == '{' {
+				key, err := decoder.Token()
+				name, ok := key.(string)
+				if err != nil || !ok || seen[name] {
+					return errors.New("duplicate concurrent benchmark field")
+				}
+				seen[name] = true
+			}
+			if err := uniqueConcurrentJSON(decoder, depth+1); err != nil {
+				return err
+			}
+		}
+		_, err = decoder.Token()
+	}
+	return err
+}
+
+func ConcurrentProjectContract() (ConcurrentContract, error) {
+	body, err := inputs.ReadFile("data/concurrent-projects.json")
+	if err != nil {
+		return ConcurrentContract{}, err
+	}
+	return parseConcurrentContract(body)
+}
+
+// ConcurrentProjectContractSHA256 binds the typed composition, existing oracle
+// contract, catalog and both fixture trees. It does not attest an executable,
+// provider call, concurrent clients or economic results.
+func ConcurrentProjectContractSHA256() (string, error) {
+	value, err := ConcurrentProjectContract()
+	if err != nil {
+		return "", err
+	}
+	body, _ := inputs.ReadFile("data/concurrent-projects.json")
+	hash := sha256.New()
+	add := func(name string, body []byte) {
+		hash.Write([]byte(name + "\x00"))
+		hash.Write(body)
+		hash.Write([]byte{0})
+	}
+	add("concurrent-projects.json", body)
+	add("concurrent.go", concurrentContractSource)
+	add("catalog_sha256", []byte(CatalogSHA256()))
+	add("fixture_contract_sha256", []byte(ContractSHA256()))
+	for _, child := range value.Children {
+		digest, err := ProjectSHA256(child.Fixture)
+		if err != nil {
+			return "", err
+		}
+		add(child.Scenario, []byte(digest))
+	}
+	return hex.EncodeToString(hash.Sum(nil)), nil
+}

@@ -1,0 +1,252 @@
+{
+  "old_native_head": "99800ee533538c852e5dd1492dc4b56e8c3f8669",
+  "integrated_main": "1dcf90400f67eb960a2446ccf3c987ecf977a9d8",
+  "main_tree": "c26448992236054aba5672fc84b72dcc435423c9",
+  "composition_head": "3a380bfc00a0445b154d0f0a6d378fdd1945fbd9",
+  "composition_tree": "5e8818ddec68fae4f891f511c962c733fbb9a4fa",
+  "new_main_paths": 40,
+  "rows": [
+    {
+      "path": "internal/benchmarkfixtures/concurrent.go",
+      "bytes": 4182,
+      "sha256": "0a9196070967e0fb166a57c2f1664bf18dcd769746f05574059343e399961207",
+      "main_git_blob": "70af7db0c0be59f560773e9a6d6943cbcae92b55"
+    },
+    {
+      "path": "internal/benchmarkfixtures/concurrent_test.go",
+      "bytes": 2414,
+      "sha256": "ab5105c18db04f09fdcc2b688c77b381eb60fcce514223048863540caf428b2b",
+      "main_git_blob": "8564813c42ed267a9e731a22bd65d7f787bf6a9b"
+    },
+    {
+      "path": "internal/benchmarkfixtures/data/concurrent-projects.json",
+      "bytes": 293,
+      "sha256": "e3e3e059d320b2110bb7f5a1a2cf8805db8107b5b243abc3159a650664c72c4b",
+      "main_git_blob": "9a8d327759ffe2b237bd8550706214a8165d157a"
+    },
+    {
+      "path": "release-notes/concurrent-projects-c182-validation.md",
+      "bytes": 1846,
+      "sha256": "dc85c59563fce0964d2b9581933eea43eda336102e26b47ae45af068a67f1761",
+      "main_git_blob": "bc8ca9a96cf08868a0e55c269c5e6ddb6d5571b7"
+    },
+    {
+      "path": "release-notes/concurrent-projects-offline-contract.md",
+      "bytes": 5664,
+      "sha256": "92dbe227d4b073382ef4d84fe2fcf82fb4eb9ee013b417a3b43f445b5a8bbc9f",
+      "main_git_blob": "5f834db6b35bc40a175b6dedd666735d259939a1"
+    },
+    {
+      "path": "release-notes/evidence/concurrent-projects-contract/epoch-c182/logs/benchmark-race.log",
+      "bytes": 10048,
+      "sha256": "dfcfd473dd8f4ae2d949e3d59e51779e657969624b8e51cd0bc0370684a4964c",
+      "main_git_blob": "14e4e3eb1217925a67eb854d4f0a90858fbeba4f"
+    },
+    {
+      "path": "release-notes/evidence/concurrent-projects-contract/epoch-c182/logs/full-go.jsonl.gz",
+      "bytes": 146404,
+      "sha256": "7fd55941329d49cc39db90b6f6c19da7ba6e6533bc50637dbbb3e297278dd5a8",
+      "main_git_blob": "bc05bf33a65c428be2d9bd5571a3b3b0a8006348"
+    },
+    {
+      "path": "release-notes/evidence/concurrent-projects-contract/epoch-c182/logs/full-go.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "main_git_blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+    },
+    {
+      "path": "release-notes/evidence/concurrent-projects-contract/epoch-c182/logs/offline-preflight.json",
+      "bytes": 1600,
+      "sha256": "988f11f72af3ca2486a06a35cf1e69d743e7af6004c1e6cb0bc8fb7806108650",
+      "main_git_blob": "340aecba98bdf03ea0007ee2f6fc036313c21706"
+    },
+    {
+      "path": "release-notes/evidence/concurrent-projects-contract/epoch-c182/logs/offline-preflight.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "main_git_blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+    },
+    {
+      "path": "release-notes/evidence/concurrent-projects-contract/epoch-c182/logs/python.log",
+      "bytes": 173,
+      "sha256": "73e2a7a704f68c370246ff14eaf3b8abf7e784780d42c1a9ab6c82af17152e24",
+      "main_git_blob": "f2f6800e30fdb4eb647f5afa3bfd8a87f64e0157"
+    },
+    {
+      "path": "release-notes/evidence/concurrent-projects-contract/epoch-c182/logs/rollback.log",
+      "bytes": 2344,
+      "sha256": "2f9eee3e9e29bd95c737a0c067d3e6315aaa89fda7cbac395c1132c94f0e6a9f",
+      "main_git_blob": "e4f92d9d6cdab6e9b655d090d2add54c2d6aa357"
+    },
+    {
+      "path": "release-notes/evidence/concurrent-projects-contract/epoch-c182/logs/vet.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "main_git_blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+    },
+    {
+      "path": "release-notes/evidence/concurrent-projects-contract/epoch-c182/source-manifest.json",
+      "bytes": 1899,
+      "sha256": "3feee0e6630f3f7352a48609f8554a9dcd7df29b62690bbb9ad91ced1bc8f499",
+      "main_git_blob": "a2e9e86e234c2dbac2e1fbefb45e3bbf71e6eb01"
+    },
+    {
+      "path": "release-notes/evidence/concurrent-projects-contract/epoch-c182/validation.json",
+      "bytes": 19452,
+      "sha256": "685526b47050a3ec03256a5191f976a0a0df406c391368829e70d2d41d83a878",
+      "main_git_blob": "56ad54148484e6bbadb57e09383c511a425c37cd"
+    },
+    {
+      "path": "release-notes/evidence/concurrent-projects-contract/logs/benchmark-race.log",
+      "bytes": 10048,
+      "sha256": "81ea3262b5e9e970748b6661a0b8fe879ab28e3b7ef653eb5c272219b9ae8893",
+      "main_git_blob": "fa15780ab3e34833e30bf2356bb7304b0aa9d13a"
+    },
+    {
+      "path": "release-notes/evidence/concurrent-projects-contract/logs/case-alias-before.log",
+      "bytes": 2559,
+      "sha256": "dc17881a5f248c8b9c67575f6f286695dad81c9e0a72e2ed4edc0e2801c85cb4",
+      "main_git_blob": "5ea0473080846509cc41321cce8bceb9b51505b5"
+    },
+    {
+      "path": "release-notes/evidence/concurrent-projects-contract/logs/case-alias-parser-before.go.txt",
+      "bytes": 3926,
+      "sha256": "94950a7c61794d2c4dd58e25637c759496752f1df85b6d3c05079087f143fbe0",
+      "main_git_blob": "bb0fa10e57c5fdf9aa8c4707d9c3db8020fd4e17"
+    },
+    {
+      "path": "release-notes/evidence/concurrent-projects-contract/logs/case-alias-test.go.txt",
+      "bytes": 2414,
+      "sha256": "ab5105c18db04f09fdcc2b688c77b381eb60fcce514223048863540caf428b2b",
+      "main_git_blob": "8564813c42ed267a9e731a22bd65d7f787bf6a9b"
+    },
+    {
+      "path": "release-notes/evidence/concurrent-projects-contract/logs/full-go.jsonl.gz",
+      "bytes": 142229,
+      "sha256": "ee90aa453f957879787422248eee586e086fe94a2c88fd00e8785a8acc4b55f5",
+      "main_git_blob": "210e47546304c6cc42ab5c1ffc96771d9b452bfd"
+    },
+    {
+      "path": "release-notes/evidence/concurrent-projects-contract/logs/full-go.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "main_git_blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+    },
+    {
+      "path": "release-notes/evidence/concurrent-projects-contract/logs/initial-benchmark-race.log",
+      "bytes": 9862,
+      "sha256": "1ce1c6d26ec01f2481f57495512583dfc04e8d8c86455455cb00831f87f736fb",
+      "main_git_blob": "b8857823f89d2bd043462f9a418b70ce829f2b6f"
+    },
+    {
+      "path": "release-notes/evidence/concurrent-projects-contract/logs/initial-full-go.jsonl.gz",
+      "bytes": 142078,
+      "sha256": "c8386f17e341c190c66e3658efabcb6496b644f7dbffbabd1a482b86c1bc805a",
+      "main_git_blob": "82ea42f9ec4818cf84ba970c2ebf99055c1e2503"
+    },
+    {
+      "path": "release-notes/evidence/concurrent-projects-contract/logs/initial-offline-preflight.json",
+      "bytes": 1600,
+      "sha256": "9a52799d05a3f4012abe8ac0683d6bb160190999931e7916cb71f26be42fc7de",
+      "main_git_blob": "93b7f0ca12ba5cedf84339b2ed5f6bab1ff0ee83"
+    },
+    {
+      "path": "release-notes/evidence/concurrent-projects-contract/logs/initial-python.log",
+      "bytes": 173,
+      "sha256": "1305be263da40781cd4a99e064e9cb2c8678ff323bbc44f0652d7f413bffd8d7",
+      "main_git_blob": "424342a56791ab34e9649e507cda142ab405d43e"
+    },
+    {
+      "path": "release-notes/evidence/concurrent-projects-contract/logs/initial-source-manifest.json",
+      "bytes": 1117,
+      "sha256": "781281b6ac50b2a4b1674df33bf1aebdb1b45f9cb2acedd755447d4ab3b36643",
+      "main_git_blob": "4034169e376807b529813b90d8923d93587cb13d"
+    },
+    {
+      "path": "release-notes/evidence/concurrent-projects-contract/logs/initial-vet.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "main_git_blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+    },
+    {
+      "path": "release-notes/evidence/concurrent-projects-contract/logs/missing-go-preflight.json",
+      "bytes": 1546,
+      "sha256": "ff0ac61af20a16eab9754fb2cead56878172efc2355e52f1a0d58fd16734083b",
+      "main_git_blob": "4fdbb375be359953fa88c4429c153c537fdf4194"
+    },
+    {
+      "path": "release-notes/evidence/concurrent-projects-contract/logs/missing-go-preflight.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "main_git_blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+    },
+    {
+      "path": "release-notes/evidence/concurrent-projects-contract/logs/offline-preflight.json",
+      "bytes": 1600,
+      "sha256": "988f11f72af3ca2486a06a35cf1e69d743e7af6004c1e6cb0bc8fb7806108650",
+      "main_git_blob": "340aecba98bdf03ea0007ee2f6fc036313c21706"
+    },
+    {
+      "path": "release-notes/evidence/concurrent-projects-contract/logs/offline-preflight.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "main_git_blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+    },
+    {
+      "path": "release-notes/evidence/concurrent-projects-contract/logs/python.log",
+      "bytes": 173,
+      "sha256": "df328283019bb8ed20ef97c830eeed90dacfceeec27ede0a956cbbba92efde8d",
+      "main_git_blob": "2a9d42c49cfd58b0bbe1e997192a37ad20bcda59"
+    },
+    {
+      "path": "release-notes/evidence/concurrent-projects-contract/logs/rollback.log",
+      "bytes": 2352,
+      "sha256": "15d55e67b38a5f35e1283439781dd89c43bc1bcf5673cc22a222ffc163857040",
+      "main_git_blob": "a921cb8e75bd22923a7f4fbf08166aabed86e849"
+    },
+    {
+      "path": "release-notes/evidence/concurrent-projects-contract/logs/vet.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "main_git_blob": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391"
+    },
+    {
+      "path": "release-notes/evidence/concurrent-projects-contract/logs/without-optin.log",
+      "bytes": 230,
+      "sha256": "6e8fb4f58da643ec5724b738a5451194420de620f89ca10dbb05a98f896f44d4",
+      "main_git_blob": "fca12a0799287912c8d25316fe547555c9fdf53e"
+    },
+    {
+      "path": "release-notes/evidence/concurrent-projects-contract/source-manifest.json",
+      "bytes": 1543,
+      "sha256": "f4fca09385c75fe96e66061c2ff7e12f04843ded95faa9e0a01a70ad5fc3801d",
+      "main_git_blob": "6448a1c0480dc900da7aa4da340ad791f2c18873"
+    },
+    {
+      "path": "release-notes/evidence/concurrent-projects-contract/validation.json",
+      "bytes": 35628,
+      "sha256": "9d6b83d53659a39c5a1660c98b4d97da32de7c0780484ff8f214a58b5ea348ba",
+      "main_git_blob": "ad5d711da6fab5f89e3121927344ef7ec18d0f66"
+    },
+    {
+      "path": "scripts/benchmark_catalog.py",
+      "bytes": 10781,
+      "sha256": "4611c0f0ca6d05ecc4854caf8f79be9fbdac0f85313864cfe8426cb5dfbf9e95",
+      "main_git_blob": "882a43322a6f3fe8f9ac1c07e97a29829792aef8"
+    },
+    {
+      "path": "scripts/benchmark_concurrent_contract.py",
+      "bytes": 6266,
+      "sha256": "d99397132cd1c7399af5f3dca7cd57f17f64ded936f7718d4450fc0bd960fded",
+      "main_git_blob": "acea9ea7fe932aabd0da4fe474020b1eb2016ad3"
+    },
+    {
+      "path": "scripts/test_benchmark_concurrent_contract.py",
+      "bytes": 6240,
+      "sha256": "f27b358ef3789c1a5d4993f91a0c1977b58140dd7b9edb6f0a55d724f100721c",
+      "main_git_blob": "7e701409824ef500618f945e8227f359cafc762b"
+    }
+  ],
+  "runtime_and_prior_test_docs_embed_unchanged": true,
+  "old_prior_go_files_checked": 567
+}

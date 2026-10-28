@@ -23,10 +23,20 @@ const (
 )
 
 var (
-	opaqueIDPattern = regexp.MustCompile(`^artifact_[0-9a-f]{32}$`)
+	opaqueIDPattern = regexp.MustCompile(ArtifactIDPattern)
+	legacyIDPattern = regexp.MustCompile(`^artifact_[0-9a-f]{32}$`)
 	digestPattern   = regexp.MustCompile(`^[0-9a-f]{64}$`)
 	labelPattern    = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$`)
 )
+
+// Protected IDs remain recognizable after losing all process-local bindings.
+// The prefix requires stricter recovery; knowing it never grants access.
+const ArtifactIDPattern = `^(artifact|evidence)_[0-9a-f]{32}$`
+
+func ValidArtifactID(id string) bool { return opaqueIDPattern.MatchString(id) }
+func ProtectedArtifactID(id string) bool {
+	return strings.HasPrefix(id, "evidence_") && ValidArtifactID(id)
+}
 
 type Sensitivity string
 

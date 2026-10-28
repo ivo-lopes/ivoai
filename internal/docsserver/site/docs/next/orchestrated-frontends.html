@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="generator" content="Docusaurus v3.10.2">
 <title data-rh="true">Orchestrated frontends | IVOAI</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="http://localhost:7780/docs/next/orchestrated-frontends"><meta data-rh="true" property="og:locale" content="en_US"><meta data-rh="true" property="og:locale:alternate" content="pt_BR"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="Orchestrated frontends | IVOAI"><meta data-rh="true" name="description" content="The v0.13.0 increment shares executor-turn contracts in Core and keeps each"><meta data-rh="true" property="og:description" content="The v0.13.0 increment shares executor-turn contracts in Core and keeps each"><link data-rh="true" rel="icon" href="/img/favicon.svg"><link data-rh="true" rel="canonical" href="http://localhost:7780/docs/next/orchestrated-frontends"><link data-rh="true" rel="alternate" href="http://localhost:7780/docs/next/orchestrated-frontends" hreflang="en-US"><link data-rh="true" rel="alternate" href="http://localhost:7780/pt-BR/docs/next/orchestrated-frontends" hreflang="pt-BR"><link data-rh="true" rel="alternate" href="http://localhost:7780/docs/next/orchestrated-frontends" hreflang="x-default"><link rel="stylesheet" href="/assets/css/styles.c768eb50.css">
-<script src="/assets/js/runtime~main.33c3f7ed.js" defer="defer"></script>
-<script src="/assets/js/main.441dc8c8.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.75bddc0f.js" defer="defer"></script>
+<script src="/assets/js/main.6c7444d6.js" defer="defer"></script>
 </head>
 <body>
 <svg style="display: none;"><defs>
@@ -19,10 +19,25 @@ Runtime CI passed 15/15 at both merged PR heads; see the <a class="" href="/docs
 for those runs and the separate metadata/documentation and Release publication gates.
 The later local <code>VERSION</code> and RTK pilots are excluded.</p>
 <h2 class="anchor anchorTargetStickyNavbar_J2Vv" id="commands">Commands<a href="#commands" class="hash-link" aria-label="Direct link to Commands" title="Direct link to Commands" translate="no">​</a></h2>
-<div class="ivoai-table-region" role="region" aria-label="Scrollable table" tabindex="0"><table><thead><tr><th>Command</th><th>Admission and execution</th></tr></thead><tbody><tr><td><code>ivoai codex</code></td><td>Native Codex TUI; IVOAI admission; Codex primary preference</td></tr><tr><td><code>ivoai opencode</code></td><td>Managed OpenCode TUI; primary selected by IVOAI policy</td></tr><tr><td><code>ivoai auto</code></td><td>Deprecated alias for <code>ivoai opencode</code> throughout v0.10.x</td></tr><tr><td><code>ivoai codex --direct</code></td><td>Official Codex client, no prompt gate/DAG</td></tr><tr><td><code>ivoai opencode --direct</code></td><td>Standalone OpenCode, no prompt gate/DAG</td></tr><tr><td><code>ivoai claude</code></td><td>Existing optional direct Claude interface</td></tr></tbody></table></div>
+<div class="ivoai-table-region" role="region" aria-label="Scrollable table" tabindex="0"><table><thead><tr><th>Command</th><th>Admission and execution</th></tr></thead><tbody><tr><td><code>ivoai codex</code></td><td>Native Codex TUI; IVOAI admission; Codex primary preference</td></tr><tr><td><code>ivoai opencode</code></td><td>Deprecated explicit legacy OpenCode TUI; primary selected by IVOAI policy</td></tr><tr><td><code>ivoai auto</code></td><td>Deprecated explicit legacy alias; use <code>ivoai codex</code> for native managed sessions</td></tr><tr><td><code>ivoai codex --direct</code></td><td>Official Codex client, no prompt gate/DAG</td></tr><tr><td><code>ivoai opencode --direct</code></td><td>Standalone OpenCode, no prompt gate/DAG</td></tr><tr><td><code>ivoai claude</code></td><td>Existing optional direct Claude interface</td></tr></tbody></table></div>
 <p>Put <code>--direct</code> before <code>--</code>; arguments after <code>--</code> belong to the official client.
 The provider-neutral <code>session start --executor codex|opencode --mode direct</code>
 surface remains available. <code>--mode orchestrated</code> enters the shared native core.</p>
+<p>Native Codex sessions and Codex/Claude managed workers exclude OpenCode from
+discovery, cached catalogs, quota routing, retries and dispatch even when it is
+installed. The legacy commands remain explicit. Retained OpenCode tasks or
+checkpoints block a native resume/recovery with a migration message; they are
+not rewritten or replayed. Native AUTO handoff to Claude and initial
+<code>ivoai codex --planner claude</code> are currently refused before starting another
+frontend. Existing approved Codex/Claude routing decisions remain separate from
+plan approval; this increment does not certify a native Claude TUI.</p>
+<p>The shared Core retains official Claude headless execution and Claude worker
+contracts under existing grants and routing decisions. The native Codex picker
+exposes Codex models, and its turn admission rejects Claude selections even when
+the shared catalog contains them. Internal alternate-route callbacks do not
+establish a Claude-primary path through that native presentation. The refused
+initial planner/handoff modes and the retained Core contracts have distinct
+boundaries; no Codex-presentation/Claude-primary parity is certified here.</p>
 <h2 class="anchor anchorTargetStickyNavbar_J2Vv" id="native-codex-terminal">Native Codex terminal<a href="#native-codex-terminal" class="hash-link" aria-label="Direct link to Native Codex terminal" title="Direct link to Native Codex terminal" translate="no">​</a></h2>
 <p>Enter the first prompt directly in the official Codex composer. Use its native
 multiline controls and press Enter to send. For example:</p>

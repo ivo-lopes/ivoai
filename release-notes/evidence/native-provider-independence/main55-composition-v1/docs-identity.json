@@ -1,0 +1,14 @@
+{
+  "status": "PASS_EXACT_INPUT_IDENTITY_NOT_NEW_BUILD",
+  "previous_native_head": "99800ee533538c852e5dd1492dc4b56e8c3f8669",
+  "source_head": "3a380bfc00a0445b154d0f0a6d378fdd1945fbd9",
+  "input_sha256": "705408480af21f74380d5eb380dd05bef7b26229673a7da4d2a0101d84f86710",
+  "input_count": 394,
+  "markers": [
+    "website/static/build-input.sha256",
+    "internal/docsserver/site/build-input.sha256",
+    "internal/docsserver/site/pt-BR/build-input.sha256"
+  ],
+  "site_and_build_scripts_byte_identical": true,
+  "new_Node_build": "NOT_RUN; unchanged inputs verified, previous own frozen build evidence retained"
+}

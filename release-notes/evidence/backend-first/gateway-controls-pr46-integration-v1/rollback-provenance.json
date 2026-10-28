@@ -1,0 +1,12 @@
+{
+  "source_revision": "3be82befea6ed3875373afcb1bfaa450710310ac",
+  "source_manifest_sha256": "28eeb86068f75de7d60ca7a0702723c63519dc844a8b593bab8441f986050389",
+  "probe_source_sha256": "37c26f467d5472bad3650e0e6ee2460c7929cd78332174d87958ca86243ef860",
+  "legacy_binary_sha256": "fc913780355621826b49aa03455cdf0b743294acfccaf6dbfc10db755bee27e2",
+  "current_test_sha256": "cc7ca999eae5a1bd1c5ed1b8f0a23c700c35c4d8c660f4345ff9514267a55299",
+  "observed_pre_reporting_head": "ab83f98a56e3c6b413de445d92b3608f04398fa6",
+  "named_tests": 1,
+  "skips": 0,
+  "precommit_failure": "rollback.log/json preserved; ancestry absent at10f, guard stopped before probe",
+  "postcommit_result": "PASS after actual merge completed, unchanged gate; no bypass/fetch"
+}

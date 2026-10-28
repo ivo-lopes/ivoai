@@ -1,0 +1,9 @@
+# G1a — retention classification cache correction
+
+Independent review found a P2 metadata correctness defect in PR52 at `8b6861aba0e2b7474f71e18fa2c578432e5c5140`. Reissuing the same immutable snapshot under Restricted after Internal, with unchanged policy digest and TTL, reused an Internal cached Document. The reverse transition also retained the former classification. Ownership and current grant checks remained enforced; no cross-owner disclosure is claimed. The SPI is unwired and this change has no v0.14.0 runtime impact.
+
+The Memory snapshot scope/cache domain now hashes the complete `MemoryRetentionDecision`, including sensitivity, rather than only its policy digest and TTL. A classification change cannot reuse a Document carrying the old classification. Equal decisions still share immutable bytes and issue separate recipient-owned refs, without another LIVE request. Existing grant/retention revocation checks and storage contracts are unchanged.
+
+The new regression test first failed in both directions on the old production code. After the fix it verifies Internal→Restricted and Restricted→Internal, unchanged-decision cache hits, recipient ownership/SHA, new-decision cache misses, no LIVE replay, and revocation before storage reads. The independent review reproduction also passes after the correction.
+
+The [correction receipt](evidence/strict-memory-response-snapshot/classification-fix/validation.json) records the original adverse reproduction, pre-fix failures, new source hashes and actual checks. The [initial G1a receipt](evidence/strict-memory-response-snapshot/validation.json) remains byte-for-byte unchanged and is not reclassified as proof of this correction. This increment adds no App/scheduler/worker wiring, policy mechanism, credential access, real provider run or release certification.

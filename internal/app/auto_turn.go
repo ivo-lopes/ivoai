@@ -151,6 +151,16 @@ type autoTurnOptions struct {
 func (a *App) scopeAutoRunner(base core.ExecutorRunner, original config.Config, state config.State, store session.Store, id, cwd, runtimeDir, instructionsPath string, agentArgs, selectors []string, current *autoTurnState, catalog opencodebridge.ModelCatalog, options ...autoTurnOptions) core.ExecutorRunner {
 	enforceDAG := a.OpenCodeBridgeRunner == nil
 	wrapped := autoTurnRunner{prepare: func(ctx context.Context, request core.ExecutorRequest) (preparedAutoTurn, error) {
+		value, err := store.Get(id)
+		if err != nil {
+			return preparedAutoTurn{}, err
+		}
+		if session.NativeProvidersOnly(value) && request.Executor == "opencode" {
+			return preparedAutoTurn{}, session.ErrOpenCodeManagedDeprecated
+		}
+		if err := store.CheckNativeProviders(value); err != nil {
+			return preparedAutoTurn{}, err
+		}
 		if err := store.RetirePrimaryTurn(id); err != nil {
 			return preparedAutoTurn{Policy: core.ExecutionPolicy{NoReplay: true, NoAutomaticFailover: true}}, err
 		}

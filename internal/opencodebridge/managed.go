@@ -42,6 +42,9 @@ var tuiKeyboard []byte
 //go:embed assets/ivoai-theme.json
 var ivoaiTheme []byte
 
+// ManagedOpenCodeVersion is the reviewed private build with fail-closed local plugins.
+const ManagedOpenCodeVersion = "1.19.0-ivoai.3"
+
 type ManagedOptions struct {
 	// NativeExecutor runs OpenCode's own provider, never the IVOAI provider
 	// bridge (which would recursively dispatch another executor).
@@ -91,6 +94,9 @@ func StartManaged(ctx context.Context, options ManagedOptions) (*Managed, error)
 	}
 	if options.OpenCodePath == "" || options.RuntimeDir == "" || options.StateDir == "" || options.Directory == "" || options.Bridge == nil && !options.NativeExecutor {
 		return nil, errors.New("incomplete managed OpenCode options")
+	}
+	if options.Version != ManagedOpenCodeVersion {
+		return nil, errors.New("MANAGED_OPENCODE_UPDATE_REQUIRED: private offline plugins require 1.19.0-ivoai.3; use an official IVOAI release and run setup/update; the managed backend was not started and retained files are not removed")
 	}
 	if err := platform.EnsurePrivateDir(options.RuntimeDir); err != nil {
 		return nil, err
@@ -389,6 +395,8 @@ func managedEnvironment(existing []string, stateDir string, paths managedPaths, 
 	root := filepath.Join(stateDir, "opencode-managed")
 	values := map[string]string{
 		"OPENCODE_CONFIG":                  paths.config,
+		"IVOAI_MANAGED_LOCAL_PLUGINS":      "1",
+		"IVOAI_MANAGED_ASSETS_DIR":         filepath.Dir(paths.config),
 		"OPENCODE_TUI_CONFIG":              paths.tui,
 		"OPENCODE_DISABLE_PROJECT_CONFIG":  "1",
 		"OPENCODE_DISABLE_AUTOUPDATE":      "1",

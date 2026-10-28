@@ -1,0 +1,78 @@
+{
+  "schema": 1,
+  "condition": "offline-app-gateway-v1",
+  "mechanism_result": "PASS",
+  "economic_gate": "INCOMPLETE; NOT_EVALUATED by offline fixture",
+  "base_commit": "16f4e42f3528a71522023ed61bc2406ca6ab8d2a",
+  "source_and_binary_freeze": "verified before and after export; source inventory includes all tracked Go files, go.mod/go.sum and codeintel adapter plus new test",
+  "freeze_manifest_stage": "pre-run; its empty adverse_outcomes is not a post-run assessment",
+  "tests": {
+    "gateway_race": {
+      "result": "PASS",
+      "seconds": 2.745,
+      "top_level_tests_passed": 5,
+      "export_test": "NOT_RUN in generic suite; separately executed PASS against frozen binary"
+    },
+    "supporting_race": {
+      "evidence": {
+        "result": "PASS",
+        "seconds": 51.111
+      },
+      "workingcontext": {
+        "result": "PASS",
+        "seconds": 67.245
+      },
+      "codeintel": {
+        "result": "PASS",
+        "seconds": 20.479
+      }
+    },
+    "app_vet": "PASS",
+    "amd64_v1_compiled_and_executed": "PASS; existing CGO_ENABLED=1 build, no new runtime dependency",
+    "arm64": "cross-compile PASS; NOT_EXECUTED",
+    "export": {
+      "result": "PASS",
+      "rows": 12,
+      "positive_reads": 10,
+      "expected_denials": 2
+    },
+    "guard_negative_controls": "three expected nonzero exits before arms; receipt unchanged",
+    "receipt_bound_allowlist_private_mode": "PASS; no dynamic paths/owners/text/errors in receipt rows"
+  },
+  "arms": {
+    "OFF": {
+      "retrieval_operations": 5,
+      "code_inspections": 5,
+      "codeintel_cache_hits": 0,
+      "gateway_retrievals": 0,
+      "gateway_cache_hits": 0,
+      "retrieval_us_sum_diagnostic": 51518
+    },
+    "ON": {
+      "retrieval_operations": 5,
+      "code_inspections": 3,
+      "codeintel_cache_hits": 0,
+      "gateway_retrievals": 5,
+      "gateway_cache_hits": 2,
+      "retrieval_us_sum_diagnostic": 95910
+    }
+  },
+  "adverse_outcomes": [
+    {
+      "observation": "ON was slower in each of the five positive retrieval operations in this exported single OFF/ON run, despite two avoided CodeIntel direct inspections",
+      "basis": "see per-operation receipt microseconds; host retrieval checks/artifact writes included; no load equivalence or causal estimate",
+      "action": "preserved unchanged; do not infer token, quota or end-to-end LLM savings"
+    }
+  ],
+  "limits": [
+    "No LLM/native client/Graft invocation or actual dispatched worker",
+    "CodeIntel normal cache stays enabled, but this direct small-file route does not exercise its structural result cache",
+    "Gateway activation proven by exact capability event deltas; misses/hits not conflated with CodeIntel cache",
+    "Exact host ArtifactStore.Read under issued owner only; no claim about old Core/MCP session-only recovery boundary; G0 lives separately in PR50",
+    "Same App/session within each arm, distinct App/session/cache across arms; same immutable binary/corpus bytes and normalized query budget3072",
+    "Only one sequential OFF/ON diagnostic; not ABBA, no sampler, CPU/RSS, model/cache/quota equivalence or economic assessment",
+    "No READY promotion or rescore of 126 historical attempts; catalog stays9READY/5UNSUPPORTED/2BLOCKED",
+    "CONTEXT_SYNC BLOCKED IVOAI-175"
+  ],
+  "rollback": "Revert this test/docs-only commit; no config or state migration"
+}

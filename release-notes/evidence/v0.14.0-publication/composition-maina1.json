@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "purpose": "New post-publication documentation composition epoch after PR46 main integration; prior epochs are immutable.",
+  "previous_documentation_head": "a0a2972aece33f0d7c06fba9ffbe5820de40dfc5",
+  "original_publication_documentation_commit": "bda605b69bd076e8ce444816f71e79dacf7e8f96",
+  "integrated_main": "a1ccf4ca33a1e1f748810add9e03fe61fb963831",
+  "integration_merge_commit": "7793051b1c45779ce14b8ba4e335a1cfe23f7f62",
+  "integration": "Clean no-conflict merge; benchmark helpers/test scaffolding and protected-recovery source from main preserved.",
+  "release_boundary": {
+    "tag": "v0.14.0",
+    "artifact_source": "6d99e320912f3f7325c3009209a10e9df86610d4",
+    "tag_object": "3943e54ecbecf380429b89ad5a28a0500d138891",
+    "post_tag_main": "Main now contains PR46 and PR50; both remain excluded from the immutable v0.14.0 tag/assets.",
+    "runtime_or_binary_rebuild_claim": false,
+    "tag_asset_release_body_or_production_mutations": false
+  },
+  "checks": {
+    "docs-check.log": {
+      "command": "scripts/build-docs.sh --check (own frozen modules; EN/PT build and embed comparison)",
+      "exit_code": 0,
+      "sha256": "c137e137c67f8b269fd34db5f444ceff65522a67f308c158d2d480637f04007c"
+    },
+    "cli-reference.log": {
+      "command": "scripts/generate-cli-reference.sh --check",
+      "exit_code": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "full-go.log": {
+      "command": "GOTOOLCHAIN=local GOPROXY=off GOSUMDB=off go test ./...",
+      "exit_code": 0,
+      "sha256": "9a2fb5a56494ebb86a979888d8e3b7610fbbe145b5e429c5cadcac33f2b5964f"
+    },
+    "python-full.log": {
+      "command": "python3 -m unittest discover -s scripts -p 'test_*.py'",
+      "exit_code": 0,
+      "sha256": "78b880c796b0ea61e56b28a2ad1109b74da4e0e2c5d0875a6c43318a3fcf7c40"
+    },
+    "rollback.log": {
+      "command": "scripts/test-protected-evidence-rollback.sh",
+      "exit_code": 0,
+      "sha256": "b5786957363951392ba43e02f6065f11b85628ea80e6bbc116901528821ea1ce"
+    }
+  },
+  "counts": {
+    "go_packages_passed": 59,
+    "go_packages_without_tests": 3,
+    "python_tests_passed": 65,
+    "python_skipped_tests": 0,
+    "mandatory_rollback": "PASS; actual legacy ancestor/current protected artifact proof; parser rejects missing/skipped proof"
+  },
+  "preservation": {
+    "prior_receipt_file_count": 17,
+    "prior_receipt_sha256": {
+      "release-notes/evidence/v0.14.0-publication/composition-main064.json": "1fa7380b6bda5121752058a5d4cec367da7d9c7a3188ae7d111e4548942ad120",
+      "release-notes/evidence/v0.14.0-publication/deepmerge-low-triage.json": "108a508ece5e26cda14bd42121af5d77e419444c6a3a8291f3fbe6093e8dc6f8",
+      "release-notes/evidence/v0.14.0-publication/deepmerge-why.json": "a5a1526a622764f903b80a6199e5f0a5588549d1baeecb33aa07d36d349c5d1b",
+      "release-notes/evidence/v0.14.0-publication/docs-audit-high.json": "ffffa99c7e8e322f071c31baf5be2fc6194a35d942176dfbba80c4355140abe0",
+      "release-notes/evidence/v0.14.0-publication/documentation-validation.json": "2689a9a108b61db9dfd17fa68c7095832a5d62aad9341dd2e4b3aa28e493d396",
+      "release-notes/evidence/v0.14.0-publication/github-gates.json": "cca653ea121ca6d3675f4d5fae14bafb869b3801e591f9b6afc3984eabc14992",
+      "release-notes/evidence/v0.14.0-publication/publication.json": "c55cc6c4117308f0a188fcbd7c8af415be9aa88768f05b674ae9595a55ea245a",
+      "release-notes/evidence/v0.14.0-publication/runtime-smoke.json": "6d5025a006d3f5e7848cc5765833985d9d48648e14fb1faf7dd6eeaaee129b5c",
+      "release-notes/evidence/v0.14.0-publication/verification.json": "52a2b6eff67617f7057d5bf8df614ce377f53c91a805da48c5d2118ac2ea6f85",
+      "release-notes/evidence/v0.14.0-publication/verifier/README.md": "4428cdfa61ce1af9f477ae5f42137999d39c08e850f41cf35242c447d3101693",
+      "release-notes/evidence/v0.14.0-publication/verifier/buildinfo_reader.go.txt": "ed9718c5e503d11c70ebbc25fe887ce7ae5abf578faadbe450e334d0503e0eb1",
+      "release-notes/evidence/v0.14.0-publication/verifier/fixtures/old-pax-4MiB-fixture.tar.gz": "e2ab494487248ca04e3008b627722636ad7d76c188888e6ceb033036dc4726e6",
+      "release-notes/evidence/v0.14.0-publication/verifier/fixtures/old-pax-limit-observation.json": "e7876ce231f87a2c960ad20dd9e2f58fac462724d898dbbcd6bed48d27ebbdcb",
+      "release-notes/evidence/v0.14.0-publication/verifier/source-manifest.sha256": "ab00246a08c8bf85e2f942d297d2674583b88807dcf1d239bd40615b300f6456",
+      "release-notes/evidence/v0.14.0-publication/verifier/test_verifier.py": "515e3211777db477b54f9e3fa929e9c801aa88c1e2f01be15dacd668c9ef7fa1",
+      "release-notes/evidence/v0.14.0-publication/verifier/unit-tests.log": "f61772852685e9fb91c31468b0058e3501fff1c8bad7c8c4f99ce3fddb4e43a6",
+      "release-notes/evidence/v0.14.0-publication/verifier/verify_release014.py": "15c166f204ddaaf776a0b5a891dcb5fba06fc37bd82e9a39d81bd30e49763976"
+    },
+    "all_prior_report_docs_embed_low_triage_unchanged": true,
+    "source_scripts_workflows_dependencies_equal_integrated_main": true
+  },
+  "audit": "No dependency, threshold or suppression change; original LOW needs_review triage and high-exit0/low-exit1 results remain their original epoch, not a new audit or a zero-vulnerability claim.",
+  "scope_limits": [
+    "No native clients, provider/model calls, institutional authentication or production state involved.",
+    "Go full-suite package success is not execution of opt-in live integrations; prior skip limitations remain explicit.",
+    "Mandatory rollback compiles disposable test programs only; no rebuilt/published v0.14.0 runtime or artifact claim.",
+    "Full combined-source hosted CI remains required before merge.",
+    "Verifier source and original release verification continue to use frozen source6d99; publication reports are later docs commits, not part of the tag/assets."
+  ]
+}

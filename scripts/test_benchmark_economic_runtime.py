@@ -4,6 +4,7 @@ import importlib.util
 import io
 import json
 import os
+import sys
 from pathlib import Path
 import tempfile
 import signal
@@ -22,7 +23,13 @@ def valid_row(scenario="api", arm="A", **changes):
     row.update(Scenario=scenario, Arm=arm, Model="gpt-6.1-sol", Effort="low",
                DistributionInventorySHA256="a" * 64, TotalMS=100, ProviderMS=90,
                PrefetchMS=10, InputTokens=100, CachedInputTokens=60, OutputTokens=5,
-               Correct=True, JSONDecoded=True)
+               Correct=True, JSONDecoded=True, Execution="read_only", EditValidated=False, OracleToolsSHA256="", NativeWorkerObservation="PARTIAL_CLIENT_PROJECTION_TOTALS_UNKNOWN")
+    row['NativeEventMetrics'] = {"schema_version":1, "stream_status":"complete", "coverage":"partial_client_projection",
+        "tool_completions":dict.fromkeys(("command_execution","mcp_tool_call","file_change","web_search","collab_tool_call"),0),
+        "repeated_exact_payloads":dict.fromkeys(("command_execution","mcp_tool_call"),0),
+        "collaboration_completions":dict.fromkeys(("spawn_agent","send_input","wait","close_agent"),0),
+        "reported_spawn_receivers":None,"unclassified_errors":0,"duplicate_terminal_items":0,"unknown_events":0,"unknown_items":0,
+        "native_workers":None,"native_delegations":None,"native_retries":None}
     row.update(changes)
     return row
 
@@ -92,6 +99,37 @@ class EvidenceTests(unittest.TestCase):
         self.assertIsNone(row["InputTokens"])
         self.assertEqual(row["Error"], "correctness_failed")
 
+    def test_native_observations_are_enum_only_partial_and_fail_closed(self):
+        for mutate in (lambda v:v.update(native_workers=0), lambda v:v.update(native_retries=1),
+                       lambda v:v.update(private="SECRET"), lambda v:v.update(schema_version=True),
+                       lambda v:v['tool_completions'].update(SECRET=1),
+                       lambda v:v['repeated_exact_payloads'].update(command_execution=1),
+                       lambda v:v.update(stream_status="partial"),
+                       lambda v:v.update(reported_spawn_receivers=0)):
+            value=valid_row();mutate(value['NativeEventMetrics'])
+            row=self.read([value]);self.assertFalse(row['MeasurementValid']);self.assertNotIn('SECRET',json.dumps(row))
+        value=valid_row(Correct=False);value['NativeEventMetrics']['stream_status']='partial'
+        row=self.read([value]);self.assertTrue(row['MeasurementValid']);self.assertFalse(row['Correct'])
+
+
+    def test_edit_answer_requires_bound_executable_patch_verdict(self):
+        scenario = "small_known_file_correction"
+        capabilities = {"catalog_sha256": "1"*64, "harness_sha256": "2"*64,
+                        "fixtures": {"go-clamp-edit": "3"*64}, "oracle_tools": {scenario: "4"*64}}
+        good = valid_row(scenario, Execution="workspace_edit", EditValidated=True, EditFiles=1,
+                         OracleToolsSHA256="4"*64, CatalogSHA256="1"*64,
+                         HarnessSHA256="2"*64, FixtureSHA256="3"*64,
+                         ValidationMS=20, TotalMS=120)
+        for changes in ({}, {"EditValidated": False}, {"EditFiles": 0}, {"EditFiles": 3},
+                        {"OracleToolsSHA256": "SECRET"}, {"Execution": "read_only"},
+                        {"ValidationMS": 1000}):
+            with self.subTest(changes=changes):
+                self.path.write_text(json.dumps([{**good, **changes}]))
+                row = BENCHMARK.read_evidence(self.path, scenario, "A", 0, 0, "a"*64, capabilities)
+                self.assertEqual(row["Correct"], not changes)
+                self.assertEqual(row["MeasurementValid"], not changes)
+                self.assertNotIn("SECRET", json.dumps(row))
+
 
 class SummaryTests(unittest.TestCase):
     def rows(self):
@@ -115,6 +153,9 @@ class SummaryTests(unittest.TestCase):
         self.assertEqual(summary["all_attempts"]["A"]["InputTokens"]["sum"], 900)
         self.assertEqual(summary["all_attempts"]["A"]["CachedInputTokens"]["sum"], 450)
         self.assertIsNone(summary["monetary_cost"])
+        self.assertIsNone(summary["workers"])
+        self.assertIsNone(summary["delegations"])
+        self.assertEqual(summary["native_worker_observation"], "PARTIAL_CLIENT_PROJECTION_TOTALS_UNKNOWN")
 
     def test_failures_remain_in_all_attempts_and_out_of_matched_pairs(self):
         rows = self.rows()
@@ -149,6 +190,18 @@ class SummaryTests(unittest.TestCase):
         self.assertEqual(BENCHMARK.summarize(rows, 1)["subset_economic_diagnostic"], "INCOMPLETE")
 
 
+class ProcessSamplingTests(unittest.TestCase):
+    @unittest.skipUnless(sys.platform.startswith("linux"), "Linux procfs sampler")
+    def test_existing_runner_observes_only_its_live_subtree(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            code, resources=BENCHMARK.run_attempt(["/usr/bin/python3","-c", "import subprocess,time; p=subprocess.Popen(['/bin/sleep','0.5']); p.wait()"],
+                {"PATH":"/usr/bin:/bin","HOME":tmp}, Path(tmp)/"resource.json", timeout=3, sample_processes=True)
+            self.assertEqual(code,0)
+            self.assertGreaterEqual(resources['ProcessSampling']['sampled_process_count_peak'],2)
+            self.assertIsNone(resources['ProcessSampling']['actual_process_total'])
+            self.assertNotIn('argv',json.dumps(resources))
+
+
 class DriverTests(unittest.TestCase):
     def test_driver_allowlist_preserves_auth_scope_without_inheriting_secrets(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -181,8 +234,17 @@ class DriverTests(unittest.TestCase):
                     mock.patch.object(BENCHMARK, "run_attempt", side_effect=capture):
                 status, _ = self.execute("valid")
             self.assertEqual(status, 0)  # Synthetic test processes, no client.
-            self.assertEqual(len(captured), 6)
-            for environment in captured:
+            self.assertEqual(len(captured), 8)
+            discovery = [env for env in captured if "IVOAI_BENCHMARK_CATALOG_OUTPUT" in env]
+            execution = [env for env in captured if "IVOAI_ECONOMIC_RUNTIME_ARM" in env]
+            self.assertEqual(len(discovery), 2)
+            self.assertEqual(len(execution), 6)
+            for environment in discovery:
+                self.assertNotIn("CODEX_HOME", environment)
+                self.assertNotEqual(environment["HOME"], str(home))
+                self.assertFalse(set(blocked) & environment.keys())
+                self.assertNotIn("PRIVATE_ENV_SENTINEL", environment.values())
+            for environment in execution:
                 for key, value in safe.items():
                     if key != "TMPDIR":  # Driver owns each comparison's private temporary root.
                         self.assertEqual(environment[key], value)
@@ -198,15 +260,22 @@ class DriverTests(unittest.TestCase):
         self.addCleanup(temporary.cleanup)
         root = Path(temporary.name)
         fake = root / "fake-test"
+        capabilities = BENCHMARK.benchmark_catalog.expected_capabilities(
+            BENCHMARK.benchmark_catalog.ROOT / "internal/app/primary_prefetch_live_test.go")
+        fixture_names = {s.id: s.fixture for s in BENCHMARK.benchmark_catalog.load_catalog()}
         # This test program prints a secret sentinel to prove output suppression.
         fake.write_text("#!/usr/bin/python3\nimport os,sys,json,hashlib\nfrom pathlib import Path\n"
                         "print('SECRET')\nprint('SECRET',file=sys.stderr)\n"
+                        f"capabilities={capabilities!r}\nfixtures={fixture_names!r}\n"
+                        "if any('TestPrimaryPrefetchBenchmarkCatalog' in arg for arg in sys.argv):\n"
+                        " Path(os.environ['IVOAI_BENCHMARK_CATALOG_OUTPUT']).write_text(json.dumps(capabilities));sys.exit(0)\n"
                         "arm=os.environ['IVOAI_ECONOMIC_RUNTIME_ARM']\n"
                         "scenario=next(x for x in sys.argv if x.startswith('-test.run=')).split('/')[1]\n"
                         "output=Path(os.environ['IVOAI_GRAFT_PREFETCH_OUTPUT'])\n"
                         f"mode={mode!r}\n"
                         f"row={valid_row()!r}\n" +
                         "row.update(Scenario=scenario,Arm=arm,Private='SECRET',Error='SECRET')\n"
+                        "row.update(CatalogSHA256=capabilities['catalog_sha256'],HarnessSHA256=capabilities['harness_sha256'],FixtureSHA256=capabilities['fixtures'][fixtures[scenario]])\n"
                         "row['DistributionInventorySHA256']=hashlib.sha256((Path(os.environ['IVOAI_GRAFT_TEST_DIST'])/'files.json').read_bytes()).hexdigest()\n"
                         "if mode=='no_test': sys.exit(0)\n"
                         "if mode=='empty_failed': output.write_text('[]'); sys.exit(7)\n"
@@ -259,6 +328,8 @@ class DriverTests(unittest.TestCase):
         self.assertEqual(manifest["host_mcp_tools_exposed"], 0)
         self.assertIsNone(manifest["native_tools_exposed"])
         self.assertEqual(manifest["native_tools_inventory"], "UNVERIFIED")
+        self.assertFalse(manifest["process_sampling"]["enabled"])
+        self.assertEqual(manifest["native_event_observation_schema"], 1)
         self.assertNotIn("tools_exposed", manifest)
         self.assertEqual(manifest["runtime_flags"], {"experimental_evidence_gateway": os.environ.get("IVOAI_EXPERIMENTAL_EVIDENCE_GATEWAY") == "1"})
         for name in ("baseline_test_sha256", "candidate_test_sha256", "codex_sha256", "node_sha256",

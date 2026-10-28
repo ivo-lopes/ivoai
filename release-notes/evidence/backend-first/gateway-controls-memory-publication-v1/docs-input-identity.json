@@ -1,0 +1,19 @@
+{
+  "status": "PASS_IDENTITY_NOT_NEW_BUILD",
+  "reviewed_head": "fb4b7a172a8a55c3c9a8fb6fc2d3fb4f8df53f8d",
+  "input_sha256": "88ccd62c6d80f9f01e28486135f66da6bdb87eee4c9d3ce1a2cc72d77c76e372",
+  "repository_owned_input_count": 394,
+  "marker_paths": [
+    "website/static/build-input.sha256",
+    "internal/docsserver/site/build-input.sha256",
+    "internal/docsserver/site/pt-BR/build-input.sha256"
+  ],
+  "embedded_file_count": 1128,
+  "check_scripts_sha256": {
+    "scripts/build-docs.sh": "7a8e1a9e888b895f960963e89aa466a11ac15bf3061b51d36653bf3ec62c3cbf",
+    "scripts/check-embedded-docs.py": "bd098643e0f5ab39b1628517484bfe7ff1914305bc720802dcc4a3535d2103d0",
+    "scripts/generate-cli-reference.sh": "979dcd13a50d0287cdee99dbcfa1d6ecc569eaf013cb3f1e5c44c1c68a6e53de"
+  },
+  "node_modules_borrowed_or_installed": false,
+  "new_local_node_build": "NOT_RUN; exact reviewed docs/embed inputs retained; explicitly accepted local identity check, fresh hosted CI must rebuild EN/PT."
+}

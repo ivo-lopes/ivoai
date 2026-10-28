@@ -47,6 +47,8 @@ func TestManagedOpenCodeUsesPrivateIsolatedConfiguration(t *testing.T) {
 		t.Fatal(err)
 	}
 	t.Setenv("OPENCODE_CONFIG_CONTENT", `{"share":"auto"}`)
+	t.Setenv("IVOAI_MANAGED_LOCAL_PLUGINS", "0")
+	t.Setenv("IVOAI_MANAGED_ASSETS_DIR", filepath.Join(root, "foreign"))
 	t.Setenv("OPENCODE_CONFIG_DIR", filepath.Join(root, "hostile"))
 	t.Setenv("OPENAI_API_KEY", "must-not-reach-frontend")
 	t.Setenv("GITHUB_TOKEN", "generic-secret-must-not-reach-frontend")
@@ -60,7 +62,7 @@ func TestManagedOpenCodeUsesPrivateIsolatedConfiguration(t *testing.T) {
 	t.Setenv("IVOAI_EXTERNAL_MCP_SESSION_TOKEN", "must-not-reach-frontend")
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	managed, err := StartManaged(ctx, ManagedOptions{OpenCodePath: wrapper, Version: "fixture", RuntimeDir: filepath.Join(root, "runtime"), StateDir: filepath.Join(root, "state"), Directory: root, Bridge: bridge, Instructions: "fixture instructions", ResumeSessionID: "ses_resume_fixture"})
+	managed, err := StartManaged(ctx, ManagedOptions{OpenCodePath: wrapper, Version: ManagedOpenCodeVersion, RuntimeDir: filepath.Join(root, "runtime"), StateDir: filepath.Join(root, "state"), Directory: root, Bridge: bridge, Instructions: "fixture instructions", ResumeSessionID: "ses_resume_fixture"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -88,7 +90,7 @@ func TestManagedOpenCodeUsesPrivateIsolatedConfiguration(t *testing.T) {
 			t.Fatalf("unnecessary desktop authority propagated: %s", forbidden)
 		}
 	}
-	for _, expected := range []string{"OPENCODE_DISABLE_PROJECT_CONFIG=1", "OPENCODE_DISABLE_AUTOUPDATE=1", "OPENCODE_DISABLE_MODELS_FETCH=1", "OPENCODE_DISABLE_LSP_DOWNLOAD=1", "OPENCODE_DISABLE_EXTERNAL_SKILLS=1", "OPENCODE_DISABLE_DEFAULT_PLUGINS=1", "OPENCODE_CONFIG=", "OPENCODE_TUI_CONFIG=", "XDG_CONFIG_HOME="} {
+	for _, expected := range []string{"IVOAI_MANAGED_LOCAL_PLUGINS=1", "IVOAI_MANAGED_ASSETS_DIR=", "OPENCODE_DISABLE_PROJECT_CONFIG=1", "OPENCODE_DISABLE_AUTOUPDATE=1", "OPENCODE_DISABLE_MODELS_FETCH=1", "OPENCODE_DISABLE_LSP_DOWNLOAD=1", "OPENCODE_DISABLE_EXTERNAL_SKILLS=1", "OPENCODE_DISABLE_DEFAULT_PLUGINS=1", "OPENCODE_CONFIG=", "OPENCODE_TUI_CONFIG=", "XDG_CONFIG_HOME="} {
 		if !strings.Contains(environment, expected) {
 			t.Fatalf("managed environment omitted %q", expected)
 		}
@@ -198,7 +200,7 @@ func TestManagedOpenCodeRejectsUnsafeResumeSessionID(t *testing.T) {
 	wrapper := fixtureExecutable(t, root, "opencode", "#!/bin/sh\nGO_WANT_MANAGED_OPENCODE_HELPER=1 exec \""+os.Args[0]+"\" -test.run=TestManagedOpenCodeHelper -- \"$@\"\n")
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	if _, err := StartManaged(ctx, ManagedOptions{OpenCodePath: wrapper, Version: "fixture", RuntimeDir: filepath.Join(root, "runtime"), StateDir: filepath.Join(root, "state"), Directory: root, Bridge: bridge, ResumeSessionID: "../../unsafe"}); err == nil {
+	if _, err := StartManaged(ctx, ManagedOptions{OpenCodePath: wrapper, Version: ManagedOpenCodeVersion, RuntimeDir: filepath.Join(root, "runtime"), StateDir: filepath.Join(root, "state"), Directory: root, Bridge: bridge, ResumeSessionID: "../../unsafe"}); err == nil {
 		t.Fatal("unsafe resume session identifier was accepted")
 	}
 }
@@ -214,7 +216,7 @@ func TestManagedOpenCodeEarlyExitReturnsWithoutHanging(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 	started := time.Now()
-	if _, err := StartManaged(ctx, ManagedOptions{OpenCodePath: path, Version: "fixture", RuntimeDir: filepath.Join(root, "runtime"), StateDir: filepath.Join(root, "state"), Directory: root, Bridge: bridge}); err == nil {
+	if _, err := StartManaged(ctx, ManagedOptions{OpenCodePath: path, Version: ManagedOpenCodeVersion, RuntimeDir: filepath.Join(root, "runtime"), StateDir: filepath.Join(root, "state"), Directory: root, Bridge: bridge}); err == nil {
 		t.Fatal("early backend exit was accepted")
 	}
 	if time.Since(started) > 2*time.Second {
@@ -497,6 +499,13 @@ func TestManagedOpenCodeHelper(t *testing.T) {
 	if os.Getenv("GO_WANT_MANAGED_OPENCODE_HELPER") != "1" {
 		return
 	}
+	if os.Getenv("IVOAI_MANAGED_LOCAL_PLUGINS") != "1" {
+		os.Exit(4)
+	}
+	assets := os.Getenv("IVOAI_MANAGED_ASSETS_DIR")
+	if !filepath.IsAbs(assets) || filepath.Join(assets, "opencode.json") != os.Getenv("OPENCODE_CONFIG") || filepath.Join(assets, "tui.json") != os.Getenv("OPENCODE_TUI_CONFIG") {
+		os.Exit(4)
+	}
 	args := os.Args
 	port := ""
 	for index := range args {
@@ -530,7 +539,7 @@ func TestManagedOpenCodeHelper(t *testing.T) {
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
-		_, _ = fmt.Fprint(w, `{"healthy":true,"version":"fixture"}`)
+		_, _ = fmt.Fprintf(w, `{"healthy":true,"version":%q}`, ManagedOpenCodeVersion)
 	})}
 	if err := server.Serve(listener); err != nil && err != http.ErrServerClosed {
 		os.Exit(3)

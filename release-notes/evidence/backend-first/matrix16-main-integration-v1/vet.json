@@ -1,0 +1,13 @@
+{
+  "check": "vet",
+  "started_utc": "2026-10-28T18:53:34.342814+00:00",
+  "ended_utc": "2026-10-28T18:53:36.421949+00:00",
+  "exit_code": 0,
+  "args": [
+    "vet",
+    "./..."
+  ],
+  "environment_basis": "explicit private HOME, pinned Go/Node PATH, no auth/provider opt-ins, GOPROXY/GOSUMDBoff; shared content-addressed Go caches",
+  "provider_turns": 0,
+  "context_sync": "BLOCKED IVOAI-175"
+}

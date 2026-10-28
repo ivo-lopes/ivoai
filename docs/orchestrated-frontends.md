@@ -12,8 +12,8 @@ The later local `VERSION` and RTK pilots are excluded.
 | Command | Admission and execution |
 | --- | --- |
 | `ivoai codex` | Native Codex TUI; IVOAI admission; Codex primary preference |
-| `ivoai opencode` | Managed OpenCode TUI; primary selected by IVOAI policy |
-| `ivoai auto` | Deprecated alias for `ivoai opencode` throughout v0.10.x |
+| `ivoai opencode` | Deprecated explicit legacy OpenCode TUI; primary selected by IVOAI policy |
+| `ivoai auto` | Deprecated explicit legacy alias; use `ivoai codex` for native managed sessions |
 | `ivoai codex --direct` | Official Codex client, no prompt gate/DAG |
 | `ivoai opencode --direct` | Standalone OpenCode, no prompt gate/DAG |
 | `ivoai claude` | Existing optional direct Claude interface |
@@ -21,6 +21,23 @@ The later local `VERSION` and RTK pilots are excluded.
 Put `--direct` before `--`; arguments after `--` belong to the official client.
 The provider-neutral `session start --executor codex|opencode --mode direct`
 surface remains available. `--mode orchestrated` enters the shared native core.
+
+Native Codex sessions and Codex/Claude managed workers exclude OpenCode from
+discovery, cached catalogs, quota routing, retries and dispatch even when it is
+installed. The legacy commands remain explicit. Retained OpenCode tasks or
+checkpoints block a native resume/recovery with a migration message; they are
+not rewritten or replayed. Native AUTO handoff to Claude and initial
+`ivoai codex --planner claude` are currently refused before starting another
+frontend. Existing approved Codex/Claude routing decisions remain separate from
+plan approval; this increment does not certify a native Claude TUI.
+
+The shared Core retains official Claude headless execution and Claude worker
+contracts under existing grants and routing decisions. The native Codex picker
+exposes Codex models, and its turn admission rejects Claude selections even when
+the shared catalog contains them. Internal alternate-route callbacks do not
+establish a Claude-primary path through that native presentation. The refused
+initial planner/handoff modes and the retained Core contracts have distinct
+boundaries; no Codex-presentation/Claude-primary parity is certified here.
 
 ## Native Codex terminal
 

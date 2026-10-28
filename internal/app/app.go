@@ -187,6 +187,12 @@ func (a *App) MenuSnapshot() (MenuSnapshot, error) {
 }
 
 func (a *App) Setup(ctx context.Context) error {
+	return a.SetupWithLegacyOpenCode(ctx, false)
+}
+
+// SetupWithLegacyOpenCode is an explicit compatibility choice, never inferred
+// from the existence of a user's binary, configuration or historical session.
+func (a *App) SetupWithLegacyOpenCode(ctx context.Context, includeLegacy bool) error {
 	if err := a.Store.Ensure(); err != nil {
 		return err
 	}
@@ -211,7 +217,7 @@ func (a *App) Setup(ctx context.Context) error {
 			return err
 		}
 	}
-	installer := components.Installer{Runner: a.Runner, Store: a.Store, Out: a.Out}
+	installer := components.Installer{Runner: a.Runner, Store: a.Store, Out: a.Out, Catalog: components.ClientSetupCatalog(includeLegacy)}
 	if err := a.migrateLegacyMemory(); err != nil {
 		return fmt.Errorf("legacy Memory migration: %w", err)
 	}

@@ -1,0 +1,29 @@
+{
+  "schema": 1,
+  "incoming_patch_vs_old_branch": {
+    "exit_code": 2,
+    "stdout": "patches/opencode/1.19.0-managed-local-plugins.patch:7: trailing whitespace.\n+ \npatches/opencode/1.19.0-managed-local-plugins.patch:13: trailing whitespace.\n+ \npatches/opencode/1.19.0-managed-local-plugins.patch:20: trailing whitespace.\n+ \npatches/opencode/1.19.0-managed-local-plugins.patch:63: trailing whitespace.\n+ \npatches/opencode/1.19.0-managed-local-plugins.patch:65: trailing whitespace.\n+ \npatches/opencode/1.19.0-managed-local-plugins.patch:99: trailing whitespace.\n+ \npatches/opencode/1.19.0-managed-local-plugins.patch:157: trailing whitespace.\n+ \n",
+    "lines": [
+      7,
+      13,
+      20,
+      63,
+      65,
+      99,
+      157
+    ],
+    "basis": "seven required space-prefixed blank context lines in incoming unified patch; byte-identical to main6d99",
+    "patch_sha256": "22f550551848c6240022767c070d8cc1082f0fb3da16210bde28d08d98fd103c"
+  },
+  "recording_incident": {
+    "initial_assertion": "FAIL expected only14lines, observed18; two raw go version -m logs contain trailing tabs",
+    "original_raw_diff_stdout": "patches/opencode/1.19.0-managed-local-plugins.patch:7: trailing whitespace.\n+ \npatches/opencode/1.19.0-managed-local-plugins.patch:13: trailing whitespace.\n+ \npatches/opencode/1.19.0-managed-local-plugins.patch:20: trailing whitespace.\n+ \npatches/opencode/1.19.0-managed-local-plugins.patch:63: trailing whitespace.\n+ \npatches/opencode/1.19.0-managed-local-plugins.patch:65: trailing whitespace.\n+ \npatches/opencode/1.19.0-managed-local-plugins.patch:99: trailing whitespace.\n+ \npatches/opencode/1.19.0-managed-local-plugins.patch:157: trailing whitespace.\n+ \nrelease-notes/evidence/backend-first/matrix16-main-integration-v1/amd64-build-info.log:3: trailing whitespace.\n+\tmod\tgithub.com/ivo-lopes/ivoai\t(devel)\t\nrelease-notes/evidence/backend-first/matrix16-main-integration-v1/arm64-build-info.log:3: trailing whitespace.\n+\tmod\tgithub.com/ivo-lopes/ivoai\t(devel)\t\n",
+    "resolution": "store raw build info stdout losslessly in JSON; no bytes stripped or runtime changes; avoid recursive whitespace log",
+    "raw_private_log_sha256": "0d722ff791b07f9d5229a29e5fb57a60886fad3bef3e7127010be50b417ddc30"
+  },
+  "pr_contribution_vs_main": {
+    "exit_code": 0,
+    "stdout": "",
+    "result": "PASS"
+  }
+}

@@ -1,0 +1,28 @@
+=== RUN   TestPinnedCodexManagedNativeWorkerBoundary
+=== RUN   TestPinnedCodexManagedNativeWorkerBoundary/legacy_flags_positive
+    managed_codex_live_test.go:208: official0.162.1: advertised=true spawned_identity=true child_requests=1 http_requests=3 unsupported=false; synthetic local only
+    managed_codex_live_test.go:209: JSONL terminal collaboration events=0; actual worker/delegation/retry totals=UNKNOWN; fixture child requests are a separate scoped observation
+=== RUN   TestPinnedCodexManagedNativeWorkerBoundary/v2_overrides_agents_false
+    managed_codex_live_test.go:208: official0.162.1: advertised=true spawned_identity=true child_requests=1 http_requests=3 unsupported=false; synthetic local only
+    managed_codex_live_test.go:209: JSONL terminal collaboration events=0; actual worker/delegation/retry totals=UNKNOWN; fixture child requests are a separate scoped observation
+=== RUN   TestPinnedCodexManagedNativeWorkerBoundary/cli_enable_overrides_config
+    managed_codex_live_test.go:208: official0.162.1: advertised=true spawned_identity=true child_requests=1 http_requests=3 unsupported=false; synthetic local only
+    managed_codex_live_test.go:209: JSONL terminal collaboration events=0; actual worker/delegation/retry totals=UNKNOWN; fixture child requests are a separate scoped observation
+=== RUN   TestPinnedCodexManagedNativeWorkerBoundary/hostile_profile_positive
+    managed_codex_live_test.go:208: official0.162.1: advertised=true spawned_identity=true child_requests=1 http_requests=3 unsupported=false; synthetic local only
+    managed_codex_live_test.go:209: JSONL terminal collaboration events=0; actual worker/delegation/retry totals=UNKNOWN; fixture child requests are a separate scoped observation
+=== RUN   TestPinnedCodexManagedNativeWorkerBoundary/managed_clean
+    managed_codex_live_test.go:208: official0.162.1: advertised=false spawned_identity=false child_requests=0 http_requests=2 unsupported=true; synthetic local only
+    managed_codex_live_test.go:209: JSONL terminal collaboration events=0; actual worker/delegation/retry totals=UNKNOWN; fixture child requests are a separate scoped observation
+=== RUN   TestPinnedCodexManagedNativeWorkerBoundary/managed_hostile_profile_and_compact_config
+    managed_codex_live_test.go:208: official0.162.1: advertised=false spawned_identity=false child_requests=0 http_requests=2 unsupported=true; synthetic local only
+    managed_codex_live_test.go:209: JSONL terminal collaboration events=0; actual worker/delegation/retry totals=UNKNOWN; fixture child requests are a separate scoped observation
+--- PASS: TestPinnedCodexManagedNativeWorkerBoundary (5.52s)
+    --- PASS: TestPinnedCodexManagedNativeWorkerBoundary/legacy_flags_positive (0.62s)
+    --- PASS: TestPinnedCodexManagedNativeWorkerBoundary/v2_overrides_agents_false (0.93s)
+    --- PASS: TestPinnedCodexManagedNativeWorkerBoundary/cli_enable_overrides_config (0.95s)
+    --- PASS: TestPinnedCodexManagedNativeWorkerBoundary/hostile_profile_positive (0.91s)
+    --- PASS: TestPinnedCodexManagedNativeWorkerBoundary/managed_clean (0.69s)
+    --- PASS: TestPinnedCodexManagedNativeWorkerBoundary/managed_hostile_profile_and_compact_config (0.82s)
+PASS
+ok  	github.com/ivo-lopes/ivoai/internal/workers	6.555s

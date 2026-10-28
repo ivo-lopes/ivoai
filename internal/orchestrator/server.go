@@ -34,36 +34,39 @@ type Server struct {
 	DAGProtocol            string // host-generated static instructions, never external text
 	PreparePrimaryEvidence func(context.Context, routing.Task, int) (json.RawMessage, error)
 
-	CheckMCPGrants        func(context.Context, []routing.TaskInput) (bool, error)
-	planMu                sync.Mutex
-	LowQuotaThreshold     int
-	ProviderPreference    string
-	routingMu             sync.Mutex
-	WorktreeRoot          string
-	PrepareWorker         func(context.Context, routing.Task, workers.Request) (workers.Request, error)
-	HostResources         func() orchestration.HostResources
-	Sequential            bool
-	ParallelWrites        bool
-	NativePolicy          bool
-	AutomaticDispatch     bool
-	RequirePlanApproval   bool
-	Store                 session.Store
-	SessionID             string
-	Adapter               WorkerAdapter
-	Control               LifecycleControl
-	Directory             string
-	RuntimeDir            string
-	ReviewExecutor        string
-	Quota                 *quota.Manager
-	CheckpointEnabled     bool
-	BootstrapRequired     bool
-	ProgressiveEscalation bool
-	Parallelism           bool
-	Weights               routing.Weights
-	Registry              routing.Registry
-	Overrides             map[string]map[routing.Tier]routing.ProfileOverride
-	WorkingContext        workingcontext.ArtifactStore
-	Compressor            workingcontext.RepresentationCompressor
+	CheckMCPGrants         func(context.Context, []routing.TaskInput) (bool, error)
+	planMu                 sync.Mutex
+	LowQuotaThreshold      int
+	ProviderPreference     string
+	routingMu              sync.Mutex
+	WorktreeRoot           string
+	PrepareWorker          func(context.Context, routing.Task, workers.Request) (workers.Request, error)
+	HostResources          func() orchestration.HostResources
+	Sequential             bool
+	ParallelWrites         bool
+	NativePolicy           bool
+	AutomaticDispatch      bool
+	RequirePlanApproval    bool
+	Store                  session.Store
+	SessionID              string
+	Adapter                WorkerAdapter
+	Control                LifecycleControl
+	Directory              string
+	RuntimeDir             string
+	ReviewExecutor         string
+	Quota                  *quota.Manager
+	CheckpointEnabled      bool
+	BootstrapRequired      bool
+	ProgressiveEscalation  bool
+	Parallelism            bool
+	Weights                routing.Weights
+	Registry               routing.Registry
+	Overrides              map[string]map[routing.Tier]routing.ProfileOverride
+	WorkingContext         workingcontext.ArtifactStore
+	Compressor             workingcontext.RepresentationCompressor
+	RecoverEvidence        func(context.Context, workingcontext.Ownership, string) ([]byte, workingcontext.ArtifactRef, error)
+	artifactOwner          *workingcontext.Ownership // immutable host-captured reader projection
+	protectedArtifactsOnly bool
 
 	mu      sync.Mutex
 	results map[string]workerResult
@@ -156,8 +159,18 @@ func (s *Server) protocolServer() *mcp.Server {
 }
 
 func (s *Server) authorized() error {
+	return s.authorizedContext(context.Background())
+}
+
+func (s *Server) authorizedContext(ctx context.Context) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	value, err := s.Store.Get(s.SessionID)
 	if err != nil {
+		return err
+	}
+	if err := s.Store.CheckNativeProviders(value); err != nil {
 		return err
 	}
 	safeCoordinator := value.Coordinator == "native" && value.Mode == session.ModeAuto && value.SwarmID == "native_"+value.SessionID
@@ -167,7 +180,7 @@ func (s *Server) authorized() error {
 	if !value.Active() || (value.Mode != session.ModeOrchestrated && value.Mode != session.ModeAuto) || !safeCoordinator || value.ProviderExecution {
 		return errors.New("orchestration bridge requires an active safe orchestrated session")
 	}
-	return s.checkPrimaryTurn(context.Background())
+	return s.checkPrimaryTurn(ctx)
 }
 
 func (s *Server) checkPrimaryTurn(ctx context.Context) error {
@@ -219,12 +232,11 @@ func (s *Server) addTools(server *mcp.Server) {
 	server.AddTool(&mcp.Tool{Name: "orchestration_delegate", Description: "Run a bounded task through an official Codex or Claude Code worker. Ruflo only records lifecycle.", InputSchema: object(map[string]any{
 		"role":               map[string]any{"type": "string", "pattern": `^[A-Za-z][A-Za-z0-9_-]{0,63}$`},
 		"task":               map[string]any{"type": "string", "minLength": 1, "maxLength": workers.MaxTaskBytes},
-		"preferred_executor": map[string]any{"type": "string", "enum": quota.ProviderNames()},
+		"preferred_executor": map[string]any{"type": "string", "enum": s.providerNames()},
 		"model":              map[string]any{"type": "string", "minLength": 1, "maxLength": 128},
 	}, "role", "task"), Annotations: write}, s.guardTool(s.delegate))
 	server.AddTool(&mcp.Tool{Name: "orchestration_result", Description: "Read a bounded structured WorkerResult; only opaque evidence references survive primary failover.", InputSchema: object(map[string]any{"worker_id": map[string]any{"type": "string"}}, "worker_id"), Annotations: read}, s.guardTool(s.result))
-	server.AddTool(&mcp.Tool{Name: "orchestration_artifact_read", Description: "Explicitly recover exact private worker evidence by opaque ResultRef for the active session.", InputSchema: object(map[string]any{"artifact_id": map[string]any{"type": "string", "pattern": `^artifact_[0-9a-f]{32}$`}}, "artifact_id"), Annotations: read}, s.guardTool(s.artifactRead))
-	server.AddTool(&mcp.Tool{Name: "orchestration_artifact_read_range", Description: "Explicitly recover a bounded byte range from private worker evidence by opaque ResultRef.", InputSchema: object(map[string]any{"artifact_id": map[string]any{"type": "string", "pattern": `^artifact_[0-9a-f]{32}$`}, "offset": map[string]any{"type": "integer", "minimum": 0}, "length": map[string]any{"type": "integer", "minimum": 1, "maximum": 1048576}}, "artifact_id", "offset", "length"), Annotations: read}, s.guardTool(s.artifactReadRange))
+	s.addArtifactTools(server, read)
 	server.AddTool(&mcp.Tool{Name: "orchestration_cancel", Description: "Cancel a worker owned by this active session.", InputSchema: object(map[string]any{"worker_id": map[string]any{"type": "string"}}, "worker_id"), Annotations: write}, s.guardTool(s.cancel))
 	value, _ := s.Store.Get(s.SessionID)
 	if value.Mode == session.ModeAuto {
@@ -270,6 +282,9 @@ func (s *Server) delegate(ctx context.Context, request *mcp.CallToolRequest) (*m
 	}
 	if !quota.Supported(quota.Provider(args.Executor)) {
 		return nil, errors.New("preferred_executor must be codex, claude or opencode")
+	}
+	if err := s.providerAllowed(args.Executor); err != nil {
+		return nil, err
 	}
 	requestedExecutor := args.Executor
 	fallbackReason := ""
@@ -422,7 +437,7 @@ func (s *Server) quotaStatus(ctx context.Context, _ *mcp.CallToolRequest) (*mcp.
 		return nil, errors.New("quota routing is available only in automatic sessions")
 	}
 	result := map[string]quota.ProviderQuota{}
-	for _, provider := range quota.Providers() {
+	for _, provider := range s.Quota.Providers() {
 		current, _ := s.Quota.Probe(ctx, provider, false)
 		result[string(provider)] = current
 	}
@@ -484,9 +499,25 @@ func (s *Server) result(_ context.Context, request *mcp.CallToolRequest) (*mcp.C
 }
 
 func (s *Server) artifactRead(ctx context.Context, request *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	if err := s.checkArtifactAuthority(ctx); err != nil {
+		return nil, err
+	}
 	id, err := artifactIDArgument(request)
 	if err != nil {
 		return nil, err
+	}
+	if workingcontext.ProtectedArtifactID(id) {
+		body, ref, err := s.recoverProtectedArtifact(ctx, id)
+		if err != nil {
+			return nil, err
+		}
+		if err := s.checkArtifactAuthority(ctx); err != nil {
+			return nil, err
+		}
+		return toolResult(map[string]any{"ref": ref, "encoding": "base64", "data": base64.StdEncoding.EncodeToString(body)})
+	}
+	if s.protectedArtifactsOnly {
+		return nil, errors.New("protected evidence reader requires a protected artifact")
 	}
 	if s.WorkingContext == nil {
 		return nil, errors.New("working context artifact store is unavailable")
@@ -505,17 +536,40 @@ func (s *Server) artifactRead(ctx context.Context, request *mcp.CallToolRequest)
 		return nil, closeErr
 	}
 	s.observeArtifactAccess(id, false, int64(len(body)), nil)
+	if err := s.checkArtifactAuthority(ctx); err != nil {
+		return nil, err
+	}
 	return toolResult(map[string]any{"ref": ref, "encoding": "base64", "data": base64.StdEncoding.EncodeToString(body)})
 }
 
 func (s *Server) artifactReadRange(ctx context.Context, request *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+	if err := s.checkArtifactAuthority(ctx); err != nil {
+		return nil, err
+	}
 	var args struct {
 		ArtifactID string `json:"artifact_id"`
 		Offset     int64  `json:"offset"`
 		Length     int64  `json:"length"`
 	}
-	if strictArguments(request, &args) != nil || args.Offset < 0 || args.Length < 1 || args.Length > 1<<20 {
+	if strictArguments(request, &args) != nil || !workingcontext.ValidArtifactID(args.ArtifactID) || args.Offset < 0 || args.Length < 1 || args.Length > 1<<20 {
 		return nil, errors.New("valid bounded artifact range is required")
+	}
+	if workingcontext.ProtectedArtifactID(args.ArtifactID) {
+		body, ref, err := s.recoverProtectedArtifact(ctx, args.ArtifactID)
+		if err != nil {
+			return nil, err
+		}
+		if args.Offset > int64(len(body)) || args.Length > int64(len(body))-args.Offset {
+			return nil, errors.New("artifact range exceeds payload")
+		}
+		part := body[args.Offset : args.Offset+args.Length]
+		if err := s.checkArtifactAuthority(ctx); err != nil {
+			return nil, err
+		}
+		return toolResult(map[string]any{"ref": ref, "offset": args.Offset, "length": len(part), "encoding": "base64", "data": base64.StdEncoding.EncodeToString(part)})
+	}
+	if s.protectedArtifactsOnly {
+		return nil, errors.New("protected evidence reader requires a protected artifact")
 	}
 	if s.WorkingContext == nil {
 		return nil, errors.New("working context artifact store is unavailable")
@@ -526,6 +580,9 @@ func (s *Server) artifactReadRange(ctx context.Context, request *mcp.CallToolReq
 		return nil, err
 	}
 	s.observeArtifactAccess(args.ArtifactID, true, int64(len(body)), nil)
+	if err := s.checkArtifactAuthority(ctx); err != nil {
+		return nil, err
+	}
 	return toolResult(map[string]any{"ref": ref, "offset": args.Offset, "length": len(body), "encoding": "base64", "data": base64.StdEncoding.EncodeToString(body)})
 }
 
@@ -605,7 +662,7 @@ func artifactIDArgument(request *mcp.CallToolRequest) (string, error) {
 	var args struct {
 		ArtifactID string `json:"artifact_id"`
 	}
-	if strictArguments(request, &args) != nil || len(args.ArtifactID) != 41 || !strings.HasPrefix(args.ArtifactID, "artifact_") {
+	if strictArguments(request, &args) != nil || !workingcontext.ValidArtifactID(args.ArtifactID) {
 		return "", errors.New("valid artifact_id is required")
 	}
 	return args.ArtifactID, nil

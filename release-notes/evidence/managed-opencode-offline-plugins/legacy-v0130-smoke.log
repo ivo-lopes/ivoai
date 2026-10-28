@@ -1,0 +1,43 @@
+=== RUN   TestLiveManagedOpenCodeAPI
+    api_test.go:103: managed OpenCode provider readiness: IVOAI provider catalog readiness: last=communication_failure attempts=8: context deadline exceeded
+--- FAIL: TestLiveManagedOpenCodeAPI (22.68s)
+=== RUN   TestLiveManagedOpenCodeRoutesPromptThroughIVOAI
+--- PASS: TestLiveManagedOpenCodeRoutesPromptThroughIVOAI (19.94s)
+=== RUN   TestLiveManagedOpenCodeAttachRendersIVOAIPlugin
+=== RUN   TestLiveManagedOpenCodeAttachRendersIVOAIPlugin/width60
+=== RUN   TestLiveManagedOpenCodeAttachRendersIVOAIPlugin/width100
+=== RUN   TestLiveManagedOpenCodeAttachRendersIVOAIPlugin/width160
+--- PASS: TestLiveManagedOpenCodeAttachRendersIVOAIPlugin (62.20s)
+    --- PASS: TestLiveManagedOpenCodeAttachRendersIVOAIPlugin/width60 (24.51s)
+    --- PASS: TestLiveManagedOpenCodeAttachRendersIVOAIPlugin/width100 (20.77s)
+    --- PASS: TestLiveManagedOpenCodeAttachRendersIVOAIPlugin/width160 (16.92s)
+=== RUN   TestLiveManagedOpenCodePermissions
+=== RUN   TestLiveManagedOpenCodePermissions/full
+    permissions_test.go:184: mode=full permission_prompt_count=0 filesystem_fixture=PASS
+=== RUN   TestLiveManagedOpenCodePermissions/interactive
+    permissions_test.go:184: mode=interactive permission_prompt_count=4 filesystem_fixture=PASS
+--- PASS: TestLiveManagedOpenCodePermissions (37.25s)
+    --- PASS: TestLiveManagedOpenCodePermissions/full (16.72s)
+    --- PASS: TestLiveManagedOpenCodePermissions/interactive (20.52s)
+=== RUN   TestLiveManagedOpenCodeResizeKeyboard
+    tui_interaction_test.go:182: resize=100 panel visible; Escape returned
+    tui_interaction_test.go:182: resize=60 panel visible; Escape returned
+    tui_interaction_test.go:182: resize=100 panel visible; Escape returned
+    tui_interaction_test.go:182: resize=160 panel visible; Escape returned
+--- PASS: TestLiveManagedOpenCodeResizeKeyboard (21.41s)
+FAIL
+FAIL	github.com/ivo-lopes/ivoai/internal/opencodebridge	163.481s
+=== RUN   TestLiveOpenCodeExecutorHTTPContract
+    opencode_http_test.go:43: managed OpenCode provider readiness: IVOAI provider catalog readiness: last=communication_failure attempts=8: context deadline exceeded
+--- FAIL: TestLiveOpenCodeExecutorHTTPContract (24.69s)
+=== RUN   TestLiveOpenCodeExecutorNativeLifecycle
+--- PASS: TestLiveOpenCodeExecutorNativeLifecycle (2.92s)
+=== RUN   TestLiveNativeOpenCodeAUTOExecutor
+    opencode_native_test.go:137: OPENCODE_NATIVE_CONTROLLED_HTTP=PASS; requested/effective=PASS; recursion=0; quota=UNKNOWN
+    opencode_native_test.go:171: AUTO_FRONTEND_NATIVE_E2E=PASS; MCP_MEMORY=PASS; MCP_CONTEXT=PASS
+    opencode_native_test.go:175: NATIVE_EXTERNAL_MCP_AUTH=PASS; UPSTREAM_SECRET_IN_NATIVE_CONFIG=false; FULL_APPROVAL_PROMPTS=0
+    opencode_native_test.go:220: NATIVE_INTERACTIVE_APPROVAL=PASS; NATIVE_CANCELLATION=PASS
+--- PASS: TestLiveNativeOpenCodeAUTOExecutor (62.22s)
+FAIL
+FAIL	github.com/ivo-lopes/ivoai/internal/agents	89.837s
+FAIL

@@ -1,0 +1,19 @@
+=== RUN   TestEvidenceGatewayOfflineControls
+=== RUN   TestEvidenceGatewayOfflineControls/OFF
+=== RUN   TestEvidenceGatewayOfflineControls/ON
+--- PASS: TestEvidenceGatewayOfflineControls (0.96s)
+    --- PASS: TestEvidenceGatewayOfflineControls/OFF (0.24s)
+    --- PASS: TestEvidenceGatewayOfflineControls/ON (0.71s)
+=== RUN   TestExportEvidenceGatewayOfflineControls
+    evidence_gateway_control_test.go:301: NOT_RUN: explicit receipt output required
+--- SKIP: TestExportEvidenceGatewayOfflineControls (0.00s)
+=== RUN   TestEvidenceGatewayCodeReuseInvalidationAndAdmission
+--- PASS: TestEvidenceGatewayCodeReuseInvalidationAndAdmission (0.35s)
+=== RUN   TestExperimentalGatewayPreservesPrimaryContract
+--- PASS: TestExperimentalGatewayPreservesPrimaryContract (0.19s)
+=== RUN   TestGatewayImmediatePlanRetainsApprovalBoundary
+--- PASS: TestGatewayImmediatePlanRetainsApprovalBoundary (0.08s)
+=== RUN   TestGatewayWorkerMonorepoDirectoryAndRevocation
+--- PASS: TestGatewayWorkerMonorepoDirectoryAndRevocation (0.12s)
+PASS
+ok  	github.com/ivo-lopes/ivoai/internal/app	2.745s

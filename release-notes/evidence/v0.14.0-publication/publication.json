@@ -1,0 +1,172 @@
+{
+  "schema_version": 1,
+  "release": {
+    "tag": "v0.14.0",
+    "id": 427082748,
+    "url": "https://github.com/ivo-lopes/ivoai/releases/tag/v0.14.0",
+    "published_at": "2026-10-28T19:10:11Z",
+    "draft": false,
+    "prerelease": false,
+    "source_commit": "6d99e320912f3f7325c3009209a10e9df86610d4",
+    "annotated_tag_object": "3943e54ecbecf380429b89ad5a28a0500d138891",
+    "peeled_commit": "6d99e320912f3f7325c3009209a10e9df86610d4"
+  },
+  "verification": {
+    "pass": true,
+    "assets": 12,
+    "payload_checksums": 11,
+    "github_api_sha256_digests": 12,
+    "missing_api_digests": [],
+    "core_metadata": "Go1.27.3; module v0.14.0; exact VCS revision; modified=false; CGO0; amd64v1/ARMv8; 12 dependency versions/h1 sums per Core match reviewed source",
+    "components": "exact archive/source/patch/revision plus expected release URL/base64 payload association; no pointer-binding or new attestation claim",
+    "skill": "canonical stored ZIP and exact reviewed SKILL.md"
+  },
+  "assets": [
+    {
+      "name": "checksums.txt",
+      "bytes": 1037,
+      "sha256": "21eeca8f21ed0c83166c14d08911b5d08afc17782ee1f712564565d4c9ba66fd",
+      "github_api_digest": "sha256:21eeca8f21ed0c83166c14d08911b5d08afc17782ee1f712564565d4c9ba66fd",
+      "offline_payload_checksum": false,
+      "github_asset_id": 686048247
+    },
+    {
+      "name": "ivoai-graft_linux_amd64.tar.gz",
+      "bytes": 7689763,
+      "sha256": "85cd3b4f5a06e99a683739aa6fe7325951d3343834ef5ad18a37e30e9bfac441",
+      "github_api_digest": "sha256:85cd3b4f5a06e99a683739aa6fe7325951d3343834ef5ad18a37e30e9bfac441",
+      "offline_payload_checksum": true,
+      "github_asset_id": 686048192
+    },
+    {
+      "name": "ivoai-graft_linux_arm64.tar.gz",
+      "bytes": 7643836,
+      "sha256": "cb8253465889f48af8d0a63a10ac1115215542eb8674aa4090e529506e00af93",
+      "github_api_digest": "sha256:cb8253465889f48af8d0a63a10ac1115215542eb8674aa4090e529506e00af93",
+      "offline_payload_checksum": true,
+      "github_asset_id": 686048215
+    },
+    {
+      "name": "ivoai-memory-context.zip",
+      "bytes": 3480,
+      "sha256": "6e5bc28cb02d5557dbe16b2e2ffae7fc954c5e783c14a4dcd0fb6c08c364b378",
+      "github_api_digest": "sha256:6e5bc28cb02d5557dbe16b2e2ffae7fc954c5e783c14a4dcd0fb6c08c364b378",
+      "offline_payload_checksum": true,
+      "github_asset_id": 686048240
+    },
+    {
+      "name": "ivoai-opencode_linux_amd64.tar.gz",
+      "bytes": 60751001,
+      "sha256": "9f38b0507bdf295b34c7faf58f91fd402c5a102b76e8867242503d2e4db46b61",
+      "github_api_digest": "sha256:9f38b0507bdf295b34c7faf58f91fd402c5a102b76e8867242503d2e4db46b61",
+      "offline_payload_checksum": true,
+      "github_asset_id": 686048155
+    },
+    {
+      "name": "ivoai-opencode_linux_arm64.tar.gz",
+      "bytes": 60556466,
+      "sha256": "98e8de34c37c6640581e4ec4381c18f97dda63287188c4ef6fec123c4141e990",
+      "github_api_digest": "sha256:98e8de34c37c6640581e4ec4381c18f97dda63287188c4ef6fec123c4141e990",
+      "offline_payload_checksum": true,
+      "github_asset_id": 686048149
+    },
+    {
+      "name": "ivoai_linux_amd64.tar.gz",
+      "bytes": 19745705,
+      "sha256": "5ef73a8bbb71f14556ac49d8fcda466f559c11581d21c6dfb08d0d098b7e9e51",
+      "github_api_digest": "sha256:5ef73a8bbb71f14556ac49d8fcda466f559c11581d21c6dfb08d0d098b7e9e51",
+      "offline_payload_checksum": true,
+      "github_asset_id": 686048154
+    },
+    {
+      "name": "ivoai_linux_arm64.tar.gz",
+      "bytes": 19008782,
+      "sha256": "22c3d3175af87f831fbdb350d345675fdb4538b80edd8790c979cb699e522226",
+      "github_api_digest": "sha256:22c3d3175af87f831fbdb350d345675fdb4538b80edd8790c979cb699e522226",
+      "offline_payload_checksum": true,
+      "github_asset_id": 686048156
+    },
+    {
+      "name": "managed-graft-amd64.json",
+      "bytes": 626,
+      "sha256": "6fc5af54dd963e8d0af58b6a8dc051a52fef9e0447ef25630da669f394b6f6d7",
+      "github_api_digest": "sha256:6fc5af54dd963e8d0af58b6a8dc051a52fef9e0447ef25630da669f394b6f6d7",
+      "offline_payload_checksum": true,
+      "github_asset_id": 686048217
+    },
+    {
+      "name": "managed-graft-arm64.json",
+      "bytes": 626,
+      "sha256": "ea612e7e9e8c5e352f78a91fe3c597dec2530eb023b00346087c24a91390a106",
+      "github_api_digest": "sha256:ea612e7e9e8c5e352f78a91fe3c597dec2530eb023b00346087c24a91390a106",
+      "offline_payload_checksum": true,
+      "github_asset_id": 686048239
+    },
+    {
+      "name": "managed-opencode-amd64.json",
+      "bytes": 626,
+      "sha256": "4870643e5ed08a5b1f09ddcd7b1d8d4d4a9fe07cc61374c9cb782f7c125fc751",
+      "github_api_digest": "sha256:4870643e5ed08a5b1f09ddcd7b1d8d4d4a9fe07cc61374c9cb782f7c125fc751",
+      "offline_payload_checksum": true,
+      "github_asset_id": 686048157
+    },
+    {
+      "name": "managed-opencode-arm64.json",
+      "bytes": 626,
+      "sha256": "a68a0af70c7e11121ee6f3ced3124465a8684b8df773e23ee37af476437aafbc",
+      "github_api_digest": "sha256:a68a0af70c7e11121ee6f3ced3124465a8684b8df773e23ee37af476437aafbc",
+      "offline_payload_checksum": true,
+      "github_asset_id": 686048178
+    }
+  ],
+  "raw_private_evidence": {
+    "verification_sha256": "c2d902edc2942ad4f3b0ce383bd79baa5b42aff18d5353bd21da4adb4859bb78",
+    "runtime_smoke_sha256": "6d5025a006d3f5e7848cc5765833985d9d48648e14fb1faf7dd6eeaaee129b5c",
+    "release_api_sha256": "d413a827207fa69f6904298ab6c1e8aa0258475fb293b4ca6748266583f4acd6",
+    "publication_filter": "Only the top-level absolute local output directory was removed from verification.json; runtime-smoke.json is byte-identical. Release API is distilled to public release/asset fields, not republished wholesale."
+  },
+  "scope": {
+    "production_deployment": false,
+    "personal_client_configuration_or_credentials_changed": false,
+    "provider_or_model_calls_in_postdownload_smoke": 0,
+    "local_amd64_downloaded_core": "version/help under private allowlisted HOME/XDG/TMP; local host CPU, not no-AVX emulation",
+    "local_arm_execution": "NOT_RUN; tagged Release CI executed native ARM independently",
+    "no_avx": "tagged Release CI Core version/help and OpenCode version under Nehalem; Graft Node/native-library/grammar runtime under Nehalem",
+    "economic_acceptance": "FAIL; global 16-case matrix INCOMPLETE. The 126 tally covers six backend-first cohorts only (18\u00d74+42+12), not all real attempts in the repository; no heterogeneous aggregate causal saving.",
+    "excluded_pull_requests": [
+      45,
+      46,
+      47,
+      50,
+      51
+    ],
+    "native_tui_parity": "NOT_ESTABLISHED",
+    "global_opencode_removal": "NOT_DELIVERED",
+    "context_ingestion": "BLOCKED under IVOAI-175",
+    "postpublication_report": "This evidence commit follows the published tag; the v0.14.0 tag and its assets do not contain this new report.",
+    "backend_first_cohorts": {
+      "attempts": 126,
+      "cohort_sizes": [
+        18,
+        18,
+        18,
+        18,
+        42,
+        12
+      ],
+      "is_repository_grand_total": false,
+      "excluded_historical_series": [
+        "Original PR30 economic-runtime: 18 real v0.12.0 prefetch attempts",
+        "Original PR30: 24 schema-projection pilot attempts",
+        "Earlier MCP research outside the six backend-first cohorts"
+      ],
+      "grand_total_computed": false
+    }
+  },
+  "release_body_addendum": {
+    "scope": "The owner separately prepended a publication-verification notice; tagged source and all asset IDs/sizes/digests remained unchanged. This documentation work did not mutate the release body.",
+    "api_updated_at": "2026-10-28T19:24:31Z",
+    "api_snapshot_normalized_sha256": "e05206a2a56a0f15c3488a7849c25b80a3f6572c325a731ef5841b310320fa52",
+    "asset_identity_unchanged": true
+  }
+}

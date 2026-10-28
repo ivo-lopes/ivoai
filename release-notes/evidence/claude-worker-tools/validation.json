@@ -1,0 +1,104 @@
+{
+  "task": "IVOAI-194 (under IVOAI-191); contract audit includes IVOAI-196",
+  "date": "2026-10-28",
+  "base_commit": "3be82befea6ed3875373afcb1bfaa450710310ac",
+  "change": "Close readonly Claude builtin catalog to Read,Glob,Grep and deny native Agent/Task delegation; retain write-worker/MCP host contracts.",
+  "sources": {
+    "internal/workers/adapter.go": "eb75ea7c5e6a7b241e7c9448ed34e2e1c05a109871adc8d6e8fe6a81c4c8be15",
+    "internal/workers/claude_tools_test.go": "d71649c060951a11711d6aefbe3df0d8d514cc9c03fe1450628fdf840068c755",
+    "internal/workers/claude_official_test.go": "170ec631b365b787bd009a6958fcd4d335d505e59c59bb7573f46a4205d4f85b",
+    "scripts/test_claude_worker_tools.py": "46f4c0f1e86a851291d78a972affee82a42607c5bd8c29abc57337eee413a37e",
+    "scripts/test-claude-worker-tools.sh": "b97a82173df51cb0f1945f2c0e55a1eb0e6185be174c650689786aa19c7e5d4d",
+    ".github/workflows/ci.yml": "9927d5c86b92cbdf8db4465b2c7b81e6fc8b5900e2fbe5d63e5bbbe3d132df47",
+    ".github/workflows/release.yml": "35be783db918b527fd4b338fb2a75bcb1e0aeba54082548f35bf5da8978d52df"
+  },
+  "official_protocol_receipt": {
+    "file": "official-2.1.296-amd64.json",
+    "sha256": "ce1882be51d635e319ae48a20953135b730a5bc9bc51980945d5b5ac415004f0",
+    "mandatory_cases": 5,
+    "passed": 5,
+    "skipped": 0
+  },
+  "checks": [
+    {
+      "command": "go test ./internal/workers ./internal/app ./internal/externalmcp ./internal/agents ./internal/quota -count=1",
+      "status": "PASS",
+      "log_sha256": "d3eff08b81225ffc8d44548984380da3fb6679f2a8d66565d5ec924af00af020"
+    },
+    {
+      "command": "go test -race ./internal/workers ./internal/app ./internal/externalmcp ./internal/agents ./internal/quota -count=1 -timeout 10m",
+      "status": "PASS",
+      "log_sha256": "22efe0c20e75a47cc9aa66ab2407a06915e2d19ff860606a544c6732a425fe36"
+    },
+    {
+      "command": "go vet ./internal/workers ./internal/app ./internal/externalmcp ./internal/agents ./internal/quota",
+      "status": "PASS",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "command": "go test ./internal/workers -run ^TestClaudeWorkerBuiltinCatalogAndScopedMCPRemainIndependent$ -count=1 -v",
+      "status": "PASS",
+      "modes": [
+        "advisory",
+        "scoped-readonly",
+        "scoped-write"
+      ],
+      "log_sha256": "6255ef2f9f9c24efbfa86985308a25480c277d59b662fff06d83359186db11bd"
+    },
+    {
+      "command": "scripts/test-claude-worker-tools.sh --archive [official checksum-verified archive] --output [private proof]",
+      "status": "PASS",
+      "log_sha256": "0598dad3375a9d89a047bf3cb273c08e4255effa8899e9bf2c00428ce2c6a504"
+    },
+    {
+      "command": "python3 -m unittest discover -s scripts -p test_*.py",
+      "status": "PASS",
+      "tests": 49,
+      "log_sha256": "8bcb9374d562d7e63b620fe738a8cfd65649a5beaa98babbfc1f8dd6a849c461"
+    },
+    {
+      "command": "python3 -m py_compile scripts/test_claude_worker_tools.py; bash -n scripts/test-claude-worker-tools.sh; git diff --check",
+      "status": "PASS"
+    },
+    {
+      "command": "python3 scripts/test_claude_worker_tools.py --binary /bin/true [private fixture paths]",
+      "status": "EXPECTED_REFUSAL",
+      "exit_code": 1,
+      "reason": "Official executable digest mismatch, before launching client/namespace",
+      "log_sha256": "799860474deba7931a20bb53355bd9bc513aa82770ad7067405a823c81ac7ae7"
+    }
+  ],
+  "initial_construction_failures": [
+    {
+      "file": "claude-worker-probe-general-purpose-initial.json",
+      "sha256": "2b502139821f35c790ed59b36b24b7d16d16a8c207842e1e741c5a32334e863a",
+      "classification": "Malformed classifier responses; delegated action denied; negative case also had prompt consumed by variadic flag and exit1 with zero requests.",
+      "counted_as_passing_boundary_proof": false,
+      "raw_data_scope": "synthetic/private only; retained locally"
+    },
+    {
+      "file": "claude-worker-probe-explore-initial.json",
+      "sha256": "98494aaa48fafb87f0078e735e11ffcf2f893745a13b846f6bc1e9fb19ac3762",
+      "classification": "Explore and positive-control actions denied because classifier responses did not follow required schema; not a tool-denial guarantee.",
+      "counted_as_passing_boundary_proof": false,
+      "raw_data_scope": "synthetic/private only; retained locally"
+    },
+    {
+      "file": "claude-worker-probe-classifier-invalid.json",
+      "sha256": "c4cf97e53363775b4505c573908a95faa2ae9749aa2ab9710e5355214c5981e6",
+      "classification": "Classifier returned false instead of the required no string; denied. Corrected after examining synthetic protocol data.",
+      "counted_as_passing_boundary_proof": false,
+      "raw_data_scope": "synthetic/private only; retained locally"
+    }
+  ],
+  "limits": [
+    "No real authentication or inference; synthetic token/cost fields are not economics.",
+    "Linux amd64 official-client protocol proof only; no ARM/no-AVX or subscription certification.",
+    "No institutional MCP mutation was demonstrated. Managed host grants remain exact/read-only as applicable.",
+    "No claim of transparent native TUI mediation or Core final-validation parity.",
+    "The default unit suite explicitly skips the opt-in protocol test without a binary; only the mandatory wrapper proof counts as integration evidence.",
+    "GitHub CI/release verification and ShellCheck remain pending; local ShellCheck is unavailable.",
+    "No changes under docs/ or website/; embedded-site inputs unchanged.",
+    "Root coordinates combined release certification with the separate managed OpenCode .3 change; no release/tag/push performed here."
+  ]
+}

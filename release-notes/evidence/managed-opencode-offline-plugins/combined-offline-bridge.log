@@ -1,0 +1,28 @@
+=== RUN   TestLiveManagedOpenCodeAPI
+    api_test.go:165: HTTP create/list/get/prompt/async/status/abort/diff/files/agents/MCP/permissions=PASS SSE lifecycle=PASS
+--- PASS: TestLiveManagedOpenCodeAPI (3.47s)
+=== RUN   TestLiveManagedOpenCodeRoutesPromptThroughIVOAI
+--- PASS: TestLiveManagedOpenCodeRoutesPromptThroughIVOAI (6.04s)
+=== RUN   TestLiveManagedOpenCodeAttachRendersIVOAIPlugin
+=== RUN   TestLiveManagedOpenCodeAttachRendersIVOAIPlugin/width60
+=== RUN   TestLiveManagedOpenCodeAttachRendersIVOAIPlugin/width100
+=== RUN   TestLiveManagedOpenCodeAttachRendersIVOAIPlugin/width160
+--- PASS: TestLiveManagedOpenCodeAttachRendersIVOAIPlugin (26.73s)
+    --- PASS: TestLiveManagedOpenCodeAttachRendersIVOAIPlugin/width60 (8.92s)
+    --- PASS: TestLiveManagedOpenCodeAttachRendersIVOAIPlugin/width100 (8.95s)
+    --- PASS: TestLiveManagedOpenCodeAttachRendersIVOAIPlugin/width160 (8.87s)
+=== RUN   TestLiveManagedOpenCodePermissions
+=== RUN   TestLiveManagedOpenCodePermissions/full
+    permissions_test.go:184: mode=full permission_prompt_count=0 filesystem_fixture=PASS
+=== RUN   TestLiveManagedOpenCodePermissions/interactive
+    permissions_test.go:184: mode=interactive permission_prompt_count=4 filesystem_fixture=PASS
+--- PASS: TestLiveManagedOpenCodePermissions (8.87s)
+    --- PASS: TestLiveManagedOpenCodePermissions/full (4.28s)
+    --- PASS: TestLiveManagedOpenCodePermissions/interactive (4.59s)
+=== RUN   TestLiveManagedOpenCodeResizeKeyboard
+    tui_interaction_test.go:182: resize=100 panel visible; Escape returned
+    tui_interaction_test.go:182: resize=60 panel visible; Escape returned
+    tui_interaction_test.go:182: resize=100 panel visible; Escape returned
+    tui_interaction_test.go:182: resize=160 panel visible; Escape returned
+--- PASS: TestLiveManagedOpenCodeResizeKeyboard (11.21s)
+PASS

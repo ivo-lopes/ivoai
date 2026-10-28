@@ -1,0 +1,61 @@
+{
+  "schema": 1,
+  "epoch": "pr46-g0-main064-integration-v1",
+  "parents": {
+    "pr46": "a137d693ebd7f48eb3701b1e019c734e6264425c",
+    "main": "064edc3ad6972bf8bfd2d95f738c9732d1102396"
+  },
+  "merged_runtime_index_tree": "96b2027ecc2d9f2d9e2f9c8f34a9bb57f9622170",
+  "merge": "automatic; zero conflicts or manual runtime changes",
+  "incoming_G0_paths_identical_to_main": 94,
+  "source_file_count": 555,
+  "source_inventory_sha256": "286ea702b8cb013c2add9ee631c8ca0b6572c49e7615bb20e028883066289072",
+  "protocol": 3,
+  "protocol_files_unchanged": {
+    "internal/app/primary_prefetch_live_test.go": "8a39b1ef6f9c4efc5a95a115adac7104bc51d330c9eb3e6b2f592555f3f4fe08",
+    "scripts/benchmark-economic-runtime.py": "f3d88a3bfb4117606648a2d58ec2b4bc62a549bc41660c75c9c0192807a94e60",
+    "scripts/benchmark_catalog.py": "c2d61962691373cc120f9fda9735f13ce7b1c9122f314ca31cfe5b1fa7091622",
+    "scripts/benchmark_process_sampler.py": "5ebaaa4c8b18e4a24b85bd35b9c57fc992b972cbb529530e86e266ca15a5a3cd",
+    "internal/benchmarkfixtures/fixtures.go": "36d96121f59a734f25989db9d43f6d4c39e0a0160bbb676f82d7c5bea1a5fc86",
+    "internal/benchmarkfixtures/edit_oracle.go": "8f907857f8a2c91bc4464ae55ad8b0728e3b11621ade776808e953a7f7b85514",
+    "internal/benchmarkfixtures/exec_observation.go": "6188106799ed44eeb260d322f46f1d9e1e4fcdbbcd4c69e759a18137fba977e3",
+    "internal/benchmarkfixtures/data/catalog.json": "395f77bc5154c3df42cc7897feb7206bb38963a9441741ea24dbf290b08a9d7e"
+  },
+  "historical_artifacts": {
+    "files": 193,
+    "all_bytes_unchanged": true,
+    "includes_previous140and22_new_epoch_receipts": true,
+    "real_comparative_rows": 126,
+    "rescore": false
+  },
+  "runtime_builds": {
+    "amd64": {
+      "sha256": "70634f31ae06d31924d02b845f6602d77a42419abedddc88cc9de8dd8e7a9603",
+      "execution": "version smokePASS"
+    },
+    "arm64": {
+      "sha256": "cee14568947216e14721e859af44dda6daccf5f19103eda59612ae349714b7b1",
+      "execution": "NOT_EXECUTED crosscompile only"
+    }
+  },
+  "release014": {
+    "tag_object": "3943e54ecbecf380429b89ad5a28a0500d138891",
+    "commit": "6d99e320912f3f7325c3009209a10e9df86610d4",
+    "unchanged_by_this_merge": true
+  },
+  "rollback": {
+    "source_revision": "3be82befea6ed3875373afcb1bfaa450710310ac",
+    "source_manifest_sha256": "28eeb86068f75de7d60ca7a0702723c63519dc844a8b593bab8441f986050389",
+    "probe_source_sha256": "37c26f467d5472bad3650e0e6ee2460c7929cd78332174d87958ca86243ef860",
+    "legacy_binary_sha256": "fc913780355621826b49aa03455cdf0b743294acfccaf6dbfc10db755bee27e2",
+    "current_named_test_jsonl_sha256": "6fc67c51fabcab8bac5c5f292efa9a8d41b10aa5a3cb248ea7c893559057c37c",
+    "module_verification_sha256": "825b49c0a1aed492845664a8431f4e28b0d076f39c2021dbaeb7f55df10b27ed",
+    "skips": 0,
+    "result": "PROTECTED_EVIDENCE_ROLLBACK_GATE=PASS named_test=1 skips=0",
+    "scope": "source-pinned old Core full/range deny protected IDs; legacy put/read/GC succeed; protected payload preserved; no claim old inventory counts protected disk"
+  },
+  "provider_turns": 0,
+  "economic_gate": "INCOMPLETE; no new comparative runs",
+  "future_comparison": "rebuild same final common harness on both frozen runtime arms; strict discovery before any actual client call; no old receipts relabeled",
+  "context_sync": "BLOCKED IVOAI-175"
+}

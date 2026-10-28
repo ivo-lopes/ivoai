@@ -1,0 +1,204 @@
+{
+  "schema": 1,
+  "condition": "offline-app-gateway-v2",
+  "provider": "actual CodeIntel direct small-file read; no Graft or model provider",
+  "codeintel_cache": "normal CacheRoot enabled in both arms; direct fixture does not exercise structural result cache",
+  "worker_basis": "host metadata fixture; NOT_ACTUAL_DISPATCH; real workers UNKNOWN",
+  "recovery_basis": "ArtifactStore exact read under issued owner; not native-client or sealed Gateway recovery",
+  "timing_basis": "single sequential OFF/ON diagnostic; retrieval includes host work; no equivalent-load or causal timing claim",
+  "model_calls": 0,
+  "economy": "NOT_EVALUATED",
+  "catalog_promotion": false,
+  "rows": [
+    {
+      "arm": "OFF",
+      "operation": "primary_cold",
+      "outcome": "PASS",
+      "observed_event_deltas": {
+        "code_inspections": 1,
+        "codeintel_cache_hits": 0,
+        "direct_inspections": 1,
+        "gateway_retrievals": 0,
+        "gateway_cache_hits": 0
+      },
+      "retrieval_us": 10486,
+      "envelope_and_exact_read_us": 143,
+      "text_bytes": 121,
+      "text_sha256": "c42fa12e81a41c9dc18ff82b6ca016ef680fb2f9630112a54999b451a4bc5a91"
+    },
+    {
+      "arm": "OFF",
+      "operation": "primary_warm",
+      "outcome": "PASS",
+      "observed_event_deltas": {
+        "code_inspections": 1,
+        "codeintel_cache_hits": 0,
+        "direct_inspections": 1,
+        "gateway_retrievals": 0,
+        "gateway_cache_hits": 0
+      },
+      "retrieval_us": 12917,
+      "envelope_and_exact_read_us": 192,
+      "text_bytes": 121,
+      "text_sha256": "c42fa12e81a41c9dc18ff82b6ca016ef680fb2f9630112a54999b451a4bc5a91"
+    },
+    {
+      "arm": "OFF",
+      "operation": "worker_same_worktree",
+      "outcome": "PASS",
+      "observed_event_deltas": {
+        "code_inspections": 1,
+        "codeintel_cache_hits": 0,
+        "direct_inspections": 1,
+        "gateway_retrievals": 0,
+        "gateway_cache_hits": 0
+      },
+      "retrieval_us": 12735,
+      "envelope_and_exact_read_us": 277,
+      "text_bytes": 121,
+      "text_sha256": "c42fa12e81a41c9dc18ff82b6ca016ef680fb2f9630112a54999b451a4bc5a91"
+    },
+    {
+      "arm": "OFF",
+      "operation": "worker_distinct_worktree",
+      "outcome": "PASS",
+      "observed_event_deltas": {
+        "code_inspections": 1,
+        "codeintel_cache_hits": 0,
+        "direct_inspections": 1,
+        "gateway_retrievals": 0,
+        "gateway_cache_hits": 0
+      },
+      "retrieval_us": 13523,
+      "envelope_and_exact_read_us": 290,
+      "text_bytes": 121,
+      "text_sha256": "c42fa12e81a41c9dc18ff82b6ca016ef680fb2f9630112a54999b451a4bc5a91"
+    },
+    {
+      "arm": "OFF",
+      "operation": "generation_changed",
+      "outcome": "PASS",
+      "observed_event_deltas": {
+        "code_inspections": 1,
+        "codeintel_cache_hits": 0,
+        "direct_inspections": 1,
+        "gateway_retrievals": 0,
+        "gateway_cache_hits": 0
+      },
+      "retrieval_us": 14875,
+      "envelope_and_exact_read_us": 297,
+      "text_bytes": 121,
+      "text_sha256": "8b238e6fab8215df7d688e7adbf1351b3c5f8f3e647f115afc1be77bd4de9dc4"
+    },
+    {
+      "arm": "OFF",
+      "operation": "primary_revoked",
+      "outcome": "DENIED_AS_EXPECTED",
+      "observed_event_deltas": {
+        "code_inspections": 0,
+        "codeintel_cache_hits": 0,
+        "direct_inspections": 0,
+        "gateway_retrievals": 0,
+        "gateway_cache_hits": 0
+      },
+      "retrieval_us": 448,
+      "envelope_and_exact_read_us": 0,
+      "text_bytes": 0
+    },
+    {
+      "arm": "ON",
+      "operation": "primary_cold",
+      "outcome": "PASS",
+      "observed_event_deltas": {
+        "code_inspections": 1,
+        "codeintel_cache_hits": 0,
+        "direct_inspections": 1,
+        "gateway_retrievals": 1,
+        "gateway_cache_hits": 0
+      },
+      "retrieval_us": 19550,
+      "envelope_and_exact_read_us": 172,
+      "text_bytes": 121,
+      "text_sha256": "c42fa12e81a41c9dc18ff82b6ca016ef680fb2f9630112a54999b451a4bc5a91"
+    },
+    {
+      "arm": "ON",
+      "operation": "primary_warm",
+      "outcome": "PASS",
+      "observed_event_deltas": {
+        "code_inspections": 0,
+        "codeintel_cache_hits": 0,
+        "direct_inspections": 0,
+        "gateway_retrievals": 1,
+        "gateway_cache_hits": 1
+      },
+      "retrieval_us": 20763,
+      "envelope_and_exact_read_us": 122,
+      "text_bytes": 121,
+      "text_sha256": "c42fa12e81a41c9dc18ff82b6ca016ef680fb2f9630112a54999b451a4bc5a91"
+    },
+    {
+      "arm": "ON",
+      "operation": "worker_same_worktree",
+      "outcome": "PASS",
+      "observed_event_deltas": {
+        "code_inspections": 0,
+        "codeintel_cache_hits": 0,
+        "direct_inspections": 0,
+        "gateway_retrievals": 1,
+        "gateway_cache_hits": 1
+      },
+      "retrieval_us": 11234,
+      "envelope_and_exact_read_us": 128,
+      "text_bytes": 121,
+      "text_sha256": "c42fa12e81a41c9dc18ff82b6ca016ef680fb2f9630112a54999b451a4bc5a91"
+    },
+    {
+      "arm": "ON",
+      "operation": "worker_distinct_worktree",
+      "outcome": "PASS",
+      "observed_event_deltas": {
+        "code_inspections": 1,
+        "codeintel_cache_hits": 0,
+        "direct_inspections": 1,
+        "gateway_retrievals": 1,
+        "gateway_cache_hits": 0
+      },
+      "retrieval_us": 19483,
+      "envelope_and_exact_read_us": 135,
+      "text_bytes": 121,
+      "text_sha256": "c42fa12e81a41c9dc18ff82b6ca016ef680fb2f9630112a54999b451a4bc5a91"
+    },
+    {
+      "arm": "ON",
+      "operation": "generation_changed",
+      "outcome": "PASS",
+      "observed_event_deltas": {
+        "code_inspections": 1,
+        "codeintel_cache_hits": 0,
+        "direct_inspections": 1,
+        "gateway_retrievals": 1,
+        "gateway_cache_hits": 0
+      },
+      "retrieval_us": 27240,
+      "envelope_and_exact_read_us": 277,
+      "text_bytes": 121,
+      "text_sha256": "8b238e6fab8215df7d688e7adbf1351b3c5f8f3e647f115afc1be77bd4de9dc4"
+    },
+    {
+      "arm": "ON",
+      "operation": "primary_revoked",
+      "outcome": "DENIED_AS_EXPECTED",
+      "observed_event_deltas": {
+        "code_inspections": 0,
+        "codeintel_cache_hits": 0,
+        "direct_inspections": 0,
+        "gateway_retrievals": 0,
+        "gateway_cache_hits": 0
+      },
+      "retrieval_us": 987,
+      "envelope_and_exact_read_us": 0,
+      "text_bytes": 0
+    }
+  ]
+}

@@ -73,13 +73,7 @@ func TestEvidenceGatewayCodeReuseInvalidationAndAdmission(t *testing.T) {
 	if worker.Artifact.ID == first.Artifact.ID || worker.Artifact.Owner.WorkerID != workerID {
 		t.Fatal("sharing widened artifact ownership")
 	}
-	artifacts, err := workingcontext.NewLocalStore(filepath.Join(a.Store.Paths.CacheDir, "working-context"), workingcontext.LocalOptions{})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if _, err := artifacts.Stat(context.Background(), worker.Artifact.Owner, first.Artifact.ID); err == nil {
-		t.Fatal("worker acquired primary artifact")
-	}
+	assertCodeOwnerIsolation(t, a, worker.Artifact.Owner, first.Artifact.ID)
 	if err := os.WriteFile(filepath.Join(root, "mathpkg/scale.go"), []byte("package mathpkg\nfunc Scale(x int) int { return x * 3 }\n"), 0600); err != nil {
 		t.Fatal(err)
 	}
@@ -122,12 +116,8 @@ func TestExperimentalGatewayPreservesPrimaryContract(t *testing.T) {
 		if err != nil || len(body) > 4094 {
 			t.Fatalf("primary envelope failed: %v", err)
 		}
-		var value struct {
-			Text     string                     `json:"text"`
-			Artifact workingcontext.ArtifactRef `json:"artifact"`
-			Hit      bool                       `json:"evidence_cache_hit"`
-		}
-		if json.Unmarshal(body, &value) != nil || value.Artifact.Validate() != nil || !strings.Contains(value.Text, "Scale") {
+		value := assertExactCodeEnvelope(t, a, body, workingcontext.Ownership{SessionID: id, TaskID: task.ID})
+		if !strings.Contains(value.Text, "Scale") {
 			t.Fatal("primary exact-artifact compatibility lost")
 		}
 	}

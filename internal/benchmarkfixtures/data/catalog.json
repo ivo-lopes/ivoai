@@ -1,21 +1,27 @@
 {
-  "schema_version": 1,
-  "scope": "planned_matrix16_with_read_only_subset",
+  "schema_version": 2,
+  "scope": "planned_matrix16_with_read_and_edit_subset",
   "global_economic_gate": "INCOMPLETE",
   "scenarios": [
     {
       "id": "small_known_file_correction",
       "label": "Small known-file correction",
-      "fixture": "go-core",
+      "fixture": "go-clamp-edit",
       "languages": [
         "go"
       ],
-      "runner_supported": false,
-      "blocker": "read_only_runner_cannot_apply_and_validate_edits",
-      "task": "",
-      "prompt": "",
-      "expected": null,
-      "structural": "allowed"
+      "runner_supported": true,
+      "blocker": "",
+      "task": "Correct Clamp in mathpkg/clamp.go",
+      "prompt": "Fix the upper-bound bug in mathpkg/clamp.go: Clamp(value,min,max) must return min below min, max above max, and value otherwise for min <= max. Preserve package, declaration, parameter names and all other files. Implement a pure function using only comparisons, if statements and returns; do not add calls, imports, declarations or side effects. Only mathpkg/clamp.go may change. Run the existing tests if possible without fetching packages. Report file, lower=Clamp(-5,0,20), inside=Clamp(10,0,20), and upper=Clamp(25,0,20) as JSON. Preserve existing file permissions and directories.",
+      "expected": {
+        "file": "mathpkg/clamp.go",
+        "lower": 0,
+        "inside": 10,
+        "upper": 20
+      },
+      "structural": "allowed",
+      "execution": "workspace_edit"
     },
     {
       "id": "implementation",
@@ -34,22 +40,29 @@
         "input": 3,
         "result": 6
       },
-      "structural": "allowed"
+      "structural": "allowed",
+      "execution": "read_only"
     },
     {
       "id": "cross_module_refactor",
       "label": "Cross-module refactor",
-      "fixture": "monorepo-ts",
+      "fixture": "monorepo-refactor-ts",
       "languages": [
         "typescript",
         "shell"
       ],
-      "runner_supported": false,
-      "blocker": "read_only_runner_cannot_refactor_or_run_post_edit_oracles",
-      "task": "",
-      "prompt": "",
-      "expected": null,
-      "structural": "allowed"
+      "runner_supported": true,
+      "blocker": "",
+      "task": "Rename discount to applyDiscount across both consumers",
+      "prompt": "Rename the exported TypeScript function discount to applyDiscount in packages/shared/src/discount.ts and update both consumers packages/shop/src/main.ts and packages/admin/src/report.ts. Only those three files may change. This is an identifier-only refactor: preserve every other token, import path, computation and output; whitespace, comments and semicolons may differ. Do not add dependencies, scripts or side effects. Report export=applyDiscount, call_sites=2, shop_result=90 and admin_result=72 as JSON. Preserve existing file permissions and directories.",
+      "expected": {
+        "export": "applyDiscount",
+        "call_sites": 2,
+        "shop_result": 90,
+        "admin_result": 72
+      },
+      "structural": "allowed",
+      "execution": "workspace_edit"
     },
     {
       "id": "dependencies",
@@ -69,7 +82,8 @@
         ],
         "total": 108
       },
-      "structural": "allowed"
+      "structural": "allowed",
+      "execution": "read_only"
     },
     {
       "id": "multi_module_callers",
@@ -94,7 +108,8 @@
           }
         ]
       },
-      "structural": "required"
+      "structural": "required",
+      "execution": "read_only"
     },
     {
       "id": "api",
@@ -115,7 +130,8 @@
         ],
         "return_type": "int"
       },
-      "structural": "allowed"
+      "structural": "allowed",
+      "execution": "read_only"
     },
     {
       "id": "large_project",
@@ -129,7 +145,8 @@
       "task": "",
       "prompt": "",
       "expected": null,
-      "structural": "allowed"
+      "structural": "allowed",
+      "execution": "unavailable"
     },
     {
       "id": "monorepo",
@@ -148,7 +165,8 @@
         "shared": "packages/shared/src/discount.ts",
         "result": 90
       },
-      "structural": "allowed"
+      "structural": "allowed",
+      "execution": "read_only"
     },
     {
       "id": "unsupported_parser",
@@ -168,7 +186,8 @@
         "threshold": 100,
         "result": 88
       },
-      "structural": "forbidden"
+      "structural": "forbidden",
+      "execution": "read_only"
     },
     {
       "id": "institutional_documentation",
@@ -180,7 +199,8 @@
       "task": "",
       "prompt": "",
       "expected": null,
-      "structural": "allowed"
+      "structural": "allowed",
+      "execution": "unavailable"
     },
     {
       "id": "ai_memory_history",
@@ -192,7 +212,8 @@
       "task": "",
       "prompt": "",
       "expected": null,
-      "structural": "allowed"
+      "structural": "allowed",
+      "execution": "unavailable"
     },
     {
       "id": "non_code",
@@ -211,7 +232,8 @@
         ],
         "total_days": 8
       },
-      "structural": "forbidden"
+      "structural": "forbidden",
+      "execution": "read_only"
     },
     {
       "id": "multiple_workers",
@@ -225,7 +247,8 @@
       "task": "",
       "prompt": "",
       "expected": null,
-      "structural": "allowed"
+      "structural": "allowed",
+      "execution": "unavailable"
     },
     {
       "id": "reuse_between_turns",
@@ -239,7 +262,8 @@
       "task": "",
       "prompt": "",
       "expected": null,
-      "structural": "allowed"
+      "structural": "allowed",
+      "execution": "unavailable"
     },
     {
       "id": "interrupted_continuity",
@@ -253,7 +277,8 @@
       "task": "",
       "prompt": "",
       "expected": null,
-      "structural": "allowed"
+      "structural": "allowed",
+      "execution": "unavailable"
     },
     {
       "id": "concurrent_distinct_projects",
@@ -265,7 +290,8 @@
       "task": "",
       "prompt": "",
       "expected": null,
-      "structural": "allowed"
+      "structural": "allowed",
+      "execution": "unavailable"
     }
   ]
 }

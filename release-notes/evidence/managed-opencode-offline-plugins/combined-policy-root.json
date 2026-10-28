@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "scope": "real_pinned_binary_private_network_no_inference",
+  "uid": 0,
+  "binary_sha256": "49e0e253b972dc7944a43b7e59341abc06b3b1b88f63b2653e156c237d882093",
+  "results": [
+    {
+      "case": "managed_local",
+      "status": "PASS",
+      "registry_requests": 0,
+      "elapsed_ms": 2660,
+      "provider_inference": false
+    },
+    {
+      "case": "managed_package",
+      "status": "PASS",
+      "registry_requests": 0,
+      "elapsed_ms": 1488,
+      "provider_inference": false
+    },
+    {
+      "case": "managed_remote",
+      "status": "PASS",
+      "registry_requests": 0,
+      "elapsed_ms": 1488,
+      "provider_inference": false
+    },
+    {
+      "case": "managed_foreign_file",
+      "status": "PASS",
+      "registry_requests": 0,
+      "elapsed_ms": 1484,
+      "provider_inference": false
+    },
+    {
+      "case": "managed_symlink",
+      "status": "PASS",
+      "registry_requests": 0,
+      "elapsed_ms": 1522,
+      "provider_inference": false
+    },
+    {
+      "case": "upstream_local_control",
+      "status": "PASS",
+      "registry_requests": 1,
+      "elapsed_ms": 4343,
+      "provider_inference": false
+    }
+  ]
+}

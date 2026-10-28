@@ -103,11 +103,11 @@ func (s Store) LoadCheckpoint(id string) (Checkpoint, error) {
 		return Checkpoint{}, err
 	}
 	path := filepath.Join(s.Root, "checkpoints", id+".json")
-	fd, err := unix.Open(path, unix.O_RDONLY|unix.O_CLOEXEC|unix.O_NOFOLLOW, 0)
+	fd, err := unix.Open(path, unix.O_RDONLY|unix.O_CLOEXEC|unix.O_NOFOLLOW|unix.O_NONBLOCK, 0)
 	if errors.Is(err, unix.ENOENT) {
 		// Read-only compatibility with v0.10.2 runtime checkpoints.
 		path = filepath.Join(s.Root, "runtime", id, "checkpoint.json")
-		fd, err = unix.Open(path, unix.O_RDONLY|unix.O_CLOEXEC|unix.O_NOFOLLOW, 0)
+		fd, err = unix.Open(path, unix.O_RDONLY|unix.O_CLOEXEC|unix.O_NOFOLLOW|unix.O_NONBLOCK, 0)
 	}
 	if err != nil {
 		return Checkpoint{}, err

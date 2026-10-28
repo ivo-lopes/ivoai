@@ -1,0 +1,10 @@
+=== RUN   TestBenchmarkSandboxedEditOracles
+=== RUN   TestBenchmarkSandboxedEditOracles/small_known_file_correction
+    edit_oracle_test.go:180: offline_edit_oracle=VERIFIED mode=small_known_file_correction provider_attempts=0
+=== RUN   TestBenchmarkSandboxedEditOracles/cross_module_refactor
+    edit_oracle_test.go:180: offline_edit_oracle=VERIFIED mode=cross_module_refactor provider_attempts=0
+--- PASS: TestBenchmarkSandboxedEditOracles (25.75s)
+    --- PASS: TestBenchmarkSandboxedEditOracles/small_known_file_correction (25.43s)
+    --- PASS: TestBenchmarkSandboxedEditOracles/cross_module_refactor (0.32s)
+PASS
+ok  	github.com/ivo-lopes/ivoai/internal/benchmarkfixtures	26.759s

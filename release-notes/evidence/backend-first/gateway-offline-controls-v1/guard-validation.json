@@ -1,0 +1,41 @@
+{
+  "schema": 1,
+  "condition": "offline-app-gateway-v1",
+  "checks": [
+    {
+      "name": "reject-existing-output",
+      "expected_exit": "nonzero before any arm starts",
+      "actual_exit": 1,
+      "result": "PASS"
+    },
+    {
+      "name": "reject-nonprivate-output",
+      "expected_exit": "nonzero before any arm starts",
+      "actual_exit": 1,
+      "result": "PASS"
+    },
+    {
+      "name": "reject-inherited-git",
+      "expected_exit": "nonzero before Git or any arm starts",
+      "actual_exit": 1,
+      "result": "PASS"
+    },
+    {
+      "name": "receipt-allowlist-bound-private-mode-and-completeness",
+      "result": "PASS",
+      "rows": 12,
+      "bytes": 6361,
+      "mode": "0600"
+    },
+    {
+      "name": "historical-artifacts-unchanged",
+      "result": "PASS",
+      "basis": "no historical paths modified; base16f4; distinct new evidence directory"
+    },
+    {
+      "name": "post-run-source-and-binary-freeze",
+      "result": "PASS",
+      "source_files": 535
+    }
+  ]
+}
