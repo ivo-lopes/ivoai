@@ -86,7 +86,7 @@ def fixture_digest(name):
 
 def contract_digest():
     result = hashlib.sha256()
-    for name in ("fixtures.go", "edit_oracle.go"):
+    for name in ("fixtures.go", "edit_oracle.go", "exec_observation.go"):
         result.update(name.encode() + b"\0" + (ROOT / "internal/benchmarkfixtures" / name).read_bytes() + b"\0")
     return result.hexdigest()
 
@@ -109,7 +109,7 @@ def oracle_identity(scenario, go, node, bwrap):
 
 def expected_capabilities(harness):
     cases = [s for s in load_catalog() if s.runner_supported]
-    return {"schema_version": 2, "catalog_sha256": digest(CATALOG),
+    return {"schema_version": 3, "catalog_sha256": digest(CATALOG),
             "fixture_contract_sha256": contract_digest(),
             "harness_sha256": digest(harness), "supported_scenarios": sorted(s.id for s in cases),
             "fixtures": {s.fixture: fixture_digest(s.fixture) for s in cases}}

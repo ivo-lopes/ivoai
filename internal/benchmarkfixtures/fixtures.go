@@ -21,7 +21,7 @@ import (
 //go:embed all:data
 var inputs embed.FS
 
-//go:embed fixtures.go edit_oracle.go
+//go:embed fixtures.go edit_oracle.go exec_observation.go
 var contractSources embed.FS
 
 type Scenario struct {
@@ -89,7 +89,7 @@ func catalogBytes() []byte  { body, _ := inputs.ReadFile("data/catalog.json"); r
 func CatalogSHA256() string { sum := sha256.Sum256(catalogBytes()); return hex.EncodeToString(sum[:]) }
 func ContractSHA256() string {
 	hash := sha256.New()
-	for _, name := range []string{"fixtures.go", "edit_oracle.go"} {
+	for _, name := range []string{"fixtures.go", "edit_oracle.go", "exec_observation.go"} {
 		body, _ := contractSources.ReadFile(name)
 		hash.Write([]byte(name + "\x00"))
 		hash.Write(body)

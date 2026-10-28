@@ -19,6 +19,7 @@ import sys
 import tempfile
 import time
 import benchmark_catalog
+from benchmark_process_sampler import ProcessSampler
 
 
 SCENARIOS = ("api", "implementation", "multi_module_callers")
@@ -81,6 +82,42 @@ def unique_object(pairs):
     return value
 
 
+
+def validate_native_events(value, tool_calls):
+    keys = {"schema_version", "stream_status", "coverage", "tool_completions", "repeated_exact_payloads",
+            "collaboration_completions", "reported_spawn_receivers", "unclassified_errors", "duplicate_terminal_items",
+            "unknown_events", "unknown_items", "native_workers", "native_delegations", "native_retries"}
+    if type(value) is not dict or set(value) != keys or type(value["schema_version"]) is not int or value["schema_version"] != 1:
+        raise ValueError("invalid native observation schema")
+    if value["coverage"] != "partial_client_projection" or value["stream_status"] not in ("complete", "partial", "failed", "invalid"):
+        raise ValueError("invalid native observation scope")
+    for field, allowed in (("tool_completions", {"command_execution", "mcp_tool_call", "file_change", "web_search", "collab_tool_call"}),
+                           ("repeated_exact_payloads", {"command_execution", "mcp_tool_call"}),
+                           ("collaboration_completions", {"spawn_agent", "send_input", "wait", "close_agent"})):
+        counts = value[field]
+        if type(counts) is not dict or set(counts) != allowed or any(type(v) is not int or not 0 <= v <= 4096 for v in counts.values()):
+            raise ValueError("invalid enum-only event counts")
+    for field in ("unclassified_errors", "duplicate_terminal_items", "unknown_events", "unknown_items"):
+        if type(value[field]) is not int or not 0 <= value[field] <= 4096:
+            raise ValueError("invalid event counters")
+    if any(value[field] is not None for field in ("native_workers", "native_delegations", "native_retries")):
+        raise ValueError("partial projection cannot attest actual totals")
+    reported = value["reported_spawn_receivers"]
+    if reported is not None and (type(reported) is not int or not 1 <= reported <= 1024 or not value["collaboration_completions"]["spawn_agent"]):
+        raise ValueError("invalid reported recipients")
+    if sum(value["collaboration_completions"].values()) > value["tool_completions"]["collab_tool_call"]:
+        raise ValueError("inconsistent collaboration observations")
+    if sum(value["tool_completions"].values()) > 1024 or reported is not None and reported > 64 * value["collaboration_completions"]["spawn_agent"]:
+        raise ValueError("event identity limit exceeded")
+    if tool_calls != value["tool_completions"]["command_execution"] + value["tool_completions"]["mcp_tool_call"]:
+        raise ValueError("inconsistent legacy tool counter")
+    for kind, count in value["repeated_exact_payloads"].items():
+        if count > max(0, value["tool_completions"][kind] - 1):
+            raise ValueError("invalid repeated exact-payload count")
+    if value["stream_status"] == "complete" and (value["unknown_events"] or value["unknown_items"]):
+        raise ValueError("unknown events cannot prove complete coverage")
+    return value
+
 def read_evidence(path, scenario, arm, repetition, code, inventory_hash, capabilities=None):
     """Return one allowlisted row, including a fixed-label failure for missing tests."""
     base = {"Scenario": scenario, "Arm": arm, "Repetition": repetition,
@@ -130,7 +167,7 @@ def read_evidence(path, scenario, arm, repetition, code, inventory_hash, capabil
                                    ("InputTokens", "CachedInputTokens", "OutputTokens"))):
             raise ValueError("missing successful execution measurements")
         definition = next(s for s in benchmark_catalog.load_catalog() if s.id == scenario)
-        if row.get("Execution") != definition.execution or type(row.get("EditValidated")) is not bool or row.get("NativeWorkerObservation") != "UNVERIFIED_NATIVE_EVENTS_NOT_INSTRUMENTED":
+        if row.get("Execution") != definition.execution or type(row.get("EditValidated")) is not bool or row.get("NativeWorkerObservation") != "PARTIAL_CLIENT_PROJECTION_TOTALS_UNKNOWN":
             raise ValueError("invalid execution contract")
         if definition.execution == "workspace_edit":
             expected_oracle = capabilities.get("oracle_tools", {}).get(scenario) if capabilities else None
@@ -141,7 +178,11 @@ def read_evidence(path, scenario, arm, repetition, code, inventory_hash, capabil
                 raise ValueError("answer without validated patch")
         elif row["EditValidated"] or row["EditFiles"] != 0 or row.get("OracleToolsSHA256") != "":
             raise ValueError("unexpected edit verdict")
+        native = validate_native_events(row.get("NativeEventMetrics"), row["ToolCalls"])
+        if row["Correct"] and native["stream_status"] != "complete":
+            raise ValueError("incomplete native event stream")
         clean = {key: row.get(key) for key in COUNTS + OPTIONAL_COUNTS}
+        clean["NativeEventMetrics"] = native
         clean.update(Execution=definition.execution, EditValidated=row["EditValidated"], OracleToolsSHA256=row["OracleToolsSHA256"], NativeWorkerObservation=row["NativeWorkerObservation"])
         clean.update({key: row[key] for key in ("Model", "Effort", "DistributionInventorySHA256", "JSONDecoded")})
         clean.update(base, Correct=row["Correct"] and code == 0, MeasurementValid=True)
@@ -157,11 +198,13 @@ def read_evidence(path, scenario, arm, repetition, code, inventory_hash, capabil
     return base
 
 
-def wait4_process(process, timeout):
+def wait4_process(process, timeout, sampler=None):
     """Reap this owned PID exactly once; Popen must not poll/wait before wait4."""
     deadline = time.monotonic() + timeout
     try:
         while True:
+            if sampler is not None:
+                sampler.tick()
             pid, status, usage = os.wait4(process.pid, os.WNOHANG)
             if pid:
                 process.returncode = os.waitstatus_to_exitcode(status)
@@ -189,7 +232,7 @@ def wait4_process(process, timeout):
         raise
 
 
-def run_attempt(command, env, resource_path, timeout=250, cwd=None):
+def run_attempt(command, env, resource_path, timeout=250, cwd=None, sample_processes=False):
     # GNU time reports wait4 usage for the command and its reaped descendants.
     # It is not whole-host attribution or an instantaneous process-tree RSS sum.
     resources = {key: None for key in ("LocalUserCPUMS", "LocalSystemCPUMS",
@@ -203,11 +246,14 @@ def run_attempt(command, env, resource_path, timeout=250, cwd=None):
         command = [str(timer), "-q", "-f", '{"user":%U,"system":%S,"rss_kib":%M,"elapsed":%e}',
                    "-o", str(resource_path), "--", *command]
     started = time.monotonic()
+    sampler = None
     try:
         process = subprocess.Popen(command, env=env, stdout=subprocess.DEVNULL,
                                    stderr=subprocess.DEVNULL, start_new_session=True, cwd=cwd)
+        if sample_processes and sys.platform.startswith("linux"):
+            sampler = ProcessSampler(process.pid)
         if not wrapped and sys.platform.startswith("linux") and hasattr(os, "wait4"):
-            code, usage = wait4_process(process, timeout)
+            code, usage = wait4_process(process, timeout, sampler)
             resources.update(LocalUserCPUMS=round(usage.ru_utime * 1000),
                              LocalSystemCPUMS=round(usage.ru_stime * 1000),
                              LocalPeakRSSBytes=usage.ru_maxrss * 1024,
@@ -215,7 +261,16 @@ def run_attempt(command, env, resource_path, timeout=250, cwd=None):
                              LocalResourceSource="linux_wait4_reaped_descendants_max_rss_not_sum")
         else:
             try:
-                code = process.wait(timeout=timeout)
+                if sampler is None:
+                    code = process.wait(timeout=timeout)
+                else:
+                    deadline = time.monotonic() + timeout
+                    while process.poll() is None:
+                        sampler.tick()
+                        if time.monotonic() >= deadline:
+                            raise subprocess.TimeoutExpired(command, timeout)
+                        time.sleep(0.01)
+                    code = process.returncode
             except subprocess.TimeoutExpired:
                 # The test and ordinary client descendants share this disposable group.
                 # Structural helpers additionally have their existing parent-death guard.
@@ -260,6 +315,7 @@ def run_attempt(command, env, resource_path, timeout=250, cwd=None):
             pass
         finally:
             resource_path.unlink(missing_ok=True)
+    resources["ProcessSampling"] = sampler.result() if sampler is not None else None
     return code, resources
 
 
@@ -305,7 +361,7 @@ def summarize(rows, repetitions, scenarios=None):
     targets = change["InputTokens"] is not None and change["TotalMS"] is not None and change["InputTokens"] >= 10 and change["TotalMS"] >= 5
     diagnostic = "INCOMPLETE" if not complete or repetitions < 3 else (
         "PASS" if targets and improved * 3 >= repetitions * 2 else "FAIL")
-    return {"schema_version": 2, "scope": "app_primary_prefetch_subset",
+    return {"schema_version": 3, "scope": "app_primary_prefetch_subset",
             "global_economic_gate": "INCOMPLETE", "required_scenarios": 16,
             "measured_scenarios": sorted({row["Scenario"] for row in rows if row["MeasurementValid"]}),
             "requested_scenarios": list(scenarios), "all_attempts": all_arms,
@@ -320,7 +376,7 @@ def summarize(rows, repetitions, scenarios=None):
             "cache_accounting": "cached_input_tokens_are_subset_of_input_tokens",
             "core_workers": "not_applicable_primary_only",
             "workers": None, "delegations": None,
-            "native_worker_observation": "UNVERIFIED_NATIVE_EVENTS_NOT_INSTRUMENTED",
+            "native_worker_observation": "PARTIAL_CLIENT_PROJECTION_TOTALS_UNKNOWN",
             "quota_consumption": None}
 
 
@@ -411,7 +467,7 @@ def matrix_preflight(args, scenarios, inventory_hash, temporary):
         rows.append({"scenario": name, "status": status, "reason": reason, "execution": scenario.execution, "client_execution": "NOT_RUN"})
     if expected is not None:
         expected = {**expected, "oracle_tools": oracle_hashes}
-    return {"schema_version": 2, "scope": "matrix16_discovery_preflight_no_inference",
+    return {"schema_version": 3, "scope": "matrix16_discovery_preflight_no_inference",
             "global_economic_gate": "INCOMPLETE", "provider_attempts": 0,
             "provider_cache_equivalence": "UNVERIFIED", "effective_model_observed": None,
             "discovery": discovery, "edit_oracle_probes": oracle_probes, "scenarios": rows}, expected
@@ -426,6 +482,7 @@ def main(argv=None):
                         help="source harness to hash when accessible (must be identical in both builds)")
     parser.add_argument("--oracle-go", type=Path, help="explicit reviewed Go toolchain executable for the Go edit oracle")
     parser.add_argument("--oracle-bwrap", type=Path, default=Path("/usr/bin/bwrap"), help="existing local sandbox executable; no installation is performed")
+    parser.add_argument("--sample-processes", action="store_true", help="opt-in bounded Linux descendant/RSS observations; new measured condition")
     selection = parser.add_mutually_exclusive_group()
     selection.add_argument("--matrix16", action="store_true", help="plan all 16; unsupported/blocked cases cannot pass")
     selection.add_argument("--scenarios", nargs="+", choices=[s.id for s in benchmark_catalog.load_catalog()])
@@ -448,14 +505,17 @@ def main(argv=None):
     env["IVOAI_BENCHMARK_BWRAP"] = str(args.oracle_bwrap.resolve())
     inventory_hash = sha256(args.distribution / "files.json")
     preflight, capabilities = None, None
-    if args.matrix16 or args.scenarios or args.preflight_only:
+    if args.matrix16 or args.scenarios or args.preflight_only or args.sample_processes:
         preflight, capabilities = matrix_preflight(args, scenarios, inventory_hash, temporary)
         write_json(args.output / "preflight.json", preflight)
-    manifest = {"schema_version": 2, "scope": "app_primary_prefetch_subset", "repetitions": args.repetitions,
+    manifest = {"schema_version": 3, "scope": "app_primary_prefetch_subset", "repetitions": args.repetitions,
                 "driver_sha256": sha256(Path(__file__)), "catalog_loader_sha256": sha256(Path(benchmark_catalog.__file__)),
+                "process_sampler_sha256": sha256(Path(sys.modules[ProcessSampler.__module__].__file__)),
+                "process_sampling": {"enabled": args.sample_processes, "schema_version": 1, "interval_ms": 100, "window_budget_ms": 25, "max_processes": 128, "max_threads_per_process": 128, "max_reads_per_sample": 512, "max_samples": 3000, "max_observed_identities": 4096},
+                "native_event_observation_schema": 1,
                 "model_requested": "gpt-6.1-sol", "effort_requested": "low", "effective_model_observed": None,
                 "host_mcp_tools_exposed": 0, "native_tools_exposed": None,
-                "native_tools_inventory": "UNVERIFIED", "native_worker_observation": "UNVERIFIED_NATIVE_EVENTS_NOT_INSTRUMENTED",
+                "native_tools_inventory": "UNVERIFIED", "native_worker_observation": "PARTIAL_CLIENT_PROJECTION_TOTALS_UNKNOWN",
                 "common_native_worker_policy": "agents.enabled=false;features.multi_agent_v2=false",
                 "runtime_flags": {"experimental_evidence_gateway": os.environ.get("IVOAI_EXPERIMENTAL_EVIDENCE_GATEWAY") == "1"},
                 "baseline_test_sha256": sha256(args.baseline),
@@ -482,7 +542,7 @@ def main(argv=None):
                 binary = args.baseline if arm == "A" else args.candidate
                 code, resources = run_attempt([str(binary.resolve()),
                     "-test.run=^TestLivePrimaryCodePrefetchBenchmark/" + scenario + "/",
-                    "-test.timeout=4m"], env, temporary / f"{repetition}-{scenario}-{arm}-resources.json")
+                    "-test.timeout=4m"], env, temporary / f"{repetition}-{scenario}-{arm}-resources.json", sample_processes=args.sample_processes)
                 row = read_evidence(output, scenario, arm, repetition, code, inventory_hash, capabilities)
                 row.update(resources)
                 # Raw subprocess output is never propagated; persist only fixed labels and scalar allowlist.

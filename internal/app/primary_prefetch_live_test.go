@@ -37,6 +37,7 @@ type prefetchLiveRow struct {
 	JSONDecoded, Correct, EditValidated                                                                            bool
 	Execution, OracleToolsSHA256, NativeWorkerObservation                                                          string
 	EditFiles                                                                                                      int
+	NativeEventMetrics                                                                                             benchmarkfixtures.ExecObservation
 	Error                                                                                                          string `json:",omitempty"`
 }
 
@@ -119,7 +120,7 @@ func TestLivePrimaryCodePrefetchBenchmark(t *testing.T) {
 						t.Fatal("edit fixture host admission unavailable")
 					}
 				}
-				row := prefetchLiveRow{Scenario: scenario.name, Arm: arm, Model: "gpt-6.1-sol", Effort: "low", DistributionInventorySHA256: hex.EncodeToString(inventoryHash[:]), Execution: definition.Execution, NativeWorkerObservation: "UNVERIFIED_NATIVE_EVENTS_NOT_INSTRUMENTED"}
+				row := prefetchLiveRow{Scenario: scenario.name, Arm: arm, Model: "gpt-6.1-sol", Effort: "low", DistributionInventorySHA256: hex.EncodeToString(inventoryHash[:]), Execution: definition.Execution, NativeWorkerObservation: "PARTIAL_CLIENT_PROJECTION_TOTALS_UNKNOWN"}
 				row.CatalogSHA256, row.HarnessSHA256, row.FixtureSHA256 = benchmarkfixtures.CatalogSHA256(), prefetchHarnessSHA256(), fixtureHash
 				defer func() {
 					if !row.Correct && row.Error == "" {
@@ -245,7 +246,7 @@ func TestLivePrimaryCodePrefetchBenchmark(t *testing.T) {
 				row.TotalMS = time.Since(start).Milliseconds()
 				answer := prefetchLiveEvents(stdout.Bytes(), &row)
 				row.JSONDecoded, row.Correct = prefetchLiveCorrect(scenario.name, answer)
-				row.Correct = row.Correct && runErr == nil && !stdout.overflow && row.InputTokens != nil
+				row.Correct = row.Correct && runErr == nil && !stdout.overflow && row.InputTokens != nil && row.NativeEventMetrics.StreamStatus == "complete"
 				if definition.Execution == "workspace_edit" {
 					validationStart := time.Now()
 					after, snapshotErr := benchmarkfixtures.SnapshotEditTree(root)
@@ -297,7 +298,7 @@ func TestPrimaryPrefetchBenchmarkCatalog(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	value := prefetchBenchmarkCapabilities{SchemaVersion: 2, CatalogSHA256: benchmarkfixtures.CatalogSHA256(), ContractSHA256: benchmarkfixtures.ContractSHA256(), HarnessSHA256: prefetchHarnessSHA256(), Fixtures: map[string]string{}}
+	value := prefetchBenchmarkCapabilities{SchemaVersion: 3, CatalogSHA256: benchmarkfixtures.CatalogSHA256(), ContractSHA256: benchmarkfixtures.ContractSHA256(), HarnessSHA256: prefetchHarnessSHA256(), Fixtures: map[string]string{}}
 	for _, scenario := range catalog {
 		if scenario.RunnerSupported {
 			value.Supported = append(value.Supported, scenario.ID)
@@ -459,37 +460,13 @@ func prefetchLiveSourceHash(t *testing.T, root string) string {
 	return hex.EncodeToString(digest[:])
 }
 func prefetchLiveEvents(body []byte, row *prefetchLiveRow) string {
-	var answer string
-	for _, line := range bytes.Split(body, []byte("\n")) {
-		var event struct {
-			Type string `json:"type"`
-			Item struct {
-				Type             string `json:"type"`
-				Text             string `json:"text"`
-				AggregatedOutput string `json:"aggregated_output"`
-			} `json:"item"`
-			Usage map[string]any `json:"usage"`
-		}
-		if json.Unmarshal(line, &event) != nil {
-			continue
-		}
-		item := event.Item
-		if event.Type == "turn.completed" {
-			row.InputTokens = event.Usage["input_tokens"]
-			row.CachedInputTokens = event.Usage["cached_input_tokens"]
-			row.OutputTokens = event.Usage["output_tokens"]
-		}
-		if event.Type == "item.completed" && (item.Type == "command_execution" || item.Type == "mcp_tool_call") {
-			row.ToolCalls++
-			row.ToolResultBytes += len(item.AggregatedOutput)
-		}
-		if event.Type == "item.completed" && item.Type == "agent_message" {
-			// Codex output-schema governs the final response, not earlier
-			// commentary. Keep the last completed message, matching exec -o.
-			answer = item.Text
-		}
+	result := benchmarkfixtures.ObserveExec(body)
+	row.NativeEventMetrics = result.Observation
+	row.ToolCalls, row.ToolResultBytes = result.ToolCalls, result.ToolResultBytes
+	if result.HasUsage {
+		row.InputTokens, row.CachedInputTokens, row.OutputTokens = result.InputTokens, result.CachedInputTokens, result.OutputTokens
 	}
-	return answer
+	return result.Answer
 }
 
 type prefetchLiveBuffer struct {
@@ -581,10 +558,12 @@ func TestPrimaryPrefetchLiveFinalMessage(t *testing.T) {
 	final := `{"symbol":"Scale","file":"mathpkg/scale.go","input":3,"result":6}`
 	var stream bytes.Buffer
 	for _, event := range []map[string]any{
-		{"type": "item.completed", "item": map[string]any{"type": "agent_message", "text": "I will inspect the implementation."}},
-		{"type": "item.completed", "item": map[string]any{"type": "command_execution", "aggregated_output": "source"}},
-		{"type": "item.completed", "item": map[string]any{"type": "agent_message", "text": final}},
-		{"type": "item.updated", "item": map[string]any{"type": "agent_message", "text": "incomplete"}},
+		{"type": "thread.started", "thread_id": "fixture"},
+		{"type": "turn.started"},
+		{"type": "item.completed", "item": map[string]any{"id": "commentary", "type": "agent_message", "text": "I will inspect the implementation."}},
+		{"type": "item.completed", "item": map[string]any{"id": "command", "type": "command_execution", "status": "completed", "command": "fixture", "aggregated_output": "source"}},
+		{"type": "item.completed", "item": map[string]any{"id": "final", "type": "agent_message", "text": final}},
+		{"type": "item.updated", "item": map[string]any{"id": "other", "type": "agent_message", "text": "incomplete"}},
 		{"type": "turn.completed", "usage": map[string]any{"input_tokens": 20, "cached_input_tokens": 12, "output_tokens": 3}},
 	} {
 		if err := json.NewEncoder(&stream).Encode(event); err != nil {
@@ -600,15 +579,20 @@ func TestPrimaryPrefetchLiveFinalMessage(t *testing.T) {
 	if !decoded || !correct {
 		t.Fatal("exact final response failed correctness validation")
 	}
-	if row.ToolCalls != 1 || row.ToolResultBytes != 6 || row.InputTokens != float64(20) || row.OutputTokens != float64(3) {
+	if row.ToolCalls != 1 || row.ToolResultBytes != 6 || row.InputTokens != int64(20) || row.OutputTokens != int64(3) {
 		t.Fatal("selecting the final response lost measured metrics")
 	}
 }
 
 func TestPrimaryPrefetchLiveMeasurementContract(t *testing.T) {
 	var row prefetchLiveRow
-	answer := prefetchLiveEvents([]byte("{\"type\":\"item.completed\",\"item\":{\"type\":\"command_execution\",\"aggregated_output\":\"abc\"}}\n{\"type\":\"item.completed\",\"item\":{\"type\":\"agent_message\",\"text\":\"Scale\"}}\n{\"type\":\"turn.completed\",\"usage\":{\"input_tokens\":20,\"cached_input_tokens\":12,\"output_tokens\":3}}"), &row)
-	if answer != "Scale" || row.ToolCalls != 1 || row.ToolResultBytes != 3 || row.InputTokens != float64(20) || row.CachedInputTokens != float64(12) || row.NativeCPUMS != nil || row.ReasoningTokens != nil {
+	answer := prefetchLiveEvents([]byte(`{"type":"thread.started","thread_id":"fixture"}
+{"type":"turn.started"}
+{"type":"item.completed","item":{"id":"command","type":"command_execution","status":"completed","command":"fixture","aggregated_output":"abc"}}
+{"type":"item.completed","item":{"id":"final","type":"agent_message","text":"Scale"}}
+{"type":"turn.completed","usage":{"input_tokens":20,"cached_input_tokens":12,"output_tokens":3}}
+`), &row)
+	if answer != "Scale" || row.ToolCalls != 1 || row.ToolResultBytes != 3 || row.InputTokens != int64(20) || row.CachedInputTokens != int64(12) || row.NativeCPUMS != nil || row.ReasoningTokens != nil {
 		t.Fatal("incorrect measured or unknown metrics")
 	}
 	root := prefetchLiveRepository(t)

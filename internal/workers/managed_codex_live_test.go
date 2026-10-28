@@ -19,6 +19,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ivo-lopes/ivoai/internal/benchmarkfixtures"
 	"github.com/ivo-lopes/ivoai/internal/codexresolver"
 	"github.com/ivo-lopes/ivoai/internal/platform"
 )
@@ -191,6 +192,10 @@ func TestPinnedCodexManagedNativeWorkerBoundary(t *testing.T) {
 			if !strings.Contains(result.Stdout, `"turn.completed"`) || !strings.Contains(result.Stdout, "SYNTHETIC_FINAL") {
 				t.Fatal("official primary did not complete the synthetic task")
 			}
+			projection := benchmarkfixtures.ObserveExec([]byte(result.Stdout)).Observation
+			if projection.StreamStatus != "complete" || projection.NativeWorkers != nil || projection.NativeDelegations != nil || projection.NativeRetries != nil {
+				t.Fatal("official JSONL projection fabricated complete native execution totals")
+			}
 			mu.Lock()
 			defer mu.Unlock()
 			if tc.worker {
@@ -201,6 +206,7 @@ func TestPinnedCodexManagedNativeWorkerBoundary(t *testing.T) {
 				t.Fatalf("native worker not refused: identity=%v children=%d requests=%d unsupported=%v", identity, children, count, unsupported)
 			}
 			t.Logf("official0.162.1: advertised=%v spawned_identity=%v child_requests=%d http_requests=%d unsupported=%v; synthetic local only", advertised, identity, children, count, unsupported)
+			t.Logf("JSONL terminal collaboration events=%d; actual worker/delegation/retry totals=UNKNOWN; fixture child requests are a separate scoped observation", projection.ToolCompletions["collab_tool_call"])
 		})
 	}
 }

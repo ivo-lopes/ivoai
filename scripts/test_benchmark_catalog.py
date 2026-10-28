@@ -124,6 +124,17 @@ class PreflightTests(unittest.TestCase):
         self.assertEqual(summary["global_economic_gate"], "INCOMPLETE")
         self.assertEqual(summary["all_attempts"]["A"]["attempts"], 0)
 
+    def test_sampler_opt_in_requires_discovery_before_client_execution(self):
+        code, output, marker = self.execute("mismatch", selection=["--sample-processes"], preflight=False)
+        self.assertEqual(code, 1)
+        self.assertFalse(marker.exists())
+        report = json.loads((output / "preflight.json").read_text())
+        self.assertEqual(len(report["scenarios"]), 3)
+        self.assertTrue(all(row["status"] == "BLOCKED" for row in report["scenarios"]))
+        manifest = json.loads((output / "manifest.json").read_text())
+        self.assertTrue(manifest["process_sampling"]["enabled"])
+        self.assertEqual(len(manifest["process_sampler_sha256"]), 64)
+
     def test_missing_skipped_wrong_or_unbounded_discovery_blocks_client(self):
         for mode in ("skipped", "mismatch", "bool_version", "oversized", "duplicate", "bad_exit"):
             with self.subTest(mode=mode):

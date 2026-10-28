@@ -4,6 +4,7 @@ import importlib.util
 import io
 import json
 import os
+import sys
 from pathlib import Path
 import tempfile
 import signal
@@ -22,7 +23,13 @@ def valid_row(scenario="api", arm="A", **changes):
     row.update(Scenario=scenario, Arm=arm, Model="gpt-6.1-sol", Effort="low",
                DistributionInventorySHA256="a" * 64, TotalMS=100, ProviderMS=90,
                PrefetchMS=10, InputTokens=100, CachedInputTokens=60, OutputTokens=5,
-               Correct=True, JSONDecoded=True, Execution="read_only", EditValidated=False, OracleToolsSHA256="", NativeWorkerObservation="UNVERIFIED_NATIVE_EVENTS_NOT_INSTRUMENTED")
+               Correct=True, JSONDecoded=True, Execution="read_only", EditValidated=False, OracleToolsSHA256="", NativeWorkerObservation="PARTIAL_CLIENT_PROJECTION_TOTALS_UNKNOWN")
+    row['NativeEventMetrics'] = {"schema_version":1, "stream_status":"complete", "coverage":"partial_client_projection",
+        "tool_completions":dict.fromkeys(("command_execution","mcp_tool_call","file_change","web_search","collab_tool_call"),0),
+        "repeated_exact_payloads":dict.fromkeys(("command_execution","mcp_tool_call"),0),
+        "collaboration_completions":dict.fromkeys(("spawn_agent","send_input","wait","close_agent"),0),
+        "reported_spawn_receivers":None,"unclassified_errors":0,"duplicate_terminal_items":0,"unknown_events":0,"unknown_items":0,
+        "native_workers":None,"native_delegations":None,"native_retries":None}
     row.update(changes)
     return row
 
@@ -92,6 +99,19 @@ class EvidenceTests(unittest.TestCase):
         self.assertIsNone(row["InputTokens"])
         self.assertEqual(row["Error"], "correctness_failed")
 
+    def test_native_observations_are_enum_only_partial_and_fail_closed(self):
+        for mutate in (lambda v:v.update(native_workers=0), lambda v:v.update(native_retries=1),
+                       lambda v:v.update(private="SECRET"), lambda v:v.update(schema_version=True),
+                       lambda v:v['tool_completions'].update(SECRET=1),
+                       lambda v:v['repeated_exact_payloads'].update(command_execution=1),
+                       lambda v:v.update(stream_status="partial"),
+                       lambda v:v.update(reported_spawn_receivers=0)):
+            value=valid_row();mutate(value['NativeEventMetrics'])
+            row=self.read([value]);self.assertFalse(row['MeasurementValid']);self.assertNotIn('SECRET',json.dumps(row))
+        value=valid_row(Correct=False);value['NativeEventMetrics']['stream_status']='partial'
+        row=self.read([value]);self.assertTrue(row['MeasurementValid']);self.assertFalse(row['Correct'])
+
+
     def test_edit_answer_requires_bound_executable_patch_verdict(self):
         scenario = "small_known_file_correction"
         capabilities = {"catalog_sha256": "1"*64, "harness_sha256": "2"*64,
@@ -135,7 +155,7 @@ class SummaryTests(unittest.TestCase):
         self.assertIsNone(summary["monetary_cost"])
         self.assertIsNone(summary["workers"])
         self.assertIsNone(summary["delegations"])
-        self.assertEqual(summary["native_worker_observation"], "UNVERIFIED_NATIVE_EVENTS_NOT_INSTRUMENTED")
+        self.assertEqual(summary["native_worker_observation"], "PARTIAL_CLIENT_PROJECTION_TOTALS_UNKNOWN")
 
     def test_failures_remain_in_all_attempts_and_out_of_matched_pairs(self):
         rows = self.rows()
@@ -168,6 +188,18 @@ class SummaryTests(unittest.TestCase):
         self.assertEqual(BENCHMARK.summarize([], 3)["subset_economic_diagnostic"], "INCOMPLETE")
         rows = [row for row in self.rows() if row["Repetition"] == 0]
         self.assertEqual(BENCHMARK.summarize(rows, 1)["subset_economic_diagnostic"], "INCOMPLETE")
+
+
+class ProcessSamplingTests(unittest.TestCase):
+    @unittest.skipUnless(sys.platform.startswith("linux"), "Linux procfs sampler")
+    def test_existing_runner_observes_only_its_live_subtree(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            code, resources=BENCHMARK.run_attempt(["/usr/bin/python3","-c", "import subprocess,time; p=subprocess.Popen(['/bin/sleep','0.5']); p.wait()"],
+                {"PATH":"/usr/bin:/bin","HOME":tmp}, Path(tmp)/"resource.json", timeout=3, sample_processes=True)
+            self.assertEqual(code,0)
+            self.assertGreaterEqual(resources['ProcessSampling']['sampled_process_count_peak'],2)
+            self.assertIsNone(resources['ProcessSampling']['actual_process_total'])
+            self.assertNotIn('argv',json.dumps(resources))
 
 
 class DriverTests(unittest.TestCase):
@@ -280,6 +312,8 @@ class DriverTests(unittest.TestCase):
         self.assertEqual(manifest["host_mcp_tools_exposed"], 0)
         self.assertIsNone(manifest["native_tools_exposed"])
         self.assertEqual(manifest["native_tools_inventory"], "UNVERIFIED")
+        self.assertFalse(manifest["process_sampling"]["enabled"])
+        self.assertEqual(manifest["native_event_observation_schema"], 1)
         self.assertNotIn("tools_exposed", manifest)
         self.assertEqual(manifest["runtime_flags"], {"experimental_evidence_gateway": os.environ.get("IVOAI_EXPERIMENTAL_EVIDENCE_GATEWAY") == "1"})
         for name in ("baseline_test_sha256", "candidate_test_sha256", "codex_sha256", "node_sha256",
