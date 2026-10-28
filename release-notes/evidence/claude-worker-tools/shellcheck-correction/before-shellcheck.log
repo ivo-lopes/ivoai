@@ -1,0 +1,7 @@
+
+In /var/tmp/ivoai-shellcheck-review.fjfJuVvx/original-wrapper.sh line 35:
+mkdir -p -m 700 "$proof_output"
+         ^-- SC2174 (warning): When used with -p, -m only applies to the deepest directory.
+
+For more information:
+  https://www.shellcheck.net/wiki/SC2174 -- When used with -p, -m only applie...

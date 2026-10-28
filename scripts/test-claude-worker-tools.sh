@@ -2,6 +2,7 @@
 # Official Claude 2.1.296, synthetic loopback provider, private network/HOME.
 # No installation, provider login, personal configuration, or real inference.
 set -euo pipefail
+umask 077
 archive=''
 proof_output=''
 while (( $# )); do
@@ -32,8 +33,12 @@ tar -xzf "$archive" -C "$test_root"
 if [[ -z $proof_output ]]; then
   proof_output="$test_root/proof"
 fi
-mkdir -p -m 700 "$proof_output"
-proof_output=$(cd -- "$proof_output" && pwd)
+mkdir -p -- "$proof_output"
+proof_output=$(cd -P -- "$proof_output" && pwd -P)
+if [[ $(stat -c '%u:%a' -- "$proof_output") != "$(id -u):700" ]]; then
+  echo 'Claude worker proof output must be owned by the current user with mode 0700' >&2
+  exit 1
+fi
 cd -- "$repo_root"
 IVOAI_CLAUDE_WORKER_OFFICIAL_BINARY="$test_root/claude" \
   IVOAI_CLAUDE_WORKER_PROOF_DIR="$proof_output" \
