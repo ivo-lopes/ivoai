@@ -1,0 +1,277 @@
+{
+  "version": "2.1.296 (Claude Code)",
+  "binary_sha256": "24972e3bc859fab2b46ed4c1e51f7d6130f06d3bd550811a114640de3370d0de",
+  "official_archive_sha256": "45fe2b33f5cbdd114309618970bcd90b8b163e34252d66cf100d7e068d9b831d",
+  "factory_args_sha256": "9e403b735b836a9cc050008ae22bbaaa2d16b292c687437d8c6387abf498a039",
+  "real_inference": false,
+  "new_authentication": false,
+  "external_network": false,
+  "personal_config_mounted": false,
+  "synthetic_usage_not_economic_evidence": true,
+  "cases": [
+    {
+      "case": "positive_control",
+      "alias": "Agent",
+      "exit_code": 0,
+      "timeout": false,
+      "advertised_tools": [
+        "Agent",
+        "CronCreate",
+        "CronDelete",
+        "CronList",
+        "EnterWorktree",
+        "ExitWorktree",
+        "Glob",
+        "Grep",
+        "ListAgents",
+        "Read",
+        "ReportFindings",
+        "ScheduleWakeup",
+        "SendMessage",
+        "Skill",
+        "TaskCreate",
+        "TaskGet",
+        "TaskList",
+        "TaskStop",
+        "TaskUpdate",
+        "WebFetch",
+        "WebSearch",
+        "Workflow"
+      ],
+      "requests": 5,
+      "child_api_requests": 1,
+      "subagent_stats": {
+        "spawned": 1,
+        "requested": {
+          "background": 0,
+          "foreground": 0,
+          "unset": 1
+        },
+        "started_in_background": 1,
+        "max_depth": 1,
+        "spawned_by_subagents": 0,
+        "completed": 1,
+        "failed": 0,
+        "killed": {
+          "parent": 0,
+          "user": 0,
+          "system": 0
+        },
+        "refused": {
+          "depth_limit": 0,
+          "concurrency_limit": 0,
+          "budget": 0
+        },
+        "by_type": {
+          "Explore": 1
+        }
+      },
+      "forged_tool_disabled": false,
+      "elapsed_seconds": 0.51,
+      "pass": true
+    },
+    {
+      "case": "before_fix_agent",
+      "alias": "Agent",
+      "exit_code": 0,
+      "timeout": false,
+      "advertised_tools": [
+        "Agent",
+        "CronCreate",
+        "CronDelete",
+        "CronList",
+        "EnterWorktree",
+        "ExitWorktree",
+        "Glob",
+        "Grep",
+        "ListAgents",
+        "Read",
+        "ReportFindings",
+        "ScheduleWakeup",
+        "SendMessage",
+        "Skill",
+        "TaskCreate",
+        "TaskGet",
+        "TaskList",
+        "TaskStop",
+        "TaskUpdate",
+        "WebFetch",
+        "WebSearch",
+        "Workflow"
+      ],
+      "requests": 5,
+      "child_api_requests": 1,
+      "subagent_stats": {
+        "spawned": 1,
+        "requested": {
+          "background": 0,
+          "foreground": 0,
+          "unset": 1
+        },
+        "started_in_background": 1,
+        "max_depth": 1,
+        "spawned_by_subagents": 0,
+        "completed": 1,
+        "failed": 0,
+        "killed": {
+          "parent": 0,
+          "user": 0,
+          "system": 0
+        },
+        "refused": {
+          "depth_limit": 0,
+          "concurrency_limit": 0,
+          "budget": 0
+        },
+        "by_type": {
+          "Explore": 1
+        }
+      },
+      "forged_tool_disabled": false,
+      "elapsed_seconds": 0.515,
+      "pass": true
+    },
+    {
+      "case": "before_fix_task_alias",
+      "alias": "Task",
+      "exit_code": 0,
+      "timeout": false,
+      "advertised_tools": [
+        "Agent",
+        "CronCreate",
+        "CronDelete",
+        "CronList",
+        "EnterWorktree",
+        "ExitWorktree",
+        "Glob",
+        "Grep",
+        "ListAgents",
+        "Read",
+        "ReportFindings",
+        "ScheduleWakeup",
+        "SendMessage",
+        "Skill",
+        "TaskCreate",
+        "TaskGet",
+        "TaskList",
+        "TaskStop",
+        "TaskUpdate",
+        "WebFetch",
+        "WebSearch",
+        "Workflow"
+      ],
+      "requests": 5,
+      "child_api_requests": 1,
+      "subagent_stats": {
+        "spawned": 1,
+        "requested": {
+          "background": 0,
+          "foreground": 0,
+          "unset": 1
+        },
+        "started_in_background": 1,
+        "max_depth": 1,
+        "spawned_by_subagents": 0,
+        "completed": 1,
+        "failed": 0,
+        "killed": {
+          "parent": 0,
+          "user": 0,
+          "system": 0
+        },
+        "refused": {
+          "depth_limit": 0,
+          "concurrency_limit": 0,
+          "budget": 0
+        },
+        "by_type": {
+          "Explore": 1
+        }
+      },
+      "forged_tool_disabled": false,
+      "elapsed_seconds": 0.543,
+      "pass": true
+    },
+    {
+      "case": "fixed_agent",
+      "alias": "Agent",
+      "exit_code": 0,
+      "timeout": false,
+      "advertised_tools": [
+        "Glob",
+        "Grep",
+        "Read"
+      ],
+      "requests": 2,
+      "child_api_requests": 0,
+      "subagent_stats": {
+        "spawned": 0,
+        "requested": {
+          "background": 0,
+          "foreground": 0,
+          "unset": 0
+        },
+        "started_in_background": 0,
+        "max_depth": 0,
+        "spawned_by_subagents": 0,
+        "completed": 0,
+        "failed": 0,
+        "killed": {
+          "parent": 0,
+          "user": 0,
+          "system": 0
+        },
+        "refused": {
+          "depth_limit": 0,
+          "concurrency_limit": 0,
+          "budget": 0
+        },
+        "by_type": {}
+      },
+      "forged_tool_disabled": true,
+      "elapsed_seconds": 0.411,
+      "pass": true
+    },
+    {
+      "case": "fixed_task_alias",
+      "alias": "Task",
+      "exit_code": 0,
+      "timeout": false,
+      "advertised_tools": [
+        "Glob",
+        "Grep",
+        "Read"
+      ],
+      "requests": 2,
+      "child_api_requests": 0,
+      "subagent_stats": {
+        "spawned": 0,
+        "requested": {
+          "background": 0,
+          "foreground": 0,
+          "unset": 0
+        },
+        "started_in_background": 0,
+        "max_depth": 0,
+        "spawned_by_subagents": 0,
+        "completed": 0,
+        "failed": 0,
+        "killed": {
+          "parent": 0,
+          "user": 0,
+          "system": 0
+        },
+        "refused": {
+          "depth_limit": 0,
+          "concurrency_limit": 0,
+          "budget": 0
+        },
+        "by_type": {}
+      },
+      "forged_tool_disabled": true,
+      "elapsed_seconds": 0.402,
+      "pass": true
+    }
+  ],
+  "pass": true
+}
