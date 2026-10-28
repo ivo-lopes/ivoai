@@ -125,8 +125,11 @@ Quando `ivoai-memory` ou `ivoai-context` autoritativo estiver ativo para as font
 sessão, o launcher inicia deliberadamente o client oficial de forma direta, independentemente de
 Caveman ou Headroom ter sido solicitado. Um provider lossy pode encurtar resultados exatos de
 custom tools antes que o modelo os veja, inclusive o fim exato de uma página de memória. O launch
-mostra esse bypass e a metadata observada da sessão reporta o bypass provider-neutral; Headroom
-permanece disponível como provider explícito temporário de compatibilidade.
+mostra esse bypass e a metadata observada da sessão reporta o bypass provider-neutral.
+O componente Headroom e sua escolha explícita são mantidos, mas o wrapper gerenciado
+de Codex/Claude fica `unavailable_by_policy`: o wrapper pinado pode alterar a
+configuração MCP do cliente, sem alternativa segura com recuperação exata verificada.
+O IVOAI usa Direct uma vez, antes de sondar ou executar o wrapper, e preserva a escolha.
 
 Para uma sessão OpenCode standalone explícita, OpenCode mantém seu provider nativo somente de
 assinatura. Quando o runtime Caveman pinado não consegue fazer proxy desse provider, o preflight

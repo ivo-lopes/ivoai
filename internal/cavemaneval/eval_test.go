@@ -71,8 +71,27 @@ func (c corruptingCompressor) Compact(context.Context, workingcontext.CompactReq
 
 func TestCanaryCompressionFailureUsesBoundedDirectProjection(t *testing.T) {
 	metrics, err := Run(context.Background(), Options{Root: t.TempDir(), Provider: "caveman", Compressor: semanticCompressor{provider: "caveman", fail: true}, ContextBudget: 4096})
-	if err != nil || metrics.ArtifactMismatchCount != 0 || metrics.ExactRequiredMismatchCount != 0 || metrics.DegradedCount == 0 {
+	if err != nil || metrics.ArtifactMismatchCount != 0 || metrics.ExactRequiredMismatchCount != 0 || metrics.DegradedCount == 0 || !metrics.QualityPassed() || metrics.OptimizationVerified() || metrics.CompressionFailures == 0 {
 		t.Fatalf("degraded fallback metrics=%+v err=%v", metrics, err)
+	}
+}
+
+func TestQualityDoesNotCertifyProviderAvailabilityOrEconomics(t *testing.T) {
+	metrics, err := Run(context.Background(), Options{Root: t.TempDir(), Provider: "caveman", RuntimeSHA256: strings.Repeat("a", 64)})
+	if err != nil || !metrics.Passed() || !metrics.QualityPassed() || metrics.OptimizationVerified() || metrics.CompressionCalls != 0 {
+		t.Fatalf("missing provider was certified: %+v", metrics)
+	}
+	// Pure verdict contract, not a real binary execution or performance result.
+	base := Metrics{Provider: "caveman", RuntimeSHA256: strings.Repeat("a", 64), Scenarios: 2, ExpectedScenarios: 2, CompressionCalls: 2, CompressionApplied: 1, CompressionPassthrough: 1}
+	if !base.OptimizationVerified() {
+		t.Fatal("complete verified-runtime accounting was rejected")
+	}
+	for _, mutate := range []func(*Metrics){func(m *Metrics) { m.RuntimeSHA256 = "" }, func(m *Metrics) { m.CompressionCalls = 0 }, func(m *Metrics) { m.CompressionFailures = 1 }, func(m *Metrics) { m.DegradedCount = 1 }, func(m *Metrics) { m.ProviderMismatchCount = 1 }, func(m *Metrics) { m.CompressionApplied = 0 }, func(m *Metrics) { m.SemanticMismatchCount = 1 }, func(m *Metrics) { m.Provider = "direct" }} {
+		candidate := base
+		mutate(&candidate)
+		if candidate.OptimizationVerified() {
+			t.Fatal("incomplete/failed optimization accounting accepted")
+		}
 	}
 }
 

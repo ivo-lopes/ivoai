@@ -58,6 +58,7 @@ func compressionObservation(executor string, observation core.SessionObservation
 	provider := observation.CompressionProvider
 	reason := observability.ReasonDirect
 	state := observability.StateSelected
+	fallbackReason := observability.Reason("")
 	if policy.Bypassed {
 		provider, reason = "direct", observability.ReasonAuthoritativeSharedKnowledge
 	} else if provider == "headroom" && observation.CompressionUsed {
@@ -69,11 +70,12 @@ func compressionObservation(executor string, observation core.SessionObservation
 		state = observability.StateDegraded
 	} else if requested == "headroom" {
 		provider, reason = "direct", observability.ReasonHeadroomBypassed
+		state, fallbackReason = observability.StateDegraded, observability.ReasonPolicyDenied
 	}
 	if observation.CompressionFallback {
 		state = observability.StateDegraded
 	}
-	return observability.Event{Category: observability.CategoryCompression, Operation: observability.OperationCompressionSelect, State: state, Executor: executor, Provider: provider, RequestedProvider: requested, ProviderSource: policy.ProviderSource, Component: core.ComponentCompression, RoutingReason: reason, DurationMilliseconds: observation.CompressionPreflightMilliseconds, CompressionBypassed: policy.Bypassed, AuthoritativeKnowledge: policy.AuthoritativeActive, SelectedSourceCount: policy.SelectedSourceCount}
+	return observability.Event{Category: observability.CategoryCompression, Operation: observability.OperationCompressionSelect, State: state, Executor: executor, Provider: provider, RequestedProvider: requested, ProviderSource: policy.ProviderSource, Component: core.ComponentCompression, RoutingReason: reason, FallbackReason: fallbackReason, DurationMilliseconds: observation.CompressionPreflightMilliseconds, CompressionBypassed: policy.Bypassed, AuthoritativeKnowledge: policy.AuthoritativeActive, SelectedSourceCount: policy.SelectedSourceCount}
 }
 
 func componentSpec(name string) (components.Spec, bool) {

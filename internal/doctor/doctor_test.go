@@ -139,8 +139,8 @@ func TestComponentMatrixExplainsCapabilitiesHealthAndFallback(t *testing.T) {
 		t.Fatalf("codex selection=%+v err=%v", codex, err)
 	}
 	compression, err := matrix.Resolve(core.ComponentCompression, core.CapabilityCompressionWrap)
-	if err != nil || !compression.Component.Fallback.Allowed {
-		t.Fatalf("compression selection=%+v err=%v", compression, err)
+	if err == nil {
+		t.Fatalf("unsafe Headroom wrapper was advertised: %+v", compression)
 	}
 	compressionEntries := matrix.Entries(core.ComponentCompression)
 	if len(compressionEntries) != 2 || compressionEntries[0].Implementation != "headroom" || compressionEntries[1].Implementation != "caveman" || compressionEntries[1].Active {
@@ -175,7 +175,7 @@ func TestEffectiveCompressionTreatsExpectedFallbackAsDiagnostic(t *testing.T) {
 		t.Fatalf("healthy Caveman provider=%q reason=%q", provider, reason)
 	}
 	cfg.Compression = config.CompressionConfig{Provider: "headroom", Source: config.CompressionSourceExplicit}
-	if provider, reason := effectiveCompression(cfg, headroom.Status{Installed: true, Healthy: true}, ManagedComponent{}); provider != "headroom" || reason != "" {
+	if provider, reason := effectiveCompression(cfg, headroom.Status{Installed: true, Healthy: true}, ManagedComponent{}); provider != "direct" || reason != "unavailable_by_policy" {
 		t.Fatalf("Headroom provider=%q reason=%q", provider, reason)
 	}
 	cfg.Compression = config.CompressionConfig{Provider: "direct", Source: config.CompressionSourceExplicit}

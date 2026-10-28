@@ -2,7 +2,7 @@ package headroom
 
 import (
 	"context"
-	"strings"
+	"errors"
 	"testing"
 
 	"github.com/ivo-lopes/ivoai/internal/core"
@@ -19,19 +19,25 @@ func (adapterRunner) Run(_ context.Context, _ string, args []string, _ platform.
 	return platform.Result{}, nil
 }
 
-func TestHeadroomAdapterPreservesWrapInvocationAndDirectFallback(t *testing.T) {
+func TestHeadroomAdapterSeparatesBinaryHealthFromManagedWrapperPolicy(t *testing.T) {
 	provider := HeadroomCompressionProvider{Manager: Manager{Runner: adapterRunner{}, Binary: "/managed/headroom"}, Enabled: true, Managed: true}
 	status := provider.Probe(context.Background())
-	if !status.Available || !status.Capabilities.Supports(core.CapabilityCompressionWrap) || !status.Fallback.Allowed {
+	if status.Available || !status.Installed || status.Health != core.HealthHealthy || status.Capabilities.Supports(core.CapabilityCompressionWrap) || !status.Fallback.Allowed || status.Compatibility.Reason != "unavailable_by_policy" {
 		t.Fatalf("probe = %+v", status)
 	}
-	lease, err := provider.Prepare(context.Background(), core.CompressionRequest{Executor: core.ComponentCodex, DirectPath: "/managed/bin/codex", Args: []string{"--model", "fixture"}, Environment: []string{"PATH=/usr/bin"}})
-	if err != nil {
-		t.Fatal(err)
-	}
-	decision := lease.Decision()
-	if !decision.Used || decision.Command != "/managed/headroom" || strings.Join(decision.Args, " ") != "wrap codex -- --model fixture" || decision.Environment[0] != "PATH=/managed/bin:/usr/bin" {
-		t.Fatalf("decision = %+v", decision)
+	for _, executor := range []core.ComponentID{core.ComponentCodex, core.ComponentClaude} {
+		// A nil Runner would panic on any probe, proving refusal precedes it.
+		provider.Manager = Manager{}
+		lease, err := provider.Prepare(context.Background(), core.CompressionRequest{Executor: executor, DirectPath: "/managed/bin/executor", Fidelity: core.CompressionCompressible})
+		if !errors.Is(err, ErrUnavailableByPolicy) || lease != nil {
+			t.Fatalf("unsafe wrapper admitted: %v", err)
+		}
+		for _, fidelity := range []core.CompressionFidelity{core.CompressionExactRequired, core.CompressionBypass, core.CompressionUnsupported} {
+			lease, err := provider.Prepare(context.Background(), core.CompressionRequest{Executor: executor, DirectPath: "/managed/bin/executor", Fidelity: fidelity})
+			if err != nil || lease == nil || lease.Decision().Used || lease.Decision().Command != "/managed/bin/executor" {
+				t.Fatal("fidelity bypass did not stay Direct")
+			}
+		}
 	}
 	provider.Enabled = false
 	directLease, err := provider.Prepare(context.Background(), core.CompressionRequest{Executor: core.ComponentCodex, DirectPath: "/managed/bin/codex", Args: []string{"--help"}})

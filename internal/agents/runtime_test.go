@@ -2,6 +2,7 @@ package agents
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -15,9 +16,39 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ivo-lopes/ivoai/internal/core"
 	"github.com/ivo-lopes/ivoai/internal/platform"
 	"golang.org/x/sys/unix"
 )
+
+// Exercises generic wrapper lifecycle without admitting a real Headroom profile.
+type fixtureCompressionProvider struct {
+	path        string
+	beforeStart func()
+}
+
+func (f fixtureCompressionProvider) ID() core.ComponentID { return core.ComponentCompression }
+func (f fixtureCompressionProvider) Probe(context.Context) core.ComponentStatus {
+	return core.ComponentStatus{}
+}
+func (f fixtureCompressionProvider) Prepare(_ context.Context, r core.CompressionRequest) (core.CompressionLease, error) {
+	if f.beforeStart != nil {
+		f.beforeStart()
+	}
+	env := append([]string(nil), r.Environment...)
+	for i, value := range env {
+		if strings.HasPrefix(value, "PATH=") {
+			env[i] = "PATH=" + filepath.Dir(r.DirectPath) + ":" + strings.TrimPrefix(value, "PATH=")
+		}
+	}
+	return fixtureCompressionLease{core.CompressionDecision{Command: f.path, Args: append([]string{"wrap", string(r.Executor), "--"}, r.Args...), Environment: env, Used: true, Provider: "fixture"}}, nil
+}
+
+type fixtureCompressionLease struct{ decision core.CompressionDecision }
+
+func (l fixtureCompressionLease) Decision() core.CompressionDecision { return l.decision }
+func (fixtureCompressionLease) Done() <-chan error                   { return nil }
+func (fixtureCompressionLease) Close(context.Context) error          { return nil }
 
 func TestInteractiveChildCanReadFromForegroundPTY(t *testing.T) {
 	if os.Getenv("IVOAI_PTY_HELPER") == "1" {
@@ -44,9 +75,9 @@ exit 23
 	assertPTYConversation(t, "TestInteractiveChildCanReadFromForegroundPTY", "IVOAI_PTY_HELPER=1", "IVOAI_PTY_FAKE="+fake)
 }
 
-func TestHeadroomWrappedClaudeCanReadFromForegroundPTY(t *testing.T) {
+func TestFixtureCompressionWrappedClaudeCanReadFromForegroundPTY(t *testing.T) {
 	if os.Getenv("IVOAI_PTY_HEADROOM_HELPER") == "1" {
-		runtime := Runtime{Runner: platform.ExecRunner{}, In: os.Stdin, Out: os.Stdout, Err: os.Stderr, AgentPath: os.Getenv("IVOAI_PTY_FAKE"), HeadroomPath: os.Getenv("IVOAI_PTY_HEADROOM")}
+		runtime := Runtime{Runner: platform.ExecRunner{}, In: os.Stdin, Out: os.Stdout, Err: os.Stderr, AgentPath: os.Getenv("IVOAI_PTY_FAKE"), Compression: fixtureCompressionProvider{path: os.Getenv("IVOAI_PTY_HEADROOM")}}
 		err := runtime.Launch(context.Background(), "claude", nil, true)
 		var exitErr *ExitError
 		if errors.As(err, &exitErr) {
@@ -71,7 +102,7 @@ if [ "$1" = "wrap" ] && [ "$3" = "--help" ]; then exit 0; fi
 if [ "$1" = "wrap" ]; then agent="$2"; shift 3; exec "$agent" "$@"; fi
 exit 2
 `)
-	assertPTYConversation(t, "TestHeadroomWrappedClaudeCanReadFromForegroundPTY", "IVOAI_PTY_HEADROOM_HELPER=1", "IVOAI_PTY_FAKE="+fake, "IVOAI_PTY_HEADROOM="+headroom)
+	assertPTYConversation(t, "TestFixtureCompressionWrappedClaudeCanReadFromForegroundPTY", "IVOAI_PTY_HEADROOM_HELPER=1", "IVOAI_PTY_FAKE="+fake, "IVOAI_PTY_HEADROOM="+headroom)
 }
 
 func TestInteractiveRuntimeRestoresCanonicalEchoModes(t *testing.T) {
@@ -258,7 +289,7 @@ func TestDirectLaunchPreservesCWDArgumentsAndObservesPID(t *testing.T) {
 	}
 }
 
-func TestHeadroomCanResolveManagedAgentOutsideUserPath(t *testing.T) {
+func TestHeadroomPolicyFallbackResolvesManagedAgentOutsideUserPath(t *testing.T) {
 	root := t.TempDir()
 	marker := filepath.Join(root, "wrapped-ran")
 	agent := writeExecutable(t, root, "codex", "#!/bin/sh\n: > \"$1\"\n")
@@ -274,11 +305,11 @@ exit 2
 		t.Fatal(err)
 	}
 	if _, err := os.Stat(marker); err != nil {
-		t.Fatal("Headroom did not resolve the managed agent through the scoped PATH")
+		t.Fatal("Direct policy fallback did not resolve the managed agent")
 	}
 }
 
-func TestStartedHeadroomExitIsNotMistakenForPreflightFailure(t *testing.T) {
+func TestStartedCompressionWrapperExitIsNotMistakenForPreflightFailure(t *testing.T) {
 	root := t.TempDir()
 	marker := filepath.Join(root, "direct-must-not-run")
 	agent := writeExecutable(t, root, "codex", "#!/bin/sh\n: > \"$1\"\n")
@@ -287,7 +318,7 @@ if [ "$1" = "--version" ]; then echo "headroom 0.36.0"; exit 0; fi
 if [ "$1" = "wrap" ] && [ "$3" = "--help" ]; then exit 0; fi
 exit 42
 `)
-	runtime := Runtime{Runner: platform.ExecRunner{}, AgentPath: agent, HeadroomPath: headroom}
+	runtime := Runtime{Runner: platform.ExecRunner{}, AgentPath: agent, Compression: fixtureCompressionProvider{path: headroom}}
 	err := runtime.Launch(context.Background(), "codex", []string{marker}, true)
 	var exitErr *ExitError
 	if !errors.As(err, &exitErr) || exitErr.Code != 42 {
@@ -315,7 +346,7 @@ if [ "$1" = "wrap" ] && [ "$3" = "--help" ]; then
 fi
 exit 2
 `)
-	runtime := Runtime{Runner: platform.ExecRunner{}, AgentPath: agent, HeadroomPath: headroom}
+	runtime := Runtime{Runner: platform.ExecRunner{}, AgentPath: agent, Compression: fixtureCompressionProvider{path: headroom, beforeStart: func() { _ = os.Remove(headroom) }}}
 	if err := runtime.Launch(context.Background(), "claude", []string{marker}, true); err != nil {
 		t.Fatal(err)
 	}
@@ -325,6 +356,32 @@ exit 2
 	}
 	if string(value) != "1" {
 		t.Fatalf("Claude fallback did not preserve DISABLE_AUTOUPDATER: %q", value)
+	}
+}
+
+func TestHeadroomPolicyRefusalStartsDirectOnceWithoutAnyWrapperProbe(t *testing.T) {
+	for _, executor := range []string{"codex", "claude"} {
+		t.Run(executor, func(t *testing.T) {
+			root := t.TempDir()
+			calls := filepath.Join(root, "calls")
+			personal := filepath.Join(root, "client-config.fixture")
+			if err := os.WriteFile(personal, []byte("unchanged personal fixture"), 0600); err != nil {
+				t.Fatal(err)
+			}
+			agent := writeExecutable(t, root, executor, "#!/bin/sh\nprintf x >> '"+calls+"'\n")
+			wrapper := writeExecutable(t, root, "headroom", "#!/bin/sh\nprintf mutated > '"+personal+"'\nexit 7\n")
+			var diagnostic bytes.Buffer
+			var observed Observation
+			runtime := Runtime{Runner: platform.ExecRunner{}, AgentPath: agent, HeadroomPath: wrapper, Err: &diagnostic}
+			if err := runtime.LaunchObserved(context.Background(), executor, nil, true, func(value Observation) { observed = value }); err != nil {
+				t.Fatal(err)
+			}
+			body, _ := os.ReadFile(calls)
+			config, _ := os.ReadFile(personal)
+			if string(body) != "x" || string(config) != "unchanged personal fixture" || !strings.Contains(diagnostic.String(), "unavailable_by_policy") || !observed.CompressionFallback || observed.CompressionUsed {
+				t.Fatal("unsafe wrapper/probe ran or fallback duplicated the official executor")
+			}
+		})
 	}
 }
 
@@ -486,7 +543,7 @@ while :; do sleep 0.02; done
 	}
 }
 
-func TestHeadroomCancellationLeavesNoOwnedFakeProcesses(t *testing.T) {
+func TestFixtureCompressionCancellationLeavesNoOwnedFakeProcesses(t *testing.T) {
 	root := t.TempDir()
 	proxyPIDPath := filepath.Join(root, "proxy.pid")
 	agentPIDPath := filepath.Join(root, "agent.pid")
@@ -520,7 +577,7 @@ cleanup
 `)
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan error, 1)
-	runtime := Runtime{Runner: platform.ExecRunner{}, AgentPath: agent, HeadroomPath: headroom}
+	runtime := Runtime{Runner: platform.ExecRunner{}, AgentPath: agent, Compression: fixtureCompressionProvider{path: headroom}}
 	t.Setenv("IVOAI_FAKE_PROXY_PID", proxyPIDPath)
 	t.Setenv("IVOAI_FAKE_AGENT_PID", agentPIDPath)
 	t.Setenv("IVOAI_FAKE_READY", ready)

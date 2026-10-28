@@ -3,7 +3,17 @@
 O cutover do Caveman é condicionado por evidências, não apenas pela taxa de compressão. O
 canário compara Direct, Headroom e Caveman sem alterar o default configurado. Uma única
 divergência byte-exact, crossover de credencial, vazamento entre purposes ou corrupção silenciosa
-bloqueia a promoção.
+bloqueia a promoção. Os wrappers gerenciados do Headroom usam Direct por
+`unavailable_by_policy`; rotular uma fixture como `headroom` não é execução real.
+
+`QualityPassed()` verifica as invariantes existentes de evidência/fatos e pode
+aprovar fallback degradado íntegro. `Passed()` continua como alias apenas de
+qualidade. `OptimizationVerified()` exige também SHA-256 revisado do runtime
+declarado pelo harness confiável, corpus completo, chamadas contabilizadas,
+transformação aplicada e ausência de degradação, divergência de provider ou falha
+de compressão. O gate MCP pinado opt-in exige os dois vereditos. Nenhum certifica
+tokens/custo da sessão inteira; runtimes falsos, providers ausentes e fallback
+seguro não comprovam otimização.
 
 ## Camadas
 

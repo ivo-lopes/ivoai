@@ -37,12 +37,16 @@ type Options struct {
 	Compressor    workingcontext.RepresentationCompressor
 	ContextBudget int
 	Cycles        int
+	// Set only by a trusted live harness after checking the executed local
+	// binary against its reviewed pin. Hermetic fixtures leave this empty.
+	RuntimeSHA256 string
 }
 
 type Metrics struct {
 	Provider                   string        `json:"provider"`
 	TokenBasis                 string        `json:"token_basis"`
 	Scenarios                  int           `json:"scenarios"`
+	ExpectedScenarios          int           `json:"expected_scenarios"`
 	BytesBefore                int64         `json:"bytes_before"`
 	BytesInContext             int64         `json:"bytes_in_context"`
 	EstimatedTokensBefore      int64         `json:"estimated_tokens_before"`
@@ -55,10 +59,29 @@ type Metrics struct {
 	ExactRequiredMismatchCount int           `json:"exact_required_mismatch_count"`
 	SemanticMismatchCount      int           `json:"semantic_mismatch_count"`
 	ObservabilityLeakCount     int           `json:"observability_leak_count"`
+	RuntimeSHA256              string        `json:"runtime_sha256,omitempty"`
+	CompressionCalls           int           `json:"compression_calls"`
+	CompressionApplied         int           `json:"compression_applied"`
+	CompressionPassthrough     int           `json:"compression_passthrough"`
+	CompressionFailures        int           `json:"compression_failures"`
+	ProviderMismatchCount      int           `json:"provider_mismatch_count"`
 }
 
-func (m Metrics) Passed() bool {
+// QualityPassed checks evidence/facts, including a correct degraded fallback.
+// It does not establish provider availability or any optimization/economic gain.
+func (m Metrics) QualityPassed() bool {
 	return m.ArtifactMismatchCount == 0 && m.ExactRequiredMismatchCount == 0 && m.SemanticMismatchCount == 0 && m.ObservabilityLeakCount == 0
+}
+
+// Passed preserves the historical quality-only API. Provider gates must use
+// OptimizationVerified as well; neither method certifies whole-session savings.
+func (m Metrics) Passed() bool { return m.QualityPassed() }
+
+// OptimizationVerified confirms accounted local transforms with a caller-validated
+// runtime receipt. It is not independent attestation or a provider-cost gate.
+func (m Metrics) OptimizationVerified() bool {
+	_, err := hex.DecodeString(m.RuntimeSHA256)
+	return m.Provider != "direct" && len(m.RuntimeSHA256) == 64 && err == nil && m.QualityPassed() && m.Scenarios > 0 && m.Scenarios == m.ExpectedScenarios && m.DegradedCount == 0 && m.CompressionFailures == 0 && m.ProviderMismatchCount == 0 && m.CompressionApplied > 0 && m.CompressionCalls == m.CompressionApplied+m.CompressionPassthrough && m.CompressionCalls+m.BypassCount == m.Scenarios
 }
 
 func Run(ctx context.Context, options Options) (Metrics, error) {
@@ -79,9 +102,10 @@ func Run(ctx context.Context, options Options) (Metrics, error) {
 	if err != nil {
 		return Metrics{}, err
 	}
-	metrics := Metrics{Provider: options.Provider, TokenBasis: "heuristic_4_bytes"}
+	metrics := Metrics{Provider: options.Provider, TokenBasis: "heuristic_4_bytes", RuntimeSHA256: options.RuntimeSHA256}
 	started := time.Now()
 	corpus := Corpus()
+	metrics.ExpectedScenarios = len(corpus) * cycles
 	for cycle := 0; cycle < cycles; cycle++ {
 		for index, scenario := range corpus {
 			if err := ctx.Err(); err != nil {
@@ -96,6 +120,27 @@ func Run(ctx context.Context, options Options) (Metrics, error) {
 				ContextBudget: options.ContextBudget, PayloadType: scenario.PayloadType, Fidelity: scenario.Fidelity,
 				AssociationID: fmt.Sprintf("call_%d_%d", cycle, index),
 			})
+			for _, event := range events {
+				if event.Operation != observability.OperationCompressionResult {
+					continue
+				}
+				switch event.CompressionResult {
+				case "applied":
+					metrics.CompressionCalls++
+					metrics.CompressionApplied++
+				case "passthrough":
+					metrics.CompressionCalls++
+					metrics.CompressionPassthrough++
+				case "degraded":
+					metrics.CompressionCalls++
+					metrics.CompressionFailures++
+				default:
+					continue
+				}
+				if event.Provider != options.Provider {
+					metrics.ProviderMismatchCount++
+				}
+			}
 			metrics.Scenarios++
 			metrics.BytesBefore += int64(len(scenario.Raw))
 			metrics.BytesInContext += int64(len(result.Summary))

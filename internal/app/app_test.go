@@ -194,6 +194,10 @@ func TestConfiguredCompressionStatusDistinguishesDefaultOverrideAndFallback(t *t
 	if got := configuredCompressionStatus(cfg, state); got.Text != "explicit direct / effective direct" {
 		t.Fatalf("direct status=%+v", got)
 	}
+	cfg.Compression = config.CompressionConfig{Provider: "headroom", Source: config.CompressionSourceExplicit}
+	if got := configuredCompressionStatus(cfg, state); got.Text != "explicit headroom / effective direct / fallback=unavailable_by_policy" || got.Kind != terminalui.StatusWarning {
+		t.Fatalf("Headroom policy status=%+v", got)
+	}
 	cfg.Compression = config.CompressionConfig{Provider: "caveman", Source: config.CompressionSourceMigration}
 	delete(state.Components, "caveman")
 	if got := configuredCompressionStatus(cfg, state); got.Text != "migration caveman / effective direct / fallback=caveman_unavailable" || got.Kind != terminalui.StatusWarning {

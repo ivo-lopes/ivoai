@@ -113,13 +113,13 @@ The current adapters are:
 - `LegacyQdrantContextBackend` over the existing catalog, local embedding and Qdrant
   context service. The agent-facing contract stays read-only; ingestion remains an
   administrative composition.
-- `HeadroomCompressionProvider` over the existing wrapper probe and invocation. The
-  IVOAI fidelity policy still decides when exact Memory/Context results require a
-  bypass, and the official client remains the direct fallback.
+- `HeadroomCompressionProvider` retains binary health separately from managed
+  wrapping. Codex/Claude wrapping is `unavailable_by_policy` before probes/startup
+  because client configuration mutation and exact recovery are not safely isolated.
 - [CompressionProvider: Caveman, Headroom e bypass direto](compression-provider.md)
   records the Caveman default and migration boundary. Providers are mutually
-  exclusive; Direct remains the safety fallback and explicit Headroom remains a
-  temporary compatibility path.
+  exclusive; Direct remains the safety fallback. The Headroom component and
+  explicit setting remain present while managed wrapping uses Direct.
 - [Caveman canary and fidelity evaluation](caveman-canary.md) defines the
   deterministic corpus, byte-exact gates, opt-in pinned-asset smokes and the
   evidence used to approve the Caveman default while retaining Direct fallback.

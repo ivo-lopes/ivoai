@@ -97,10 +97,16 @@ func (p Projector) Project(ctx context.Context, input ProjectionInput) WorkerRes
 	p.emit(input.Owner, observability.OperationArtifactStoreWrite, observability.StateCompleted, observability.ReasonArtifactStored, ref, 0, 1, false)
 	resultRef := ResultRef{Artifact: ref, Role: EvidencePrimary, AssociationID: input.AssociationID}
 	payloadType := compression.NormalizePayloadType(input.PayloadType)
+	unknownPayloadType := payloadType == "" && strings.TrimSpace(input.PayloadType) != ""
 	if payloadType == "" {
 		payloadType = compression.PayloadWorkerOutput
 	}
 	fidelity := compression.Classify(compression.FidelityInput{PayloadType: payloadType, Explicit: input.Fidelity, Failed: status == ResultFailed || status == ResultCancelled})
+	if unknownPayloadType && fidelity == core.CompressionCompressible {
+		// Only an omitted legacy type defaults to worker_output. An explicit
+		// unknown format must never gain lossy eligibility through that default.
+		fidelity = core.CompressionExactRequired
+	}
 	// Binary data cannot be safely converted to the string-only compression
 	// contract. Preserve it as exact evidence and expose only its ResultRef.
 	if !utf8.Valid(input.Raw) || strings.HasPrefix(strings.ToLower(mediaType), "application/octet-stream") {

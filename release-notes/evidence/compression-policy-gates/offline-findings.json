@@ -1,0 +1,68 @@
+{
+  "external_runtime_executions": 0,
+  "limitations": [
+    "No session-economic result, actual provider token comparison, legal opinion, formal security certification or completed IVOAI-201/46.",
+    "Historical reports and source pins remain unchanged.",
+    "Quality-only Passed is not availability proof; only the updated live gate requires QualityPassed plus OptimizationVerified."
+  ],
+  "official_client_inferences": 0,
+  "pinned_caveman_source": "e20f07e8152a0c0360f58c09e79d30ac94329991",
+  "pinned_headroom_source": "855390d6110e0bbb199d9b97025baac16c2f5cf3",
+  "post_fix_checks": {
+    "docs_i18n": "PASS current=50 release=0.9.2:44",
+    "embedded_site": "PASS copied generated site and compared non-JS outputs",
+    "focused_race_packages": [
+      "headroom",
+      "compression",
+      "workingcontext",
+      "cavemaneval",
+      "agents",
+      "doctor",
+      "app"
+    ],
+    "focused_vet": "PASS",
+    "full_go_suite": "PASS",
+    "headroom_managed_wrapper": "NOT_RUN: intentionally refused by policy; fake wrapper mutation/Direct-once tests passed",
+    "pinned_caveman_mcp_runtime": "NOT_RUN: no pinned upstream executable was run",
+    "production_docs_build": "PASS en/pt-BR using already-installed identical package/lock; no install"
+  },
+  "pre_fix_observations": [
+    {
+      "bypass_wrapper_selected": true,
+      "exact_required_wrapper_selected": true,
+      "method": "Go overlay with fake version/help runner, not an upstream executable",
+      "probe": "headroom_fidelity_boundary"
+    },
+    {
+      "compressor_calls": 1,
+      "fidelity": "compressible",
+      "method": "Go overlay with in-memory fixture compressor",
+      "probe": "unknown_explicit_payload"
+    },
+    {
+      "artifact_mismatches": 0,
+      "degraded": 0,
+      "legacy_quality_passed": true,
+      "probe": "named_provider_without_compressor",
+      "provider_calls": 0,
+      "scenarios": 22,
+      "semantic_mismatches": 0
+    },
+    {
+      "artifact_mismatches": 0,
+      "degraded": 17,
+      "legacy_quality_passed": true,
+      "probe": "every_compression_call_fails",
+      "provider_calls": 17,
+      "scenarios": 22,
+      "semantic_mismatches": 0
+    }
+  ],
+  "preserved_failures": [
+    "Initial targeted tests expected the old Headroom wrapping behavior; generic wrapper lifecycle coverage moved to an injected fixture provider and policy-specific tests require zero wrapper/probe invocations.",
+    "First full Go suite exposed doctor matrix choosing an unrequested inactive Caveman fallback after Headroom refusal. Metadata fallback eligibility now requires Caveman to be configured; focused doctor and final full suite passed."
+  ],
+  "real_configuration_mutations": 0,
+  "scope": "source_review_and_hermetic_offline_probes_only",
+  "source_base": "813113fb6ed26548d4a00cf0ae5e5f6db9fd79d4"
+}
