@@ -1,0 +1,607 @@
+{
+  "schema_version": 1,
+  "source_base": "573c31cbeaedb79d3b6029d3f89af8b8a08e98ea",
+  "source_path": "internal/cli/menu.go",
+  "source_sha256": "156c35d1e195da307f232d7fb42be3c3a53f919537fc8d9158fe429be1627fef",
+  "authority": "internal/cli/menu.go PublicMenuActionIDs",
+  "tui_action_count": 118,
+  "web_slice": "local_owner_read_only",
+  "complete_parity_count": 0,
+  "partial_parity_count": 6,
+  "actions": [
+    {
+      "tui_action_id": "auto",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "capabilities.update",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "capabilities.ponytail",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "capability.inspect",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "capability.enable",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "capability.disable",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "capability.pin",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "capability.unpin",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "capability.update",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "capability.rollback",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "config.auto-profiles",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "profile.show",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "profile.restore",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "config.auto-gate",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "config.auto-plan",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "config.auto-policy",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "policy.sources",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "policy.concurrency",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "policy.worker-cap",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "policy.writes",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "policy.provider",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "policy.low-quota",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "policy.primary",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "policy.mcp",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "policy.confirmation",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "status",
+      "parity": "partial",
+      "reason": "overview/components/connections expose a bounded metadata subset"
+    },
+    {
+      "tui_action_id": "doctor",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "doctor.inventory",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "doctor.repair-hooks",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "version",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "setup",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "update.dry-run",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "update",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "rollback",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "uninstall",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "connect.list",
+      "parity": "partial",
+      "reason": "connections exposes fixed provider/server/external-MCP aggregate counts"
+    },
+    {
+      "tui_action_id": "connect.chatgpt",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "disconnect.chatgpt",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "connect.claude",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "disconnect.claude",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "connect.server",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "servers.list",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "servers.add",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "servers.manage",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "servers.test",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "servers.toggle",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "servers.edit",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "servers.re-enroll",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "servers.remove",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "mcp.list",
+      "parity": "partial",
+      "reason": "connections exposes external MCP counts only; no per-server inspection"
+    },
+    {
+      "tui_action_id": "mcp.add",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "mcp.remove",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "mcp.auth",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "mcp.auth.remove",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "mcp.header",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "mcp.test",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "launch.codex",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "launch.claude",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "launch.opencode",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "memory.status",
+      "parity": "partial",
+      "reason": "components exposes recorded ai-memory installation/version only"
+    },
+    {
+      "tui_action_id": "memory.configure",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "mcp.tools",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "mcp.enable",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "mcp.policy",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "mcp.direct-policy",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "session.direct.codex",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "session.direct.claude",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "session.direct.opencode",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "session.orchestrated.codex",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "session.orchestrated.claude",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "session.list",
+      "parity": "partial",
+      "reason": "sessions exposes up to32 metadata records with partial/truncated indicators"
+    },
+    {
+      "tui_action_id": "session.monitor",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "session.stop",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "session.continuity",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "session.scope.adopt",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "session.scope.restore",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "project.status",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "project.init",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "config.show",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "config.headroom",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "config.memory",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "config.ruflo",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "config.auto",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "config.auto-planner",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "config.auto-failover",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "config.auto-checkpoint",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "config.auto-strategy",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "config.auto-parallel",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "config.auto-bootstrap",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "config.auto-escalation",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "config.session-mode",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "config.primary",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "config.reviewer",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "config.workers",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "server.setup",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "server.status",
+      "parity": "partial",
+      "reason": "connections exposes configured/enabled server counts only"
+    },
+    {
+      "tui_action_id": "server.doctor",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "server.start",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "server.stop",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "server.restart",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "server.logs",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "server.enrollment.create",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "server.enrollment.list",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "server.enrollment.revoke",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "server.web-access.create",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "server.web-access.list",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "server.web-access.revoke",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "server.connector.list",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "server.connector.add",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "server.connector.remove",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "server.context.status",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "server.memory.status",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "server.gateway.configure",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "server.backup",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "server.restore",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "remote.status",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "remote.doctor",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    },
+    {
+      "tui_action_id": "remote.connector.list",
+      "parity": "not_implemented",
+      "reason": "No equivalent administrative action in the read-only web slice"
+    }
+  ],
+  "additional_surfaces": [
+    "CLI headless and dynamic menu actions require separate acceptance before full administrative parity",
+    "The local admin access create/list/revoke commands manage only the disjoint admin grant store"
+  ]
+}

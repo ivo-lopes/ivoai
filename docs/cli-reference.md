@@ -7,6 +7,8 @@ ivoai - personal AI client and server platform
 Usage:
   ivoai                         interactive menu
   ivoai help | version | uninstall
+  ivoai admin serve [--listen 127.0.0.1:7781]
+  ivoai admin access create [--ttl 10m] | list | revoke <id>
   ivoai status [--json]
   ivoai setup [--mode client|server]
   ivoai doctor [--json] [--inventory]
@@ -108,3 +110,13 @@ is reserved for the managed systemd unit. The default is `0.0.0.0:7780`.
 Internal session capability variables and test-only variables are intentionally not
 public interfaces. Commands return zero on success, non-zero on validation/runtime
 failure, and 130 on cancellation where the executor lifecycle supports it.
+
+## Local read-only administration
+
+`ivoai admin serve` explicitly starts an optional numeric loopback listener (default `127.0.0.1:7781`). It does not start on ordinary client sessions or the gateway. Use the same local owner and existing private ConfigRoot/StateRoot; do not run it as a privileged gateway service or expose it through a reverse proxy. In another terminal, run `ivoai admin access create --ttl 10m` and enter the one-time code in the local OAuth page. The code is intentionally printed only by this issuance command; list/revoke show metadata. `ivoai admin access revoke <id>` invalidates access from that grant.
+
+The console uses the existing OAuth PKCE store with an instance-specific `admin:read` scope and resource. Web MCP defaults and tokens, connector credentials and session capabilities remain separate. Access tokens stay in a one-hour HttpOnly/SameSiteStrict cookie; the console uses no browser token storage or refresh token. HTTP is accepted only over numeric loopback; Host/Origin are exact, forwarded headers are ignored, and there is no remote operator/RBAC delegation. State is private under StateRoot's `admin/<instance>/oauth.json`, separate from native client settings. Only the OAuth form uses `Referrer-Policy: same-origin` so browser form submissions retain a verifiable Origin; callback, API and console responses use `no-referrer`. An opaque `Origin: null` is refused, including with a valid form nonce.
+
+This first slice reads session metadata/events, selected component versions and aggregate connection configuration. It uses the same App/Core stores and allowlisted DTOs, without provider probes, network requests, chat or execution controls from a GET. Usage, when present, is a persisted official-client report scoped to `cli_invocation`; cached input is included in input, and unknown is null. It is neither a session total nor an economic result. Counts cover a bounded subset (32 sessions, at most33 entries scanned per existing namespace, 256KiB per record); partial/truncated flags must be retained and the subset is not guaranteed to contain the latest global session. Filesystem I/O and host callbacks are cooperative rather than forcibly interruptible.
+
+Administrative parity remains partial: no setup/update/rollback/uninstall, stop/start, approvals, credential editing, backup/restore, connector purge, evidence/cache/index management, native login, or conversation UI. The inventory contains118 stable TUI IDs; exposing a read-only console does not complete them. The local owner and filesystem remain trusted; read-side auth/root rechecks do not provide atomic protection against a privileged local process replacing state. Stop the explicit listener to disable the console; native client configuration and running executions are unchanged.

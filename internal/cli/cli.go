@@ -64,6 +64,8 @@ func commandHeaderEnabled(args []string) bool {
 func runCommand(ctx context.Context, a *app.App, args []string) error {
 	platform.DebugLog(a.Err, "cli.command", map[string]string{"command": args[0]})
 	switch args[0] {
+	case "admin":
+		return runAdmin(ctx, a, args[1:])
 	case "skills":
 		return runSkills(ctx, a, args[1:])
 	case "help", "--help", "-h":
@@ -823,6 +825,8 @@ func usage(w io.Writer) {
 Usage:
   ivoai                         interactive menu
   ivoai help | version | uninstall
+  ivoai admin serve [--listen 127.0.0.1:7781]
+  ivoai admin access create [--ttl 10m] | list | revoke <id>
   ivoai status [--json]
   ivoai setup [--mode client|server]
   ivoai doctor [--json] [--inventory]
