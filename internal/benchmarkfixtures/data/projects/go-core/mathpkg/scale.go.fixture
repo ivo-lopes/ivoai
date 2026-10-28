@@ -1,0 +1,2 @@
+package mathpkg
+func Scale(x int) int { return x * 2 }

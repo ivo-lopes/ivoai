@@ -1,0 +1,3 @@
+package app
+import "fixture/mathpkg"
+func Entry() int { return mathpkg.Scale(3) }

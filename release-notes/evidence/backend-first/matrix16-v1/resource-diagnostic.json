@@ -1,0 +1,201 @@
+{
+  "source_runtime_rows_sha256": "0b0ce3f04c5af447ce5c389aa0fb51d7f1835c1d8574bd54ac49782d6b822056",
+  "no_rows_excluded": true,
+  "not_rescored": true,
+  "measurement_scope": "Linux wait4 command plus reaped descendants; peak RSS is maximum individual process, not simultaneous tree sum",
+  "process_count": "only whole-host preflight count retained in provenance, not attributed per attempt",
+  "scenarios": {
+    "api": {
+      "A": {
+        "observations": 3,
+        "user_cpu_ms_sum": 3961,
+        "system_cpu_ms_sum": 1556,
+        "command_elapsed_ms_sum": 13925,
+        "peak_individual_rss_bytes_max": 364568576,
+        "prefetch_ms_sum": 7,
+        "provider_ms_sum": 13838,
+        "input_tokens_sum": 44566,
+        "tool_calls_sum": 0
+      },
+      "B": {
+        "observations": 3,
+        "user_cpu_ms_sum": 3864,
+        "system_cpu_ms_sum": 1478,
+        "command_elapsed_ms_sum": 11603,
+        "peak_individual_rss_bytes_max": 372113408,
+        "prefetch_ms_sum": 25,
+        "provider_ms_sum": 11511,
+        "input_tokens_sum": 44568,
+        "tool_calls_sum": 0
+      }
+    },
+    "dependencies": {
+      "A": {
+        "observations": 3,
+        "user_cpu_ms_sum": 4438,
+        "system_cpu_ms_sum": 1722,
+        "command_elapsed_ms_sum": 20777,
+        "peak_individual_rss_bytes_max": 391913472,
+        "prefetch_ms_sum": 6,
+        "provider_ms_sum": 20697,
+        "input_tokens_sum": 89999,
+        "tool_calls_sum": 3
+      },
+      "B": {
+        "observations": 3,
+        "user_cpu_ms_sum": 4478,
+        "system_cpu_ms_sum": 1799,
+        "command_elapsed_ms_sum": 22934,
+        "peak_individual_rss_bytes_max": 369311744,
+        "prefetch_ms_sum": 25,
+        "provider_ms_sum": 22838,
+        "input_tokens_sum": 95116,
+        "tool_calls_sum": 5
+      }
+    },
+    "implementation": {
+      "A": {
+        "observations": 3,
+        "user_cpu_ms_sum": 3789,
+        "system_cpu_ms_sum": 1502,
+        "command_elapsed_ms_sum": 11965,
+        "peak_individual_rss_bytes_max": 379097088,
+        "prefetch_ms_sum": 9,
+        "provider_ms_sum": 11884,
+        "input_tokens_sum": 44546,
+        "tool_calls_sum": 0
+      },
+      "B": {
+        "observations": 3,
+        "user_cpu_ms_sum": 3613,
+        "system_cpu_ms_sum": 1519,
+        "command_elapsed_ms_sum": 13626,
+        "peak_individual_rss_bytes_max": 366698496,
+        "prefetch_ms_sum": 25,
+        "provider_ms_sum": 13534,
+        "input_tokens_sum": 44536,
+        "tool_calls_sum": 0
+      }
+    },
+    "monorepo": {
+      "A": {
+        "observations": 3,
+        "user_cpu_ms_sum": 4900,
+        "system_cpu_ms_sum": 1897,
+        "command_elapsed_ms_sum": 27096,
+        "peak_individual_rss_bytes_max": 391024640,
+        "prefetch_ms_sum": 0,
+        "provider_ms_sum": 27021,
+        "input_tokens_sum": 133301,
+        "tool_calls_sum": 6
+      },
+      "B": {
+        "observations": 3,
+        "user_cpu_ms_sum": 4601,
+        "system_cpu_ms_sum": 1935,
+        "command_elapsed_ms_sum": 27636,
+        "peak_individual_rss_bytes_max": 356847616,
+        "prefetch_ms_sum": 0,
+        "provider_ms_sum": 27559,
+        "input_tokens_sum": 140921,
+        "tool_calls_sum": 6
+      }
+    },
+    "multi_module_callers": {
+      "A": {
+        "observations": 3,
+        "user_cpu_ms_sum": 4810,
+        "system_cpu_ms_sum": 1705,
+        "command_elapsed_ms_sum": 14792,
+        "peak_individual_rss_bytes_max": 387817472,
+        "prefetch_ms_sum": 1102,
+        "provider_ms_sum": 13625,
+        "input_tokens_sum": 44691,
+        "tool_calls_sum": 0
+      },
+      "B": {
+        "observations": 3,
+        "user_cpu_ms_sum": 4904,
+        "system_cpu_ms_sum": 1815,
+        "command_elapsed_ms_sum": 15464,
+        "peak_individual_rss_bytes_max": 383025152,
+        "prefetch_ms_sum": 1091,
+        "provider_ms_sum": 14294,
+        "input_tokens_sum": 47178,
+        "tool_calls_sum": 0
+      }
+    },
+    "non_code": {
+      "A": {
+        "observations": 3,
+        "user_cpu_ms_sum": 4314,
+        "system_cpu_ms_sum": 1811,
+        "command_elapsed_ms_sum": 21505,
+        "peak_individual_rss_bytes_max": 383324160,
+        "prefetch_ms_sum": 0,
+        "provider_ms_sum": 21437,
+        "input_tokens_sum": 88211,
+        "tool_calls_sum": 3
+      },
+      "B": {
+        "observations": 3,
+        "user_cpu_ms_sum": 4506,
+        "system_cpu_ms_sum": 1670,
+        "command_elapsed_ms_sum": 17634,
+        "peak_individual_rss_bytes_max": 379482112,
+        "prefetch_ms_sum": 0,
+        "provider_ms_sum": 17567,
+        "input_tokens_sum": 88204,
+        "tool_calls_sum": 3
+      }
+    },
+    "unsupported_parser": {
+      "A": {
+        "observations": 3,
+        "user_cpu_ms_sum": 4602,
+        "system_cpu_ms_sum": 1874,
+        "command_elapsed_ms_sum": 26589,
+        "peak_individual_rss_bytes_max": 397352960,
+        "prefetch_ms_sum": 0,
+        "provider_ms_sum": 26513,
+        "input_tokens_sum": 88533,
+        "tool_calls_sum": 3
+      },
+      "B": {
+        "observations": 3,
+        "user_cpu_ms_sum": 4584,
+        "system_cpu_ms_sum": 1799,
+        "command_elapsed_ms_sum": 25785,
+        "peak_individual_rss_bytes_max": 385765376,
+        "prefetch_ms_sum": 0,
+        "provider_ms_sum": 25711,
+        "input_tokens_sum": 88536,
+        "tool_calls_sum": 3
+      }
+    }
+  },
+  "arms": {
+    "A": {
+      "observations": 21,
+      "user_cpu_ms_sum": 30814,
+      "system_cpu_ms_sum": 12067,
+      "command_elapsed_ms_sum": 136649,
+      "peak_individual_rss_bytes_max": 397352960,
+      "prefetch_ms_sum": 1124,
+      "provider_ms_sum": 135015,
+      "input_tokens_sum": 533847,
+      "tool_calls_sum": 15
+    },
+    "B": {
+      "observations": 21,
+      "user_cpu_ms_sum": 30550,
+      "system_cpu_ms_sum": 12015,
+      "command_elapsed_ms_sum": 134682,
+      "peak_individual_rss_bytes_max": 385765376,
+      "prefetch_ms_sum": 1166,
+      "provider_ms_sum": 133014,
+      "input_tokens_sum": 549059,
+      "tool_calls_sum": 17
+    }
+  }
+}

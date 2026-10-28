@@ -1,0 +1,271 @@
+{
+  "schema_version": 1,
+  "scope": "planned_matrix16_with_read_only_subset",
+  "global_economic_gate": "INCOMPLETE",
+  "scenarios": [
+    {
+      "id": "small_known_file_correction",
+      "label": "Small known-file correction",
+      "fixture": "go-core",
+      "languages": [
+        "go"
+      ],
+      "runner_supported": false,
+      "blocker": "read_only_runner_cannot_apply_and_validate_edits",
+      "task": "",
+      "prompt": "",
+      "expected": null,
+      "structural": "allowed"
+    },
+    {
+      "id": "implementation",
+      "label": "Function identification",
+      "fixture": "go-core",
+      "languages": [
+        "go"
+      ],
+      "runner_supported": true,
+      "blocker": "",
+      "task": "Locate Scale and explain its operation",
+      "prompt": "Report Scale's unqualified declaration identifier as symbol, source file, input 3 and computed result as JSON.",
+      "expected": {
+        "symbol": "Scale",
+        "file": "mathpkg/scale.go",
+        "input": 3,
+        "result": 6
+      },
+      "structural": "allowed"
+    },
+    {
+      "id": "cross_module_refactor",
+      "label": "Cross-module refactor",
+      "fixture": "monorepo-ts",
+      "languages": [
+        "typescript",
+        "shell"
+      ],
+      "runner_supported": false,
+      "blocker": "read_only_runner_cannot_refactor_or_run_post_edit_oracles",
+      "task": "",
+      "prompt": "",
+      "expected": null,
+      "structural": "allowed"
+    },
+    {
+      "id": "dependencies",
+      "label": "Dependencies",
+      "fixture": "python-deps",
+      "languages": [
+        "python"
+      ],
+      "runner_supported": true,
+      "blocker": "",
+      "task": "Inspect API pricing/totals.py",
+      "prompt": "Read pricing/totals.py and pricing/tax.py. Report the sorted repository module dependencies of app/checkout.py as modules, and total(100) as total, as JSON.",
+      "expected": {
+        "modules": [
+          "pricing.tax",
+          "pricing.totals"
+        ],
+        "total": 108
+      },
+      "structural": "allowed"
+    },
+    {
+      "id": "multi_module_callers",
+      "label": "Impact",
+      "fixture": "go-core",
+      "languages": [
+        "go"
+      ],
+      "runner_supported": true,
+      "blocker": "",
+      "task": "Identify the function that directly calls Scale",
+      "prompt": "Report every direct caller of Scale as a JSON callers array, each with unqualified declaration identifier as symbol and repository-relative file. Include only direct callers.",
+      "expected": {
+        "callers": [
+          {
+            "symbol": "Entry",
+            "file": "app/entry.go"
+          },
+          {
+            "symbol": "Process",
+            "file": "service/process.go"
+          }
+        ]
+      },
+      "structural": "required"
+    },
+    {
+      "id": "api",
+      "label": "APIs",
+      "fixture": "go-core",
+      "languages": [
+        "go"
+      ],
+      "runner_supported": true,
+      "blocker": "",
+      "task": "Report the public signature of Scale",
+      "prompt": "Report Scale's unqualified declaration identifier as symbol, source file, ordered parameter_types, and return_type as JSON.",
+      "expected": {
+        "symbol": "Scale",
+        "file": "mathpkg/scale.go",
+        "parameter_types": [
+          "int"
+        ],
+        "return_type": "int"
+      },
+      "structural": "allowed"
+    },
+    {
+      "id": "large_project",
+      "label": "Large project / IVOAI",
+      "fixture": "",
+      "languages": [
+        "go"
+      ],
+      "runner_supported": false,
+      "blocker": "representative_large_project_fixture_and_boundaries_not_frozen",
+      "task": "",
+      "prompt": "",
+      "expected": null,
+      "structural": "allowed"
+    },
+    {
+      "id": "monorepo",
+      "label": "Monorepo",
+      "fixture": "monorepo-ts",
+      "languages": [
+        "typescript",
+        "shell"
+      ],
+      "runner_supported": true,
+      "blocker": "",
+      "task": "Read packages/shop/src/main.ts and its local import",
+      "prompt": "Read this local TypeScript monorepo without installing dependencies or executing scripts. Report entry and shared as repository-relative filenames and the computed discounted result as result, as JSON.",
+      "expected": {
+        "entry": "packages/shop/src/main.ts",
+        "shared": "packages/shared/src/discount.ts",
+        "result": 90
+      },
+      "structural": "allowed"
+    },
+    {
+      "id": "unsupported_parser",
+      "label": "Unsupported parser",
+      "fixture": "rules-shell",
+      "languages": [
+        "shell",
+        "custom_rules"
+      ],
+      "runner_supported": true,
+      "blocker": "",
+      "task": "Read policy/discount.ivo-fixture without a code parser",
+      "prompt": "Read policy/discount.ivo-fixture and check.sh as plain text. For input 100, report file, rate_percent, threshold, and result as JSON. Do not execute the script.",
+      "expected": {
+        "file": "policy/discount.ivo-fixture",
+        "rate_percent": 12,
+        "threshold": 100,
+        "result": 88
+      },
+      "structural": "forbidden"
+    },
+    {
+      "id": "institutional_documentation",
+      "label": "Institutional documentation",
+      "fixture": "",
+      "languages": [],
+      "runner_supported": false,
+      "blocker": "context_ingestion_and_retrieval_unavailable_IVOAI_175",
+      "task": "",
+      "prompt": "",
+      "expected": null,
+      "structural": "allowed"
+    },
+    {
+      "id": "ai_memory_history",
+      "label": "ai-memory history",
+      "fixture": "",
+      "languages": [],
+      "runner_supported": false,
+      "blocker": "canonical_history_dataset_and_live_memory_contract_not_frozen",
+      "task": "",
+      "prompt": "",
+      "expected": null,
+      "structural": "allowed"
+    },
+    {
+      "id": "non_code",
+      "label": "Non-code tasks",
+      "fixture": "non-code",
+      "languages": [],
+      "runner_supported": true,
+      "blocker": "",
+      "task": "Plan non-code milestones from milestones.json",
+      "prompt": "Read milestones.json. Report milestone ids ordered by priority ascending as order, and the sum of days as total_days, as JSON. No code inspection or execution is needed.",
+      "expected": {
+        "order": [
+          "review",
+          "publish",
+          "archive"
+        ],
+        "total_days": 8
+      },
+      "structural": "forbidden"
+    },
+    {
+      "id": "multiple_workers",
+      "label": "Multiple workers",
+      "fixture": "go-core",
+      "languages": [
+        "go"
+      ],
+      "runner_supported": false,
+      "blocker": "primary_only_runner_has_no_worker_or_reuse_lifecycle",
+      "task": "",
+      "prompt": "",
+      "expected": null,
+      "structural": "allowed"
+    },
+    {
+      "id": "reuse_between_turns",
+      "label": "Reuse between turns",
+      "fixture": "go-core",
+      "languages": [
+        "go"
+      ],
+      "runner_supported": false,
+      "blocker": "ephemeral_single_turn_runner_has_no_warm_session",
+      "task": "",
+      "prompt": "",
+      "expected": null,
+      "structural": "allowed"
+    },
+    {
+      "id": "interrupted_continuity",
+      "label": "Interrupted continuity",
+      "fixture": "go-core",
+      "languages": [
+        "go"
+      ],
+      "runner_supported": false,
+      "blocker": "ephemeral_runner_has_no_interrupt_resume_comparison",
+      "task": "",
+      "prompt": "",
+      "expected": null,
+      "structural": "allowed"
+    },
+    {
+      "id": "concurrent_distinct_projects",
+      "label": "Concurrent distinct projects",
+      "fixture": "",
+      "languages": [],
+      "runner_supported": false,
+      "blocker": "sequential_driver_has_no_concurrent_project_lifecycle",
+      "task": "",
+      "prompt": "",
+      "expected": null,
+      "structural": "allowed"
+    }
+  ]
+}
