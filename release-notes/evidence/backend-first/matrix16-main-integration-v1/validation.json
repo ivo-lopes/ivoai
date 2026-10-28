@@ -1,0 +1,88 @@
+{
+  "schema": 1,
+  "epoch": "pr46-main6d99-integration-v1",
+  "result": "PASS local combined code/build gates; global economic gate remainsINCOMPLETE",
+  "parents": {
+    "pr46": "16f4e42f3528a71522023ed61bc2406ca6ab8d2a",
+    "main": "6d99e320912f3f7325c3009209a10e9df86610d4"
+  },
+  "merge": {
+    "conflicts": 0,
+    "manual_runtime_changes": 0,
+    "production_or_harness_contract_edits_beyond_incoming_main": 0
+  },
+  "checks": {
+    "go_all": {
+      "result": "PASS",
+      "packages_passed": 59,
+      "packages_no_tests": 3,
+      "cmd": "go test ./...",
+      "proof": "go-test.log"
+    },
+    "python_all": {
+      "result": "PASS",
+      "tests": 61,
+      "seconds": 21.849,
+      "proof": "python-test.log"
+    },
+    "race_affected": {
+      "result": "PASS",
+      "packages": 11,
+      "uncached": true,
+      "app_seconds": 151.057,
+      "proof": "race.json/race.log"
+    },
+    "sandboxed_edit_oracles": {
+      "result": "PASS",
+      "cases": 2,
+      "provider_attempts": 0,
+      "seconds": 19.323,
+      "proof": "oracles.json/oracles.log"
+    },
+    "vet_all": "PASS",
+    "gofmt": "PASS no files",
+    "build_amd64_v1": "PASS compiled and version smoke; not a non-AVX host execution proof",
+    "build_arm64": "PASS cross-compiled; NOT_EXECUTED",
+    "diff_check": {
+      "pr_contribution_vs_main": "PASS exit0",
+      "incoming_patch_vs_old_branch": "EXPECTED_WARN exit2; seven context lines; byte-identical to main6d99",
+      "recording_assertion": "initial FAIL due two additional raw build-info trailing-tab lines; lossless JSON representation now preserves stdout bytes",
+      "proof": "diff-check.json"
+    }
+  },
+  "historical_evidence": {
+    "artifact_files_checked": 140,
+    "all_bytes_unchanged": true,
+    "cohort_row_counts": [
+      18,
+      18,
+      18,
+      18,
+      42,
+      12
+    ],
+    "total_rows_unchanged": 126,
+    "new_real_client_turns": 0,
+    "economic_rescore": false
+  },
+  "strict_discovery": {
+    "protocol": 3,
+    "driver_harness_catalog_oracle_sampler_files_unchanged_vs16f4": true,
+    "default_preflight_required": true,
+    "stale_or_wrong_binary_rejected_by_existing_tests": true,
+    "schema2_catalog_unchanged": true,
+    "no_READY_promotion": true
+  },
+  "source_epoch": "source-epoch.json records merged input tree before these new reports and exact compiled-source inventory/build hashes",
+  "environment": "explicit private HOME; all provider/auth opt-ins absent; pinned Go1.27.3/Node26.11.1; GOPROXY/GOSUMDBoff; shared content-addressed Go caches",
+  "limits": [
+    "No new LLM/native client/protected G0 recovery/actual worker/sampler calibration proof",
+    "Imported main includes Claude readonly worker boundary, managed legacy patch.3 and Core release gates; this local merge does not rerun their official-client or native ARM/non-AVX certification",
+    "Browser/UI, online dependency audits and full GitHub Actions were not rerun locally for this test-branch integration; remote CI still required before merge",
+    "Tests use synthetic/fake local process fixtures when applicable; their counts are not actual native worker/quota measurements",
+    "No benchmark performance result on the combined runtime; old C6/v0.12.1 receipts remain tied to their original source",
+    "Both future benchmark arms must rebuild identical final common harness and pass strict discovery before any provider turn",
+    "PR51 control worktree left unchanged at10f00639591c03d1daba21806c92d87ef2368627; not integrated here",
+    "CONTEXT_SYNC BLOCKED IVOAI-175"
+  ]
+}

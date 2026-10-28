@@ -1,0 +1,37 @@
+{
+  "schema_version": 2,
+  "scope": "matrix16_discovery_preflight_no_inference",
+  "global_economic_gate": "INCOMPLETE",
+  "provider_attempts": 0,
+  "provider_cache_equivalence": "UNVERIFIED",
+  "effective_model_observed": null,
+  "discovery": {
+    "A": {
+      "status": "BLOCKED",
+      "reason": "capability_discovery_missing_invalid_or_mismatched",
+      "test_exit_code": 0
+    },
+    "B": {
+      "status": "BLOCKED",
+      "reason": "capability_discovery_missing_invalid_or_mismatched",
+      "test_exit_code": 0
+    }
+  },
+  "edit_oracle_probes": {},
+  "scenarios": [
+    {
+      "scenario": "small_known_file_correction",
+      "status": "BLOCKED",
+      "reason": "binary_contract_equivalence_unconfirmed",
+      "execution": "workspace_edit",
+      "client_execution": "NOT_RUN"
+    },
+    {
+      "scenario": "cross_module_refactor",
+      "status": "BLOCKED",
+      "reason": "binary_contract_equivalence_unconfirmed",
+      "execution": "workspace_edit",
+      "client_execution": "NOT_RUN"
+    }
+  ]
+}

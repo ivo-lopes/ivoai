@@ -1,0 +1,94 @@
+{
+  "schema": 1,
+  "epoch": "pr46-g0-main064-integration-v1",
+  "result": "PASS local combined code/build/security-contract gates; global economic gate INCOMPLETE",
+  "parents": {
+    "pr46": "a137d693ebd7f48eb3701b1e019c734e6264425c",
+    "main": "064edc3ad6972bf8bfd2d95f738c9732d1102396"
+  },
+  "merge": {
+    "conflicts": 0,
+    "manual_runtime_changes": 0,
+    "incoming_G0_paths_byte_identical_to_main": 94
+  },
+  "checks": {
+    "full_go": {
+      "exit": 0,
+      "uncached": true,
+      "passing_packages": 59,
+      "no_tests_packages": 3,
+      "app_seconds": 53.824
+    },
+    "python": {
+      "exit": 0,
+      "tests": 65,
+      "seconds": 18.658
+    },
+    "affected_race": {
+      "exit": 0,
+      "packages": 18,
+      "uncached": true,
+      "app_seconds": 157.908,
+      "covers": [
+        "App",
+        "CodeIntel",
+        "fixtures",
+        "nativeCodex",
+        "observability",
+        "workers",
+        "session",
+        "admin",
+        "webauth",
+        "managedbridge",
+        "components",
+        "CLI",
+        "Evidence",
+        "WorkingContext",
+        "Orchestrator",
+        "externalMCP",
+        "agents",
+        "quota"
+      ]
+    },
+    "required_legacy_rollback": {
+      "exit": 0,
+      "named_tests": 1,
+      "skips": 0,
+      "legacy_source": "3be82befea6ed3875373afcb1bfaa450710310ac",
+      "probe": "rollback-provenance.json",
+      "result": "old full/range cannot recover protected IDs; legacy put/read/GC work; protected bytes preserved"
+    },
+    "sandboxed_edit_oracles": {
+      "exit": 0,
+      "cases": 2,
+      "provider_attempts": 0,
+      "seconds": 19.286
+    },
+    "vet": "PASS",
+    "gofmt": "PASS no files",
+    "amd64_v1_build_and_version_smoke": "PASS; not nonAVXhardware certification",
+    "arm64": "crosscompilePASS; NOT_EXECUTED"
+  },
+  "preservation": {
+    "previous_artifacts_checked": 193,
+    "all_byte_identical": true,
+    "includes_old140_and_prior22": "yes, plus their manifests/imported main proofs",
+    "historical_real_rows": 126,
+    "rescore": false,
+    "previous_epoch_reports_unchanged": true,
+    "driver_harness_catalog_oracle_sampler_sources_unchanged": true,
+    "protocol": 3,
+    "default_discovery_still_required": true,
+    "no_READY_promotion": true
+  },
+  "release014": "immutable original tag6d99; G0 and this integration remain outside it; no release publication",
+  "limits": [
+    "No nativeclient/provider/MemoryContext realturn; no live G0 consumption or authenticated parity proof",
+    "No sampler calibration/newoptimization in this branch; separate8f513876 remainsLOCAL with independent rootfixture failure under investigation",
+    "Local checks are not full hosted CI or native ARM/nonAVX/official client recertification; exacthead remote gates required before merge",
+    "Old receipts retain originalsource identities; no economic result is attributed to currentruntime",
+    "Both future comparison arms require identical rebuilt final common harness and strict discovery; model/backend/cache/quota equivalence remainUNKNOWN",
+    "CONTEXT_SYNC BLOCKED IVOAI-175"
+  ],
+  "pr_diff_check_against_main": "PASS exit0"
+}

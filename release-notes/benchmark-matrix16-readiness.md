@@ -1,5 +1,9 @@
 # Matrix16 readiness — IVOAI-198 / IVOAI-138
 
+Historical v1 record. The later [v2 edit-contract validation](benchmark-matrix16-edit-validation.md)
+adds two offline edit contracts; it does not rescore this record or the real
+comparative datasets.
+
 Base: `49445919f745157e3c8aa1c717161e49cb5f50d5` (v0.13.0 main).
 This delivery freezes a typed 16-case catalog, five synthetic projects,
 executable offline oracles and four additional read-only harness cases.

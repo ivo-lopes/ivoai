@@ -1,0 +1,40 @@
+{
+  "schema_version": 2,
+  "scope": "app_primary_prefetch_subset",
+  "repetitions": 1,
+  "driver_sha256": "5fd2455d1b12cf5ac0dc3c94e9fcdb2045f4c9fd18bbde32eef1ff94cb3448ba",
+  "catalog_loader_sha256": "05050ae988d479dc7f1ac639380ce92a3fba00fa70e788b3d387db27180223fb",
+  "model_requested": "gpt-6.1-sol",
+  "effort_requested": "low",
+  "effective_model_observed": null,
+  "host_mcp_tools_exposed": 0,
+  "native_tools_exposed": null,
+  "native_tools_inventory": "UNVERIFIED",
+  "native_worker_observation": "UNVERIFIED_NATIVE_EVENTS_NOT_INSTRUMENTED",
+  "common_native_worker_policy": "agents.enabled=false;features.multi_agent_v2=false",
+  "runtime_flags": {
+    "experimental_evidence_gateway": false
+  },
+  "baseline_test_sha256": "b555c0ceffbad3d7d30325fcbe9e28d120e84d38165965c95316bf4320578f4e",
+  "candidate_test_sha256": "baabe5ff13aaaf7f4295714530807fa2ae8e5ab920095246ea558970c4aedd83",
+  "codex_sha256": "13b2d7b38d352ccdebf34a7371484e8469028d8d25336801d2a758a6a2bd013d",
+  "node_sha256": "5a7b8a3cf5ccb57d297519754fd73238f64cf560afd0ef19a2f9bf7384cbb657",
+  "sandbox_sha256": "13b2d7b38d352ccdebf34a7371484e8469028d8d25336801d2a758a6a2bd013d",
+  "oracle_go_sha256": "5f5eb6d0b2fb6aa0bb5d5f8c5f1c944e0de955c925f0111af92a9d8f79680b5b",
+  "oracle_bwrap_sha256": "573236e5328ac2ebb08f59ae3a9805b4f8d12bdef14be8af4450d5463294985f",
+  "oracle_prlimit_sha256": "06275e616ca2b721482aeb564260489be3fdc6d5f86836b4a78e96485845f060",
+  "distribution_inventory_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+  "harness_sha256": "9251e37c616461cbd4f0bc3e0b18e5c25da22d06723fa6f5841d0d808e6247ad",
+  "requested_scenarios": [
+    "small_known_file_correction",
+    "cross_module_refactor"
+  ],
+  "catalog_sha256": "395f77bc5154c3df42cc7897feb7206bb38963a9441741ea24dbf290b08a9d7e",
+  "fixture_contract_sha256": "32b7e658c25e2c6855102c372d6aa1ca996f2b079c0b06a23a0837b27cf915b9",
+  "edit_oracle_identities": {
+    "small_known_file_correction": "148d8e727ef181a4c064c5a88a1d6fd3a859c94ca0b8dac573cf055c62278ce4",
+    "cross_module_refactor": "16b7713d9ebd220e5fff739682ac691fc622488d762c814c9c98a079b7f2bbeb"
+  },
+  "preflight_only": false,
+  "cache_policy": "cold_private_local_caches_provider_cache_unverified"
+}
