@@ -161,11 +161,12 @@ func (r CLIRunner) Run(ctx context.Context, request ExecutorRequest, emit func(s
 	finalResponsePresent := false
 	structuredFailureClass := ""
 	claudeTools := make(map[string]int)
-	parseErr := ScanJSONLines(stdout, func(value map[string]any) error {
+	parseErr := scanJSONLines(stdout, func(value map[string]any) error {
 		if spec.ObserveProgress != nil {
 			defer func() {
 				progress := trace
 				progress.Tools = append([]ToolTrace(nil), trace.Tools...)
+				progress.Usage = copyReportedUsage(trace.Usage)
 				spec.ObserveProgress(progress)
 			}()
 		}
@@ -188,6 +189,7 @@ func (r CLIRunner) Run(ctx context.Context, request ExecutorRequest, emit func(s
 		if request.Executor == "codex" {
 			if value["type"] == "turn.completed" {
 				trace.Completion = true
+				observeCodexUsage(&trace, value["usage"])
 			}
 			if value["type"] == "turn.failed" {
 				raw, _ := json.Marshal(value["error"])
@@ -290,7 +292,7 @@ func (r CLIRunner) Run(ctx context.Context, request ExecutorRequest, emit func(s
 			}
 		}
 		return nil
-	})
+	}, true)
 	// A malformed stream or disconnected consumer can stop scanning while the
 	// child is still writing. Terminate the process group before Wait so a full
 	// stdout pipe cannot deadlock the bridge.
