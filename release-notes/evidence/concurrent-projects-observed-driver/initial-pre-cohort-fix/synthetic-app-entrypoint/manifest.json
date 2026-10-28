@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "scope": "experimental_concurrent_clients",
+  "scenario_status": "UNSUPPORTED",
+  "driver_sha256": "e7b577d3e2f64cf6e1e409231b08beef0be2d031f3fa86aeb4bb93a7a9eb9e14",
+  "global_economic_gate": "INCOMPLETE",
+  "composite_driver_sha256": "f4c3f891437b0c41c9d20907a5ec0ed9a409a2180e82215f329389515f06208c",
+  "contract_sha256": "21af6cc58cc9bdf27f2a5ddf4990fb5ac7ca77a1addb7fc4af0baded74f8f33b",
+  "client_lifecycle_sha256": "1d21ceb7862f7d8c8a5b527fe56f92fab7e419c111e88388e3927fd3d12a74ce",
+  "harness_sha256": "c6d032c00932397c67db7b05fc55faa119398018112f31bc75a893c1c50c82e3",
+  "baseline_sha256": "844797d3c12554f217fddfd718da178f7f059b4b7f22e61dd06a27f781e423a2",
+  "candidate_sha256": "844797d3c12554f217fddfd718da178f7f059b4b7f22e61dd06a27f781e423a2",
+  "client_sha256": "2d7c3c441edd89aabc237e8ccde9960afb7723eb7e602769579a218fdef7bf83",
+  "repetitions": 1,
+  "provider_cache_equivalence": "UNVERIFIED",
+  "remote_inference_overlap": "NOT_ATTESTED"
+}

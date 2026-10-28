@@ -71,6 +71,13 @@ def contract_digest():
     return result.hexdigest()
 
 
+def client_lifecycle_digest():
+    result = hashlib.sha256()
+    for name in ("client_lifecycle.go", "client_lifecycle_linux.go", "client_lifecycle_other.go"):
+        result.update(name.encode() + b"\0" + (catalog.ROOT / "internal/benchmarkfixtures" / name).read_bytes() + b"\0")
+    return result.hexdigest()
+
+
 def source_pins(go):
     return {"preflight_sha256": catalog.digest(Path(__file__)),
             "oracle_runner_sha256": catalog.digest(Path(catalog.__file__)),

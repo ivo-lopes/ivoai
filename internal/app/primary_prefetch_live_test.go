@@ -38,7 +38,8 @@ type prefetchLiveRow struct {
 	Execution, OracleToolsSHA256, NativeWorkerObservation                                                          string
 	EditFiles                                                                                                      int
 	NativeEventMetrics                                                                                             benchmarkfixtures.ExecObservation
-	Error                                                                                                          string `json:",omitempty"`
+	ClientLifecycle                                                                                                *benchmarkfixtures.ClientLifecycle `json:",omitempty"`
+	Error                                                                                                          string                             `json:",omitempty"`
 }
 
 // This paired benchmark exercises the actual host prefetch/ArtifactStore
@@ -241,7 +242,24 @@ func TestLivePrimaryCodePrefetchBenchmark(t *testing.T) {
 				command.Stdout = stdout
 				command.Stderr = stderr
 				providerStart := time.Now()
-				runErr := command.Run()
+				var runErr error
+				if os.Getenv("IVOAI_CONCURRENT_CLIENT_OBSERVATION") == "1" {
+					if definition.Execution != "read_only" {
+						t.Fatal("concurrent observation only admits read-only children")
+					}
+					composition, e := benchmarkfixtures.ConcurrentProjectContractSHA256()
+					if e != nil {
+						t.Fatal("composition contract unavailable")
+					}
+					isolation := sha256.Sum256([]byte(root + "\x00" + id + "\x00" + a.Store.Paths.CacheDir))
+					row.ClientLifecycle, runErr = benchmarkfixtures.RunObservedClient(command, benchmarkfixtures.ClientIdentity{
+						AttemptID: os.Getenv("IVOAI_CONCURRENT_ATTEMPT_ID"), Scenario: scenario.name, Arm: arm,
+						FixtureSHA256: fixtureHash, HarnessSHA256: prefetchHarnessSHA256(), CompositionSHA256: composition,
+						ClientSHA256: os.Getenv("IVOAI_CONCURRENT_CLIENT_SHA256"), IsolationSHA256: hex.EncodeToString(isolation[:]),
+					}, os.Getenv("IVOAI_CONCURRENT_CLIENT_START"), root)
+				} else {
+					runErr = command.Run()
+				}
 				row.ProviderMS = time.Since(providerStart).Milliseconds()
 				row.TotalMS = time.Since(start).Milliseconds()
 				answer := prefetchLiveEvents(stdout.Bytes(), &row)
@@ -284,12 +302,13 @@ func prefetchHarnessSHA256() string {
 }
 
 type prefetchBenchmarkCapabilities struct {
-	SchemaVersion  int               `json:"schema_version"`
-	CatalogSHA256  string            `json:"catalog_sha256"`
-	ContractSHA256 string            `json:"fixture_contract_sha256"`
-	HarnessSHA256  string            `json:"harness_sha256"`
-	Supported      []string          `json:"supported_scenarios"`
-	Fixtures       map[string]string `json:"fixtures"`
+	SchemaVersion         int               `json:"schema_version"`
+	CatalogSHA256         string            `json:"catalog_sha256"`
+	ContractSHA256        string            `json:"fixture_contract_sha256"`
+	HarnessSHA256         string            `json:"harness_sha256"`
+	Supported             []string          `json:"supported_scenarios"`
+	Fixtures              map[string]string `json:"fixtures"`
+	ClientLifecycleSHA256 string            `json:"client_lifecycle_sha256,omitempty"`
 }
 
 // This discovery test never reads HOME or authenticates/starts a client.
@@ -299,6 +318,10 @@ func TestPrimaryPrefetchBenchmarkCatalog(t *testing.T) {
 		t.Fatal(err)
 	}
 	value := prefetchBenchmarkCapabilities{SchemaVersion: 3, CatalogSHA256: benchmarkfixtures.CatalogSHA256(), ContractSHA256: benchmarkfixtures.ContractSHA256(), HarnessSHA256: prefetchHarnessSHA256(), Fixtures: map[string]string{}}
+	if os.Getenv("IVOAI_CONCURRENT_DISCOVERY") == "1" {
+		value.SchemaVersion = 4
+		value.ClientLifecycleSHA256 = benchmarkfixtures.ClientLifecycleSHA256()
+	}
 	for _, scenario := range catalog {
 		if scenario.RunnerSupported {
 			value.Supported = append(value.Supported, scenario.ID)

@@ -1,0 +1,23 @@
+# Adverse synthetic protocol fixture only: no provider, auth, network or personal config.
+import importlib.util,json,pathlib,shutil,sys
+from types import SimpleNamespace
+root=pathlib.Path.cwd();sys.path.insert(0,str(root/'scripts'))
+import benchmark_concurrent_runtime as runtime
+p=pathlib.Path('/var/tmp/ivoai-concurrent-driver-current.path').read_text().strip();p=pathlib.Path(p)
+spec=importlib.util.spec_from_file_location('review_cohort_driver',root/'scripts/benchmark-economic-runtime.py');driver=importlib.util.module_from_spec(spec);sys.modules[spec.name]=driver;spec.loader.exec_module(driver)
+client=p/'cohort-client-copy';shutil.copyfile(p/'final/synthetic-client',client);client.chmod(0o700)
+args=SimpleNamespace(baseline=p/'final/app-amd64.test',candidate=p/'final/app-amd64.test',codex=client,node=pathlib.Path('/bin/true'),sandbox_binary=pathlib.Path('/bin/true'),distribution=p/'synthetic-distribution',oracle_go=pathlib.Path('/var/tmp/ivoai-validation-toolchain-20261028/go/bin/go'),output=p/'pre-fix-cohort-substitution',repetitions=1,preflight_only=False,sample_processes=False,harness=root/'internal/app/primary_prefetch_live_test.go')
+original=runtime.run_pair;count=0
+first_hash=driver.sha256(client)
+def pair(*pos,**kw):
+ global count
+ result=original(*pos,**kw);count+=1
+ if count==1:
+  with client.open('ab') as f:f.write(b'\nIVOAI_SYNTHETIC_BENIGN_ELF_TAIL\n')
+ return result
+runtime.run_pair=pair
+code=runtime.run(args,driver)
+rows=json.loads((args.output/'runtime-comparison.json').read_bytes());manifest=json.loads((args.output/'manifest.json').read_bytes())
+values=[child['ClientLifecycle']['identity']['client_sha256'] for row in rows for child in row['children']]
+print(json.dumps({'scope':'SYNTHETIC_ADVERSE_COHORT_PIN_REPRO_NO_PROVIDER','exit':code,'pair_verdicts':[row['correct'] for row in rows],'initial_client_sha256':first_hash,'manifest_client_sha256':manifest['client_sha256'],'final_client_sha256':driver.sha256(client),'observed_child_client_sha256':values},indent=2))
+assert code != 0, 'cohort accepted substituted same-path executable across A/B with stale manifest pin'

@@ -1,0 +1,126 @@
+//go:build linux
+
+package benchmarkfixtures
+
+import (
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
+	"errors"
+	"io"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"regexp"
+	"strconv"
+	"strings"
+
+	"golang.org/x/sys/unix"
+)
+
+func monotonicNS() (int64, error) {
+	var value unix.Timespec
+	err := unix.ClockGettime(unix.CLOCK_MONOTONIC, &value)
+	return value.Nano(), err
+}
+
+// RunObservedClient instruments the actual command's Start/Wait. A private
+// start receipt lets the parent independently check two live client identities;
+// start/reap intervals alone are not proof of live overlap.
+func RunObservedClient(command *exec.Cmd, identity ClientIdentity, startPath, workspaceRoot string) (*ClientLifecycle, error) {
+	invalid := errors.New("client lifecycle observation unavailable")
+	digest := regexp.MustCompile(`^[a-f0-9]{64}$`)
+	if command == nil || !regexp.MustCompile(`^[a-f0-9]{32}$`).MatchString(identity.AttemptID) || identity.Scenario != "implementation" && identity.Scenario != "dependencies" || identity.Arm != "A" && identity.Arm != "B" {
+		return nil, invalid
+	}
+	for _, value := range []string{identity.FixtureSHA256, identity.HarnessSHA256, identity.CompositionSHA256, identity.ClientSHA256, identity.IsolationSHA256} {
+		if !digest.MatchString(value) {
+			return nil, invalid
+		}
+	}
+	parent, err := os.Stat(filepath.Dir(startPath))
+	if err != nil || !filepath.IsAbs(startPath) || !parent.IsDir() || parent.Mode().Perm() != 0700 {
+		return nil, invalid
+	}
+	var stat unix.Stat_t
+	if unix.Stat(filepath.Dir(startPath), &stat) != nil || int(stat.Uid) != os.Getuid() {
+		return nil, invalid
+	}
+	realParent, parentErr := filepath.EvalSymlinks(filepath.Dir(startPath))
+	realRoot, rootErr := filepath.EvalSymlinks(workspaceRoot)
+	relative, relativeErr := filepath.Rel(realRoot, realParent)
+	if parentErr != nil || rootErr != nil || relativeErr != nil || realParent != filepath.Dir(startPath) || !filepath.IsAbs(workspaceRoot) || filepath.IsLocal(relative) || relative == "." {
+		return nil, invalid
+	}
+	// Keep host IPC outside the CLI's writable temporary area as well as its
+	// workspace. The nonce/control variables are not in the CLI environment.
+	for _, item := range command.Env {
+		if strings.HasPrefix(item, "TMPDIR=") {
+			temporary, err := filepath.EvalSymlinks(strings.TrimPrefix(item, "TMPDIR="))
+			relative, relativeErr := filepath.Rel(temporary, realParent)
+			if err != nil || relativeErr != nil || filepath.IsLocal(relative) || relative == "." {
+				return nil, invalid
+			}
+		}
+	}
+	if _, err := os.Lstat(startPath); !os.IsNotExist(err) {
+		return nil, invalid
+	}
+	if err := command.Start(); err != nil {
+		return nil, invalid
+	}
+	// All failures after Start reap this exact child. The parent owns the
+	// enclosing disposable group and handles batch cancellation/timeouts.
+	abort := func() (*ClientLifecycle, error) { _ = command.Process.Kill(); _ = command.Wait(); return nil, invalid }
+	pid := command.Process.Pid
+	file, err := os.Open("/proc/" + strconv.Itoa(pid) + "/exe")
+	if err != nil {
+		return abort()
+	}
+	hash := sha256.New()
+	n, hashErr := io.Copy(hash, io.LimitReader(file, (512<<20)+1))
+	_ = file.Close()
+	if hashErr != nil || n > 512<<20 || hex.EncodeToString(hash.Sum(nil)) != identity.ClientSHA256 {
+		return abort()
+	}
+	body, err := os.ReadFile("/proc/" + strconv.Itoa(pid) + "/stat")
+	if err != nil || len(body) > 16384 {
+		return abort()
+	}
+	end := strings.LastIndexByte(string(body), ')')
+	if end < 0 {
+		return abort()
+	}
+	fields := strings.Fields(string(body[end+1:]))
+	if len(fields) < 20 || !strings.Contains("RSDI", fields[0]) {
+		return abort()
+	}
+	ticks, err := strconv.ParseUint(fields[19], 10, 64)
+	if err != nil || ticks == 0 {
+		return abort()
+	}
+	now, err := monotonicNS()
+	if err != nil || now <= 0 {
+		return abort()
+	}
+	value := &ClientLifecycle{SchemaVersion: 1, Clock: "linux_clock_monotonic", Identity: identity, PID: pid, StartTicks: ticks, StartedNS: now, ExitCode: -1}
+	output, err := os.OpenFile(startPath, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0600)
+	if err != nil {
+		return abort()
+	}
+	err = json.NewEncoder(output).Encode(value)
+	closeErr := output.Close()
+	if err != nil || closeErr != nil {
+		return abort()
+	}
+	runErr := command.Wait()
+	value.ReapedNS, err = monotonicNS()
+	if err != nil || value.ReapedNS <= value.StartedNS {
+		return nil, invalid
+	}
+	if command.ProcessState == nil {
+		return nil, invalid
+	}
+	value.ExitCode = command.ProcessState.ExitCode()
+	return value, runErr
+}

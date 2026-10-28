@@ -198,7 +198,7 @@ def read_evidence(path, scenario, arm, repetition, code, inventory_hash, capabil
     return base
 
 
-def wait4_process(process, timeout, sampler=None):
+def wait4_process(process, timeout, sampler=None, cancel_event=None):
     """Reap this owned PID exactly once; Popen must not poll/wait before wait4."""
     deadline = time.monotonic() + timeout
     try:
@@ -210,7 +210,8 @@ def wait4_process(process, timeout, sampler=None):
                 process.returncode = os.waitstatus_to_exitcode(status)
                 return process.returncode, usage
             remaining = deadline - time.monotonic()
-            if remaining <= 0:
+            cancelled = cancel_event is not None and cancel_event.is_set()
+            if remaining <= 0 or cancelled:
                 try:
                     os.killpg(process.pid, signal.SIGKILL)
                 except ProcessLookupError:
@@ -219,7 +220,7 @@ def wait4_process(process, timeout, sampler=None):
                 # owned test PID, preserving partial resource usage on timeout.
                 pid, status, usage = os.wait4(process.pid, 0)
                 process.returncode = os.waitstatus_to_exitcode(status)
-                return 124, usage
+                return 130 if cancelled else 124, usage
             time.sleep(min(0.01, remaining))
     except BaseException:
         if process.returncode is None:
@@ -232,7 +233,7 @@ def wait4_process(process, timeout, sampler=None):
         raise
 
 
-def run_attempt(command, env, resource_path, timeout=250, cwd=None, sample_processes=False):
+def run_attempt(command, env, resource_path, timeout=250, cwd=None, sample_processes=False, on_start=None, cancel_event=None):
     # GNU time reports wait4 usage for the command and its reaped descendants.
     # It is not whole-host attribution or an instantaneous process-tree RSS sum.
     resources = {key: None for key in ("LocalUserCPUMS", "LocalSystemCPUMS",
@@ -250,10 +251,20 @@ def run_attempt(command, env, resource_path, timeout=250, cwd=None, sample_proce
     try:
         process = subprocess.Popen(command, env=env, stdout=subprocess.DEVNULL,
                                    stderr=subprocess.DEVNULL, start_new_session=True, cwd=cwd)
+        if on_start is not None:
+            try:
+                on_start(process.pid)
+            except BaseException:
+                try:
+                    os.killpg(process.pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
+                process.wait()
+                raise
         if sample_processes and sys.platform.startswith("linux"):
             sampler = ProcessSampler(process.pid)
         if not wrapped and sys.platform.startswith("linux") and hasattr(os, "wait4"):
-            code, usage = wait4_process(process, timeout, sampler)
+            code, usage = wait4_process(process, timeout, sampler, cancel_event)
             resources.update(LocalUserCPUMS=round(usage.ru_utime * 1000),
                              LocalSystemCPUMS=round(usage.ru_stime * 1000),
                              LocalPeakRSSBytes=usage.ru_maxrss * 1024,
@@ -261,13 +272,14 @@ def run_attempt(command, env, resource_path, timeout=250, cwd=None, sample_proce
                              LocalResourceSource="linux_wait4_reaped_descendants_max_rss_not_sum")
         else:
             try:
-                if sampler is None:
+                if sampler is None and cancel_event is None:
                     code = process.wait(timeout=timeout)
                 else:
                     deadline = time.monotonic() + timeout
                     while process.poll() is None:
-                        sampler.tick()
-                        if time.monotonic() >= deadline:
+                        if sampler is not None:
+                            sampler.tick()
+                        if time.monotonic() >= deadline or cancel_event is not None and cancel_event.is_set():
                             raise subprocess.TimeoutExpired(command, timeout)
                         time.sleep(0.01)
                     code = process.returncode
@@ -279,7 +291,7 @@ def run_attempt(command, env, resource_path, timeout=250, cwd=None, sample_proce
                 except ProcessLookupError:
                     pass
                 process.wait()
-                code = 124
+                code = 130 if cancel_event is not None and cancel_event.is_set() else 124
             except BaseException:
                 try:
                     os.killpg(process.pid, signal.SIGKILL)
@@ -387,6 +399,8 @@ def discover_capabilities(binary, directory, expected):
     env = {"PATH": "/nonexistent", "HOME": str(directory), "TMPDIR": str(directory),
            "GOMAXPROCS": "2", "LC_ALL": "C", "TZ": "UTC",
            "IVOAI_BENCHMARK_CATALOG_OUTPUT": str(output.resolve())}
+    if expected.get("schema_version") == 4:
+        env["IVOAI_CONCURRENT_DISCOVERY"] = "1"
     code, _ = run_attempt([str(binary.resolve()), "-test.run=^TestPrimaryPrefetchBenchmarkCatalog$",
                           "-test.timeout=10s"], env, directory / "resources.json", timeout=15, cwd=directory)
     try:
@@ -486,8 +500,12 @@ def main(argv=None):
     selection = parser.add_mutually_exclusive_group()
     selection.add_argument("--matrix16", action="store_true", help="plan all 16; unsupported/blocked cases cannot pass")
     selection.add_argument("--scenarios", nargs="+", choices=[s.id for s in benchmark_catalog.load_catalog()])
+    selection.add_argument("--concurrent-projects", action="store_true", help="experimental exact two-client composition; matrix remains UNSUPPORTED")
     parser.add_argument("--preflight-only", action="store_true", help="discover frozen binary contracts without starting a client")
     args = parser.parse_args(argv)
+    if args.concurrent_projects:
+        import benchmark_concurrent_runtime
+        return benchmark_concurrent_runtime.run(args, sys.modules[__name__])
     scenarios = tuple(s.id for s in benchmark_catalog.load_catalog()) if args.matrix16 else tuple(args.scenarios or SCENARIOS)
     if len(set(scenarios)) != len(scenarios):
         parser.error("scenario selection must be distinct")
