@@ -1,0 +1,147 @@
+{
+  "schema_version": 1,
+  "recorded_at_utc": "2026-10-28T16:32:04.522822+00:00",
+  "base_commit": "2bf9f94358aa54c22e0cc8d839e3a108774811c6",
+  "source_status": "Local uncommitted snapshot; subsequent commit binds all recorded files. No release/publication/installation.",
+  "plane_tasks": {
+    "191": "release quality dependency",
+    "192": "shared host contract",
+    "195": "legacy compatibility support, removal incomplete"
+  },
+  "runtime": {
+    "managed_version": "1.19.0-ivoai.3",
+    "upstream_revision": "733b2c627e5aec39cb33cc22373bdce33053ef2c",
+    "source_archive_sha256": "ab433f7a5fc9e54c90da18bd3457298009f426424805f043aa32c03543b4a192",
+    "combined_patch_sha256": "29ab6030f52f4b95d582ce95ae001566b7b0f3bc3bfece6a1355dce4faa2e4ec",
+    "archive_sha256": "8ea481d8a2c2d1f11417a78a3a8121e3d790630b9ed3c99b010b2cb4d24999a2",
+    "elf_sha256": "49e0e253b972dc7944a43b7e59341abc06b3b1b88f63b2653e156c237d882093",
+    "bun_version": "1.3.14",
+    "bun_archive_sha256": "951ee2aee855f08595aeec6225226a298d3fea83a3dcd6465c09cbccdf7e848f",
+    "bun_executable_sha256": "9fd36f87e4b90b07632b987a2e4ec81ca15a62c81bf983190cea6d715be2ad74",
+    "compiled_modified_source_manifest": "compiled-source-manifest.json",
+    "source_changed_after_component_build": false,
+    "builder_source_contract_registration": "Added after local component build; subsequently executed against the same compiled source/Bun. CI rebuild runs them before compile.",
+    "go_after_offline_proof_delta": "Only error wording clarified backend-specific version admission; final race/full/vet/build cover final source."
+  },
+  "checks": {
+    "full_go_final": "PASS_59_PACKAGES; standard Go cache applies; optional skipped integration is not PASS",
+    "focused_race_uncached": "PASS_opencodebridge_15.654s_agents_2.442s_components_10.936s",
+    "vet_all": "PASS",
+    "core_linux_amd64_cgo0_goamd64v1": "PASS_BUILD",
+    "core_linux_arm64_cgo0": "PASS_BUILD_NOT_EXECUTED",
+    "frozen_own_website_build_en_pt": "PASS",
+    "embedded_docs_check": "PASS",
+    "strict_yaml_no_duplicate_keys": "PASS_manifest_ci_release",
+    "python_compile": "PASS",
+    "bash_syntax": "PASS",
+    "real_pinned_component_offline_http_tui": "PASS_required_tests_zero_skips",
+    "real_pinned_policy_normal_uid": "PASS_1000_5managed_cases_registry0_each_unflagged_control1",
+    "real_pinned_policy_root_uid": "PASS_0_inside_private_user_namespace_5managed_cases_registry0_each_unflagged_control1",
+    "source_owned_runtime_probe": "PASS_explicit_typed_denial_install_add_registry0_unflagged_noeffect_dispose_normal_exit; NOT_NETWORK_ISOLATED",
+    "local_shellcheck": "UNAVAILABLE_CI_GATE_REQUIRED",
+    "arm_component_runtime": "PENDING_NATIVE_CI",
+    "non_avx_component_runtime": "PENDING_QEMU_CI",
+    "ci_exact_head": "PENDING_NO_PUSH"
+  },
+  "adverse_outcomes": [
+    {
+      "case": "CI40715183470 PR44head8e56741a",
+      "outcome": "FAIL provider readiness communication_failure8 20s; exact original network cause UNKNOWN"
+    },
+    {
+      "case": "publicv0130 .2 local smoke",
+      "outcome": "FAIL API and executor HTTP readiness; other real cases PASS; original retained, not rescored",
+      "log_sha256": "cba7c6933b297c7fa8144d1bad14971afefe0ac3f949ae960946bf43aa0f6079"
+    },
+    {
+      "case": "offline policy first construction",
+      "outcome": "FAIL_expected_denial_in_public_body; actual_generic500_ref_and_private_denial_marker; oracle now requires status500 plus private marker"
+    },
+    {
+      "case": "offline full second construction",
+      "outcome": "FAIL_native_fixture_shell_missing_bin; standard_bin_symlink_added; runtime unchanged"
+    },
+    {
+      "case": "source probe first construction",
+      "outcome": "ASSERTIONS_COMPLETED_BUT_SHARED_EFFECT_HANDLES_RETAINED; terminated143; intermediate explicit exit replaced by owned ManagedRuntime disposal"
+    },
+    {
+      "case": "source typed-denial regex construction",
+      "outcome": "FAIL_marker_is_cause_not_message; final oracle checks exact_tag_and_cause"
+    }
+  ],
+  "compatibility": {
+    "old_component_gate": "StartManaged requires exact .3 before its backend lease/serve; earlier caller discovery/version probes/session metadata may exist",
+    "old_cli_and_immutable_objects": "Retained; rollback restores old dependency behavior",
+    "source_only_catalog": "Upstream retained, cannot synthesize .3; official embedded verified metadata required",
+    "personal_state_mutated": false,
+    "asset_path_requirement": "Lexical root must equal realpath; symlink ancestors denied; canonical references to retained data required, no automatic relocation",
+    "additional_provider_sdk_install": "DENIED; generic provider parity not claimed",
+    "same_os_user_adversary": "NOT_ISOLATED_BY_ENTRYPOINT_CHECKS"
+  },
+  "measurements": {
+    "provider_inference": false,
+    "subscription_authentication": false,
+    "session_token_economy": null,
+    "money_or_quota": null,
+    "global_economic_gate": "UNCHANGED_INCOMPLETE; historical comparative attempts unchanged"
+  },
+  "log_sha256": {
+    "build.log": "82ccc84d9fc9515f24d233c33e198cd90d75ee821e2007924ed6fbaa2f08b184",
+    "offline-validation-1.log": "36d3d2af3e440c4b1f506b68abbe0222589fd6efdab8137318efa8527643d37a",
+    "offline-validation-2.log": "b44aafdfde69562c2e0bd4b207bacc1be39ea18a0aa0ad96f8b740c266dc3860",
+    "offline-validation-3.log": "7d7a8416f566333243980e86de7e207e2acce8a0c76d425f981627464eb49d12",
+    "source-contracts-1.log": "dcb13fdd2ccd1c06649e3fad4014acc7c9407c8f22739433c847e36e4ab817c7",
+    "source-contracts-2.log": "f3bd43229f545ab279861be25cd872caa816660ecf1f79616521f258022b710c",
+    "source-contracts-final.log": "0d7a9329a63ec2efb83bb50c5738e5d0b50a30e768c648aea30d052d7f467c28",
+    "source-contracts-4.log": "f3bd43229f545ab279861be25cd872caa816660ecf1f79616521f258022b710c",
+    "source-contracts-5.log": "f3bd43229f545ab279861be25cd872caa816660ecf1f79616521f258022b710c",
+    "source-contracts-scoped.log": "f3bd43229f545ab279861be25cd872caa816660ecf1f79616521f258022b710c",
+    "full-go.log": "94eefe77da95e52ebc059285277e6002853562ae143cf2c45485389f516d32a4",
+    "full-go-final.log": "8cf20f2fe055e0720eedc6d66071d38fc6c28c0f54730b6d7ae53dde3e1d4692",
+    "race-final.log": "97647faac29963bded41ecdb501a99ccc22e5b26f36e0b7bf6cf304eb8881929",
+    "vet-final.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "docs-build-final.log": "31f74ddf610fc528ee0f6f0b00eb5f0a0b4fb9a143eb8185c4e97b816a0fcbfb",
+    "docs-check-final.log": "0b573ed775a64f25ceb359b83ac66567dd775b1be2088bf2a31c97ee41c75ec0"
+  },
+  "go_build_sha256": {
+    "ivoai-amd64v1-final": "06064920eed0d4b525bff8b4c7d8c692c55fa3d6cdd11cf366d4c712a5a1b5f3",
+    "ivoai-arm64-final": "477d7035650eb54f9341e6673fe20016660628b61f95c2d564f95ea20abd39a4"
+  },
+  "source_sha256": {
+    ".github/workflows/ci.yml": "7725c7efee32530763f01565b8ee30e84d016af5a8c90b45ff189b464965af32",
+    ".github/workflows/release.yml": "f5f3045034f81d9a24c4ed516b8806055b8dd95c8bb07d7e1f69bcff0540595e",
+    "THIRD_PARTY_NOTICES.md": "c13ebc0acf1895e8eb7ca40589b353f51d1d9984c9db8cc34f130147166e5ee0",
+    "docs/troubleshooting.md": "b03e831fada7a270dbd18de2313c6dbe059c0209eeb0443fddde627e6c9a79ff",
+    "internal/app/graft_live_test.go": "fccaaf375e53a50678ea68e49867ddacb2c02eb93fa58ca6e32fbca8af805374",
+    "internal/app/native_auto_live_test.go": "a8967d4130717589ac67be4099b4d7a4e0a58c9025f13332c574d8dfd3628607",
+    "internal/components/managed_opencode.go": "6dba145e43368e3019705c29d2f225779e8bdcbc034d93d27bd3df737aa5eebc",
+    "internal/components/managed_opencode_test.go": "5a270adb873819dee42788ce8df4ffdb5afea6deeec3f3f8dd89083fde429e55",
+    "internal/opencodebridge/managed.go": "85390a1c686f0f9159a0fe0695aca1220d5ad69e6fe2f7487b3710a8819602c8",
+    "internal/opencodebridge/managed_test.go": "e2903ffea0c418863c5230ba25118cf0abe4be2b413bb6ae86bdfe1c59bc06fd",
+    "internal/opencodebridge/managed_version_test.go": "2075805ba4138e30c58b3b4c068b1e6187b68262beecc1cb2a49c68d4bf0dfc2",
+    "manifest/components.yaml": "82e691a8d901cc140998736a09066da4be1b172392f0747c2a579e06d5f8a2e5",
+    "patches/opencode/1.19.0-managed-local-plugins.patch": "22f550551848c6240022767c070d8cc1082f0fb3da16210bde28d08d98fd103c",
+    "patches/opencode/README.md": "a8ada69875de16acf50d1546bc75b44cb9d64e9d511d01d4eca1bebc815c0d70",
+    "release-notes/managed-opencode-offline-validation.md": "3127af0068bca3d072302725df82cb0abc40746f63f26cfe120ff13b120dce39",
+    "scripts/build-managed-opencode.sh": "5a0d055b9975b83a1ea39906df28ccc2d34d7a79b471409c2f06ae01336e8e7a",
+    "scripts/test-managed-opencode-offline.sh": "b27ae47ef0b14bf1d626356fe95f6ddb0091ad89c685489aac30fc5c48e335dc",
+    "scripts/test-managed-opencode-policy.py": "c6509f8f87b323cf885bb98466237eb48d732229221fd3ba548568b56534a0f0",
+    "scripts/test-managed-opencode.sh": "131d706ae123d2a8ea08fb605f776eebc01aae269754345c1e7c6803faa11ac2",
+    "scripts/test-opencode-managed-source.mjs": "9b6a99a8cab439461d718edae176b7a7471cc14f48d24d1bad50a27f6d9c7f03",
+    "scripts/test-patched-opencode.sh": "4448ff2d159837fc1844c17dc6482c8dc6d50c6c5d78181b0a338b1408a8b9ed",
+    "website/i18n/pt-BR/docusaurus-plugin-content-docs/current/troubleshooting.md": "3ffb07f6dece842d65eca57186f449e151c8b404e31e6c3b736154c3ed5fd1c5",
+    "website/static/build-input.sha256": "01a0989a0a198a0e7a0496f0ecc22a0a3c2325d2caa14b1d9d421cc6d4f56593"
+  },
+  "public_evidence_sha256": {
+    "compiled-source-manifest.json": "1b784a2efd59eee24351880fd83d3a75a55d92582f93ac43fd07f3175c56de7b",
+    "legacy-local-plugin-hold.json": "1c47c092adb0d2ee16c1979fff20b9020746993bf4a558a6c020a39ec74732ec",
+    "legacy-no-plugin-control.json": "b07c115826bf3ce1c38a121ddc73602f62713cefe97e3f3cba0016a845ef7047",
+    "legacy-v0130-smoke.log": "cba7c6933b297c7fa8144d1bad14971afefe0ac3f949ae960946bf43aa0f6079",
+    "managed-opencode-amd64.json": "ca6bd2b7257825f9802423a1cf7515c62b9425b3df5f764491b2667916ebfbbf",
+    "managed-policy-root.json": "8274c11b29e8c7add1399501eb8ebf80fa5a75b9b3c52420f27be9b19ce31242",
+    "managed-policy-user.json": "33d3308fc04666b91b51cc9661c1c0efd8e9e207da574ec730f67f2731a2990c",
+    "offline-agents.log": "f04185b76947aa80ca27ddf651a57228c36ac3ce682d87bc1edac2fd055160d2",
+    "offline-bridge.log": "91b679ad97edf12bb64fcea6869300968e00af84cf5ad10080eb7b48ac6cbcba"
+  }
+}
