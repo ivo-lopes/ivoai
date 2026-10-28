@@ -1,0 +1,115 @@
+{
+  "schema_version": 1,
+  "scenario_status": "UNSUPPORTED",
+  "execution_admission": "EXPERIMENTAL_PROBE_AVAILABLE",
+  "discovery": {
+    "A": {
+      "status": "READY",
+      "test_exit_code": 0,
+      "capabilities": {
+        "schema_version": 4,
+        "catalog_sha256": "395f77bc5154c3df42cc7897feb7206bb38963a9441741ea24dbf290b08a9d7e",
+        "fixture_contract_sha256": "79cbdc665d4e301bc6057fb15dabb73cc08964e50eae1a1558b8c5e20a93678b",
+        "harness_sha256": "c6d032c00932397c67db7b05fc55faa119398018112f31bc75a893c1c50c82e3",
+        "supported_scenarios": [
+          "api",
+          "cross_module_refactor",
+          "dependencies",
+          "implementation",
+          "monorepo",
+          "multi_module_callers",
+          "non_code",
+          "small_known_file_correction",
+          "unsupported_parser"
+        ],
+        "fixtures": {
+          "go-clamp-edit": "17989e8cf9573521b9a364538b3e9f0288bf50e7f2302d7f53d201c0957dc0c8",
+          "go-core": "94339e5800d550aaa5284ae452fef04b9c425c02dd079be54234b1bb8feb5188",
+          "monorepo-refactor-ts": "f74e0669fe05021dd8747393440d2fe5445ff0677bda2e7eb2989885a8a191ef",
+          "python-deps": "4dfd2279a45f4f1485e482743672d52a362aeb41d9dd0a671efdfa98a21847aa",
+          "monorepo-ts": "01ade0e8a5dbe64fb80ceb1210c2d0f056ed43462e9a1e86f1f9b24000feb656",
+          "rules-shell": "2650c62f41cfe3d5d0dce157cf45e35a6237605a564be2326bcd9646e123ac72",
+          "non-code": "4e5d45339ffb829146a641b9a6460879c4ab1e741f45820c00f3f3c2bb4f5cd9"
+        },
+        "client_lifecycle_sha256": "398e08040d4d2d2ab8bdeb3a376442520a537e5e4465e591604914c79e653e1d"
+      }
+    },
+    "B": {
+      "status": "READY",
+      "test_exit_code": 0,
+      "capabilities": {
+        "schema_version": 4,
+        "catalog_sha256": "395f77bc5154c3df42cc7897feb7206bb38963a9441741ea24dbf290b08a9d7e",
+        "fixture_contract_sha256": "79cbdc665d4e301bc6057fb15dabb73cc08964e50eae1a1558b8c5e20a93678b",
+        "harness_sha256": "c6d032c00932397c67db7b05fc55faa119398018112f31bc75a893c1c50c82e3",
+        "supported_scenarios": [
+          "api",
+          "cross_module_refactor",
+          "dependencies",
+          "implementation",
+          "monorepo",
+          "multi_module_callers",
+          "non_code",
+          "small_known_file_correction",
+          "unsupported_parser"
+        ],
+        "fixtures": {
+          "go-clamp-edit": "17989e8cf9573521b9a364538b3e9f0288bf50e7f2302d7f53d201c0957dc0c8",
+          "go-core": "94339e5800d550aaa5284ae452fef04b9c425c02dd079be54234b1bb8feb5188",
+          "monorepo-refactor-ts": "f74e0669fe05021dd8747393440d2fe5445ff0677bda2e7eb2989885a8a191ef",
+          "python-deps": "4dfd2279a45f4f1485e482743672d52a362aeb41d9dd0a671efdfa98a21847aa",
+          "monorepo-ts": "01ade0e8a5dbe64fb80ceb1210c2d0f056ed43462e9a1e86f1f9b24000feb656",
+          "rules-shell": "2650c62f41cfe3d5d0dce157cf45e35a6237605a564be2326bcd9646e123ac72",
+          "non-code": "4e5d45339ffb829146a641b9a6460879c4ab1e741f45820c00f3f3c2bb4f5cd9"
+        },
+        "client_lifecycle_sha256": "398e08040d4d2d2ab8bdeb3a376442520a537e5e4465e591604914c79e653e1d"
+      }
+    }
+  },
+  "offline_oracles": {
+    "schema_version": 1,
+    "scope": "offline_composition_contract_and_fixture_oracles",
+    "scenario": "concurrent_distinct_projects",
+    "scenario_status": "UNSUPPORTED",
+    "reason": "client_overlap_executor_not_implemented",
+    "client_execution": "NOT_RUN",
+    "client_overlap": "NOT_RUN",
+    "provider_attempts": 0,
+    "client_attempts": 0,
+    "global_economic_gate": "INCOMPLETE",
+    "contract_sha256": "21af6cc58cc9bdf27f2a5ddf4990fb5ac7ca77a1addb7fc4af0baded74f8f33b",
+    "source_pins_stable": true,
+    "preflight_status": "OFFLINE_ORACLES_VERIFIED",
+    "children": [
+      {
+        "scenario": "implementation",
+        "fixture": "go-core",
+        "fixture_sha256": "94339e5800d550aaa5284ae452fef04b9c425c02dd079be54234b1bb8feb5188",
+        "scope": "offline_synthetic_program_oracle",
+        "provider_attempts": 0,
+        "status": "VERIFIED",
+        "correct": true,
+        "exit_code": 0
+      },
+      {
+        "scenario": "dependencies",
+        "fixture": "python-deps",
+        "fixture_sha256": "4dfd2279a45f4f1485e482743672d52a362aeb41d9dd0a671efdfa98a21847aa",
+        "scope": "offline_synthetic_program_oracle",
+        "provider_attempts": 0,
+        "status": "VERIFIED",
+        "correct": true,
+        "exit_code": 0
+      }
+    ],
+    "source_pins": {
+      "preflight_sha256": "b51ca4c5eb9d39fe303b5b63c2ee8a9ac96c7a48078cd6c94804b1243fb407d0",
+      "oracle_runner_sha256": "4611c0f0ca6d05ecc4854caf8f79be9fbdac0f85313864cfe8426cb5dfbf9e95",
+      "go_sha256": "5f5eb6d0b2fb6aa0bb5d5f8c5f1c944e0de955c925f0111af92a9d8f79680b5b",
+      "python_sha256": "889c603f0d17cb54060951bcf4c4f9b8c9ebd9e52b392c70209bbb9755d797d9"
+    }
+  },
+  "pidfd_available": true,
+  "provider_attempts": 0,
+  "client_execution": "NOT_RUN"
+}

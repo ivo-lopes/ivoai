@@ -1,0 +1,11 @@
+# Concurrent driver: measurement-condition provenance
+
+This additive correction binds the process-sampler source and effective measurement switches to the concurrent driver's initial cohort identity. Commit `0ba301e238ff38239bd90ff2025ac649728d2bf9`, its initial adverse epoch and corrected pin-substitution evidence remain unchanged. The [new receipt](evidence/concurrent-projects-observed-driver/epoch-measurement-conditions/validation.json) belongs to this later source epoch.
+
+The frozen cohort and manifest now contain only three fixed boolean measurement conditions: `sample_processes`, `experimental_evidence_gateway` and `experimental_evidence_recovery`. Conditions use the existing benchmark environment allowlist. That allowlist currently forwards only Gateway when its value is exactly `1`; it does not admit the protected-recovery creation flag. Therefore an ambient recovery variable does not activate recovery or change its recorded effective value from false. Both backend flags remain excluded from the native CLI's environment. No flag is newly forwarded or enabled by this correction.
+
+The actual imported `ProcessSampler` module is pinned by source SHA, including when sampling is disabled. Missing sampler source blocks execution; changing its source, the sampling option or an admitted runtime flag invalidates the cohort. Completed child results remain recorded and all remaining pairs retain their two NOT_RUN children without retry. Raw environment/authentication/HOME/configuration values are never included in this identity or the manifest.
+
+Cache isolation is explicitly limited to the private App, worktree, session, state and local caches created by the existing harness. Official-client cache equivalence, provider cache equivalence and quotas remain UNVERIFIED. The correction makes no cache-equivalence or economic-saving claim.
+
+The driver remains opt-in and the catalog remains UNSUPPORTED. NativeRunner, CLI invocation, Go observer/harness and prior artifacts are unchanged. Validation uses synthetic local clients and reports them as fixtures; no provider, authenticated official client, quota test or production ingestion is run. Source/pin changes and boolean changes are tested for safe abort, including a private copied sampler whose bytes are changed or removed after a completed pair.

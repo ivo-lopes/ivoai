@@ -21,6 +21,14 @@ IDENTITY_KEYS = {"attempt_id", "scenario", "arm", "fixture_sha256", "harness_sha
 LIFECYCLE_KEYS = {"schema_version", "clock", "identity", "pid", "start_ticks", "started_ns", "reaped_ns", "exit_code"}
 
 
+def measurement_conditions(args, environment):
+    # Only effective host-admitted booleans, never auth/config/env values. The
+    # current benchmark allowlist does not forward the recovery creation flag.
+    return {'sample_processes':bool(args.sample_processes),
+            'experimental_evidence_gateway':environment.get('IVOAI_EXPERIMENTAL_EVIDENCE_GATEWAY')=='1',
+            'experimental_evidence_recovery':environment.get('IVOAI_EXPERIMENTAL_EVIDENCE_RECOVERY')=='1'}
+
+
 def capture_cohort(args, driver):
     """One initial scientific identity for the entire opt-in comparison."""
     sources = catalog.ROOT / 'internal/benchmarkfixtures'
@@ -28,6 +36,7 @@ def capture_cohort(args, driver):
              'node':getattr(args,'node',None),'sandbox':getattr(args,'sandbox_binary',None),
              'oracle_go':getattr(args,'oracle_go',None),'oracle_python':Path(sys.executable),
              'resource_timer':Path('/usr/bin/time'), 'driver':Path(driver.__file__),
+             'process_sampler':Path(sys.modules[driver.ProcessSampler.__module__].__file__),
              'composite_driver':Path(__file__),'catalog_loader':Path(catalog.__file__),
              'composition_loader':Path(contract.__file__),
              'harness':getattr(args,'harness',catalog.ROOT/'internal/app/primary_prefetch_live_test.go'),
@@ -37,10 +46,14 @@ def capture_cohort(args, driver):
     for name in ('concurrent.go','fixtures.go','edit_oracle.go','exec_observation.go',
                  'client_lifecycle.go','client_lifecycle_linux.go','client_lifecycle_other.go'):
         paths[name]=sources/name
-    return {'files':{name:driver.sha256(path) if path is not None else None for name,path in paths.items()},
+    file_pins={name:driver.sha256(path) if path is not None else None for name,path in paths.items()}
+    if not isinstance(file_pins['process_sampler'],str) or not DIGEST.fullmatch(file_pins['process_sampler']):
+        raise ValueError('process_sampler_source_unavailable')
+    return {'files':file_pins,
             'locations':{name:hashlib.sha256(str(path.resolve()).encode()).hexdigest() if path is not None else None for name,path in paths.items()},
             'fixtures':{name:catalog.fixture_digest(fixture) for name,fixture in contract.CHILDREN},
-            'composition_sha256':contract.contract_digest(),'observer_sha256':contract.client_lifecycle_digest()}
+            'composition_sha256':contract.contract_digest(),'observer_sha256':contract.client_lifecycle_digest(),
+            'measurement_conditions':measurement_conditions(args,driver.benchmark_environment())}
 
 
 def cohort_unchanged(frozen,args,driver):
@@ -168,6 +181,9 @@ def run_pair(driver, args, arm, repetition, environment, capabilities, temporary
     if not cohort_unchanged(cohort,args,driver):
         row=not_run_pair(arm,repetition,'cohort_inputs_changed');row['cohort_pins_stable']=False
         return row
+    if measurement_conditions(args,environment)!=cohort['measurement_conditions']:
+        row=not_run_pair(arm,repetition,'cohort_measurement_conditions_changed');row['cohort_pins_stable']=False
+        return row
     batch = temporary / secrets.token_hex(16); batch.mkdir(mode=0o700)
     executable_info = args.codex.stat(); executable = (executable_info.st_dev, executable_info.st_ino)
     binary = args.baseline if arm == "A" else args.candidate
@@ -287,6 +303,10 @@ def run(args, driver):
         "client_lifecycle_sha256": cohort['observer_sha256'], "harness_sha256": cohort['files']['harness'],
         "baseline_sha256": cohort['files']['baseline'], "candidate_sha256": cohort['files']['candidate'],
         "client_sha256": cohort['files']['client'], "cohort_initial":cohort, "repetitions": args.repetitions,
+        "process_sampler_sha256":cohort['files']['process_sampler'],
+        "measurement_conditions":cohort['measurement_conditions'],
+        "cache_isolation":"private_App_worktree_session_state_and_caches",
+        "official_client_cache_equivalence":"UNVERIFIED","quota_equivalence":"UNVERIFIED",
         "provider_cache_equivalence": "UNVERIFIED", "remote_inference_overlap": "NOT_ATTESTED"})
     if not admitted or args.preflight_only:
         driver.write_json(args.output / "runtime-comparison.json", [])

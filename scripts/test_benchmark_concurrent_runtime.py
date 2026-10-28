@@ -70,6 +70,8 @@ class SyntheticConcurrentRuntimeTests(unittest.TestCase):
         args = SimpleNamespace(baseline=harness, candidate=harness, codex=Path("/bin/sleep"), distribution=distribution, sample_processes=False)
         private = root / "private"; private.mkdir(mode=0o700)
         env = {"PATH": "/usr/bin:/bin", "IVOAI_GRAFT_TEST_DIST": str(distribution)}
+        for flag in ('IVOAI_EXPERIMENTAL_EVIDENCE_GATEWAY','IVOAI_EXPERIMENTAL_EVIDENCE_RECOVERY'):
+            if DRIVER.benchmark_environment().get(flag)=='1':env[flag]='1'
         return args, env, capabilities, private
 
     def test_synthetic_actual_client_overlap_and_public_rows_hide_pids(self):
@@ -201,6 +203,12 @@ class SyntheticConcurrentRuntimeTests(unittest.TestCase):
         manifest=json.loads((output/'manifest.json').read_bytes())
         self.assertEqual(manifest['scenario_status'],'UNSUPPORTED')
         self.assertEqual(manifest['global_economic_gate'],'INCOMPLETE')
+        self.assertIs(type(manifest['measurement_conditions']['sample_processes']),bool)
+        self.assertEqual(manifest['process_sampler_sha256'],manifest['cohort_initial']['files']['process_sampler'])
+        self.assertEqual(manifest['cache_isolation'],'private_App_worktree_session_state_and_caches')
+        self.assertEqual(manifest['official_client_cache_equivalence'],'UNVERIFIED')
+        self.assertEqual(manifest['provider_cache_equivalence'],'UNVERIFIED')
+        self.assertEqual(manifest['quota_equivalence'],'UNVERIFIED')
         self.assertNotIn('"pid"',json.dumps(rows))
 
     def test_old_discovery_and_preflight_only_never_start_clients(self):
@@ -284,7 +292,7 @@ class SyntheticConcurrentRuntimeTests(unittest.TestCase):
     def test_cohort_pins_bind_executables_source_contract_oracles_and_distribution(self):
         args,_,_,private=self.fixture();self.complete_args(args,private)
         initial=runtime.capture_cohort(args,DRIVER)
-        required={'baseline','candidate','client','node','sandbox','oracle_go','oracle_python','resource_timer',
+        required={'baseline','candidate','client','node','sandbox','oracle_go','oracle_python','resource_timer','process_sampler',
                   'driver','composite_driver','catalog_loader','composition_loader','harness','distribution_inventory',
                   'catalog','composition','go_mod','go_sum','concurrent.go','fixtures.go','edit_oracle.go','exec_observation.go',
                   'client_lifecycle.go','client_lifecycle_linux.go','client_lifecycle_other.go'}
@@ -293,6 +301,51 @@ class SyntheticConcurrentRuntimeTests(unittest.TestCase):
             changed=dict(initial);changed['files']=dict(initial['files']);changed['files'][name]='f'*64
             with self.subTest(pin=name),mock.patch.object(runtime,'capture_cohort',return_value=changed):
                 self.assertFalse(runtime.cohort_unchanged(initial,args,DRIVER))
+
+    def test_only_effective_boolean_measurement_conditions_are_pinned_without_private_values(self):
+        with mock.patch.dict(os.environ,{'HOME':'PRIVATE_HOME_SENTINEL','OPENAI_API_KEY':'PRIVATE_TOKEN_SENTINEL'},clear=True):
+            args,_,_,private=self.fixture();self.complete_args(args,private)
+            initial=runtime.capture_cohort(args,DRIVER)
+            self.assertEqual(initial['measurement_conditions'],{'sample_processes':False,'experimental_evidence_gateway':False,'experimental_evidence_recovery':False})
+            with mock.patch.dict(os.environ,{'IVOAI_EXPERIMENTAL_EVIDENCE_GATEWAY':'1'}):
+                self.assertFalse(runtime.cohort_unchanged(initial,args,DRIVER))
+                self.assertTrue(runtime.capture_cohort(args,DRIVER)['measurement_conditions']['experimental_evidence_gateway'])
+            args.sample_processes=True
+            self.assertFalse(runtime.cohort_unchanged(initial,args,DRIVER))
+            args.sample_processes=False
+            with mock.patch.dict(os.environ,{'IVOAI_EXPERIMENTAL_EVIDENCE_RECOVERY':'1','IVOAI_EXPERIMENTAL_EVIDENCE_GATEWAY':'PRIVATE_VALUE_SENTINEL'}):
+                current=runtime.capture_cohort(args,DRIVER)
+                self.assertEqual(current,initial) # Neither raw value is admitted.
+            encoded=json.dumps(initial)
+            for value in ('PRIVATE_HOME_SENTINEL','PRIVATE_TOKEN_SENTINEL','PRIVATE_VALUE_SENTINEL'):
+                self.assertNotIn(value,encoded)
+
+    def test_measurement_flag_and_actual_sampler_copy_changes_stop_remaining_clients(self):
+        for mode in ('sampling','gateway','sampler_source','sampler_source_missing'):
+            with self.subTest(mode=mode),mock.patch.dict(os.environ,{},clear=True):
+                args,_,_,private=self.fixture();self.complete_args(args,private)
+                sampler=private/'sampler.py'
+                sampler.write_bytes(Path(sys.modules[DRIVER.ProcessSampler.__module__].__file__).read_bytes())
+                spec=importlib.util.spec_from_file_location('synthetic_sampler_fixture',sampler)
+                module=importlib.util.module_from_spec(spec);sys.modules[spec.name]=module;spec.loader.exec_module(module)
+                self.addCleanup(lambda:sys.modules.pop('synthetic_sampler_fixture',None))
+                original=runtime.run_pair;calls=[]
+                def change_after_pair(*pos,**kw):
+                    row=original(*pos,**kw);calls.append(1)
+                    if mode=='sampling':args.sample_processes=True
+                    elif mode=='gateway':os.environ['IVOAI_EXPERIMENTAL_EVIDENCE_GATEWAY']='1'
+                    elif mode=='sampler_source_missing':sampler.unlink()
+                    else:
+                        with sampler.open('a') as stream:stream.write('\n# changed synthetic sampler provenance\n')
+                    return row
+                with mock.patch.object(DRIVER,'ProcessSampler',module.ProcessSampler),mock.patch.object(contract,'preflight',return_value={'preflight_status':'OFFLINE_ORACLES_VERIFIED','scope':'synthetic_test_admission_stub'}),mock.patch.object(runtime,'run_pair',side_effect=change_after_pair):
+                    self.assertEqual(runtime.run(args,DRIVER),1)
+                rows=json.loads((args.output/'runtime-comparison.json').read_bytes())
+                self.assertEqual(len(calls),1)
+                self.assertTrue(all(child['Correct'] for child in rows[0]['children']))
+                self.assertEqual(rows[1]['client_execution'],'NOT_RUN')
+                self.assertEqual(len(rows[1]['children']),2)
+                self.assertFalse(json.loads((args.output/'cohort-final.json').read_bytes())['cohort_pins_stable'])
 
 
 if __name__ == "__main__":
