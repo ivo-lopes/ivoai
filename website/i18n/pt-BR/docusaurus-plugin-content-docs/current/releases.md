@@ -1,6 +1,13 @@
 # Releases
 
-## Candidata v0.14.0
+## v0.14.0
+
+A [v0.14.0](https://github.com/ivo-lopes/ivoai/releases/tag/v0.14.0) foi publicada
+em 28/10/2026 às 19:10:11 UTC, do fonte `6d99e320`. Os 12 assets públicos foram
+baixados e conferidos por tamanho/digest da API; os 11 checksums de payload passaram.
+Módulo, VCS, dependências/componentes do Core e skill correspondem ao fonte revisado.
+O [relatório pós-publicação](https://github.com/ivo-lopes/ivoai/blob/main/release-notes/v0.14.0-publication-verification.md)
+é um commit posterior de documentação, sem inclusão na tag ou nos assets publicados.
 
 Adiciona o [console administrativo local de consulta](admin-console.md), controles
 de workers nativos do Codex gerenciado, métricas estritas de uma execução e
@@ -17,28 +24,41 @@ Os PRs [41](https://github.com/ivo-lopes/ivoai/pull/41),
 [43](https://github.com/ivo-lopes/ivoai/pull/43) e
 [44](https://github.com/ivo-lopes/ivoai/pull/44) passaram em 15/15 verificações cada.
 O PR [48](https://github.com/ivo-lopes/ivoai/pull/48) passou em 15/15 no seu fonte
-revisado ([CI](https://github.com/ivo-lopes/ivoai/actions/runs/40729664838)); o
-combinado Claude/admin/`.3` exige CI próprio e a prova Claude de cinco casos.
-Release também deve executar version/help do Core exato com HOME/XDG privados em
-ARM nativo e Nehalem amd64 antes de empacotar.
-A publicação ainda depende dos gates do fonte final e de Release. Isso não
-representa implantação em produção ou migração concluída.
+revisado ([CI](https://github.com/ivo-lopes/ivoai/actions/runs/40729664838)). O main
+publicado passou depois em [16/16 jobs](https://github.com/ivo-lopes/ivoai/actions/runs/40746711281),
+e os cinco [jobs Release](https://github.com/ivo-lopes/ivoai/actions/runs/40746774761)
+passaram, incluindo a prova Claude de cinco casos e version/help do Core exato
+com HOME/XDG privados em ARM nativo e Nehalem amd64 antes do empacotamento.
+Um smoke local separado do download passou em version/help AMD64; não houve
+execução ARM local. Essa verificação pós-download não fez chamadas a provedores/
+modelos, instalação local ou implantação em produção.
 
 A nova comparação de sete casos preservou 42 tentativas reais corretas: entrada
 +2,85% e tempo −1,44%; as metas de 10%/5% foram reprovadas. As 72 tentativas
 anteriores continuam preservadas. Outros [12 turnos de edição](https://github.com/ivo-lopes/ivoai/blob/99fe07a93e242d2163116bf6dd8d265c3c8f9d8c/release-notes/benchmark-matrix16-edit-live-validation.md)
 passaram nos oráculos declarados, mas reprovaram as mesmas metas: entrada −0,01257%,
 tempo das fases −2,28091% e processo −2,46501%. Ambos usaram leitura direta, sem
-prefetch/Graft/Gateway. Os 126 turnos históricos possuem condições diferentes e
-não são agregados como economia causal. O novo harness não integra esta release.
+prefetch/Graft/Gateway. Os 126 turnos cobrem somente seis coortes backend-first (18×4+42+12), sem
+representar todas as tentativas do repositório. Pilotos prefetch/schema do PR30 e
+pesquisas MCP anteriores permanecem separados; não há total geral nem ganho
+causal agregado entre condições diferentes. O novo harness não integra esta release.
 Os PRs [45](https://github.com/ivo-lopes/ivoai/pull/45),
-[46](https://github.com/ivo-lopes/ivoai/pull/46) e
-[47](https://github.com/ivo-lopes/ivoai/pull/47) continuam excluídos.
+[46](https://github.com/ivo-lopes/ivoai/pull/46),
+[47](https://github.com/ivo-lopes/ivoai/pull/47),
+[50](https://github.com/ivo-lopes/ivoai/pull/50) e
+[51](https://github.com/ivo-lopes/ivoai/pull/51) continuam excluídos.
 A matriz global é INCOMPLETE. Essas medições
 antecedem as mudanças posteriores e não comprovam seu efeito econômico. Remoção
 OpenCode, execução adaptativa geral, equivalência Claude, Antigravity e ingestão
-Context continuam pendentes. Consulte as [notas bilíngues da candidata](https://github.com/ivo-lopes/ivoai/blob/main/release-notes/v0.14.0.md)
-para evidências ligadas ao fonte, compatibilidade e limites de rollback.
+Context continuam pendentes. Consulte as [notas bilíngues da tag](https://github.com/ivo-lopes/ivoai/blob/v0.14.0/release-notes/v0.14.0.md)
+para escopo, compatibilidade e limites de rollback. A linguagem de candidata
+anterior à publicação foi preservada; o relatório separado acima registra o resultado real.
+
+A auditoria desta atualização documental passou no limiar alto inalterado,
+com um advisory baixo residual em deepmerge 4.3.1 transitivo. A revisão limitada
+identificou dependência Node/SVGR de build, sem demonstrar rota explorável pelo
+HTTP Go ou navegador. Não há alegação de zero vulnerabilidades ou segurança
+universal. O relatório pós-publicação preserva os detalhes e o exit 1 no limiar baixo.
 
 ## v0.13.0
 

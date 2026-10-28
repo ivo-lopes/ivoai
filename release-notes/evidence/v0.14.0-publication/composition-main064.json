@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "purpose": "Post-publication documentation composition with current main; a new epoch, not a rewrite of bda publication proof.",
+  "original_publication_documentation_commit": "bda605b69bd076e8ce444816f71e79dacf7e8f96",
+  "integrated_main": "064edc3ad6972bf8bfd2d95f738c9732d1102396",
+  "integration_merge_commit": "2e31eff33e72b5e9f0527c3e8dc72f9d2c55b4c1",
+  "integration": "Clean no-conflict merge; existing main runtime, G0/protected-recovery references and workflow gates preserved.",
+  "release_boundary": {
+    "tag": "v0.14.0",
+    "artifact_source": "6d99e320912f3f7325c3009209a10e9df86610d4",
+    "tag_object": "3943e54ecbecf380429b89ad5a28a0500d138891",
+    "main_protected_recovery": "PR50/G0 is present in the later main source but remains outside the v0.14.0 tag/assets.",
+    "runtime_or_binary_rebuild_claim": false,
+    "tag_asset_release_body_or_production_mutations": false
+  },
+  "checks": {
+    "docs-check.log": {
+      "command": "scripts/build-docs.sh --check (own frozen modules; builds EN/PT and compares embed)",
+      "exit_code": 0,
+      "sha256": "b66255b0531333836cf44bec9bb162adbe9f64332d97421875a75b1577d841ba"
+    },
+    "cli-reference.log": {
+      "command": "scripts/generate-cli-reference.sh --check",
+      "exit_code": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "affected-vet.log": {
+      "command": "go vet ./internal/app ./internal/evidence ./internal/orchestrator ./internal/workingcontext",
+      "exit_code": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "affected-race.log": {
+      "command": "go test -race ./internal/app ./internal/evidence ./internal/orchestrator ./internal/workingcontext -run '^TestProtected' -count=1",
+      "exit_code": 0,
+      "sha256": "c6af40fc658fe448b1dd9cba926b3bb341664a09e2946c591a0b135c55a04dbe"
+    }
+  },
+  "affected_race_results": [
+    "ok  \tgithub.com/ivo-lopes/ivoai/internal/app\t1.131s",
+    "ok  \tgithub.com/ivo-lopes/ivoai/internal/evidence\t1.556s",
+    "ok  \tgithub.com/ivo-lopes/ivoai/internal/orchestrator\t1.089s",
+    "ok  \tgithub.com/ivo-lopes/ivoai/internal/workingcontext\t1.027s"
+  ],
+  "preservation": {
+    "original_receipt_count": 16,
+    "original_receipt_sha256": {
+      "release-notes/evidence/v0.14.0-publication/deepmerge-low-triage.json": "108a508ece5e26cda14bd42121af5d77e419444c6a3a8291f3fbe6093e8dc6f8",
+      "release-notes/evidence/v0.14.0-publication/deepmerge-why.json": "a5a1526a622764f903b80a6199e5f0a5588549d1baeecb33aa07d36d349c5d1b",
+      "release-notes/evidence/v0.14.0-publication/docs-audit-high.json": "ffffa99c7e8e322f071c31baf5be2fc6194a35d942176dfbba80c4355140abe0",
+      "release-notes/evidence/v0.14.0-publication/documentation-validation.json": "2689a9a108b61db9dfd17fa68c7095832a5d62aad9341dd2e4b3aa28e493d396",
+      "release-notes/evidence/v0.14.0-publication/github-gates.json": "cca653ea121ca6d3675f4d5fae14bafb869b3801e591f9b6afc3984eabc14992",
+      "release-notes/evidence/v0.14.0-publication/publication.json": "c55cc6c4117308f0a188fcbd7c8af415be9aa88768f05b674ae9595a55ea245a",
+      "release-notes/evidence/v0.14.0-publication/runtime-smoke.json": "6d5025a006d3f5e7848cc5765833985d9d48648e14fb1faf7dd6eeaaee129b5c",
+      "release-notes/evidence/v0.14.0-publication/verification.json": "52a2b6eff67617f7057d5bf8df614ce377f53c91a805da48c5d2118ac2ea6f85",
+      "release-notes/evidence/v0.14.0-publication/verifier/README.md": "4428cdfa61ce1af9f477ae5f42137999d39c08e850f41cf35242c447d3101693",
+      "release-notes/evidence/v0.14.0-publication/verifier/buildinfo_reader.go.txt": "ed9718c5e503d11c70ebbc25fe887ce7ae5abf578faadbe450e334d0503e0eb1",
+      "release-notes/evidence/v0.14.0-publication/verifier/fixtures/old-pax-4MiB-fixture.tar.gz": "e2ab494487248ca04e3008b627722636ad7d76c188888e6ceb033036dc4726e6",
+      "release-notes/evidence/v0.14.0-publication/verifier/fixtures/old-pax-limit-observation.json": "e7876ce231f87a2c960ad20dd9e2f58fac462724d898dbbcd6bed48d27ebbdcb",
+      "release-notes/evidence/v0.14.0-publication/verifier/source-manifest.sha256": "ab00246a08c8bf85e2f942d297d2674583b88807dcf1d239bd40615b300f6456",
+      "release-notes/evidence/v0.14.0-publication/verifier/test_verifier.py": "515e3211777db477b54f9e3fa929e9c801aa88c1e2f01be15dacd668c9ef7fa1",
+      "release-notes/evidence/v0.14.0-publication/verifier/unit-tests.log": "f61772852685e9fb91c31468b0058e3501fff1c8bad7c8c4f99ce3fddb4e43a6",
+      "release-notes/evidence/v0.14.0-publication/verifier/verify_release014.py": "15c166f204ddaaf776a0b5a891dcb5fba06fc37bd82e9a39d81bd30e49763976"
+    },
+    "original_report_docs_and_embed_unchanged": true,
+    "runtime_scripts_workflows_and_dependencies_equal_integrated_main": true
+  },
+  "audit": "No dependency, suppression or threshold change. Original bda high-gate exit0/low-detail exit1 and residual deepmerge LOW needs_review remain the original epoch; no new zero-vulnerability or exploit claim.",
+  "scope_limits": [
+    "Local checks are docs/CLI, affected-package vet and targeted protected-recovery race tests, not a repeat of the original full-Go epoch.",
+    "Full combined-source CI remains required; no CI conclusion fabricated here.",
+    "Original exact26 verifier sources and release artifact verification remain pinned to released source6d99; this composition does not rerun or broaden those claims.",
+    "No provider/model/authentication/client or production deployment operation performed."
+  ]
+}
