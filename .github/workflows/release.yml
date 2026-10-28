@@ -162,6 +162,20 @@ jobs:
           graft_build="$(jq -c --arg url "$graft_url" '. + {url:$url}' "$graft_metadata" | base64 -w0)"
           go build -trimpath -ldflags "-s -w -X main.version=${VERSION#v} -X github.com/ivo-lopes/ivoai/internal/components.managedOpenCodeBuild=${managed_build} -X github.com/ivo-lopes/ivoai/internal/components.managedGraftBuild=${graft_build}" -o dist/ivoai ./cmd/ivoai
           go version -m dist/ivoai | grep -F 'vcs.modified=false'
+          # Execute this exact Core before archiving. The amd64 emulator has no
+          # AVX/AVX2; the ARM job runs on its native architecture.
+          core_command=("$PWD/dist/ivoai")
+          if [[ "$GOARCH" == amd64 ]]; then
+            core_command=(qemu-x86_64 -cpu Nehalem "$PWD/dist/ivoai")
+          fi
+          smoke_root="$(mktemp -d)"
+          trap 'rm -rf -- "$smoke_root"' EXIT
+          mkdir -p "$smoke_root"/{home,config,data,state,cache,tmp}
+          core_env=(env -i PATH="$PATH" HOME="$smoke_root/home" XDG_CONFIG_HOME="$smoke_root/config" XDG_DATA_HOME="$smoke_root/data" XDG_STATE_HOME="$smoke_root/state" XDG_CACHE_HOME="$smoke_root/cache" TMPDIR="$smoke_root/tmp" NO_COLOR=1)
+          actual_version="$("${core_env[@]}" timeout 60 "${core_command[@]}" version)"
+          [[ "$actual_version" == "${VERSION#v}" ]]
+          "${core_env[@]}" timeout 60 "${core_command[@]}" help > "$smoke_root/help.txt"
+          test -s "$smoke_root/help.txt"
           tar -C dist -czf "dist/release/ivoai_${GOOS}_${GOARCH}.tar.gz" ivoai
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
