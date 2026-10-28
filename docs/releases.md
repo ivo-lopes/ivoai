@@ -4,7 +4,10 @@
 
 Adds the [local read-only administrative console](admin-console.md), managed
 Codex native-worker controls, strict invocation usage reports and compression
-policy corrections. The private legacy frontend `.3` avoids runtime plugin SDK
+policy corrections. Readonly Claude workers now expose only `Read,Glob,Grep`
+and deny native `Agent`/`Task`; broader research uses approved Core/MCP
+capabilities, with the write-worker contract unchanged. This is a delegation
+boundary rather than native TUI or account parity. The private legacy frontend `.3` avoids runtime plugin SDK
 installation and requires an explicit reviewed update from older builds.
 Optional VERSION, RTK-OSS and Codebase readers remain narrow
 pilots; the diagnostic native evidence runner still refuses production.
@@ -13,6 +16,11 @@ PRs [41](https://github.com/ivo-lopes/ivoai/pull/41),
 [42](https://github.com/ivo-lopes/ivoai/pull/42),
 [43](https://github.com/ivo-lopes/ivoai/pull/43) and
 [44](https://github.com/ivo-lopes/ivoai/pull/44) each passed 15/15 checks.
+PR [48](https://github.com/ivo-lopes/ivoai/pull/48) passed 15/15 at its reviewed
+source ([run](https://github.com/ivo-lopes/ivoai/actions/runs/40729664838)); the
+combined Claude/admin/`.3` candidate requires its own CI and official five-case
+Claude protocol proof. Release must also execute the exact Core version/help
+under private HOME/XDG on native ARM and amd64 Nehalem before archiving.
 Publication still requires the exact final source and Release gates. No production
 deployment or completed migration is implied.
 
@@ -23,6 +31,9 @@ passed the declared oracles but missed the same targets: input −0.01257%, phas
 time −2.28091%, process time −2.46501%. Both arms used direct inspection, with no
 prefetch/Graft/Gateway. The 126 historical attempts span different conditions and
 are not aggregated as causal savings. The new edit harness is outside this release.
+PRs [45](https://github.com/ivo-lopes/ivoai/pull/45),
+[46](https://github.com/ivo-lopes/ivoai/pull/46) and
+[47](https://github.com/ivo-lopes/ivoai/pull/47) remain excluded.
 The global matrix is INCOMPLETE. These measurements predate the later changes
 and do not establish their economic effect. OpenCode removal, general adaptive
 execution, Claude equivalence, Antigravity and Context ingestion remain pending.

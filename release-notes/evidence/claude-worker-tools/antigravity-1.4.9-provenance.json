@@ -1,0 +1,13 @@
+{
+  "manifest_version": "1.4.9",
+  "manifest_url": "https://antigravity-cli-auto-updater-974169037036.us-central1.run.app/manifests/linux_amd64.json",
+  "payload_url": "https://storage.googleapis.com/antigravity-public/antigravity-cli/1.4.9-4962164969177088/linux-x64/cli_linux_x64.tar.gz",
+  "archive_sha512_matches_manifest": true,
+  "archive_sha256": "3d84e3a461b9cbf9ffc9deede155a01921380e964f51a82c0bc505db80ae8525",
+  "archive_binary_member": "antigravity",
+  "official_binary_sha256": "1c9102d0a36194d57f6b4a66249217ece0bf563e108bcdd1046b81c5b6d6004c",
+  "installed_binary_sha256": "1c9102d0a36194d57f6b4a66249217ece0bf563e108bcdd1046b81c5b6d6004c",
+  "bytes_equal": true,
+  "signature_or_source_commit": "NOT_EXPOSED_IN_MANIFEST",
+  "installation_executed": false
+}

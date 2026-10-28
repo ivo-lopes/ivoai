@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="generator" content="Docusaurus v3.10.2">
 <title data-rh="true">ivoai architecture | IVOAI</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="http://localhost:7780/docs/next/architecture"><meta data-rh="true" property="og:locale" content="en_US"><meta data-rh="true" property="og:locale:alternate" content="pt_BR"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="ivoai architecture | IVOAI"><meta data-rh="true" name="description" content="This page retains historical architecture descriptions originally based on"><meta data-rh="true" property="og:description" content="This page retains historical architecture descriptions originally based on"><link data-rh="true" rel="icon" href="/img/favicon.svg"><link data-rh="true" rel="canonical" href="http://localhost:7780/docs/next/architecture"><link data-rh="true" rel="alternate" href="http://localhost:7780/docs/next/architecture" hreflang="en-US"><link data-rh="true" rel="alternate" href="http://localhost:7780/pt-BR/docs/next/architecture" hreflang="pt-BR"><link data-rh="true" rel="alternate" href="http://localhost:7780/docs/next/architecture" hreflang="x-default"><script data-rh="true" type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"ivoai architecture","item":"http://localhost:7780/docs/next/architecture"}]}</script><link rel="stylesheet" href="/assets/css/styles.c768eb50.css">
-<script src="/assets/js/runtime~main.caa87353.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.8880df9d.js" defer="defer"></script>
 <script src="/assets/js/main.6c7444d6.js" defer="defer"></script>
 </head>
 <body>
@@ -23,6 +23,11 @@ scheduler, executor, credential store or authorization authority. Native Codex
 worker controls preserve Core delegation, while reported usage remains scoped
 to a CLI invocation. The unsafe optional Headroom wrapper is refused; Caveman and
 Direct selection remains compatible.
+Readonly Claude workers close their builtin catalog to <code>Read,Glob,Grep</code> and deny
+<code>Agent</code>/<code>Task</code>; plan mode alone did not prevent native delegation in the pinned
+2.1.296 proof. Additional research uses approved Core/MCP capabilities. Scoped
+MCP grants and write-worker policy remain separate; this does not establish native
+TUI mediation or account parity.
 The private legacy frontend <code>.3</code> skips runtime plugin SDK installation under the
 managed opt-in and restricts plugin entrypoints to private canonical files.
 Older builds require a reviewed update before managed backend launch; the legacy
@@ -30,7 +35,8 @@ dependency is still present. See the migration limits in the candidate notes.</p
 <p>The optional evidence/code pilots retain exact references and explicit host
 admission. They do not establish a universal native-tool gateway. General
 primary-only execution and operational OpenCode removal are not in this candidate.
-The global economic gate remains INCOMPLETE, with the latest live subset failing
+The later native-independence, edit benchmark and adaptive pilots in PRs 45/46/47
+are excluded. The global economic gate remains INCOMPLETE, with the latest live subset failing
 the predeclared targets. See <a class="" href="/docs/next/releases">releases</a> and the linked evidence.</p>
 <h2 class="anchor anchorTargetStickyNavbar_J2Vv" id="earlier-increment-v0130">Earlier increment: v0.13.0<a href="#earlier-increment-v0130" class="hash-link" aria-label="Direct link to Earlier increment: v0.13.0" title="Direct link to Earlier increment: v0.13.0" translate="no">​</a></h2>
 <p>This increment extends v0.12.1. <a href="https://github.com/ivo-lopes/ivoai/pull/31" target="_blank" rel="noopener noreferrer" class="">PR #31</a> and

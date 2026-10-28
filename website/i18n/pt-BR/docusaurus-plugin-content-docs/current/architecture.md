@@ -13,6 +13,11 @@ scheduler, executor, store de credenciais ou autoridade de autorização. Os
 controles de workers nativos do Codex preservam a delegação do Core, e as métricas
 continuam limitadas a uma execução CLI. O wrapper Headroom opcional inseguro é
 recusado; a seleção Caveman/Direct permanece compatível.
+Workers Claude readonly limitam builtins a `Read,Glob,Grep` e negam `Agent`/`Task`;
+o modo plan sozinho permitiu delegação nativa na prova com a versão 2.1.296 fixada.
+Pesquisa adicional usa capacidades Core/MCP aprovadas. Grants MCP e o contrato
+de escrita permanecem separados; isso não comprova mediação da TUI ou paridade
+de contas.
 O frontend legado privado `.3` dispensa instalação do SDK npm em runtime sob
 o opt-in gerenciado e restringe plugins a entrypoints privados canônicos.
 Builds antigos exigem atualização revisada antes de iniciar esse backend; a
@@ -21,7 +26,8 @@ dependência legada permanece. Consulte os limites de migração nas notas.
 Os pilotos opcionais de evidências/código mantêm referências exatas e admissão
 explícita pelo host. Não constituem um gateway universal das ferramentas nativas.
 Execução geral somente no primary e remoção operacional do OpenCode não fazem
-parte desta candidata. O gate econômico global continua INCOMPLETE, e o último
+parte desta candidata. Os pilotos posteriores de independência nativa, benchmark
+de edição e adaptação dos PRs 45/46/47 continuam excluídos. O gate econômico global continua INCOMPLETE, e o último
 subconjunto real reprovou as metas. Consulte [releases](releases.md) e as evidências.
 
 ## Incremento anterior: v0.13.0

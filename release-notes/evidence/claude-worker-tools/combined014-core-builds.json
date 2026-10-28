@@ -1,0 +1,31 @@
+{
+  "amd64v1": {
+    "sha256": "6534752ab5968a0a21eb2548d6dc70f392dbcc312b30d61a7d979d4cd51ad7f8",
+    "elf_machine": 62,
+    "status": "BUILD_PASS",
+    "distributed_release_artifact": false
+  },
+  "arm64": {
+    "sha256": "7d24414116b69feb63ca53d67c9206af4754358cd5d5977ffec6ce1bab4c6a48",
+    "elf_machine": 183,
+    "status": "BUILD_PASS",
+    "distributed_release_artifact": false
+  },
+  "native_amd64_version": {
+    "status": "PASS",
+    "stdout_sha256": "c78f0abc1bbeeb6a82fb4239a641e28f1b1c5cfdc1084bbe6a5ee9f25af49075",
+    "private_HOME_XDG": true,
+    "real_inference": false
+  },
+  "native_amd64_help": {
+    "status": "PASS",
+    "stdout_sha256": "3cca92f1e89bcad603e04d8e224463e26a8986af963d3f0acca0df2d2657c6a1",
+    "private_HOME_XDG": true,
+    "real_inference": false
+  },
+  "limitations": [
+    "Core build/source sanity only; local binaries do not embed reviewed release component metadata.",
+    "Native ARM and Nehalem execution of the exact tagged distribution remains a required Release gate.",
+    "qemu-x86_64 unavailable locally; no local no-AVX runtime claim."
+  ]
+}
