@@ -1,0 +1,11 @@
+=== RUN   TestLiveOpenCodeExecutorHTTPContract
+--- PASS: TestLiveOpenCodeExecutorHTTPContract (9.42s)
+=== RUN   TestLiveOpenCodeExecutorNativeLifecycle
+--- PASS: TestLiveOpenCodeExecutorNativeLifecycle (1.67s)
+=== RUN   TestLiveNativeOpenCodeAUTOExecutor
+    opencode_native_test.go:137: OPENCODE_NATIVE_CONTROLLED_HTTP=PASS; requested/effective=PASS; recursion=0; quota=UNKNOWN
+    opencode_native_test.go:171: AUTO_FRONTEND_NATIVE_E2E=PASS; MCP_MEMORY=PASS; MCP_CONTEXT=PASS
+    opencode_native_test.go:175: NATIVE_EXTERNAL_MCP_AUTH=PASS; UPSTREAM_SECRET_IN_NATIVE_CONFIG=false; FULL_APPROVAL_PROMPTS=0
+    opencode_native_test.go:220: NATIVE_INTERACTIVE_APPROVAL=PASS; NATIVE_CANCELLATION=PASS
+--- PASS: TestLiveNativeOpenCodeAUTOExecutor (36.11s)
+PASS

@@ -65,6 +65,11 @@ jobs:
           go test ./...
           go test -race -timeout 20m ./...
           go vet ./...
+      - name: Admit the existing sandbox launcher for offline managed plugin tests
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends bubblewrap apparmor python3
+          scripts/setup-ci-graft-sandbox.sh
       - name: Managed OpenCode HTTP and attach integration
         run: |
           node --test internal/opencodebridge/keyboard.test.mjs
@@ -115,6 +120,12 @@ jobs:
       - name: Install non-AVX CPU smoke dependency
         if: matrix.goarch == 'amd64'
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends qemu-user
+      - name: Install reviewed Graft build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends bubblewrap apparmor binutils gcc-12 g++-12 make python3 patch
+      - name: Admit only the CI sandbox launcher to user namespaces
+        run: scripts/setup-ci-graft-sandbox.sh
       - name: Build and verify patched managed frontend
         run: |
           scripts/build-managed-opencode.sh "$PWD/dist/release"
@@ -124,12 +135,6 @@ jobs:
           scripts/test-patched-opencode.sh \
             "$PWD/dist/release/ivoai-opencode_linux_${{ matrix.goarch }}.tar.gz" \
             "$PWD/dist/release/managed-opencode-${{ matrix.goarch }}.json"
-      - name: Install reviewed Graft build dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends bubblewrap apparmor binutils gcc-12 g++-12 make python3 patch
-      - name: Admit only the CI sandbox launcher to user namespaces
-        run: scripts/setup-ci-graft-sandbox.sh
       - name: Build compatible managed Graft and verify baseline CPU
         env:
           GRAFT_GCC_MAJOR: "12"

@@ -38,7 +38,7 @@ func managedOpenCodeSpec(original Spec, encoded, platform string) (Spec, error) 
 		return Spec{}, invalid
 	}
 	var metadata managedOpenCodeMetadata
-	if json.Unmarshal(body, &metadata) != nil || metadata.Version != "1.19.0-ivoai.2" || metadata.Platform != platform || (platform != "linux/amd64" && platform != "linux/arm64") {
+	if json.Unmarshal(body, &metadata) != nil || metadata.Version != "1.19.0-ivoai.3" || metadata.Platform != platform || (platform != "linux/amd64" && platform != "linux/arm64") {
 		return Spec{}, invalid
 	}
 	for _, value := range []string{metadata.Revision, metadata.SHA256, metadata.SourceSHA256, metadata.PatchSHA256} {

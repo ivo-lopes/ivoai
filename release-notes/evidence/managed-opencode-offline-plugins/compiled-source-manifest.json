@@ -1,0 +1,14 @@
+{
+  "upstream_revision": "733b2c627e5aec39cb33cc22373bdce33053ef2c",
+  "upstream_archive_sha256": "ab433f7a5fc9e54c90da18bd3457298009f426424805f043aa32c03543b4a192",
+  "compiled_modified_files_sha256": {
+    "packages/core/src/flag/flag.ts": "e33d80b79f07c25a2afd6f3991edc4169396f60694915549f51c5842e12bcd88",
+    "packages/core/src/npm.ts": "854a1e4b2f1f8b372ace0324aa782f70a54f984bbcc017a1a088a0c4379adb71",
+    "packages/opencode/src/config/config.ts": "f1eb6887fbc8eebba494e13869b375348e57a8dbdec514ed61c56c4e6917967b",
+    "packages/opencode/src/config/tui.ts": "b07f9745e44ad89f4888ef57fd3ffe513ccb3333030b4c2df428e4a0c9868957",
+    "packages/opencode/src/plugin/ivoai-managed.ts": "eb5240b56ca174b974054955728546a233393c7fbee9dce1c2f065efba8b9829",
+    "packages/opencode/src/plugin/loader.ts": "ac6752c041177f5007b386eb5a06c5294868ad907b7dc8bccf4f612d1faecd9e",
+    "packages/opencode/src/plugin/tui/runtime.ts": "89a28a4e540cd300ba9b31e0e9e2d224180ac3383492b2c25664f204b4085c36"
+  },
+  "note": "Original frozen archive plus three applied patches; generated Web UI/models snapshot is bound by the compiled executable and build log, not independently source-reproducible."
+}

@@ -4,18 +4,26 @@
 
 Adiciona o [console administrativo local de consulta](admin-console.md), controles
 de workers nativos do Codex gerenciado, métricas estritas de uma execução e
-correções da política de compressão. VERSION, RTK-OSS e Codebase continuam pilotos
+correções da política de compressão. O frontend legado privado `.3` dispensa
+instalação do SDK npm em runtime e exige atualização revisada de builds antigos.
+VERSION, RTK-OSS e Codebase continuam pilotos
 opcionais limitados; o runner nativo de evidências ainda recusa produção.
 
 Os PRs [41](https://github.com/ivo-lopes/ivoai/pull/41),
-[42](https://github.com/ivo-lopes/ivoai/pull/42) e
-[43](https://github.com/ivo-lopes/ivoai/pull/43) passaram em 15/15 verificações cada.
+[42](https://github.com/ivo-lopes/ivoai/pull/42),
+[43](https://github.com/ivo-lopes/ivoai/pull/43) e
+[44](https://github.com/ivo-lopes/ivoai/pull/44) passaram em 15/15 verificações cada.
 A publicação ainda depende dos gates do fonte final e de Release. Isso não
 representa implantação em produção ou migração concluída.
 
 A nova comparação de sete casos preservou 42 tentativas reais corretas: entrada
 +2,85% e tempo −1,44%; as metas de 10%/5% foram reprovadas. As 72 tentativas
-anteriores continuam preservadas. A matriz global é INCOMPLETE. Essas medições
+anteriores continuam preservadas. Outros [12 turnos de edição](https://github.com/ivo-lopes/ivoai/blob/99fe07a93e242d2163116bf6dd8d265c3c8f9d8c/release-notes/benchmark-matrix16-edit-live-validation.md)
+passaram nos oráculos declarados, mas reprovaram as mesmas metas: entrada −0,01257%,
+tempo das fases −2,28091% e processo −2,46501%. Ambos usaram leitura direta, sem
+prefetch/Graft/Gateway. Os 126 turnos históricos possuem condições diferentes e
+não são agregados como economia causal. O novo harness não integra esta release.
+A matriz global é INCOMPLETE. Essas medições
 antecedem as mudanças posteriores e não comprovam seu efeito econômico. Remoção
 OpenCode, execução adaptativa geral, equivalência Claude, Antigravity e ingestão
 Context continuam pendentes. Consulte as [notas bilíngues da candidata](https://github.com/ivo-lopes/ivoai/blob/main/release-notes/v0.14.0.md)

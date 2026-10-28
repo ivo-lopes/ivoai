@@ -77,6 +77,11 @@ jobs:
         run: |
           python3 -m unittest discover -s scripts -p 'test_*.py'
           python3 scripts/test-smoke-native-auto.py
+      - name: Admit the existing sandbox launcher for offline managed plugin tests
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends bubblewrap apparmor python3
+          scripts/setup-ci-graft-sandbox.sh
       - name: Managed OpenCode HTTP and attach integration
         run: scripts/test-managed-opencode.sh
       - name: Native Codex TUI and fail-closed App Server admission
@@ -141,6 +146,11 @@ jobs:
       - name: Install non-AVX CPU smoke dependency
         if: matrix.arch == 'amd64'
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends qemu-user
+      - name: Admit the existing sandbox launcher for offline managed plugin tests
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends bubblewrap apparmor python3
+          scripts/setup-ci-graft-sandbox.sh
       - name: Build pinned source patch without dependency hooks
         run: scripts/build-managed-opencode.sh "$PWD/dist/managed-frontend"
       - name: Native TUI success and failure feedback

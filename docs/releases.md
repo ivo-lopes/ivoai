@@ -4,17 +4,25 @@
 
 Adds the [local read-only administrative console](admin-console.md), managed
 Codex native-worker controls, strict invocation usage reports and compression
-policy corrections. Optional VERSION, RTK-OSS and Codebase readers remain narrow
+policy corrections. The private legacy frontend `.3` avoids runtime plugin SDK
+installation and requires an explicit reviewed update from older builds.
+Optional VERSION, RTK-OSS and Codebase readers remain narrow
 pilots; the diagnostic native evidence runner still refuses production.
 
 PRs [41](https://github.com/ivo-lopes/ivoai/pull/41),
-[42](https://github.com/ivo-lopes/ivoai/pull/42) and
-[43](https://github.com/ivo-lopes/ivoai/pull/43) each passed 15/15 checks.
+[42](https://github.com/ivo-lopes/ivoai/pull/42),
+[43](https://github.com/ivo-lopes/ivoai/pull/43) and
+[44](https://github.com/ivo-lopes/ivoai/pull/44) each passed 15/15 checks.
 Publication still requires the exact final source and Release gates. No production
 deployment or completed migration is implied.
 
 The new seven-case comparison retained 42 correct real attempts: input +2.85%,
 elapsed −1.44%; the 10%/5% targets failed. All 72 prior attempts remain preserved.
+Another [12 edit turns](https://github.com/ivo-lopes/ivoai/blob/99fe07a93e242d2163116bf6dd8d265c3c8f9d8c/release-notes/benchmark-matrix16-edit-live-validation.md)
+passed the declared oracles but missed the same targets: input −0.01257%, phase
+time −2.28091%, process time −2.46501%. Both arms used direct inspection, with no
+prefetch/Graft/Gateway. The 126 historical attempts span different conditions and
+are not aggregated as causal savings. The new edit harness is outside this release.
 The global matrix is INCOMPLETE. These measurements predate the later changes
 and do not establish their economic effect. OpenCode removal, general adaptive
 execution, Claude equivalence, Antigravity and Context ingestion remain pending.

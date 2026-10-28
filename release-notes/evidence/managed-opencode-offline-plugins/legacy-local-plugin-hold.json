@@ -1,0 +1,38 @@
+{
+  "registry_hits": [
+    {
+      "path": "/@opencode-ai%2fplugin",
+      "at_ms": 2267
+    }
+  ],
+  "results": [
+    {
+      "phase": "health",
+      "at_ms": 1922,
+      "status": 200,
+      "elapsed_ms": 9,
+      "bytes": 43
+    },
+    {
+      "phase": "before_release",
+      "at_ms": 1922,
+      "error": "TimeoutError",
+      "elapsed_ms": 2002
+    },
+    {
+      "phase": "before_release_again",
+      "at_ms": 3924,
+      "error": "TimeoutError",
+      "elapsed_ms": 2002
+    },
+    {
+      "phase": "after_release",
+      "at_ms": 5927,
+      "status": 200,
+      "elapsed_ms": 859,
+      "bytes": 751
+    }
+  ],
+  "external_network": false,
+  "provider_inference": false
+}
