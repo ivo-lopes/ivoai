@@ -13,6 +13,10 @@ scheduler, executor, store de credenciais ou autoridade de autorização. Os
 controles de workers nativos do Codex preservam a delegação do Core, e as métricas
 continuam limitadas a uma execução CLI. O wrapper Headroom opcional inseguro é
 recusado; a seleção Caveman/Direct permanece compatível.
+O frontend legado privado `.3` dispensa instalação do SDK npm em runtime sob
+o opt-in gerenciado e restringe plugins a entrypoints privados canônicos.
+Builds antigos exigem atualização revisada antes de iniciar esse backend; a
+dependência legada permanece. Consulte os limites de migração nas notas.
 
 Os pilotos opcionais de evidências/código mantêm referências exatas e admissão
 explícita pelo host. Não constituem um gateway universal das ferramentas nativas.

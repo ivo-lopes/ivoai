@@ -18,3 +18,5 @@ for scenario in success:mouse:csi-u success:multiline:csi-u failure:mouse:xterm 
   IVOAI_LIVE_OPENCODE_CLIPBOARD="$result" IVOAI_LIVE_OPENCODE_COPY="$copy" IVOAI_LIVE_OPENCODE_KEYBOARD="$keyboard" \
     go test ./internal/opencodebridge -run '^TestLiveManagedOpenCodeResizeKeyboard$' -count=1 -timeout 2m
 done
+
+"$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/test-managed-opencode-offline.sh" "$archive" "$metadata"
