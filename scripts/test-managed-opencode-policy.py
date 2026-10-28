@@ -108,7 +108,7 @@ def run(binary, root):
                     request(route)
                 except TimeoutError:
                     timed_out = True
-                assert timed_out and hits, "unflagged control did not demonstrate dependency wait"
+                assert timed_out and len(hits) == 1, "unflagged control did not demonstrate one dependency wait"
                 release.set()
                 status, _ = request(route, 15)
                 assert status == 200, "unflagged upstream behavior did not resume after registry failure"

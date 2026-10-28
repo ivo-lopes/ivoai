@@ -1,7 +1,9 @@
 # Managed OpenCode local-plugin policy validation
 
 This is a compatibility fix supporting IVOAI-191/192/195, not completion of the
-OpenCode removal or any economic gate. It is based on main `2bf9f943`. It does
+OpenCode removal or any economic gate. The component build began on main `2bf9f943`; the final local source also includes
+main `3be82befea6ed3875373afcb1bfaa450710310ac`, preserving its administrative
+OAuth correction, guide and release gate. It does
 not modify the historical `.2` archives, private configurations, credentials or
 histories. No release or production installation is performed by this record.
 
@@ -123,3 +125,19 @@ The integration script includes offline policy and HTTP/TUI checks. A supported
 bubblewrap setup is required; no missing sandbox is counted as a pass. Private
 validation workspaces are retained locally for inspection and must not be uploaded
 wholesale because fixtures contain disposable authentication/state.
+
+`Npm.add` may reuse a retained SDK cache without reaching reification. The
+managed npm guard prevents installation; it is not a universal prohibition or
+attestation of every dynamically loaded provider SDK. Plugin entrypoints remain
+restricted independently before package resolution. No SDK cache is deleted, and
+cached-provider behavior/isolation is not generally certified by these fixtures.
+
+After combining main, the exact same component ELF passed the complete offline
+suite again with mandatory PASS records for all eight named top-level tests and
+zero skips. Combined policy data and bridge/agent logs are retained alongside the
+prior epoch. Full Go, affected race tests, vet, cross-builds and own frozen
+EN/PT documentation checks passed; their hashes are in the validation record.
+The new patch file contains seven normal unified-diff blank context lines that
+an initial staged whitespace check reported. Its bytes were retained for immutable
+patch/component provenance; other source whitespace and the final merge diff
+were clean. No whitespace or CI configuration was weakened to hide that format.

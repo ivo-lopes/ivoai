@@ -5,7 +5,22 @@ v0.5.0 and records the current incremental status separately below. Exact pins
 live in `manifest/components.yaml`; delivered behavior and migration limits belong
 to versioned implementation and validation evidence.
 
-## Current incremental delivery: v0.13.0
+## Current candidate: v0.14.0
+
+The same Core now supplies a [local read-only admin console](admin-console.md).
+It reuses the App, session/OAuth stores and bounded DTOs; JavaScript adds no
+scheduler, executor, credential store or authorization authority. Native Codex
+worker controls preserve Core delegation, while reported usage remains scoped
+to a CLI invocation. The unsafe optional Headroom wrapper is refused; Caveman and
+Direct selection remains compatible.
+
+The optional evidence/code pilots retain exact references and explicit host
+admission. They do not establish a universal native-tool gateway. General
+primary-only execution and operational OpenCode removal are not in this candidate.
+The global economic gate remains INCOMPLETE, with the latest live subset failing
+the predeclared targets. See [releases](releases.md) and the linked evidence.
+
+## Earlier increment: v0.13.0
 
 This increment extends v0.12.1. [PR #31](https://github.com/ivo-lopes/ivoai/pull/31) and
 [PR #32](https://github.com/ivo-lopes/ivoai/pull/32) merged as `c475d2a3` and

@@ -105,3 +105,9 @@ private runtime/cache paths targeting the same retained directories; no automati
 relocation, history migration or symlink rewrite is performed. Noncanonical
 installations require operator correction and are not compatibility-certified by
 the isolated tests above.
+
+`Npm.add` may reuse a retained SDK cache without reaching reification. The
+managed npm guard prevents installation; it is not a universal prohibition or
+attestation of every dynamically loaded provider SDK. Plugin entrypoints remain
+restricted independently before package resolution. No SDK cache is deleted, and
+cached-provider behavior/isolation is not generally certified by these fixtures.

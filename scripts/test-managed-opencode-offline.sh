@@ -27,6 +27,14 @@ for spec in 'bridge:TestLiveManagedOpenCode(RoutesPromptThroughIVOAI|AttachRende
   IFS=: read -r package pattern <<< "$spec"
   bwrap "${common[@]}" "/proof/$package.test" -test.run "^($pattern)$" -test.count=1 -test.v -test.timeout=6m > "$work/$package.log" 2>&1
   grep -q '^PASS$' "$work/$package.log"
+  if [[ "$package" == bridge ]]; then
+    required=(TestLiveManagedOpenCodeRoutesPromptThroughIVOAI TestLiveManagedOpenCodeAttachRendersIVOAIPlugin TestLiveManagedOpenCodePermissions TestLiveManagedOpenCodeAPI TestLiveManagedOpenCodeResizeKeyboard)
+  else
+    required=(TestLiveOpenCodeExecutorHTTPContract TestLiveOpenCodeExecutorNativeLifecycle TestLiveNativeOpenCodeAUTOExecutor)
+  fi
+  for name in "${required[@]}"; do
+    grep -Fq -- "--- PASS: $name (" "$work/$package.log"
+  done
   if grep -q -- '--- SKIP:' "$work/$package.log"; then
     echo 'Required offline managed test skipped' >&2
     exit 1
