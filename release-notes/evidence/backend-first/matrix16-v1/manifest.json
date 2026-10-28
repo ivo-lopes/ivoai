@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "scope": "app_primary_prefetch_subset",
+  "repetitions": 3,
+  "model_requested": "gpt-6.1-sol",
+  "effort_requested": "low",
+  "effective_model_observed": null,
+  "host_mcp_tools_exposed": 0,
+  "native_tools_exposed": null,
+  "native_tools_inventory": "UNVERIFIED",
+  "runtime_flags": {
+    "experimental_evidence_gateway": true
+  },
+  "baseline_test_sha256": "1217a92bf3744ee485f5e4595e068dc84780315070e9368769b323bb20ef789b",
+  "candidate_test_sha256": "2aceba564734c97b42dafaa86e83c9d4a0821d25fe90755831a9d654ddd0df57",
+  "codex_sha256": "b93f6811d3f653f0fb83be4050d857fb9abbb111dfa2ce160563327daff7f306",
+  "node_sha256": "5a7b8a3cf5ccb57d297519754fd73238f64cf560afd0ef19a2f9bf7384cbb657",
+  "sandbox_sha256": "f6a153d756f6f39f53718a7cfbd0776f8be0a55621c7f1b7304570032ddf19a1",
+  "distribution_inventory_sha256": "4c405568d9fd2d3bf78f7831d4b536a460bde13cb2a8724332e61ff4b6228c43",
+  "harness_sha256": "5f3faac7d6d8c8ce6b48b4f7d70c2505ebdd57c3f4a84f41c4141b5ef89ab143",
+  "requested_scenarios": [
+    "api",
+    "implementation",
+    "multi_module_callers",
+    "dependencies",
+    "monorepo",
+    "unsupported_parser",
+    "non_code"
+  ],
+  "catalog_sha256": "13779e11784adfbc314e733738bfb06a9a60787979127f5ba07647ba1e72fa52",
+  "fixture_contract_sha256": "8891b0280ffbb27887c642ff89a87f3c46cfc31570d6dc964b7a2039e946632a",
+  "preflight_only": false,
+  "cache_policy": "cold_private_local_caches_provider_cache_unverified"
+}

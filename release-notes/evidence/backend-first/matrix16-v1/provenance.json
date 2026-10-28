@@ -1,0 +1,89 @@
+{
+  "scope": "app_prefetch_7_scenario_repeated_subset",
+  "global_economic_gate": "INCOMPLETE",
+  "baseline_runtime_tag": "v0.12.1",
+  "baseline_runtime_source": "3ff6db8bb0174b1ae6f781f6754e2653a6dae5db",
+  "baseline_harness_commit": "8f7be69f5e3315a8cb5d7868cdbe1563f68386f4",
+  "candidate_source": "fe2e65806e92121fd7440f106a2d55b20a837b52",
+  "candidate_runtime_source": "49445919f745157e3c8aa1c717161e49cb5f50d5",
+  "build_flags": {
+    "CGO_ENABLED": "0",
+    "GOAMD64": "v1",
+    "trimpath": true,
+    "buildvcs": false
+  },
+  "child_path": "/tmp/ivoai-backend-benchmark/runtime/node/bin:/tmp/ivoai-backend-toolchain/go/bin:/usr/bin:/bin",
+  "child_path_sha256": "961cdf5f6ef2065b623d31de532a24b1fd61384156a283c2cbe43f7927375819",
+  "repetitions": 3,
+  "planned_comparative_attempts": 42,
+  "provider_cache_equivalence": "UNVERIFIED",
+  "backend_identity": "UNVERIFIED",
+  "host_idle": false,
+  "concurrency_note": "Other agents held new heavy checks; editing, remote CI and ordinary host activity may continue. No idle-host claim.",
+  "host_cpu_count": 12,
+  "host_load_average": [
+    0.42724609375,
+    0.662109375,
+    0.82763671875
+  ],
+  "host_process_count": 376,
+  "recorded_at_unix": 1793146585.009904,
+  "executables": {
+    "go": {
+      "basename": "go",
+      "sha256": "5f5eb6d0b2fb6aa0bb5d5f8c5f1c944e0de955c925f0111af92a9d8f79680b5b"
+    },
+    "node": {
+      "basename": "node",
+      "sha256": "5a7b8a3cf5ccb57d297519754fd73238f64cf560afd0ef19a2f9bf7384cbb657"
+    },
+    "codex": {
+      "basename": "codex",
+      "sha256": "b93f6811d3f653f0fb83be4050d857fb9abbb111dfa2ce160563327daff7f306"
+    },
+    "shell": {
+      "basename": "bash",
+      "sha256": "223fe8564b60636bc738b6178d3ba9a50ef7d791266b0efae6363bb716e4c47f"
+    },
+    "python": {
+      "basename": "python3",
+      "sha256": "889c603f0d17cb54060951bcf4c4f9b8c9ebd9e52b392c70209bbb9755d797d9"
+    },
+    "baseline": {
+      "basename": "ivoai-v0121-matrix16-baseline.test",
+      "sha256": "1217a92bf3744ee485f5e4595e068dc84780315070e9368769b323bb20ef789b"
+    },
+    "candidate": {
+      "basename": "ivoai-matrix16-candidate-fe2e6580.test",
+      "sha256": "2aceba564734c97b42dafaa86e83c9d4a0821d25fe90755831a9d654ddd0df57"
+    },
+    "sandbox_helper": {
+      "basename": "ivoai-final-amd64",
+      "sha256": "f6a153d756f6f39f53718a7cfbd0776f8be0a55621c7f1b7304570032ddf19a1"
+    }
+  },
+  "baseline_harness_commit_scope": "local tests-only reconstruction: same public fe2e6580 harness and benchmarkfixtures over public v0.12.1 source; no production source change",
+  "after": {
+    "recorded_at_unix": 1793146912.5141573,
+    "config_bytes_and_mode_unchanged": true,
+    "source_commit_after": "fe2e65806e92121fd7440f106a2d55b20a837b52",
+    "worktree_clean_after": true,
+    "all_attempts": 42,
+    "all_valid": true,
+    "all_correct": true,
+    "report_sha256": {
+      "manifest.json": "e99dab836cdc94085c0e89afab3608ba8a49c3e7d5812fbc56a1cd4027aadeb1",
+      "preflight.json": "7b5a6235d043243d59bf503c38027464392484430adb99e73b46259106962ab0",
+      "runtime-comparison.json": "0b0ce3f04c5af447ce5c389aa0fb51d7f1835c1d8574bd54ac49782d6b822056",
+      "summary.json": "21b69700d7615c9aac439df87aeecb89272e02160c17eb7422afac34c9bd4054"
+    }
+  },
+  "personal_config_content_omitted": true,
+  "mode_before": "0o600",
+  "mode_after": "0o600",
+  "all_42_rows_preserved": true,
+  "new_test_artifacts_not_full_published_clients": true,
+  "agent_or_harness_auth_files_read_or_copied": false,
+  "new_official_cli_turn_attempts": 42,
+  "provider_model_request_count": null
+}
