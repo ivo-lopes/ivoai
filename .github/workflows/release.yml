@@ -65,6 +65,10 @@ jobs:
           go test ./...
           go test -race -timeout 20m ./...
           go vet ./...
+      - name: Protected evidence recovery rollback against pinned legacy Core
+        # Required before build/publish, using the tag's current Core and exact
+        # historical source. Missing history/cache/proof cannot become a skip.
+        run: scripts/test-protected-evidence-rollback.sh
       - name: Prepare isolated OpenCode and Claude protocol gates
         run: |
           sudo apt-get update

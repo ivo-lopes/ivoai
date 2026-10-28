@@ -1,0 +1,18 @@
+{
+  "check": "oracles",
+  "started_utc": "2026-10-28T19:29:05.229869+00:00",
+  "ended_utc": "2026-10-28T19:29:24.810994+00:00",
+  "exit_code": 0,
+  "args": [
+    "test",
+    "-race",
+    "./internal/benchmarkfixtures",
+    "-run",
+    "^TestBenchmarkSandboxedEditOracles$",
+    "-count=1",
+    "-v"
+  ],
+  "environment_basis": "explicit private HOME, pinned Go/Node PATH, no auth/provider opt-ins, GOPROXY/GOSUMDBoff; shared content-addressed Go caches",
+  "provider_turns": 0,
+  "context_sync": "BLOCKED IVOAI-175"
+}

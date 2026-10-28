@@ -252,6 +252,16 @@ func (a *App) prepareWorkerAccess(ctx context.Context, cfg config.Config, store 
 		}
 	}
 	grants := []workers.MCPGrant{}
+	if target, available, projectionErr := a.workerEvidenceProjection(cfg, current, request); projectionErr != nil {
+		return request, projectionErr
+	} else if available {
+		for _, existing := range targets {
+			if existing.Name == target.Name {
+				return request, errors.New("MCP_DENIED: duplicate protected evidence reader")
+			}
+		}
+		targets = append(targets, target)
+	}
 	if len(targets) > 0 {
 		// An approved plan grants only these exact tools. Full permission never
 		// broadens the scope, and Release revokes the independent worker token.

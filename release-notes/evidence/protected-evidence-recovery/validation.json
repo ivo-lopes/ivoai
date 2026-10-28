@@ -1,0 +1,1550 @@
+{
+  "schema": "ivoai.protected-evidence-recovery.validation.v1",
+  "status": "LOCAL_PROTOTYPE_VALIDATED_NOT_RELEASE_CERTIFICATION",
+  "date": "2026-10-28",
+  "tasks": [
+    "IVOAI-199",
+    "IVOAI-148",
+    "IVOAI-192"
+  ],
+  "branch": "feat/protected-evidence-recovery",
+  "base_revision": "3be82befea6ed3875373afcb1bfaa450710310ac",
+  "source_manifest": "source-manifest.json",
+  "source_manifest_sha256": "a774b589783c5253c856c04c33ad7fe83e553ef881ea082c8c08e9c40344c046",
+  "frozen_source_map_sha256": "2eab850238a0b781262b2f63caf61ca60e6490b43df75d6cdb0eb1d308ddf2c2",
+  "toolchain": "go version go1.27.3 linux/amd64",
+  "environment": {
+    "GOTOOLCHAIN": "local",
+    "TMPDIR": "private /var/tmp directory on ext4",
+    "GOTMPDIR": "same private /var/tmp directory",
+    "personal_configuration_modified": false,
+    "native_model_inference": false,
+    "external_installers_or_downloads": false
+  },
+  "checks": [
+    {
+      "command": "go test ./... -count=1 -json",
+      "exit": 1,
+      "classification": "FAIL_PRESERVED",
+      "details": {
+        "log": "logs/protected-full-go.jsonl.gz",
+        "log_sha256": "b4b7dc51a3dc53c98d57c0d5b2840ab67598b845471a99793a54cdadc1d9c28e",
+        "uncompressed_sha256": "d9feb7c7b4c54b4a90114aac935b06832925572dc54e0400c908f64b7ce4ef25",
+        "package_counts": {
+          "skip": 3,
+          "pass": 58,
+          "fail": 1
+        },
+        "packages": [
+          {
+            "Action": "skip",
+            "Package": "github.com/ivo-lopes/ivoai/cmd/ivoai",
+            "Elapsed": 0
+          },
+          {
+            "Action": "skip",
+            "Package": "github.com/ivo-lopes/ivoai/cmd/ivoai-output-view-sandbox",
+            "Elapsed": 0
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/agents",
+            "Elapsed": 0.653
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/codebase",
+            "Elapsed": 0.018
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/codesandbox",
+            "Elapsed": 0.008
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/codexresolver",
+            "Elapsed": 0.014
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/compression",
+            "Elapsed": 0.002
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/benchmarkfixtures",
+            "Elapsed": 0.13
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/codexfrontend",
+            "Elapsed": 0.62
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/core",
+            "Elapsed": 0.002
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/docsserver",
+            "Elapsed": 0.009
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/context",
+            "Elapsed": 0.78
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/caveman",
+            "Elapsed": 2.4699999999999998
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/enrollment",
+            "Elapsed": 3.3890000000000002
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/externalmcp",
+            "Elapsed": 0.026
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/doctor",
+            "Elapsed": 3.933
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/headroom",
+            "Elapsed": 0.003
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/knowledgepolicy",
+            "Elapsed": 0.002
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/gateway",
+            "Elapsed": 0.078
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/admin",
+            "Elapsed": 7.9399999999999995
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/config",
+            "Elapsed": 5.292
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/componentupdate",
+            "Elapsed": 6.068
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/observability",
+            "Elapsed": 0.003
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/connections",
+            "Elapsed": 7.698
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/migration",
+            "Elapsed": 3.003
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/memory",
+            "Elapsed": 3.212
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/platform",
+            "Elapsed": 0.05
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/policy",
+            "Elapsed": 0.003
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/project",
+            "Elapsed": 0.019
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/promptgate",
+            "Elapsed": 0.005
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/orchestration",
+            "Elapsed": 0.642
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/routing",
+            "Elapsed": 0.008
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/rtkview",
+            "Elapsed": 0.003
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/secrets",
+            "Elapsed": 0.066
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/server",
+            "Elapsed": 0.111
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/quota",
+            "Elapsed": 0.78
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/serverpool",
+            "Elapsed": 0.003
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/nativecodex",
+            "Elapsed": 3.703
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/servercmd",
+            "Elapsed": 0.541
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/knowledgerouter",
+            "Elapsed": 5.638
+          },
+          {
+            "Action": "fail",
+            "Package": "github.com/ivo-lopes/ivoai/internal/opencodebridge",
+            "Elapsed": 5.589
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/skills",
+            "Elapsed": 3.577
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/session",
+            "Elapsed": 5.133
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/terminalui",
+            "Elapsed": 0.008
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/toolrouting",
+            "Elapsed": 0.002
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/update",
+            "Elapsed": 0.094
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/webauth",
+            "Elapsed": 0.323
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/skillupdate",
+            "Elapsed": 2.951
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/skillgate",
+            "Elapsed": 5.531
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/webmcp",
+            "Elapsed": 0.023
+          },
+          {
+            "Action": "skip",
+            "Package": "github.com/ivo-lopes/ivoai/scripts/upgrade-matrix-v050",
+            "Elapsed": 0
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/workers",
+            "Elapsed": 0.038
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/supplychain",
+            "Elapsed": 1.298
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/components",
+            "Elapsed": 18.883
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/workingcontext",
+            "Elapsed": 5.691
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/skillcatalog",
+            "Elapsed": 15.07
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/codeintel",
+            "Elapsed": 24.665
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/evidence",
+            "Elapsed": 22.357
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/cli",
+            "Elapsed": 26.443
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/orchestrator",
+            "Elapsed": 29.457
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/cavemaneval",
+            "Elapsed": 42.64
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/app",
+            "Elapsed": 59.83
+          }
+        ],
+        "test_event_counts_including_subtests": {
+          "pass": 1781,
+          "skip": 61,
+          "fail": 2
+        },
+        "skipped_tests": [
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/agents",
+            "test": "TestLiveOpenCodeExecutorHTTPContract"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/agents",
+            "test": "TestLiveOpenCodeExecutorNativeLifecycle"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/agents",
+            "test": "TestLiveNativeOpenCodeAUTOExecutor"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/agents",
+            "test": "TestNativeMCPEnvironmentHelper"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/agents",
+            "test": "TestAuthenticatedExecutorsThroughPinnedCaveman"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/codeintel",
+            "test": "TestEfficiencyEvidence"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/codeintel",
+            "test": "TestStructuralConcurrencyEvidence"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/codeintel",
+            "test": "TestExtendedLiveCodexBenchmark"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/codebase",
+            "test": "TestRealPinnedCodebasePreviouslyIndexedFixture"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/codesandbox",
+            "test": "TestNodeConfinement/ABI0"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/codesandbox",
+            "test": "TestNodeConfinement/ABI1"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/codesandbox",
+            "test": "TestNodeConfinement/ABI2"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/codexfrontend",
+            "test": "TestLiveNativeAppServerAdmission"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/codexfrontend",
+            "test": "TestLiveNativeTUI"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/caveman",
+            "test": "TestPinnedCavemanProxyManualCanary"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/admin",
+            "test": "TestLiveAdminBrowserFixture"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/opencodebridge",
+            "test": "TestLiveManagedOpenCodeAPI"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/connections",
+            "test": "TestLivePlaneExternalMCPAuthentication"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/memory",
+            "test": "TestReviewedMemoryHookRendererIsolated"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/nativecodex",
+            "test": "TestNativeCodexProtocolFixture"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/routing",
+            "test": "TestLiveOfficialCatalogHasVerifiedPrimaryCapability"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/rtkview",
+            "test": "TestRealPinnedOSSView"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/opencodebridge",
+            "test": "TestLiveManagedOpenCodeRoutesPromptThroughIVOAI"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/opencodebridge",
+            "test": "TestLiveManagedOpenCodeAttachRendersIVOAIPlugin"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/opencodebridge",
+            "test": "TestLiveCodexGitAndNonGitResume"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/opencodebridge",
+            "test": "TestLiveManagedOpenCodePermissions"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/session",
+            "test": "TestPreviousPublishedBinaryReadsContinuityState"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/nativecodex",
+            "test": "TestNativeCodexHeldPipeFixture"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/nativecodex",
+            "test": "TestLiveOfficialPrimaryEvidenceViewAndOwnedResume"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/nativecodex",
+            "test": "TestLiveOfficialPrimaryViewThenExplicitExact"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/nativecodex",
+            "test": "TestLiveOfficialPrimaryPendingCallbackCancellation"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/skillcatalog",
+            "test": "TestClaudeRedLiveSelectedSkill"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/components",
+            "test": "TestReviewedManagedGraftArtifact"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/opencodebridge",
+            "test": "TestLiveManagedOpenCodeResizeKeyboard"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/opencodebridge",
+            "test": "TestLiveCodexReportedUsageLocalProvider"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/workers",
+            "test": "TestPinnedCodexManagedNativeWorkerBoundary"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/evidence",
+            "test": "TestRealRTKGeneratedGatewayABBA"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/evidence",
+            "test": "TestRealRTKGatewayABBA"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/components",
+            "test": "TestLiveRufloProfileInstallation"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/workingcontext",
+            "test": "TestLiveProtectedArtifactsDoNotPoisonLegacyCoreRollback"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/codeintel",
+            "test": "TestLiveCodexStructuralCapability"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/codeintel",
+            "test": "TestReviewedNativeMCP"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/codeintel",
+            "test": "TestStructuralPerformanceEvidence"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/codeintel",
+            "test": "TestReviewedGraftSandbox"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/codeintel",
+            "test": "TestReviewedGraftOperationsAndIncremental"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/codeintel",
+            "test": "TestReviewedGraftScenarios"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/cavemaneval",
+            "test": "TestPinnedCavemanMCPManualCanary"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/app",
+            "test": "TestFrontendArtifactDirectModes"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/app",
+            "test": "TestOrchestratedFrontendSessionRollbackCompatibility"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/app",
+            "test": "TestLiveGraftManagedOpenCode"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/app",
+            "test": "TestLiveLocalMetadataOfficialAppServer"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/app",
+            "test": "TestMCPArtifactWorkerHelper"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/app",
+            "test": "TestMCPArtifactTaskGrants"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/app",
+            "test": "TestLiveMCPArtifactConfigUpgrade"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/app",
+            "test": "TestLiveNativeAUTOArtifact"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/app",
+            "test": "TestNativeCapabilityPublishedArtifact"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/app",
+            "test": "TestOrchestrationPublishedBinaryConfigUpgradeRollback"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/app",
+            "test": "TestLiveP0VoicehubThroughManagedOpenCode"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/app",
+            "test": "TestLiveP0MCPReference"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/app",
+            "test": "TestLivePrimaryCodePrefetchBenchmark"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/app",
+            "test": "TestPrimaryPrefetchMatrixHostPrefetch"
+          }
+        ],
+        "failures": [
+          {
+            "Package": "github.com/ivo-lopes/ivoai/internal/opencodebridge",
+            "Test": "TestProviderReadinessReportsBoundedObservedState/malformed",
+            "Elapsed": 0.32
+          },
+          {
+            "Package": "github.com/ivo-lopes/ivoai/internal/opencodebridge",
+            "Test": "TestProviderReadinessReportsBoundedObservedState",
+            "Elapsed": 1.44
+          },
+          {
+            "Package": "github.com/ivo-lopes/ivoai/internal/opencodebridge",
+            "Elapsed": 5.589
+          }
+        ]
+      },
+      "failure_notes": "Unchanged legacy provider_readiness_test.go malformed case: 280ms deadline, last=not_requested attempts=0. Cause INCONCLUSIVE; no timeout/oracle changed."
+    },
+    {
+      "command": "go test ./internal/opencodebridge -run ^TestProviderReadinessReportsBoundedObservedState$ -count=3 -v",
+      "exit": 0,
+      "classification": "PASS",
+      "elapsed_seconds": 4.228,
+      "log": "logs/protected-readiness-isolated.log"
+    },
+    {
+      "command": "go test -p 2 ./... -count=1 -json",
+      "exit": 0,
+      "classification": "PASS_WITH_EXPLICIT_OPT_IN_SKIPS",
+      "details": {
+        "log": "logs/protected-full-go-repeat.jsonl.gz",
+        "log_sha256": "f6df064a5ef4a6be96be091c9e9422754c5706310877a818c454fdb45b7a5946",
+        "uncompressed_sha256": "2b4a748613aca22562a5c4e6ac00fe26026ee9c95fff4c5cdc92f5de8df81246",
+        "package_counts": {
+          "skip": 3,
+          "pass": 59
+        },
+        "packages": [
+          {
+            "Action": "skip",
+            "Package": "github.com/ivo-lopes/ivoai/cmd/ivoai",
+            "Elapsed": 0
+          },
+          {
+            "Action": "skip",
+            "Package": "github.com/ivo-lopes/ivoai/cmd/ivoai-output-view-sandbox",
+            "Elapsed": 0
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/admin",
+            "Elapsed": 0.207
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/agents",
+            "Elapsed": 0.291
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/benchmarkfixtures",
+            "Elapsed": 0.01
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/caveman",
+            "Elapsed": 1.278
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/cavemaneval",
+            "Elapsed": 33.315
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/app",
+            "Elapsed": 45.117
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/codebase",
+            "Elapsed": 0.017
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/cli",
+            "Elapsed": 10.214
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/codesandbox",
+            "Elapsed": 0.007
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/codexfrontend",
+            "Elapsed": 0.618
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/codexresolver",
+            "Elapsed": 0.011
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/components",
+            "Elapsed": 4.947
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/componentupdate",
+            "Elapsed": 0.15
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/compression",
+            "Elapsed": 0.005
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/config",
+            "Elapsed": 0.135
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/connections",
+            "Elapsed": 0.285
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/context",
+            "Elapsed": 0.032
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/core",
+            "Elapsed": 0.003
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/docsserver",
+            "Elapsed": 0.007
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/doctor",
+            "Elapsed": 0.078
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/enrollment",
+            "Elapsed": 0.056
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/codeintel",
+            "Elapsed": 17.552
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/evidence",
+            "Elapsed": 7.562
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/externalmcp",
+            "Elapsed": 0.02
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/gateway",
+            "Elapsed": 0.035
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/headroom",
+            "Elapsed": 0.002
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/knowledgepolicy",
+            "Elapsed": 0.002
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/knowledgerouter",
+            "Elapsed": 0.255
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/memory",
+            "Elapsed": 1.169
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/migration",
+            "Elapsed": 1.317
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/observability",
+            "Elapsed": 0.004
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/nativecodex",
+            "Elapsed": 2.622
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/orchestration",
+            "Elapsed": 0.449
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/opencodebridge",
+            "Elapsed": 4.9879999999999995
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/platform",
+            "Elapsed": 0.018
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/policy",
+            "Elapsed": 0.003
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/project",
+            "Elapsed": 0.015
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/promptgate",
+            "Elapsed": 0.004
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/quota",
+            "Elapsed": 0.239
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/routing",
+            "Elapsed": 0.009
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/rtkview",
+            "Elapsed": 0.003
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/secrets",
+            "Elapsed": 0.022
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/server",
+            "Elapsed": 0.075
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/servercmd",
+            "Elapsed": 0.448
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/serverpool",
+            "Elapsed": 0.003
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/session",
+            "Elapsed": 1.036
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/skillcatalog",
+            "Elapsed": 4.645
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/skillgate",
+            "Elapsed": 0.718
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/skills",
+            "Elapsed": 0.74
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/skillupdate",
+            "Elapsed": 2.105
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/supplychain",
+            "Elapsed": 0.427
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/terminalui",
+            "Elapsed": 0.01
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/toolrouting",
+            "Elapsed": 0.002
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/update",
+            "Elapsed": 0.028
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/webauth",
+            "Elapsed": 0.122
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/webmcp",
+            "Elapsed": 0.021
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/workers",
+            "Elapsed": 0.035
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/workingcontext",
+            "Elapsed": 4.522
+          },
+          {
+            "Action": "skip",
+            "Package": "github.com/ivo-lopes/ivoai/scripts/upgrade-matrix-v050",
+            "Elapsed": 0
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/orchestrator",
+            "Elapsed": 25.042
+          }
+        ],
+        "test_event_counts_including_subtests": {
+          "pass": 1783,
+          "skip": 61
+        },
+        "skipped_tests": [
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/admin",
+            "test": "TestLiveAdminBrowserFixture"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/agents",
+            "test": "TestLiveOpenCodeExecutorHTTPContract"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/agents",
+            "test": "TestLiveOpenCodeExecutorNativeLifecycle"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/agents",
+            "test": "TestLiveNativeOpenCodeAUTOExecutor"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/agents",
+            "test": "TestNativeMCPEnvironmentHelper"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/agents",
+            "test": "TestAuthenticatedExecutorsThroughPinnedCaveman"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/caveman",
+            "test": "TestPinnedCavemanProxyManualCanary"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/app",
+            "test": "TestFrontendArtifactDirectModes"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/app",
+            "test": "TestOrchestratedFrontendSessionRollbackCompatibility"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/app",
+            "test": "TestLiveGraftManagedOpenCode"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/app",
+            "test": "TestLiveLocalMetadataOfficialAppServer"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/app",
+            "test": "TestMCPArtifactWorkerHelper"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/app",
+            "test": "TestMCPArtifactTaskGrants"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/app",
+            "test": "TestLiveMCPArtifactConfigUpgrade"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/app",
+            "test": "TestLiveNativeAUTOArtifact"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/app",
+            "test": "TestNativeCapabilityPublishedArtifact"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/cavemaneval",
+            "test": "TestPinnedCavemanMCPManualCanary"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/app",
+            "test": "TestOrchestrationPublishedBinaryConfigUpgradeRollback"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/app",
+            "test": "TestLiveP0VoicehubThroughManagedOpenCode"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/app",
+            "test": "TestLiveP0MCPReference"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/app",
+            "test": "TestLivePrimaryCodePrefetchBenchmark"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/app",
+            "test": "TestPrimaryPrefetchMatrixHostPrefetch"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/codebase",
+            "test": "TestRealPinnedCodebasePreviouslyIndexedFixture"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/codeintel",
+            "test": "TestEfficiencyEvidence"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/codeintel",
+            "test": "TestStructuralConcurrencyEvidence"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/codeintel",
+            "test": "TestExtendedLiveCodexBenchmark"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/codesandbox",
+            "test": "TestNodeConfinement/ABI0"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/codesandbox",
+            "test": "TestNodeConfinement/ABI1"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/codesandbox",
+            "test": "TestNodeConfinement/ABI2"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/codexfrontend",
+            "test": "TestLiveNativeAppServerAdmission"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/codexfrontend",
+            "test": "TestLiveNativeTUI"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/components",
+            "test": "TestReviewedManagedGraftArtifact"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/components",
+            "test": "TestLiveRufloProfileInstallation"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/connections",
+            "test": "TestLivePlaneExternalMCPAuthentication"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/evidence",
+            "test": "TestRealRTKGeneratedGatewayABBA"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/evidence",
+            "test": "TestRealRTKGatewayABBA"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/codeintel",
+            "test": "TestLiveCodexStructuralCapability"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/codeintel",
+            "test": "TestReviewedNativeMCP"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/codeintel",
+            "test": "TestStructuralPerformanceEvidence"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/codeintel",
+            "test": "TestReviewedGraftSandbox"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/codeintel",
+            "test": "TestReviewedGraftOperationsAndIncremental"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/codeintel",
+            "test": "TestReviewedGraftScenarios"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/memory",
+            "test": "TestReviewedMemoryHookRendererIsolated"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/opencodebridge",
+            "test": "TestLiveManagedOpenCodeAPI"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/nativecodex",
+            "test": "TestNativeCodexProtocolFixture"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/nativecodex",
+            "test": "TestNativeCodexHeldPipeFixture"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/nativecodex",
+            "test": "TestLiveOfficialPrimaryEvidenceViewAndOwnedResume"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/nativecodex",
+            "test": "TestLiveOfficialPrimaryViewThenExplicitExact"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/nativecodex",
+            "test": "TestLiveOfficialPrimaryPendingCallbackCancellation"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/opencodebridge",
+            "test": "TestLiveManagedOpenCodeRoutesPromptThroughIVOAI"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/opencodebridge",
+            "test": "TestLiveManagedOpenCodeAttachRendersIVOAIPlugin"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/opencodebridge",
+            "test": "TestLiveCodexGitAndNonGitResume"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/opencodebridge",
+            "test": "TestLiveManagedOpenCodePermissions"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/opencodebridge",
+            "test": "TestLiveManagedOpenCodeResizeKeyboard"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/opencodebridge",
+            "test": "TestLiveCodexReportedUsageLocalProvider"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/routing",
+            "test": "TestLiveOfficialCatalogHasVerifiedPrimaryCapability"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/rtkview",
+            "test": "TestRealPinnedOSSView"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/session",
+            "test": "TestPreviousPublishedBinaryReadsContinuityState"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/skillcatalog",
+            "test": "TestClaudeRedLiveSelectedSkill"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/workers",
+            "test": "TestPinnedCodexManagedNativeWorkerBoundary"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/workingcontext",
+            "test": "TestLiveProtectedArtifactsDoNotPoisonLegacyCoreRollback"
+          }
+        ],
+        "failures": []
+      }
+    },
+    {
+      "command": "go test -race ./internal/evidence ./internal/workingcontext ./internal/orchestrator -count=1 -json",
+      "exit": 0,
+      "classification": "PASS_WITH_EXPLICIT_OPT_IN_SKIPS",
+      "details": {
+        "log": "logs/protected-affected-race.jsonl.gz",
+        "log_sha256": "0b5f3de97e2d9a2fc9b548d03b549ef867471279239f34c9f0607711e948d953",
+        "uncompressed_sha256": "7fb22be46d4cc0fb57b0afad692c7a2cf40f3a8e6f53e9d9ad5a46cf6a75cb05",
+        "package_counts": {
+          "pass": 3
+        },
+        "packages": [
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/evidence",
+            "Elapsed": 55.63
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/workingcontext",
+            "Elapsed": 70.111
+          },
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/orchestrator",
+            "Elapsed": 111.175
+          }
+        ],
+        "test_event_counts_including_subtests": {
+          "pass": 162,
+          "skip": 3
+        },
+        "skipped_tests": [
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/evidence",
+            "test": "TestRealRTKGeneratedGatewayABBA"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/evidence",
+            "test": "TestRealRTKGatewayABBA"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/workingcontext",
+            "test": "TestLiveProtectedArtifactsDoNotPoisonLegacyCoreRollback"
+          }
+        ],
+        "failures": []
+      }
+    },
+    {
+      "command": "go test -race -p 2 ./internal/app -count=1 -json",
+      "exit": 0,
+      "classification": "PASS_WITH_EXPLICIT_OPT_IN_SKIPS",
+      "details": {
+        "log": "logs/protected-full-app-race.jsonl.gz",
+        "log_sha256": "5e3950305dab2b9d8aea71a29816e5962bd494586498f5fa240bc2edaa5bb7b9",
+        "uncompressed_sha256": "c2130a6504c8b26fbbf94bf5e69f3a371f1f47848a1d347186e357a2b6ed0a34",
+        "package_counts": {
+          "pass": 1
+        },
+        "packages": [
+          {
+            "Action": "pass",
+            "Package": "github.com/ivo-lopes/ivoai/internal/app",
+            "Elapsed": 149.827
+          }
+        ],
+        "test_event_counts_including_subtests": {
+          "pass": 349,
+          "skip": 14
+        },
+        "skipped_tests": [
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/app",
+            "test": "TestFrontendArtifactDirectModes"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/app",
+            "test": "TestOrchestratedFrontendSessionRollbackCompatibility"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/app",
+            "test": "TestLiveGraftManagedOpenCode"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/app",
+            "test": "TestLiveLocalMetadataOfficialAppServer"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/app",
+            "test": "TestMCPArtifactWorkerHelper"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/app",
+            "test": "TestMCPArtifactTaskGrants"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/app",
+            "test": "TestLiveMCPArtifactConfigUpgrade"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/app",
+            "test": "TestLiveNativeAUTOArtifact"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/app",
+            "test": "TestNativeCapabilityPublishedArtifact"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/app",
+            "test": "TestOrchestrationPublishedBinaryConfigUpgradeRollback"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/app",
+            "test": "TestLiveP0VoicehubThroughManagedOpenCode"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/app",
+            "test": "TestLiveP0MCPReference"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/app",
+            "test": "TestLivePrimaryCodePrefetchBenchmark"
+          },
+          {
+            "package": "github.com/ivo-lopes/ivoai/internal/app",
+            "test": "TestPrimaryPrefetchMatrixHostPrefetch"
+          }
+        ],
+        "failures": []
+      }
+    },
+    {
+      "command": "go test -race ./internal/evidence ./internal/workingcontext ./internal/orchestrator ./internal/app -run TestProtected -count=1 -v",
+      "exit": 0,
+      "classification": "PASS",
+      "log": "logs/protected-focused-final-race-2.log",
+      "note": "Final production source. Followed by additional foreign/range adversarial assertions in existing orchestrator test; those passed in subsequent full affected race and fullGo repeat."
+    },
+    {
+      "command": "scripts/test-protected-evidence-rollback.sh",
+      "exit": 0,
+      "classification": "PASS_NO_SKIP",
+      "log": "logs/protected-legacy-rollback.log",
+      "legacy_revision": "3be82befea6ed3875373afcb1bfaa450710310ac",
+      "legacy_test_executable_sha256": "ffc0ea8615e35c9176264be9847960fa8e182ae97a87dbf10cab8b23658cb2bc",
+      "note": "Actual old Core source compiled offline, actual full/range handlers deny evidence_; legacy put/read/inventory/GC still work; protected payload unchanged."
+    },
+    {
+      "command": "go vet ./...",
+      "exit": 0,
+      "classification": "PASS",
+      "log": "logs/protected-vet-final.log"
+    },
+    {
+      "command": "bash -n scripts/test-protected-evidence-rollback.sh",
+      "exit": 0,
+      "classification": "PASS"
+    },
+    {
+      "command": "gofmt -l (all changed/new Go files)",
+      "exit": 0,
+      "classification": "PASS_EMPTY_OUTPUT"
+    },
+    {
+      "command": "git diff --check",
+      "exit": 0,
+      "classification": "PASS"
+    }
+  ],
+  "builds": [
+    {
+      "target": "linux/amd64/v1",
+      "command": "CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOAMD64=v1 go build -p 2 -o <private-temp-binary> ./cmd/ivoai",
+      "exit": 0,
+      "sha256": "189bd08bfa96490bae92973be4baaacd590143cabb9e5c82371e65747952b7f5",
+      "bytes": 75752941,
+      "validation": "STATIC_BUILD_ONLY; no ARM hardware or physical no-AVX runtime claim"
+    },
+    {
+      "target": "linux/arm64",
+      "command": "CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -p 2 -o <private-temp-binary> ./cmd/ivoai",
+      "exit": 0,
+      "sha256": "fe9622135c2d9f639df665874be95d489f39e4076eccf86fe0916c825aa08859",
+      "bytes": 73745393,
+      "validation": "STATIC_BUILD_ONLY; no ARM hardware or physical no-AVX runtime claim"
+    }
+  ],
+  "construction_failures_preserved": [
+    {
+      "log": "logs/protected-compile-focused.log",
+      "result": "FAIL",
+      "correction": "New helper referred to absent TaskMetadata.WritePaths; use existing CapabilityProfile.Write. Final source compiled and passed all listed gates."
+    },
+    {
+      "log": "logs/protected-library-race.log",
+      "result": "FAIL",
+      "correction": "New test incorrectly expected ErrDenied; original Recover deliberately maps revoked auth during check to ErrChanged. Existing production contract retained; new test now asserts ErrChanged and zero raw reads."
+    },
+    {
+      "log": "logs/protected-focused-final-race.log",
+      "result": "TOOL_ENVIRONMENT_FAILURE",
+      "correction": "go/gofmt absent from shell PATH; repeated with explicit reviewed local toolchain. No test was run in the failed command."
+    },
+    {
+      "log": "logs/initial-protected-focused.log",
+      "result": "PARTIAL_COVERAGE_ONLY",
+      "correction": "Two packages said no tests to run at that construction stage. Not treated as protected recovery coverage."
+    }
+  ],
+  "security_boundary": {
+    "default_creation": "legacy artifact_; new experimental recovery flag off",
+    "protected_marker": "opaque evidence_ ID, chosen only by trusted host PutRequest.ProtectedRecovery",
+    "missing_binding": "fail closed before legacy Read/ReadRange, including restart and creation flagoff",
+    "canonical_grants": "existing Gateway Request.Authorize and CurrentGeneration, before/after I/O; no client-supplied scope or callback",
+    "recovery_binding_limit": 64,
+    "worker_projection": "same canonical worktree, read-only capability envelope, same Core process, exactly two readers behind existing Local/Access and revocable task bearer",
+    "storage": "existing private ArtifactStore and unchanged ResultRef/metadata JSON",
+    "mutable_replay": false,
+    "live_remote_generation_invented": false,
+    "remote_continuous_revocation_claimed": false,
+    "credentials_in_report": "No detected credential patterns in archived full logs; fixtures only. This is a targeted log check, not certification."
+  },
+  "rollback": {
+    "old_core_rejects_protected_reads": true,
+    "old_legacy_inventory_remains_operational": true,
+    "old_core_ignores_protected_disk_in_quota_and_gc": true,
+    "disk_limit_caveat": "New Core counts both namespaces; old Core can add legacy allowance while ignoring protected bytes. Restore understanding Core for normal GC. Do not delete private evidence to manufacture rollback success.",
+    "protected_refs_persisted_into_session_worker_metadata_by_G0": false,
+    "legacy_unmarked_gateway_refs": "Not retrospectively distinguishable; prior contract retained."
+  },
+  "economics": {
+    "input_token_saving": "NOT_MEASURED",
+    "session_time_saving": "NOT_MEASURED",
+    "quality_equivalence_for_native_clients": "NOT_MEASURED",
+    "note": "Passing local snapshot reuse fixtures is not an economic/session benchmark."
+  },
+  "integration_limits": [
+    "No live Memory/Context adapter, institutional corpus generation or remote auth integration.",
+    "No cross-process/worktree/restart capability recovery; losing binding/seal deliberately denies recovery.",
+    "MCP transport fixture and App wiring are tested; no authenticated native model/client run is claimed.",
+    "No production release, push or merge; excluded from 0.14.",
+    "When combined with PR47 preserve guardTool/checkPrimaryTurn around artifact registrations and rerun combined-head gates.",
+    "Context ingestion unavailable/read-only in the reviewed architecture; CONTEXT_SYNC=BLOCKED pending IVOAI-175; no Context write or synchronization claimed."
+  ],
+  "log_inventory": [
+    {
+      "path": "logs/initial-protected-focused.log",
+      "bytes": 269,
+      "sha256": "e8d9cacdcad7a0dd48ee07dabe807da9806dfe0e72e564d789b099904750b324"
+    },
+    {
+      "path": "logs/protected-affected-race.jsonl.gz",
+      "bytes": 12597,
+      "sha256": "0b5f3de97e2d9a2fc9b548d03b549ef867471279239f34c9f0607711e948d953"
+    },
+    {
+      "path": "logs/protected-app-compile-2.log",
+      "bytes": 52,
+      "sha256": "3028d7be522456dc8603b316a63d10172e5390aa8e12e69fec76965412036425"
+    },
+    {
+      "path": "logs/protected-app-race.log",
+      "bytes": 213,
+      "sha256": "fb811e044ebf2c44cff6dc941db7c64cc6c46f06d1dd71366c6e634f3334b11c"
+    },
+    {
+      "path": "logs/protected-build-amd64.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "logs/protected-build-arm64.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "logs/protected-compile-focused.log",
+      "bytes": 500,
+      "sha256": "12bda416ba1e52595540c02e2ee95f751d61bca3baa23de9e78796e2a82f8af2"
+    },
+    {
+      "path": "logs/protected-focused-final-race-2.log",
+      "bytes": 2145,
+      "sha256": "3ea501e3c619c1040e876b6de653347024f34385df08601cd388620395832be3"
+    },
+    {
+      "path": "logs/protected-focused-final-race.log",
+      "bytes": 41,
+      "sha256": "84c754cb6e71716e7f02a16acd6dcc449ba0311c864853a5acaed6a4ac55ea83"
+    },
+    {
+      "path": "logs/protected-full-app-race.jsonl.gz",
+      "bytes": 26832,
+      "sha256": "5e3950305dab2b9d8aea71a29816e5962bd494586498f5fa240bc2edaa5bb7b9"
+    },
+    {
+      "path": "logs/protected-full-go-repeat.jsonl.gz",
+      "bytes": 137975,
+      "sha256": "f6df064a5ef4a6be96be091c9e9422754c5706310877a818c454fdb45b7a5946"
+    },
+    {
+      "path": "logs/protected-full-go.jsonl.gz",
+      "bytes": 143002,
+      "sha256": "b4b7dc51a3dc53c98d57c0d5b2840ab67598b845471a99793a54cdadc1d9c28e"
+    },
+    {
+      "path": "logs/protected-legacy-rollback.log",
+      "bytes": 663,
+      "sha256": "beb333472d33a8ec00b6dd5be7a801e3ce3a507f7dcb98c43db12801b1f33b0b"
+    },
+    {
+      "path": "logs/protected-library-race.log",
+      "bytes": 812,
+      "sha256": "8091fff6019a72ad2e4fc575c1cd766afe004a019693aa5cceee2be6d5bdc5ef"
+    },
+    {
+      "path": "logs/protected-library-routes-race-2.log",
+      "bytes": 181,
+      "sha256": "2f3230b8530ef0de553ca1c9f112741cda8f6907280c1be2ed7feb9a20dbc2c2"
+    },
+    {
+      "path": "logs/protected-readiness-isolated.log",
+      "bytes": 2660,
+      "sha256": "404cb661fd01f2d86ebbb9c77f61a7302457dcef81d592bd7a5ce012671e2db3"
+    },
+    {
+      "path": "logs/protected-routes-race.log",
+      "bytes": 920,
+      "sha256": "7617a607769d964e1d2cd93183a8d6a5455cf5fd077fa39defc267b118d79696"
+    },
+    {
+      "path": "logs/protected-vet-final.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "logs/protected-vet.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "namespace_audit": {
+    "go": "ArtifactRef, paths, inventory, quota and GC use central ArtifactIDPattern; generator remains legacy-only; Core full/range schemas accept both then enforce binding.",
+    "non_go": "scripts/benchmark-rtk-generated.py:42 intentionally retains artifact_ for its unchanged unprotected output-view fixture; no TS/JS/Rust consumer validator found. No RTK benchmark is reclassified as a protected recovery run."
+  }
+}
