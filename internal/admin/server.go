@@ -187,7 +187,15 @@ func (s *Server) admitRate() bool {
 
 func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
-	s.oauth.Register(mux)
+	// This browser backend registers clients and exchanges/revokes tokens through
+	// the existing Store. Expose only its authorization form, rather than the
+	// Web MCP service's public registration, token and discovery endpoints.
+	authorization := http.NewServeMux()
+	s.oauth.Register(authorization)
+	mux.Handle("GET /oauth/authorize", authorization)
+	mux.Handle("POST /oauth/authorize", authorization)
+	mux.HandleFunc("GET /oauth/", http.NotFound)
+	mux.HandleFunc("POST /oauth/", http.NotFound)
 	mux.HandleFunc("GET /auth/start", s.start)
 	mux.HandleFunc("GET /auth/callback", s.callback)
 	mux.HandleFunc("POST /auth/logout", s.logout)

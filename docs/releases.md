@@ -1,5 +1,26 @@
 # Releases
 
+## v0.14.0 candidate
+
+Adds the [local read-only administrative console](admin-console.md), managed
+Codex native-worker controls, strict invocation usage reports and compression
+policy corrections. Optional VERSION, RTK-OSS and Codebase readers remain narrow
+pilots; the diagnostic native evidence runner still refuses production.
+
+PRs [41](https://github.com/ivo-lopes/ivoai/pull/41),
+[42](https://github.com/ivo-lopes/ivoai/pull/42) and
+[43](https://github.com/ivo-lopes/ivoai/pull/43) each passed 15/15 checks.
+Publication still requires the exact final source and Release gates. No production
+deployment or completed migration is implied.
+
+The new seven-case comparison retained 42 correct real attempts: input +2.85%,
+elapsed −1.44%; the 10%/5% targets failed. All 72 prior attempts remain preserved.
+The global matrix is INCOMPLETE. These measurements predate the later changes
+and do not establish their economic effect. OpenCode removal, general adaptive
+execution, Claude equivalence, Antigravity and Context ingestion remain pending.
+See the [bilingual candidate notes](https://github.com/ivo-lopes/ivoai/blob/main/release-notes/v0.14.0.md)
+for source-bound evidence, compatibility and rollback limits.
+
 ## v0.13.0
 
 Incremental backend-first delivery: fail-closed benchmark evidence, an optional
