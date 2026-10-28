@@ -30,7 +30,7 @@ alone does not certify delivery, particularly over SSH. An unavailable backend
 produces failed/unconfirmed feedback instead of a false success toast.
 
 Release archives include separately checksummed managed OpenCode binaries and
-provenance metadata. The patched build is identified as `1.19.0-ivoai.2`, not as
+provenance metadata. The patched build is identified as `1.19.0-ivoai.3`, not as
 the untouched upstream artifact. Existing immutable objects remain available for
 rollback.
 
@@ -846,3 +846,21 @@ Run `sudo ivoai server docs status`, `systemctl status ivoai-docs.service`, and
 `curl -f http://127.0.0.1:7780/`, then the server LAN address. If loopback succeeds
 but LAN fails, inspect the host firewall and the Nginx Proxy Manager source route;
 do not replace the production service with `docusaurus start`.
+
+### Managed OpenCode requests an update
+
+`MANAGED_OPENCODE_UPDATE_REQUIRED` means the retained executable predates the
+reviewed local-plugin contract. Use an official IVOAI release and run its managed
+setup/update; existing history, configuration and authentication are preserved.
+A source-only build keeps upstream catalog entries unless reviewed release
+metadata was embedded, so plain setup cannot fabricate this patched artifact.
+
+The `.3` private runtime loads only IVOAI's owned local entrypoints and never
+installs npm dependencies at runtime. Older `.2` builds may wait for the npm
+registry during provider readiness even with model fetching disabled. Timeout
+limits are unchanged; registry failure is not a valid managed workaround.
+
+The private asset root must use a canonical path with no symlink ancestors.
+Use canonical runtime/cache paths targeting the same retained directories; IVOAI
+does not relocate history or rewrite symlinks automatically. Noncanonical legacy
+layouts need operator correction before this managed contract can load.

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="generator" content="Docusaurus v3.10.2">
 <title data-rh="true">Releases | IVOAI</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="http://localhost:7780/pt-BR/docs/next/releases"><meta data-rh="true" property="og:locale" content="pt_BR"><meta data-rh="true" property="og:locale:alternate" content="en_US"><meta data-rh="true" name="docusaurus_locale" content="pt-BR"><meta data-rh="true" name="docsearch:language" content="pt-BR"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="Releases | IVOAI"><meta data-rh="true" name="description" content="Candidata v0.14.0"><meta data-rh="true" property="og:description" content="Candidata v0.14.0"><link data-rh="true" rel="icon" href="/pt-BR/img/favicon.svg"><link data-rh="true" rel="canonical" href="http://localhost:7780/pt-BR/docs/next/releases"><link data-rh="true" rel="alternate" href="http://localhost:7780/docs/next/releases" hreflang="en-US"><link data-rh="true" rel="alternate" href="http://localhost:7780/pt-BR/docs/next/releases" hreflang="pt-BR"><link data-rh="true" rel="alternate" href="http://localhost:7780/docs/next/releases" hreflang="x-default"><script data-rh="true" type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Releases","item":"http://localhost:7780/pt-BR/docs/next/releases"}]}</script><link rel="stylesheet" href="/pt-BR/assets/css/styles.ef9ae034.css">
-<script src="/pt-BR/assets/js/runtime~main.4a21ca14.js" defer="defer"></script>
+<script src="/pt-BR/assets/js/runtime~main.4609c3a1.js" defer="defer"></script>
 <script src="/pt-BR/assets/js/main.1b5f3623.js" defer="defer"></script>
 </head>
 <body>
@@ -15,16 +15,24 @@
 <h2 class="anchor anchorTargetStickyNavbar_J2Vv" id="candidata-v0140">Candidata v0.14.0<a href="#candidata-v0140" class="hash-link" aria-label="Link direto para Candidata v0.14.0" title="Link direto para Candidata v0.14.0" translate="no">​</a></h2>
 <p>Adiciona o <a class="" href="/pt-BR/docs/next/admin-console">console administrativo local de consulta</a>, controles
 de workers nativos do Codex gerenciado, métricas estritas de uma execução e
-correções da política de compressão. VERSION, RTK-OSS e Codebase continuam pilotos
+correções da política de compressão. O frontend legado privado <code>.3</code> dispensa
+instalação do SDK npm em runtime e exige atualização revisada de builds antigos.
+VERSION, RTK-OSS e Codebase continuam pilotos
 opcionais limitados; o runner nativo de evidências ainda recusa produção.</p>
 <p>Os PRs <a href="https://github.com/ivo-lopes/ivoai/pull/41" target="_blank" rel="noopener noreferrer" class="">41</a>,
-<a href="https://github.com/ivo-lopes/ivoai/pull/42" target="_blank" rel="noopener noreferrer" class="">42</a> e
-<a href="https://github.com/ivo-lopes/ivoai/pull/43" target="_blank" rel="noopener noreferrer" class="">43</a> passaram em 15/15 verificações cada.
+<a href="https://github.com/ivo-lopes/ivoai/pull/42" target="_blank" rel="noopener noreferrer" class="">42</a>,
+<a href="https://github.com/ivo-lopes/ivoai/pull/43" target="_blank" rel="noopener noreferrer" class="">43</a> e
+<a href="https://github.com/ivo-lopes/ivoai/pull/44" target="_blank" rel="noopener noreferrer" class="">44</a> passaram em 15/15 verificações cada.
 A publicação ainda depende dos gates do fonte final e de Release. Isso não
 representa implantação em produção ou migração concluída.</p>
 <p>A nova comparação de sete casos preservou 42 tentativas reais corretas: entrada
 +2,85% e tempo −1,44%; as metas de 10%/5% foram reprovadas. As 72 tentativas
-anteriores continuam preservadas. A matriz global é INCOMPLETE. Essas medições
+anteriores continuam preservadas. Outros <a href="https://github.com/ivo-lopes/ivoai/blob/99fe07a93e242d2163116bf6dd8d265c3c8f9d8c/release-notes/benchmark-matrix16-edit-live-validation.md" target="_blank" rel="noopener noreferrer" class="">12 turnos de edição</a>
+passaram nos oráculos declarados, mas reprovaram as mesmas metas: entrada −0,01257%,
+tempo das fases −2,28091% e processo −2,46501%. Ambos usaram leitura direta, sem
+prefetch/Graft/Gateway. Os 126 turnos históricos possuem condições diferentes e
+não são agregados como economia causal. O novo harness não integra esta release.
+A matriz global é INCOMPLETE. Essas medições
 antecedem as mudanças posteriores e não comprovam seu efeito econômico. Remoção
 OpenCode, execução adaptativa geral, equivalência Claude, Antigravity e ingestão
 Context continuam pendentes. Consulte as <a href="https://github.com/ivo-lopes/ivoai/blob/main/release-notes/v0.14.0.md" target="_blank" rel="noopener noreferrer" class="">notas bilíngues da candidata</a>

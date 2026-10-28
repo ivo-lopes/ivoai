@@ -25,10 +25,10 @@ func TestManagedOpenCodeReleaseMetadataPromotesThroughInstaller(t *testing.T) {
 	if runtime.GOOS != "linux" || (runtime.GOARCH != "amd64" && runtime.GOARCH != "arm64") {
 		t.Skip("managed release targets Linux amd64/arm64")
 	}
-	archive := testArchive(t, "opencode", []byte("#!/bin/sh\necho 1.19.0-ivoai.2\n"))
+	archive := testArchive(t, "opencode", []byte("#!/bin/sh\necho 1.19.0-ivoai.3\n"))
 	digest := sha256.Sum256(archive)
 	metadata := managedOpenCodeMetadata{
-		Version: "1.19.0-ivoai.2", Platform: runtime.GOOS + "/" + runtime.GOARCH,
+		Version: "1.19.0-ivoai.3", Platform: runtime.GOOS + "/" + runtime.GOARCH,
 		SHA256: hex.EncodeToString(digest[:]), SourceSHA256: strings.Repeat("b", 64), PatchSHA256: strings.Repeat("c", 64),
 		UpstreamRevision: "733b2c627e5aec39cb33cc22373bdce33053ef2c",
 		Archive:          "ivoai-opencode_linux_" + runtime.GOARCH + ".tar.gz",
@@ -77,7 +77,7 @@ func TestManagedOpenCodeReleaseMetadataPromotesThroughInstaller(t *testing.T) {
 
 func TestManagedOpenCodeBuildIdentity(t *testing.T) {
 	metadata := managedOpenCodeMetadata{
-		Version: "1.19.0-ivoai.2", Platform: "linux/amd64",
+		Version: "1.19.0-ivoai.3", Platform: "linux/amd64",
 		SHA256: strings.Repeat("a", 64), SourceSHA256: strings.Repeat("b", 64), PatchSHA256: strings.Repeat("c", 64),
 		UpstreamRevision: "733b2c627e5aec39cb33cc22373bdce33053ef2c",
 		Archive:          "ivoai-opencode_linux_amd64.tar.gz",
@@ -112,12 +112,13 @@ func TestManagedOpenCodeBuildIdentity(t *testing.T) {
 		t.Fatal("official prerelease tag contract rejected", err)
 	}
 	for name, mutate := range map[string]func(*managedOpenCodeMetadata){
-		"different-platform": func(m *managedOpenCodeMetadata) { m.Platform = "linux/arm64" },
-		"different-upstream": func(m *managedOpenCodeMetadata) { m.UpstreamRevision = strings.Repeat("f", 40) },
-		"wrong-digest":       func(m *managedOpenCodeMetadata) { m.SHA256 = "invalid" },
-		"changed-artifact":   func(m *managedOpenCodeMetadata) { m.SHA256 = strings.Repeat("f", 64) },
-		"wrong-identity":     func(m *managedOpenCodeMetadata) { m.Revision = strings.Repeat("e", 64) },
-		"foreign-publisher":  func(m *managedOpenCodeMetadata) { m.URL = strings.Replace(m.URL, "ivo-lopes/ivoai", "other/repo", 1) },
+		"old-managed-version": func(m *managedOpenCodeMetadata) { m.Version = "1.19.0-ivoai.2" },
+		"different-platform":  func(m *managedOpenCodeMetadata) { m.Platform = "linux/arm64" },
+		"different-upstream":  func(m *managedOpenCodeMetadata) { m.UpstreamRevision = strings.Repeat("f", 40) },
+		"wrong-digest":        func(m *managedOpenCodeMetadata) { m.SHA256 = "invalid" },
+		"changed-artifact":    func(m *managedOpenCodeMetadata) { m.SHA256 = strings.Repeat("f", 64) },
+		"wrong-identity":      func(m *managedOpenCodeMetadata) { m.Revision = strings.Repeat("e", 64) },
+		"foreign-publisher":   func(m *managedOpenCodeMetadata) { m.URL = strings.Replace(m.URL, "ivo-lopes/ivoai", "other/repo", 1) },
 		"credentials-in-url": func(m *managedOpenCodeMetadata) {
 			m.URL = strings.Replace(m.URL, "https://", "https://user:fixture@", 1)
 		},
