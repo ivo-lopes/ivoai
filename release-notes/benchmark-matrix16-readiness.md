@@ -166,3 +166,36 @@ offline verdicts. No Plane item or economic gate is marked complete here.
 Rollback is an ordinary revert of this harness/catalog increment; historical
 datasets and runtime defaults remain unchanged. No release, push or merge is
 part of this delivery.
+
+## Environment boundary: separate post-catalog hardening
+
+Checkpoint `9ed891e900c586a9522ce6ba0527ff45b98d6ac3` was exercised **offline
+only**, before this environment hardening. Its binary/discovery/oracle reports
+remain unchanged; it is not an approved inference checkpoint. Review found that
+the old harness/driver inherited unrelated environment variables after removing
+only two API-key names. Native executor reads in the added cases make that an
+unnecessary secret-exposure boundary, even though no inference was performed.
+
+The driver now builds an explicit environment, adds only its own benchmark paths,
+forces GOMAXPROCS=2/private TMPDIR and admits the one known experimental Gateway
+flag. The Codex child independently uses a strict allowlist: HOME, CODEX_HOME,
+PATH, LANG, standard POSIX/glibc LC categories, TZ, TERM, TMPDIR, required XDG
+directories and DBUS_SESSION_BUS_ADDRESS for official keyring authentication.
+Unrecognized `LC_*` names are not a wildcard escape. Authentication stays with
+the official client and its existing HOME/CODEX_HOME/keyring scope; no auth file,
+token or credential is copied, read or rewritten by this filter or its tests.
+This does not claim that keeping HOME makes its files unreachable to the client.
+
+Arbitrary API keys, Git/provider tokens, AWS/Azure credentials, OTEL headers,
+external MCP configuration, loader/Python injection and proxy/certificate
+overrides are not inherited. Proxies and custom CA variables are absent by
+default; the client uses system/default trust. No override is introduced without
+a demonstrated requirement and separate host-controlled review. An environment
+requiring such overrides may be unavailable for a future benchmark; it must not
+silently restore broad environment inheritance.
+
+Regressions inject fake secrets alongside a private fake HOME/CODEX_HOME scope,
+verify both environment boundaries and preserve those authentication path values
+without reading credentials. The fixed-source binary and provenance must be
+rebuilt in a new private directory before any real comparison. Historical JSON,
+failed observations and the pre-hardening checkpoint are not relabeled or erased.

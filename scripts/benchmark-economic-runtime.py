@@ -29,6 +29,25 @@ COUNTS = ("TotalMS", "ProviderMS", "PrefetchMS", "PromptBytes", "EvidenceBytes",
           "StructuralCalls", "CacheHits")
 OPTIONAL_COUNTS = ("InputTokens", "CachedInputTokens", "OutputTokens", "ReasoningTokens",
                    "ToolDescriptionTokens", "NativeCPUMS", "NativePeakMemoryBytes")
+CLIENT_ENVIRONMENT = (
+    "HOME", "CODEX_HOME", "PATH", "LANG", "TZ", "TERM", "TMPDIR",
+    "LC_ALL", "LC_CTYPE", "LC_COLLATE", "LC_MESSAGES", "LC_MONETARY", "LC_NUMERIC", "LC_TIME",
+    "LC_PAPER", "LC_NAME", "LC_ADDRESS", "LC_TELEPHONE", "LC_MEASUREMENT", "LC_IDENTIFICATION",
+    "XDG_CONFIG_HOME", "XDG_DATA_HOME", "XDG_CACHE_HOME", "XDG_STATE_HOME", "XDG_RUNTIME_DIR",
+    "DBUS_SESSION_BUS_ADDRESS",
+)
+
+
+def benchmark_environment():
+    """Keep native CLI auth scope; no arbitrary secrets, proxies, CAs or hooks.
+
+    Benchmark paths and process controls are added explicitly by main. No auth
+    file is read, copied or rewritten; official CLI login remains its own.
+    """
+    environment = {key: os.environ[key] for key in CLIENT_ENVIRONMENT if key in os.environ}
+    if os.environ.get("IVOAI_EXPERIMENTAL_EVIDENCE_GATEWAY") == "1":
+        environment["IVOAI_EXPERIMENTAL_EVIDENCE_GATEWAY"] = "1"
+    return environment
 
 
 def sha256(path):
@@ -361,7 +380,7 @@ def main(argv=None):
     args.output.mkdir(mode=0o700, parents=True, exist_ok=False)
     temporary = args.output / "tmp"
     temporary.mkdir(mode=0o700)
-    env = {k: v for k, v in os.environ.items() if k not in ("OPENAI_API_KEY", "CODEX_API_KEY")}
+    env = benchmark_environment()
     env.update(TMPDIR=str(temporary.resolve()), GOMAXPROCS="2", IVOAI_GRAFT_PREFETCH_LIVE="1",
                IVOAI_LIVE_CODEX_PATH=str(args.codex.resolve()), IVOAI_GRAFT_TEST_NODE=str(args.node.resolve()),
                IVOAI_GRAFT_TEST_DIST=str(args.distribution.resolve()),

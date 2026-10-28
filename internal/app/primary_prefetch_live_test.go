@@ -464,13 +464,48 @@ func (b *prefetchLiveBuffer) Write(body []byte) (int, error) {
 }
 func prefetchSubscriptionEnvironment() []string {
 	env := []string{}
-	for _, entry := range os.Environ() {
-		name, _, _ := strings.Cut(entry, "=")
-		if name != "OPENAI_API_KEY" && name != "CODEX_API_KEY" {
-			env = append(env, entry)
+	// Preserve official CLI authentication locations, never copy/read auth.
+	// Native execution must not inherit unrelated provider keys, tokens,
+	// telemetry, MCP configuration, loader injection, proxies or custom CAs.
+	for _, name := range []string{
+		"HOME", "CODEX_HOME", "PATH", "LANG", "TZ", "TERM", "TMPDIR",
+		"LC_ALL", "LC_CTYPE", "LC_COLLATE", "LC_MESSAGES", "LC_MONETARY", "LC_NUMERIC", "LC_TIME",
+		"LC_PAPER", "LC_NAME", "LC_ADDRESS", "LC_TELEPHONE", "LC_MEASUREMENT", "LC_IDENTIFICATION",
+		"XDG_CONFIG_HOME", "XDG_DATA_HOME", "XDG_CACHE_HOME", "XDG_STATE_HOME", "XDG_RUNTIME_DIR",
+		"DBUS_SESSION_BUS_ADDRESS",
+	} {
+		if value, present := os.LookupEnv(name); present {
+			env = append(env, name+"="+value)
 		}
 	}
 	return env
+}
+
+func TestPrimaryPrefetchSubscriptionEnvironment(t *testing.T) {
+	home := t.TempDir()
+	safe := map[string]string{"HOME": home, "CODEX_HOME": filepath.Join(home, "official-cli-scope"), "PATH": "/fixture/bin", "LANG": "C.UTF-8", "LC_ALL": "C.UTF-8", "TERM": "dumb", "TZ": "UTC", "TMPDIR": filepath.Join(home, "tmp"), "XDG_CONFIG_HOME": filepath.Join(home, "config"), "XDG_RUNTIME_DIR": filepath.Join(home, "runtime"), "DBUS_SESSION_BUS_ADDRESS": "unix:path=" + filepath.Join(home, "bus")}
+	for key, value := range safe {
+		t.Setenv(key, value)
+	}
+	unsafe := []string{"OPENAI_API_KEY", "CODEX_API_KEY", "ANTHROPIC_API_KEY", "AZURE_OPENAI_API_KEY", "GITHUB_TOKEN", "GH_TOKEN", "GEMINI_API_KEY", "AWS_SECRET_ACCESS_KEY", "OTEL_EXPORTER_OTLP_HEADERS", "MCP_SERVER_TOKEN", "IVOAI_SERVER_TOKEN", "LD_PRELOAD", "LD_LIBRARY_PATH", "PYTHONPATH", "PYTHONSTARTUP", "HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "NO_PROXY", "http_proxy", "https_proxy", "SSL_CERT_FILE", "SSL_CERT_DIR", "NODE_EXTRA_CA_CERTS", "LC_PRIVATE_TOKEN", "IVOAI_GRAFT_TEST_DIST", "IVOAI_EXPERIMENTAL_EVIDENCE_GATEWAY"}
+	for _, key := range unsafe {
+		t.Setenv(key, "private-sentinel")
+	}
+	actual := map[string]string{}
+	for _, entry := range prefetchSubscriptionEnvironment() {
+		key, value, _ := strings.Cut(entry, "=")
+		actual[key] = value
+	}
+	for key, want := range safe {
+		if actual[key] != want {
+			t.Fatalf("official CLI scope/process environment not preserved: %s", key)
+		}
+	}
+	for _, key := range unsafe {
+		if _, present := actual[key]; present {
+			t.Fatalf("unrelated environment inherited: %s", key)
+		}
+	}
 }
 func guardPrefetchCodexConfig(t *testing.T) {
 	t.Helper()

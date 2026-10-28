@@ -150,6 +150,49 @@ class SummaryTests(unittest.TestCase):
 
 
 class DriverTests(unittest.TestCase):
+    def test_driver_allowlist_preserves_auth_scope_without_inheriting_secrets(self):
+        with tempfile.TemporaryDirectory() as directory:
+            home = Path(directory)
+            temporary = home / "tmp"
+            temporary.mkdir()
+            safe = {"HOME": str(home), "CODEX_HOME": str(home / "official-auth-scope"),
+                    "PATH": "/fixture/bin", "LANG": "C.UTF-8", "LC_ALL": "C.UTF-8",
+                    "TZ": "UTC", "TERM": "dumb", "TMPDIR": str(temporary),
+                    "XDG_CONFIG_HOME": str(home / "config"), "XDG_RUNTIME_DIR": str(home / "runtime"),
+                    "DBUS_SESSION_BUS_ADDRESS": "unix:path=" + str(home / "bus")}
+            blocked = ("OPENAI_API_KEY", "CODEX_API_KEY", "ANTHROPIC_API_KEY", "AZURE_OPENAI_API_KEY",
+                       "GITHUB_TOKEN", "GH_TOKEN", "GOOGLE_API_KEY", "GEMINI_API_KEY", "AWS_SECRET_ACCESS_KEY",
+                       "OTEL_EXPORTER_OTLP_HEADERS", "OTEL_EXPORTER_OTLP_ENDPOINT", "MCP_SERVER_TOKEN",
+                       "IVOAI_SERVER_TOKEN", "LD_PRELOAD", "LD_LIBRARY_PATH", "PYTHONPATH", "PYTHONSTARTUP",
+                       "HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "NO_PROXY", "http_proxy", "https_proxy",
+                       "SSL_CERT_FILE", "SSL_CERT_DIR", "CURL_CA_BUNDLE", "NODE_EXTRA_CA_CERTS", "LC_PRIVATE_TOKEN")
+            fixture = {**safe, **{key: "PRIVATE_ENV_SENTINEL" for key in blocked},
+                       "GOMAXPROCS": "999", "IVOAI_EXPERIMENTAL_EVIDENCE_GATEWAY": "1",
+                       "IVOAI_GRAFT_TEST_DIST": "PRIVATE_ENV_SENTINEL",
+                       "IVOAI_GRAFT_PREFETCH_DIAGNOSTICS": "PRIVATE_ENV_SENTINEL"}
+            captured = []
+            original = BENCHMARK.run_attempt
+
+            def capture(command, environment, *args, **kwargs):
+                captured.append(environment.copy())
+                return original(command, environment, *args, **kwargs)
+
+            with mock.patch.dict(os.environ, fixture, clear=True), \
+                    mock.patch.object(BENCHMARK, "run_attempt", side_effect=capture):
+                status, _ = self.execute("valid")
+            self.assertEqual(status, 0)  # Synthetic test processes, no client.
+            self.assertEqual(len(captured), 6)
+            for environment in captured:
+                for key, value in safe.items():
+                    if key != "TMPDIR":  # Driver owns each comparison's private temporary root.
+                        self.assertEqual(environment[key], value)
+                self.assertTrue(Path(environment["TMPDIR"]).is_absolute())
+                self.assertEqual(environment["GOMAXPROCS"], "2")
+                self.assertEqual(environment["IVOAI_EXPERIMENTAL_EVIDENCE_GATEWAY"], "1")
+                self.assertFalse(set(blocked) & environment.keys())
+                self.assertNotIn("PRIVATE_ENV_SENTINEL", environment.values())
+                self.assertNotIn("IVOAI_GRAFT_PREFETCH_DIAGNOSTICS", environment)
+
     def execute(self, mode):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
