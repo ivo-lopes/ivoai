@@ -11,8 +11,10 @@ Native provider/setup independence and optional adaptive primary/Core DAG
 composition are prepared as a candidate. G0 is wired into already-admitted code
 prefetch behind its default-OFF experimental flag, with protected Core/MCP exact
 recovery and a separate protected-creation opt-in. G1a Memory remains a host SPI,
-unwired to App, scheduler or clients; PR55 is offline preflight only. Adaptive is OFF by default. Final CI,
-actual canary and distribution validation remain separate gates. The published
+unwired to App, scheduler or clients; PR55 is offline preflight only. Adaptive stays
+OFF by default. The separate real canary failed and blocks publication; cause UNKNOWN.
+The earlier PR57 CI pass applies only to head `03492d1d`; follow-up CI and distribution
+validation remain separate gates. The published
 v0.14.0 status below is historical. See [releases](releases.md).
 
 ## Current release: v0.14.0

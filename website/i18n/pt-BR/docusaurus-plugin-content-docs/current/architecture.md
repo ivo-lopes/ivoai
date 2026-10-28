@@ -13,7 +13,9 @@ sob flag experimental OFF por padrão, com recuperação exata Core/MCP protegid
 opt-in separado para criação protegida. G1a Memory segue SPI do host sem ligação
 a App, scheduler ou clientes; PR55 é apenas preflight offline. Adaptação fica OFF
 por padrão.
-CI final, canário real e artefatos exigem validações próprias. O estado publicado
+O canário real separado falhou e bloqueia publicação; causa UNKNOWN. O CI anterior
+do PR57 se aplica somente ao head `03492d1d`; CI desta atualização e artefatos exigem
+validações próprias. O estado publicado
 da v0.14.0 abaixo é histórico. Consulte [releases](releases.md).
 
 ## Release atual: v0.14.0

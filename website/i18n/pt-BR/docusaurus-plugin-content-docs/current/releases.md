@@ -2,6 +2,15 @@
 
 ## v0.15.0 — candidata local, não publicada
 
+**Publicação bloqueada por falha no canário real; a candidata não foi publicada.**
+O head `03492d1d` do PR57 passou 16 checks no [CI do head anterior](https://github.com/ivo-lopes/ivoai/actions/runs/40780164326).
+Esse resultado não é CI desta atualização. O canário separado do Core `0bab9b34`
+teve uma tentativa, zero eventos JSON e nenhuma resposta após 5.219 segundos;
+uso UNAVAILABLE e causa de startup UNKNOWN. Workers/tasks/failovers Core foram
+zero; não houve segunda tentativa Core/CLI. Retries nativos seguem UNKNOWN.
+O canário fica fora dos 126 turnos históricos e não prova ausência de chamadas
+ao provedor. Consulte o [registro do canário reprovado](https://github.com/ivo-lopes/ivoai/blob/release/v0.15.0-candidate/release-notes/v0.15.0-canary-failure.md).
+
 A fonte candidata `0bab9b34` inclui independência dos provedores/setup nativos,
 Gateway no prefetch de código já admitido sob flag OFF por padrão, recuperação
 exata G0 Core/MCP protegida e SPI G1a de snapshots Memory sem ligação ao App,
@@ -16,9 +25,9 @@ PR55 é pré-requisito offline de fonte, não concorrência observada de cliente
 PR54/56 não incorporados ficam excluídos. Economia global continua INCOMPLETE;
 evidências adversas permanecem. Paridade geral de modelos/TUI/Claude/Antigravity
 e administração não está comprovada; Context segue BLOCKED/IVOAI-175. O advisory
-LOW de deepmerge na documentação permanece needs_review. Canário real, CI final,
-validação dos artefatos e publicação continuam pendentes, independentemente da
-preparação desta candidata. Consulte as [notas bilíngues preliminares](https://github.com/ivo-lopes/ivoai/blob/release/v0.15.0-candidate/release-notes/v0.15.0.md)
+LOW de deepmerge na documentação permanece needs_review. O canário real falhou;
+a publicação está bloqueada. CI desta atualização e validação dos artefatos
+continuam gates separados pendentes. Consulte as [notas bilíngues preliminares](https://github.com/ivo-lopes/ivoai/blob/release/v0.15.0-candidate/release-notes/v0.15.0.md)
 para migrar/reverter sem apagar dados preservados nem reproduzir mutações.
 
 ## v0.14.0

@@ -2,6 +2,15 @@
 
 ## v0.15.0 — local candidate, not published
 
+**Publication is blocked by a failed real canary; the candidate is not published.**
+PR57 head `03492d1d` passed 16 checks in the [prior-head CI run](https://github.com/ivo-lopes/ivoai/actions/runs/40780164326).
+That result is not CI for this follow-up. The separate `0bab9b34` Core canary had
+one attempt, zero JSON events and no answer after 5.219 seconds; usage is
+UNAVAILABLE and startup cause UNKNOWN. Core workers/tasks/failovers were zero;
+there was no second Core/CLI attempt. Native retries remain UNKNOWN. The canary
+is separate from the 126 historical turns and proves no absence of provider
+requests. See the [failed-canary record](https://github.com/ivo-lopes/ivoai/blob/release/v0.15.0-candidate/release-notes/v0.15.0-canary-failure.md).
+
 Candidate source `0bab9b34` includes native-provider/default-setup independence,
 default-OFF Gateway code-prefetch with protected G0 Core/MCP recovery, unwired
 G1a Memory snapshot SPI, offline benchmark
@@ -16,8 +25,8 @@ PR55 is a source-only offline concurrency prerequisite, not observed concurrent
 clients. Unmerged PR54/56 are excluded. Global economics remains INCOMPLETE;
 historical adverse evidence is unchanged. General model/TUI/Claude/Antigravity
 and admin parity are unproven; Context remains BLOCKED/IVOAI-175. The LOW docs
-deepmerge advisory remains needs_review. Actual canary, final CI, distribution
-checks and publication are pending, independently of preparing this candidate.
+deepmerge advisory remains needs_review. The real canary failed; publication is
+blocked. Follow-up CI and distribution checks remain separate pending gates.
 See the [draft bilingual notes](https://github.com/ivo-lopes/ivoai/blob/release/v0.15.0-candidate/release-notes/v0.15.0.md)
 for migration and rollback without deleting retained data or replaying mutations.
 

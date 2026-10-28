@@ -1,0 +1,8 @@
+{
+  "verify_release014.py": "15c166f204ddaaf776a0b5a891dcb5fba06fc37bd82e9a39d81bd30e49763976",
+  "buildinfo_reader.go": "ed9718c5e503d11c70ebbc25fe887ce7ae5abf578faadbe450e334d0503e0eb1",
+  "test_verifier.py": "515e3211777db477b54f9e3fa929e9c801aa88c1e2f01be15dacd668c9ef7fa1",
+  "old-pax-4MiB-fixture.tar.gz": "e2ab494487248ca04e3008b627722636ad7d76c188888e6ceb033036dc4726e6",
+  "verify_release.py": "e0a9dbbe495937c2f3851ffd8f9b7191df86a82c06965fc9cf6b0f22b9f58c36",
+  "test_runner.py": "cb048c8eab8231dae1c99ae726bef8e3cccef2faa337ad80f17b8c3a8e578e6d"
+}
