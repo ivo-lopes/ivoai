@@ -1,0 +1,285 @@
+{
+  "schema_version": 1,
+  "recorded_at_utc": "2026-10-28T14:07:03.838336+00:00",
+  "base_commit": "573c31cbeaedb79d3b6029d3f89af8b8a08e98ea",
+  "scope": "Existing managed Codex CLI native collaboration handler; synthetic local protocol, no model inference/authentication/TUI/economic certification. No production Evidence Runner admission.",
+  "official_pin": {
+    "version": "0.162.1",
+    "source": "https://github.com/openai/codex/releases/tag/rust-v0.162.1",
+    "codex_archive_sha256": "86f268d81b898f3e144c5ecff2ad2fda2c5802e042d6195b72538fe0fa125057",
+    "codex_executable_sha256": "628e35487d888a28f0427fc37501da529dd3d81fcbad7a2c3421c1e8670d92e1",
+    "companion_archive_sha256": "458239ea45c1fc508d89695f180ab352f2834709a8a46929a4466f4f04399ada",
+    "companion_executable_sha256": "ec71830690a7c0024916ee0c99fbdc635bc6e747ff665ea4f03a8389bbcb6b30"
+  },
+  "checks": {
+    "focused_go_test_resolver_workers_app": "PASS",
+    "focused_go_vet_resolver_workers_app": "PASS",
+    "focused_go_race_resolver_workers_app_including_official_proof": "PASS",
+    "opt_in_download_extract_hash_and_real_protocol_script": "PASS",
+    "bash_syntax": "PASS",
+    "git_diff_check": "PASS",
+    "shellcheck": "NOT_RUN_LOCAL_UNAVAILABLE",
+    "linux_amd64_goamd64_v1_cgo0_worker_test_build": "PASS_NOT_SPECIAL_CPU_RUNTIME",
+    "linux_arm64_cgo0_worker_test_build": "PASS_NOT_EXECUTED",
+    "full_repository_suite": "NOT_RUN_LOCAL_PENDING_CI",
+    "profile_selector_gate_final_delta_focused_race": "PASS; full three-package race preceded the selector-only rejection delta"
+  },
+  "attempts": [
+    {
+      "log_sha256": "b4677cdcdbf31a268d3db78a86e1afa8fbdf2a7e64f87b6ffa80701ba21bca6b",
+      "attempt": "pinned-live-go-test-attempt1-legacy-profile-failure.log",
+      "outcome": "FAIL_INVALID_PROFILE_PREFLIGHT",
+      "cases": [
+        {
+          "case": "legacy_flags_positive",
+          "tool_advertised": true,
+          "spawned_identity": true,
+          "child_model_requests": 1,
+          "http_requests": 3,
+          "unsupported_result": false
+        },
+        {
+          "case": "v2_overrides_agents_false",
+          "tool_advertised": true,
+          "spawned_identity": true,
+          "child_model_requests": 1,
+          "http_requests": 3,
+          "unsupported_result": false
+        },
+        {
+          "case": "cli_enable_overrides_config",
+          "tool_advertised": true,
+          "spawned_identity": true,
+          "child_model_requests": 1,
+          "http_requests": 3,
+          "unsupported_result": false
+        },
+        {
+          "case": "managed_clean",
+          "tool_advertised": false,
+          "spawned_identity": false,
+          "child_model_requests": 0,
+          "http_requests": 2,
+          "unsupported_result": true
+        }
+      ],
+      "invalid_profile_preflight_count": 1
+    },
+    {
+      "log_sha256": "56086ef1c5c0c2620078e5e490b0326b47e3b7e77712f883b68fe70b17ad6fcc",
+      "attempt": "pinned-live-go-test-attempt2.log",
+      "outcome": "PASS",
+      "cases": [
+        {
+          "case": "legacy_flags_positive",
+          "tool_advertised": true,
+          "spawned_identity": true,
+          "child_model_requests": 1,
+          "http_requests": 3,
+          "unsupported_result": false
+        },
+        {
+          "case": "v2_overrides_agents_false",
+          "tool_advertised": true,
+          "spawned_identity": true,
+          "child_model_requests": 1,
+          "http_requests": 3,
+          "unsupported_result": false
+        },
+        {
+          "case": "cli_enable_overrides_config",
+          "tool_advertised": true,
+          "spawned_identity": true,
+          "child_model_requests": 1,
+          "http_requests": 3,
+          "unsupported_result": false
+        },
+        {
+          "case": "hostile_profile_positive",
+          "tool_advertised": true,
+          "spawned_identity": true,
+          "child_model_requests": 1,
+          "http_requests": 3,
+          "unsupported_result": false
+        },
+        {
+          "case": "managed_clean",
+          "tool_advertised": false,
+          "spawned_identity": false,
+          "child_model_requests": 0,
+          "http_requests": 2,
+          "unsupported_result": true
+        },
+        {
+          "case": "managed_hostile_profile_and_compact_config",
+          "tool_advertised": false,
+          "spawned_identity": false,
+          "child_model_requests": 0,
+          "http_requests": 2,
+          "unsupported_result": true
+        }
+      ],
+      "invalid_profile_preflight_count": 0
+    },
+    {
+      "log_sha256": "35a66aeb4b2264c2c255ac0c76a3b832a95cd2298ea04fc7e17575dbdd0ae9dd",
+      "attempt": "final-focused-race.log",
+      "outcome": "PASS",
+      "cases": [
+        {
+          "case": "legacy_flags_positive",
+          "tool_advertised": true,
+          "spawned_identity": true,
+          "child_model_requests": 1,
+          "http_requests": 3,
+          "unsupported_result": false
+        },
+        {
+          "case": "v2_overrides_agents_false",
+          "tool_advertised": true,
+          "spawned_identity": true,
+          "child_model_requests": 1,
+          "http_requests": 3,
+          "unsupported_result": false
+        },
+        {
+          "case": "cli_enable_overrides_config",
+          "tool_advertised": true,
+          "spawned_identity": true,
+          "child_model_requests": 1,
+          "http_requests": 3,
+          "unsupported_result": false
+        },
+        {
+          "case": "hostile_profile_positive",
+          "tool_advertised": true,
+          "spawned_identity": true,
+          "child_model_requests": 1,
+          "http_requests": 3,
+          "unsupported_result": false
+        },
+        {
+          "case": "managed_clean",
+          "tool_advertised": false,
+          "spawned_identity": false,
+          "child_model_requests": 0,
+          "http_requests": 2,
+          "unsupported_result": true
+        },
+        {
+          "case": "managed_hostile_profile_and_compact_config",
+          "tool_advertised": false,
+          "spawned_identity": false,
+          "child_model_requests": 0,
+          "http_requests": 2,
+          "unsupported_result": true
+        }
+      ],
+      "invalid_profile_preflight_count": 0
+    },
+    {
+      "log_sha256": "572292d5cb1e9456ad144bf2302707c87f24171dbb07b88ce04f3160778fa847",
+      "attempt": "opt-in-script.log",
+      "outcome": "PASS",
+      "cases": [
+        {
+          "case": "legacy_flags_positive",
+          "tool_advertised": true,
+          "spawned_identity": true,
+          "child_model_requests": 1,
+          "http_requests": 3,
+          "unsupported_result": false
+        },
+        {
+          "case": "v2_overrides_agents_false",
+          "tool_advertised": true,
+          "spawned_identity": true,
+          "child_model_requests": 1,
+          "http_requests": 3,
+          "unsupported_result": false
+        },
+        {
+          "case": "cli_enable_overrides_config",
+          "tool_advertised": true,
+          "spawned_identity": true,
+          "child_model_requests": 1,
+          "http_requests": 3,
+          "unsupported_result": false
+        },
+        {
+          "case": "hostile_profile_positive",
+          "tool_advertised": true,
+          "spawned_identity": true,
+          "child_model_requests": 1,
+          "http_requests": 3,
+          "unsupported_result": false
+        },
+        {
+          "case": "managed_clean",
+          "tool_advertised": false,
+          "spawned_identity": false,
+          "child_model_requests": 0,
+          "http_requests": 2,
+          "unsupported_result": true
+        },
+        {
+          "case": "managed_hostile_profile_and_compact_config",
+          "tool_advertised": false,
+          "spawned_identity": false,
+          "child_model_requests": 0,
+          "http_requests": 2,
+          "unsupported_result": true
+        }
+      ],
+      "invalid_profile_preflight_count": 0
+    }
+  ],
+  "initial_standalone_legacy_probe": {
+    "exit_code": 0,
+    "http_requests": 3,
+    "child_model_requests": 1,
+    "returned_task_identity": true,
+    "private_raw_requests_sha256": {
+      "request-1.json": "37133d31d0260e7cf455aa2cc65f96fa6c114beaf53dd55cbe991d23cef6a786",
+      "request-2.json": "38ddb802adddff2397d8163b8b978355b12e69583bd993c7a9e78191fdb4faaa",
+      "request-3.json": "0daf9c5043919f4bc7d4b1d94526c1c0ee79683f5b5c9908f798c24b7a2166de"
+    },
+    "private_stdout_sha256": "a6599f9bc6de049e2bea0abe15008dc275521588631aef66794ebd7a823008a0"
+  },
+  "toolchain": "go1.27.3 linux/amd64",
+  "artifact_sha256": {
+    "workers-amd64v1.test": "b4905f9087cf6db96bcd74cccac6a0d467f3ecce743b204d458d4989d1952068",
+    "workers-arm64.test": "29e1953eb9cf59d9fcd9f960309e0fd2c4df179b4bb4beb10583301cd38e8be6"
+  },
+  "private_log_sha256": {
+    "focused-go-test.log": "a1338c4f5f60ebc804a86eb60fc512361fe2e74972ac391c7103c7c207eb9939",
+    "focused-go-vet.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "pinned-live-go-test-attempt1-legacy-profile-failure.log": "b4677cdcdbf31a268d3db78a86e1afa8fbdf2a7e64f87b6ffa80701ba21bca6b",
+    "pinned-live-go-test-attempt2.log": "56086ef1c5c0c2620078e5e490b0326b47e3b7e77712f883b68fe70b17ad6fcc",
+    "final-focused-race.log": "35a66aeb4b2264c2c255ac0c76a3b832a95cd2298ea04fc7e17575dbdd0ae9dd",
+    "final-focused-vet.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "opt-in-script.log": "572292d5cb1e9456ad144bf2302707c87f24171dbb07b88ce04f3160778fa847",
+    "profile-selector-regression.log": "c425a5dc6b799535d64fe8a681d50334cdb65ef59e3a8c26a81fbe6f5d23b02e"
+  },
+  "source_sha256": {
+    "internal/app/auto.go": "8190d293e17bbe2d5f6fb9d2940aa2502f455eece883ebc3869ef8e7e352f486",
+    "internal/app/auto_policy_args_test.go": "4bf8f1ed5bf0596dc6ad6f6a2a7a1872c46c210d7859564f45e5128aba424ad2",
+    "internal/codexresolver/arguments.go": "668973fb3533c0eeda7b931b31ff3ae44290c280e1750b801b886e95fd296b95",
+    "internal/codexresolver/arguments_test.go": "6ce7d6ab2ab606fe5a447c34f9f6e7edc68ecbb7240f8aa87a7abc0edf80f3e2",
+    "internal/workers/adapter.go": "1115032c227747fee2286dc29bbea9c98e4b939bb0fd8ab6c28579ab9b6468de",
+    "internal/workers/adapter_test.go": "7aa45ceeaf5db3ca3c605b69a24e62fa15c5afa698ea26efaa48e169073bb1ec",
+    "internal/workers/managed_codex_live_test.go": "ab08ffe9ea02dbb8eb6dcf3dba7947aab7fd4973aac41cc7251dc723c66deb98",
+    "scripts/test-managed-codex-worker-boundary.sh": "86a5caba8c3c78144ba659f4981f7bd2a5c0bb33fccf6ebadf02320f28e97f4f",
+    "release-notes/managed-codex-worker-boundary.md": "9a63a9e0f54e85fe4abdba78b6f30cdb3e8237bc0726720c861cad3b8d34d9ac"
+  },
+  "limitations": [
+    "Normal CI skips optional real proof unless explicit pinned executable is supplied; skip is NOT_RUN.",
+    "Previous private /tmp research artifacts disappeared after directory cleanup; this delivery certifies new proof only.",
+    "No minimum-version admission gate added; explicit non-pinned native executables remain existing compatibility responsibility.",
+    "No real-provider quotas/tokens/prices or TUI equivalence measured.",
+    "No universal interception, arbitrary nested executable prevention or future-version certification.",
+    "No ARM64/no-AVX runtime proof locally.",
+    "No credentials or personal config read/copied/changed.",
+    "MCP inventory does not replay arbitrary caller profile/config; profile proof covers native-worker denial only. Production AUTO rejects profile flags/selectors; workerArgs emits no arbitrary profile. No universal helper MCP isolation claim."
+  ]
+}

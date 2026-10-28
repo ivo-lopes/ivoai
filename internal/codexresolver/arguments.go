@@ -1,6 +1,7 @@
 package codexresolver
 
 import (
+	"errors"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -45,11 +46,37 @@ func ConfigurationArgs(args []string) []string {
 		if (arg == "-c" || arg == "--config") && i+1 < len(args) {
 			configuration = append(configuration, arg, args[i+1])
 			i++
-		} else if strings.HasPrefix(arg, "--config=") || strings.HasPrefix(arg, "-c=") {
+		} else if strings.HasPrefix(arg, "--config=") || strings.HasPrefix(arg, "-c") && len(arg) > 2 {
 			configuration = append(configuration, arg)
 		} else {
 			remaining = append(remaining, arg)
 		}
 	}
 	return append(configuration, remaining...)
+}
+
+// ManagedAgentArgs keeps native worker creation subordinate to Core. Legacy
+// multi_agent feature flags alone do not disable the namespaced worker handler.
+// CLI --enable is rejected because Codex applies feature toggles after -c
+// overrides regardless of their textual order. Callers keep ConfigurationArgs
+// at the final exec boundary, including compact -c overrides.
+func ManagedAgentArgs(args []string) ([]string, error) {
+	boundary := len(args)
+	for index, arg := range args {
+		if arg == "--" {
+			boundary = index
+			break
+		}
+		key, _, _ := strings.Cut(arg, "=")
+		if key == "--enable" {
+			return nil, errors.New("managed Codex feature toggles are controlled by IVOAI")
+		}
+	}
+	out := append([]string(nil), args[:boundary]...)
+	out = append(out,
+		"-c", "features.apps=false", "-c", "features.hooks=false",
+		"-c", "features.multi_agent=false", "-c", "features.plugins=false",
+		"-c", "features.remote_plugin=false", "-c", "agents.enabled=false",
+		"-c", "features.multi_agent_v2=false")
+	return append(out, args[boundary:]...), nil
 }

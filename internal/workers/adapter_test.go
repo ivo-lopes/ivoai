@@ -156,13 +156,46 @@ exit 0
 		t.Fatal(err)
 	}
 	joined := strings.Join(args, " ")
-	for _, restriction := range []string{"features.apps=false", "features.hooks=false", "features.multi_agent=false", "features.plugins=false", "features.remote_plugin=false", "mcp_servers.personal.enabled=false", "--sandbox read-only"} {
+	for _, restriction := range []string{"features.apps=false", "features.hooks=false", "features.multi_agent=false", "agents.enabled=false", "features.multi_agent_v2=false", "features.plugins=false", "features.remote_plugin=false", "mcp_servers.personal.enabled=false", "--sandbox read-only"} {
 		if !strings.Contains(joined, restriction) {
 			t.Fatalf("runtime restriction missing: %s", restriction)
 		}
 	}
 	if _, err := adapter.Runner.Run(context.Background(), codex, append(args, "exec"), platform.RunOptions{}); err != nil {
 		t.Fatalf("inventory generated an invalid runtime MCP table: %v", err)
+	}
+}
+
+func TestCodexIsolationRejectsFeatureToggleBeforeInventory(t *testing.T) {
+	root := t.TempDir()
+	marker := filepath.Join(root, "unexpected-inventory")
+	codex := executable(t, root, "codex", "#!/bin/sh\n: > '"+marker+"'\nprintf '[]'\n")
+	for _, args := range [][]string{{"--enable", "multi_agent_v2"}, {"--enable=multi_agent_v2"}} {
+		_, err := (Adapter{Runner: platform.ExecRunner{}}).IsolateCodexMCPs(context.Background(), codex, args)
+		if err == nil {
+			t.Fatal("dangerous feature toggle entered MCP inventory")
+		}
+	}
+	if _, err := os.Stat(marker); !os.IsNotExist(err) {
+		t.Fatal("rejected arguments executed a client process")
+	}
+}
+
+func TestCodexIsolationPreservesCoreProjectionAndHostPolicyPrecedence(t *testing.T) {
+	root := t.TempDir()
+	codex := executable(t, root, "codex", "#!/bin/sh\nprintf '%s' '[{\"name\":\"ivoai-orchestrator\"}]'\n")
+	input := []string{"-cagents.enabled=true", "-c=features.multi_agent_v2=true", "--config=features.plugins=true", "-c", "mcp_servers.ivoai-orchestrator.enabled=true", "exec", "--json"}
+	args, err := (Adapter{Runner: platform.ExecRunner{}}).IsolateCodexMCPs(context.Background(), codex, input)
+	if err != nil {
+		t.Fatal(err)
+	}
+	args = codexresolver.ConfigurationArgs(args)
+	joined := strings.Join(args, " ")
+	if strings.LastIndex(joined, "agents.enabled=false") < strings.Index(joined, "agents.enabled=true") || strings.LastIndex(joined, "features.multi_agent_v2=false") < strings.Index(joined, "features.multi_agent_v2=true") || strings.LastIndex(joined, "features.plugins=false") < strings.Index(joined, "features.plugins=true") {
+		t.Fatal("caller configuration won over managed policy")
+	}
+	if strings.Index(joined, "mcp_servers.ivoai-orchestrator.enabled=false") >= strings.Index(joined, "mcp_servers.ivoai-orchestrator.enabled=true") {
+		t.Fatal("host Core MCP projection cannot re-enable its owned endpoint")
 	}
 }
 
