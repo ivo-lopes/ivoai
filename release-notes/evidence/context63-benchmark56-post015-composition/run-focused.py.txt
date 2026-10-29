@@ -1,0 +1,13 @@
+from pathlib import Path
+import json,os,subprocess,time,hashlib,collections
+p=Path('/var/tmp/ivoai-context63-benchmark56-proof-20261029');f=json.loads((p/'source-freeze.json').read_text())
+assert not subprocess.check_output(['git','status','--porcelain'])
+assert all(hashlib.sha256(Path(n).read_bytes()).hexdigest()==h for n,h in f['files'].items())
+cmd=['/var/tmp/ivoai-validation-toolchain-20261028/go/bin/go','test','-count=1','-timeout=120s','-json','./cmd/ivoai','./internal/servercmd','./internal/docsserver']
+env={'HOME':str(p/'home'),'PATH':'/var/tmp/ivoai-validation-toolchain-20261028/go/bin:/usr/bin:/bin','GOCACHE':'/home/ivo/.cache/go-build','GOMODCACHE':'/home/ivo/go/pkg/mod','GOPATH':'/home/ivo/go','GOENV':'off','GOWORK':'off','GOPROXY':'off','GOSUMDB':'off','GOFLAGS':'-mod=readonly','GOTOOLCHAIN':'local','GOMAXPROCS':'2','LANG':'C.UTF-8','GOTMPDIR':str(p/'go-tmp'),'TMPDIR':str(p/'go-tmp'),'GIT_NO_REPLACE_OBJECTS':'1','GIT_NO_LAZY_FETCH':'1'}
+(p/'focused.started.json').write_text(json.dumps({'source':f['source'],'command':cmd,'environment':env,'invocations':1},indent=2)+'\n')
+t=time.monotonic()
+with (p/'focused.jsonl').open('wb') as out,(p/'focused.stderr').open('wb') as err:r=subprocess.run(cmd,env=env,stdout=out,stderr=err,timeout=180)
+rows=[json.loads(s) for s in (p/'focused.jsonl').read_text().splitlines()];unchanged=all(hashlib.sha256(Path(n).read_bytes()).hexdigest()==h for n,h in f['files'].items())
+result={'source':f['source'],'tree':f['tree'],'exit':r.returncode,'wall_seconds':round(time.monotonic()-t,3),'package_results':[{'package':x['Package'],'result':x['Action'],'seconds':x.get('Elapsed')} for x in rows if 'Test'not in x and x['Action'] in ('pass','fail','skip')],'test_results':dict(collections.Counter(x['Action'] for x in rows if 'Test'in x and x['Action'] in ('pass','fail','skip'))),'skipped_tests':[x['Test'] for x in rows if x['Action']=='skip' and 'Test'in x],'source_unchanged_after':unchanged,'official_client_auth_model_or_service_calls':0,'CI_for_merge':'NOT_RUN','post_v015_tag':True}
+(p/'focused.result.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2));raise SystemExit(0 if r.returncode==0 and unchanged else 1)

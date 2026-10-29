@@ -1,0 +1,10 @@
+{
+  "source": "b7e616c6a1898fec91ecc618c16ff0777fa57193",
+  "gate": "App-hermetic",
+  "exit": 0,
+  "wall_seconds": 14.074,
+  "all_frozen_paths_unchanged_after": 4068,
+  "official_client_auth_model_or_deployed_service_calls": 0,
+  "full_Go_race_Python_Node_run": false,
+  "comparative_binary_pair_rebuilt": false
+}
