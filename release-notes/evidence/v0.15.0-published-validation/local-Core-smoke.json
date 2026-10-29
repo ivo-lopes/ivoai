@@ -1,0 +1,22 @@
+{
+  "result": "PASS_DOWNLOADED_AMD64_CORE_VERSION_HELP",
+  "source": "8f688e26f0c4570b6a2b30c7e052672f102703f3",
+  "version": "0.15.0",
+  "binary_sha256": "96ce375f352574d83ed502cfac9c1fb8d1d3d3ff5d66fd86ba8343408981d79d",
+  "cases": [
+    {
+      "command": "version",
+      "exit": 0,
+      "stdout_bytes": 7,
+      "wall_seconds": 0.009
+    },
+    {
+      "command": "help",
+      "exit": 0,
+      "stdout_bytes": 3722,
+      "wall_seconds": 0.009
+    }
+  ],
+  "arm64_local_execution": "NOT_RUN",
+  "client_auth_model_install_calls": 0
+}

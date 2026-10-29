@@ -1,0 +1,315 @@
+{
+  "pass": true,
+  "verifier_sha256": "15c166f204ddaaf776a0b5a891dcb5fba06fc37bd82e9a39d81bd30e49763976",
+  "private_runner_sha256": "e0a9dbbe495937c2f3851ffd8f9b7191df86a82c06965fc9cf6b0f22b9f58c36",
+  "immutable_baseline_sha256": "15c166f204ddaaf776a0b5a891dcb5fba06fc37bd82e9a39d81bd30e49763976",
+  "release_expectations": {
+    "tag": "v0.15.0",
+    "release_id": 427478463,
+    "published_at": "2026-10-29T04:51:24Z",
+    "prerelease": false
+  },
+  "private_output_created": true,
+  "output": "/var/tmp/ivoai-v015-postdownload-s6s8tu20/verified",
+  "tag": "v0.15.0",
+  "source_commit": "8f688e26f0c4570b6a2b30c7e052672f102703f3",
+  "network_calls": false,
+  "downloaded_code_executed": false,
+  "asset_limits_bytes": {
+    "ivoai-opencode_linux_arm64.tar.gz": 268435456,
+    "ivoai-opencode_linux_amd64.tar.gz": 268435456,
+    "managed-graft-arm64.json": 65536,
+    "ivoai-memory-context.zip": 524288,
+    "ivoai_linux_amd64.tar.gz": 134217728,
+    "ivoai-graft_linux_arm64.tar.gz": 536870912,
+    "ivoai-graft_linux_amd64.tar.gz": 536870912,
+    "checksums.txt": 65536,
+    "managed-opencode-amd64.json": 65536,
+    "managed-opencode-arm64.json": 65536,
+    "ivoai_linux_arm64.tar.gz": 134217728,
+    "managed-graft-amd64.json": 65536
+  },
+  "core_decompressed_limit_bytes": 268500992,
+  "resource_limits": {
+    "python_soft_address_space": 1073741824,
+    "wall_seconds": 300,
+    "reader_address_space": 4294967296,
+    "reader_cpu_seconds": 20,
+    "reader_wall_seconds": 30,
+    "reader_output_bytes": 2097152,
+    "core_dumps": false,
+    "gzip_read_bytes": 1048576,
+    "zip_directory_bytes": 4096,
+    "zip_entries": 2
+  },
+  "asset_sha256": {
+    "checksums.txt": "394439ef448a127ba355501ece1ed5b3a377573fa4b2a769aaa7572a987dfb66",
+    "ivoai-graft_linux_amd64.tar.gz": "85cd3b4f5a06e99a683739aa6fe7325951d3343834ef5ad18a37e30e9bfac441",
+    "ivoai-graft_linux_arm64.tar.gz": "cb8253465889f48af8d0a63a10ac1115215542eb8674aa4090e529506e00af93",
+    "ivoai-memory-context.zip": "6e5bc28cb02d5557dbe16b2e2ffae7fc954c5e783c14a4dcd0fb6c08c364b378",
+    "ivoai-opencode_linux_amd64.tar.gz": "b7499554921e48ab50b17cf8ecf941ba3e4896eb6613405c03e70055a5963f84",
+    "ivoai-opencode_linux_arm64.tar.gz": "65db6be387d1b24f4e94a93980dacc402af47b5023204cc0ad5d1aae464c2060",
+    "ivoai_linux_amd64.tar.gz": "e8e8b40e593d708d4bacd688ecbbb580179b6e0afae27948f9e9a9687f42231e",
+    "ivoai_linux_arm64.tar.gz": "9cc869633fa4f691dee49b85495e3fc486aa9af857a0b40b6183eca35f66829f",
+    "managed-graft-amd64.json": "6fc5af54dd963e8d0af58b6a8dc051a52fef9e0447ef25630da669f394b6f6d7",
+    "managed-graft-arm64.json": "ea612e7e9e8c5e352f78a91fe3c597dec2530eb023b00346087c24a91390a106",
+    "managed-opencode-amd64.json": "6bf0a05aa550a48b5f5543955707d60eb292e4dc77e237f2f04b6ce1f856c880",
+    "managed-opencode-arm64.json": "bb4ed32e57e92ac1c5e2e946d635a2044369415c7530087eaa993d05ede6c024"
+  },
+  "api": {
+    "provided": true,
+    "api_file_sha256": "5a2c11ac94e2d6eaaa44160cfa8696ef63ca2e55a22c8335e8c2b749b8f46fc1",
+    "release_id": 427478463,
+    "verified_sha256": [
+      "checksums.txt",
+      "ivoai-graft_linux_amd64.tar.gz",
+      "ivoai-graft_linux_arm64.tar.gz",
+      "ivoai-memory-context.zip",
+      "ivoai-opencode_linux_amd64.tar.gz",
+      "ivoai-opencode_linux_arm64.tar.gz",
+      "ivoai_linux_amd64.tar.gz",
+      "ivoai_linux_arm64.tar.gz",
+      "managed-graft-amd64.json",
+      "managed-graft-arm64.json",
+      "managed-opencode-amd64.json",
+      "managed-opencode-arm64.json"
+    ],
+    "missing_sha256": []
+  },
+  "reviewed_source": {
+    "module": "github.com/ivo-lopes/ivoai",
+    "go_version": "go1.27.3",
+    "source_commit": "8f688e26f0c4570b6a2b30c7e052672f102703f3",
+    "go_mod_sha256": "d1c486bcfb3a5e1127b4f47de7e62001c768ee744c42b6f96627f6895d026705",
+    "go_sum_sha256": "44f145c4f9477395f29442a17757c7de7b24df282e19c7e6ffddb58662e2553c"
+  },
+  "patch_sha256": {
+    "opencode": "29ab6030f52f4b95d582ce95ae001566b7b0f3bc3bfece6a1355dce4faa2e4ec",
+    "graft": "cc2d5aadfb9f603bb1fed610a8fbb3cf62aaba0273012f788773163325369eff"
+  },
+  "reader_source_sha256": "ed9718c5e503d11c70ebbc25fe887ce7ae5abf578faadbe450e334d0503e0eb1",
+  "cores": {
+    "amd64": {
+      "go_version": "go1.27.3",
+      "main_module": {
+        "Path": "github.com/ivo-lopes/ivoai",
+        "Version": "v0.15.0"
+      },
+      "settings": {
+        "-buildmode": "exe",
+        "-compiler": "gc",
+        "-trimpath": "true",
+        "CGO_ENABLED": "0",
+        "GOARCH": "amd64",
+        "GOOS": "linux",
+        "GOAMD64": "v1",
+        "vcs": "git",
+        "vcs.revision": "8f688e26f0c4570b6a2b30c7e052672f102703f3",
+        "vcs.time": "2026-10-29T04:18:08Z",
+        "vcs.modified": "false"
+      },
+      "dependencies": {
+        "github.com/coder/websocket": {
+          "version": "v1.8.15",
+          "sum": "h1:6B2JPeOGlpff2Uz6vOEH1Vzpi0iUz20A+lPVhPHtNUA="
+        },
+        "github.com/google/jsonschema-go": {
+          "version": "v0.4.3",
+          "sum": "h1:/DBOLZTfDow7pe2GmaJNhltueGTtDKICi8V8p+DQPd0="
+        },
+        "github.com/modelcontextprotocol/go-sdk": {
+          "version": "v1.8.0",
+          "sum": "h1:KIvahhYqwtbeniWVPs3TcXEA7b8jEtwfBpOTAI+Urx4="
+        },
+        "github.com/pelletier/go-toml/v2": {
+          "version": "v2.4.3",
+          "sum": "h1:GTRvJQutkOSftxIFD5xw9aepkYNuPWmVJpffdDPYVpY="
+        },
+        "github.com/segmentio/asm": {
+          "version": "v1.2.1",
+          "sum": "h1:DTNbBqs57ioxAD4PrArqftgypG4/qNpXoJx8TVXxPR0="
+        },
+        "github.com/segmentio/encoding": {
+          "version": "v0.5.4",
+          "sum": "h1:OW1VRern8Nw6ITAtwSZ7Idrl3MXCFwXHPgqESYfvNt0="
+        },
+        "github.com/yosida95/uritemplate/v3": {
+          "version": "v3.0.2",
+          "sum": "h1:Ed3Oyj9yrmi9087+NczuL5BwkIc4wvTb5zIM+UJPGz4="
+        },
+        "golang.org/x/oauth2": {
+          "version": "v0.37.0",
+          "sum": "h1:JUlcxA8oAtauLfiH8FX2/FkAWHAdi0QtGCGc+hofE98="
+        },
+        "golang.org/x/sync": {
+          "version": "v0.24.0",
+          "sum": "h1:iqiDrGoDgyuvAKrhLQthUEzU/R378N78gXbBjxed7oA="
+        },
+        "golang.org/x/sys": {
+          "version": "v0.49.0",
+          "sum": "h1:XbzkgYJHdqh/8m2Uu0W/dQv8nktxx4BFHp1M0gROTXA="
+        },
+        "golang.org/x/term": {
+          "version": "v0.47.0",
+          "sum": "h1:cpyOwQkr2Nzxe2p6KnrTG7Ei2wtzjsuSjhpXXepZ/BM="
+        },
+        "golang.org/x/time": {
+          "version": "v0.16.0",
+          "sum": "h1:vMb6ptszcQMkcwiRTAuNNU50gom6++Q/6gY2hDM6VDE="
+        }
+      },
+      "binary_sha256": "96ce375f352574d83ed502cfac9c1fb8d1d3d3ff5d66fd86ba8343408981d79d",
+      "embedded_components": {
+        "opencode": {
+          "metadata": {
+            "version": "1.19.0-ivoai.3",
+            "platform": "linux/amd64",
+            "revision": "dd5ccc81db9afb717c6ebdac43fab0b26770c751a337e41701c923f829b909db",
+            "sha256": "b7499554921e48ab50b17cf8ecf941ba3e4896eb6613405c03e70055a5963f84",
+            "archive": "ivoai-opencode_linux_amd64.tar.gz",
+            "upstream_revision": "733b2c627e5aec39cb33cc22373bdce33053ef2c",
+            "source_sha256": "ab433f7a5fc9e54c90da18bd3457298009f426424805f043aa32c03543b4a192",
+            "patch_sha256": "29ab6030f52f4b95d582ce95ae001566b7b0f3bc3bfece6a1355dce4faa2e4ec",
+            "bun_version": "1.3.14",
+            "bun_sha256": "951ee2aee855f08595aeec6225226a298d3fea83a3dcd6465c09cbccdf7e848f",
+            "url": "https://github.com/ivo-lopes/ivoai/releases/download/v0.15.0/ivoai-opencode_linux_amd64.tar.gz"
+          },
+          "base64_payload_occurrences": 1,
+          "method": "exact expected base64 payload in ELF; no execution or pointer-binding claim"
+        },
+        "graft": {
+          "metadata": {
+            "archive": "ivoai-graft_linux_amd64.tar.gz",
+            "node_sha256": "15fc043a51a5783f2f4b634561091658f5a7f0e3db03f997dca3a8033a33e45b",
+            "node_version": "26.11.1",
+            "patch_sha256": "cc2d5aadfb9f603bb1fed610a8fbb3cf62aaba0273012f788773163325369eff",
+            "platform": "linux/amd64",
+            "revision": "e927180e1e098aeba6c318b4834eccb8fdc7d7fb9787e2028de023c2a115f96f",
+            "sha256": "85cd3b4f5a06e99a683739aa6fe7325951d3343834ef5ad18a37e30e9bfac441",
+            "source_sha256": "d39598390324ad0076a88ab593b63ad2ba352370ea07c073e31f11327979f8e1",
+            "upstream_revision": "fe30ead39d5e6f0c921018d364da2bdbc9d4b3ad",
+            "version": "0.21.1-ivoai.1",
+            "url": "https://github.com/ivo-lopes/ivoai/releases/download/v0.15.0/ivoai-graft_linux_amd64.tar.gz"
+          },
+          "base64_payload_occurrences": 1,
+          "method": "exact expected base64 payload in ELF; no execution or pointer-binding claim"
+        }
+      }
+    },
+    "arm64": {
+      "go_version": "go1.27.3",
+      "main_module": {
+        "Path": "github.com/ivo-lopes/ivoai",
+        "Version": "v0.15.0"
+      },
+      "settings": {
+        "-buildmode": "exe",
+        "-compiler": "gc",
+        "-trimpath": "true",
+        "CGO_ENABLED": "0",
+        "GOARCH": "arm64",
+        "GOOS": "linux",
+        "GOARM64": "v8.0",
+        "vcs": "git",
+        "vcs.revision": "8f688e26f0c4570b6a2b30c7e052672f102703f3",
+        "vcs.time": "2026-10-29T04:18:08Z",
+        "vcs.modified": "false"
+      },
+      "dependencies": {
+        "github.com/coder/websocket": {
+          "version": "v1.8.15",
+          "sum": "h1:6B2JPeOGlpff2Uz6vOEH1Vzpi0iUz20A+lPVhPHtNUA="
+        },
+        "github.com/google/jsonschema-go": {
+          "version": "v0.4.3",
+          "sum": "h1:/DBOLZTfDow7pe2GmaJNhltueGTtDKICi8V8p+DQPd0="
+        },
+        "github.com/modelcontextprotocol/go-sdk": {
+          "version": "v1.8.0",
+          "sum": "h1:KIvahhYqwtbeniWVPs3TcXEA7b8jEtwfBpOTAI+Urx4="
+        },
+        "github.com/pelletier/go-toml/v2": {
+          "version": "v2.4.3",
+          "sum": "h1:GTRvJQutkOSftxIFD5xw9aepkYNuPWmVJpffdDPYVpY="
+        },
+        "github.com/segmentio/asm": {
+          "version": "v1.2.1",
+          "sum": "h1:DTNbBqs57ioxAD4PrArqftgypG4/qNpXoJx8TVXxPR0="
+        },
+        "github.com/segmentio/encoding": {
+          "version": "v0.5.4",
+          "sum": "h1:OW1VRern8Nw6ITAtwSZ7Idrl3MXCFwXHPgqESYfvNt0="
+        },
+        "github.com/yosida95/uritemplate/v3": {
+          "version": "v3.0.2",
+          "sum": "h1:Ed3Oyj9yrmi9087+NczuL5BwkIc4wvTb5zIM+UJPGz4="
+        },
+        "golang.org/x/oauth2": {
+          "version": "v0.37.0",
+          "sum": "h1:JUlcxA8oAtauLfiH8FX2/FkAWHAdi0QtGCGc+hofE98="
+        },
+        "golang.org/x/sync": {
+          "version": "v0.24.0",
+          "sum": "h1:iqiDrGoDgyuvAKrhLQthUEzU/R378N78gXbBjxed7oA="
+        },
+        "golang.org/x/sys": {
+          "version": "v0.49.0",
+          "sum": "h1:XbzkgYJHdqh/8m2Uu0W/dQv8nktxx4BFHp1M0gROTXA="
+        },
+        "golang.org/x/term": {
+          "version": "v0.47.0",
+          "sum": "h1:cpyOwQkr2Nzxe2p6KnrTG7Ei2wtzjsuSjhpXXepZ/BM="
+        },
+        "golang.org/x/time": {
+          "version": "v0.16.0",
+          "sum": "h1:vMb6ptszcQMkcwiRTAuNNU50gom6++Q/6gY2hDM6VDE="
+        }
+      },
+      "binary_sha256": "40bcdd403235c2a1d7f8dc43253d307ff298dfaab75872905843eec5ee568fd4",
+      "embedded_components": {
+        "opencode": {
+          "metadata": {
+            "version": "1.19.0-ivoai.3",
+            "platform": "linux/arm64",
+            "revision": "d5c910845b1d41ae99f0de8b95925bbeed6d4f8ec446f229154b966bfbe02102",
+            "sha256": "65db6be387d1b24f4e94a93980dacc402af47b5023204cc0ad5d1aae464c2060",
+            "archive": "ivoai-opencode_linux_arm64.tar.gz",
+            "upstream_revision": "733b2c627e5aec39cb33cc22373bdce33053ef2c",
+            "source_sha256": "ab433f7a5fc9e54c90da18bd3457298009f426424805f043aa32c03543b4a192",
+            "patch_sha256": "29ab6030f52f4b95d582ce95ae001566b7b0f3bc3bfece6a1355dce4faa2e4ec",
+            "bun_version": "1.3.14",
+            "bun_sha256": "a27ffb63a8310375836e0d6f668ae17fa8d8d18b88c37c821c65331973a19a3b",
+            "url": "https://github.com/ivo-lopes/ivoai/releases/download/v0.15.0/ivoai-opencode_linux_arm64.tar.gz"
+          },
+          "base64_payload_occurrences": 1,
+          "method": "exact expected base64 payload in ELF; no execution or pointer-binding claim"
+        },
+        "graft": {
+          "metadata": {
+            "archive": "ivoai-graft_linux_arm64.tar.gz",
+            "node_sha256": "170454fb022f5e9b5f6cc76c25fa32ef5100895be44eb04e92f9780591491bbf",
+            "node_version": "26.11.1",
+            "patch_sha256": "cc2d5aadfb9f603bb1fed610a8fbb3cf62aaba0273012f788773163325369eff",
+            "platform": "linux/arm64",
+            "revision": "78b9c846a6b4d52a9d5ba538a0dfd054b58f7df23a90c53d4ebd94d354e67450",
+            "sha256": "cb8253465889f48af8d0a63a10ac1115215542eb8674aa4090e529506e00af93",
+            "source_sha256": "d39598390324ad0076a88ab593b63ad2ba352370ea07c073e31f11327979f8e1",
+            "upstream_revision": "fe30ead39d5e6f0c921018d364da2bdbc9d4b3ad",
+            "version": "0.21.1-ivoai.1",
+            "url": "https://github.com/ivo-lopes/ivoai/releases/download/v0.15.0/ivoai-graft_linux_arm64.tar.gz"
+          },
+          "base64_payload_occurrences": 1,
+          "method": "exact expected base64 payload in ELF; no execution or pointer-binding claim"
+        }
+      }
+    }
+  },
+  "checksums_payloads_verified": 11,
+  "assets_count": 12,
+  "limits": [
+    "Checksum/metadata association, not a new source attestation or binary reproducibility proof.",
+    "Expected embedded bytes are checked; runtime variable binding/behavior is certified separately by Release tests.",
+    "No runtime, TUI, no-AVX or ARM execution occurs in this offline verifier.",
+    "API digests absent from supplied JSON remain unknown; checksums.txt has no offline self-digest anchor."
+  ]
+}

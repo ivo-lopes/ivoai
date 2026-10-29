@@ -1,0 +1,103 @@
+{
+  "release_id": 427478463,
+  "tag": "v0.15.0",
+  "published_at": "2026-10-29T04:51:24Z",
+  "assets": [
+    {
+      "name": "checksums.txt",
+      "id": 687391601,
+      "expected_bytes": 1037,
+      "status": "PASS_API_SIZE_AND_SHA256",
+      "bytes": 1037,
+      "sha256": "394439ef448a127ba355501ece1ed5b3a377573fa4b2a769aaa7572a987dfb66"
+    },
+    {
+      "name": "ivoai-graft_linux_amd64.tar.gz",
+      "id": 687391541,
+      "expected_bytes": 7689763,
+      "status": "PASS_API_SIZE_AND_SHA256",
+      "bytes": 7689763,
+      "sha256": "85cd3b4f5a06e99a683739aa6fe7325951d3343834ef5ad18a37e30e9bfac441"
+    },
+    {
+      "name": "ivoai-graft_linux_arm64.tar.gz",
+      "id": 687391568,
+      "expected_bytes": 7643836,
+      "status": "PASS_API_SIZE_AND_SHA256",
+      "bytes": 7643836,
+      "sha256": "cb8253465889f48af8d0a63a10ac1115215542eb8674aa4090e529506e00af93"
+    },
+    {
+      "name": "ivoai-memory-context.zip",
+      "id": 687391588,
+      "expected_bytes": 3480,
+      "status": "PASS_API_SIZE_AND_SHA256",
+      "bytes": 3480,
+      "sha256": "6e5bc28cb02d5557dbe16b2e2ffae7fc954c5e783c14a4dcd0fb6c08c364b378"
+    },
+    {
+      "name": "ivoai-opencode_linux_amd64.tar.gz",
+      "id": 687391499,
+      "expected_bytes": 60751005,
+      "status": "PASS_API_SIZE_AND_SHA256",
+      "bytes": 60751005,
+      "sha256": "b7499554921e48ab50b17cf8ecf941ba3e4896eb6613405c03e70055a5963f84"
+    },
+    {
+      "name": "ivoai-opencode_linux_arm64.tar.gz",
+      "id": 687391505,
+      "expected_bytes": 60554071,
+      "status": "PASS_API_SIZE_AND_SHA256",
+      "bytes": 60554071,
+      "sha256": "65db6be387d1b24f4e94a93980dacc402af47b5023204cc0ad5d1aae464c2060"
+    },
+    {
+      "name": "ivoai_linux_amd64.tar.gz",
+      "id": 687391504,
+      "expected_bytes": 19883843,
+      "status": "PASS_API_SIZE_AND_SHA256",
+      "bytes": 19883843,
+      "sha256": "e8e8b40e593d708d4bacd688ecbbb580179b6e0afae27948f9e9a9687f42231e"
+    },
+    {
+      "name": "ivoai_linux_arm64.tar.gz",
+      "id": 687391503,
+      "expected_bytes": 19145954,
+      "status": "PASS_API_SIZE_AND_SHA256",
+      "bytes": 19145954,
+      "sha256": "9cc869633fa4f691dee49b85495e3fc486aa9af857a0b40b6183eca35f66829f"
+    },
+    {
+      "name": "managed-graft-amd64.json",
+      "id": 687391571,
+      "expected_bytes": 626,
+      "status": "PASS_API_SIZE_AND_SHA256",
+      "bytes": 626,
+      "sha256": "6fc5af54dd963e8d0af58b6a8dc051a52fef9e0447ef25630da669f394b6f6d7"
+    },
+    {
+      "name": "managed-graft-arm64.json",
+      "id": 687391581,
+      "expected_bytes": 626,
+      "status": "PASS_API_SIZE_AND_SHA256",
+      "bytes": 626,
+      "sha256": "ea612e7e9e8c5e352f78a91fe3c597dec2530eb023b00346087c24a91390a106"
+    },
+    {
+      "name": "managed-opencode-amd64.json",
+      "id": 687391502,
+      "expected_bytes": 626,
+      "status": "PASS_API_SIZE_AND_SHA256",
+      "bytes": 626,
+      "sha256": "6bf0a05aa550a48b5f5543955707d60eb292e4dc77e237f2f04b6ce1f856c880"
+    },
+    {
+      "name": "managed-opencode-arm64.json",
+      "id": 687391528,
+      "expected_bytes": 626,
+      "status": "PASS_API_SIZE_AND_SHA256",
+      "bytes": 626,
+      "sha256": "bb4ed32e57e92ac1c5e2e946d635a2044369415c7530087eaa993d05ede6c024"
+    }
+  ]
+}

@@ -1,0 +1,45 @@
+import concurrent.futures, hashlib, json, pathlib, re, urllib.request
+
+root = pathlib.Path(__file__).resolve().parent
+api = json.loads((root / 'release-api.json').read_text())
+expected = {'checksums.txt', 'ivoai-memory-context.zip'}
+for arch in ['amd64', 'arm64']:
+    expected.update({f'ivoai_linux_{arch}.tar.gz', f'ivoai-opencode_linux_{arch}.tar.gz', f'ivoai-graft_linux_{arch}.tar.gz', f'managed-opencode-{arch}.json', f'managed-graft-{arch}.json'})
+assert api['id'] == 427478463 and api['tag_name'] == 'v0.15.0' and api['published_at'] == '2026-10-29T04:51:24Z'
+assert api['draft'] is False and api['prerelease'] is False
+assert len(api['assets']) == len(expected) and {x['name'] for x in api['assets']} == expected
+assert sum(x['size'] for x in api['assets']) <= 512 << 20
+for asset in api['assets']:
+    assert type(asset['size']) is int and 0 < asset['size'] <= 128 << 20
+    assert re.fullmatch(r'sha256:[a-f0-9]{64}', asset['digest'])
+    assert asset['browser_download_url'] == 'https://github.com/ivo-lopes/ivoai/releases/download/v0.15.0/' + asset['name']
+
+def download(asset):
+    name = asset['name']
+    record = {'name': name, 'id': asset['id'], 'expected_bytes': asset['size'], 'status': 'FAIL_DOWNLOAD_OR_INTEGRITY'}
+    try:
+        sha, size = hashlib.sha256(), 0
+        request = urllib.request.Request(asset['browser_download_url'], headers={'User-Agent': 'IVOAI-release-validation'})
+        with urllib.request.urlopen(request, timeout=60) as response, (root / 'assets' / name).open('xb') as output:
+            assert response.status == 200 and response.url.startswith('https://')
+            while True:
+                block = response.read(min(1 << 20, asset['size'] - size + 1))
+                if not block:
+                    break
+                size += len(block)
+                assert size <= asset['size']
+                sha.update(block)
+                output.write(block)
+        record.update(bytes=size, sha256=sha.hexdigest())
+        assert size == asset['size'] and 'sha256:' + sha.hexdigest() == asset['digest']
+        record['status'] = 'PASS_API_SIZE_AND_SHA256'
+    except Exception:
+        pass
+    return record
+
+with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
+    results = list(pool.map(download, api['assets']))
+receipt = {'release_id': api['id'], 'tag': api['tag_name'], 'published_at': api['published_at'], 'assets': results}
+(root / 'download-result.json').open('x').write(json.dumps(receipt, indent=2) + '\n')
+print(json.dumps({'downloaded': len(results), 'passed': sum(x['status'] == 'PASS_API_SIZE_AND_SHA256' for x in results), 'failures': [x['name'] for x in results if x['status'] != 'PASS_API_SIZE_AND_SHA256']}))
+raise SystemExit(0 if all(x['status'] == 'PASS_API_SIZE_AND_SHA256' for x in results) else 1)
