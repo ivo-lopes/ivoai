@@ -1,0 +1,16 @@
+{
+  "status": "FROZEN_PREPARED_NOT_EXECUTED_ROOT_REVIEW_REQUIRED",
+  "input_pins": 34,
+  "frozen_inputs_sha256": "fc18e5cfa8030ca9f875434701dff7b72fc1db2bea368d53bb8861ba5b439599",
+  "plan_sha256": "c3e9a73e51703903e9b5d5dc0bc25b21abb79ef16d7fce2e3bbcceb3d7bdf9b4",
+  "JS_sha256": "88abca315796085995abfc501c152ea6de9fdc8d7a602937215d9a8c668fe9b4",
+  "wire_sha256": "571e62f9d13469c457b5312caa83ef41b844752bef3bff136bf57d515e62dadf",
+  "contract_sha256": "a834ffb8bb94ce474a517417161e8e7581b7d310b821352fe8f45588bc3986ce",
+  "host_sha256": "036222e29a2b68ffd3d9e1661cd494ba7a9ec5ed0e31c396426492dda55026e2",
+  "app_test_ELF_sha256": "f304fd6277bf49c5189651024237e060fdfb6ebbd14079409007a7cb6a713d6d",
+  "official_CLI_inventory_exec_HTTP_MCP_namespace_runs": 0,
+  "Go_preparation_only_test": "PASS actual helper argv/Dir/Env matches frozen plan, no Cmd.Run",
+  "Python_pure_contract_cases": 21,
+  "cloud_context_requirements": "UNATTESTED",
+  "cohort_global_economy_gate": "BLOCKED/INCOMPLETE"
+}
