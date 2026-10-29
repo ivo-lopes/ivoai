@@ -1,0 +1,9 @@
+{
+  "first_nominal": "tool observed controlled fake PASS1.584s, before final modes/optin; no captured stdout",
+  "epoch1": "candidate/baseline-race, vet and arm64-build logs refer to final-source-frozen.json before upstream limiter",
+  "epoch2": "final-* logs refer to source-freeze-v2 before spontaneous-signal refusal fix; recipe script later pinned source/Go separately",
+  "epoch3": "v3-* logs/source-freeze-v3 are final Go source; final-inputs-frozen also binds recipe markdown",
+  "negative_failures": "Both expected FAILs preserved, not counted as normal PASS",
+  "timeouts_assertions": "No failed run was made green by increasing timeout or relaxing refusal criteria",
+  "metadata_diff_check": "Raw go version -m includes a trailing tab and failed git diff --check; gzip stores the original bytes exactly rather than stripping/weakening the check. Raw SHA preserved in validation."
+}

@@ -1,0 +1,10 @@
+{
+  "initial_nominal_before_final_request_and_delivery_regressions": {
+    "exit": 0,
+    "package_seconds": 0.026,
+    "top_level_tests": 6,
+    "provenance": "tool-observed output; no prior log was captured"
+  },
+  "later_apply_patch_context_failure": "No test or client run; corrected patch construction before final freeze",
+  "historical_epochs_unchanged": true
+}

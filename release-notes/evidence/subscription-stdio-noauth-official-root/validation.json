@@ -1,0 +1,38 @@
+{
+  "result": "PASS_OFFICIAL_NOAUTH_NEGATIVE_ONLY",
+  "source": "ed9b659693d8aeb3cd51c42492078371769a6f6c",
+  "source_inputs_verified_after": 6,
+  "reviewed_wrapper_sha256": "d9a4eec35eec072017db5cd73c5ed2d47928a37933ec881efb124de08b4b188c",
+  "wrapper_delta": "GOWORK=off in offline Go build only; original7a73 archived unchanged",
+  "official_invocations": "one app-server process through source opt-in; four read RPCs plus initialized notification; no turn/model/status/login",
+  "namespace_exit": 0,
+  "actual_native_wait_zero": true,
+  "authenticated_positive_certified": false,
+  "fixture_input_hashes": {
+    "case/codehome/config.toml": {
+      "sha256": "60623c58f74f3e09cb94287daf1f8e3a495122359523c07212a266598c8d2f3f",
+      "bytes": 272
+    },
+    "fixture/system-config.toml": {
+      "sha256": "e4dffca5794f3eb34098059d8b286a4beb826ef8a11cc6b6aa7670b069f4dbba",
+      "bytes": 92
+    },
+    "fixture/mcp-tripwire.sh": {
+      "sha256": "d1028142355880293f3e3aa206c33f34f9c7c03228bd4e859ff2d27f064705da",
+      "bytes": 118
+    },
+    "fixture/host-netns": {
+      "sha256": "fe50dd5e5a7f72627cc0c52a6cb6ca6c043032fd15edfa678477400ba07a9e86",
+      "bytes": 17
+    }
+  },
+  "not_claimed": [
+    "personal configuration read or copy by runner",
+    "subscription provenance or billing",
+    "model inference or availability",
+    "real benchmark cohort",
+    "all MCP transports/cloud/runtime isolation",
+    "release015 qualification"
+  ],
+  "elapsed_wall": "NOT_MEASURED_AS_PHASE_BENCHMARK"
+}

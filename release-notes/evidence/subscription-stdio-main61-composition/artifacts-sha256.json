@@ -1,0 +1,78 @@
+{
+  "Go-summary.json": {
+    "sha256": "26860795677feccf142156a82935bdbf9d1136fda66b5f588276912d1a1d17e4",
+    "bytes": 546
+  },
+  "Python.log": {
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  "Python.result.json": {
+    "sha256": "2d5a7364edd0e1c1df08c1435a6e08e564a7d83ea72724547161ec8b5fcfdc1e",
+    "bytes": 255
+  },
+  "Python.started.json": {
+    "sha256": "1688895f959689ff30350982edff504e74d98d876f5ab88b6cc5e6b7cc8ef100",
+    "bytes": 974
+  },
+  "Python.stderr": {
+    "sha256": "a582692124f3ed1c26b41e95809b6e89c55a39939ed99d4a8e1f567b66f84086",
+    "bytes": 171
+  },
+  "fixture-after-check.json": {
+    "sha256": "c911c08295e9c2de590b8adf8888e01f9f00503d3588f0cb2462356f847e9494",
+    "bytes": 495
+  },
+  "full-go.jsonl.gz": {
+    "sha256": "c8455e0f53ea78212fa1ecd366bab4641c9cda84d255783699fad6e3fdc916a3",
+    "bytes": 165419
+  },
+  "full-go.result.json": {
+    "sha256": "df6e8dd31abc94096afe90af606e5a2a7d0426d609324898f33fe6ffd3ea0fda",
+    "bytes": 255
+  },
+  "full-go.started.json": {
+    "sha256": "604879ed517cc7037fc0b53964d0acb26ac022c02b0c379cf5342e5051bc0306",
+    "bytes": 964
+  },
+  "full-go.stderr": {
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  "prior-records.json": {
+    "sha256": "d490eee230b4923b0573bd320c709fcae7d7b9545f0eb4f90b038620e9f3e251",
+    "bytes": 244840
+  },
+  "run-gate.py.txt": {
+    "sha256": "b62e4a7ac0dcfe77b6aa69907d14e4290bb0aabf19ee04b2c9ce18110e3d4be1",
+    "bytes": 2211
+  },
+  "source-frozen.json": {
+    "sha256": "da0650ca29fd150bc2434a772fa8e6aff17eaac7e5cd380d96cc0e2006d9533f",
+    "bytes": 74721
+  },
+  "supplemental-fixture-check.json": {
+    "sha256": "09cf5eea2f6209c9ed53ac11ccabfa50593424d08867c54190de272b914a3ed0",
+    "bytes": 429
+  },
+  "validation.json": {
+    "sha256": "1296724c07b21f92ca7526e5b8d4e4f5788bd1045f2684b401a14efeb75160e8",
+    "bytes": 4609
+  },
+  "vet.log": {
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  "vet.result.json": {
+    "sha256": "97f9eb8278a835f7f97e6db5cfb9493dae408bb256337d4790ee19c958b292ec",
+    "bytes": 252
+  },
+  "vet.started.json": {
+    "sha256": "41fe22f7acfe36ceb5bdaa2b8f1760d58adb47a7ffefc027fca557bd8c319192",
+    "bytes": 930
+  },
+  "vet.stderr": {
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  }
+}

@@ -1,0 +1,6 @@
+--- FAIL: TestPrimaryPrefetchSubscriptionStdioControlledProtocols (0.20s)
+    --- FAIL: TestPrimaryPrefetchSubscriptionStdioControlledProtocols/oversize (0.02s)
+        primary_prefetch_subscription_stdio_contract_linux_test.go:128: buffered transport overread beyond the global budget plus one byte
+FAIL
+FAIL	github.com/ivo-lopes/ivoai/internal/app	0.202s
+FAIL

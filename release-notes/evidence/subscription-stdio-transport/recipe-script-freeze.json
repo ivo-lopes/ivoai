@@ -1,0 +1,7 @@
+{
+  "script": "run_offline_once.py",
+  "sha256": "7a73cb4304829b564bc3a01750a360879ab3552ba37388c3c59d10e5f1402a27",
+  "status": "PREPARED_NOT_EXECUTED",
+  "go_inputs_remain": "source-freeze-v2.json",
+  "change_since_v2": "recipe only: expected source commit and Go executable digest checks; AST parsed only"
+}

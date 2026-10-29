@@ -1,0 +1,6 @@
+--- FAIL: TestPrimaryPrefetchSubscriptionStdioControlledProtocols (0.24s)
+    --- FAIL: TestPrimaryPrefetchSubscriptionStdioControlledProtocols/self_kill (0.02s)
+        primary_prefetch_subscription_stdio_contract_linux_test.go:119: controlled protocol result differs from closed expectation
+FAIL
+FAIL	github.com/ivo-lopes/ivoai/internal/app	0.247s
+FAIL

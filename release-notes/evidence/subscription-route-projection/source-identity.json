@@ -1,0 +1,16 @@
+{
+  "candidate": {
+    "base": "e4250ab0497f4366cb80b7ce03aa21608f58dd34",
+    "existing_go_count": 589,
+    "existing_go_mismatches": [],
+    "new_helpers_match_final_freeze": true,
+    "production_go_count": 284
+  },
+  "baseline": {
+    "base": "b45354791f1d28632e8094b82d1fe5f9c568eba1",
+    "existing_go_count": 493,
+    "existing_go_mismatches": [],
+    "new_helpers_match_final_freeze": true,
+    "production_go_count": 246
+  }
+}

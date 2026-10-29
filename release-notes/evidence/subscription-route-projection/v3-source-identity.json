@@ -1,0 +1,16 @@
+{
+  "candidate": {
+    "base": "e4250ab0497f4366cb80b7ce03aa21608f58dd34",
+    "existing_go_paths": 589,
+    "existing_go_mismatches": [],
+    "non_test_go_paths": 284,
+    "new_helpers_match_v3": true
+  },
+  "baseline": {
+    "base": "b45354791f1d28632e8094b82d1fe5f9c568eba1",
+    "existing_go_paths": 493,
+    "existing_go_mismatches": [],
+    "non_test_go_paths": 246,
+    "new_helpers_match_v3": true
+  }
+}

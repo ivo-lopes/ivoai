@@ -1,0 +1,501 @@
+package app
+
+// Benchmark preparation only. No production caller, transport implementation,
+// process launcher or automatic cohort wiring exists in this file.
+
+import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"os/exec"
+	"reflect"
+	"strings"
+	"time"
+)
+
+const (
+	prefetchSubscriptionMaxBytes  = 2 << 20
+	prefetchSubscriptionMaxDepth  = 32
+	prefetchSubscriptionMaxNodes  = 32768
+	prefetchSubscriptionMaxString = 128 << 10
+	prefetchSubscriptionInference = "https://chatgpt.com/backend-api/codex"
+	prefetchSubscriptionBackend   = "https://chatgpt.com/backend-api/"
+)
+
+type prefetchSubscriptionReason uint8
+
+const (
+	prefetchSubscriptionOK prefetchSubscriptionReason = iota
+	prefetchSubscriptionScopeDenied
+	prefetchSubscriptionProxyPolicyUnknown
+	prefetchSubscriptionTransportUnavailable
+	prefetchSubscriptionRPCInvalid
+	prefetchSubscriptionRPCError
+	prefetchSubscriptionResponseBounds
+	prefetchSubscriptionConfigDenied
+	prefetchSubscriptionRequirementsDenied
+	prefetchSubscriptionAuthDenied
+	prefetchSubscriptionRouteDenied
+	prefetchSubscriptionCanceled
+	prefetchSubscriptionCleanupFailed
+)
+
+func (r prefetchSubscriptionReason) Error() string {
+	names := [...]string{"ACCEPTED_UNQUALIFIED", "SCOPE_DENIED", "PROXY_POLICY_UNKNOWN", "TRANSPORT_UNAVAILABLE", "RPC_INVALID", "RPC_ERROR", "RESPONSE_BOUNDS", "CONFIG_DENIED", "REQUIREMENTS_DENIED", "AUTH_DENIED", "ROUTE_DENIED", "CANCELED", "CLEANUP_FAILED"}
+	if int(r) >= len(names) {
+		return "UNKNOWN"
+	}
+	return names[r]
+}
+
+// PermitFilteredEnvironment is an explicit host benchmark-policy input, never a
+// model/config field or inferred permission to remove an institutional proxy.
+// Unknown/required proxy policy refuses this prepared filtered-env profile. It
+// never appends respect_system_proxy=false or changes client network policy.
+type prefetchSubscriptionHostPolicy struct{ PermitFilteredEnvironment bool }
+
+type prefetchSubscriptionSummary struct {
+	Accepted  bool   `json:"accepted"`
+	Connected bool   `json:"connected"`
+	Provider  string `json:"provider"`
+	Auth      string `json:"auth"`
+	Route     string `json:"route"`
+	Reason    string `json:"reason"`
+}
+
+type prefetchSubscriptionPlan struct{ scope prefetchDirectScope }
+
+func (prefetchSubscriptionPlan) String() string   { return "subscription-probe-plan" }
+func (prefetchSubscriptionPlan) GoString() string { return "subscription-probe-plan" }
+func (prefetchSubscriptionPlan) MarshalJSON() ([]byte, error) {
+	return []byte(`{"connected":false}`), nil
+}
+
+func prefetchPrepareSubscription(scope prefetchDirectScope, policy prefetchSubscriptionHostPolicy) (prefetchSubscriptionPlan, error) {
+	if !policy.PermitFilteredEnvironment {
+		return prefetchSubscriptionPlan{}, prefetchSubscriptionProxyPolicyUnknown
+	}
+	if scope.configurationScope != prefetchDirectUserConfigIncluded || len(scope.globals) < 6 {
+		return prefetchSubscriptionPlan{}, prefetchSubscriptionScopeDenied
+	}
+	allowed := map[string]bool{}
+	for _, key := range strings.Fields("HOME CODEX_HOME PATH LANG TZ TERM TMPDIR LC_ALL LC_CTYPE LC_COLLATE LC_MESSAGES LC_MONETARY LC_NUMERIC LC_TIME LC_PAPER LC_NAME LC_ADDRESS LC_TELEPHONE LC_MEASUREMENT LC_IDENTIFICATION XDG_CONFIG_HOME XDG_DATA_HOME XDG_CACHE_HOME XDG_STATE_HOME XDG_RUNTIME_DIR DBUS_SESSION_BUS_ADDRESS") {
+		allowed[key] = true
+	}
+	seen := map[string]bool{}
+	for _, entry := range scope.environment {
+		key, _, ok := strings.Cut(entry, "=")
+		if !ok || !allowed[key] || seen[key] {
+			return prefetchSubscriptionPlan{}, prefetchSubscriptionScopeDenied
+		}
+		seen[key] = true
+	}
+	// Only the already reviewed common scope constructor is accepted. In
+	// particular no caller-added endpoint, profile, ignore-config or proxy flag
+	// can be hidden before the canonical settings.
+	want, err := prefetchNewDirectScope(scope.executable, scope.directory, scope.globals[3], scope.globals[1], scope.environment)
+	if err != nil || !reflect.DeepEqual(scope.globals, want.globals) {
+		return prefetchSubscriptionPlan{}, prefetchSubscriptionScopeDenied
+	}
+	want.globals = append(want.globals, "-c", `model_provider="openai"`, "-c", `openai_base_url="`+prefetchSubscriptionInference+`"`, "-c", `chatgpt_base_url="`+prefetchSubscriptionBackend+`"`)
+	return prefetchSubscriptionPlan{scope: want}, nil
+}
+
+// All three commands receive the same frozen configuration settings. Returning
+// a command does not run it. No initializer in this increment executes one.
+func (p prefetchSubscriptionPlan) probeCommand(ctx context.Context) *exec.Cmd {
+	return p.scope.command(ctx, nil, []string{"app-server", "--listen", "stdio://"})
+}
+func (p prefetchSubscriptionPlan) inventoryScope() prefetchDirectScope {
+	s := p.scope
+	s.environment = append([]string{}, s.environment...)
+	s.globals = append([]string{}, s.globals...)
+	return s
+}
+
+type prefetchSubscriptionRequest struct {
+	ID     int
+	Method string
+	Params map[string]any
+}
+
+// Session is the seam for an existing owned, cancellable official RPC lifecycle.
+// No implementation of it may copy auth or settings. Close must reap its owned
+// child and cancel blocked reads. This increment supplies only synthetic fakes;
+// real lifecycle/CLI acceptance remains a separately reviewed offline gate.
+type prefetchSubscriptionSession interface {
+	Call(context.Context, prefetchSubscriptionRequest) (io.ReadCloser, error)
+	Notify(context.Context, string) error
+	Close() error
+}
+type prefetchSubscriptionOpen func(context.Context, *exec.Cmd) (prefetchSubscriptionSession, error)
+
+type prefetchSubscriptionAdmission struct {
+	plan    prefetchSubscriptionPlan
+	summary prefetchSubscriptionSummary
+}
+
+func (a prefetchSubscriptionAdmission) String() string               { return a.summary.Reason }
+func (a prefetchSubscriptionAdmission) GoString() string             { return a.summary.Reason }
+func (a prefetchSubscriptionAdmission) MarshalJSON() ([]byte, error) { return json.Marshal(a.summary) }
+
+func prefetchSubscriptionProbe(ctx context.Context, plan prefetchSubscriptionPlan, open prefetchSubscriptionOpen) (admission *prefetchSubscriptionAdmission, err error) {
+	// Capture the exact scope before callbacks can mutate caller-owned aliases.
+	plan.scope.environment = append([]string{}, plan.scope.environment...)
+	plan.scope.globals = append([]string{}, plan.scope.globals...)
+	if ctx == nil {
+		return nil, prefetchSubscriptionScopeDenied
+	}
+	if open == nil {
+		return nil, prefetchSubscriptionTransportUnavailable
+	}
+	// Reject zero/forged plans before invoking even an injected transport.
+	base := plan.scope
+	if len(base.globals) < 6 {
+		return nil, prefetchSubscriptionScopeDenied
+	}
+	base.globals = append([]string{}, base.globals[:len(base.globals)-6]...)
+	want, check := prefetchPrepareSubscription(base, prefetchSubscriptionHostPolicy{PermitFilteredEnvironment: true})
+	if check != nil || !reflect.DeepEqual(want.scope, plan.scope) {
+		return nil, prefetchSubscriptionScopeDenied
+	}
+	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
+	defer cancel()
+	if ctx.Err() != nil {
+		return nil, prefetchSubscriptionCanceled
+	}
+	// Never expose aliases to the retained plan to the transport.
+	command := plan.probeCommand(ctx)
+	expectedPath, expectedDir := command.Path, command.Dir
+	expectedArgs, expectedEnv := append([]string{}, command.Args...), append([]string{}, command.Env...)
+	sameScope := func() bool {
+		return command.Path == expectedPath && command.Dir == expectedDir && reflect.DeepEqual(command.Args, expectedArgs) && reflect.DeepEqual(command.Env, expectedEnv)
+	}
+	session, openErr := open(ctx, command)
+	if openErr != nil || session == nil {
+		if session != nil {
+			_ = session.Close()
+		}
+		return nil, prefetchSubscriptionTransportUnavailable
+	}
+	defer func() {
+		if session.Close() != nil {
+			admission = nil
+			err = prefetchSubscriptionCleanupFailed
+		} else if ctx.Err() != nil {
+			admission = nil
+			err = prefetchSubscriptionCanceled
+		} else if !sameScope() {
+			admission = nil
+			err = prefetchSubscriptionScopeDenied
+		}
+	}()
+	if !sameScope() {
+		return nil, prefetchSubscriptionScopeDenied
+	}
+	call := func(id int, method string, params map[string]any) (map[string]any, error) {
+		if ctx.Err() != nil {
+			return nil, prefetchSubscriptionCanceled
+		}
+		if !sameScope() {
+			return nil, prefetchSubscriptionScopeDenied
+		}
+		reader, callErr := session.Call(ctx, prefetchSubscriptionRequest{ID: id, Method: method, Params: params})
+		if callErr != nil || reader == nil {
+			if reader != nil {
+				_ = reader.Close()
+			}
+			return nil, prefetchSubscriptionRPCError
+		}
+		value, readErr := prefetchSubscriptionRPC(ctx, reader, id)
+		if reader.Close() != nil {
+			return nil, prefetchSubscriptionRPCError
+		}
+		if ctx.Err() != nil {
+			return nil, prefetchSubscriptionCanceled
+		}
+		if !sameScope() {
+			return nil, prefetchSubscriptionScopeDenied
+		}
+		return value, readErr
+	}
+	if _, err = call(1, "initialize", map[string]any{"clientInfo": map[string]any{"name": "ivoai-benchmark-route-probe", "version": "1"}, "capabilities": map[string]any{"experimentalApi": true}}); err != nil {
+		return nil, err
+	}
+	if session.Notify(ctx, "initialized") != nil {
+		return nil, prefetchSubscriptionRPCError
+	}
+	config, err := call(2, "config/read", map[string]any{"includeLayers": false, "cwd": plan.scope.directory})
+	if err != nil {
+		return nil, err
+	}
+	if !prefetchSubscriptionConfig(config) {
+		return nil, prefetchSubscriptionConfigDenied
+	}
+	requirements, err := call(3, "configRequirements/read", map[string]any{})
+	if err != nil {
+		return nil, err
+	}
+	if !prefetchSubscriptionRequirements(requirements) {
+		return nil, prefetchSubscriptionRequirementsDenied
+	}
+	account, err := call(4, "account/read", map[string]any{"refreshToken": false})
+	if err != nil {
+		return nil, err
+	}
+	auth, route := prefetchSubscriptionAccount(account)
+	if !auth {
+		return nil, prefetchSubscriptionAuthDenied
+	}
+	if !route {
+		return nil, prefetchSubscriptionRouteDenied
+	}
+	if ctx.Err() != nil {
+		return nil, prefetchSubscriptionCanceled
+	}
+	if !sameScope() {
+		return nil, prefetchSubscriptionScopeDenied
+	}
+	return &prefetchSubscriptionAdmission{plan: plan, summary: prefetchSubscriptionSummary{Accepted: true, Connected: false, Provider: "OPENAI", Auth: "CHATGPT_COMPATIBLE", Route: "CHATGPT_CANONICAL", Reason: prefetchSubscriptionOK.Error()}}, nil
+}
+
+// Parse bounded bytes from an owned, context-cancellable RPC stream. The raw
+// bytes and full decoded configuration are local only and never returned to a
+// caller, stored in an admission, hashed, traced or formatted as an error.
+func prefetchSubscriptionRPC(ctx context.Context, reader io.Reader, id int) (map[string]any, error) {
+	var body bytes.Buffer
+	defer func() { clear(body.Bytes()) }()
+	chunk := make([]byte, 4096)
+	defer clear(chunk)
+	zeroReads := 0
+	for {
+		if ctx.Err() != nil {
+			return nil, prefetchSubscriptionCanceled
+		}
+		// Read at most one extra byte to distinguish exact EOF from overflow.
+		n, e := reader.Read(chunk[:min(len(chunk), prefetchSubscriptionMaxBytes-body.Len()+1)])
+		if n < 0 || n > len(chunk) {
+			return nil, prefetchSubscriptionRPCInvalid
+		}
+		if body.Len()+n > prefetchSubscriptionMaxBytes {
+			return nil, prefetchSubscriptionResponseBounds
+		}
+		_, _ = body.Write(chunk[:n])
+		if n == 0 && e == nil {
+			zeroReads++
+			if zeroReads > 100 {
+				return nil, prefetchSubscriptionRPCInvalid
+			}
+		} else {
+			zeroReads = 0
+		}
+		if e == io.EOF {
+			break
+		}
+		if e != nil {
+			return nil, prefetchSubscriptionRPCInvalid
+		}
+	}
+	d := json.NewDecoder(bytes.NewReader(body.Bytes()))
+	d.UseNumber()
+	nodes := 0
+	v, e := prefetchSubscriptionValue(d, 0, &nodes)
+	if e != nil {
+		return nil, e
+	}
+	if _, e = d.Token(); e != io.EOF {
+		return nil, prefetchSubscriptionRPCInvalid
+	}
+	obj, ok := v.(map[string]any)
+	if !ok {
+		return nil, prefetchSubscriptionRPCInvalid
+	}
+	if version, ok := obj["jsonrpc"]; ok && version != "2.0" {
+		return nil, prefetchSubscriptionRPCInvalid
+	}
+	number, ok := obj["id"].(json.Number)
+	if !ok || string(number) != fmt.Sprint(id) {
+		return nil, prefetchSubscriptionRPCInvalid
+	}
+	if _, ok := obj["method"]; ok {
+		return nil, prefetchSubscriptionRPCInvalid
+	}
+	if _, ok := obj["error"]; ok {
+		return nil, prefetchSubscriptionRPCError
+	}
+	result, ok := obj["result"].(map[string]any)
+	if !ok {
+		return nil, prefetchSubscriptionRPCInvalid
+	}
+	return result, nil
+}
+
+func prefetchSubscriptionValue(d *json.Decoder, depth int, nodes *int) (any, error) {
+	*nodes++
+	if depth > prefetchSubscriptionMaxDepth || *nodes > prefetchSubscriptionMaxNodes {
+		return nil, prefetchSubscriptionResponseBounds
+	}
+	token, err := d.Token()
+	if err != nil {
+		return nil, prefetchSubscriptionRPCInvalid
+	}
+	switch value := token.(type) {
+	case json.Delim:
+		switch value {
+		case '{':
+			obj := map[string]any{}
+			for d.More() {
+				key, e := d.Token()
+				name, ok := key.(string)
+				if e != nil || !ok || len(name) > prefetchSubscriptionMaxString {
+					return nil, prefetchSubscriptionRPCInvalid
+				}
+				if _, exists := obj[name]; exists {
+					return nil, prefetchSubscriptionRPCInvalid
+				}
+				item, e := prefetchSubscriptionValue(d, depth+1, nodes)
+				if e != nil {
+					return nil, e
+				}
+				obj[name] = item
+			}
+			end, e := d.Token()
+			if e != nil || end != json.Delim('}') {
+				return nil, prefetchSubscriptionRPCInvalid
+			}
+			return obj, nil
+		case '[':
+			items := []any{}
+			for d.More() {
+				item, e := prefetchSubscriptionValue(d, depth+1, nodes)
+				if e != nil {
+					return nil, e
+				}
+				items = append(items, item)
+			}
+			end, e := d.Token()
+			if e != nil || end != json.Delim(']') {
+				return nil, prefetchSubscriptionRPCInvalid
+			}
+			return items, nil
+		default:
+			return nil, prefetchSubscriptionRPCInvalid
+		}
+	case string:
+		if len(value) > prefetchSubscriptionMaxString {
+			return nil, prefetchSubscriptionResponseBounds
+		}
+	}
+	return token, nil
+}
+
+func prefetchSubscriptionConfig(result map[string]any) bool {
+	if _, present := result["layers"]; present {
+		return false
+	}
+	c, ok := result["config"].(map[string]any)
+	if !ok {
+		return false
+	}
+	if c["model_provider"] != "openai" || c["openai_base_url"] != prefetchSubscriptionInference || c["chatgpt_base_url"] != prefetchSubscriptionBackend {
+		return false
+	}
+	// A first small guard refuses restrictions that exec could enforce by
+	// logout. Their absence/null is observable; no workspace ID is inspected.
+	for _, key := range []string{"forced_login_method", "forced_chatgpt_workspace_id"} {
+		if value, ok := c[key]; !ok || value != nil {
+			return false
+		}
+	}
+	return true
+}
+
+func prefetchSubscriptionRequirements(result map[string]any) bool {
+	value, present := result["requirements"]
+	if !present {
+		return false
+	}
+	if value == nil {
+		return true
+	}
+	r, ok := value.(map[string]any)
+	if !ok {
+		return false
+	}
+	// The pinned mapper supplies effective login methods for every non-null
+	// requirements object. Missing/null cannot be promoted to compatible.
+	if methods, present := r["allowedLoginMethods"]; !present || methods == nil {
+		return false
+	}
+	for key, value := range r {
+		switch key {
+		// ConfigRequirements uses camelCase; Config itself uses snake_case.
+		case "modelProvider":
+			if value != nil && value != "openai" {
+				return false
+			}
+		case "modelProviders":
+			if value == nil {
+				continue
+			}
+			providers, ok := value.(map[string]any)
+			if !ok {
+				return false
+			}
+			if _, selected := providers["openai"]; selected {
+				return false
+			}
+		case "chatgptBaseUrl":
+			if value != nil && value != prefetchSubscriptionBackend {
+				return false
+			}
+		case "allowedLoginMethods":
+			if value == nil {
+				continue
+			}
+			methods, ok := value.([]any)
+			if !ok || len(methods) < 1 || len(methods) > 2 {
+				return false
+			}
+			seen := map[string]bool{}
+			for _, method := range methods {
+				name, ok := method.(string)
+				if !ok || name != "chatgpt" && name != "api" || seen[name] {
+					return false
+				}
+				seen[name] = true
+			}
+			// A policy permitting API as well does not request API execution.
+			// The separate observed account gate still rejects API-key auth.
+			if !seen["chatgpt"] {
+				return false
+			}
+		// Other requirements cannot be treated as grants or route defaults. The
+		// first fixture-only profile accepts only an explicitly enumerated null
+		// set; expanding it needs contract evidence rather than silent ignore.
+		default:
+			if value != nil {
+				return false
+			}
+		}
+	}
+	return true
+}
+
+func prefetchSubscriptionAccount(result map[string]any) (bool, bool) {
+	account, ok := result["account"].(map[string]any)
+	if !ok || account["type"] != "chatgpt" || result["requiresOpenaiAuth"] != true {
+		return false, false
+	}
+	routing, ok := result["workspaceRouting"].(map[string]any)
+	if !ok {
+		return true, false
+	}
+	if routing["backendOrigin"] != "https://chatgpt.com" {
+		return true, false
+	}
+	override := routing["accountRoutingOverride"]
+	return true, override == "NO_CONSTRAINT"
+}

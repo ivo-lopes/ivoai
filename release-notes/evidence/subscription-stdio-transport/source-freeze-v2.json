@@ -1,0 +1,15 @@
+{
+  "base": "b495e7499514acbb43aaa770735a5f5b335e482b",
+  "baseline_base": "378d9075c500a41163a7d496815070600ff4ce9b",
+  "files": {
+    "internal/app/primary_prefetch_subscription_stdio_linux_test.go": "07e611bb844dadf7e3780a4bfdcfd5ac1f3a5c5743ee7043bb538323df07a69e",
+    "internal/app/primary_prefetch_subscription_stdio_contract_linux_test.go": "af4a2c55153dfc39a79bad05f34937e1a3b3c15906aa6237b9553b751179da05",
+    "internal/app/primary_prefetch_subscription_offline_linux_test.go": "17b7c74f28d56ca392cf11698bc15f06b5df1849b779a9c1917281e831003483",
+    "internal/app/testdata/subscription_stdio_fixture.go.txt": "621d329230cb744c3c38f4dfc8b53e19acb22fd7638df17bb2e683618267107b",
+    "release-notes/evidence/subscription-stdio-transport/run_offline_once.py": "73683c1efc8127073a202fbe6fe9b33f5579fa558239fd4f4b3d313d0c68b1b3"
+  },
+  "source_only": true,
+  "official_client_calls": 0,
+  "previous_epoch_preserved": "final-source-frozen.json; not the final v2 source",
+  "limiter_control_expected_FAIL_seconds": 0.202
+}

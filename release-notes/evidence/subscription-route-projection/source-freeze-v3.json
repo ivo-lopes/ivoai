@@ -1,0 +1,14 @@
+{
+  "base": "e4250ab0497f4366cb80b7ce03aa21608f58dd34",
+  "baseline_projection_base": "b45354791f1d28632e8094b82d1fe5f9c568eba1",
+  "source_only": true,
+  "connected": false,
+  "files": {
+    "internal/app/primary_prefetch_subscription_guard_test.go": "4204708a830577c425d180e1cff57278e38078b5f6683ee3ed3fbee6f39ab42a",
+    "internal/app/primary_prefetch_subscription_contract_test.go": "4cbc8682a3da9badbb036a45053a59b67d3d81c9b383426a26fb041be092f6d5"
+  },
+  "prior_freezes_preserved": [
+    "frozen-source.json",
+    "final-source-frozen.json"
+  ]
+}

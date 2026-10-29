@@ -1,0 +1,5 @@
+{
+  "Replace": {
+    "/var/tmp/ivoai-subscription-stdio-transport-20261029/internal/app/primary_prefetch_subscription_stdio_linux_test.go": "/var/tmp/ivoai-subscription-stdio-transport-20261029/release-notes/evidence/subscription-stdio-transport/pre-spontaneous-exit-transport.go.txt"
+  }
+}

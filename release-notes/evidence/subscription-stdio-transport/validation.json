@@ -1,0 +1,100 @@
+{
+  "schema_version": 1,
+  "recorded_utc": "2026-10-29T03:53:32.608233+00:00",
+  "result": "CONTROLLED_FAKE_TRANSPORT_PASS_OFFICIAL_NEGATIVE_PREPARED_NOT_EXECUTED",
+  "candidate_base": "b495e7499514acbb43aaa770735a5f5b335e482b",
+  "baseline_final_projection": "cbfb139d1c016db789dae170bf0c40f682a5c406",
+  "baseline_prior_projection": "652674413cbd4536f61b12d59cd7d4135b76402f",
+  "source_freeze": "source-freeze-v3.json",
+  "source_freeze_sha256": "37c97c3c19b7eab32868bf7071e9c68bcaa46fb6d75c977bc73ec9322a870f12",
+  "shared_new_source_identity": true,
+  "existing_go_identity": {
+    "candidate": {
+      "base": "b495e7499514acbb43aaa770735a5f5b335e482b",
+      "existing_go_paths": 591,
+      "non_test_go_paths": 284,
+      "existing_go_mismatches": []
+    },
+    "baseline": {
+      "base": "378d9075c500a41163a7d496815070600ff4ce9b",
+      "existing_go_paths": 495,
+      "non_test_go_paths": 246,
+      "existing_go_mismatches": []
+    }
+  },
+  "final_race": {
+    "v3-candidate-race.jsonl": {
+      "events_including_subtests": {
+        "pass": 85
+      },
+      "top_level": 14,
+      "package": [
+        {
+          "Action": "pass",
+          "Elapsed": 3.429
+        }
+      ]
+    },
+    "v3-baseline-race.jsonl": {
+      "events_including_subtests": {
+        "pass": 85
+      },
+      "top_level": 14,
+      "package": [
+        {
+          "Action": "pass",
+          "Elapsed": 3.427
+        }
+      ]
+    }
+  },
+  "vet": {
+    "candidate_exit": 0,
+    "baseline_exit": 0
+  },
+  "linux_ARM64": {
+    "compile_exit": 0,
+    "execution": "NOT_RUN",
+    "test_ELF_sha256": "338da8c5a0932e7e3c0d16161257312d7bd2e94549f32e5a87f5d8cd307c5c87",
+    "compiled_from_frozen_uncommitted_test_source": true,
+    "metadata_archive": "v3-arm64-metadata.log.gz",
+    "metadata_raw_sha256": "0896f17fabeccd14480bd0358f0424dd8cd4f0d618fa748abecb91b5b29099e6",
+    "metadata_archive_exact_bytes": true
+  },
+  "negative_controls": [
+    {
+      "case": "bufio_without_upstream_global_limiter",
+      "exit": 1,
+      "package_seconds": 0.202,
+      "ordinary_pass": false
+    },
+    {
+      "case": "spontaneous_SIGKILL_preobserved_before_Close",
+      "exit": 1,
+      "package_seconds": 0.247,
+      "ordinary_pass": false
+    }
+  ],
+  "official_recipe": {
+    "status": "PREPARED_NOT_EXECUTED",
+    "script_sha256": "7a73cb4304829b564bc3a01750a360879ab3552ba37388c3c59d10e5f1402a27",
+    "static_check": "Python AST parse PASS only; no wrapper invocation",
+    "expected_positive": "NOT_CERTIFIED_FRESH_NO_AUTH; synthetic positive unit only",
+    "requires_parent_review_before_execution": true,
+    "final_Go_epoch": "source-freeze-v3.json",
+    "final_inputs_freeze_sha256": "f8a3a84b467d5c25bdb1c79111efa850a46414cec7039242585e2c9bb5989eff",
+    "recipe_markdown_sha256": "d7f2fc7576e422229f2b6cfb458f450f79874a2c55cf4d43d0b9eb0fed3a3b36"
+  },
+  "selected_tests_only": true,
+  "official_optin_test": "NOT_INVOKED_NOT_COUNTED_AS_PASS",
+  "real_auth_status_model_provider_CLI_RPC_executions": 0,
+  "personal_config_auth_keyring_reads_copies_hashes": 0,
+  "real_cohort_wiring": false,
+  "native_diagnostic_runner_bypass": false,
+  "new_dependencies_frameworks_authstores_orchestrators": false,
+  "normal_client_owned_refresh": "SUPPORTED; no credentials used in this preparation",
+  "full_Go_hosted_CI": "NOT_RUN_COMPOSITION_REQUIRED",
+  "release_changes": "NONE",
+  "economics": "NOT_MEASURED",
+  "prior_artifacts_preserved": true
+}

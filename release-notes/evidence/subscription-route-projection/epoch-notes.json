@@ -1,0 +1,10 @@
+{
+  "final_epoch": "source-freeze-v3.json",
+  "v1_results": "candidate-nominal/candidate-race/baseline-race and candidate-vet logs; synthetic profile before scope-snapshot regression",
+  "v2_results": "final-candidate-race/final-baseline-race and final-*-vet logs; snapshot fixed, requirements compatible-policy fixture not yet aligned with pinned camelCase schema",
+  "v3_results": "v3-* logs; final scope snapshot plus official-shape requirements, fail-closed missing login policy, both permitted login methods handled without choosing API",
+  "scope_alias_before": "FAIL negative0.007s, preserved; no production source affected",
+  "requirements_field_before": "FAIL negative0.012s, preserved; no official RPC had been run",
+  "all_skips": "zero in executed selected tests; no opt-in/provider tests executed",
+  "historical_identity_count_note": "Earlier source-identity.json production_go_count counts all tracked non-_test.go paths, not a production build closure. v3-source-identity.json uses the precise non_test_go_paths name."
+}

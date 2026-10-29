@@ -1,0 +1,5 @@
+--- FAIL: TestPrimaryPrefetchSubscriptionProtocolRequests (0.00s)
+    primary_prefetch_subscription_contract_test.go:172: explicit compatible requirements refused
+FAIL
+FAIL	github.com/ivo-lopes/ivoai/internal/app	0.012s
+FAIL

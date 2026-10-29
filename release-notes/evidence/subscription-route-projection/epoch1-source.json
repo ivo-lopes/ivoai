@@ -1,0 +1,10 @@
+{
+  "base": "e4250ab0497f4366cb80b7ce03aa21608f58dd34",
+  "files": {
+    "internal/app/primary_prefetch_subscription_guard_test.go": "5ab69c70fd8d7d7aab4bae55eac47fb4c9aada6f73164059dac293302b034797",
+    "internal/app/primary_prefetch_subscription_contract_test.go": "a48971e5685279bd2fc89f5fd332fdcd22b41062ee555ba9b930dc5c403c72f9"
+  },
+  "source_only": true,
+  "transport": "INJECTED_SYNTHETIC_ONLY",
+  "real_client_calls": 0
+}

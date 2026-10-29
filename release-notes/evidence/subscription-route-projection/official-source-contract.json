@@ -1,0 +1,51 @@
+{
+  "tag": "rust-v0.162.1",
+  "tag_object": "7a078f6bb4ce0dc2a81408b334ce52979d92c603",
+  "peeled_commit": "092d3acd6bec3e3a14bdc7e7a2810ab628ab759d",
+  "source_not_ELF_rebuild_attestation": true,
+  "official_source_files": {
+    "codex-rs/app-server-protocol/src/protocol/v2/config.rs": {
+      "sha256": "93f7493dba38114e4be349e6d327605cfd88b8eb8454db6f5173d329e87fb9af",
+      "bytes": 42503
+    },
+    "codex-rs/app-server-protocol/src/protocol/v2/account.rs": {
+      "sha256": "f52c03c9f98f8fd496824616ec1669954f35470cbd2ff15101ce4b7e6a57b2ad",
+      "bytes": 31165
+    },
+    "codex-rs/app-server/src/request_processors/config_processor.rs": {
+      "sha256": "9f644fe304985473611354abc826d1811931c55b54df8dedbc8f49a4def462e4",
+      "bytes": 52739
+    },
+    "codex-rs/model-provider-info/src/lib.rs": {
+      "sha256": "93ce6cd0a65477dff89545b8b48853455da0654c4bcc5a1092596d88d9dfe25c",
+      "bytes": 31484
+    },
+    "codex-rs/core/src/config/mod.rs": {
+      "sha256": "32babb117ff4bf0dc08050c4a755f5996f57f51fcebb82595c81648420394259",
+      "bytes": 202569
+    },
+    "codex-rs/login/src/auth/manager.rs": {
+      "sha256": "d2081e3e4f2f339a7a1aa52ea62d8485e7785c2b0a12dde1a7f470019d56dc2a",
+      "bytes": 119014
+    },
+    "codex-rs/exec/src/lib.rs": {
+      "sha256": "51b62cef4893c6d07b51753fc2716fc05985cdc9de6673f2fa2d974779454d4b",
+      "bytes": 89346
+    },
+    "codex-rs/app-server/src/request_processors/account_processor/workspace_routing.rs": {
+      "sha256": "2d2e1badd55ac8805ac344f8b921ac10d7f6bc0b8b9679108ddb3bb288f09c92",
+      "bytes": 21222
+    },
+    "codex-rs/model-provider/src/provider.rs": {
+      "sha256": "fff66b31c38e6ef815b023bbb797178a039a28a0fca0e39deaef029a57dbabf9",
+      "bytes": 54210
+    }
+  },
+  "schema_notes": [
+    "Config fields snake_case; ConfigRequirements fields camelCase",
+    "AccountRoutingOverride::NoConstraint explicitly serializes NO_CONSTRAINT despite enclosing snake_case",
+    "includeLayers=false does not remove secrets from effective config",
+    "account/read refreshToken=false does not prohibit client-owned normal OAuth refresh or workspace discovery"
+  ],
+  "research_source_order": "Memory read_page then one memory_query for irrelevant result, then Context(empty), then official docs and official GitHub pin source"
+}

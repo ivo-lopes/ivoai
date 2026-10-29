@@ -1,0 +1,11 @@
+{
+  "base": "e4250ab0497f4366cb80b7ce03aa21608f58dd34",
+  "baseline_projection_base": "b45354791f1d28632e8094b82d1fe5f9c568eba1",
+  "files": {
+    "internal/app/primary_prefetch_subscription_guard_test.go": "dd72a6579b85a3436423d01516e7a612398e2047cbe91b02923a826c164f1a30",
+    "internal/app/primary_prefetch_subscription_contract_test.go": "cdfc50dc66df32e5697eaadea0ba76f97ddc2f1da8693f586ca022804294146d"
+  },
+  "source_only": true,
+  "transport": "INJECTED_SYNTHETIC_ONLY",
+  "real_client_calls": 0
+}
