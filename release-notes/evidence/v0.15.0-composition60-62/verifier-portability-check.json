@@ -1,0 +1,13 @@
+{
+  "status": "PASS_STATIC_ARCHIVE_IDENTITY_AND_DOCUMENTED_MATERIALIZATION",
+  "archive_manifest_entries": 29,
+  "source_map_entries": 20,
+  "helper_kept_go_txt": true,
+  "wrapper_uses_materialized_directory": true,
+  "explicit_source_tree_cli": true,
+  "legacy_test_SOURCE_overridden_by_documented_runner": true,
+  "Python_sources_AST_valid": 4,
+  "unit35_and_v014_controls": "PRIOR_EPOCH_PRESERVED_NOT_RERUN",
+  "v015_downloaded_asset_verification": "NOT_RUN_NOT_PUBLISHED",
+  "asset_download_execution_auth_provider": 0
+}

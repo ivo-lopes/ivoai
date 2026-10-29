@@ -1,0 +1,36 @@
+import hashlib,json,os,pathlib,subprocess,time
+proof=pathlib.Path(__file__).resolve().parent
+source=pathlib.Path('/home/ivo/Downloads/PROJETOS/MINDSITE/ivoai-release-v015-candidate')
+f=json.loads((proof/'source-frozen.json').read_text())
+assert all(hashlib.sha256((source/n).read_bytes()).hexdigest()==h for n,h in f['files'].items())
+(proof/'core-smoke-corrected.started.json').open('x').write(json.dumps({'source':f['source_commit'],'version':'0.15.0','operations':['trusted Go buildinfo read amd64/arm64','local source-built amd64 Core version','local source-built amd64 Core help'],'native_executors_auth_status_models':0},indent=2)+'\n')
+home=proof/'core-smoke-corrected-home';home.mkdir(mode=0o700)
+env={'HOME':str(home),'PATH':'/usr/bin:/bin','LANG':'C.UTF-8','TZ':'UTC','XDG_CONFIG_HOME':str(home/'config'),'XDG_DATA_HOME':str(home/'data'),'XDG_CACHE_HOME':str(home/'cache'),'XDG_STATE_HOME':str(home/'state')}
+go='/var/tmp/ivoai-validation-toolchain-20261028/go/bin/go';builds={}
+for arch in ['amd64v1','arm64']:
+ binary=proof/('ivoai-0.15.0-linux-'+arch)
+ run=subprocess.run([go,'version','-m',str(binary)],env=env,stdout=subprocess.PIPE,stderr=subprocess.PIPE,check=True)
+ (proof/('buildinfo-corrected-'+arch+'.txt')).write_bytes(run.stdout)
+ settings={}
+ for line in run.stdout.decode().splitlines():
+  parts=line.strip().split('\t')
+  if len(parts)>=2 and parts[0]=='build' and '=' in parts[1]:
+   key,value=parts[1].split('=',1);settings[key]=value
+ assert settings['vcs.revision']==f['source_commit'] and settings['vcs.modified']=='false'
+ assert settings['CGO_ENABLED']=='0' and settings['GOOS']=='linux'
+ assert settings['GOARCH']==('amd64' if arch=='amd64v1' else 'arm64')
+ if arch=='amd64v1':assert settings['GOAMD64']=='v1'
+ commands=json.loads((proof/('build-'+arch+'.started.json')).read_text())['command']
+ assert commands[commands.index('-ldflags')+1]=='-s -w -X main.version=0.15.0'
+ builds[arch]={'sha256':hashlib.sha256(binary.read_bytes()).hexdigest(),'bytes':binary.stat().st_size,'settings':settings,'execution':'only version/help on native host' if arch=='amd64v1' else 'NOT_RUN_CROSS_BUILD_ONLY','release_asset':False,'release_specific_managed_component_metadata':'NOT_INJECTED_LOCAL_CORE_SMOKE_ONLY'}
+outputs={}
+for operation in ['version','help']:
+ start=time.monotonic();p=subprocess.run([str(proof/'ivoai-0.15.0-linux-amd64v1'),operation],env=env,stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=15)
+ (proof/('Core-'+operation+'.stdout')).write_bytes(p.stdout);(proof/('Core-'+operation+'.stderr')).write_bytes(p.stderr)
+ assert p.returncode==0 and len(p.stdout)<32768 and not p.stderr
+ if operation=='version':assert p.stdout.decode().strip()=='0.15.0'
+ else:assert b'ivoai setup' in p.stdout and b'--legacy-opencode' in p.stdout
+ outputs[operation]={'exit':p.returncode,'wall_seconds':round(time.monotonic()-start,3),'stdout_sha256':hashlib.sha256(p.stdout).hexdigest(),'stdout_bytes':len(p.stdout),'stderr_bytes':len(p.stderr)}
+assert all(hashlib.sha256((source/n).read_bytes()).hexdigest()==h for n,h in f['files'].items())
+report={'status':'PASS_LOCAL_SOURCE_BUILT_CORE_METADATA_VERSION_HELP','source':f['source_commit'],'version':'0.15.0','builds':builds,'ldflags_buildinfo':'ABSENT under -trimpath, expected from reviewed local Go source; main.version validated by recorded build command and actual Core version output','Core_outputs':outputs,'HOME':'owned private new directory, no real user HOME/config/auth','ARM_or_emulated_noAVX_execution':'NOT_RUN','official_executor_auth_status_provider_model':0,'published_artifacts':'NOT_BUILT_DOWNLOADED_OR_EXECUTED','source_unchanged':True}
+(proof/'core-build-smoke-corrected.json').write_text(json.dumps(report,indent=2)+'\n');print(json.dumps({'status':report['status'],'source':f['source_commit'],'amd64_version_help_exit':[outputs[x]['exit'] for x in ['version','help']],'build_metadata_vcs_modified':False}))
