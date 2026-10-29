@@ -1,0 +1,12 @@
+{
+  "files": {
+    "internal/app/primary_prefetch_subscription_authenticated_linux_test.go": "bc7e2be3bb688f28b5ddd3b903710f515bb58a3c8d0ff3f6b713d4ec0a6f0372",
+    "internal/app/primary_prefetch_subscription_authenticated_contract_linux_test.go": "2b80ad6a150aa5874d133bc1c9ab7ce2804a0085bd46e0cebbf6341983e1bc04",
+    "release-notes/evidence/subscription-authenticated-metadata/run_authenticated_once.py": "096adb046cdb482841d341f9a209f269cc30736e455b87d23ec02ac42f8df481",
+    "release-notes/evidence/subscription-authenticated-metadata/test_recipe_contract.py": "93b36646d677e74d5530ddde5406fe2af1db537340129e66ddd8c5beaf3f12d3",
+    "release-notes/evidence/subscription-authenticated-metadata/RECIPE.md": "33427b4d7dc07a58f9144bd3c54e96e1797f6d6028564c400237534d5f89493a"
+  },
+  "go_inputs_same_as_readonly_validation": true,
+  "script_changed_after_Go_checks": "closed-receipt semantic validation and two new pure Python cases only; no Go changes",
+  "official_optin_and_wrapper": "PREPARED_NOT_EXECUTED"
+}

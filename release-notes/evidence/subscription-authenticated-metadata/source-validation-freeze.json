@@ -1,0 +1,11 @@
+{
+  "base": "7747ac86c748bbbbbddfe3457499fbef8f6f661c",
+  "qualified_guard_source": "ed9b659693d8aeb3cd51c42492078371769a6f6c",
+  "files": {
+    "internal/app/primary_prefetch_subscription_authenticated_linux_test.go": "bc7e2be3bb688f28b5ddd3b903710f515bb58a3c8d0ff3f6b713d4ec0a6f0372",
+    "internal/app/primary_prefetch_subscription_authenticated_contract_linux_test.go": "2b80ad6a150aa5874d133bc1c9ab7ce2804a0085bd46e0cebbf6341983e1bc04",
+    "release-notes/evidence/subscription-authenticated-metadata/run_authenticated_once.py": "d81d174eea68e890ae3aa511c0e71415191864bc0075a3ec5eadc7dfc66521ec",
+    "release-notes/evidence/subscription-authenticated-metadata/test_recipe_contract.py": "65487287a55e1626fbba26134d987d6208eb103078654fe1f85122ed4cd35c78"
+  },
+  "official_client_runs": 0
+}
