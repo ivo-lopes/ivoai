@@ -20,6 +20,9 @@ import (
 )
 
 type ExecutorSpec struct {
+	// CodexConfigContext is shared with managed MCP inventory. Nil retains the
+	// legacy standalone invocation contract.
+	CodexConfigContext   *codexresolver.ConfigContext
 	ObserveProgress      func(ExecutionTrace)
 	Version              string
 	ObserveConfiguration bool
@@ -51,6 +54,12 @@ func (r CLIRunner) Run(ctx context.Context, request ExecutorRequest, emit func(s
 	spec := r.Codex
 	if request.Executor == "claude" {
 		spec = r.Claude
+	}
+	if request.Executor == "codex" && spec.CodexConfigContext != nil {
+		if spec.CodexConfigContext.Validate() != nil {
+			return ExecutorResult{}, failure("CODEX_MANAGED_CONFIG_CONTEXT_UNAVAILABLE")
+		}
+		spec.Dir, spec.Env = spec.CodexConfigContext.Directory(), spec.CodexConfigContext.Environment()
 	}
 	if spec.Disabled || spec.Path == "" {
 		return ExecutorResult{}, failure("executor_unavailable")
@@ -84,7 +93,11 @@ func (r CLIRunner) Run(ctx context.Context, request ExecutorRequest, emit func(s
 	args := append([]string(nil), spec.Args...)
 	if request.Executor == "codex" {
 		invocation := codexresolver.SplitExecArguments(spec.Args)
-		invocation.GlobalArgs = append(invocation.GlobalArgs, codexresolver.ProjectTrustArgs(spec.Dir)...)
+		if spec.CodexConfigContext != nil {
+			invocation.GlobalArgs = append(invocation.GlobalArgs, spec.CodexConfigContext.ProjectTrustArguments()...)
+		} else {
+			invocation.GlobalArgs = append(invocation.GlobalArgs, codexresolver.ProjectTrustArgs(spec.Dir)...)
+		}
 		args = invocation.Arguments(request.ExecutorSessionID, spec.Dir, appendSelectionArgs(nil, request))
 	} else {
 		args = append(args, "--print", "--verbose", "--output-format", "stream-json", "--include-partial-messages")

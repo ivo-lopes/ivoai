@@ -1,0 +1,6 @@
+--- FAIL: TestCodexMCPInventoryIncludesExecutionConfig (0.00s)
+    inventory_context_test.go:21: inventory lost the execution project-trust policy
+    inventory_context_test.go:22: inventory lost caller configuration
+FAIL
+FAIL	github.com/ivo-lopes/ivoai/internal/workers	0.009s
+FAIL

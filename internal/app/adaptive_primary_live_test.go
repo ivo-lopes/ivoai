@@ -18,6 +18,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ivo-lopes/ivoai/internal/codexresolver"
 	"github.com/ivo-lopes/ivoai/internal/config"
 	"github.com/ivo-lopes/ivoai/internal/core"
 	"github.com/ivo-lopes/ivoai/internal/opencodebridge"
@@ -404,11 +405,15 @@ stream_max_retries=0
 			args = append(args, "-c", "mcp_servers.ivoai-orchestrator.env."+key+"="+strconv.Quote(value))
 		}
 		args = append(args, "-c", `mcp_servers.ivoai-orchestrator.args=[]`, "--skip-git-repo-check", "-c", `web_search="disabled"`)
-		args, err = (workers.Adapter{Runner: f.a.Runner}).IsolateCodexMCPs(ctx, f.state.Components["codex"].Path, args)
+		scope, err := codexresolver.NewConfigContext(platform.RunOptions{Dir: f.root, Env: environment, CleanEnv: true})
 		if err != nil {
 			return core.ExecutorResult{}, err
 		}
-		runner := opencodebridge.CLIRunner{Codex: opencodebridge.ExecutorSpec{Path: f.state.Components["codex"].Path, SHA256: adaptiveCodexSHA, Version: "0.162.1", Args: args, Env: environment, Dir: f.root}}
+		args, err = (workers.Adapter{Runner: f.a.Runner}).IsolateCodexMCPsInContext(ctx, f.state.Components["codex"].Path, args, scope)
+		if err != nil {
+			return core.ExecutorResult{}, err
+		}
+		runner := opencodebridge.CLIRunner{Codex: opencodebridge.ExecutorSpec{Path: f.state.Components["codex"].Path, SHA256: adaptiveCodexSHA, Version: "0.162.1", Args: args, Env: scope.Environment(), Dir: scope.Directory(), CodexConfigContext: &scope}}
 		return runner.Run(ctx, request, emit)
 	})
 	b, results := adaptiveBridge(t, f, base)

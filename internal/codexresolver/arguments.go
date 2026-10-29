@@ -89,7 +89,7 @@ func ValidateManagedConfigScope(args []string) error {
 	if managedIgnoresUserConfig(args[:managedArgumentBoundary(args)]) {
 		return errors.New("CODEX_MANAGED_CONFIG_SCOPE_UNSUPPORTED: managed MCP isolation cannot safely honor --ignore-user-config; omit that flag; IVOAI does not modify personal configuration files")
 	}
-	return nil
+	return validateManagedDirectoryArguments(args)
 }
 
 func managedArgumentBoundary(args []string) int {

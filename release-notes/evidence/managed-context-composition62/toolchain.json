@@ -1,0 +1,8 @@
+{
+  "version": "go version go1.27.3 linux/amd64",
+  "sha256": "5f5eb6d0b2fb6aa0bb5d5f8c5f1c944e0de955c925f0111af92a9d8f79680b5b",
+  "GOPROXY": "off",
+  "GOSUMDB": "off",
+  "HOME": "private proof directory",
+  "provider_client_auth": "NOT_RUN"
+}

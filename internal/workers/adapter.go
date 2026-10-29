@@ -182,6 +182,18 @@ func (a Adapter) Run(ctx context.Context, request Request, observe func(Observat
 	if err != nil {
 		return Result{}, err
 	}
+	environment := workerEnvironment(direct, request.Executor)
+	if request.Access != nil {
+		environment = request.Access.environment(environment)
+	}
+	var configContext codexresolver.ConfigContext
+	if request.Executor == "codex" {
+		configContext, err = codexresolver.NewConfigContext(platform.RunOptions{Dir: request.Directory, Env: environment, CleanEnv: true})
+		if err != nil {
+			return Result{}, err
+		}
+		request.Directory = configContext.Directory()
+	}
 	args, resultFile, err := workerArgs(request)
 	if err != nil {
 		return Result{}, err
@@ -190,9 +202,9 @@ func (a Adapter) Run(ctx context.Context, request Request, observe func(Observat
 		defer os.Remove(resultFile)
 	}
 	if request.Access != nil {
-		args, err = a.isolateScopedMCPs(ctx, direct, request, args)
+		args, err = a.isolateScopedMCPs(ctx, direct, request, args, configContext)
 	} else {
-		args, err = a.isolateMCPs(ctx, direct, request.Executor, args)
+		args, err = a.isolateMCPs(ctx, direct, request.Executor, args, configContext)
 	}
 	if err != nil {
 		return Result{}, err
@@ -221,9 +233,9 @@ func (a Adapter) Run(ctx context.Context, request Request, observe func(Observat
 			}
 		}
 	}
-	result, startErr := run(ctx, command, commandArgs, request, direct, useHeadroom, observe)
+	result, startErr := run(ctx, command, commandArgs, request, direct, useHeadroom, observe, environment)
 	if startErr != nil && useHeadroom && isStartError(startErr) {
-		return run(ctx, direct, args, request, direct, false, observe)
+		return run(ctx, direct, args, request, direct, false, observe, environment)
 	}
 	if startErr != nil {
 		return result, startErr
@@ -276,29 +288,55 @@ var readOnlyKnowledgeTools = map[string][]string{
 // IsolateCodexMCPs reuses the official inventory boundary for a controlled
 // primary as well as workers. Callers append only their managed projections;
 // those explicitly re-enable their session-local servers after this deny list.
+// This compatibility wrapper snapshots current cwd/environment. Callers with a
+// distinct exec context must migrate to IsolateCodexMCPsInContext and reuse it.
 func (a Adapter) IsolateCodexMCPs(ctx context.Context, executable string, args []string) ([]string, error) {
-	a.KnowledgeServers = nil
-	return a.isolateMCPs(ctx, executable, "codex", args)
+	scope, err := codexresolver.NewConfigContext(platform.RunOptions{})
+	if err != nil {
+		return nil, err
+	}
+	return a.IsolateCodexMCPsInContext(ctx, executable, args, scope)
 }
 
-func (a Adapter) isolateMCPs(ctx context.Context, executable, executor string, args []string) ([]string, error) {
+// IsolateCodexMCPsInContext uses the immutable process/config scope that the
+// caller also supplies to exec. Managed projections stay after the deny list.
+func (a Adapter) IsolateCodexMCPsInContext(ctx context.Context, executable string, args []string, scope codexresolver.ConfigContext) ([]string, error) {
+	a.KnowledgeServers = nil
+	return a.isolateMCPs(ctx, executable, "codex", args, scope)
+}
+
+func (a Adapter) isolateMCPs(ctx context.Context, executable, executor string, args []string, scopes ...codexresolver.ConfigContext) ([]string, error) {
 	switch executor {
 	case "codex":
-		managedArgs, err := codexresolver.ManagedAgentArgs(args)
+		var scope codexresolver.ConfigContext
+		var err error
+		if len(scopes) == 1 {
+			scope = scopes[0]
+		} else if len(scopes) == 0 {
+			scope, err = codexresolver.NewConfigContext(platform.RunOptions{})
+		} else {
+			return nil, errors.New("CODEX_MANAGED_CONFIG_CONTEXT_UNAVAILABLE")
+		}
+		if err != nil {
+			return nil, err
+		}
+		managedArgs, err := scope.ManagedArguments(args)
 		if err != nil {
 			return nil, err
 		}
 		if a.Runner == nil {
 			return nil, errors.New("isolate Codex worker MCPs: runner is unavailable")
 		}
-		// Inventory and execution must use the same feature restrictions. Plugin
-		// MCPs disappear when plugins are disabled; overriding those stale names
-		// would create transport-less MCP tables that Codex rejects at startup.
-		inventoryArgs, err := codexresolver.ManagedAgentArgs([]string{"mcp", "list", "--json"})
+		// Inventory and execution share context, config and feature restrictions.
+		// Project/plugin names may disappear under the managed policy; denying
+		// stale names creates transport-less MCP tables rejected by Codex.
+		inventoryArgs, err := codexresolver.MCPInventoryArguments(managedArgs)
 		if err != nil {
 			return nil, err
 		}
-		result, err := a.Runner.Run(ctx, executable, inventoryArgs, platform.RunOptions{Timeout: 15 * time.Second})
+		options := scope.RunOptions()
+		options.Timeout = 15 * time.Second
+		result, err := a.Runner.Run(ctx, executable, inventoryArgs, options)
 		if err != nil {
 			return nil, fmt.Errorf("isolate Codex worker MCPs: inspect configured servers: %w", err)
 		}
@@ -500,14 +538,11 @@ func (b *limitedBuffer) Write(value []byte) (int, error) {
 	return original, nil
 }
 
-func run(ctx context.Context, command string, args []string, request Request, direct string, headroomUsed bool, observe func(Observation)) (Result, error) {
+func run(ctx context.Context, command string, args []string, request Request, direct string, headroomUsed bool, observe func(Observation), environment []string) (Result, error) {
 	cmd := exec.CommandContext(ctx, command, args...)
 	cmd.Dir = request.Directory
 	cmd.Stdin = strings.NewReader(request.Task)
-	cmd.Env = workerEnvironment(direct, request.Executor)
-	if request.Access != nil {
-		cmd.Env = request.Access.environment(cmd.Env)
-	}
+	cmd.Env = environment
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 	var stdout, stderr limitedBuffer
 	stdout.limit = MaxRawResultBytes

@@ -1,0 +1,18 @@
+--- FAIL: TestCodexIncompleteOptionsFailBeforeInventory (0.00s)
+    --- FAIL: TestCodexIncompleteOptionsFailBeforeInventory/-c (0.00s)
+        inventory_context_test.go:158: host policy was accepted as a missing caller option value
+    --- FAIL: TestCodexIncompleteOptionsFailBeforeInventory/--config (0.00s)
+        inventory_context_test.go:158: host policy was accepted as a missing caller option value
+    --- FAIL: TestCodexIncompleteOptionsFailBeforeInventory/--profile (0.00s)
+        inventory_context_test.go:158: host policy was accepted as a missing caller option value
+    --- FAIL: TestCodexIncompleteOptionsFailBeforeInventory/-p (0.00s)
+        inventory_context_test.go:158: host policy was accepted as a missing caller option value
+    --- FAIL: TestCodexIncompleteOptionsFailBeforeInventory/--disable (0.00s)
+        inventory_context_test.go:158: host policy was accepted as a missing caller option value
+    --- FAIL: TestCodexIncompleteOptionsFailBeforeInventory/--output-schema (0.00s)
+        inventory_context_test.go:158: host policy was accepted as a missing caller option value
+    --- FAIL: TestCodexIncompleteOptionsFailBeforeInventory/--output-last-message (0.00s)
+        inventory_context_test.go:158: host policy was accepted as a missing caller option value
+FAIL
+FAIL	github.com/ivo-lopes/ivoai/internal/workers	0.009s
+FAIL
