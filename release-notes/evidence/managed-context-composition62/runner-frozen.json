@@ -1,0 +1,6 @@
+{
+  "sha256": "6fa7ad973c26ab9aca5e4ae27d15b414f6d50c0b08a2c494b8ade712ba6fee27",
+  "exclusive_marker_per_gate": true,
+  "full_go_max_runs": 1,
+  "vet_max_runs": 1
+}
