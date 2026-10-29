@@ -1,0 +1,12 @@
+{
+  "composition.json": "21a9d68be8f1ccd69c39aa6c1e532a882ab93abf5b867c6e2a703079cd37ca7c",
+  "fixture-inputs.json": "77f948fc3b79d7775c1cc3788427d74414c1ca13f728c4f92ec38342d111fd38",
+  "focused.jsonl": "e8aa8851b557502dfcfb73cb71f99d971cf7cf71aa2a02d8319570becf562ed3",
+  "focused.result.json": "dbb396daf86df061de80c342cc410e8f8f82d99e5ad4afb873dc8eaa1ebe77fd",
+  "focused.started.json": "e04a34744668c9f360b32952c7874848b60d94079fe39478bb330b6eda38fe65",
+  "focused.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "initial-manifest-scope-failure.json": "5e947314668180b642520ff098c4916db4894b78e781f61eb551edcfbe0594f4",
+  "run-focused.py.txt": "71c55a4e33e66239792d21e5d0cae1739a93c78548516b9374ce93d395624bf3",
+  "source-freeze.json": "22095e8cc4cf45289622e1fa96a16136951b6c905c0c35a41dc6fa1e6e66d0db",
+  "validate-composition.py.txt": "e5a49be9b69d024f6b3dc8882f304bd06d604ac87605868b5a8a3ebaa8248578"
+}

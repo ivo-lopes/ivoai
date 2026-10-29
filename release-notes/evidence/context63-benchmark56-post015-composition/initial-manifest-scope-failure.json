@@ -1,0 +1,1 @@
+{"result":"FAIL_CHECKER_SCOPE","tests_executed":0,"cause":"Initial object-union checker treated the inherited PR63 archived base-runner.go.txt as an executable source addition that had to exist in 1f. It is a prior evidence artifact; it is byte-exact PR63 and is included in the evidence union. No repository source changed."}

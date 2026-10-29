@@ -1,0 +1,33 @@
+{
+  "source": "e80273d981632ec32ba60f8d534619ac1cf0bf18",
+  "tree": "2ee4f51d76503aac13b0b44ba10cdaa55d6246fc",
+  "exit": 0,
+  "wall_seconds": 8.237,
+  "package_results": [
+    {
+      "package": "github.com/ivo-lopes/ivoai/cmd/ivoai",
+      "result": "skip",
+      "seconds": 0
+    },
+    {
+      "package": "github.com/ivo-lopes/ivoai/internal/docsserver",
+      "result": "pass",
+      "seconds": 0.007
+    },
+    {
+      "package": "github.com/ivo-lopes/ivoai/internal/servercmd",
+      "result": "pass",
+      "seconds": 0.458
+    }
+  ],
+  "test_results": {
+    "pass": 52
+  },
+  "skipped_tests": [],
+  "source_unchanged_after": true,
+  "official_client_auth_model_or_service_calls": 0,
+  "CI_for_merge": "NOT_RUN",
+  "post_v015_tag": true,
+  "cmd_ivoai_classification": "COMPILED_NO_TEST_FILES; package skip event is not a passing test",
+  "passing_top_level_tests": 32
+}
