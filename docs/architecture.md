@@ -5,11 +5,22 @@ v0.5.0 and records the current incremental status separately below. Exact pins
 live in `manifest/components.yaml`; delivered behavior and migration limits belong
 to versioned implementation and validation evidence.
 
-## Local v0.15.0 candidate — publication HOLD
+## Local v0.15.0 candidate — conditional publication
 
-**PUBLICATION HOLD: PR61's MCP context and PR60/62 fixture corrections are
-composed locally; exact candidate-head CI, distribution gates and applicable
-final-source runtime qualification remain pending.** A supported
+**Publication is conditional on exact final-head CI and the existing Release/distribution
+gates; this candidate is not published.** A new restricted qualification on
+`77d5fd6c` passed both named official-client/Core protocol tests and both CLI
+subcases under race detection, with zero failures/skips. It used the reviewed
+0.162.1 client/companion, fresh fixture homes and a local fake provider without
+subscription authentication or real-model calls. The checks cover managed MCP
+scope/receipt/replay behavior and a separate actual Core bootstrap; they do not
+certify public TUI lifecycle, system/cloud isolation or general client/model
+parity. See the [final-source qualification](https://github.com/ivo-lopes/ivoai/blob/release/v0.15.0-candidate/release-notes/v0.15.0-final-runtime-qualification.md).
+Consult [GitHub releases](https://github.com/ivo-lopes/ivoai/releases) and the
+[workflow status](https://github.com/ivo-lopes/ivoai/actions) for subsequent
+publication/gate status; this record does not authorize a tag.
+
+The following observations remain historical and bound to their own sources. A supported
 `55ec7ab9` real turn passed its math oracle; its intentional SIGINT cleanup
 persisted failed/fallback1, which is not a measured frontend process exit.
 A separate public startup with only `/quit` + Enter completed naturally in
@@ -32,7 +43,7 @@ G0 is wired into admitted code prefetch behind its default-OFF flag, with protec
 Core/MCP exact recovery and separate protected creation opt-in. G1 Memory remains
 an unwired host SPI. Adaptive stays OFF, using literal-envelope admission and the
 existing Core DAG/approvals. PR55 is offline preflight; PR54/56 remain excluded.
-See [releases](releases.md) for precise source epochs and current hold. The
+See [releases](releases.md) for precise source epochs and publication conditions. The
 published v0.14.0 description below remains historical.
 
 ## Current release: v0.14.0

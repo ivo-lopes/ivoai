@@ -2,9 +2,20 @@
 
 ## v0.15.0 — local candidate, not published
 
-**PUBLICATION HOLD: PR61's MCP context and PR60/62 fixture corrections are
-composed locally; exact candidate-head CI, distribution gates and applicable
-final-source runtime qualification remain pending.** A supported
+**Publication is conditional on exact final-head CI and the existing Release/distribution
+gates; this candidate is not published.** A new restricted qualification on
+`77d5fd6c` passed both named official-client/Core protocol tests and both CLI
+subcases under race detection, with zero failures/skips. It used the reviewed
+0.162.1 client/companion, fresh fixture homes and a local fake provider without
+subscription authentication or real-model calls. The checks cover managed MCP
+scope/receipt/replay behavior and a separate actual Core bootstrap; they do not
+certify public TUI lifecycle, system/cloud isolation or general client/model
+parity. See the [final-source qualification](https://github.com/ivo-lopes/ivoai/blob/release/v0.15.0-candidate/release-notes/v0.15.0-final-runtime-qualification.md).
+Consult [GitHub releases](https://github.com/ivo-lopes/ivoai/releases) and the
+[workflow status](https://github.com/ivo-lopes/ivoai/actions) for subsequent
+publication/gate status; this record does not authorize a tag.
+
+The following observations remain historical and bound to their own sources. A supported
 `55ec7ab9` real turn passed its math oracle; its intentional SIGINT cleanup
 persisted failed/fallback1, which is not a measured frontend process exit.
 A separate public startup with only `/quit` + Enter completed naturally in

@@ -10,7 +10,9 @@ candidate setup. To explicitly provision the retained compatibility component,
 use `ivoai setup --mode client --legacy-opencode`; server setup refuses this flag.
 Ordinary setup preserves existing OpenCode ownership, binaries and history; it
 does not uninstall, repair or adopt that component. See [releases](releases.md)
-for candidate status and native migration limits.
+for conditional publication status and native migration limits. The restricted
+official-client/Core qualification uses a local fake provider without subscription
+authentication; it does not certify general TUI, auth or model behavior.
 
 ## Managed native configuration scope
 

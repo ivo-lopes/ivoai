@@ -5,11 +5,22 @@ na v0.5.0, e registra separadamente o estado incremental atual abaixo. As versõ
 exatas estão em `manifest/components.yaml`; comportamento entregue e limites da
 migração pertencem às evidências versionadas de implementação e validação.
 
-## Candidata local v0.15.0 — publicação HOLD
+## Candidata local v0.15.0 — publicação condicionada
 
-**PUBLICAÇÃO EM HOLD: contexto MCP do PR61 e correções de fixtures PR60/62
-compostos localmente; CI da candidata exata, distribuição e qualificação de
-runtime aplicável à fonte final continuam pendentes.** Um turno
+**Publicação condicionada à CI da fonte final exata e aos gates existentes de
+Release/distribuição; esta candidata não está publicada.** A nova qualificação
+restrita em `77d5fd6c` passou nos dois testes nomeados de protocolo CLI oficial/Core
+e nos dois subcasos CLI, com race e zero falhas/skips. Usou o par cliente/companion
+0.162.1 revisado, homes novos de fixtures e provedor falso local, sem autenticação
+de assinatura ou chamadas a modelo real. Verifica escopo MCP/receipt/recusa de
+replay e bootstrap real separado do Core; não certifica lifecycle da TUI pública,
+isolamento system/cloud ou paridade geral de clientes/modelos. Consulte a
+[qualificação da fonte final](https://github.com/ivo-lopes/ivoai/blob/release/v0.15.0-candidate/release-notes/v0.15.0-final-runtime-qualification.md).
+Consulte [releases no GitHub](https://github.com/ivo-lopes/ivoai/releases) e o
+[estado dos workflows](https://github.com/ivo-lopes/ivoai/actions) para publicação e
+gates posteriores; este registro não autoriza uma tag.
+
+As observações seguintes permanecem históricas, vinculadas a suas próprias fontes. Um turno
 real suportado em `55ec7ab9` passou no oráculo matemático; seu cleanup intencional
 por SIGINT persistiu failed/fallback1, sem medir o exit real do frontend.
 Outra inicialização pública, com apenas `/quit` + Enter, terminou naturalmente
@@ -32,7 +43,7 @@ G0 está ligado ao prefetch admitido sob flag OFF por padrão, com recuperação
 Core/MCP protegida e opt-in separado de criação protegida. G1 Memory permanece SPI
 sem ligação. Adaptação segue OFF, com admissão de envelope literal e DAG/aprovações
 Core existentes. PR55 é preflight offline; PR54/56 ficam excluídos. Consulte
-[releases](releases.md) para épocas exatas e hold atual. A descrição da v0.14.0
+[releases](releases.md) para épocas exatas e condições de publicação. A descrição da v0.14.0
 publicada abaixo continua histórica.
 
 ## Release atual: v0.14.0

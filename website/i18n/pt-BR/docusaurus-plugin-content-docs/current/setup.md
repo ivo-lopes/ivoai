@@ -10,7 +10,9 @@ candidato do updater. Para provisionar explicitamente o componente de
 compatibilidade preservado, use `ivoai setup --mode client --legacy-opencode`;
 setup de servidor recusa essa flag. O setup comum preserva propriedade, binários
 e histórico OpenCode existentes; não desinstala, repara nem adota o componente.
-Consulte [releases](releases.md) para estado da candidata e limites da migração.
+Consulte [releases](releases.md) para publicação condicionada e limites da migração. A qualificação restrita
+CLI oficial/Core usa provedor falso local, sem autenticação de assinatura; não
+certifica comportamento geral de TUI, autenticação ou modelo.
 
 ## Escopo de configuração nativo gerenciado
 

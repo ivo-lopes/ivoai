@@ -1,0 +1,22 @@
+{
+  "command": [
+    "/var/tmp/ivoai-validation-toolchain-20261028/go/bin/go",
+    "test",
+    "-race",
+    "-count=1",
+    "-timeout",
+    "120s",
+    "-json",
+    "./internal/app",
+    "-run",
+    "^TestLiveAdaptivePrimary(OfficialCLIWithoutDAG|CoreReadBootstrapWithoutChildFlag)$"
+  ],
+  "source": "77d5fd6c0c75effcf34e34a440e199c9344a96b0",
+  "official_pair": {
+    "/var/tmp/ivoai-adaptive-validation.VNtuzS/TestLiveAdaptivePrimaryCoreEscalationWithoutChildFlag337711545/004/codex": "628e35487d888a28f0427fc37501da529dd3d81fcbad7a2c3421c1e8670d92e1",
+    "/var/tmp/ivoai-adaptive-validation.VNtuzS/TestLiveAdaptivePrimaryCoreEscalationWithoutChildFlag337711545/004/codex-code-mode-host": "ec71830690a7c0024916ee0c99fbdc635bc6e747ff665ea4f03a8389bbcb6b30"
+  },
+  "auth": "fresh private HOME/CODEX_HOME per fixture; no login/status/account; fake local provider requires_openai_auth=false",
+  "bounds": "one Go invocation, two named top-level tests, two CLI subcases, no retry; no network namespace/host etc replacement",
+  "no_real_model": true
+}
