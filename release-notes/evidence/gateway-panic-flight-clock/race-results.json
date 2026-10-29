@@ -1,0 +1,35 @@
+{
+  "github.com/ivo-lopes/ivoai/internal/evidence": {
+    "package_result": [
+      {
+        "Action": "pass",
+        "Elapsed": 49.249
+      }
+    ],
+    "passing_top_level_tests": 36,
+    "test_event_counts_including_subtests": {
+      "pass": 113,
+      "skip": 2
+    },
+    "skipped_tests_not_passes": [
+      "TestRealRTKGeneratedGatewayABBA",
+      "TestRealRTKGatewayABBA"
+    ]
+  },
+  "github.com/ivo-lopes/ivoai/internal/workingcontext": {
+    "package_result": [
+      {
+        "Action": "pass",
+        "Elapsed": 66.523
+      }
+    ],
+    "passing_top_level_tests": 18,
+    "test_event_counts_including_subtests": {
+      "pass": 21,
+      "skip": 1
+    },
+    "skipped_tests_not_passes": [
+      "TestLiveProtectedArtifactsDoNotPoisonLegacyCoreRollback"
+    ]
+  }
+}

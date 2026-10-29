@@ -1,0 +1,19 @@
+{
+  "base": "b523055dcbcb833df1f1d903e0b823e1a0376b2c",
+  "recorded_utc": "2026-10-29T01:46:01.582391+00:00",
+  "intent": "Separate synchronous panic flight cleanup oracle from filesystem durability and a controlled deadline after Put",
+  "production_changes": false,
+  "original_source_evidence_workingcontext_equals4368": true,
+  "planned_source_only_controls": [
+    "Legacy panic assertion under synctest+afterPut1s virtual delay: expected FAIL ErrChanged while prior flight is proven released",
+    "Final test synchronously requires captured done closed/flight removed/no cache/puts before storage; same virtual delay then exact durable recovery succeeds",
+    "Separate actual stdlib context.WithTimeout1s inside synctest expires after Put barrier: ErrChanged/no packet/no cache/flight released",
+    "Private runtime overlay omits only flight cleanup defer: final panic oracle expected immediate FAIL before second Retrieve",
+    "Private overlay omits only postPut admission recheck: deadline oracle expected FAIL",
+    "Focused evidence+workingcontext race and vet on frozen final tests"
+  ],
+  "no_native_clients_status_auth_models_providers": true,
+  "no_real_clock_deadline_extension": true,
+  "stdlib_only": "testing/synctest from already required Go1.27.3; no dependency/module/pin/workflow changes",
+  "not_claimed": "Exact original slow site or original cause beyond observed packet error; any runtime correctness/security flaw"
+}
