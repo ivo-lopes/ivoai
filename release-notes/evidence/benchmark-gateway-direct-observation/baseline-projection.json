@@ -1,0 +1,9 @@
+{
+  "baseline_projection": "c647007043da18203e1b45cf90668ef6a759fc4e",
+  "baseline_projection_tree": "28b31f174e2dd0f8834c93a74d4b5ff9f2ce3288",
+  "baseline_original_non_test_go_verified": 239,
+  "module_manifests_verified": 2,
+  "common_projected_paths": 49,
+  "production_changes": false,
+  "baseline_diff_only_common_paths": true
+}

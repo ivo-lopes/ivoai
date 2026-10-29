@@ -1,0 +1,387 @@
+{
+  "schema": "ivoai.benchmark-gateway-direct-observation.v1",
+  "status": "LOCAL_TEST_ONLY_DIRECT_EVENT_OBSERVATION_VALIDATED_NO_ECONOMY_COHORT",
+  "base_revision": "991b670c2b24ec6046d9425272cb2fce46e1eea9",
+  "source_manifest_sha256": "0a79064c994e28814c4196ff68e204da8b88242af3ae8b4c39c2dc1954748be0",
+  "source_file_count": 3,
+  "production_changes": false,
+  "client_prompt_argv_env_lifecycle_validation_tail_byte_identical_sha256": "985d27269a1b62b3b147a96239d527704db15fdd98d2d5b03efc031c176bafa5",
+  "fixture_oracle_observer_contract_sources_unchanged": true,
+  "event_basis": "Completed retained session capability.resolve/evidence.code; separate code.inspect counts; no flag/PrefetchCalls activation inference. Event persistence is not asserted complete.",
+  "new_counts": [
+    "GatewayCodeResolves",
+    "GatewayCodeCacheHits",
+    "GatewayCodeCacheMisses",
+    "GatewayCodeCacheUnknown"
+  ],
+  "cache_condition": "Fresh App/session/cache, no Gateway prewarm per benchmark row. Second-read offline control is mechanism-only reuse. Official/client provider cache equivalence UNVERIFIED.",
+  "legacy_wire_compatibility": "Additive all-or-none block; absent legacy fields remain unreported, never synthesized zero; economics unchanged.",
+  "source_pinned_offline_expectation": "Test-only explicit IVOAI_BENCHMARK_EXPECT_GATEWAY_EVENTS=0 for baseline3ff,1 for candidate; not forwarded to any client or used as an observed metric.",
+  "checks": [
+    {
+      "name": "candidate-control",
+      "exit": 0,
+      "package_seconds": 1.6760000000000002,
+      "test_event_counts_including_subtests": {
+        "pass": 7
+      },
+      "explicit_skips": [],
+      "skips_are_not_successful_integrations": true,
+      "required_observation_tests_passed_without_skip": true,
+      "log": "candidate-control.jsonl.gz",
+      "scope": "final candidate or aligned baseline condition"
+    },
+    {
+      "name": "baseline-control",
+      "exit": 0,
+      "package_seconds": 2.636,
+      "test_event_counts_including_subtests": {
+        "pass": 5
+      },
+      "explicit_skips": [],
+      "skips_are_not_successful_integrations": true,
+      "required_observation_tests_passed_without_skip": true,
+      "log": "baseline-control.jsonl.gz",
+      "scope": "pre-mode-alignment baseline check"
+    },
+    {
+      "name": "baseline-control-final",
+      "exit": 0,
+      "package_seconds": 1.17,
+      "test_event_counts_including_subtests": {
+        "pass": 5
+      },
+      "explicit_skips": [],
+      "skips_are_not_successful_integrations": true,
+      "required_observation_tests_passed_without_skip": true,
+      "log": "baseline-control-final.jsonl.gz",
+      "scope": "final candidate or aligned baseline condition"
+    },
+    {
+      "name": "app-race",
+      "exit": 0,
+      "package_seconds": 177.189,
+      "test_event_counts_including_subtests": {
+        "skip": 20,
+        "pass": 403
+      },
+      "explicit_skips": [
+        "TestLiveAdaptivePrimaryCoreEscalationWithoutChildFlag",
+        "TestLiveAdaptivePrimaryCoreReadBootstrapWithoutChildFlag",
+        "TestLiveAdaptivePrimaryOfficialCLIWithoutDAG/usage_absent",
+        "TestLiveAdaptivePrimaryOfficialCLIWithoutDAG/usage_complete",
+        "TestExportEvidenceGatewayOfflineControls",
+        "TestFrontendArtifactDirectModes",
+        "TestOrchestratedFrontendSessionRollbackCompatibility",
+        "TestLiveGraftManagedOpenCode",
+        "TestLiveLocalMetadataOfficialAppServer",
+        "TestMCPArtifactWorkerHelper",
+        "TestMCPArtifactTaskGrants",
+        "TestLiveMCPArtifactConfigUpgrade",
+        "TestLiveNativeAUTOArtifact",
+        "TestNativeCapabilityPublishedArtifact",
+        "TestOrchestrationPublishedBinaryConfigUpgradeRollback",
+        "TestLiveP0VoicehubThroughManagedOpenCode",
+        "TestLiveP0MCPReference",
+        "TestLivePrimaryCodePrefetchBenchmark",
+        "TestPrimaryPrefetchMatrixHostPrefetch",
+        "TestPrimaryPrefetchBenchmarkEditPreflight"
+      ],
+      "skips_are_not_successful_integrations": true,
+      "required_observation_tests_passed_without_skip": true,
+      "log": "app-race.jsonl.gz",
+      "scope": "final candidate or aligned baseline condition"
+    },
+    {
+      "name": "Python full suite",
+      "tests": 94,
+      "exit": 0,
+      "log": "python.log"
+    },
+    {
+      "name": "go vet ./internal/app",
+      "exit": 0,
+      "log": "vet.log"
+    }
+  ],
+  "compiled_test_binaries": {
+    "baseline": {
+      "sha256": "efa37bf80625712df3f2bc3076ee4b5b035d2598a4b16050cf03df198c34be05",
+      "bytes": 26504893,
+      "target": "CGO0/linux/amd64/v1",
+      "build_flags": [
+        "-trimpath",
+        "-buildvcs=false",
+        "-mod=readonly"
+      ],
+      "exit": 0
+    },
+    "candidate": {
+      "sha256": "edf09b534783cb10e465aeebf1246a56d4621a66d2051937abc6d17df7ed7e62",
+      "bytes": 29191517,
+      "target": "CGO0/linux/amd64/v1",
+      "build_flags": [
+        "-trimpath",
+        "-buildvcs=false",
+        "-mod=readonly"
+      ],
+      "exit": 0
+    }
+  },
+  "discovery4_both_identical": true,
+  "baseline_original_production_verification": {
+    "non_test_Go": 239,
+    "module_manifests": 2,
+    "byte_and_Git_executable_mode_coverage": "complete, nonempty",
+    "production_shims": false
+  },
+  "common_projected_paths": 49,
+  "common_source_final_bytes_and_modes_equal": true,
+  "initial_failures_preserved": [
+    "candidate-control-invocation-error: -p2 syntax, no tests executed",
+    "construction-mode-mismatch: initial private projection mode check FAILED, not PASS; new baseline read modes aligned, focused checks/build repeated"
+  ],
+  "prior_release_note_files_byte_identical": 766,
+  "frozen_labs_preserved": [
+    {
+      "lab": "ivoai-concurrent-projection.tty9fsve",
+      "all_pins_verified": 2499,
+      "freeze_sha256": "e642f89dc2c0c442b472d33a7d3079f74b6760c42607476ec4b505a5924896fb",
+      "receipt_sha256": "0d4e5dd72e1bd03af9e9b3dbb77d94bd623a4c7783de0893b06e10198c935b68"
+    },
+    {
+      "lab": "ivoai-concurrent-projection642.WySIOI4I",
+      "all_pins_verified": 3015,
+      "freeze_sha256": "e333f876793eae19b37dc8fc70a00fac8456dfb0db62d5e0fb6fa2ba0d6ce77e",
+      "receipt_sha256": "053c5849dc36e289f81339df5c1db03a29ca94f3ab1e7fc1daa006ceb16dff58"
+    }
+  ],
+  "toolchain": "Reviewed Go1.27.3; private HOME/GOCACHE/TMPDIR; GOTOOLCHAIN=local GOENV/GOWORK/GOPROXY/GOSUMDB/GOVCS off, mod=readonly; existing module cache; host/cache trust not hermetic attestation.",
+  "real_official_client_auth_model_provider_calls": 0,
+  "new_structural_Graft_queries": 0,
+  "concurrent_scenario": "UNSUPPORTED",
+  "matrix": {
+    "supported": 9,
+    "unsupported": 5,
+    "blocked": 2
+  },
+  "global_economic_gate": "INCOMPLETE",
+  "MCP_isolation": "SEPARATE_BLOCKER_UNCHANGED",
+  "future_both_arms_rebuild_discovery_freeze_required": true,
+  "limitations": [
+    "No real-provider cohort, economic saving, official native parity, release, whole-repository Go/race or physical CPU certification.",
+    "Zero matching events means none retained, not continuous complete runtime coverage. Cache observation labels never prove monetary/session-token savings.",
+    "Default production flags, client invocation/isolation, fixtures, executable oracles and observer unchanged.",
+    "The new test-only source requires new common projections/builds/discovery/input freeze before any future separately authorized cohort. Old391/642 labs remain closed and unchanged.",
+    "Final review and integrated-head hosted CI remain required; no push performed."
+  ],
+  "inventory": [
+    {
+      "path": "app-race.exit",
+      "bytes": 2,
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "app-race.jsonl.gz",
+      "bytes": 31399,
+      "sha256": "7b9951958334f022897b3b802330a26b82ce8a7cfb9f523d9dec25aaffebee93"
+    },
+    {
+      "path": "app-race.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "baseline-control-final.exit",
+      "bytes": 2,
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "baseline-control-final.jsonl.gz",
+      "bytes": 777,
+      "sha256": "476b94b83ced7679d72cdee93b32913bce9524a2596ef560c35d1467e2b7f576"
+    },
+    {
+      "path": "baseline-control-final.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "baseline-control.exit",
+      "bytes": 2,
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "baseline-control.jsonl.gz",
+      "bytes": 792,
+      "sha256": "1f8042db8cdae39409151439433640e400e4e259305bcd97bd16e05ede70ee4f"
+    },
+    {
+      "path": "baseline-control.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "baseline-discovery.exit",
+      "bytes": 2,
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "baseline-discovery.json",
+      "bytes": 1140,
+      "sha256": "976ae4fe4e2f4e150c61c54027be7057c471c2540654a166e510ffe20220327a"
+    },
+    {
+      "path": "baseline-discovery.log",
+      "bytes": 105,
+      "sha256": "b2997a7b9e4aaa1d7705921a47614ec2ca90c194fe576daca9c38d5b5caffd46"
+    },
+    {
+      "path": "baseline-projection.json",
+      "bytes": 335,
+      "sha256": "42a0a1ffcd6244677d69508423c101117592dfaad4bc519076f1b86089dfd32a"
+    },
+    {
+      "path": "build-baseline-final.exit",
+      "bytes": 2,
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "build-baseline-final.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build-baseline.exit",
+      "bytes": 2,
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "build-baseline.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "build-candidate.exit",
+      "bytes": 2,
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "build-candidate.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "candidate-control-invocation-error.exit",
+      "bytes": 2,
+      "sha256": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865"
+    },
+    {
+      "path": "candidate-control-invocation-error.jsonl",
+      "bytes": 544,
+      "sha256": "59d42682098213a6789110e54b8296204dfc18573ab1e8014b83764872fa3ce7"
+    },
+    {
+      "path": "candidate-control-invocation-error.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "candidate-control.exit",
+      "bytes": 2,
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "candidate-control.jsonl.gz",
+      "bytes": 963,
+      "sha256": "f5ba6e1b3a0f56611de4bad1f84a3f6d263db647522446bc3e72c0300aafb0fd"
+    },
+    {
+      "path": "candidate-control.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "candidate-discovery.exit",
+      "bytes": 2,
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "candidate-discovery.json",
+      "bytes": 1140,
+      "sha256": "976ae4fe4e2f4e150c61c54027be7057c471c2540654a166e510ffe20220327a"
+    },
+    {
+      "path": "candidate-discovery.log",
+      "bytes": 105,
+      "sha256": "b2997a7b9e4aaa1d7705921a47614ec2ca90c194fe576daca9c38d5b5caffd46"
+    },
+    {
+      "path": "common-source-manifest.json",
+      "bytes": 10546,
+      "sha256": "7147485b9bf62f6383d6b1cd56e4bc73dbedb176bce32223f04023317d0be63c"
+    },
+    {
+      "path": "construction-initial-common-source-manifest.json",
+      "bytes": 10546,
+      "sha256": "1b9890c55c61e6b9e1bf3ded9b8c571b035ddf728ab71067927cf102fc8be395"
+    },
+    {
+      "path": "construction-mode-mismatch.json",
+      "bytes": 8200,
+      "sha256": "29ec7f8f6aceaf3e868ca90968704d1f211c2ed3a7293e009f16ccb8ec70fd00"
+    },
+    {
+      "path": "python.exit",
+      "bytes": 2,
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "python.log",
+      "bytes": 194,
+      "sha256": "a3d8929cedf0ebb250d126f8e79acee651cb4b3b8099924fdac52fadb250269b"
+    },
+    {
+      "path": "source-manifest.json",
+      "bytes": 959,
+      "sha256": "0a79064c994e28814c4196ff68e204da8b88242af3ae8b4c39c2dc1954748be0"
+    },
+    {
+      "path": "vet.exit",
+      "bytes": 2,
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "vet.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "discovery": {
+    "schema_version": 4,
+    "catalog_sha256": "395f77bc5154c3df42cc7897feb7206bb38963a9441741ea24dbf290b08a9d7e",
+    "fixture_contract_sha256": "79cbdc665d4e301bc6057fb15dabb73cc08964e50eae1a1558b8c5e20a93678b",
+    "harness_sha256": "bde1d968b85f41e47adbc7996cb5cce170bb3919998a654ced7998ca3b3e8eb5",
+    "supported_scenarios": [
+      "api",
+      "cross_module_refactor",
+      "dependencies",
+      "implementation",
+      "monorepo",
+      "multi_module_callers",
+      "non_code",
+      "small_known_file_correction",
+      "unsupported_parser"
+    ],
+    "fixtures": {
+      "go-clamp-edit": "17989e8cf9573521b9a364538b3e9f0288bf50e7f2302d7f53d201c0957dc0c8",
+      "go-core": "94339e5800d550aaa5284ae452fef04b9c425c02dd079be54234b1bb8feb5188",
+      "monorepo-refactor-ts": "f74e0669fe05021dd8747393440d2fe5445ff0677bda2e7eb2989885a8a191ef",
+      "monorepo-ts": "01ade0e8a5dbe64fb80ceb1210c2d0f056ed43462e9a1e86f1f9b24000feb656",
+      "non-code": "4e5d45339ffb829146a641b9a6460879c4ab1e741f45820c00f3f3c2bb4f5cd9",
+      "python-deps": "4dfd2279a45f4f1485e482743672d52a362aeb41d9dd0a671efdfa98a21847aa",
+      "rules-shell": "2650c62f41cfe3d5d0dce157cf45e35a6237605a564be2326bcd9646e123ac72"
+    },
+    "client_lifecycle_sha256": "398e08040d4d2d2ab8bdeb3a376442520a537e5e4465e591604914c79e653e1d"
+  }
+}

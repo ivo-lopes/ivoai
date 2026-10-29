@@ -1,0 +1,6 @@
+{"ImportPath":".","Action":"build-output","Output":"# .\n"}
+{"ImportPath":".","Action":"build-output","Output":"no Go files in /var/tmp/ivoai-gateway-observation.buHd7tuh/source\n"}
+{"ImportPath":".","Action":"build-fail"}
+{"Time":"2026-10-28T21:04:49.192239573-03:00","Action":"start","Package":"."}
+{"Time":"2026-10-28T21:04:49.192465301-03:00","Action":"output","Package":".","Output":"FAIL\t. [setup failed]\n","OutputType":"frame"}
+{"Time":"2026-10-28T21:04:49.192484831-03:00","Action":"fail","Package":".","Elapsed":0,"FailedBuild":"."}

@@ -55,6 +55,30 @@ class EvidenceTests(unittest.TestCase):
         self.assertEqual(failed["InputTokens"], 100)
         self.assertEqual(failed["Error"], "test_execution_failed")
 
+    def test_gateway_event_fields_survive_json_and_legacy_absence_is_not_zero(self):
+        fields = dict(GatewayCodeResolves=3, GatewayCodeCacheHits=1,
+                      GatewayCodeCacheMisses=1, GatewayCodeCacheUnknown=1,
+                      GatewayObservationBasis="COMPLETED_SESSION_EVENTS_NOT_ECONOMY",
+                      GatewayCacheCondition="FRESH_APP_SESSION_NO_PREWARM")
+        row = self.read([valid_row(PrefetchCalls=1, CacheHits=0, **fields)])
+        self.assertTrue(row["MeasurementValid"])
+        self.assertEqual({key: row[key] for key in fields}, fields)
+        self.assertEqual(row["PrefetchCalls"], 1)
+        self.assertEqual(row["CacheHits"], 0)
+        legacy = self.read([valid_row()])
+        self.assertTrue(legacy["MeasurementValid"])
+        self.assertTrue(all(key not in legacy for key in fields))
+        for change in ({"GatewayCodeResolves": True}, {"GatewayCodeCacheHits": -1},
+                       {"GatewayCodeCacheUnknown": None}, {"GatewayCodeResolves": 4},
+                       {"GatewayObservationBasis": "FLAG_ENABLED"},
+                       {"GatewayCacheCondition": "WARM_ASSUMED"}):
+            with self.subTest(change=change):
+                self.assertFalse(self.read([valid_row(**(fields | change))])["MeasurementValid"])
+        for missing in fields:
+            with self.subTest(missing=missing):
+                partial = {key: value for key, value in fields.items() if key != missing}
+                self.assertFalse(self.read([valid_row(**partial)])["MeasurementValid"])
+
     def test_invalid_verdict_identity_and_measurements(self):
         for payload in ([], None, {}, [valid_row(), valid_row()], [True],
                         [valid_row(Arm="B")], [valid_row(Scenario="implementation")],

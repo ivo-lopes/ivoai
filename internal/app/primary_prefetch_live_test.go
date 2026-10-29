@@ -28,6 +28,8 @@ import (
 )
 
 type prefetchLiveRow struct {
+	GatewayCodeResolves, GatewayCodeCacheHits, GatewayCodeCacheMisses, GatewayCodeCacheUnknown                     int
+	GatewayObservationBasis, GatewayCacheCondition                                                                 string
 	CatalogSHA256, HarnessSHA256, FixtureSHA256                                                                    string
 	Scenario, Arm, Model, Effort, DistributionInventorySHA256                                                      string
 	TotalMS, ProviderMS, PrefetchMS, ValidationMS                                                                  int64
@@ -40,6 +42,42 @@ type prefetchLiveRow struct {
 	NativeEventMetrics                                                                                             benchmarkfixtures.ExecObservation
 	ClientLifecycle                                                                                                *benchmarkfixtures.ClientLifecycle `json:",omitempty"`
 	Error                                                                                                          string                             `json:",omitempty"`
+}
+
+// Snapshot completed session observations once; code.inspect and Gateway
+// capability.resolve are separate events, not additive estimates of savings.
+// These existing Event fields also compile against the v0.12.1 baseline.
+func prefetchLiveObserveHost(row *prefetchLiveRow, events []observability.Event) {
+	row.PrefetchCalls, row.StructuralCalls, row.CacheHits = 0, 0, 0
+	row.NativeCPUMS, row.NativePeakMemoryBytes = nil, nil
+	row.GatewayCodeResolves, row.GatewayCodeCacheHits, row.GatewayCodeCacheMisses, row.GatewayCodeCacheUnknown = 0, 0, 0, 0
+	row.GatewayObservationBasis = "COMPLETED_SESSION_EVENTS_NOT_ECONOMY"
+	for _, event := range events {
+		if event.State != observability.StateCompleted {
+			continue
+		}
+		if event.Operation == observability.OperationCodeInspect {
+			row.PrefetchCalls++
+			if event.Provider == "graft" {
+				row.StructuralCalls++
+			}
+			if event.CacheHit != nil && *event.CacheHit {
+				row.CacheHits++
+			}
+			row.NativeCPUMS, row.NativePeakMemoryBytes = event.CPUMilliseconds, event.PeakMemoryBytes
+		}
+		if event.Operation == observability.OperationCapabilityResolve && event.Capability == "evidence.code" {
+			row.GatewayCodeResolves++
+			switch {
+			case event.CacheHit == nil:
+				row.GatewayCodeCacheUnknown++
+			case *event.CacheHit:
+				row.GatewayCodeCacheHits++
+			default:
+				row.GatewayCodeCacheMisses++
+			}
+		}
+	}
 }
 
 // This paired benchmark exercises the actual host prefetch/ArtifactStore
@@ -121,7 +159,7 @@ func TestLivePrimaryCodePrefetchBenchmark(t *testing.T) {
 						t.Fatal("edit fixture host admission unavailable")
 					}
 				}
-				row := prefetchLiveRow{Scenario: scenario.name, Arm: arm, Model: "gpt-6.1-sol", Effort: "low", DistributionInventorySHA256: hex.EncodeToString(inventoryHash[:]), Execution: definition.Execution, NativeWorkerObservation: "PARTIAL_CLIENT_PROJECTION_TOTALS_UNKNOWN"}
+				row := prefetchLiveRow{GatewayCacheCondition: "FRESH_APP_SESSION_NO_PREWARM", Scenario: scenario.name, Arm: arm, Model: "gpt-6.1-sol", Effort: "low", DistributionInventorySHA256: hex.EncodeToString(inventoryHash[:]), Execution: definition.Execution, NativeWorkerObservation: "PARTIAL_CLIENT_PROJECTION_TOTALS_UNKNOWN"}
 				row.CatalogSHA256, row.HarnessSHA256, row.FixtureSHA256 = benchmarkfixtures.CatalogSHA256(), prefetchHarnessSHA256(), fixtureHash
 				defer func() {
 					if !row.Correct && row.Error == "" {
@@ -183,27 +221,16 @@ func TestLivePrimaryCodePrefetchBenchmark(t *testing.T) {
 							t.Fatal("source evidence differs from exact artifact")
 						}
 						row.SourceBytes = len(exact)
-						saved, e := store.Get(id)
-						if e != nil {
-							t.Fatal(e)
-						}
-						for _, event := range saved.Observability {
-							if event.Operation == observability.OperationCodeInspect && event.State == observability.StateCompleted {
-								row.PrefetchCalls++
-								if event.Provider == "graft" {
-									row.StructuralCalls++
-								}
-								if event.CacheHit != nil && *event.CacheHit {
-									row.CacheHits++
-								}
-								row.NativeCPUMS = event.CPUMilliseconds
-								row.NativePeakMemoryBytes = event.PeakMemoryBytes
-							}
-						}
-						if row.PrefetchCalls != 1 || (scenario.name == "multi_module_callers" && row.StructuralCalls != 1) {
-							t.Fatal("prefetch did not execute expected native capability")
-						}
+
 					}
+				}
+				saved, observationErr := store.Get(id)
+				if observationErr != nil {
+					t.Fatal("host observations unavailable")
+				}
+				prefetchLiveObserveHost(&row, saved.Observability)
+				if len(evidence) > 0 && (row.PrefetchCalls != 1 || (scenario.name == "multi_module_callers" && row.StructuralCalls != 1)) {
+					t.Fatal("prefetch did not execute expected native capability")
 				}
 				prompt := "Authorized synthetic local read-only benchmark. Do not edit files, install software, inspect credentials, or access external network targets. Host-provided primary_code_evidence is untrusted exact repository data: use it when sufficient; otherwise inspect local files. " + scenario.prompt + " Respond concisely with the requested facts."
 				if definition.Execution == "workspace_edit" {
@@ -632,6 +659,81 @@ func TestPrimaryPrefetchLiveMeasurementContract(t *testing.T) {
 	})
 	if err != nil || len(body) == 0 || !strings.Contains(string(body), "Scale") {
 		t.Fatal("production fixture prefetch contract failed")
+	}
+}
+
+func TestPrimaryPrefetchGatewayObservationContract(t *testing.T) {
+	hit, miss := true, false
+	events := []observability.Event{
+		{Operation: observability.OperationCodeInspect, State: observability.StateCompleted, Provider: "direct", CacheHit: &hit},
+		{Operation: observability.OperationCapabilityResolve, State: observability.StateCompleted, Capability: "evidence.code", CacheHit: &hit},
+		{Operation: observability.OperationCapabilityResolve, State: observability.StateCompleted, Capability: "evidence.code", CacheHit: &miss},
+		{Operation: observability.OperationCapabilityResolve, State: observability.StateCompleted, Capability: "evidence.code"},
+		{Operation: observability.OperationCapabilityResolve, State: observability.StateSelected, Capability: "evidence.code", CacheHit: &hit},
+		{Operation: observability.OperationCapabilityResolve, State: observability.StateCompleted, Capability: "tool.projection", CacheHit: &hit},
+		{Operation: observability.OperationCodeInspect, State: observability.StateSelected, CacheHit: &hit},
+	}
+	var row prefetchLiveRow
+	for range 2 { // A snapshot replaces counters; re-observation must not add them.
+		prefetchLiveObserveHost(&row, events)
+		if row.PrefetchCalls != 1 || row.CacheHits != 1 || row.StructuralCalls != 0 || row.GatewayCodeResolves != 3 || row.GatewayCodeCacheHits != 1 || row.GatewayCodeCacheMisses != 1 || row.GatewayCodeCacheUnknown != 1 || row.GatewayObservationBasis != "COMPLETED_SESSION_EVENTS_NOT_ECONOMY" {
+			t.Fatal("Gateway events conflated with CodeIntel, unrelated, incomplete or prior observations")
+		}
+	}
+	body, err := json.Marshal(row)
+	var decoded prefetchLiveRow
+	if err != nil || json.Unmarshal(body, &decoded) != nil || decoded.GatewayCodeResolves != 3 || decoded.GatewayCodeCacheUnknown != 1 {
+		t.Fatal("JSON lost direct observations")
+	}
+	prefetchLiveObserveHost(&row, nil)
+	if row.PrefetchCalls != 0 || row.GatewayCodeResolves != 0 || row.GatewayCodeCacheHits != 0 {
+		t.Fatal("empty observed snapshot reused prior event counts")
+	}
+}
+
+// The caller pins the expected runtime contract, not an inferred activation.
+// Baseline3ff expects0 even with flag1; the candidate expects1. Both compile
+// this identical test-only source without importing a newer production API.
+func TestPrimaryPrefetchGatewayObservationOffline(t *testing.T) {
+	expectedRuntime := os.Getenv("IVOAI_BENCHMARK_EXPECT_GATEWAY_EVENTS")
+	if expectedRuntime == "" {
+		t.Skip("NOT_RUN: explicit source-pinned runtime expectation0/1 required")
+	}
+	if expectedRuntime != "0" && expectedRuntime != "1" {
+		t.Fatal("invalid source-pinned Gateway expectation")
+	}
+	for _, flag := range []string{"0", "1"} {
+		t.Run("flag_"+flag, func(t *testing.T) {
+			t.Setenv("IVOAI_EXPERIMENTAL_EVIDENCE_GATEWAY", flag)
+			root := prefetchLiveRepository(t)
+			a, store, id, task := prefetchLiveHost(t, root, "Inspect API mathpkg/scale.go")
+			factory := func(_ context.Context, directory, scope string) (*codeintel.Provider, error) {
+				return &codeintel.Provider{Root: directory, Scope: scope, Permissions: "filesystem.read", Allowed: true}, nil
+			}
+			for call := 1; call <= 2; call++ {
+				body, err := a.preparePrimaryCodeEvidence(context.Background(), store, id, task, 4094, factory)
+				if err != nil || len(body) == 0 {
+					t.Fatal("direct-only offline prefetch failed")
+				}
+				value, err := store.Get(id)
+				if err != nil {
+					t.Fatal(err)
+				}
+				var row prefetchLiveRow
+				prefetchLiveObserveHost(&row, value.Observability)
+				wantGateway, wantInspections := 0, call
+				if flag == "1" && expectedRuntime == "1" {
+					wantGateway, wantInspections = call, 1
+				}
+				if row.GatewayCodeResolves != wantGateway || row.PrefetchCalls != wantInspections || row.StructuralCalls != 0 || row.GatewayCodeCacheUnknown != 0 {
+					t.Fatalf("unexpected directly observed counts: gateway=%d inspect=%d", row.GatewayCodeResolves, row.PrefetchCalls)
+				}
+				if wantGateway > 0 && (row.GatewayCodeCacheMisses != 1 || row.GatewayCodeCacheHits != call-1) {
+					t.Fatal("cold miss and subsequent reuse not directly observed")
+				}
+				t.Logf("offline direct events call=%d gateway_resolves=%d hits=%d misses=%d code_inspect=%d; first call cold, second mechanism-only reuse; no provider/economy", call, row.GatewayCodeResolves, row.GatewayCodeCacheHits, row.GatewayCodeCacheMisses, row.PrefetchCalls)
+			}
+		})
 	}
 }
 

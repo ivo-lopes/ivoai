@@ -30,6 +30,8 @@ COUNTS = ("TotalMS", "ProviderMS", "PrefetchMS", "PromptBytes", "EvidenceBytes",
           "StructuralCalls", "CacheHits")
 OPTIONAL_COUNTS = ("InputTokens", "CachedInputTokens", "OutputTokens", "ReasoningTokens",
                    "ToolDescriptionTokens", "NativeCPUMS", "NativePeakMemoryBytes")
+GATEWAY_COUNTS = ("GatewayCodeResolves", "GatewayCodeCacheHits", "GatewayCodeCacheMisses", "GatewayCodeCacheUnknown")
+GATEWAY_LABELS = ("GatewayObservationBasis", "GatewayCacheCondition")
 CLIENT_ENVIRONMENT = (
     "HOME", "CODEX_HOME", "PATH", "LANG", "TZ", "TERM", "TMPDIR",
     "LC_ALL", "LC_CTYPE", "LC_COLLATE", "LC_MESSAGES", "LC_MONETARY", "LC_NUMERIC", "LC_TIME",
@@ -118,6 +120,22 @@ def validate_native_events(value, tool_calls):
         raise ValueError("unknown events cannot prove complete coverage")
     return value
 
+def gateway_observations(row):
+    """Additive host observations; absent legacy fields remain unreported."""
+    fields = GATEWAY_COUNTS + GATEWAY_LABELS
+    if not any(key in row for key in fields):
+        return {}
+    if any(key not in row for key in fields):
+        raise ValueError("partial Gateway observations")
+    if any(type(row[key]) is not int or not 0 <= row[key] <= MAX_INTEGER for key in GATEWAY_COUNTS):
+        raise ValueError("invalid Gateway counters")
+    if row["GatewayCodeResolves"] != sum(row[key] for key in GATEWAY_COUNTS[1:]):
+        raise ValueError("inconsistent Gateway cache observations")
+    if row["GatewayObservationBasis"] != "COMPLETED_SESSION_EVENTS_NOT_ECONOMY" or row["GatewayCacheCondition"] != "FRESH_APP_SESSION_NO_PREWARM":
+        raise ValueError("invalid Gateway observation basis or cache condition")
+    return {key: row[key] for key in fields}
+
+
 def read_evidence(path, scenario, arm, repetition, code, inventory_hash, capabilities=None):
     """Return one allowlisted row, including a fixed-label failure for missing tests."""
     base = {"Scenario": scenario, "Arm": arm, "Repetition": repetition,
@@ -182,6 +200,7 @@ def read_evidence(path, scenario, arm, repetition, code, inventory_hash, capabil
         if row["Correct"] and native["stream_status"] != "complete":
             raise ValueError("incomplete native event stream")
         clean = {key: row.get(key) for key in COUNTS + OPTIONAL_COUNTS}
+        clean.update(gateway_observations(row))
         clean["NativeEventMetrics"] = native
         clean.update(Execution=definition.execution, EditValidated=row["EditValidated"], OracleToolsSHA256=row["OracleToolsSHA256"], NativeWorkerObservation=row["NativeWorkerObservation"])
         clean.update({key: row[key] for key in ("Model", "Effort", "DistributionInventorySHA256", "JSONDecoded")})
