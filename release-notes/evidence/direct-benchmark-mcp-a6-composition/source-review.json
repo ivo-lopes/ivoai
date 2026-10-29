@@ -1,0 +1,38 @@
+{
+  "source": "19cf11b1a46926ac77e5d02208d1305001fd227d",
+  "common_paths": {
+    "internal/app/primary_prefetch_live_test.go": "685af2187a93d5bf26fe2300fe0fbc76bbf91810f2bb32879505e9d145bd6849",
+    "scripts/benchmark_catalog.py": "2fd9d08b5467992ba2f07839a9dbc241d149a8ed7850f75cb47fde41ff18d080",
+    "scripts/test_benchmark_catalog.py": "9728ffa703a582c7c0149a88e42527175c2141e21a95e19cc18154d4ea9f4a2b"
+  },
+  "latest22_artifacts_verified": true,
+  "private40_inputs_verified_no_raw_auth_session_read": true,
+  "shared_live_tail_exact6cc": true,
+  "driver_observer_lifecycle_exact6cc": true,
+  "baseline_candidate_original_projections": [
+    {
+      "base": "3ff6db8bb0174b1ae6f781f6754e2653a6dae5db",
+      "original_runtime_module_files": 241,
+      "original_bytes_unchanged": true,
+      "harness": "685af2187a93d5bf26fe2300fe0fbc76bbf91810f2bb32879505e9d145bd6849"
+    },
+    {
+      "base": "6cc9af6c31dc6e084b243fe9e1232bb83e0a403b",
+      "original_runtime_module_files": 286,
+      "original_bytes_unchanged": true,
+      "harness": "685af2187a93d5bf26fe2300fe0fbc76bbf91810f2bb32879505e9d145bd6849"
+    }
+  ],
+  "existing_A6_runtime_Go_byte_exact": 281,
+  "only_extra_non_test_Go": [
+    "internal/benchmarkfixtures/client_lifecycle.go",
+    "internal/benchmarkfixtures/client_lifecycle_linux.go",
+    "internal/benchmarkfixtures/client_lifecycle_other.go"
+  ],
+  "original_records_preserved": 998,
+  "prior_discovery_baseline_candidate_equal": true,
+  "scope_enum": "USER_CONFIG_INCLUDED_SHARED_SCOPE",
+  "helper_connected": false,
+  "provider_guard": "NOT_IMPLEMENTED_BLOCKS_REAL_COHORT",
+  "no_client_calls_in_review": true
+}

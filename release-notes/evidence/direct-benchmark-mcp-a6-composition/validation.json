@@ -1,0 +1,145 @@
+{
+  "schema_version": 1,
+  "recorded_utc": "2026-10-29T02:52:55.252419+00:00",
+  "result": "REVIEW_AND_FOCUSED_COMPOSITION_GATES_PASS_HELPER_UNWIRED_PROVIDER_GUARD_NOT_READY",
+  "source_commit": "19cf11b1a46926ac77e5d02208d1305001fd227d",
+  "source_tree": "0a4b9b1e708491e599ef31f8b4eae3ea56d7cc8e",
+  "parents": [
+    "e4250ab0497f4366cb80b7ce03aa21608f58dd34",
+    "a6af03f2c92bbb35ba8112eae19b2d675fa69537"
+  ],
+  "source_freeze_sha256": "93dae44d238a452f3288b685d68889a49796ab6b8455ec852860d585a740b76b",
+  "source_paths": 652,
+  "Go_paths": 590,
+  "Go_script_edits": 0,
+  "scope_enum_declared": "USER_CONFIG_INCLUDED_SHARED_SCOPE",
+  "helper_connected": false,
+  "scope_is_cohort_observation": false,
+  "provider_guard": "NOT_IMPLEMENTED_BLOCKS_REAL_COHORT",
+  "new_paid_fallback_branch": false,
+  "normal_user_config_route_attested": false,
+  "gates": {
+    "Python": {
+      "source": "19cf11b1a46926ac77e5d02208d1305001fd227d",
+      "gate": "Python",
+      "exit": 0,
+      "wall_seconds": 31.247,
+      "source_unchanged_after": true,
+      "native_client_auth_status_model": 0,
+      "not_fullGo_or_paired_build": true
+    },
+    "App-pure": {
+      "source": "19cf11b1a46926ac77e5d02208d1305001fd227d",
+      "gate": "App-pure",
+      "exit": 0,
+      "wall_seconds": 6.461,
+      "source_unchanged_after": true,
+      "native_client_auth_status_model": 0,
+      "not_fullGo_or_paired_build": true
+    },
+    "bench-race": {
+      "source": "19cf11b1a46926ac77e5d02208d1305001fd227d",
+      "gate": "bench-race",
+      "exit": 0,
+      "wall_seconds": 5.676,
+      "source_unchanged_after": true,
+      "native_client_auth_status_model": 0,
+      "not_fullGo_or_paired_build": true
+    },
+    "vet": {
+      "source": "19cf11b1a46926ac77e5d02208d1305001fd227d",
+      "gate": "vet",
+      "exit": 0,
+      "wall_seconds": 4.495,
+      "source_unchanged_after": true,
+      "native_client_auth_status_model": 0,
+      "not_fullGo_or_paired_build": true
+    }
+  },
+  "Python_tests": 71,
+  "Go_summary": {
+    "App-pure": {
+      "packages": [
+        {
+          "Package": "github.com/ivo-lopes/ivoai/internal/app",
+          "Action": "pass",
+          "Elapsed": 0.017
+        }
+      ],
+      "test_events_including_subtests": {
+        "pass": 38
+      },
+      "passed_top_level": 10,
+      "skips_not_passes": []
+    },
+    "bench-race": {
+      "packages": [
+        {
+          "Package": "github.com/ivo-lopes/ivoai/internal/benchmarkfixtures",
+          "Action": "pass",
+          "Elapsed": 3.076
+        }
+      ],
+      "test_events_including_subtests": {
+        "skip": 2,
+        "pass": 70
+      },
+      "passed_top_level": 18,
+      "skips_not_passes": [
+        "TestLifecycleSyntheticChild",
+        "TestBenchmarkSandboxedEditOracles"
+      ]
+    }
+  },
+  "Go_version": "go version go1.27.3 linux/amd64",
+  "Go_binary_sha256": "5f5eb6d0b2fb6aa0bb5d5f8c5f1c944e0de955c925f0111af92a9d8f79680b5b",
+  "source_review": {
+    "source": "19cf11b1a46926ac77e5d02208d1305001fd227d",
+    "common_paths": {
+      "internal/app/primary_prefetch_live_test.go": "685af2187a93d5bf26fe2300fe0fbc76bbf91810f2bb32879505e9d145bd6849",
+      "scripts/benchmark_catalog.py": "2fd9d08b5467992ba2f07839a9dbc241d149a8ed7850f75cb47fde41ff18d080",
+      "scripts/test_benchmark_catalog.py": "9728ffa703a582c7c0149a88e42527175c2141e21a95e19cc18154d4ea9f4a2b"
+    },
+    "latest22_artifacts_verified": true,
+    "private40_inputs_verified_no_raw_auth_session_read": true,
+    "shared_live_tail_exact6cc": true,
+    "driver_observer_lifecycle_exact6cc": true,
+    "baseline_candidate_original_projections": [
+      {
+        "base": "3ff6db8bb0174b1ae6f781f6754e2653a6dae5db",
+        "original_runtime_module_files": 241,
+        "original_bytes_unchanged": true,
+        "harness": "685af2187a93d5bf26fe2300fe0fbc76bbf91810f2bb32879505e9d145bd6849"
+      },
+      {
+        "base": "6cc9af6c31dc6e084b243fe9e1232bb83e0a403b",
+        "original_runtime_module_files": 286,
+        "original_bytes_unchanged": true,
+        "harness": "685af2187a93d5bf26fe2300fe0fbc76bbf91810f2bb32879505e9d145bd6849"
+      }
+    ],
+    "existing_A6_runtime_Go_byte_exact": 281,
+    "only_extra_non_test_Go": [
+      "internal/benchmarkfixtures/client_lifecycle.go",
+      "internal/benchmarkfixtures/client_lifecycle_linux.go",
+      "internal/benchmarkfixtures/client_lifecycle_other.go"
+    ],
+    "original_records_preserved": 998,
+    "prior_discovery_baseline_candidate_equal": true,
+    "scope_enum": "USER_CONFIG_INCLUDED_SHARED_SCOPE",
+    "helper_connected": false,
+    "provider_guard": "NOT_IMPLEMENTED_BLOCKS_REAL_COHORT",
+    "no_client_calls_in_review": true
+  },
+  "discovery4_equal_inherited_both": true,
+  "discovery4_sha256": "46f38362fc00cfacb980be9987a63ddcc3a8ef9a5841c69ac0ab21f1cc592c03",
+  "original_E425_22_proofs_and_private40_inputs": "VERIFIED_READONLY_NO_PRIVATE_AUTH_SESSION_DB_READ",
+  "prior_records_preserved": 998,
+  "new_official_cli_help_status_auth_config_account_rpc_realmodel_provider": 0,
+  "no_App_race_or_fullGo": "A6 fixture-only changes do not affect common App; no need to repeat unrelated gates",
+  "new_frozen_baseline_candidate_builds": "NOT_RUN_HARNESS_IDENTITY_UNCHANGED_BY_COMPOSITION",
+  "catalog": "9supported_synthetic_5unsupported_2blocked_NO_PROMOTION",
+  "global_economic_gate": "INCOMPLETE",
+  "release_or_hosted_CI": "NOT_CLAIMED_ROOT_REVIEW_REQUIRED",
+  "publication": "LOCAL_COMPOSITION_ONLY_NO_PUSH_HOSTED_MERGE_TAG_RELEASE"
+}

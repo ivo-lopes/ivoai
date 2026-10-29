@@ -1,0 +1,34 @@
+{
+  "App-pure": {
+    "packages": [
+      {
+        "Package": "github.com/ivo-lopes/ivoai/internal/app",
+        "Action": "pass",
+        "Elapsed": 0.017
+      }
+    ],
+    "test_events_including_subtests": {
+      "pass": 38
+    },
+    "passed_top_level": 10,
+    "skips_not_passes": []
+  },
+  "bench-race": {
+    "packages": [
+      {
+        "Package": "github.com/ivo-lopes/ivoai/internal/benchmarkfixtures",
+        "Action": "pass",
+        "Elapsed": 3.076
+      }
+    ],
+    "test_events_including_subtests": {
+      "skip": 2,
+      "pass": 70
+    },
+    "passed_top_level": 18,
+    "skips_not_passes": [
+      "TestLifecycleSyntheticChild",
+      "TestBenchmarkSandboxedEditOracles"
+    ]
+  }
+}
