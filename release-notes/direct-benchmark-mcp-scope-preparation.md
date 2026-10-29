@@ -1,45 +1,63 @@
-# Direct benchmark MCP scope: test-only preparation
+# Direct benchmark MCP scope: current test-only preparation
 
-The standalone economic benchmark has a new, **unwired** test-only inventory and
-command builder. Its source-only tests require one frozen argument, working
-directory and explicitly copied environment scope for inventory and execution.
-Successful inventory is required before constructing the denied command. The
-reader bounds stdout at256KiB, stderr at64KiB and names at128, rejects malformed,
-ambiguous or unsafe names, and places exact per-server enabled=false overrides
-before the fixed host restrictions. Inventory contents and raw diagnostics are
-never emitted in measurement rows. No empty-table clear or managed ABI bypass is
-introduced; managed --ignore-user-config rejection is unchanged.
+The standalone helper now explicitly includes user configuration under
+USER_CONFIG_INCLUDED_SHARED_SCOPE. Its common prefix is identical for inventory
+and exec in baseline/candidate and contains no ignore-user-config option.
+Discovery reports direct_mcp_helper_configuration_scope and
+**direct_mcp_helper_connected=false**. These describe a declared, disconnected
+helper; they do not relabel the still-legacy live benchmark invocation or admit a
+real cohort. Prompt, oracles, client observer/lifecycle, metrics and production
+runtime are unchanged. Managed ignore rejection remains intact.
 
-This is preparation, not demonstrated official MCP isolation. The current live
-invocation, prompts, observer lifecycle, metrics, production runtime and driver
-are unchanged. A separately frozen private proposal tests whether the reviewed
-CLI accepts --ignore-user-config for inventory and execution with the same scope.
-A must show a system-only configured/catalog source, then B applies the exact
-system-name denial and requires no startup/catalog. An incomplete A stops B.
-No official CLI, inventory, MCP, provider, namespace, auth/status/model or cohort
-execution was made for this change. Its explicit future budget is at most two
-inventories and two exec calls, subject to root review and authorization.
+The helper snapshots global arguments and environment before inventory, uses the
+same actual cwd, and requires the successful bounded inventory result to build
+its denied command. Stdout256KiB/stderr64KiB/names128 are hard-bounded; malformed,
+ambiguous and unsafe names fail closed. Exact per-server enabled=false overrides
+precede fixed host restrictions. No empty-table clear, guessed name provenance,
+projection re-enable input or raw inventory/diagnostic measurement output exists.
 
-The [receipt](evidence/direct-benchmark-mcp-scope-preparation/validation.json)
-binds candidate/baseline helper race tests, candidate vet, preserved existing
-measurement/catalog contracts, fresh App builds and matching discovery schema4.
-Baseline3ff retains all241 original non-testGo/module files; candidate6cc retains
-all286. The harness differs only by the added helper/tests and imports, with
-HarnessSHA70ccfa8a3728282a7c168bbb567583516d8a2f999918187931e78ba9334fdd1d.
-The baseline already has the same inline-table ProjectTrustArgs; the initial
-private audit's caveat about that implementation was corrected without changing
-its original document. Fresh private Go source-only preparation compares actual
-helper argv/Dir/Env to the proposed plan;21 pure Python protocol cases pass.
+The [current receipt](evidence/direct-benchmark-mcp-user-config-scope/validation.json)
+records candidate/baseline source-only helper race checks, candidate vet,
+71Python benchmark tests, fresh App builds and identical discovery4. Python
+rejects missing/unknown scope enums or a substituted connected=true declaration
+before synthetic client attempts. Baseline3ff retains241 original non-testGo/module
+files and candidate6cc retains286. No new production API/dependency is projected.
+Future comparisons require both arms rebuilt, discovery and conditions re-frozen.
 
-The first bounded-writer test failed because embedding bytes.Buffer promoted its
-WriteString method and bypassed the custom Write method. That adverse source/log
-is preserved. A private named buffer fixes the defect; final helper tests pass
-with race detection in both common projections. Earlier proof epochs and labs
-remain unchanged. No full App race, hosted CI, native ARM or hardware noAVX
-certification is claimed here.
+The root-reviewed exact new offline pair was executed **once**, after the frozen
+preparation controls. A inventoried both synthetic user/system entries and
+observed both startup/init/list and actual fixture-bound CodeMode ALL_TOOLS
+metadata. B repeated the same inventory and added only the two exact denies:
+zero observed fixture startup/init/list and an empty MCP catalog. Each arm used
+one inventory and one exec, with two accepted fakeHTTP requests and zero nested
+MCP calls. A5.226s/B5.202s are fixture durations, not economic comparisons. Actual
+inventory/exec, App and namespace exit0; no individual MCP/companion Wait claim.
 
-Cloud/context-policy isolation remains unverified. Real cohorts remain blocked,
-concurrent_distinct_projects remains UNSUPPORTED and the global economic gate
-remains INCOMPLETE. A future common harness change requires both arms rebuilt,
-discovery repeated and source/conditions frozen. Reverting this standalone
-preparation needs no credential, configuration, data or runtime migration.
+The [execution receipt](evidence/direct-benchmark-mcp-user-config-scope/execution-validation.json)
+binds all40input pins unchanged,171private artifacts and historical artifact
+checks. Fresh cases were exact/owned/private, without auth files or symlinks.
+The25pure protocol cases and Go argv/Dir/Env preparation control remain separately
+labelled as preparation. The original static PREPARED receipt is not rewritten as
+execution. Root authorization was specific and consumed; there was no retuning,
+alias, retry or extra call. This proves exclusion for these two frozen synthetic
+layers only. No real auth/status/model/provider/cohort call was made.
+
+Historical epochs remain unchanged:
+
+- ed79 preserves the initial promoted WriteString failure and named-buffer fix;
+  its first root-ignore proposal fc18 remains NOT_RUN with all34pins intact.
+- 476 preserves the inventory-result slice alias OLD FAIL during/after inventory,
+  then the exclusive snapshot fix. Its source/build checks do not qualify the
+  old official inventory syntax.
+- Three independent root-owned help-only observations prove CLI628e lists ignore
+  under exec, not root, and rejects root ignore+mcp help with exit2. No inventory
+  or task was run by those helps. The known-incompatible plan was retired, never
+  executed, aliased, retuned or relabelled as an isolation success.
+
+The [provider-route proposal](direct-benchmark-provider-route-proposal.md) records
+why CHATGPT authentication alone cannot admit a normal-config cohort and why some
+apparently read-only official APIs/forced-login controls have side effects. That
+guard is NOT_IMPLEMENTED. Real cohorts remain BLOCKED; cloud/context policies are
+unverified, concurrent_distinct_projects remains UNSUPPORTED and the global
+economic gate INCOMPLETE. No parity, savings or release certification is claimed.
+Reverting this preparation needs no credential, configuration or data migration.

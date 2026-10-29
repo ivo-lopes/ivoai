@@ -1,0 +1,19 @@
+{
+  "status": "FROZEN_PREPARED_NOT_EXECUTED_ROOT_REVIEW_REQUIRED",
+  "input_pins": 40,
+  "helper_configuration_scope": "USER_CONFIG_INCLUDED_SHARED_SCOPE",
+  "helper_connected_to_live_benchmark": false,
+  "frozen_inputs_sha256": "6b49f7975515c6ea01d007d456cb1c7ba782ccc59ca749373c07ac4372b7ebb2",
+  "plan_sha256": "03b0cf371b12a765f941e4b743d84d8099f12fa18a1af9befdbd0fb83de905a5",
+  "JS_sha256": "b04d20082e611f9a8f23aef2740684ed53eb7d325a62434f13be8474ed58629f",
+  "wire_sha256": "da86ca87fb00c8be3a12dd731ba1ea63b1d0f61b26018305a4810a2a286c81fa",
+  "contract_sha256": "6e2b3f508caba0e43e753226e7a42daf8b5101ff4f584c76a75ea92dd36f3f16",
+  "host_sha256": "dfedb55407bcbd6d07f65177c8e382c065f4cc22a1560afdb1eed9286aaaaf91",
+  "app_test_ELF_sha256": "870fad7bfa6c724bf48617d84daa3f0ec22decb02ea00b763c7f9f043e75d5a7",
+  "official_CLI_inventory_exec_HTTP_MCP_namespace_runs": 0,
+  "Go_preparation_only_test": "PASS actual helper argv/Dir/Env versus plan, no Cmd.Run",
+  "Python_pure_contract_cases": 25,
+  "guard_provider_route": "NOT_IMPLEMENTED_BLOCKS_REAL_COHORT",
+  "cloud_context_requirements": "UNATTESTED",
+  "global_economic_gate": "INCOMPLETE"
+}

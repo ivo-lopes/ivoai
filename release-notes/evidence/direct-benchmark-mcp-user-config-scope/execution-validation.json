@@ -1,0 +1,120 @@
+{
+  "status": "COMPLETED_ONCE_TWO_SYNTHETIC_LAYER_EXCLUSION_OBSERVED",
+  "outcome": "PER_ENTRY_DENIAL_EXCLUDED_BOTH_SYNTHETIC_LAYERS_THIS_SCOPE_ONLY",
+  "scope": "USER_CONFIG_INCLUDED_SHARED_SCOPE",
+  "helper_connected_to_live_benchmark": false,
+  "root_approval_scope": "TWO_OFFLINE_USER_CONFIG_SHARED_SCOPE_ARMS_ONLY",
+  "freeze_sha256": "6b49f7975515c6ea01d007d456cb1c7ba782ccc59ca749373c07ac4372b7ebb2",
+  "plan_sha256": "03b0cf371b12a765f941e4b743d84d8099f12fa18a1af9befdbd0fb83de905a5",
+  "new40inputs_before_after_unchanged": 40,
+  "historical_artifacts_verified_unchanged": {
+    "old_empty_map_corrected": 172,
+    "old_empty_map_original": 81,
+    "ed79_receipt": 19,
+    "476_receipt": 17,
+    "fc18_frozen_inputs": 34
+  },
+  "host_exit": 0,
+  "inventory_CLI_processes": 2,
+  "exec_CLI_processes": 2,
+  "accepted_fake_provider_HTTP_requests": 4,
+  "nested_MCP_calls": 0,
+  "real_auth_status_model_provider_calls": 0,
+  "results": [
+    {
+      "arm": "A",
+      "duration_seconds": 5.226,
+      "helper": {
+        "arm": "A",
+        "exec_count": 1,
+        "exec_exit": 0,
+        "exec_launched": true,
+        "helper_configuration_scope": "USER_CONFIG_INCLUDED_SHARED_SCOPE",
+        "inventory_count": 1,
+        "inventory_exit": 0,
+        "inventory_launched": true,
+        "inventory_names_count": 2,
+        "result": "CLI_EXIT_ZERO_PENDING_HOST_PROTOCOL_VALIDATION"
+      },
+      "app_exit": 0,
+      "client_exit": 0,
+      "namespace_exit": 0,
+      "contract_status": "PASS",
+      "synthetic_final_valid": true,
+      "admitted_HTTP_requests": 2,
+      "accepted_provider_connections": 2,
+      "mcp_layers": {
+        "user": {
+          "process_started": 1,
+          "initialize": 1,
+          "initialize_result_ready": 1,
+          "notifications/initialized": 1,
+          "tools/list": 1,
+          "tools/list_result_ready": 1
+        },
+        "system": {
+          "process_started": 1,
+          "initialize": 1,
+          "initialize_result_ready": 1,
+          "notifications/initialized": 1,
+          "tools/list": 1,
+          "tools/list_result_ready": 1
+        }
+      },
+      "nested_MCP_tools_call_count": 0,
+      "actual_CodeMode_ALL_TOOLS_names": [
+        "mcp__system_layer__offline_system_ping",
+        "mcp__user_layer__offline_user_ping"
+      ]
+    },
+    {
+      "arm": "B",
+      "duration_seconds": 5.202,
+      "helper": {
+        "arm": "B",
+        "exec_count": 1,
+        "exec_exit": 0,
+        "exec_launched": true,
+        "helper_configuration_scope": "USER_CONFIG_INCLUDED_SHARED_SCOPE",
+        "inventory_count": 1,
+        "inventory_exit": 0,
+        "inventory_launched": true,
+        "inventory_names_count": 2,
+        "result": "CLI_EXIT_ZERO_PENDING_HOST_PROTOCOL_VALIDATION"
+      },
+      "app_exit": 0,
+      "client_exit": 0,
+      "namespace_exit": 0,
+      "contract_status": "PASS",
+      "synthetic_final_valid": true,
+      "admitted_HTTP_requests": 2,
+      "accepted_provider_connections": 2,
+      "mcp_layers": {
+        "user": {},
+        "system": {}
+      },
+      "nested_MCP_tools_call_count": 0,
+      "actual_CodeMode_ALL_TOOLS_names": []
+    }
+  ],
+  "fresh_ownership": {
+    "pre_execution_initial_case_inventory_exact": true,
+    "private_directory_owner_mode0700": true,
+    "all_case_artifacts_owned_by_current_UID": true,
+    "no_case_symlink_or_auth_json": true,
+    "inventory_exec_App_namespace_Wait_exit0": true,
+    "cleanup_limit": "MCP graceful Wait and companion process lifecycle not independently observed; remaining namespace-owned processes bounded by namespace exit"
+  },
+  "no_retry_alias_retune": true,
+  "not_proven": [
+    "providerGuard/canonical subscription route",
+    "cloud/context/institutional configuration isolation",
+    "configuration freshness beyond these frozen inputs",
+    "live benchmark integration/cohort/client parity",
+    "economics or task correctness",
+    "remote HTTP concurrency/native retry totals"
+  ],
+  "global_economic_gate": "INCOMPLETE",
+  "concurrent_distinct_projects": "UNSUPPORTED",
+  "provider_guard": "NOT_IMPLEMENTED_BLOCKS_REAL_COHORT"
+}
