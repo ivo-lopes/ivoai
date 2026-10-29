@@ -1,0 +1,190 @@
+{
+  "epoch": "NATIVE_CLEANUP_FIXTURE_SINGLE_PROC_SNAPSHOT_20261029",
+  "source_base": "4368d5495a5be4ce425f4ab89849df0296fc6f9b",
+  "source_branch": "diag/native-close-writer-20261029",
+  "source_frozen_Go": {
+    "internal/codexfrontend/facade_test.go": "d357486923c43dd8566168d5730b4e884501edfac8acc89d1a178b7b973d9495",
+    "internal/codexfrontend/fixture_process_test.go": "5dc87c8d51eef1923b5d0cbbcbf98c721a0580493aaa55fcdeaaf48295d22205",
+    "internal/codexfrontend/facade.go": "12785e5110eb5e9b4ee9b32313b78051b12acb7561096c838dc7cbbf6e312ac0",
+    "internal/codexfrontend/clients.go": "df95221da8a31439dce51de37707978693a2db852cfa101dad45495450b0bbe0"
+  },
+  "production_change": "NONE; facade.go/clients.go and all runtime Go unchanged",
+  "original_CI": {
+    "run": 40795567122,
+    "job": 123191101273,
+    "source_head": "6cc9af6c31dc6e084b243fe9e1232bb83e0a403b",
+    "merge": "1e64d9b86588604d8e1f800d63a4bba1e03ffc85",
+    "status": "FAIL_UNCHANGED",
+    "test": "TestNativeCloseStopsBackgroundDirectoryWriters/closed_writer",
+    "duration_seconds": 0.01,
+    "error": "native writer survived frontend cleanup before trigger",
+    "saved_local_CI_text_log_sha256": "bb03a135404bfb33baaa781b21d67fecbf042b8a4cfd701d7e4aa47bde78bea1",
+    "saved_local_CI_text_log_bytes": 308626,
+    "log_provenance": "Owner-provided saved CI text; hash of local file, not a claim of binary-exact server transport",
+    "exact_original_interleaving": "UNKNOWN_NOT_CAPTURED"
+  },
+  "causal_mechanism": {
+    "observed": "Owned child becomesZ, observed dead; next identity read matches zombie; ownedWait reaps it before state read; ENOENT was incorrectly converted toalive.",
+    "own_child_Wait": 0,
+    "legacy_first_alive": false,
+    "legacy_final_alive": true,
+    "single_snapshot_control_alive": false,
+    "scope": "Deterministic source-only process interleaving; consistent with short CI failure, not exact attribution of unlogged CI reads."
+  },
+  "changes": {
+    "identity_and_state": "One snapshot, same generation/terminal-state semantics",
+    "unknown_read_parse_errors": "Alive/failclosed; permission/EIO/malformed cases explicitly covered",
+    "PID_publication": "Adjacent temporary file then rename; separate readiness hardening, not asserted as CIcause",
+    "deadline_and_trigger": "Unchanged100x5ms readiness/cleanup loops, causal release trigger/live control/final liveness assertion retained",
+    "public_API_state_permissions_clients_dependencies": "UNCHANGED"
+  },
+  "validation": {
+    "regression_before": {
+      "result": "FAIL_EXPECTED_LEGACY_OBSERVER_BUG",
+      "exit": 1,
+      "not_normal_pass": true
+    },
+    "regression_after_and_normal_cleanup_fixture": {
+      "result": "PASS",
+      "exit": 0,
+      "package_seconds": 0.038
+    },
+    "negative_skip_fixture_Close": {
+      "result": "FAIL_EXPECTED_LIVE_WRITER_REJECTED",
+      "exit": 1,
+      "seconds": 0.536,
+      "not_normal_pass": true,
+      "production_mutation": false,
+      "cleanup": "Existing defers call realClose after assertion, own processes only"
+    },
+    "focused_source_only_race": {
+      "result": "PASS",
+      "exit": 0,
+      "top_level": 9,
+      "passing_events": 36,
+      "failed": 0,
+      "skipped": 0,
+      "package_seconds": 1.065
+    },
+    "vet": {
+      "result": "PASS",
+      "exit": 0,
+      "output_bytes": 0
+    },
+    "independent_root_native_optins_race": {
+      "result": "PASS_SCOPED_FAKE_PROVIDER_PROTOCOL_TUI",
+      "count": 1,
+      "package_seconds": 8.038,
+      "top_level": 13,
+      "passing_events": 40,
+      "failed": 0,
+      "skipped": 0,
+      "pinned_codex_sha256": "628e35487d888a28f0427fc37501da529dd3d81fcbad7a2c3421c1e8670d92e1",
+      "manual_login_status_or_real_model_requests": 0,
+      "limits": "env-i/privateHOME/NativeHomefake, no new download; not a network namespace, /etc replacement, external traffic audit or system/cloud MCP isolation certificate"
+    }
+  },
+  "readiness": "LOCAL_PATCH_READY_FOR_REVIEW; fresh16hosted checks required beforemerge; no push/CIrerun/tag/release performed",
+  "not_claimed": [
+    "Production cleanup defect fixed",
+    "Exact original CIinterleaving known",
+    "Original red CIreclassified green",
+    "All external network behavior traced",
+    "Real auth/model/quotas or globalTUIparity",
+    "Economic savings or publicAPI migration"
+  ],
+  "files": {
+    "before-fix-facade_test.go.txt": {
+      "sha256": "d357486923c43dd8566168d5730b4e884501edfac8acc89d1a178b7b973d9495",
+      "bytes": 20458
+    },
+    "root-native-race.jsonl": {
+      "sha256": "40d9ccb05893f4c658d6e9492e016cdfa70eb69d25e1837f5e70384686e69ba2",
+      "bytes": 39537
+    },
+    "regression-after-and-fixture.log": {
+      "sha256": "55bcc2ca9db258bb70657d55731cc754f52aca603bba3ecc5133c756027afbf1",
+      "bytes": 2542
+    },
+    "before-fix-fixture_process_test.go.txt": {
+      "sha256": "3563216815e83d93c7fdbb2866a5a1f33db7c40ff35cc9d4c6323d461afbeaf3",
+      "bytes": 2544
+    },
+    "focused-race.exit": {
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "bytes": 2
+    },
+    "causal-overlay-facade_test.go.txt": {
+      "sha256": "dd0251a72ca47391c35b27e1b6bc4abfcebbb6709672a37853197ee4eda94f08",
+      "bytes": 23878
+    },
+    "regression-after-and-fixture.exit": {
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "bytes": 2
+    },
+    "mutant-skip-close-facade_test.go.txt": {
+      "sha256": "866b94384c1de34ade3fc36bd5656c47a2a823b509b353469bfedbb9f7aee412",
+      "bytes": 20600
+    },
+    "before-fix-source.json": {
+      "sha256": "dc2c1f819d413e4968c8531756e4f3437096496d5fb2f14789584dae7d24ad19",
+      "bytes": 318
+    },
+    "mutant-predeclared.json": {
+      "sha256": "86364717f9a7516ed5b28ea69c0a90bfebbefb1aaa0fd18c97eecfe1eb68ab7b",
+      "bytes": 608
+    },
+    "reap-interleaving.json": {
+      "sha256": "6487e957ba6513bc3eb4d59dabf595b26413db80bd34ed2ff425043417682085",
+      "bytes": 349
+    },
+    "mutant-skip-close.log": {
+      "sha256": "4868500b31050997af577724e3dbb8779ec04d90c4605758ac27e1cea7443b7b",
+      "bytes": 427
+    },
+    "root-native-race-validation.json": {
+      "sha256": "6cf45361f039f423d1f89471a85d6bb1039806cc78bf337db73c8d73679784f0",
+      "bytes": 1749
+    },
+    "vet.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "regression-before.exit": {
+      "sha256": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865",
+      "bytes": 2
+    },
+    "mutant-skip-close.exit": {
+      "sha256": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865",
+      "bytes": 2
+    },
+    "vet.exit": {
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "bytes": 2
+    },
+    "causal-predeclared.json": {
+      "sha256": "64ea7989f525498cfec1cf68a238554ab85159ea4b7657fd06c86192e7186dc3",
+      "bytes": 488
+    },
+    "original-ci-excerpt.log": {
+      "sha256": "2b4783b4799cefe3767a68a4c1cb4ce3fbcc410a11894dd73fb93a97a6c48fe3",
+      "bytes": 902
+    },
+    "focused-race.jsonl": {
+      "sha256": "dbc5c35b7d14441171a5b87a6a11d5af584bfe506b9dc6053927cac0a81fec62",
+      "bytes": 35465
+    },
+    "final-source-frozen.json": {
+      "sha256": "1d7f24305a30d8b019e77a4e4e120ef4bb06338ba72a8cfbc4ec576937dc26e4",
+      "bytes": 635
+    },
+    "regression-before.log": {
+      "sha256": "42600e6b6265e6f0220454337e6d2bf9c373dfd66cffd674b08b4f56b905d134",
+      "bytes": 297
+    },
+    "reap-interleaving.log": {
+      "sha256": "f4fa4b36ae1a81480a32f8f3f57d85bf66bf0b06e6cc9eded09e214f05ee4f33",
+      "bytes": 340
+    }
+  }
+}

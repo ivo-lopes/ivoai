@@ -1,0 +1,7 @@
+2026-10-29T00:40:22.4251882Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules origin +refs/heads/*:refs/remotes/origin/* +refs/tags/*:refs/tags/* +1e64d9b86588604d8e1f800d63a4bba1e03ffc85:refs/remotes/pull/56/merge
+2026-10-29T00:40:26.9394962Z  * [new ref]           1e64d9b86588604d8e1f800d63a4bba1e03ffc85 -> pull/56/merge
+2026-10-29T00:40:27.2793147Z HEAD is now at 1e64d9b8 Merge 6cc9af6c31dc6e084b243fe9e1232bb83e0a403b into 4368d5495a5be4ce425f4ab89849df0296fc6f9b
+2026-10-29T00:40:27.2930660Z 1e64d9b86588604d8e1f800d63a4bba1e03ffc85
+2026-10-29T00:53:42.7320036Z --- FAIL: TestNativeCloseStopsBackgroundDirectoryWriters (0.02s)
+2026-10-29T00:53:42.7320533Z     --- FAIL: TestNativeCloseStopsBackgroundDirectoryWriters/closed_writer (0.01s)
+2026-10-29T00:53:42.7320994Z         facade_test.go:118: native writer survived frontend cleanup before trigger
