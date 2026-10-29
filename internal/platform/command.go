@@ -38,6 +38,20 @@ type Result struct {
 	ExitCode int
 }
 
+// SnapshotEnvironment resolves ExecRunner's inheritance/override rules into a
+// non-nil independent environment shared by multiple child calls. A clean nil
+// environment means empty; inherited nil means the current parent environment.
+// Callers must not log the returned values.
+func SnapshotEnvironment(o RunOptions) []string {
+	if o.CleanEnv {
+		return append([]string{}, o.Env...)
+	}
+	if o.Env == nil {
+		return append([]string{}, os.Environ()...)
+	}
+	return mergedEnvironment(os.Environ(), o.Env)
+}
+
 type ExecRunner struct{}
 
 func (ExecRunner) LookPath(name string) (string, error) { return exec.LookPath(name) }
@@ -56,10 +70,8 @@ func (ExecRunner) Run(ctx context.Context, command string, args []string, o RunO
 		cmd.SysProcAttr = &syscall.SysProcAttr{Pdeathsig: syscall.SIGKILL}
 	}
 	cmd.Dir = o.Dir
-	if o.CleanEnv {
-		cmd.Env = append([]string(nil), o.Env...)
-	} else if o.Env != nil {
-		cmd.Env = mergedEnvironment(os.Environ(), o.Env)
+	if o.CleanEnv || o.Env != nil {
+		cmd.Env = SnapshotEnvironment(o)
 	}
 	cmd.Stdin = o.Stdin
 	var stdout, stderr strings.Builder

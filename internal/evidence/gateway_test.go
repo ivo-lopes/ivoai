@@ -11,6 +11,7 @@ import (
 	"sync"
 	"sync/atomic"
 	"testing"
+	"testing/synctest"
 	"time"
 
 	"github.com/ivo-lopes/ivoai/internal/core"
@@ -560,24 +561,94 @@ func TestGatewayCacheBoundsDoNotPreventUncachedExactRecovery(t *testing.T) {
 	}
 }
 
-func TestGatewayRecoveredProviderPanicReleasesFlight(t *testing.T) {
-	f := newGatewayFixture(t)
-	func() {
-		defer func() {
-			if recover() == nil {
-				t.Error("fixture provider did not panic")
-			}
-		}()
-		_, _ = f.gateway.Retrieve(context.Background(), f.request, func(context.Context) (Document, error) {
-			panic("synthetic parser failure")
-		})
-	}()
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-	defer cancel()
-	packet, err := f.gateway.Retrieve(ctx, f.request, func(context.Context) (Document, error) { return exactDocument(), nil })
-	if err != nil || packet.Text != string(exactDocument().Raw) {
-		t.Fatalf("recovered provider panic poisoned subsequent request: %v", err)
+func assertGatewayFlightReleased(t *testing.T, f *gatewayFixture, key string, pending *flight, puts int32) {
+	t.Helper()
+	if pending == nil {
+		t.Fatal("provider was not admitted under an observable flight")
 	}
+	select {
+	case <-pending.done:
+	default:
+		t.Fatal("provider flight completion was not closed synchronously")
+	}
+	f.gateway.mu.Lock()
+	_, retained := f.gateway.flights[key]
+	remaining, cached, cacheBytes := len(f.gateway.flights), len(f.gateway.entries), f.gateway.bytes
+	f.gateway.mu.Unlock()
+	if retained || remaining != 0 {
+		t.Fatal("provider flight entry was not removed synchronously")
+	}
+	if cached != 0 || cacheBytes != 0 || f.store.puts.Load() != puts || f.store.reads.Load() != 0 {
+		t.Fatal("failed retrieval changed cache or unexpected artifact I/O")
+	}
+}
+
+func TestGatewayRecoveredProviderPanicReleasesFlight(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		f := newGatewayFixture(t)
+		key := Digest(f.request.Owner.SessionID, f.request.Scope, f.request.Source, f.generation.Load().(string), f.request.QueryDigest)
+		var pending *flight
+		func() {
+			defer func() {
+				if recover() != "synthetic parser failure" {
+					t.Error("fixture provider panic was not recovered")
+				}
+			}()
+			_, _ = f.gateway.Retrieve(context.Background(), f.request, func(context.Context) (Document, error) {
+				f.gateway.mu.Lock()
+				pending = f.gateway.flights[key]
+				f.gateway.mu.Unlock()
+				panic("synthetic parser failure")
+			})
+		}()
+		// Cleanup is synchronous on panic unwinding, independent of a later fetch,
+		// scheduler or fsync. A leaked defer must fail here before another Retrieve.
+		assertGatewayFlightReleased(t, f, key, pending, 0)
+		// Keep a controlled one-second storage delay separate from the flight oracle.
+		// Virtual time excludes unrelated host/fsync latency from this assertion.
+		f.store.afterPut = func() { time.Sleep(time.Second) }
+		start := time.Now()
+		packet, err := f.gateway.Retrieve(context.Background(), f.request, func(context.Context) (Document, error) { return exactDocument(), nil })
+		if err != nil || packet.Text != string(exactDocument().Raw) || packet.CacheHit || time.Since(start) != time.Second {
+			t.Fatalf("released flight did not permit exact retrieval after controlled storage delay: %v", err)
+		}
+		recovered, err := f.gateway.Recover(context.Background(), f.request, packet.Ref)
+		if err != nil || !bytes.Equal(recovered, exactDocument().Raw) || f.store.puts.Load() != 1 {
+			t.Fatal("subsequent retrieval lost durable exact evidence")
+		}
+	})
+}
+
+func TestGatewayDeadlineAfterArtifactPutRemainsFailClosed(t *testing.T) {
+	synctest.Test(t, func(t *testing.T) {
+		f := newGatewayFixture(t)
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+		defer cancel()
+		key := Digest(f.request.Owner.SessionID, f.request.Scope, f.request.Source, f.generation.Load().(string), f.request.QueryDigest)
+		var pending *flight
+		expiredAfterPut := false
+		f.store.afterPut = func() {
+			if ctx.Err() != nil {
+				t.Fatal("context expired before controlled post-Put deadline")
+			}
+			time.Sleep(time.Second)
+			synctest.Wait()
+			if !errors.Is(ctx.Err(), context.DeadlineExceeded) {
+				t.Fatal("post-Put context did not retain the one-second deadline")
+			}
+			expiredAfterPut = true
+		}
+		packet, err := f.gateway.Retrieve(ctx, f.request, func(context.Context) (Document, error) {
+			f.gateway.mu.Lock()
+			pending = f.gateway.flights[key]
+			f.gateway.mu.Unlock()
+			return exactDocument(), nil
+		})
+		if !expiredAfterPut || !errors.Is(ctx.Err(), context.DeadlineExceeded) || !errors.Is(err, ErrChanged) || packet.Text != "" || packet.Ref.Result.Artifact.ID != "" {
+			t.Fatalf("post-Put deadline released evidence or changed error contract: %v", err)
+		}
+		assertGatewayFlightReleased(t, f, key, pending, 1)
+	})
 }
 
 func TestGatewaySourceKindsAndMissingProvenanceFailClosed(t *testing.T) {

@@ -1,0 +1,11 @@
+{
+  "final_source_sha256": "1e424982dc7b1164f4587a0547527f02b808069d29d435da92849f97df7d1f91",
+  "files": {
+    "predeclared.json": "3fac5af7e7a9763671f8bc811cfc23ad32de59885fe0792333e5f038784efa96",
+    "mutant-no-flight-cleanup.go.txt": "2d07595013a89d9a6854e91f2b5d483f80fe7e914357dd7bae800242a9ed5f5b",
+    "mutant-no-postPut-check.go.txt": "ee42b44416ca65eb38ae93d00027d1ece04daef7bef1681a008ac27a2cc42f98",
+    "mutant-no-flight-cleanup-overlay.json": "95c7855e184ee62f63eda4e2f27a36bc7f374e1ce028aff6935a79fae91c52ff",
+    "mutant-no-postPut-check-overlay.json": "ee10ca1a8525adcdb3e5c73d51934c2f5651a2deb3f7ad1e44d8d9076abc1b44"
+  },
+  "expected": "each mutant fails one targeted assertion once; no second retrieval on pending-flight mutant"
+}

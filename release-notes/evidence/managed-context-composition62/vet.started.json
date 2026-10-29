@@ -1,0 +1,11 @@
+{
+  "source": "80c0814d19995bc3ad228a11ef917e14c75989ee",
+  "source_freeze_sha256": "b77d57026157ecfcd2d173c36af28ac1a828d716ace918658931538ee5ebf330",
+  "max_runs": 1,
+  "command": [
+    "go",
+    "vet",
+    "./..."
+  ],
+  "started_utc": "2026-10-29T02:08:09.323380+00:00"
+}

@@ -1,0 +1,103 @@
+{
+  "schema_version": 1,
+  "recorded_utc": "2026-10-29T01:53:46.058770+00:00",
+  "result": "LOCAL_TEST_ONLY_GATES_PASS_FINAL_COMPOSITION_CI_PENDING",
+  "base": "b523055dcbcb833df1f1d903e0b823e1a0376b2c",
+  "final_source_freeze_sha256": "1e424982dc7b1164f4587a0547527f02b808069d29d435da92849f97df7d1f91",
+  "source_go_paths": 590,
+  "runtime_go_paths_unchanged": 282,
+  "only_existing_source_change": "internal/evidence/gateway_test.go",
+  "Go": "go version go1.27.3 linux/amd64",
+  "go_binary_sha256": "5f5eb6d0b2fb6aa0bb5d5f8c5f1c944e0de955c925f0111af92a9d8f79680b5b",
+  "stdlib_synctest_source_sha256": "115339f4e00dc671533d3f8b4add8da30537569f06cadabc2ab3b2f7466ab30c",
+  "original_full_go": "FAIL_PRESERVED_NOT_RETRIED_58_OTHER_PACKAGES_PASS_3_NO_TESTS",
+  "original_exact_delay_or_packet_check": "UNKNOWN_NOT_INSTRUMENTED",
+  "controls": {
+    "legacy_afterPut_deadline": {
+      "exit": 1,
+      "expected": "old assertion rejects despite synchronous panic flight release",
+      "package_seconds": 0.006,
+      "ordinary_pass": false
+    },
+    "nominal_two_tests": {
+      "exit": 0,
+      "tests": 2,
+      "package_seconds": 0.006
+    },
+    "omitted_flight_cleanup": {
+      "exit": 1,
+      "package_seconds": 0.005,
+      "expected": "immediate failure before next Retrieve",
+      "ordinary_pass": false
+    },
+    "omitted_postPut_recheck": {
+      "exit": 1,
+      "package_seconds": 0.006,
+      "expected": "deadline test rejects errnil/issued evidence",
+      "ordinary_pass": false
+    }
+  },
+  "race": {
+    "github.com/ivo-lopes/ivoai/internal/evidence": {
+      "package_result": [
+        {
+          "Action": "pass",
+          "Elapsed": 49.249
+        }
+      ],
+      "passing_top_level_tests": 36,
+      "test_event_counts_including_subtests": {
+        "pass": 113,
+        "skip": 2
+      },
+      "skipped_tests_not_passes": [
+        "TestRealRTKGeneratedGatewayABBA",
+        "TestRealRTKGatewayABBA"
+      ]
+    },
+    "github.com/ivo-lopes/ivoai/internal/workingcontext": {
+      "package_result": [
+        {
+          "Action": "pass",
+          "Elapsed": 66.523
+        }
+      ],
+      "passing_top_level_tests": 18,
+      "test_event_counts_including_subtests": {
+        "pass": 21,
+        "skip": 1
+      },
+      "skipped_tests_not_passes": [
+        "TestLiveProtectedArtifactsDoNotPoisonLegacyCoreRollback"
+      ]
+    }
+  },
+  "vet": {
+    "exit": 0,
+    "packages": [
+      "internal/evidence",
+      "internal/workingcontext"
+    ],
+    "output_bytes": 0
+  },
+  "deadline_semantics": "Actual stdlib context.WithTimeout1s in a virtual synctest clock; postPut expiration proven before unchanged runtime check. No claim about bounded fsync walltime.",
+  "runtime_policy_unchanged": {
+    "Gateway": true,
+    "LocalStore": true,
+    "context_error_mapping": true,
+    "TTL": true,
+    "authorization_generation_checks": true,
+    "cache_singleflight_security": true
+  },
+  "other_unchanged": [
+    "existing benchmark data/cohorts",
+    "old evidence",
+    "modules/pins/workflows",
+    "website/embed",
+    "Core/native clients/lifecycle"
+  ],
+  "native_client_auth_status_model_provider_calls": 0,
+  "external_network_installer_dependency_downloads": 0,
+  "new_full_suite": "NOT_RUN_EXACT_HEAD_CI_REQUIRED",
+  "delivery": "LOCAL_ONLY_NO_PUSH_MERGE_RELEASE"
+}
