@@ -1,0 +1,6 @@
+=== RUN   TestGatewayRecoveredProviderPanicReleasesFlight
+    gateway_test.go:606: provider flight completion was not closed synchronously
+--- FAIL: TestGatewayRecoveredProviderPanicReleasesFlight (0.00s)
+FAIL
+FAIL	github.com/ivo-lopes/ivoai/internal/evidence	0.005s
+FAIL
