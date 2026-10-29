@@ -1,0 +1,10 @@
+{
+  "purpose": "deterministic own-zombie reap between original predicate identity and state reads",
+  "source": "4368d5495a5be4ce425f4ab89849df0296fc6f9b",
+  "production_codexfrontend_equals_CI6cc": true,
+  "actual_CI_reason": "UNPROVEN; investigate source mechanism without attributing unknown log absence",
+  "owned_source_only_test_executions": 1,
+  "real_official_status_auth_model_operations": 0,
+  "original_Close_mutation": false,
+  "unknown_errors_or_deadlines_weakened": false
+}

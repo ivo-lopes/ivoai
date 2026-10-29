@@ -1,0 +1,6 @@
+=== RUN   TestNativeFixtureWriterCannotReviveAfterReap
+    fixture_process_test.go:99: known terminated writer became alive after owned reap between observations
+--- FAIL: TestNativeFixtureWriterCannotReviveAfterReap (0.01s)
+FAIL
+FAIL	github.com/ivo-lopes/ivoai/internal/codexfrontend	0.010s
+FAIL

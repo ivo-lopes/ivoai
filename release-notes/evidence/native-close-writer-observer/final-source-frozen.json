@@ -1,0 +1,12 @@
+{
+  "base": "4368d5495a5be4ce425f4ab89849df0296fc6f9b",
+  "test_only": true,
+  "files": {
+    "internal/codexfrontend/facade_test.go": "d357486923c43dd8566168d5730b4e884501edfac8acc89d1a178b7b973d9495",
+    "internal/codexfrontend/fixture_process_test.go": "5dc87c8d51eef1923b5d0cbbcbf98c721a0580493aaa55fcdeaaf48295d22205",
+    "internal/codexfrontend/facade.go": "12785e5110eb5e9b4ee9b32313b78051b12acb7561096c838dc7cbbf6e312ac0",
+    "internal/codexfrontend/clients.go": "df95221da8a31439dce51de37707978693a2db852cfa101dad45495450b0bbe0"
+  },
+  "production_codexfrontend_diff": "EMPTY",
+  "source_go_frozen_before_race_vet": true
+}
