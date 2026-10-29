@@ -94,6 +94,9 @@ func (r *runner) run(ctx context.Context, args []string) error {
 	case "web-access":
 		return r.webAccess(layout, args[1:])
 	case "connector":
+		if os.Getenv("IVOAI_TEST_MODE") == "1" {
+			manager.Controller = nil
+		}
 		return r.connector(ctx, layout, manager, args[1:])
 	case "context":
 		return r.context(ctx, layout, args[1:])
@@ -885,8 +888,13 @@ func (r *runner) connector(ctx context.Context, layout server.Layout, manager se
 		if err := ensureServiceOwnership(layout); err != nil {
 			return err
 		}
-		if os.Getenv("IVOAI_TEST_MODE") != "1" {
-			_ = exec.CommandContext(ctx, "systemctl", "restart", "ivoai-context.service", "ivoai-gateway.service").Run()
+		if manager.Controller == nil && os.Getenv("IVOAI_TEST_MODE") == "1" {
+			return nil
+		}
+		// The registry is already committed. Report activation failure without
+		// echoing potentially sensitive service output or undoing configuration.
+		if manager.Controller == nil || manager.Controller.Restart(ctx, []string{"ivoai-context.service", "ivoai-gateway.service"}) != nil {
+			return errors.New("connector registry saved, but context/gateway services did not restart; ingestion is not confirmed; resolve the service failure and run ivoai server restart")
 		}
 		return nil
 	case "remove":

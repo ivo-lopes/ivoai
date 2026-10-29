@@ -1,0 +1,67 @@
+{
+  "status": "LOCAL_FIX_PASS_EXTERNAL_INGESTION_NOT_RUN",
+  "source": "360a9de83e32414ffe894b38c60888dddca62d2c",
+  "base": "ccc48a055ae3099a2027cfc8f31210c172baf247",
+  "source_paths": 593,
+  "source_freeze_sha256": "7064ec5949bee441be04b8779f7c360ea9256a85929fac705ef74c13b1a51058",
+  "Go": {
+    "packages": {
+      "pass": 3
+    },
+    "test_events": {
+      "pass": 78
+    },
+    "top_level_passes": 56
+  },
+  "gates": {
+    "focused-race": {
+      "source": "360a9de83e32414ffe894b38c60888dddca62d2c",
+      "gate": "focused-race",
+      "exit": 0,
+      "wall_seconds": 6.807,
+      "source_unchanged_after": true,
+      "official_client_auth_model_or_service_calls": 0,
+      "external_Context_sync": "BLOCKED_NOT_EXECUTED"
+    },
+    "vet": {
+      "source": "360a9de83e32414ffe894b38c60888dddca62d2c",
+      "gate": "vet",
+      "exit": 0,
+      "wall_seconds": 0.834,
+      "source_unchanged_after": true,
+      "official_client_auth_model_or_service_calls": 0,
+      "external_Context_sync": "BLOCKED_NOT_EXECUTED"
+    },
+    "linux-arm64-compile": {
+      "source": "360a9de83e32414ffe894b38c60888dddca62d2c",
+      "gate": "linux-arm64-compile",
+      "exit": 0,
+      "wall_seconds": 3.123,
+      "source_unchanged_after": true,
+      "official_client_auth_model_or_service_calls": 0,
+      "external_Context_sync": "BLOCKED_NOT_EXECUTED"
+    }
+  },
+  "ARM64_compile_only": {
+    "sha256": "92ebc3a0762b0558851598486eafaf2e61f7eac436d145408173083db47a863a",
+    "bytes": 64289152,
+    "executed": false
+  },
+  "changed_runtime_paths": [
+    "internal/servercmd/runner.go"
+  ],
+  "new_test_paths": [
+    "internal/servercmd/connector_restart_test.go"
+  ],
+  "old_control": {
+    "exit": 1,
+    "base_runner_sha256": "fc71325bb5495a5d27017ef7da2177e62a4a3eaa1949754267f055d42aa206cf",
+    "regression_test_sha256": "55a0144fa1d68632e7bb6ebd5e413e9a7979361bfec6f256df6b19e38b8d687c",
+    "result": "old method bypasses/ignores supplied Controller in TEST_MODE; both fixture subcases FAIL; not an observed production incident"
+  },
+  "test_mode_public_dispatch": "connector only uses nil Controller, preserving prior hermetic CLI behavior; fake Controller enters method directly",
+  "no_live_service_network_auth_or_external_ingestion": true,
+  "non_Linux_support": "not added; existing Linux-only server setup guard unchanged",
+  "CONTEXT_SYNC": "BLOCKED",
+  "IVOAI_175": "NOT_DONE"
+}
