@@ -1,0 +1,19 @@
+{
+  "packages": {
+    "skip": 3,
+    "pass": 59
+  },
+  "test_events": {
+    "pass": 2195,
+    "skip": 72
+  },
+  "top_level_passes": 1203,
+  "new_official_optin": "SKIP",
+  "controlled_stdio_first_run_time": "2026-10-29T01:09:36.132337984-03:00",
+  "controlled_stdio_top_passes": [
+    "TestPrimaryPrefetchSubscriptionStdioControlledProtocols",
+    "TestPrimaryPrefetchSubscriptionStdioPinnedScopeAndWhitelist",
+    "TestPrimaryPrefetchSubscriptionStdioCancelHeldPipes",
+    "TestPrimaryPrefetchSubscriptionStdioRejectsEffectsAndWrongOrder"
+  ]
+}
