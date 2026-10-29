@@ -7,11 +7,13 @@ import (
 	_ "embed"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 	"testing"
@@ -525,6 +527,265 @@ func prefetchLiveEvents(body []byte, row *prefetchLiveRow) string {
 		row.InputTokens, row.CachedInputTokens, row.OutputTokens = result.InputTokens, result.CachedInputTokens, result.OutputTokens
 	}
 	return result.Answer
+}
+
+// Standalone benchmark only: this deliberately does not enter the managed
+// Adapter API, whose unsupported --ignore-user-config scope remains rejected.
+// The official inventory syntax/effective scope still requires an independently
+// reviewed offline proof before this helper can be connected to real cohorts.
+type prefetchDirectScope struct {
+	executable, directory string
+	environment, globals  []string
+}
+
+type prefetchDirectRunner func(*exec.Cmd) error
+
+// A successful bounded inventory is required to construct an exec command.
+// Its scope is the frozen scope actually passed to the inventory runner.
+type prefetchDirectInventoryResult struct {
+	scope prefetchDirectScope
+	names []string
+}
+
+var prefetchDirectServerName = regexp.MustCompile(`^[a-zA-Z0-9_-]{1,128}$`)
+
+func prefetchNewDirectScope(executable, directory, model, sandbox string, environment []string) (prefetchDirectScope, error) {
+	if !filepath.IsAbs(executable) || !filepath.IsAbs(directory) || model == "" || strings.ContainsAny(model, "\x00\r\n") || sandbox != "read-only" && sandbox != "workspace-write" || environment == nil {
+		return prefetchDirectScope{}, errors.New("direct benchmark configuration scope unavailable")
+	}
+	for _, entry := range environment {
+		if strings.ContainsRune(entry, '\x00') || !strings.Contains(entry, "=") {
+			return prefetchDirectScope{}, errors.New("direct benchmark environment unavailable")
+		}
+	}
+	globals := []string{"--ignore-user-config", "--sandbox", sandbox, "-m", model, "-C", directory, "-c", `model_reasoning_effort="low"`}
+	globals = append(globals, codexresolver.ProjectTrustArgs(directory)...)
+	globals = append(globals, "-c", "agents.enabled=false", "-c", "features.multi_agent_v2=false", "-c", "features.multi_agent=false", "-c", "features.plugins=false", "-c", "features.hooks=false", "-c", "features.apps=false", "-c", "features.remote_plugin=false", "-c", "sandbox_workspace_write.network_access=false")
+	return prefetchDirectScope{executable: executable, directory: directory, environment: append([]string{}, environment...), globals: append([]string{}, globals...)}, nil
+}
+
+func (scope prefetchDirectScope) command(ctx context.Context, prefix, suffix []string) *exec.Cmd {
+	args := append([]string{}, prefix...)
+	args = append(args, scope.globals...)
+	args = append(args, suffix...)
+	command := exec.CommandContext(ctx, scope.executable, args...)
+	command.Dir = scope.directory
+	command.Env = append([]string{}, scope.environment...)
+	return command
+}
+
+// This writer stops accepting bytes at the boundary instead of accumulating
+// unbounded output and checking its length only after the process has finished.
+type prefetchDirectBoundedOutput struct {
+	buffer   bytes.Buffer
+	limit    int
+	overflow bool
+}
+
+func (out *prefetchDirectBoundedOutput) Write(body []byte) (int, error) {
+	left := out.limit - out.buffer.Len()
+	if len(body) > left {
+		out.overflow = true
+		_, _ = out.buffer.Write(body[:left])
+		return left, io.ErrShortBuffer
+	}
+	return out.buffer.Write(body)
+}
+
+func prefetchDirectInventory(ctx context.Context, scope prefetchDirectScope, run prefetchDirectRunner) (*prefetchDirectInventoryResult, error) {
+	if run == nil {
+		return nil, errors.New("direct benchmark inventory runner unavailable")
+	}
+	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
+	defer cancel()
+	command := scope.command(ctx, nil, []string{"mcp", "list", "--json"})
+	stdout := &prefetchDirectBoundedOutput{limit: 256 << 10}
+	stderr := &prefetchDirectBoundedOutput{limit: 64 << 10}
+	command.Stdout, command.Stderr = stdout, stderr
+	if err := run(command); err != nil || ctx.Err() != nil || stdout.overflow || stderr.overflow {
+		return nil, errors.New("direct benchmark inventory failed")
+	}
+	// Do not retain or forward inventory/error contents: transports can include
+	// URLs, environment values and other private client configuration metadata.
+	names, err := prefetchDirectInventoryNames(stdout.buffer.Bytes())
+	if err != nil {
+		return nil, err
+	}
+	return &prefetchDirectInventoryResult{scope: scope, names: names}, nil
+}
+
+func prefetchDirectInventoryNames(body []byte) ([]string, error) {
+	invalid := errors.New("direct benchmark inventory invalid")
+	if len(body) > 256<<10 {
+		return nil, invalid
+	}
+	decoder := json.NewDecoder(bytes.NewReader(body))
+	var servers []json.RawMessage
+	if err := decoder.Decode(&servers); err != nil || servers == nil || len(servers) > 128 {
+		return nil, invalid
+	}
+	var extra any
+	if !errors.Is(decoder.Decode(&extra), io.EOF) {
+		return nil, invalid
+	}
+	names, seen := []string{}, map[string]bool{}
+	for _, raw := range servers {
+		item := json.NewDecoder(bytes.NewReader(raw))
+		token, err := item.Token()
+		if err != nil || token != json.Delim('{') {
+			return nil, invalid
+		}
+		name, keys := "", map[string]bool{}
+		for item.More() {
+			token, err = item.Token()
+			key, ok := token.(string)
+			if err != nil || !ok || keys[key] {
+				return nil, invalid
+			}
+			keys[key] = true
+			var value json.RawMessage
+			if item.Decode(&value) != nil {
+				return nil, invalid
+			}
+			if key == "name" && json.Unmarshal(value, &name) != nil {
+				return nil, invalid
+			}
+		}
+		if token, err = item.Token(); err != nil || token != json.Delim('}') || !prefetchDirectServerName.MatchString(name) || seen[name] {
+			return nil, invalid
+		}
+		seen[name] = true
+		names = append(names, name)
+	}
+	return names, nil
+}
+
+func prefetchDirectExec(ctx context.Context, inventory *prefetchDirectInventoryResult, schema, prompt string) (*exec.Cmd, error) {
+	// No projection/re-enable input exists in the direct benchmark. Managed Core
+	// projections remain exclusively the responsibility of the managed Adapter.
+	if inventory == nil || len(inventory.names) > 128 || schema == "" || strings.ContainsRune(schema, '\x00') {
+		return nil, errors.New("direct benchmark exec unavailable")
+	}
+	deny, seen := []string{}, map[string]bool{}
+	for _, name := range inventory.names {
+		if !prefetchDirectServerName.MatchString(name) || seen[name] {
+			return nil, errors.New("direct benchmark server identifier invalid")
+		}
+		seen[name] = true
+		deny = append(deny, "-c", "mcp_servers."+name+".enabled=false")
+	}
+	return inventory.scope.command(ctx, deny, []string{"exec", "--ephemeral", "--skip-git-repo-check", "--json", "--color", "never", "--output-schema", schema, "--", prompt}), nil
+}
+
+func TestPrimaryPrefetchDirectMCPScope(t *testing.T) {
+	env := []string{"HOME=/synthetic/home", "PATH=/synthetic/bin"}
+	scope, err := prefetchNewDirectScope("/synthetic/codex", "/synthetic/repo", "gpt-6.1-sol", "read-only", env)
+	if err != nil {
+		t.Fatal(err)
+	}
+	env[0] = "HOME=/substituted"
+	runs := 0
+	inventory, err := prefetchDirectInventory(context.Background(), scope, func(command *exec.Cmd) error {
+		runs++
+		want := append([]string{scope.executable}, scope.globals...)
+		want = append(want, "mcp", "list", "--json")
+		if strings.Join(command.Args, "\x00") != strings.Join(want, "\x00") || command.Dir != scope.directory || strings.Join(command.Env, "\x00") != "HOME=/synthetic/home\x00PATH=/synthetic/bin" {
+			t.Fatal("inventory configuration scope changed")
+		}
+		// Command-owned slices cannot mutate the frozen host scope.
+		command.Env[0] = "HOME=/changed-by-runner"
+		command.Args[1] = "--changed-by-runner"
+		_, err := io.WriteString(command.Stdout, `[{"name":"system_layer","transport":{"url":"synthetic-not-retained"}},{"name":"other-2"}]`)
+		return err
+	})
+	if err != nil || runs != 1 || strings.Join(inventory.names, ",") != "system_layer,other-2" {
+		t.Fatal("strict synthetic inventory failed")
+	}
+	prompt := "--enable malicious prompt remains positional"
+	command, err := prefetchDirectExec(context.Background(), inventory, "/synthetic/schema.json", prompt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	prefix := []string{scope.executable, "-c", "mcp_servers.system_layer.enabled=false", "-c", "mcp_servers.other-2.enabled=false"}
+	want := append(prefix, scope.globals...)
+	want = append(want, "exec", "--ephemeral", "--skip-git-repo-check", "--json", "--color", "never", "--output-schema", "/synthetic/schema.json", "--", prompt)
+	if strings.Join(command.Args, "\x00") != strings.Join(want, "\x00") || command.Dir != scope.directory || strings.Join(command.Env, "\x00") != "HOME=/synthetic/home\x00PATH=/synthetic/bin" {
+		t.Fatal("execution scope, denials, restrictions or prompt boundary changed")
+	}
+	if _, err := prefetchNewDirectScope("/synthetic/codex", "/synthetic/repo", "gpt-6.1-sol", "read-only", nil); err == nil {
+		t.Fatal("nil environment would inherit ambient scope")
+	}
+	if command, err := prefetchDirectExec(context.Background(), nil, "/synthetic/schema", prompt); err == nil || command != nil {
+		t.Fatal("missing inventory reached execution")
+	}
+	for _, unsafe := range [][]string{{"a", "a"}, {"a.b"}, {strings.Repeat("a", 129)}} {
+		if command, err := prefetchDirectExec(context.Background(), &prefetchDirectInventoryResult{scope: scope, names: unsafe}, "/synthetic/schema", prompt); err == nil || command != nil {
+			t.Fatal("unsafe names reached execution")
+		}
+	}
+}
+
+func TestPrimaryPrefetchDirectMCPInventoryStrict(t *testing.T) {
+	valid := []string{`[]`, `[{"name":"server_1"}]`, `[{"name":"a","transport":{"env":{"FIXTURE":"not-retained"}}}]`}
+	many := make([]string, 128)
+	for i := range many {
+		many[i] = fmt.Sprintf(`{"name":"server_%d"}`, i)
+	}
+	valid = append(valid, "["+strings.Join(many, ",")+"]")
+	for _, body := range valid {
+		if _, err := prefetchDirectInventoryNames([]byte(body)); err != nil {
+			t.Fatal("valid bounded inventory rejected")
+		}
+	}
+	invalid := []string{`null`, `{}`, `[null]`, `["a"]`, `[{}]`, `[{"name":null}]`, `[{"name":1}]`, `[{"name":""}]`, `[{"name":"a","name":"b"}]`, `[{"name":"a","name":"a"}]`, `[{"name":"a"},{"name":"a"}]`, `[{"name":"a.b"}]`, `[{"name":"a b"}]`, `[{"name":"a\\b"}]`, `[{"name":"ç"}]`, `[{"name":"a\"b"}]`, `[{"name":"a"}] []`, `[{"name":"a"}`, `[{"name":"` + strings.Repeat("a", 129) + `"}]`, "[" + strings.Join(append(many, `{"name":"over"}`), ",") + "]", strings.Repeat(" ", 256<<10) + "[]"}
+	for i, body := range invalid {
+		t.Run(fmt.Sprintf("invalid_%02d", i), func(t *testing.T) {
+			if names, err := prefetchDirectInventoryNames([]byte(body)); err == nil || names != nil || strings.Contains(err.Error(), body) {
+				t.Fatal("unsafe inventory accepted or raw contents disclosed")
+			}
+		})
+	}
+}
+
+func TestPrimaryPrefetchDirectMCPInventoryFailureClosed(t *testing.T) {
+	scope, err := prefetchNewDirectScope("/synthetic/codex", "/synthetic/repo", "gpt-6.1-sol", "read-only", []string{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, kind := range []string{"exit", "stdout_overflow", "stderr_overflow", "partial", "canceled"} {
+		t.Run(kind, func(t *testing.T) {
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			names, err := prefetchDirectInventory(ctx, scope, func(command *exec.Cmd) error {
+				switch kind {
+				case "exit":
+					return errors.New("synthetic private failure")
+				case "stdout_overflow":
+					_, err := io.WriteString(command.Stdout, strings.Repeat(" ", (256<<10)+1))
+					if err == nil || command.Stdout.(*prefetchDirectBoundedOutput).buffer.Len() != 256<<10 {
+						t.Fatal("stdout writer did not enforce bound")
+					}
+				case "stderr_overflow":
+					_, err := io.WriteString(command.Stderr, strings.Repeat("x", (64<<10)+1))
+					if err == nil || command.Stderr.(*prefetchDirectBoundedOutput).buffer.Len() != 64<<10 {
+						t.Fatal("stderr writer did not enforce bound")
+					}
+				case "partial":
+					_, _ = io.WriteString(command.Stdout, `[{"name":`)
+				case "canceled":
+					cancel()
+					_, _ = io.WriteString(command.Stdout, `[]`)
+				}
+				return nil
+			})
+			if err == nil || names != nil || strings.Contains(err.Error(), "private") {
+				t.Fatal("failed inventory admitted or disclosed raw diagnostic")
+			}
+		})
+	}
+	if _, err := prefetchDirectInventory(context.Background(), scope, nil); err == nil {
+		t.Fatal("missing runner admitted")
+	}
 }
 
 type prefetchLiveBuffer struct {
