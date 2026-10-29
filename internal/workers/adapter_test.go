@@ -181,6 +181,47 @@ func TestCodexIsolationRejectsFeatureToggleBeforeInventory(t *testing.T) {
 	}
 }
 
+func TestCodexIsolationRejectsIgnoredUserConfigBeforeInventory(t *testing.T) {
+	root := t.TempDir()
+	marker := filepath.Join(root, "unexpected-inventory")
+	codex := executable(t, root, "codex", "#!/bin/sh\n: > '"+marker+"'\nprintf '[]'\n")
+	for _, args := range [][]string{
+		{"--ignore-user-config"},
+		{"exec", "--ignore-user-config"},
+		{"--ignore-user-config=true"},
+		{"--ignore-user-config=false"},
+		{"--output-schema", "--", "--ignore-user-config"},
+	} {
+		_, err := (Adapter{Runner: platform.ExecRunner{}}).IsolateCodexMCPs(context.Background(), codex, args)
+		if err == nil || !strings.Contains(err.Error(), "CODEX_MANAGED_CONFIG_SCOPE_UNSUPPORTED") {
+			t.Errorf("unsupported configuration scope was not rejected: args=%q error=%v", args, err)
+		}
+	}
+	if _, err := os.Stat(marker); !os.IsNotExist(err) {
+		t.Fatal("unsupported configuration scope executed the inventory client")
+	}
+}
+
+func TestCodexIsolationDoesNotInterpretOptionValuesAsConfigScope(t *testing.T) {
+	root := t.TempDir()
+	codex := executable(t, root, "codex", "#!/bin/sh\nprintf '%s' '[{\"name\":\"personal\"}]'\n")
+	for _, args := range [][]string{
+		{"--output-schema", "--ignore-user-config"},
+		{"-c", "--ignore-user-config"},
+		{"--output-schema=--ignore-user-config"},
+		{"--", "--ignore-user-config"},
+		{"--output-schema", "schema.json", "--", "--ignore-user-config"},
+	} {
+		got, err := (Adapter{Runner: platform.ExecRunner{}}).IsolateCodexMCPs(context.Background(), codex, args)
+		if err != nil {
+			t.Fatalf("literal value was interpreted as an option: args=%q error=%v", args, err)
+		}
+		if !strings.Contains(strings.Join(got, " "), "mcp_servers.personal.enabled=false") {
+			t.Fatal("normal configuration scope lost MCP isolation")
+		}
+	}
+}
+
 func TestCodexIsolationPreservesCoreProjectionAndHostPolicyPrecedence(t *testing.T) {
 	root := t.TempDir()
 	codex := executable(t, root, "codex", "#!/bin/sh\nprintf '%s' '[{\"name\":\"ivoai-orchestrator\"}]'\n")

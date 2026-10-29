@@ -1,0 +1,13 @@
+{
+  "scope": "ONE_CAUSAL_OFFLINE_EXPERIMENT_OLD_FAIL_NEW_PASS_NO_PROVIDER",
+  "source": "dc9dc587",
+  "observed_CI": "runtime_test.go:590 invalid PID marker empty, test failed0.01s",
+  "CI_sha256": "15ab83651eae40a3d34716e801171a928bf43b348e46bb5417fb5904a5121089",
+  "original_test_source_sha256": "4707a7e1f5f91cd040b36f46c4159799be42a1ccb7ef7e8ad18a3e35023cbd4b",
+  "intervention": "Only target fixture agent publication: replace printf PID with a shell group that delays150ms before printf, preserving the original output-redirection target. OLD opens final filename before delay; FIX opens private temp filename and publishes atomically after write. Same intervention both arms.",
+  "expected_old": "FAIL invalid PID marker empty",
+  "expected_new": "PASS identical process ESRCH assertions and1s readiness/3s cancellation deadlines",
+  "executions": "Exactly one OLD and one NEW causal arm; no retry-until-green",
+  "ownership": "Each compiled test executable in its own process group/session; diagnostic parent subreaper, cleanup only that owned group, reap owned adopted children. No CLI/provider/auth.",
+  "no_production_change": true
+}

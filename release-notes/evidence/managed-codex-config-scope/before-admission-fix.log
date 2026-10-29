@@ -1,0 +1,9 @@
+--- FAIL: TestCodexIsolationRejectsIgnoredUserConfigBeforeInventory (0.00s)
+    adapter_test.go:196: unsupported configuration scope was not rejected: args=["--ignore-user-config"] error=<nil>
+    adapter_test.go:196: unsupported configuration scope was not rejected: args=["exec" "--ignore-user-config"] error=<nil>
+    adapter_test.go:196: unsupported configuration scope was not rejected: args=["--ignore-user-config=true"] error=<nil>
+    adapter_test.go:196: unsupported configuration scope was not rejected: args=["--ignore-user-config=false"] error=<nil>
+    adapter_test.go:200: unsupported configuration scope executed the inventory client
+FAIL
+FAIL	github.com/ivo-lopes/ivoai/internal/workers	0.018s
+FAIL

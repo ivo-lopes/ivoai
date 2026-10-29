@@ -1,0 +1,8 @@
+{
+  "internal/app/auto.go": "9d3cf34bb9bb720bb6e36f52f5294ce1996ccacae86a864192993ed06bc717ac",
+  "internal/app/auto_policy_args_test.go": "9e1bc16bebb94f920b25206305ca0cbd560a1ca1f8129a82c330a6628038842e",
+  "internal/codexresolver/arguments.go": "89488a61ffcc70903ca7a437ac481b7573cb804a3ed439a7f7cea4032c7e0b53",
+  "internal/codexresolver/arguments_test.go": "12199ec51442107add504d66c2ee00ed9c9ca332cae3547d04e252b859cd23d9",
+  "internal/codexresolver/invocation.go": "bc3a0360dff3e1e8ce8662beade0f406e0286f9f25a7f713ea34867605b62b4f",
+  "internal/workers/adapter_test.go": "d9f1167f52d651d96faf80448b51e0225eaf6e2c4b1dad515cfec38fd6690a63"
+}

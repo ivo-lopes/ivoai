@@ -1,0 +1,35 @@
+{
+  "status": "LOCAL_COMBINED_55EC_CHECKS_PASS_CI_PENDING",
+  "base": "55ec7ab98683bf0c8784b93baebc966f2910772b",
+  "source_commit": "c7ad71bf2e7a1f9bf95cdabdff978aee84fcce37",
+  "runtime_test_sha256": "e0427f8bd3e5a6b89ff2138b52c600e5fc600f68b2ded83ce678a2656d72118f",
+  "production_runtime_sha256": "bde4d7acfb1e4100011bec4210d3f2bfcb426283f2b5fff8dc78866eb0fc9121",
+  "production_go_module_pin_workflow_unchanged_from_base": true,
+  "changed_go_files": [
+    "internal/agents/runtime_test.go"
+  ],
+  "checks": {
+    "full_go": {
+      "exit": 0,
+      "pass_packages": 59,
+      "no_test_packages": 3,
+      "cached_packages": 0,
+      "app_seconds": 75.323
+    },
+    "agents_race": {
+      "exit": 0,
+      "seconds": 2.895
+    },
+    "vet_all": {
+      "exit": 0
+    }
+  },
+  "historical_failure": "PR57/dc9 run40784670844 quality Unit tests FAIL preserved; no CI retry",
+  "causal_control": "original dc9 test plus150ms publication delay FAIL; fixed test same delay PASS; once per arm; separate historical receipt",
+  "test_assertions_and_existing_deadlines_unchanged": true,
+  "client_provider_auth_model_calls": 0,
+  "full_app_race": "NOT_RUN_IN_THIS_EPOCH",
+  "ci": "PENDING_NEW_HEAD",
+  "release": "NOT_PUBLISHED",
+  "scope": "fixture-only PID publication/cancellation cleanup; safe combination with separate managed configuration guard"
+}

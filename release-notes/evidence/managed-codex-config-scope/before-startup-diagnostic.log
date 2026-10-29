@@ -1,0 +1,5 @@
+--- FAIL: TestAutoReportsUnsupportedCodexConfigScopeBeforeFrontend (0.00s)
+    auto_policy_args_test.go:43: startup did not expose the fixed migration diagnostic: open unused: no such file or directory
+FAIL
+FAIL	github.com/ivo-lopes/ivoai/internal/app	0.011s
+FAIL

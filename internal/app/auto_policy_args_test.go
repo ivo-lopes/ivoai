@@ -33,3 +33,13 @@ func TestAutoRejectsControlPlaneConfigOverrides(t *testing.T) {
 		}
 	}
 }
+
+func TestAutoReportsUnsupportedCodexConfigScopeBeforeFrontend(t *testing.T) {
+	// A bare App has no runner, store or frontend. The diagnostic must be
+	// available at argument construction, before those effects are possible.
+	a := &App{}
+	_, err := a.autoBridgeArgs("codex", []string{"--ignore-user-config"}, "fixture", "unused", "unused", config.Default())
+	if err == nil || !strings.Contains(err.Error(), "CODEX_MANAGED_CONFIG_SCOPE_UNSUPPORTED") || !strings.Contains(err.Error(), "omit that flag") {
+		t.Fatalf("startup did not expose the fixed migration diagnostic: %v", err)
+	}
+}

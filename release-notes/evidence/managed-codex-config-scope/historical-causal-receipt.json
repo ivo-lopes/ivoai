@@ -1,0 +1,119 @@
+{
+  "schema_version": 1,
+  "kind": "ALLOWLISTED_HISTORICAL_OFFLINE_CAUSAL_RECEIPT",
+  "source_git": "0bab9b3409a287917f73a5c0620a3758a4be5c36",
+  "Core_binary_sha256": "578e790f0a037cd29117f72b14be82e14b176a9c0a5ba5576d1d6b787bab804f",
+  "codex_version": "0.162.1 linux-amd64",
+  "codex_sha256": "628e35487d888a28f0427fc37501da529dd3d81fcbad7a2c3421c1e8670d92e1",
+  "companion_sha256": "ec71830690a7c0024916ee0c99fbdc635bc6e747ff665ea4f03a8389bbcb6b30",
+  "historical_private_receipt_sha256": "9cffed8ccfa1970f8e968b754cbf7e4093eaa1ad04a1f8f3565bbac38985952a",
+  "exact_copied_public_summary_sha256": "83520ff60c76a5ecd14620afee1607f9eebc11b80c9278122af7d86f55c8c4de",
+  "production_source_sha256": {
+    "internal/workers/adapter.go": "eb75ea7c5e6a7b241e7c9448ed34e2e1c05a109871adc8d6e8fe6a81c4c8be15",
+    "internal/codexresolver/arguments.go": "668973fb3533c0eeda7b931b31ff3ae44290c280e1750b801b886e95fd296b95",
+    "internal/codexresolver/invocation.go": "7e4a5be938d8121032a59c3fb4284958af09bec759596cae3ac0975ddcc3fb5d",
+    "internal/opencodebridge/executor.go": "d28777f8040d1497a5c8f3a99b93a9792dcdd59187ce80248a19b22d5add2db1",
+    "internal/app/auto.go": "95cc2c22c9a1b44513178594a00f7c053d102d07ec9bf0aa765f1fa6ebc15ba7",
+    "internal/app/auto_turn.go": "3a42d64a97717f52fe6e0592415cd10e55e6368938ee83fa9209562715974b3f",
+    "internal/app/session.go": "53ac94c2d3c8274e1ab0fe3d6d2c09cafef48ed7c5273844e47fe46db8f872a5"
+  },
+  "private_harness_and_binary_sha256": {
+    "adaptive_primary_live_test.go": "bcc3a46c9bdc146b671f8ba4186cd181f6aaeaadd259fb929ed3201a612f2859",
+    "control/adaptive_primary_live_test.go": "eafd13fa73ff1a349dd00f7bff22284245ecae15cbdc6ae5bf7cf981a87716b8",
+    "adaptive_primary_test.go": "b806e6469fd36f451d598473ba3a8c6bd9225d870c17e0efdf6ab86af1f647b3",
+    "executor.go": "b134c2d7624f2e07feab82bae0c93b74ea0f1adf711065f8eecc273c5a24ba1c",
+    "app-mismatch.test": "6b49ee030542c8070de7ce4a8c0c2dd91aac0ac01aa3e93192a215dd5143bf5b",
+    "control/app-control.test": "f0ad833165b17c9f38dc70f6ae3d97d471fbd4cdb4ea4da7cd5592d9135b4b7c"
+  },
+  "private_argument_sha256": {
+    "baseline": "938439d0169a62d6d4de922468924c458a2f4ac80477edfd2c8251b075469a9a",
+    "control": "72b395b3d763152090b152819b7d4ef9920f0d9f2c34949c121bfb7bb2ed4dae"
+  },
+  "argument_comparison": {
+    "normalization": [
+      "random TempDir suffix",
+      "opaque synthetic session ID",
+      "loopback port",
+      "earlier overridden test-executable command; final command remains /core-approved in both"
+    ],
+    "normalized_single_effective_setting_delta": true,
+    "removed_setting_count": 1,
+    "baseline_entries": 78,
+    "control_entries": 76,
+    "baseline_normalized_sha256": "c8d04aae747bcbdc0b59f0a43409420407ddb128807387acd88a58f9cbdea050",
+    "control_normalized_sha256": "05b49e818e7970158d1e1c9487e4e8a3c86618a4994e78a15cb91216992bc44e",
+    "baseline_minus_setting_normalized_sha256": "05b49e818e7970158d1e1c9487e4e8a3c86618a4994e78a15cb91216992bc44e",
+    "initial_comparison_attempt": "Initial normalization missed the earlier overridden test executable; that unsuccessful report-construction attempt remains private and did not change run outcomes."
+  },
+  "scope": {
+    "network": "New bwrap network namespace with only loopback and zero routes; no personal HOME/config/auth/keyring mount.",
+    "fixture": "One synthetic stdio MCP defined only in fresh user config; system config absent and no project MCP config.",
+    "new_synthetic_session_and_catalog": true,
+    "actual_frozen_Core_MCP_command": true,
+    "failed_real_session_or_receipt_copied": false,
+    "system_project_cloud_equivalence_proven": false,
+    "user_MCP_start_tripwire_observed": false,
+    "production_rules_or_assertions_weakened": false
+  },
+  "baseline": {
+    "overall": "FAIL_CLI_PRIMARY_PROOF_BEFORE_CORE_INVENTORY_ASSERTION",
+    "diagnostic_enum": "CONFIG_INVALID_TRANSPORT",
+    "exit": 1,
+    "seconds": 1.23,
+    "synthetic_provider_requests": 0,
+    "stdout_events": 0,
+    "stdout_bytes": 0,
+    "stderr_bytes": 78
+  },
+  "single_control": {
+    "overall": "FAIL_CORE_INVENTORY_EXPECTATION",
+    "diagnostic_enum": "CLI_FINAL_RESPONSE_REACHED",
+    "exit": 1,
+    "seconds": 7.43,
+    "synthetic_provider_requests": 1,
+    "stdout_events": 4,
+    "stdout_bytes": 349,
+    "stderr_bytes": 0,
+    "difference": "Only the known user-only synthetic disabled-stub setting was omitted after inventory; ignore-user-config and all other restrictions remain.",
+    "general_inventory_skip_policy": false
+  },
+  "empty_HOME_fullflags_epoch": {
+    "overall": "FAIL_CORE_INVENTORY_EXPECTATION",
+    "startup_failure_reproduced": false,
+    "synthetic_provider_requests": 1,
+    "parsed_final_response": true,
+    "stderr_bytes": 0,
+    "raw_stdout_not_retained": true
+  },
+  "original_real_canary": {
+    "source": "0bab9b3409a287917f73a5c0620a3758a4be5c36",
+    "status": "FAIL_UNVERIFIED_INFERENCE",
+    "questions": 1,
+    "core_attempts": 1,
+    "core_workers": 0,
+    "core_tasks": 0,
+    "core_failovers": 0,
+    "receipt_mode": "closed",
+    "requested_model": "gpt-6.1-sol",
+    "requested_effort": "low",
+    "executor_exit": 1,
+    "failure_class": "executor_exit_nonzero",
+    "stdout_events": 0,
+    "stderr_bytes": 72,
+    "provider_usage": "UNAVAILABLE",
+    "correctness": "NOT_EVALUATED_NO_FINAL_ANSWER",
+    "cause": "UNKNOWN_NOT_ATTRIBUTED",
+    "limitation": "Offline78 and real72 bytes do not establish the same cause. Real stderr/effective inventory were not retained or newly inspected."
+  },
+  "additional_real_provider_or_personal_auth_status_calls": 0,
+  "final_fix_source_validation": "PENDING_SEPARATE_ROOT_RECEIPT; historical evidence is not final-fix source certification.",
+  "publication_filter": {
+    "raw_stderr_or_stdout_copied": false,
+    "raw_arguments_copied": false,
+    "environment_values_copied": false,
+    "auth_or_keyring_data_copied": false,
+    "personal_configuration_or_history_copied": false,
+    "private_harness_sources_copied": false,
+    "only_public_summary_and_explicitly_projected_metadata": true
+  }
+}
