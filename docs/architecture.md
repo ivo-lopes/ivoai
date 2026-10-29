@@ -7,8 +7,9 @@ to versioned implementation and validation evidence.
 
 ## Local v0.15.0 candidate — publication HOLD
 
-**PUBLICATION HOLD: MCP configuration-scope correction, process-cleanup CI
-investigation, final-head CI and distribution gates remain pending.** A supported
+**PUBLICATION HOLD: PR61's MCP context and PR60/62 fixture corrections are
+composed locally; exact candidate-head CI, distribution gates and applicable
+final-source runtime qualification remain pending.** A supported
 `55ec7ab9` real turn passed its math oracle; its intentional SIGINT cleanup
 persisted failed/fallback1, which is not a measured frontend process exit.
 A separate public startup with only `/quit` + Enter completed naturally in
@@ -19,6 +20,13 @@ session was not run. The original `0bab9b34` failure and UNKNOWN cause remain
 preserved; none of these observations joins the 126 comparative turns.
 See the [normal-exit report](https://github.com/ivo-lopes/ivoai/blob/release/v0.15.0-candidate/release-notes/native-normal-quit-validation.md).
 No general TUI/client/model parity or economic result follows.
+
+Managed MCP inventory/execution share one captured cwd/environment and explicit
+config/profile scope. The host keeps project policy, native-worker denials and
+Core projection precedence. Config files/cloud policy are not frozen. Native
+`-C`/`--cd` and `--ignore-user-config` remain unsupported: use shell `cd` before
+starting IVOAI, without editing personal configuration. PR60/62 correct test
+observation/clock fixtures, not production cleanup or security deadlines.
 
 G0 is wired into admitted code prefetch behind its default-OFF flag, with protected
 Core/MCP exact recovery and separate protected creation opt-in. G1 Memory remains

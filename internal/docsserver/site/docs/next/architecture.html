@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="generator" content="Docusaurus v3.10.2">
 <title data-rh="true">ivoai architecture | IVOAI</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="http://localhost:7780/docs/next/architecture"><meta data-rh="true" property="og:locale" content="en_US"><meta data-rh="true" property="og:locale:alternate" content="pt_BR"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="ivoai architecture | IVOAI"><meta data-rh="true" name="description" content="This page retains historical architecture descriptions originally based on"><meta data-rh="true" property="og:description" content="This page retains historical architecture descriptions originally based on"><link data-rh="true" rel="icon" href="/img/favicon.svg"><link data-rh="true" rel="canonical" href="http://localhost:7780/docs/next/architecture"><link data-rh="true" rel="alternate" href="http://localhost:7780/docs/next/architecture" hreflang="en-US"><link data-rh="true" rel="alternate" href="http://localhost:7780/pt-BR/docs/next/architecture" hreflang="pt-BR"><link data-rh="true" rel="alternate" href="http://localhost:7780/docs/next/architecture" hreflang="x-default"><script data-rh="true" type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"ivoai architecture","item":"http://localhost:7780/docs/next/architecture"}]}</script><link rel="stylesheet" href="/assets/css/styles.c768eb50.css">
-<script src="/assets/js/runtime~main.ec6e9821.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.41d8985a.js" defer="defer"></script>
 <script src="/assets/js/main.6c7444d6.js" defer="defer"></script>
 </head>
 <body>
@@ -17,8 +17,9 @@ v0.5.0 and records the current incremental status separately below. Exact pins
 live in <code>manifest/components.yaml</code>; delivered behavior and migration limits belong
 to versioned implementation and validation evidence.</p>
 <h2 class="anchor anchorTargetStickyNavbar_J2Vv" id="local-v0150-candidate--publication-hold">Local v0.15.0 candidate — publication HOLD<a href="#local-v0150-candidate--publication-hold" class="hash-link" aria-label="Direct link to Local v0.15.0 candidate — publication HOLD" title="Direct link to Local v0.15.0 candidate — publication HOLD" translate="no">​</a></h2>
-<p><strong>PUBLICATION HOLD: MCP configuration-scope correction, process-cleanup CI
-investigation, final-head CI and distribution gates remain pending.</strong> A supported
+<p><strong>PUBLICATION HOLD: PR61&#x27;s MCP context and PR60/62 fixture corrections are
+composed locally; exact candidate-head CI, distribution gates and applicable
+final-source runtime qualification remain pending.</strong> A supported
 <code>55ec7ab9</code> real turn passed its math oracle; its intentional SIGINT cleanup
 persisted failed/fallback1, which is not a measured frontend process exit.
 A separate public startup with only <code>/quit</code> + Enter completed naturally in
@@ -29,6 +30,12 @@ session was not run. The original <code>0bab9b34</code> failure and UNKNOWN caus
 preserved; none of these observations joins the 126 comparative turns.
 See the <a href="https://github.com/ivo-lopes/ivoai/blob/release/v0.15.0-candidate/release-notes/native-normal-quit-validation.md" target="_blank" rel="noopener noreferrer" class="">normal-exit report</a>.
 No general TUI/client/model parity or economic result follows.</p>
+<p>Managed MCP inventory/execution share one captured cwd/environment and explicit
+config/profile scope. The host keeps project policy, native-worker denials and
+Core projection precedence. Config files/cloud policy are not frozen. Native
+<code>-C</code>/<code>--cd</code> and <code>--ignore-user-config</code> remain unsupported: use shell <code>cd</code> before
+starting IVOAI, without editing personal configuration. PR60/62 correct test
+observation/clock fixtures, not production cleanup or security deadlines.</p>
 <p>G0 is wired into admitted code prefetch behind its default-OFF flag, with protected
 Core/MCP exact recovery and separate protected creation opt-in. G1 Memory remains
 an unwired host SPI. Adaptive stays OFF, using literal-envelope admission and the

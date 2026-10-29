@@ -2,8 +2,9 @@
 
 ## v0.15.0 — local candidate, not published
 
-**PUBLICATION HOLD: MCP configuration-scope correction, process-cleanup CI
-investigation, final-head CI and distribution gates remain pending.** A supported
+**PUBLICATION HOLD: PR61's MCP context and PR60/62 fixture corrections are
+composed locally; exact candidate-head CI, distribution gates and applicable
+final-source runtime qualification remain pending.** A supported
 `55ec7ab9` real turn passed its math oracle; its intentional SIGINT cleanup
 persisted failed/fallback1, which is not a measured frontend process exit.
 A separate public startup with only `/quit` + Enter completed naturally in
@@ -21,14 +22,23 @@ closed final receipt, NoReplay and duplicate409. It used a fake provider and
 proves no real-model, account, TUI or economic parity. Core child Wait0 was not
 observed; lifecycle remains UNKNOWN. Earlier FAIL/NOT_MET receipts are unchanged.
 
-The candidate composes main58 `eb30d6ca`/reviewed runtime `55ec7ab9` and PR59
-`5683c922`, merged as main `4368d549` with the same tree. [CI59](https://github.com/ivo-lopes/ivoai/actions/runs/40788883401)
-passed 16/16 at attempt1 on its own head; this is not CI for the new candidate.
-The original PR57 PID-fixture CI failure stays FAIL. Its correction changes test
-PID publication/cleanup only, without production runtime or deadline changes.
-Managed Codex explicitly refuses `--ignore-user-config`: omit the flag to migrate;
-config files stay unchanged. This does not implement equivalent scope or skip
-MCP inventory.
+This candidate composes actual main `bcdb3466` (PR60/62) and PR61 head
+`83df882b`. Its Go/module bytes match that reviewed PR61 composition; no benchmark
+PR54/56 or subscription-guard pilot is imported. PR61 merged as main `ccc48a05` after [CI40805624155](https://github.com/ivo-lopes/ivoai/actions/runs/40805624155)
+passed16/16 at attempt1 on `83df882b`. That result retains its source identity;
+this candidate still needs its own final-head CI and distribution gates.
+
+Managed MCP inventory and execution now share captured cwd, environment, project
+policy and explicit config/profile settings. This snapshot does not freeze config
+files or cloud policy. Managed `-C`/`--cd` overrides and `--ignore-user-config` are
+refused with a migration diagnostic: start IVOAI after shell `cd` and omit those
+native flags. Existing sessions retain their recorded workspace; personal files
+stay unchanged. Inventory is not skipped. See [setup](setup.md).
+
+PR60 corrects a test process-state observer/PID publication; PR62 separates panic
+flight cleanup from a storage deadline fixture. Production cleanup, TTL and
+security thresholds are unchanged. Old PR57/56 CI failures, the prior Gateway
+composition FAIL and causal/mutant controls remain historical evidence.
 
 Native paths exclude OpenCode discovery/fallback and default client setup omits
 it; explicit `ivoai setup --mode client --legacy-opencode`, deprecated commands
@@ -40,7 +50,7 @@ not concurrent client execution; PR54/56 are excluded.
 
 Global economics remains INCOMPLETE. General model/TUI/Claude/Antigravity/admin
 parity is unproven, Context remains BLOCKED/IVOAI-175, and LOW docs deepmerge stays
-needs_review. See the [draft notes](https://github.com/ivo-lopes/ivoai/blob/release/v0.15.0-candidate/release-notes/v0.15.0.md) and [source-bound report](https://github.com/ivo-lopes/ivoai/blob/release/v0.15.0-candidate/release-notes/v0.15.0-composition58-59.md)
+needs_review. See the [draft notes](https://github.com/ivo-lopes/ivoai/blob/release/v0.15.0-candidate/release-notes/v0.15.0.md) and [source-bound report](https://github.com/ivo-lopes/ivoai/blob/release/v0.15.0-candidate/release-notes/v0.15.0-composition60-62.md)
 for exact scopes, adverse evidence and migration without deleting or replaying data.
 
 ## v0.14.0

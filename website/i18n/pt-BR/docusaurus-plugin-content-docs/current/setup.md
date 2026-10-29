@@ -12,6 +12,23 @@ setup de servidor recusa essa flag. O setup comum preserva propriedade, binário
 e histórico OpenCode existentes; não desinstala, repara nem adota o componente.
 Consulte [releases](releases.md) para estado da candidata e limites da migração.
 
+## Escopo de configuração nativo gerenciado
+
+No Codex gerenciado, entre no workspace desejado com `cd` no shell:
+
+```sh
+cd /path/to/project
+ivoai codex
+```
+
+Não encaminhe `-C`/`--cd` nativos nem `--ignore-user-config`: são recusados com
+`CODEX_MANAGED_CONFIG_SCOPE_UNSUPPORTED`. Sessões existentes preservam workspace;
+use uma sessão nova ao selecionar outro diretório inicial. O host compartilha
+diretório/ambiente/config capturados entre inventário MCP e execução, preservando
+grants Core, sandbox e aprovações. Não é necessário editar arquivos pessoais de
+configuração ou credenciais. O snapshot não congela configurações/política cloud
+nem certifica paridade geral de clientes. Consulte [releases](releases.md).
+
 ## Configuração de servidor em Debian 12 e LXC
 
 `sudo ivoai setup --mode server` executa um preflight antes de gravar o estado do

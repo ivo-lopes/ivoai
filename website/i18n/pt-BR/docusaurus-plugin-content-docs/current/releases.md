@@ -2,8 +2,9 @@
 
 ## v0.15.0 — candidata local, não publicada
 
-**PUBLICAÇÃO EM HOLD: correção do escopo MCP, investigação da CI de limpeza
-de processos, CI da fonte final e distribuição continuam pendentes.** Um turno
+**PUBLICAÇÃO EM HOLD: contexto MCP do PR61 e correções de fixtures PR60/62
+compostos localmente; CI da candidata exata, distribuição e qualificação de
+runtime aplicável à fonte final continuam pendentes.** Um turno
 real suportado em `55ec7ab9` passou no oráculo matemático; seu cleanup intencional
 por SIGINT persistiu failed/fallback1, sem medir o exit real do frontend.
 Outra inicialização pública, com apenas `/quit` + Enter, terminou naturalmente
@@ -21,14 +22,23 @@ receipt final fechado, NoReplay e duplicate409. Usou provedor falso e não prova
 paridade de modelo real, conta, TUI ou economia. Wait0 do filho Core não foi
 observado; lifecycle fica UNKNOWN. Recibos FAIL/NOT_MET anteriores são preservados.
 
-A candidata compõe main58 `eb30d6ca`/runtime revisado `55ec7ab9` e PR59 `5683c922`,
-incorporado ao main `4368d549` com a mesma árvore. [CI59](https://github.com/ivo-lopes/ivoai/actions/runs/40788883401)
-passou 16/16 na tentativa1 em seu próprio head; não é CI da nova candidata.
-A falha original de CI57 na fixture de PID continua FAIL. Sua correção altera
-somente publicação de PID/cleanup de teste, sem mudar produção ou prazos.
-Codex gerenciado recusa `--ignore-user-config`: migre omitindo a flag;
-configurações ficam intactas. Não implementa escopo equivalente nem dispensa
-inventário MCP.
+Esta candidata compõe o main `bcdb3466` (PR60/62) e o head PR61 `83df882b`.
+Seus bytes Go/módulos correspondem à composição revisada do PR61; não incorpora
+PR54/56 nem piloto de guard de assinatura. PR61 foi incorporado como main `ccc48a05` após [CI40805624155](https://github.com/ivo-lopes/ivoai/actions/runs/40805624155)
+passar16/16 na tentativa1 em `83df882b`. Esse resultado mantém sua fonte; a
+candidata ainda precisa de CI própria da fonte final e gates de distribuição.
+
+Inventário e execução MCP gerenciados compartilham cwd, ambiente, política de
+projeto e opções explícitas de config/profile capturados. O snapshot não congela
+arquivos ou política cloud. Overrides nativos `-C`/`--cd` e `--ignore-user-config`
+são recusados com diagnóstico: entre no diretório com `cd` no shell e omita essas
+flags ao iniciar IVOAI. Sessões existentes mantêm workspace registrado; arquivos
+pessoais ficam intactos. Inventário não é dispensado. Consulte [setup](setup.md).
+
+PR60 corrige observação de estado/PID de processos de teste; PR62 separa cleanup de
+flight de panic e prazo da fixture de armazenamento. Cleanup de produção, TTL e
+limiares de segurança não mudam. Falhas antigas de CI57/56, a composição Gateway
+FAIL anterior e controles causais/mutantes permanecem como evidência histórica.
 
 Caminhos nativos excluem descoberta/fallback OpenCode e setup padrão deixa de
 provisioná-lo; `ivoai setup --mode client --legacy-opencode`, comandos descontinuados
@@ -40,7 +50,7 @@ preflight offline, não clientes concorrentes; PR54/56 ficam excluídos.
 
 Economia global INCOMPLETE; paridade geral de modelos/TUI/Claude/Antigravity/admin
 não comprovada; Context BLOCKED/IVOAI-175 e LOW docs deepmerge needs_review.
-Consulte as [notas preliminares](https://github.com/ivo-lopes/ivoai/blob/release/v0.15.0-candidate/release-notes/v0.15.0.md) e o [relatório por fonte](https://github.com/ivo-lopes/ivoai/blob/release/v0.15.0-candidate/release-notes/v0.15.0-composition58-59.md)
+Consulte as [notas preliminares](https://github.com/ivo-lopes/ivoai/blob/release/v0.15.0-candidate/release-notes/v0.15.0.md) e o [relatório por fonte](https://github.com/ivo-lopes/ivoai/blob/release/v0.15.0-candidate/release-notes/v0.15.0-composition60-62.md)
 para escopo, evidências adversas e migração sem apagar ou reproduzir dados.
 
 ## v0.14.0

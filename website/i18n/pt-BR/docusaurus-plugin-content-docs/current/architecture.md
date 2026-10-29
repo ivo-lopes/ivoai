@@ -7,8 +7,9 @@ migração pertencem às evidências versionadas de implementação e validaçã
 
 ## Candidata local v0.15.0 — publicação HOLD
 
-**PUBLICAÇÃO EM HOLD: correção do escopo MCP, investigação da CI de limpeza
-de processos, CI da fonte final e distribuição continuam pendentes.** Um turno
+**PUBLICAÇÃO EM HOLD: contexto MCP do PR61 e correções de fixtures PR60/62
+compostos localmente; CI da candidata exata, distribuição e qualificação de
+runtime aplicável à fonte final continuam pendentes.** Um turno
 real suportado em `55ec7ab9` passou no oráculo matemático; seu cleanup intencional
 por SIGINT persistiu failed/fallback1, sem medir o exit real do frontend.
 Outra inicialização pública, com apenas `/quit` + Enter, terminou naturalmente
@@ -19,6 +20,13 @@ executado. A falha original `0bab9b34` e sua causa UNKNOWN são preservadas; est
 observações não entram nos 126 turnos comparativos. Consulte o
 [relatório de saída normal](https://github.com/ivo-lopes/ivoai/blob/release/v0.15.0-candidate/release-notes/native-normal-quit-validation.md).
 Não comprova paridade geral de TUI/clientes/modelos nem economia.
+
+Inventário/execução MCP gerenciados compartilham cwd/ambiente capturados e escopo
+explícito de config/profile, preservando política de projeto, negações de workers
+nativos e precedência das projeções Core. Arquivos/política cloud não são
+congelados. `-C`/`--cd` e `--ignore-user-config` continuam sem suporte: use `cd` no
+shell antes de iniciar IVOAI, sem editar configuração pessoal. PR60/62 corrigem
+fixtures de observação/relógio, não cleanup ou prazos de segurança de produção.
 
 G0 está ligado ao prefetch admitido sob flag OFF por padrão, com recuperação exata
 Core/MCP protegida e opt-in separado de criação protegida. G1 Memory permanece SPI
