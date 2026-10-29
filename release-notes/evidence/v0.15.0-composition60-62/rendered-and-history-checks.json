@@ -1,0 +1,24 @@
+{
+  "historical_evidence_files_unchanged": 714,
+  "rendered": {
+    "docs/next/architecture.html": {
+      "hold_context_and_migration_present": true
+    },
+    "docs/next/releases.html": {
+      "hold_context_and_migration_present": true
+    },
+    "pt-BR/docs/next/architecture.html": {
+      "hold_context_and_migration_present": true
+    },
+    "pt-BR/docs/next/releases.html": {
+      "hold_context_and_migration_present": true
+    },
+    "docs/next/setup.html": {
+      "migration_example_present": true
+    },
+    "pt-BR/docs/next/setup.html": {
+      "migration_example_present": true
+    }
+  },
+  "input_embed_markers_identical": true
+}

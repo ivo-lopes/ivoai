@@ -5,6 +5,47 @@ na v0.5.0, e registra separadamente o estado incremental atual abaixo. As versõ
 exatas estão em `manifest/components.yaml`; comportamento entregue e limites da
 migração pertencem às evidências versionadas de implementação e validação.
 
+## Candidata local v0.15.0 — publicação condicionada
+
+**Publicação condicionada à CI da fonte final exata e aos gates existentes de
+Release/distribuição; esta candidata não está publicada.** A nova qualificação
+restrita em `77d5fd6c` passou nos dois testes nomeados de protocolo CLI oficial/Core
+e nos dois subcasos CLI, com race e zero falhas/skips. Usou o par cliente/companion
+0.162.1 revisado, homes novos de fixtures e provedor falso local, sem autenticação
+de assinatura ou chamadas a modelo real. Verifica escopo MCP/receipt/recusa de
+replay e bootstrap real separado do Core; não certifica lifecycle da TUI pública,
+isolamento system/cloud ou paridade geral de clientes/modelos. Consulte a
+[qualificação da fonte final](https://github.com/ivo-lopes/ivoai/blob/release/v0.15.0-candidate/release-notes/v0.15.0-final-runtime-qualification.md).
+Consulte [releases no GitHub](https://github.com/ivo-lopes/ivoai/releases) e o
+[estado dos workflows](https://github.com/ivo-lopes/ivoai/actions) para publicação e
+gates posteriores; este registro não autoriza uma tag.
+
+As observações seguintes permanecem históricas, vinculadas a suas próprias fontes. Um turno
+real suportado em `55ec7ab9` passou no oráculo matemático; seu cleanup intencional
+por SIGINT persistiu failed/fallback1, sem medir o exit real do frontend.
+Outra inicialização pública, com apenas `/quit` + Enter, terminou naturalmente
+em 2,147s: WaitCore0, Session/frontend completed0 e nenhum resíduo no SID próprio,
+sem pergunta/tentativa/worker ou sinal forçado. Isso qualifica startup/quit ocioso
+nesses inputs exatos. Turno real seguido de quit normal na mesma sessão não foi
+executado. A falha original `0bab9b34` e sua causa UNKNOWN são preservadas; estas
+observações não entram nos 126 turnos comparativos. Consulte o
+[relatório de saída normal](https://github.com/ivo-lopes/ivoai/blob/release/v0.15.0-candidate/release-notes/native-normal-quit-validation.md).
+Não comprova paridade geral de TUI/clientes/modelos nem economia.
+
+Inventário/execução MCP gerenciados compartilham cwd/ambiente capturados e escopo
+explícito de config/profile, preservando política de projeto, negações de workers
+nativos e precedência das projeções Core. Arquivos/política cloud não são
+congelados. `-C`/`--cd` e `--ignore-user-config` continuam sem suporte: use `cd` no
+shell antes de iniciar IVOAI, sem editar configuração pessoal. PR60/62 corrigem
+fixtures de observação/relógio, não cleanup ou prazos de segurança de produção.
+
+G0 está ligado ao prefetch admitido sob flag OFF por padrão, com recuperação exata
+Core/MCP protegida e opt-in separado de criação protegida. G1 Memory permanece SPI
+sem ligação. Adaptação segue OFF, com admissão de envelope literal e DAG/aprovações
+Core existentes. PR55 é preflight offline; PR54/56 ficam excluídos. Consulte
+[releases](releases.md) para épocas exatas e condições de publicação. A descrição da v0.14.0
+publicada abaixo continua histórica.
+
 ## Release atual: v0.14.0
 
 O mesmo Core agora fornece um [console administrativo local de consulta](admin-console.md).

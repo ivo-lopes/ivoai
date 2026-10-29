@@ -1,0 +1,121 @@
+{
+  "epoch": "REAL_PUBLIC_MANAGED_READONLY_CANARY_SUPPORTED_CONFIG_55ec",
+  "result": "PASS_NARROW_TURN_CANARY",
+  "whole_session_lifecycle": "NOT_CERTIFIED_POST_SIGINT_FAILED_STATE",
+  "source": "55ec7ab98683bf0c8784b93baebc966f2910772b",
+  "production_main_context_reported_by_root": "4368d5495a5be4ce425f4ab89849df0296fc6f9b; production guard identical, test/docs differ; actual binary VCS55ec",
+  "core_sha256": "5973758fb84bb2abe77ca39cbdd4f48d309ef7433d06b34fe5c646d55f54f6c7",
+  "runner_sha256": "2838651874d335253bfd275917d27271b5e276d96d5f25bcfbf55aab75c7bdec",
+  "codex_sha256": "628e35487d888a28f0427fc37501da529dd3d81fcbad7a2c3421c1e8670d92e1",
+  "companion_sha256": "ec71830690a7c0024916ee0c99fbdc635bc6e747ff665ea4f03a8389bbcb6b30",
+  "fresh_status": {
+    "auth_enum": "CHATGPT",
+    "status_exit": 0,
+    "duration_seconds": 0.104,
+    "binary_sha256": "628e35487d888a28f0427fc37501da529dd3d81fcbad7a2c3421c1e8670d92e1"
+  },
+  "manual_status_operations_this_epoch": 1,
+  "manual_status_operations_across_the_two_authorized_canary_epochs": 2,
+  "normal_Core_startup_auth_catalog_quota_checks": "Owned by production startup; not counted as manual status probes",
+  "real_prompt_submissions_this_epoch": 1,
+  "Core_attempts": 1,
+  "workers": 0,
+  "tasks": 0,
+  "DAG": false,
+  "failovers": 0,
+  "checkpoint": false,
+  "public_entrypoint": "ivoai codex --planner codex -- --model gpt-6.1-sol -c model_reasoning_effort=low --ephemeral --output-schema <owned-schema> -c web_search=disabled -c history.persistence=none",
+  "ignore_user_config": false,
+  "pilot_scope": "ON only in private canary environment/config; product defaultOFF",
+  "selection": "explicit codex/gpt-6.1-sol/low",
+  "effective_model": null,
+  "effective_effort": null,
+  "effective_backend": "UNKNOWN_NOT_REPORTED",
+  "native_retries": "UNKNOWN_NOT_EXPOSED",
+  "duration_seconds": 11.246,
+  "usage": {
+    "input_tokens": 22162,
+    "output_tokens": 81,
+    "cached_input_tokens": 10880,
+    "basis": "client_reported",
+    "source": "codex_exec_turn_completed",
+    "scope": "cli_invocation"
+  },
+  "usage_kind": "CLIENT_REPORTED_CLI_INVOCATION; not provider-direct accounting or cost estimate",
+  "quota_admission": {
+    "source": "codex app-server",
+    "authenticated": true,
+    "eligible": true,
+    "window_count": 2,
+    "quota_consumption_delta": null,
+    "consumption_basis": "UNKNOWN_NO_PAIRED_QUOTA_MEASUREMENT"
+  },
+  "turn_completion": {
+    "turn_state": "completed",
+    "receipt_mode": "closed",
+    "effective_executor": "codex",
+    "executor_exit_code": 0,
+    "executor_version": "0.162.1",
+    "stdout_events": 7,
+    "last_valid_event": "turn.completed",
+    "completion_event": true,
+    "final_response_present": true,
+    "stderr_bytes": 0
+  },
+  "objective_validation": {
+    "answer": {
+      "values": [
+        -3,
+        4,
+        2
+      ],
+      "normalizes_reversed_bounds": true
+    },
+    "prepared_offline_Go_oracle": "PASS",
+    "post_turn_exact_answer_verifier": "PASS",
+    "fixture_content_and_metadata_unchanged": true,
+    "fixture_file_sha256": {
+      "go.mod": "ea28e30464619b9ad313a0806aee810b2ce9d77a37fcac8d6cbddd56a3929a9c",
+      "clamp.go": "6adc3a3caa6a97c9e3b9b382700375cd348917e8488a58620bb227d04498e335"
+    },
+    "oracle_log_sha256": "95c213eb1db0699e683190754f3cf401c3f6d98397c6067c5f47af20fdac8511"
+  },
+  "cleanup": {
+    "driver_exit": 0,
+    "root_exit": 130,
+    "kind": "GRACEFUL_CANCEL_AFTER_TURN",
+    "owned_process_residue_guard": "PASS_FOR_ROOT_SID_SCOPE",
+    "persisted_session_state": "failed",
+    "persisted_frontend_state": "failed",
+    "persisted_frontend_exit_code": 1,
+    "persisted_session_exit_code": 1,
+    "intentional_cancel_note": "After completed turn, reviewed runner signals owned Core with SIGINT; root130 is accepted. Session/frontend persist failed/code1. This is not successful whole-session/zero-exit lifecycle certification.",
+    "Core_child_Wait_zero": "NOT_OBSERVED"
+  },
+  "privacy": {
+    "agent_wrapper_auth_config_keyring_read_copy_hash": false,
+    "synthetic_raw_recorder_used_on_real_run": false,
+    "raw_status_transcript_backend_stderr_retained": false,
+    "personal_settings_write_by_wrapper": false,
+    "official_client_owns_existing_auth_in_place": true,
+    "official_client_may_read_own_normal_configuration": true
+  },
+  "preserved_limits": [
+    "Original failed0bab real canary remainsFAIL/UNKNOWN; no retrospective causal attribution or overwrite.",
+    "Earlier lifecycle baseline remainsUNKNOWN; current intentional cancellation is not its fix.",
+    "No A/B,AB/BA,economic target,aggregate token reduction,multi-project quality or TUI parity demonstrated.",
+    "Effective backend/model/effort,native retries and quota consumption remainUNKNOWN where not reported.",
+    "No release approval from this narrow turn result; no further real status/model/catalog/provider operation authorized."
+  ],
+  "artifacts": {
+    "result_sha256": "00fd318fd58de56f282f77efd1257b68001c791e88bedc2a1535aa6f48751c9b",
+    "fresh_status_sha256": "0ebc5eb16741bc3eab3ae7ba86254947e396420121a0e98029adc18de1127199",
+    "authorization_link_sha256": "833447059593813a60476caaf1cd959486ac31968358b3e333aa1e0b77c1834a",
+    "answer_sha256": "b552f94b430bd2da08958c3b8bd9e9b45ed68b3612a814e892901f61f368007b",
+    "fixture_manifest_sha256": "a51be7a467b8b0fd9d53772bc67b820f51ffb5e651bdc047d6fad26f37ceae9d",
+    "private_logical_session_sha256": "52e73ecf0a1b1f0ea8b404311b0b787277ec909309f929508799d4ce82a594c5",
+    "original_failure_result_sha256": "ef53cf6d7a71897f56c8c56d5c6f1f04f84c376246007ccebb525e24e39fe207",
+    "historical_status_receipt_sha256": "763131d28da531cdada5a9e11e24624a6ece7b391fd7030e890e5b9764c14c4c",
+    "receipt_builder_scope_note_sha256": "4340694c30ec5126e0822e2f42af480319c5a62a940ae4b46dc9844e00f567d4"
+  }
+}

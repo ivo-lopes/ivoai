@@ -1,0 +1,14 @@
+✓ Lockfile passes supply-chain policies (verified 4h ago)
+Lockfile is up to date, resolution step is skipped
+Done in 120ms using pnpm v12.11.2
+$ node scripts/check-i18n.mjs
+file:///media/ivo/ARQUIVOS/home/ivo/Downloads/PROJETOS/MINDSITE/ivoai-release-v015-candidate/website/scripts/check-i18n.mjs:30
+      throw new Error(`pt-BR ${label} code blocks drifted from the source document: ${file}`);
+            ^
+
+Error: pt-BR current code blocks drifted from the source document: setup.md
+    at validatePair (file:///media/ivo/ARQUIVOS/home/ivo/Downloads/PROJETOS/MINDSITE/ivoai-release-v015-candidate/website/scripts/check-i18n.mjs:30:13)
+    at async file:///media/ivo/ARQUIVOS/home/ivo/Downloads/PROJETOS/MINDSITE/ivoai-release-v015-candidate/website/scripts/check-i18n.mjs:39:22
+
+Node.js v26.11.1
+[ELIFECYCLE] Command failed with exit code 1.

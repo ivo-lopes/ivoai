@@ -1,0 +1,38 @@
+{
+  "base_candidate": "74a67b6a1720f08b9299dc589fd8e92169f2a9ab",
+  "runtime_bytes_source": "5683c92276203f7f861ec3b0aa04932701a32ee7",
+  "go_module_files_unchanged": 587,
+  "build": "PASS_EN_PT_FROZEN_LOCKFILE; npm registry metadata requests occurred in this build",
+  "initial_preparation": "FAILED_OLD_COREPACK_SELECTED_NETWORK_DISABLED; preserved build.log; no source or dependency change",
+  "initial_rendered_notice_check": "FAILED_WRONG_VERSIONED_ROUTE docs/architecture.html; current routes docs/next/* used below without source change",
+  "full_rebuild_embedded_comparison": "PASS_Exit0; COREPACK_ENABLE_NETWORK=0 npm_config_offline=true",
+  "affected_go": "PASS_3_COUNT1",
+  "i18n": "PASS_CURRENT51_RELEASE0.9.2_44",
+  "rendered_qualified_hold_notices": [
+    {
+      "path": "docs/next/architecture.html",
+      "sha256": "cff33beb14664e2da9fe137c16cab3f8e4e3f433aabb3955ac8dc649241d3d73",
+      "qualified_hold_visible": true
+    },
+    {
+      "path": "docs/next/releases.html",
+      "sha256": "a31d9d51ab40e320da7ed905fe5262bad91ea53bd633292c47b3a7b007b50e62",
+      "qualified_hold_visible": true
+    },
+    {
+      "path": "pt-BR/docs/next/architecture.html",
+      "sha256": "71f4d1d8c34186568d454ba9d31a8e0cc26d4087612ef464996e7e017e0536de",
+      "qualified_hold_visible": true
+    },
+    {
+      "path": "pt-BR/docs/next/releases.html",
+      "sha256": "d33e8861235b061d382c1875d21429ee7ac0aed8462a52d8772cb490f279ab10",
+      "qualified_hold_visible": true
+    }
+  ],
+  "documentation_input_sha256": "ec2bfbb5f1c8f8d7b0423442ce655259e70916af2b4fd81cca47f3f22e4ac281",
+  "new_official_client_or_auth_calls_by_documentation_task": 0,
+  "publication": "HOLD_SCOPE_FIX_CLOSE_CI_FINAL_COMPOSITION_DISTRIBUTION",
+  "old_receipts": "UNCHANGED",
+  "raw_log_whitespace": "Two upstream Docusaurus informational lines retain their emitted trailing space in build-correct-corepack.log and check.log; raw logs preserved. Source-only diff --check PASS."
+}

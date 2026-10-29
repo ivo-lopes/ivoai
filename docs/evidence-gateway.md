@@ -5,6 +5,20 @@ This is a transient retrieval layer inside the existing Go backend. It does not
 replace the scheduler, Memory, Context, the code providers or ArtifactStore.
 The complete migration and certification remain pending.
 
+## Local v0.15.0 candidate: G0 and G1 boundaries
+
+G0 is wired into already-admitted code prefetch behind the default-OFF
+`IVOAI_EXPERIMENTAL_EVIDENCE_GATEWAY` flag. Protected artifact creation has a
+separate `IVOAI_EXPERIMENTAL_EVIDENCE_RECOVERY=1` opt-in. Protected Core/MCP exact
+recovery uses live host bindings, owner, grants and generation checks; full primary
+readers also recheck active Core/receipt authority. Private worker projections
+expose only two owner-bound protected readers. Lost bindings fail closed, including
+after restart or creation flag removal; no legacy fallback reconstructs authority.
+G1a Memory snapshots remain an unwired host SPI with no App/scheduler/client route.
+This candidate does not establish universal client/tool recovery or Context ingest.
+The initial implementation and adverse comparisons below retain their epoch.
+See [releases](releases.md) for candidate status and rollback limits.
+
 ## Enable and rollback
 
 Set `IVOAI_EXPERIMENTAL_EVIDENCE_GATEWAY=1` only on the IVOAI host process for an

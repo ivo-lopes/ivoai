@@ -1,0 +1,57 @@
+ivoai - personal AI client and server platform
+
+Usage:
+  ivoai                         interactive menu
+  ivoai help | version | uninstall
+  ivoai admin serve [--listen 127.0.0.1:7781]
+  ivoai admin access create [--ttl 10m] | list | revoke <id>
+  ivoai status [--json]
+  ivoai setup [--mode client|server] [--legacy-opencode]
+  ivoai doctor [--json] [--inventory]
+  ivoai update [--dry-run] | update --rollback [--force]
+  ivoai update --codex [--rollback]
+  ivoai connect [list|chatgpt|claude]
+  ivoai connect server [--url URL] [--purpose PURPOSE] [--redundancy-group GROUP] [--priority N] [--enrollment-code CODE|--code-stdin]
+  ivoai connect server add <alias> [--url URL] [--purpose PURPOSE] [--redundancy-group GROUP] [--priority N] [--enrollment-code CODE|--code-stdin]
+  ivoai connect server list [--json] | show <alias> [--json] | test <alias> [--json]
+  ivoai connect server enable <alias> | disable <alias> | remove <alias>
+  ivoai connect server edit <alias> [--purpose PURPOSE] [--redundancy-group GROUP] [--priority N]
+  ivoai connect server re-enroll <alias> [--url URL] [--code-stdin]
+  ivoai connect mcp [list] | add <name> <https-url> | remove <name>
+  ivoai connect mcp auth set <name> --bearer-token-stdin
+  ivoai connect mcp auth remove <name>
+  ivoai connect mcp header set <name> <header-name> --value-stdin
+  ivoai connect mcp test <name>
+  ivoai connect mcp tools <name>
+  ivoai connect mcp enable <name> | disable <name>
+  ivoai connect mcp policy <name> <read_only|read_auto_ask_mutating>
+  ivoai connect mcp direct-policy <name> <read_only|disabled>
+  ivoai disconnect <chatgpt|claude|server [alias|--all]>
+  ivoai codex [--direct] [--knowledge-source <alias|purpose>] [-- agent arguments...]
+  ivoai claude [--knowledge-source <alias|purpose>] [-- agent arguments...]
+  ivoai opencode [--direct] [--planner codex|claude|opencode] [--knowledge-source <alias|purpose>] [-- agent arguments...]
+  ivoai auto [--planner codex|claude|opencode] [--knowledge-source <alias|purpose>] [-- agent arguments...]
+  ivoai session start --executor <codex|claude|opencode> --mode <direct|orchestrated> [--knowledge-source <alias|purpose>] [-- agent arguments...]
+  ivoai session list [--json] | show [--json] <id> | stop <id>
+  ivoai session resume <id> [--frontend codex|opencode] [--knowledge-source alias]
+  ivoai session recover <id> [--knowledge-source alias]
+  ivoai session adopt-scope <id> [--knowledge-source alias] [--confirm] [--json]
+  ivoai session restore-scope <id> --backup PATH [--confirm] [--json]
+  ivoai session handoff <id> --to codex|claude --confirm
+  ivoai monitor [--watch] [--session <id>] [--json]
+  ivoai memory [status|configure]
+  ivoai skills list | show <source-id> | doctor
+  ivoai skills update [source-id]
+  ivoai skills enable <source-id> | disable <source-id> | pin <source-id> | unpin <source-id> | rollback <source-id>
+  ivoai config [show|set <key> <value>]
+  ivoai config profile <list|show|preview ID|apply ID|restore>
+  ivoai project [init|status]
+  ivoai server setup | status | doctor | start | stop | restart
+  ivoai server logs [service]
+  ivoai server enrollment create [--ttl 10m] | list | revoke <id>
+  ivoai server web-access create [--ttl 10m] [--scopes SCOPE,...] | list | revoke <id>
+  ivoai server connector list | add --name NAME --type filesystem|git --path PATH | remove NAME
+  ivoai server context status | memory status | docs status | docs configure --listen IP:PORT | docs serve
+  ivoai server gateway serve | gateway configure --public-url HTTPS_ORIGIN [--listen HOST:PORT] [--trusted-proxy CIDR] [--tls-cert PATH --tls-key PATH]
+  ivoai server backup [--output PATH] | restore --input PATH
+  ivoai server remote status | doctor | connector list

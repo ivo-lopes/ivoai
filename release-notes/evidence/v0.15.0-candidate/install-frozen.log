@@ -1,0 +1,61 @@
+? Verifying lockfile against supply-chain policies (1336 entries)...
+Update available! 12.11.2 → 12.16.1.
+Changelog: https://pnpm.io/v/12.16.1
+To update, run: curl -fsSL https://get.pnpm.io/install.sh | sh -
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Packages are hard linked from the content-addressable store to the virtual store.
+  Content-addressable store is at: /media/ivo/ARQUIVOS/.pnpm-store/v11
+  Virtual store is at:             node_modules/.pnpm
+[WARN] Request took 10122ms: https://registry.npmjs.org/@babel%2Fhelper-validator-identifier
+[WARN] Request took 10202ms: https://registry.npmjs.org/@babel%2Fhelper-replace-supers
+[WARN] Request took 10309ms: https://registry.npmjs.org/@babel%2Fhelper-skip-transparent-expression-wrappers
+[WARN] Request took 10360ms: https://registry.npmjs.org/@babel%2Fhelper-validator-option
+[WARN] Request took 10424ms: https://registry.npmjs.org/@babel%2Fhelper-wrap-function
+[WARN] Request took 10596ms: https://registry.npmjs.org/@babel%2Fplugin-bugfix-safari-class-field-initializer-scope
+[WARN] Request took 10619ms: https://registry.npmjs.org/@babel%2Fhelpers
+[WARN] Request took 10674ms: https://registry.npmjs.org/@babel%2Fparser
+[WARN] Request took 10773ms: https://registry.npmjs.org/@babel%2Fplugin-bugfix-firefox-class-in-computed-class-key
+[WARN] Request took 11057ms: https://registry.npmjs.org/@babel%2Fplugin-bugfix-safari-rest-destructuring-rhs-array
+[WARN] Request took 11081ms: https://registry.npmjs.org/@babel%2Fplugin-syntax-dynamic-import
+[WARN] Request took 11115ms: https://registry.npmjs.org/@babel%2Fplugin-proposal-private-property-in-object
+[WARN] Request took 11150ms: https://registry.npmjs.org/@babel%2Fplugin-syntax-import-assertions
+[WARN] Request took 11255ms: https://registry.npmjs.org/@babel%2Fplugin-syntax-import-attributes
+[WARN] Request took 11305ms: https://registry.npmjs.org/@babel%2Fplugin-syntax-typescript
+[WARN] Request took 11343ms: https://registry.npmjs.org/@babel%2Fplugin-transform-arrow-functions
+[WARN] Request took 11361ms: https://registry.npmjs.org/@babel%2Fplugin-syntax-jsx
+[WARN] Request took 11389ms: https://registry.npmjs.org/@babel%2Fplugin-bugfix-safari-id-destructuring-collision-in-function-expression
+[WARN] Request took 11560ms: https://registry.npmjs.org/@babel%2Fplugin-syntax-unicode-sets-regex
+[WARN] Request took 11603ms: https://registry.npmjs.org/@babel%2Fplugin-transform-async-generator-functions
+[WARN] Request took 11657ms: https://registry.npmjs.org/@babel%2Fplugin-transform-async-to-generator
+[WARN] Request took 11743ms: https://registry.npmjs.org/@babel%2Fplugin-transform-block-scoped-functions
+[WARN] Request took 11779ms: https://registry.npmjs.org/@babel%2Fplugin-transform-block-scoping
+[WARN] Request took 11807ms: https://registry.npmjs.org/@babel%2Fcompat-data
+[WARN] Request took 11859ms: https://registry.npmjs.org/@babel%2Fhelper-optimise-call-expression
+[WARN] Request took 11859ms: https://registry.npmjs.org/@babel%2Fplugin-bugfix-v8-spread-parameters-in-optional-chaining
+✓ Lockfile passes supply-chain policies (1336 entries in 33.1s)
+Lockfile is up to date, resolution step is skipped
+Packages: +1298
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Progress: resolved 1298, reused 1298, downloaded 0, added 1298, done
+
+dependencies:
++ @docusaurus/core 3.10.2
++ @docusaurus/preset-classic 3.10.2
++ @docusaurus/theme-mermaid 3.10.2
++ @easyops-cn/docusaurus-search-local 0.55.3
++ @fontsource/bpmf-huninn 5.3.1
++ @mdx-js/react 3.1.1
++ @mermaid-js/layout-elk 1.0.1
++ clsx 2.1.1
++ prism-react-renderer 2.4.1
++ react 19.3.0
++ react-dom 19.3.0
+
+devDependencies:
++ @axe-core/playwright 4.13.0
++ @docusaurus/module-type-aliases 3.10.2
++ @docusaurus/tsconfig 3.10.2
++ @playwright/test 1.64.0
++ typescript 7.0.2
+
+Done in 35.3s using pnpm v12.11.2

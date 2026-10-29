@@ -1,0 +1,6 @@
+=== RUN   TestAutoRejectsControlPlaneConfigOverrides
+--- PASS: TestAutoRejectsControlPlaneConfigOverrides (0.00s)
+=== RUN   TestAutoReportsUnsupportedCodexConfigScopeBeforeFrontend
+--- PASS: TestAutoReportsUnsupportedCodexConfigScopeBeforeFrontend (0.00s)
+PASS
+ok  	github.com/ivo-lopes/ivoai/internal/app	1.030s

@@ -1,0 +1,23 @@
+{
+  "status": "PASS_NARROW_TURN_LIFECYCLE_QUALIFICATION_PENDING",
+  "root_confirmed_summary_sha256": "44df9bbf2a7c1a27d06e684169c558fba22f6d5d022d4f16b3011c61ed5819e4",
+  "binary_source": "55ec7ab98683bf0c8784b93baebc966f2910772b",
+  "binary_sha256": "5973758fb84bb2abe77ca39cbdd4f48d309ef7433d06b34fe5c646d55f54f6c7",
+  "summary_copied_byte_exact": true,
+  "other_raw_session_config_auth_or_terminal_files_read_or_archived_by_docs_task": false,
+  "docs_task_new_native_client_status_provider_calls": 0,
+  "turn_oracle_pass": true,
+  "actual_executor_exit": 0,
+  "persisted_session_state": "failed",
+  "persisted_frontend_state": "failed",
+  "persisted_frontend_exit_code": 1,
+  "persisted_session_exit_code": 1,
+  "stored_exit_code_origin": "Root source review: context-cancellation fallback1; not a directly measured frontend process exit",
+  "actual_frontend_exit_observed": false,
+  "lifecycle_classification": "INVESTIGATION_PENDING_DRIVER_CANCEL_VS_NORMAL_TUI_EXIT",
+  "Core_child_Wait_zero": "NOT_OBSERVED",
+  "publication": "HOLD_LIFECYCLE_QUALIFICATION_FINAL_SOURCE_CI_DISTRIBUTION_GATES",
+  "original_0bab_real_failure": "PRESERVED_FAIL_CAUSE_UNKNOWN_NOT_ATTRIBUTED",
+  "added_to_126_historical_turns": false,
+  "usage_scope": "client-reported single CLI invocation; cache included in input; no provider-direct cost/quota/economy inference"
+}

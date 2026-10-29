@@ -1,0 +1,17 @@
+{
+  "base_source": "77d5fd6c0c75effcf34e34a440e199c9344a96b0",
+  "scope": "documentation and embedded-site only",
+  "build_log_completed_both_locales": true,
+  "check_exit": 0,
+  "docsserver_exit": 0,
+  "docsserver_test_passes": 2,
+  "docsserver_failures": 0,
+  "docsserver_skips": 0,
+  "rendered_pages": 6,
+  "prior_tracked_evidence_files_unchanged": 874,
+  "runtime_and_modules_unchanged": 592,
+  "official_client_executions_in_this_docs_epoch": 0,
+  "full_Go_reruns": 0,
+  "publication": "CONDITIONAL; no tag/release/assets created",
+  "historical_runtime_sources": "unchanged; see final-runtime qualification report for separate new execution"
+}

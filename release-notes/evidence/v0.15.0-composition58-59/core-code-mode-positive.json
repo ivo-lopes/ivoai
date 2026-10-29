@@ -1,0 +1,193 @@
+{
+  "epoch": "PRIVATE_NOAUTH_CORRECT_SDK_METADATA_POSITIVE_Core_55ec",
+  "overall": "PASS_SCOPED_OFFLINE_PROTOCOL",
+  "duration_seconds": 7.36,
+  "offline_executions": 1,
+  "synthetic_HTTP_requests": 2,
+  "real_auth_status_provider_calls": 0,
+  "source": "55ec7ab98683bf0c8784b93baebc966f2910772b",
+  "source_tree": "22c13b12573b23ed0292f91eb03f4b0476df3e06",
+  "source_clean_and_frozen_inputs_unchanged": true,
+  "harness_recorder_assertions_byte_identical_to_prior_failed_epoch": true,
+  "Core_sha256": "5973758fb84bb2abe77ca39cbdd4f48d309ef7433d06b34fe5c646d55f54f6c7",
+  "codex_sha256": "628e35487d888a28f0427fc37501da529dd3d81fcbad7a2c3421c1e8670d92e1",
+  "companion_sha256": "ec71830690a7c0024916ee0c99fbdc635bc6e747ff665ea4f03a8389bbcb6b30",
+  "root_reviewed_JS_sha256": "65c7a478eae1162549039dead8e7d8f379048cf6a7b313e0abc40ba4dc089387",
+  "root_reviewed_wire_sha256": "8d6de0c9b9882ab633721b8f3d562451e932afe235e79a009e09bf95d03a6b7c",
+  "actual_Core_call": {
+    "count": 1,
+    "tool": "orchestration_capabilities",
+    "arguments": {},
+    "matching_rpc_result": true,
+    "error": false,
+    "isError": false,
+    "provider_names": [
+      "codex"
+    ],
+    "full_Core_result_sha256": "ed16c5a0bab7b4fb3cece7e386b31ec2acda0b2bc59dc08dad4f67d39517eabb",
+    "matching_custom_output_projection": true
+  },
+  "host_assertions": {
+    "same_active_readonly_receipt_before_after_call": true,
+    "no_plan_tasks_workers_decisions_failover_checkpoint": true,
+    "final_only_after_call_result_assertions": true,
+    "receipt_closed_same_identity_final": true,
+    "NoReplay": true,
+    "NoAutomaticFailover_Core_policy": true,
+    "duplicate_envelope_HTTP": 409,
+    "duplicate_caused_new_synthetic_requests": false
+  },
+  "observed": {
+    "namespace_interfaces": [
+      "lo"
+    ],
+    "routes": 0,
+    "real_HOME_mounted": false,
+    "fresh_HOME_CODEX_HOME": true,
+    "CLI_events": [
+      {
+        "type": "thread.started",
+        "item_type": null
+      },
+      {
+        "type": "turn.started",
+        "item_type": null
+      },
+      {
+        "type": "item.started",
+        "item_type": "mcp_tool_call"
+      },
+      {
+        "type": "item.completed",
+        "item_type": "mcp_tool_call"
+      },
+      {
+        "type": "item.completed",
+        "item_type": "agent_message"
+      },
+      {
+        "type": "turn.completed",
+        "item_type": null
+      }
+    ],
+    "CLI_completion": "turn.completed",
+    "CLI_stderr_bytes": 0,
+    "Core_stderr_bytes": 0,
+    "Core_child_Wait_zero": "NOT_OBSERVED"
+  },
+  "capture_completeness": {
+    "HTTP1": "COMPLETE",
+    "HTTP2": "COMPLETE",
+    "Core_forwarded_raw": "COMPLETE_FOR_OBSERVED_BYTES_NO_TRUNCATION_MARKER",
+    "limits": "HTTP2MiB each/Core2MiB each direction; all below bounds and valid JSON",
+    "parent_mode": "0700",
+    "raw_modes": "0600"
+  },
+  "scope": "Existing synthetic catalog/session fixture plus production scopeAutoRunner admission/autoBridgeArgs/Adapter/CLIRunner, exact official CLI pair and actual Core main _orchestrator-serve. Not full public startup or real subscription inference.",
+  "limits": [
+    "Original real canary72byte failure remains UNKNOWN; this does not attribute or fix it.",
+    "Earlier lifecycle baseline remains UNKNOWN; no Core child Wait0 marker observed.",
+    "Earlier FAIL/NOT_MET receipts are preserved, not rewritten or discarded.",
+    "Synthetic provider returns fixture data; no real-model quality, quota, economic gain or TUI parity is proven.",
+    "Core NoAutomaticFailover is not a general assertion about native client retries.",
+    "One authorized offline execution only; no additional run or real auth/status/provider call authorized."
+  ],
+  "files": {
+    "predeclared.json": {
+      "sha256": "14b68eb83e3ac3cf5b4aa8358883f6da678ec24d085cfa740fe1a663378e0f80",
+      "bytes": 836
+    },
+    "frozen-inputs.json": {
+      "sha256": "3e115551ee054cc0b211dbc4f592bccdece0d661fce33e5c9d51c34243c4332e",
+      "bytes": 1817
+    },
+    "overlay.json": {
+      "sha256": "2d3dc1e4f5ba947f81385862f264f919bb150b5efe2f3e3fc7fb402366a5bd16",
+      "bytes": 554
+    },
+    "adaptive_primary_live_test.go": {
+      "sha256": "2bb0719edc1939e67ede179be6b13f54e62f2e1ec229a8e4a4566716400151d1",
+      "bytes": 26872
+    },
+    "adaptive_primary_test.go": {
+      "sha256": "b806e6469fd36f451d598473ba3a8c6bd9225d870c17e0efdf6ab86af1f647b3",
+      "bytes": 17577
+    },
+    "executor.go": {
+      "sha256": "b134c2d7624f2e07feab82bae0c93b74ea0f1adf711065f8eecc273c5a24ba1c",
+      "bytes": 17464
+    },
+    "core_wire_proxy.py": {
+      "sha256": "4429cb1060babe87e7159e8c10b10ad91e174003460c7677fb05d0110a1d915f",
+      "bytes": 3950
+    },
+    "run-once.sh": {
+      "sha256": "2abb998a711e091454de71780bc8df0b08a41edef2d02238c59bcdccfe828b19",
+      "bytes": 1416
+    },
+    "run.log": {
+      "sha256": "b8adcdccee393da024e7b1238439ef8ec7c6a3ad9ac9c6d06f950b32934cffc9",
+      "bytes": 881
+    },
+    "run.exit": {
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "bytes": 2
+    },
+    "app-Core-positive.test": {
+      "sha256": "0983ec82befb4bfc0746963d570a73cf49a67552451ca0c359c0e246e6f7cfe6",
+      "bytes": 29239761
+    },
+    "reviewed/root-review.json": {
+      "sha256": "feaddb3dd34b8836d03d00a5654462b62bd5b470ebe349a81a6f73aede7f7ae3",
+      "bytes": 1012
+    },
+    "reviewed/call_core_capabilities.js": {
+      "sha256": "65c7a478eae1162549039dead8e7d8f379048cf6a7b313e0abc40ba4dc089387",
+      "bytes": 2279
+    },
+    "reviewed/response-item-PROPOSED-NOT-TESTED.json": {
+      "sha256": "8d6de0c9b9882ab633721b8f3d562451e932afe235e79a009e09bf95d03a6b7c",
+      "bytes": 2531
+    },
+    "captures/provider-request-1.raw.json": {
+      "sha256": "b950098438482861617f37cd7f863235943b81d2f73ff0b3efc1429fb530fb35",
+      "bytes": 52490
+    },
+    "captures/baseline.stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "captures/baseline.stdout": {
+      "sha256": "ca6d6b96fb5a8c3b126e18cb664afe17a829e0bf68d29bd6ddf9f36f8a2c7fef",
+      "bytes": 3850
+    },
+    "captures/core-protocol.jsonl": {
+      "sha256": "cfcda3daef3effae1c12cd2ea14a131924f6636e4c6eb187b25f0e7e3b339219",
+      "bytes": 9426
+    },
+    "captures/baseline.argv.json": {
+      "sha256": "0a13828ec2c74601f580da8d02285e02fe83184ff6f6267500f796ff28b66b5c",
+      "bytes": 6443
+    },
+    "captures/core-stdout.raw": {
+      "sha256": "bfc89f593ec2e500e2a46275c73cc2494ef048fbfa4b2f2d08bc535687859026",
+      "bytes": 16747
+    },
+    "captures/provider-request-2.raw.json": {
+      "sha256": "429b30bf9c76d3b2d80f8a556b521c6596219120d19ae60cbe99a14eeb914d67",
+      "bytes": 55373
+    },
+    "captures/core-stdin.raw": {
+      "sha256": "4ace9b0c15e1bfb100b6040aec86879d02479e1b074d1aa364594e75b2956ff9",
+      "bytes": 1254
+    },
+    "captures/core-stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "captures/positive-control-summary.json": {
+      "sha256": "fb5a7d71711ec930b86efe8b0fec05dc238537f4c307acc70fe76947283b52de",
+      "bytes": 289
+    }
+  }
+}

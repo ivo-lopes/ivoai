@@ -1,0 +1,16 @@
+{
+  "status": "FAIL_HARNESS_EXPECTED_LDFLAGS_BUILDINFO_KEY_ABSENT",
+  "source": "520463c3f3d4501a727aa76967960b2f9ec82e49",
+  "builds_exits": [
+    0,
+    0
+  ],
+  "source_changed": false,
+  "failure": "KeyError -ldflags; immutable build command/result and CLI version still need verification",
+  "operations_completed": [
+    "amd64 Go buildinfo read"
+  ],
+  "Core_version_help_executed": false,
+  "official_executor_auth_status_provider_model": 0,
+  "initial_script_sha256": "615ee275ed6d763f064a8f07c686efa8f0d708920d403c814ff12ec96b008e50"
+}

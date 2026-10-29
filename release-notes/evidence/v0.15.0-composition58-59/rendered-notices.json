@@ -1,0 +1,30 @@
+[
+  {
+    "path": "docs/next/releases.html",
+    "hold_visible": true,
+    "investigation_pending_visible": true,
+    "stored_fallback_limit_visible": true,
+    "sha256": "07f889c853533fb0c855655c3ab58920d0fead7d32e47af9642f52b550eec93f"
+  },
+  {
+    "path": "pt-BR/docs/next/releases.html",
+    "hold_visible": true,
+    "investigation_pending_visible": true,
+    "stored_fallback_limit_visible": true,
+    "sha256": "52b1bf30e4b4a1efc3104b12e249bd43b7edaa52a3610b1ef4364a7e8b0770b7"
+  },
+  {
+    "path": "docs/next/architecture.html",
+    "hold_visible": true,
+    "investigation_pending_visible": true,
+    "stored_fallback_limit_visible": true,
+    "sha256": "8fca52397223b8d2ec764d2cf0d4ce650c96a7448ac7a34717c03b04328a1f45"
+  },
+  {
+    "path": "pt-BR/docs/next/architecture.html",
+    "hold_visible": true,
+    "investigation_pending_visible": true,
+    "stored_fallback_limit_visible": true,
+    "sha256": "a0c5848db0345375266b6208b5fb2e4306089c8303390fe3eca4c2209d9ed7f4"
+  }
+]

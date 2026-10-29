@@ -1,0 +1,231 @@
+{
+  "schema_version": 1,
+  "recorded_utc": "2026-10-29T03:22:29.709179+00:00",
+  "status": "LOCAL_CANDIDATE_CHECKS_PASS_PUBLICATION_HOLD",
+  "candidate_source": "520463c3f3d4501a727aa76967960b2f9ec82e49",
+  "actual_main": "ccc48a055ae3099a2027cfc8f31210c172baf247",
+  "reviewed_Go_source": "83df882b38e9cdf8158b69623aa58f6001124355",
+  "source_freeze_sha256": "b404ddc5ed2db441886a32f8a583fa6ad5421b9b3288cb61ae5df3aaf9a8f4ec",
+  "frozen_paths": 3491,
+  "Go_and_modules_equal83": 592,
+  "Go_paths": 590,
+  "source_Go_edits": 0,
+  "inherited_CI61": {
+    "source": "83df882b38e9cdf8158b69623aa58f6001124355",
+    "run": 40805624155,
+    "attempt": 1,
+    "passed": 16,
+    "provenance": "root confirmed and recorded; NOT candidate CI"
+  },
+  "candidate_exact_head_CI": "PENDING_ROOT",
+  "gates": {
+    "full-go": {
+      "source": "520463c3f3d4501a727aa76967960b2f9ec82e49",
+      "exit": 0,
+      "count": 1,
+      "wall_seconds": 123.646,
+      "finished_utc": "2026-10-29T02:56:23.616109+00:00",
+      "frozen_source_unchanged_after": true,
+      "live_optin_environment": "ABSENT; explicit environment, no official-client optins",
+      "official_executor_auth_status_model_calls": 0
+    },
+    "vet": {
+      "source": "520463c3f3d4501a727aa76967960b2f9ec82e49",
+      "exit": 0,
+      "count": 1,
+      "wall_seconds": 9.322,
+      "finished_utc": "2026-10-29T02:54:29.292672+00:00",
+      "frozen_source_unchanged_after": true,
+      "live_optin_environment": "ABSENT; explicit environment, no official-client optins",
+      "official_executor_auth_status_model_calls": 0
+    },
+    "rollback": {
+      "source": "520463c3f3d4501a727aa76967960b2f9ec82e49",
+      "exit": 0,
+      "count": 1,
+      "wall_seconds": 5.344,
+      "finished_utc": "2026-10-29T03:04:30.592134+00:00",
+      "frozen_source_unchanged_after": true,
+      "live_optin_environment": "ABSENT; explicit environment, no official-client optins",
+      "official_executor_auth_status_model_calls": 0
+    },
+    "Python": {
+      "source": "520463c3f3d4501a727aa76967960b2f9ec82e49",
+      "exit": 0,
+      "count": 1,
+      "wall_seconds": 12.087,
+      "finished_utc": "2026-10-29T03:04:37.329315+00:00",
+      "frozen_source_unchanged_after": true,
+      "live_optin_environment": "ABSENT; explicit environment, no official-client optins",
+      "official_executor_auth_status_model_calls": 0
+    },
+    "CLI-reference": {
+      "source": "520463c3f3d4501a727aa76967960b2f9ec82e49",
+      "exit": 0,
+      "count": 1,
+      "wall_seconds": 5.261,
+      "finished_utc": "2026-10-29T03:04:30.499234+00:00",
+      "frozen_source_unchanged_after": true,
+      "live_optin_environment": "ABSENT; explicit environment, no official-client optins",
+      "official_executor_auth_status_model_calls": 0
+    },
+    "build-amd64v1": {
+      "source": "520463c3f3d4501a727aa76967960b2f9ec82e49",
+      "exit": 0,
+      "count": 1,
+      "wall_seconds": 6.354,
+      "finished_utc": "2026-10-29T03:04:31.590145+00:00",
+      "frozen_source_unchanged_after": true,
+      "live_optin_environment": "ABSENT; explicit environment, no official-client optins",
+      "official_executor_auth_status_model_calls": 0
+    },
+    "build-arm64": {
+      "source": "520463c3f3d4501a727aa76967960b2f9ec82e49",
+      "exit": 0,
+      "count": 1,
+      "wall_seconds": 5.463,
+      "finished_utc": "2026-10-29T03:04:30.700278+00:00",
+      "frozen_source_unchanged_after": true,
+      "live_optin_environment": "ABSENT; explicit environment, no official-client optins",
+      "official_executor_auth_status_model_calls": 0
+    }
+  },
+  "full_go_summary": {
+    "packages": {
+      "skip": 3,
+      "pass": 59
+    },
+    "test_events_including_subtests": {
+      "pass": 2068,
+      "skip": 69
+    },
+    "raw_sha256": "347b7d8708208c389de1858fc297556525341048050e806a0e60a8039a68eee8",
+    "gzip_bytes": 157496
+  },
+  "docs": {
+    "source": "content recorded by520, root-built before handoff",
+    "corrected_build_and_check": "PASS",
+    "i18n": "PASS51current44release092",
+    "embedded_fixtures": "PASS4",
+    "rendered_pages": 6,
+    "initial_i18n_failure": "PRESERVED_NO_UNCHANGED_RETRY",
+    "new_Node_build": "NOT_RUN_INPUT_EMBED_UNCHANGED",
+    "doc_site_dependency_audit": "PRIOR_LOW_DEEPMERGE_NEEDS_REVIEW_NO_NEW_ZERO_VULN_CLAIM"
+  },
+  "historical_proof_union_preserved": 808,
+  "rollback_named": {
+    "source": "520463c3f3d4501a727aa76967960b2f9ec82e49",
+    "test": "TestLiveProtectedArtifactsDoNotPoisonLegacyCoreRollback",
+    "runs": 1,
+    "passes": 1,
+    "skips": 0,
+    "failures": 0,
+    "legacy_source": "3be82befea6ed3875373afcb1bfaa450710310ac",
+    "legacy_source_manifest_sha256": "28eeb86068f75de7d60ca7a0702723c63519dc844a8b593bab8441f986050389",
+    "legacy_binary_sha256": "fc913780355621826b49aa03455cdf0b743294acfccaf6dbfc10db755bee27e2",
+    "current_jsonl_sha256": "49ced04e2490a9d467f5c4bbeed1e4a0c18a42e1cd25fe942c6c8ef55183e109",
+    "module_verify_log_sha256": "825b49c0a1aed492845664a8431f4e28b0d076f39c2021dbaeb7f55df10b27ed",
+    "current_and_legacy_modules_verified": true,
+    "official_clients_models": "NOT_RUN_TRUSTED_LOCAL_LEGACY_READER_ONLY",
+    "proof_directory": "/var/tmp/ivoai-v015-context-composition.iqA1ju1x/go-tmp/ivoai-evidence-rollback.KkOlhrqW"
+  },
+  "Core_builds_smoke": {
+    "status": "PASS_LOCAL_SOURCE_BUILT_CORE_METADATA_VERSION_HELP",
+    "source": "520463c3f3d4501a727aa76967960b2f9ec82e49",
+    "version": "0.15.0",
+    "builds": {
+      "amd64v1": {
+        "sha256": "72f852985d263b0632625dd43611072a3135d610bb8c9cc53ee548df2f93f5d9",
+        "bytes": 67952800,
+        "settings": {
+          "-buildmode": "exe",
+          "-compiler": "gc",
+          "-trimpath": "true",
+          "CGO_ENABLED": "0",
+          "GOARCH": "amd64",
+          "GOOS": "linux",
+          "GOAMD64": "v1",
+          "vcs": "git",
+          "vcs.revision": "520463c3f3d4501a727aa76967960b2f9ec82e49",
+          "vcs.time": "2026-10-29T02:51:07Z",
+          "vcs.modified": "false"
+        },
+        "execution": "only version/help on native host",
+        "release_asset": false,
+        "release_specific_managed_component_metadata": "NOT_INJECTED_LOCAL_CORE_SMOKE_ONLY"
+      },
+      "arm64": {
+        "sha256": "281f5fe92e40581499f44c6ad94904adcd7063f2fd9a56d03e1bbd872dd26711",
+        "bytes": 66388128,
+        "settings": {
+          "-buildmode": "exe",
+          "-compiler": "gc",
+          "-trimpath": "true",
+          "CGO_ENABLED": "0",
+          "GOARCH": "arm64",
+          "GOOS": "linux",
+          "GOARM64": "v8.0",
+          "vcs": "git",
+          "vcs.revision": "520463c3f3d4501a727aa76967960b2f9ec82e49",
+          "vcs.time": "2026-10-29T02:51:07Z",
+          "vcs.modified": "false"
+        },
+        "execution": "NOT_RUN_CROSS_BUILD_ONLY",
+        "release_asset": false,
+        "release_specific_managed_component_metadata": "NOT_INJECTED_LOCAL_CORE_SMOKE_ONLY"
+      }
+    },
+    "ldflags_buildinfo": "ABSENT under -trimpath, expected from reviewed local Go source; main.version validated by recorded build command and actual Core version output",
+    "Core_outputs": {
+      "version": {
+        "exit": 0,
+        "wall_seconds": 0.005,
+        "stdout_sha256": "f8405a7330c287028d470c3ee3506f878f1ad85ed79c1d1adc19df2ff7398915",
+        "stdout_bytes": 7,
+        "stderr_bytes": 0
+      },
+      "help": {
+        "exit": 0,
+        "wall_seconds": 0.005,
+        "stdout_sha256": "112885f1cdcab1d5b06dcac38a4dd50b26e6824e1e95f26952446f1384cffced",
+        "stdout_bytes": 3722,
+        "stderr_bytes": 0
+      }
+    },
+    "HOME": "owned private new directory, no real user HOME/config/auth",
+    "ARM_or_emulated_noAVX_execution": "NOT_RUN",
+    "official_executor_auth_status_provider_model": 0,
+    "published_artifacts": "NOT_BUILT_DOWNLOADED_OR_EXECUTED",
+    "source_unchanged": true
+  },
+  "initial_buildinfo_expectation_failure": "PRESERVED_KEY_ABSENT_WITH_TRIMPATH_NO_CORE_EXEC_OR_REBUILD_BEFORE_CORRECTION",
+  "future_verifier": {
+    "status": "PASS_STATIC_ARCHIVE_IDENTITY_AND_DOCUMENTED_MATERIALIZATION",
+    "archive_manifest_entries": 29,
+    "source_map_entries": 20,
+    "helper_kept_go_txt": true,
+    "wrapper_uses_materialized_directory": true,
+    "explicit_source_tree_cli": true,
+    "legacy_test_SOURCE_overridden_by_documented_runner": true,
+    "Python_sources_AST_valid": 4,
+    "unit35_and_v014_controls": "PRIOR_EPOCH_PRESERVED_NOT_RERUN",
+    "v015_downloaded_asset_verification": "NOT_RUN_NOT_PUBLISHED",
+    "asset_download_execution_auth_provider": 0
+  },
+  "native_guard_perf56_sampler54": "EXCLUDED",
+  "new_official_executor_auth_status_model_provider_Memory_Plane": 0,
+  "new_whole_race_ARM_noAVX_execution": "NOT_RUN",
+  "Release_distribution_downloaded_assets": "PENDING_ROOT_NOT_RELEASE_ARTIFACTS",
+  "runtime_canary": "PRIOR55ec_SEPARATE_NOT_REASSIGNED_FINAL_SOURCE_QUALIFICATION_PENDING",
+  "global_economic_gate": "INCOMPLETE",
+  "CONTEXT_SYNC": "BLOCKED_IVOAI175",
+  "publication": "NONE_NO_PUSH_HOSTED_MERGE_TAG_RELEASE",
+  "not_claimed": [
+    "general TUI/client/model/admin parity",
+    "full roadmap complete",
+    "economic targets met",
+    "final-head CI from61",
+    "immutable cloud/configfile scope",
+    "ldflags source attestation/reproducible distribution build"
+  ]
+}

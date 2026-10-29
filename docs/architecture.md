@@ -5,6 +5,47 @@ v0.5.0 and records the current incremental status separately below. Exact pins
 live in `manifest/components.yaml`; delivered behavior and migration limits belong
 to versioned implementation and validation evidence.
 
+## Local v0.15.0 candidate — conditional publication
+
+**Publication is conditional on exact final-head CI and the existing Release/distribution
+gates; this candidate is not published.** A new restricted qualification on
+`77d5fd6c` passed both named official-client/Core protocol tests and both CLI
+subcases under race detection, with zero failures/skips. It used the reviewed
+0.162.1 client/companion, fresh fixture homes and a local fake provider without
+subscription authentication or real-model calls. The checks cover managed MCP
+scope/receipt/replay behavior and a separate actual Core bootstrap; they do not
+certify public TUI lifecycle, system/cloud isolation or general client/model
+parity. See the [final-source qualification](https://github.com/ivo-lopes/ivoai/blob/release/v0.15.0-candidate/release-notes/v0.15.0-final-runtime-qualification.md).
+Consult [GitHub releases](https://github.com/ivo-lopes/ivoai/releases) and the
+[workflow status](https://github.com/ivo-lopes/ivoai/actions) for subsequent
+publication/gate status; this record does not authorize a tag.
+
+The following observations remain historical and bound to their own sources. A supported
+`55ec7ab9` real turn passed its math oracle; its intentional SIGINT cleanup
+persisted failed/fallback1, which is not a measured frontend process exit.
+A separate public startup with only `/quit` + Enter completed naturally in
+2.147s: Core Wait0, Session/frontend completed0 and no owned SID residue, with
+zero question/attempt/worker and no forced signal. This qualifies normal idle
+startup/quit for those exact inputs. A real turn followed by normal quit in one
+session was not run. The original `0bab9b34` failure and UNKNOWN cause remain
+preserved; none of these observations joins the 126 comparative turns.
+See the [normal-exit report](https://github.com/ivo-lopes/ivoai/blob/release/v0.15.0-candidate/release-notes/native-normal-quit-validation.md).
+No general TUI/client/model parity or economic result follows.
+
+Managed MCP inventory/execution share one captured cwd/environment and explicit
+config/profile scope. The host keeps project policy, native-worker denials and
+Core projection precedence. Config files/cloud policy are not frozen. Native
+`-C`/`--cd` and `--ignore-user-config` remain unsupported: use shell `cd` before
+starting IVOAI, without editing personal configuration. PR60/62 correct test
+observation/clock fixtures, not production cleanup or security deadlines.
+
+G0 is wired into admitted code prefetch behind its default-OFF flag, with protected
+Core/MCP exact recovery and separate protected creation opt-in. G1 Memory remains
+an unwired host SPI. Adaptive stays OFF, using literal-envelope admission and the
+existing Core DAG/approvals. PR55 is offline preflight; PR54/56 remain excluded.
+See [releases](releases.md) for precise source epochs and publication conditions. The
+published v0.14.0 description below remains historical.
+
 ## Current release: v0.14.0
 
 The same Core now supplies a [local read-only admin console](admin-console.md).
