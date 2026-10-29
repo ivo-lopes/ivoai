@@ -5,24 +5,25 @@ v0.5.0 and records the current incremental status separately below. Exact pins
 live in `manifest/components.yaml`; delivered behavior and migration limits belong
 to versioned implementation and validation evidence.
 
-## Local v0.15.0 candidate
+## Local v0.15.0 candidate — publication HOLD
 
-Native provider/setup independence and optional adaptive primary/Core DAG
-composition are prepared as a candidate. G0 is wired into already-admitted code
-prefetch behind its default-OFF experimental flag, with protected Core/MCP exact
-recovery and a separate protected-creation opt-in. G1a Memory remains a host SPI,
-unwired to App, scheduler or clients; PR55 is offline preflight only. Adaptive stays
-OFF by default. The separate real canary failed and blocks publication; cause UNKNOWN.
-The earlier PR57 CI pass applies only to head `03492d1d`; follow-up CI and distribution
-validation remain separate gates. The published
-v0.14.0 status below is historical. See [releases](releases.md).
+The candidate composes reviewed main58 guard and test-only PR59 PID cleanup.
+Managed Codex refuses `--ignore-user-config`; omit it without editing personal
+config. Normal Core projection and policy remain, without equivalent ignore scope.
+The separate offline Core Code Mode call/result proof passed in its narrow fake
+provider scope; earlier failed receipts stay unchanged and Core child Wait0 remains
+unobserved. A new real supported turn passed, but session/frontend became failed
+with stored fallback code1 after intentional cancellation, not a measured frontend
+exit. Lifecycle classification remains
+INVESTIGATION_PENDING, alongside final-head CI/distribution gates. No general
+TUI/client/model parity or economic result follows.
 
-This composition includes the reviewed main58 guard: managed Codex refuses
-`--ignore-user-config`; omit it without editing personal config. No equivalent
-inventory scope or policy bypass is introduced. PR59 changes only the fake PID
-fixture; its own CI passed 16/16 on `5683c922`, merged as main `4368d549`.
-The original failed CI remains preserved and this candidate requires new CI;
-Core Code Mode proof is NOT_MET and publication remains BLOCKED.
+G0 is wired into admitted code prefetch behind its default-OFF flag, with protected
+Core/MCP exact recovery and separate protected creation opt-in. G1 Memory remains
+an unwired host SPI. Adaptive stays OFF, using literal-envelope admission and the
+existing Core DAG/approvals. PR55 is offline preflight; PR54/56 remain excluded.
+See [releases](releases.md) for precise source epochs and current hold. The
+published v0.14.0 description below remains historical.
 
 ## Current release: v0.14.0
 

@@ -2,43 +2,43 @@
 
 ## v0.15.0 — local candidate, not published
 
-**Publication is blocked by a failed real canary; the candidate is not published.**
-PR57 head `03492d1d` passed 16 checks in the [prior-head CI run](https://github.com/ivo-lopes/ivoai/actions/runs/40780164326).
-That result is not CI for this follow-up. The separate `0bab9b34` Core canary had
-one attempt, zero JSON events and no answer after 5.219 seconds; usage is
-UNAVAILABLE and startup cause UNKNOWN. Core workers/tasks/failovers were zero;
-there was no second Core/CLI attempt. Native retries remain UNKNOWN. The canary
-is separate from the 126 historical turns and proves no absence of provider
-requests. See the [failed-canary record](https://github.com/ivo-lopes/ivoai/blob/release/v0.15.0-candidate/release-notes/v0.15.0-canary-failure.md).
+**PUBLICATION HOLD: lifecycle qualification, final-head CI and distribution gates
+remain pending.** The new supported-source `55ec7ab9` canary completed one bounded
+read-only turn and its math oracle. After intentional SIGINT, however, session
+and frontend state were persisted failed with fallback code1. That stored code
+maps context cancellation; it is not a measured frontend process exit.
+Distinguishing driver cancellation from normal TUI exit remains INVESTIGATION_PENDING. This is a
+narrow turn result, not a zero-exit lifecycle or general native TUI qualification.
+The original `0bab9b34` real failure and its UNKNOWN cause remain preserved,
+separately from the new run and the 126 historical backend-first turns.
 
-The local candidate now composes main58 `eb30d6ca`/reviewed runtime `55ec7ab9`
-and PR59 `5683c922` with PR57 `dc9dc587`. Managed Codex explicitly refuses
-`--ignore-user-config`: omit the flag to migrate; config files stay unchanged.
-This does not implement equivalent scope or skip MCP inventory. PR59 changes
-only PID publication/cleanup in a test fixture. The original failed CI57 remains
-FAIL; [CI59](https://github.com/ivo-lopes/ivoai/actions/runs/40788883401) passed
-16/16 at attempt1 on `5683c922`, now merged as main `4368d549` with the same tree.
-That is not CI for this candidate composition. Core Code Mode proof remains
-NOT_MET; publication stays BLOCKED.
+A separate scoped offline Core Code Mode proof now passed on `55ec7ab9`: one
+actual Core tool call, matching non-error result, same read-only receipt,
+closed final receipt, NoReplay and duplicate409. It used a fake provider and
+proves no real-model, account, TUI or economic parity. Core child Wait0 was not
+observed; lifecycle remains UNKNOWN. Earlier FAIL/NOT_MET receipts are unchanged.
 
-The candidate includes native-provider/default-setup independence,
-default-OFF Gateway code-prefetch with protected G0 Core/MCP recovery, unwired
-G1a Memory snapshot SPI, offline benchmark
-controls/preflight and the optional adaptive primary pilot. Native paths exclude
-OpenCode discovery/fallback; default client setup omits it. Explicit
-`ivoai setup --mode client --legacy-opencode`, deprecated legacy commands and
-retained histories/checkpoints remain available. The adaptive flag stays OFF:
-first eligible literal envelope, no prompt classifier, existing Core DAG/approvals.
-Official synthetic metadata proofs are not general real-model or TUI validation.
+The candidate composes main58 `eb30d6ca`/reviewed runtime `55ec7ab9` and PR59
+`5683c922`, merged as main `4368d549` with the same tree. [CI59](https://github.com/ivo-lopes/ivoai/actions/runs/40788883401)
+passed 16/16 at attempt1 on its own head; this is not CI for the new candidate.
+The original PR57 PID-fixture CI failure stays FAIL. Its correction changes test
+PID publication/cleanup only, without production runtime or deadline changes.
+Managed Codex explicitly refuses `--ignore-user-config`: omit the flag to migrate;
+config files stay unchanged. This does not implement equivalent scope or skip
+MCP inventory.
 
-PR55 is a source-only offline concurrency prerequisite, not observed concurrent
-clients. Unmerged PR54/56 are excluded. Global economics remains INCOMPLETE;
-historical adverse evidence is unchanged. General model/TUI/Claude/Antigravity
-and admin parity are unproven; Context remains BLOCKED/IVOAI-175. The LOW docs
-deepmerge advisory remains needs_review. The real canary failed; publication is
-blocked. Follow-up CI and distribution checks remain separate pending gates.
-See the [draft bilingual notes](https://github.com/ivo-lopes/ivoai/blob/release/v0.15.0-candidate/release-notes/v0.15.0.md)
-for migration and rollback without deleting retained data or replaying mutations.
+Native paths exclude OpenCode discovery/fallback and default client setup omits
+it; explicit `ivoai setup --mode client --legacy-opencode`, deprecated commands
+and retained histories/checkpoints remain. G0 code prefetch and protected Core/MCP
+recovery remain experimental/default-OFF with a separate creation opt-in; G1
+Memory stays unwired. Adaptive remains OFF: first eligible literal envelope,
+no prompt classifier, existing Core DAG/approvals. PR55 is offline preflight,
+not concurrent client execution; PR54/56 are excluded.
+
+Global economics remains INCOMPLETE. General model/TUI/Claude/Antigravity/admin
+parity is unproven, Context remains BLOCKED/IVOAI-175, and LOW docs deepmerge stays
+needs_review. See the [draft notes](https://github.com/ivo-lopes/ivoai/blob/release/v0.15.0-candidate/release-notes/v0.15.0.md) and [source-bound report](https://github.com/ivo-lopes/ivoai/blob/release/v0.15.0-candidate/release-notes/v0.15.0-composition58-59.md)
+for exact scopes, adverse evidence and migration without deleting or replaying data.
 
 ## v0.14.0
 

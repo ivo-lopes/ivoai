@@ -5,25 +5,25 @@ na v0.5.0, e registra separadamente o estado incremental atual abaixo. As versõ
 exatas estão em `manifest/components.yaml`; comportamento entregue e limites da
 migração pertencem às evidências versionadas de implementação e validação.
 
-## Candidata local v0.15.0
+## Candidata local v0.15.0 — publicação HOLD
 
-Independência nativa de provedores/setup e composição adaptativa/Core DAG opcional
-estão preparados como candidata. G0 está ligado ao prefetch de código já admitido
-sob flag experimental OFF por padrão, com recuperação exata Core/MCP protegida e
-opt-in separado para criação protegida. G1a Memory segue SPI do host sem ligação
-a App, scheduler ou clientes; PR55 é apenas preflight offline. Adaptação fica OFF
-por padrão.
-O canário real separado falhou e bloqueia publicação; causa UNKNOWN. O CI anterior
-do PR57 se aplica somente ao head `03492d1d`; CI desta atualização e artefatos exigem
-validações próprias. O estado publicado
-da v0.14.0 abaixo é histórico. Consulte [releases](releases.md).
+A candidata compõe a recusa revisada do main58 e cleanup de PID somente de teste
+no PR59. Codex gerenciado recusa `--ignore-user-config`; omita a flag sem editar
+configuração pessoal. Core e políticas normais seguem, sem escopo ignore equivalente.
+A prova offline separada de chamada/resultado Core Code Mode passou no seu escopo
+de provedor falso; falhas anteriores ficam preservadas e Wait0 do filho Core não
+foi observado. Um novo turno real suportado passou, mas sessão/frontend ficaram
+failed, com código fallback1 após cancelamento intencional, não exit medido do
+frontend. Classificação de lifecycle segue
+INVESTIGATION_PENDING, junto aos gates de CI final/distribuição. Não comprova
+paridade geral de TUI/clientes/modelos nem economia.
 
-Esta composição inclui a recusa revisada do main58: Codex gerenciado não aceita
-`--ignore-user-config`; omita a flag sem editar configuração pessoal. Não há
-inventário de escopo equivalente nem bypass de política. PR59 altera somente a
-fixture de PID; seu CI passou 16/16 no head `5683c922`, incorporado ao main
-`4368d549`. A falha original fica preservada e a candidata exige novo CI;
-prova Core Code Mode NOT_MET e publicação BLOCKED.
+G0 está ligado ao prefetch admitido sob flag OFF por padrão, com recuperação exata
+Core/MCP protegida e opt-in separado de criação protegida. G1 Memory permanece SPI
+sem ligação. Adaptação segue OFF, com admissão de envelope literal e DAG/aprovações
+Core existentes. PR55 é preflight offline; PR54/56 ficam excluídos. Consulte
+[releases](releases.md) para épocas exatas e hold atual. A descrição da v0.14.0
+publicada abaixo continua histórica.
 
 ## Release atual: v0.14.0
 

@@ -1,0 +1,17 @@
+{
+  "status": "PASS_SCOPED_OFFLINE_PROTOCOL",
+  "source_receipt_sha256": "b9b6502890e038c55e9f88b84b452a2a2e65ff3ad546c5e596bd99f8782a1ead",
+  "source": "55ec7ab98683bf0c8784b93baebc966f2910772b",
+  "source_tree": "22c13b12573b23ed0292f91eb03f4b0476df3e06",
+  "fact_provenance": "root reviewed receipt and fixture metadata correction; receipt copied byte-exact",
+  "expected_metadata_correction": {
+    "prior_plain_MCP_description_bytes": 110,
+    "actual_SDK_wrapper_description_bytes": 603,
+    "change_scope": "fixture expectation constant only; other recorder/assertion bodies preserved"
+  },
+  "not_a_production_patch": true,
+  "earlier_FAIL_NOT_MET_receipts_preserved": true,
+  "Core_child_Wait_zero": "NOT_OBSERVED",
+  "lifecycle_acceptance": "UNKNOWN",
+  "public_CLI_startup_auth_TUI_real_model_or_economics_proven": false
+}
