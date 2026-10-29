@@ -1,0 +1,36 @@
+{
+  "result": "PASS_FROZEN_FIXTURE_PACKAGE_RACE_WITH_PINNED_NATIVE_OPTINS",
+  "source_base": "4368d5495a5be4ce425f4ab89849df0296fc6f9b",
+  "source_freeze_sha256": "1d7f24305a30d8b019e77a4e4e120ef4bb06338ba72a8cfbc4ec576937dc26e4",
+  "source_files_verified_before_and_after": {
+    "internal/codexfrontend/facade_test.go": "d357486923c43dd8566168d5730b4e884501edfac8acc89d1a178b7b973d9495",
+    "internal/codexfrontend/fixture_process_test.go": "5dc87c8d51eef1923b5d0cbbcbf98c721a0580493aaa55fcdeaaf48295d22205",
+    "internal/codexfrontend/facade.go": "12785e5110eb5e9b4ee9b32313b78051b12acb7561096c838dc7cbbf6e312ac0",
+    "internal/codexfrontend/clients.go": "df95221da8a31439dce51de37707978693a2db852cfa101dad45495450b0bbe0"
+  },
+  "production_change": "NONE; codexfrontend production exact4368",
+  "codex_sha256": "628e35487d888a28f0427fc37501da529dd3d81fcbad7a2c3421c1e8670d92e1",
+  "Go": "1.27.3",
+  "fresh_count": 1,
+  "race": true,
+  "package_exit": 0,
+  "package_elapsed_seconds": 8.038,
+  "passed_test_events_including_subtests": 40,
+  "passed_top_level_tests": 13,
+  "skipped": 0,
+  "failed": 0,
+  "live_native_tests": [
+    "TestLiveNativeAppServerAdmission",
+    "TestLiveNativeTUI"
+  ],
+  "environment": "env-i; new private HOME/TMPDIR, no API/proxy/auth env; NativeHome and provider fake fixtures; GOPROXY/GOSUMDB off",
+  "new_downloads_status_auth_real_model_requests": 0,
+  "not_claimed": [
+    "real provider authentication or quota parity",
+    "economic savings",
+    "production cancellation or cleanup change",
+    "explanation of exact original CI interleaving",
+    "natural public quit: this is a separate previously qualified epoch"
+  ],
+  "log_sha256": "40d9ccb05893f4c658d6e9492e016cdfa70eb69d25e1837f5e70384686e69ba2"
+}

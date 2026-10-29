@@ -1,0 +1,380 @@
+// Package evidence composes transient exact artifacts and read-only retrieval.
+// It does not schedule agents, grant capabilities, or replace durable knowledge.
+package evidence
+
+import (
+	"bytes"
+	"context"
+	"crypto/hmac"
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
+	"errors"
+	"io"
+	"mime"
+	"regexp"
+	"strings"
+	"sync"
+	"time"
+	"unicode/utf8"
+
+	"github.com/ivo-lopes/ivoai/internal/core"
+	"github.com/ivo-lopes/ivoai/internal/platform"
+	"github.com/ivo-lopes/ivoai/internal/workingcontext"
+)
+
+const MaxPayloadBytes = 1 << 20
+const maxEntries = 64
+const maxCachedBytes = 4 << 20
+const cacheTTL = 5 * time.Minute
+
+var ErrDenied = errors.New("evidence request denied")
+var ErrChanged = errors.New("evidence source or authorization changed")
+var ErrSensitive = errors.New("evidence contains nonpersistable data")
+
+var sensitiveAssignment = regexp.MustCompile(`(?i)["'](?:api[_-]?key|secret[_-]?key|access[_-]?token|refresh[_-]?token|oauth[_-]?token|id[_-]?token|client[_-]?secret|password|passwd|authorization|cookie)["']\s*:\s*["']`)
+var privateKey = regexp.MustCompile(`-----BEGIN (?:[A-Z0-9]+ )*PRIVATE KEY-----`)
+
+// Scope contains host-derived digests, never credentials or caller-supplied
+// repository claims. Worktrees, organizations and permission generations are
+// distinct even when their source bytes are identical.
+type Scope struct {
+	Organization string `json:"organization"`
+	Repository   string `json:"repository"`
+	Worktree     string `json:"worktree"`
+	Permissions  string `json:"permissions"`
+}
+
+type Basis string
+
+const (
+	Extracted Basis = "extracted"
+	Inferred  Basis = "inferred"
+)
+
+// Request is created by the host after intent routing and capability admission.
+// QueryDigest includes the normalized operation, arguments and retrieval budget.
+// For live indexed sources CurrentGeneration observes additions, edits, renames
+// and deletions. A host-issued immutable response uses its own nonce/digest;
+// that identity never asserts the current version or remote grant of a service.
+type Request struct {
+	// ProtectedRecovery opts into host-bound recovery and durable ID marking.
+	ProtectedRecovery bool
+	// ArtifactTTL is host policy; zero preserves the existing store default.
+	ArtifactTTL       time.Duration
+	Owner             workingcontext.Ownership
+	Scope             Scope
+	Source            string
+	QueryDigest       string
+	ReadOnly          bool
+	BudgetBytes       int
+	Authorize         func(context.Context) error
+	CurrentGeneration func(context.Context) (string, error)
+}
+
+type Document struct {
+	Raw            []byte
+	MediaType      string
+	Basis          Basis
+	SourceComplete bool // false for excerpts, partial coverage or failed retrieval
+	Sensitivity    workingcontext.Sensitivity
+}
+
+// Ref describes the stored result, not an assertion that the complete original
+// source is stored or that a semantic task is solved. SourceComplete and Gaps
+// distinguish exact recovery of an excerpt from recovery of the whole source.
+type Ref struct {
+	Result         workingcontext.ResultRef `json:"result"`
+	Scope          Scope                    `json:"scope"`
+	Source         string                   `json:"source"`
+	Generation     string                   `json:"generation"`
+	QueryDigest    string                   `json:"query_digest"`
+	Basis          Basis                    `json:"basis"`
+	SourceComplete bool                     `json:"source_complete"`
+	Untrusted      bool                     `json:"untrusted"`
+	Fidelity       core.CompressionFidelity `json:"fidelity"`
+	Seal           string                   `json:"seal"`
+}
+
+type Packet struct {
+	Ref            Ref      `json:"ref"`
+	Text           string   `json:"text,omitempty"`
+	CacheHit       bool     `json:"cache_hit"`
+	Representation string   `json:"representation"`
+	Sufficiency    string   `json:"sufficiency"`
+	Gaps           []string `json:"gaps,omitempty"`
+}
+
+type cached struct {
+	document Document
+	expires  time.Time
+}
+
+type flight struct{ done chan struct{} }
+
+// Gateway is bounded and process-local. Keys include session, scope, source,
+// generation and query. Cache hits repeat admission and source-generation
+// checks. Each recipient receives its own artifact under its existing grants;
+// sharing retrieval never widens ArtifactStore ownership.
+type Gateway struct {
+	store           workingcontext.ArtifactStore
+	now             func() time.Time
+	mu              sync.Mutex
+	entries         map[string]cached
+	flights         map[string]*flight
+	bytes           int
+	sealKey         [32]byte
+	bindings        map[string]recoveryBinding
+	pendingBindings int
+}
+
+func New(store workingcontext.ArtifactStore) (*Gateway, error) {
+	if store == nil {
+		return nil, errors.New("evidence requires an artifact store")
+	}
+	g := &Gateway{store: store, now: time.Now, entries: map[string]cached{}, flights: map[string]*flight{}, bindings: map[string]recoveryBinding{}}
+	if _, err := rand.Read(g.sealKey[:]); err != nil {
+		return nil, errors.New("evidence integrity key unavailable")
+	}
+	return g, nil
+}
+
+// Retrieve accepts only read-only host operations. It never replays a mutable
+// operation and never derives execution instructions from external content.
+func (g *Gateway) Retrieve(ctx context.Context, r Request, fetch func(context.Context) (Document, error)) (Packet, error) {
+	if err := validate(r); err != nil || fetch == nil {
+		return Packet{}, ErrDenied
+	}
+	for {
+		generation, err := check(ctx, r)
+		if err != nil {
+			return Packet{}, err
+		}
+		key := Digest(r.Owner.SessionID, r.Scope, r.Source, generation, r.QueryDigest)
+		g.mu.Lock()
+		g.pruneLocked()
+		if entry, ok := g.entries[key]; ok {
+			doc := clone(entry.document)
+			g.mu.Unlock()
+			return g.packet(ctx, r, generation, doc, true)
+		}
+		if pending, ok := g.flights[key]; ok {
+			g.mu.Unlock()
+			select {
+			case <-ctx.Done():
+				return Packet{}, ctx.Err()
+			case <-pending.done:
+				continue // revalidate this recipient, even when another one succeeded
+			}
+		}
+		if len(g.flights) >= 8 {
+			g.mu.Unlock()
+			return Packet{}, errors.New("evidence retrieval queue is full")
+		}
+		pending := &flight{done: make(chan struct{})}
+		g.flights[key] = pending
+		g.mu.Unlock()
+
+		return func() (Packet, error) {
+// Private negative control omits only deferred flight cleanup.
+			return g.retrieve(ctx, r, generation, key, fetch)
+		}()
+	}
+}
+
+func (g *Gateway) retrieve(ctx context.Context, r Request, generation, key string, fetch func(context.Context) (Document, error)) (Packet, error) {
+	doc, err := fetch(ctx)
+	if err != nil {
+		return Packet{}, err
+	}
+	doc = clone(doc)
+	if len(doc.Raw) > MaxPayloadBytes || !utf8.Valid(doc.Raw) || strings.ContainsRune(string(doc.Raw), '\x00') || !doc.Sensitivity.Persistable() || platform.Redact(string(doc.Raw)) != string(doc.Raw) || sensitiveAssignment.Match(doc.Raw) || privateKey.Match(doc.Raw) || !safeMediaType(doc.MediaType) {
+		return Packet{}, ErrSensitive
+	}
+	if doc.Basis != Extracted && doc.Basis != Inferred {
+		return Packet{}, errors.New("evidence requires explicit provenance basis")
+	}
+	packet, err := g.packet(ctx, r, generation, doc, false)
+	if err != nil {
+		return Packet{}, err
+	}
+	g.mu.Lock()
+	g.pruneLocked()
+	if len(g.entries) < maxEntries && g.bytes+len(doc.Raw) <= maxCachedBytes {
+		g.entries[key] = cached{document: doc, expires: g.now().Add(cacheTTL)}
+		g.bytes += len(doc.Raw)
+	}
+	g.mu.Unlock()
+	return packet, nil
+}
+
+func (g *Gateway) packet(ctx context.Context, r Request, generation string, doc Document, hit bool) (Packet, error) {
+	current, err := check(ctx, r)
+	if err != nil || current != generation {
+		return Packet{}, ErrChanged
+	}
+	if r.ProtectedRecovery {
+		if err := g.reserveBinding(); err != nil {
+			return Packet{}, err
+		}
+		defer func() { g.mu.Lock(); g.pendingBindings--; g.mu.Unlock() }()
+	}
+	artifact, err := g.store.Put(ctx, workingcontext.PutRequest{ProtectedRecovery: r.ProtectedRecovery, TTL: r.ArtifactTTL, Kind: workingcontext.ArtifactStdout, MediaType: doc.MediaType, Owner: r.Owner, Sensitivity: doc.Sensitivity, Truncated: !doc.SourceComplete}, bytes.NewReader(doc.Raw))
+	if err != nil {
+		return Packet{}, err
+	}
+	if r.ProtectedRecovery && !workingcontext.ProtectedArtifactID(artifact.ID) {
+		return Packet{}, ErrDenied
+	}
+	current, err = check(ctx, r)
+	if err != nil || current != generation {
+		return Packet{}, ErrChanged
+	}
+	ref := Ref{Result: workingcontext.ResultRef{Artifact: artifact, Role: workingcontext.EvidencePrimary}, Scope: r.Scope, Source: r.Source, Generation: generation, QueryDigest: r.QueryDigest, Basis: doc.Basis, SourceComplete: doc.SourceComplete, Untrusted: true, Fidelity: core.CompressionExactRequired}
+	ref.Seal = g.seal(ref)
+	if r.ProtectedRecovery {
+		g.mu.Lock()
+		g.bindings[artifact.ID] = recoveryBinding{request: r, ref: ref}
+		g.mu.Unlock()
+	}
+	p := Packet{Ref: ref, CacheHit: hit, Representation: "exact", Sufficiency: "requires_task_validation"}
+	if len(doc.Raw) <= r.BudgetBytes {
+		p.Text = string(doc.Raw)
+	} else {
+		// Keep authoritative bytes out of context rather than cut through a diff,
+		// stack trace, UTF-8 sequence or test result. Full recovery stays available.
+		p.Representation = "reference_only"
+		p.Gaps = append(p.Gaps, "context_budget")
+	}
+	if !doc.SourceComplete {
+		p.Gaps = append(p.Gaps, "source_incomplete")
+	}
+	if doc.Basis == Inferred {
+		p.Gaps = append(p.Gaps, "inference_requires_verification")
+	}
+	return p, nil
+}
+
+// Recover repeats the same scope, query, generation and authorization contract.
+// Exact means byte-identical to the stored result; an excerpt remains an excerpt.
+func (g *Gateway) Recover(ctx context.Context, r Request, ref Ref) ([]byte, error) {
+	if err := validate(r); err != nil || !hmac.Equal([]byte(ref.Seal), []byte(g.seal(ref))) || ref.Scope != r.Scope || ref.Source != r.Source || ref.QueryDigest != r.QueryDigest || ref.Result.Artifact.Owner != r.Owner || !ref.Untrusted || ref.Fidelity != core.CompressionExactRequired {
+		return nil, ErrDenied
+	}
+	if err := ref.Result.Validate(); err != nil {
+		return nil, ErrDenied
+	}
+	generation, err := check(ctx, r)
+	if err != nil || generation != ref.Generation {
+		return nil, ErrChanged
+	}
+	reader, actual, err := g.store.Read(ctx, r.Owner, ref.Result.Artifact.ID)
+	if err != nil {
+		return nil, err
+	}
+	defer reader.Close()
+	if actual != ref.Result.Artifact {
+		return nil, ErrChanged
+	}
+	body, err := io.ReadAll(io.LimitReader(reader, MaxPayloadBytes+1))
+	if err != nil || len(body) > MaxPayloadBytes {
+		return nil, errors.New("exact evidence exceeds recovery bound")
+	}
+	current, err := check(ctx, r)
+	if err != nil || current != generation {
+		return nil, ErrChanged
+	}
+	return body, nil
+}
+
+func validate(r Request) error {
+	if !r.ReadOnly || r.Authorize == nil || r.CurrentGeneration == nil || r.BudgetBytes < 1 || r.BudgetBytes > 32768 || r.Owner.Validate() != nil {
+		return ErrDenied
+	}
+	if r.ArtifactTTL != 0 && (r.ArtifactTTL < time.Minute || r.ArtifactTTL > workingcontext.DefaultLimits().MaxTTL) {
+		return ErrDenied
+	}
+	if r.Source != "code" && r.Source != "memory" && r.Source != "context" && r.Source != "tool_read" {
+		return ErrDenied
+	}
+	for _, value := range []string{r.Scope.Organization, r.Scope.Repository, r.Scope.Worktree, r.Scope.Permissions, r.QueryDigest} {
+		if !isDigest(value) {
+			return ErrDenied
+		}
+	}
+	return nil
+}
+
+func check(ctx context.Context, r Request) (string, error) {
+	if err := ctx.Err(); err != nil {
+		return "", err
+	}
+	if err := r.Authorize(ctx); err != nil {
+		return "", ErrDenied
+	}
+	generation, err := r.CurrentGeneration(ctx)
+	if err != nil || !isDigest(generation) {
+		return "", ErrChanged
+	}
+	return generation, nil
+}
+
+func clone(doc Document) Document { doc.Raw = bytes.Clone(doc.Raw); return doc }
+
+// The seal binds the issued artifact to its host scope. Comparing only fields
+// supplied again by a caller would allow relabeling another scoped artifact.
+func (g *Gateway) seal(ref Ref) string {
+	ref.Seal = ""
+	body, _ := json.Marshal(ref)
+	mac := hmac.New(sha256.New, g.sealKey[:])
+	mac.Write(body)
+	return hex.EncodeToString(mac.Sum(nil))
+}
+
+func (g *Gateway) pruneLocked() {
+	for key, entry := range g.entries {
+		if !g.now().Before(entry.expires) {
+			g.bytes -= len(entry.document.Raw)
+			delete(g.entries, key)
+		}
+	}
+}
+
+// Digest binds host-selected identities without persisting their raw values.
+func Digest(values ...any) string {
+	body, err := json.Marshal(values)
+	if err != nil {
+		return ""
+	}
+	hash := sha256.Sum256(body)
+	return hex.EncodeToString(hash[:])
+}
+
+func isDigest(value string) bool {
+	if len(value) != 64 {
+		return false
+	}
+	for _, char := range value {
+		if !(char >= '0' && char <= '9' || char >= 'a' && char <= 'f') {
+			return false
+		}
+	}
+	return true
+}
+
+func safeMediaType(value string) bool {
+	if len(value) > 128 || platform.Redact(value) != value || strings.ContainsAny(value, "\x00\r\n\x1b") {
+		return false
+	}
+	kind, parameters, err := mime.ParseMediaType(value)
+	if err != nil || (kind != "text/plain" && kind != "application/json" && kind != "text/x-diff") {
+		return false
+	}
+	for key, value := range parameters {
+		if key != "charset" || !strings.EqualFold(value, "utf-8") {
+			return false
+		}
+	}
+	return true
+}

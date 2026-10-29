@@ -1,0 +1,45 @@
+{
+  "source": "b523055dcbcb833df1f1d903e0b823e1a0376b2c",
+  "full_log_private_sha256": "16ded281de58f46f197aff5b553634ef16a907e26c073d0dea5716d080a5c5a0",
+  "full_log_private_bytes": 2142187,
+  "events": [
+    {
+      "Time": "2026-10-28T22:36:47.826446872-03:00",
+      "Action": "run",
+      "Package": "github.com/ivo-lopes/ivoai/internal/evidence",
+      "Test": "TestGatewayRecoveredProviderPanicReleasesFlight"
+    },
+    {
+      "Time": "2026-10-28T22:36:47.826458972-03:00",
+      "Action": "output",
+      "Package": "github.com/ivo-lopes/ivoai/internal/evidence",
+      "Test": "TestGatewayRecoveredProviderPanicReleasesFlight",
+      "Output": "=== RUN   TestGatewayRecoveredProviderPanicReleasesFlight\n",
+      "OutputType": "frame"
+    },
+    {
+      "Time": "2026-10-28T22:36:49.106744921-03:00",
+      "Action": "output",
+      "Package": "github.com/ivo-lopes/ivoai/internal/evidence",
+      "Test": "TestGatewayRecoveredProviderPanicReleasesFlight",
+      "Output": "    gateway_test.go:579: recovered provider panic poisoned subsequent request: evidence source or authorization changed\n",
+      "OutputType": "error"
+    },
+    {
+      "Time": "2026-10-28T22:36:49.165163269-03:00",
+      "Action": "output",
+      "Package": "github.com/ivo-lopes/ivoai/internal/evidence",
+      "Test": "TestGatewayRecoveredProviderPanicReleasesFlight",
+      "Output": "--- FAIL: TestGatewayRecoveredProviderPanicReleasesFlight (1.34s)\n",
+      "OutputType": "frame"
+    },
+    {
+      "Time": "2026-10-28T22:36:49.165208228-03:00",
+      "Action": "fail",
+      "Package": "github.com/ivo-lopes/ivoai/internal/evidence",
+      "Test": "TestGatewayRecoveredProviderPanicReleasesFlight",
+      "Elapsed": 1.34
+    }
+  ],
+  "interpretation": "Original FAIL preserved. ErrChanged indicates packet check after fetch, not flight wait timeout. Exact original wait site and latency cause were not instrumented."
+}

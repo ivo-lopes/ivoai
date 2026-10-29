@@ -1,0 +1,27 @@
+{
+  "result": "PASS_TARGETED_RACE_AND_VET_ON_TEST_ONLY_TARGET",
+  "target_source": "2b96397db62275923ae68f14ad42cf658f40ecf8",
+  "author_source": "6411360f77c2e2ab11684e83043f10842f11146e",
+  "target_base": "8a956f7a00632c2dfef757bc5b8eda62a7c19bfe",
+  "transplant": "conflict-free cherry-pick; no context571 production imported",
+  "test_and_evidence_workingcontext_sources_equal_author": true,
+  "source_sha256": {
+    "internal/evidence/gateway_test.go": "ffea4db4a6f2ca1c199f4b282d69a94bafa4b88d7cc28a7ea7c18e63dc21c301",
+    "internal/evidence/gateway.go": "51e5dac4157fbf26bd1702fa16e68e911f9e627c3a8e6595c2b46dc5d6a46b2e",
+    "internal/workingcontext/local.go": "5e4f50dc19b4344a34bf2b4e683b5d247dc8ec603e1eeeb86b27b4aea0619405"
+  },
+  "production_Go_files_exact_target_base": 281,
+  "nominal_count": 1,
+  "race": true,
+  "passed_named_tests": 2,
+  "failures": 0,
+  "skips": 0,
+  "package_seconds": 1.04,
+  "vet": "PASS_EXIT0",
+  "author_broader_race": "Own641/source590 proof preserved; not reassigned to this target",
+  "original_full_Go_b523": "FAIL_PRESERVED58PASS1FAIL3NO_TESTS; not retried unchanged",
+  "hosted_final_head_CI": "PENDING",
+  "new_OfficialCLI_auth_status_model_provider_calls": 0,
+  "new_dependencies_runtime_timeout_TTL_authorization_changes": 0,
+  "publication": "NONE"
+}

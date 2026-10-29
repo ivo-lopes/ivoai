@@ -1,0 +1,8 @@
+=== RUN   TestNativeCloseStopsBackgroundDirectoryWriters
+=== RUN   TestNativeCloseStopsBackgroundDirectoryWriters/closed_writer
+    facade_test.go:109: native writer survived frontend cleanup before trigger
+--- FAIL: TestNativeCloseStopsBackgroundDirectoryWriters (0.53s)
+    --- FAIL: TestNativeCloseStopsBackgroundDirectoryWriters/closed_writer (0.53s)
+FAIL
+FAIL	github.com/ivo-lopes/ivoai/internal/codexfrontend	0.536s
+FAIL
