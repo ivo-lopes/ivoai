@@ -1,0 +1,9 @@
+{
+  "source": "58639394dca7b38d2b61a918cbe1e594ab126326",
+  "gate": "vet",
+  "exit": 0,
+  "wall_seconds": 4.129,
+  "source_unchanged_after": true,
+  "native_client_auth_status_model": 0,
+  "paired_build": false
+}
