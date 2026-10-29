@@ -1,0 +1,9 @@
+{
+  "status": "OLD_FAIL_CONFIRMED",
+  "source_commit": "ed79d4815ba13339b429fa63a6212f06850d6a53",
+  "source_sha256": "70ccfa8a3728282a7c168bbb567583516d8a2f999918187931e78ba9334fdd1d",
+  "overlay_sha256": "5b69fca082021e31ee644ba01156f7bf30d960b62db326f66f51808ed34698bd",
+  "log_sha256": "4c2391b328408b41233d458c6ed0c31d23733c9729a779bce7901f666bb91774",
+  "cause": "inventory Result scope slices alias caller; during or after runner caller edits change later exec arguments/environment",
+  "official_exec_inventory_calls": 0
+}

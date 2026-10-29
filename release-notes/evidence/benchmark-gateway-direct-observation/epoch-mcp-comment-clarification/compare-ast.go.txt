@@ -1,0 +1,9 @@
+package main
+import("bytes";"crypto/sha256";"fmt";"go/ast";"go/parser";"go/token";"os";"reflect")
+func normalized(path string) []byte {
+ f,err:=parser.ParseFile(token.NewFileSet(),path,nil,parser.SkipObjectResolution);if err!=nil{panic(err)}
+ var b bytes.Buffer
+ err=ast.Fprint(&b,nil,f,func(name string,v reflect.Value)bool{return v.Type()!=reflect.TypeOf(token.Pos(0))&&name!="Scope"&&name!="Unresolved"&&name!="Obj"});if err!=nil{panic(err)}
+ return b.Bytes()
+}
+func main(){a,b:=normalized(os.Args[1]),normalized(os.Args[2]);if !bytes.Equal(a,b){panic("non-comment Go AST changed")};fmt.Printf("GO_AST_IGNORING_COMMENTS_AND_POSITIONS=IDENTICAL sha256=%x\n",sha256.Sum256(a))}

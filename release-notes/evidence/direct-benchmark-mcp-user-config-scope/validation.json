@@ -1,0 +1,94 @@
+{
+  "status": "PASS_SOURCE_AND_TWO_LAYER_OFFLINE_EXCLUSION_HELPER_UNWIRED",
+  "source_manifest_sha256": "e898f0eee23b487f95401a55402263c3c2f0708560debd47bd67cd94241e09af",
+  "scope": "USER_CONFIG_INCLUDED_SHARED_SCOPE",
+  "helper_connected_to_live_benchmark": false,
+  "gates": {
+    "candidate_helper_existing_contracts_race": "PASS1.074s",
+    "baseline_helper_race": "PASS1.046s",
+    "candidate_vet": "PASS",
+    "Python_benchmark_suites": "71tests PASS29.454s; fixture subprocesses synthetic, no official CLI",
+    "fresh_App_builds": "baseline/candidate CGO0/amd64v1 PASS",
+    "fresh_discovery4": "identical new enum plus helper_connected=false, same catalog/fixtures/observer",
+    "Go_offline_preparation_only": "PASS actual helper argv/Dir/Env matches plan, no Cmd.Run",
+    "Python_pure_protocol_cases": "25PASS",
+    "diff_check": "PASS"
+  },
+  "source_projection": {
+    "common_source_sha256": {
+      "internal/app/primary_prefetch_live_test.go": "685af2187a93d5bf26fe2300fe0fbc76bbf91810f2bb32879505e9d145bd6849",
+      "scripts/benchmark_catalog.py": "2fd9d08b5467992ba2f07839a9dbc241d149a8ed7850f75cb47fde41ff18d080",
+      "scripts/test_benchmark_catalog.py": "9728ffa703a582c7c0149a88e42527175c2141e21a95e19cc18154d4ea9f4a2b"
+    },
+    "live_invocation_prompt_observer_lifecycle_unchanged": true,
+    "scope": "USER_CONFIG_INCLUDED_SHARED_SCOPE",
+    "helper_connected_to_live_benchmark": false,
+    "production": {
+      "baseline": {
+        "base": "3ff6db8bb0174b1ae6f781f6754e2653a6dae5db",
+        "original_non_test_go_and_modules_verified": 241,
+        "original_bytes_unchanged": true
+      },
+      "candidate": {
+        "base": "6cc9af6c31dc6e084b243fe9e1232bb83e0a403b",
+        "original_non_test_go_and_modules_verified": 286,
+        "original_bytes_unchanged": true
+      }
+    },
+    "matching_discovery4": true
+  },
+  "offline_execution": {
+    "outcome": "PER_ENTRY_DENIAL_EXCLUDED_BOTH_SYNTHETIC_LAYERS_THIS_SCOPE_ONLY",
+    "root_authorization_consumed_once": true,
+    "inventory_CLI_processes": 2,
+    "exec_CLI_processes": 2,
+    "accepted_fake_HTTP_requests": 4,
+    "nested_MCP_calls": 0,
+    "A_observed_fixture_MCPs_and_ALL_TOOLS": 2,
+    "B_observed_fixture_MCPs_and_ALL_TOOLS": 0,
+    "execution_receipt_sha256": "ab9bc0b78ed4b2593d66e854fb3b731aef232c37b5fc1ca5df8d9eb74b556427",
+    "private_artifact_manifest_sha256": "09cfab5fde9519eeec437665b09d0b37aacc713a5ae4b102e175a4aeeebb3794",
+    "private_artifact_entries": 171,
+    "new40inputs_before_after_unchanged": 40,
+    "original_static_receipts_preserved_as_preparation": true
+  },
+  "historical_artifacts_verified_unchanged": {
+    "old_empty_map_corrected": 172,
+    "old_empty_map_original": 81,
+    "ed79_receipt": 19,
+    "476_receipt": 17,
+    "fc18_frozen_inputs": 34
+  },
+  "prepared_epoch": {
+    "status": "FROZEN_PREPARED_NOT_EXECUTED_ROOT_REVIEW_REQUIRED",
+    "input_pins": 40,
+    "helper_configuration_scope": "USER_CONFIG_INCLUDED_SHARED_SCOPE",
+    "helper_connected_to_live_benchmark": false,
+    "frozen_inputs_sha256": "6b49f7975515c6ea01d007d456cb1c7ba782ccc59ca749373c07ac4372b7ebb2",
+    "plan_sha256": "03b0cf371b12a765f941e4b743d84d8099f12fa18a1af9befdbd0fb83de905a5",
+    "JS_sha256": "b04d20082e611f9a8f23aef2740684ed53eb7d325a62434f13be8474ed58629f",
+    "wire_sha256": "da86ca87fb00c8be3a12dd731ba1ea63b1d0f61b26018305a4810a2a286c81fa",
+    "contract_sha256": "6e2b3f508caba0e43e753226e7a42daf8b5101ff4f584c76a75ea92dd36f3f16",
+    "host_sha256": "dfedb55407bcbd6d07f65177c8e382c065f4cc22a1560afdb1eed9286aaaaf91",
+    "app_test_ELF_sha256": "870fad7bfa6c724bf48617d84daa3f0ec22decb02ea00b763c7f9f043e75d5a7",
+    "official_CLI_inventory_exec_HTTP_MCP_namespace_runs": 0,
+    "Go_preparation_only_test": "PASS actual helper argv/Dir/Env versus plan, no Cmd.Run",
+    "Python_pure_contract_cases": 25,
+    "guard_provider_route": "NOT_IMPLEMENTED_BLOCKS_REAL_COHORT",
+    "cloud_context_requirements": "UNATTESTED",
+    "global_economic_gate": "INCOMPLETE"
+  },
+  "provider_guard": "NOT_IMPLEMENTED_BLOCKS_REAL_COHORT; normal official auth refresh is not agent credential manipulation",
+  "real_auth_status_model_provider_cohort_calls": 0,
+  "no_personal_credentials_or_configuration_manually_read_copied_hashed_modified": true,
+  "global_economic_gate": "INCOMPLETE",
+  "concurrent_distinct_projects": "UNSUPPORTED",
+  "not_certified": [
+    "provider/canonical subscription route",
+    "cloud/context/institutional policy isolation",
+    "live helper integration or real cohort",
+    "economics/task correctness/TUI parity",
+    "fullGo/fullAppRace/hostedCI or physicalARM/noAVX in this narrow increment"
+  ],
+  "next": "root source review/local commit publication decision, then separate provider-route guard contract; no new CLI/RPC authorized by this receipt"
+}

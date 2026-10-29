@@ -1,0 +1,19 @@
+{
+  "status": "SOURCE_ONLY_FINAL_NO_OFFICIAL_EXEC",
+  "harness_sha256": "70ccfa8a3728282a7c168bbb567583516d8a2f999918187931e78ba9334fdd1d",
+  "original_harness_except_added_helper_imports_identical": true,
+  "client_observer_prompt_lifecycle_existing_metrics_unchanged": true,
+  "production": {
+    "baseline": {
+      "base": "3ff6db8bb0174b1ae6f781f6754e2653a6dae5db",
+      "non_test_go_and_modules_verified": 241,
+      "all_original_bytes_unchanged": true
+    },
+    "candidate": {
+      "base": "6cc9af6c31dc6e084b243fe9e1232bb83e0a403b",
+      "non_test_go_and_modules_verified": 286,
+      "all_original_bytes_unchanged": true
+    }
+  },
+  "discovery4_identical": true
+}

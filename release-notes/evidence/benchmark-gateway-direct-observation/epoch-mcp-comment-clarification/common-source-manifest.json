@@ -1,0 +1,301 @@
+{
+  "shared_source_revision": "c455_plus_comment_only_delta_exact_three_source_manifest",
+  "baseline_runtime": "3ff6db8bb0174b1ae6f781f6754e2653a6dae5db",
+  "candidate_runtime": "991b670c2b24ec6046d9425272cb2fce46e1eea9",
+  "files": [
+    {
+      "path": "internal/app/primary_prefetch_live_test.go",
+      "bytes": 43092,
+      "sha256": "2aac078cf6d3cfeb6da118a8c9eeb78fc0bb17ce5297a2262f4c28aa6dd7f7fe",
+      "mode": 384
+    },
+    {
+      "path": "internal/benchmarkfixtures/client_lifecycle.go",
+      "bytes": 1456,
+      "sha256": "66c915beece2f0f68ae73a2205bab02d03dc338bb96c7f4eb04bb39363d3c1ea",
+      "mode": 384
+    },
+    {
+      "path": "internal/benchmarkfixtures/client_lifecycle_linux.go",
+      "bytes": 4467,
+      "sha256": "de6e0f675bbf13bc43f48c648cdd022f6a7b2ceb4e5c7de780f13cf8cef31003",
+      "mode": 384
+    },
+    {
+      "path": "internal/benchmarkfixtures/client_lifecycle_linux_test.go",
+      "bytes": 4715,
+      "sha256": "249e017079e6d94cf7400d5a83fa69f1ef2d1d55245fa3ecf3bce81c3bb4717f",
+      "mode": 384
+    },
+    {
+      "path": "internal/benchmarkfixtures/client_lifecycle_other.go",
+      "bytes": 247,
+      "sha256": "cf1394878c27f63e581ae3ab219075b9e720052148fdfe3536d620a287b4343f",
+      "mode": 384
+    },
+    {
+      "path": "internal/benchmarkfixtures/concurrent.go",
+      "bytes": 4182,
+      "sha256": "0a9196070967e0fb166a57c2f1664bf18dcd769746f05574059343e399961207",
+      "mode": 384
+    },
+    {
+      "path": "internal/benchmarkfixtures/concurrent_test.go",
+      "bytes": 2414,
+      "sha256": "ab5105c18db04f09fdcc2b688c77b381eb60fcce514223048863540caf428b2b",
+      "mode": 384
+    },
+    {
+      "path": "internal/benchmarkfixtures/data/catalog.json",
+      "bytes": 9672,
+      "sha256": "395f77bc5154c3df42cc7897feb7206bb38963a9441741ea24dbf290b08a9d7e",
+      "mode": 384
+    },
+    {
+      "path": "internal/benchmarkfixtures/data/concurrent-projects.json",
+      "bytes": 293,
+      "sha256": "e3e3e059d320b2110bb7f5a1a2cf8805db8107b5b243abc3159a650664c72c4b",
+      "mode": 384
+    },
+    {
+      "path": "internal/benchmarkfixtures/data/projects/go-clamp-edit/go.mod.fixture",
+      "bytes": 29,
+      "sha256": "47e08c5a0f243770f6e12f2fe7e0872cd2f8f243430f7076fecf30d32411303c",
+      "mode": 384
+    },
+    {
+      "path": "internal/benchmarkfixtures/data/projects/go-clamp-edit/mathpkg/clamp.go.fixture",
+      "bytes": 133,
+      "sha256": "86d0a577ae59ce899f177fd7360863614b05d6bbb8e8088cad68f6da7f49cb0d",
+      "mode": 384
+    },
+    {
+      "path": "internal/benchmarkfixtures/data/projects/go-clamp-edit/mathpkg/clamp_test.go.fixture",
+      "bytes": 477,
+      "sha256": "78f5baec1b0e8eeef0d5b6d73eb7553bc6b9d464dd187f23f098de21c5cb4f15",
+      "mode": 384
+    },
+    {
+      "path": "internal/benchmarkfixtures/data/projects/go-core/app/entry.go.fixture",
+      "bytes": 82,
+      "sha256": "8d07e7f055b835cd913738773ee29ff11359ed65340922d83f78680fd7798cf5",
+      "mode": 384
+    },
+    {
+      "path": "internal/benchmarkfixtures/data/projects/go-core/go.mod.fixture",
+      "bytes": 24,
+      "sha256": "aa8d5076537e2c5ed8c4fcf9a62e75c8606f68903b146f0d7dd8598db424b368",
+      "mode": 384
+    },
+    {
+      "path": "internal/benchmarkfixtures/data/projects/go-core/mathpkg/scale.go.fixture",
+      "bytes": 55,
+      "sha256": "0b39a55bd9f0549873f965d8a04beee24504f957d2e5bdcf36c1b78e760a10e0",
+      "mode": 384
+    },
+    {
+      "path": "internal/benchmarkfixtures/data/projects/go-core/service/process.go.fixture",
+      "bytes": 88,
+      "sha256": "37b920af11be7357a21f7541fa4182af6674ee1e0d010dc27f0b3f552f34ec4f",
+      "mode": 384
+    },
+    {
+      "path": "internal/benchmarkfixtures/data/projects/monorepo-refactor-ts/package.json",
+      "bytes": 65,
+      "sha256": "77e06860a055d3673dae242b95e40456c9b5cd821ccc50796cc3eb80119b9986",
+      "mode": 384
+    },
+    {
+      "path": "internal/benchmarkfixtures/data/projects/monorepo-refactor-ts/packages/admin/src/report.ts",
+      "bytes": 123,
+      "sha256": "67142c9f2cb92bf5d111d35126854d3324e4834a99da85a4d5f0f9f795f86f1a",
+      "mode": 384
+    },
+    {
+      "path": "internal/benchmarkfixtures/data/projects/monorepo-refactor-ts/packages/shared/src/discount.ts",
+      "bytes": 77,
+      "sha256": "b38aaa2e1eace7b5124af69ed40b7e2e3eba9d32e1d27dd032c60d90da1aad96",
+      "mode": 384
+    },
+    {
+      "path": "internal/benchmarkfixtures/data/projects/monorepo-refactor-ts/packages/shop/src/main.ts",
+      "bytes": 123,
+      "sha256": "1f2371b007f1dc9a3cec224748dc7cb47372e55cf40f99f07497026122fd97d2",
+      "mode": 384
+    },
+    {
+      "path": "internal/benchmarkfixtures/data/projects/monorepo-ts/check.sh",
+      "bytes": 54,
+      "sha256": "ba1f43cf7a1a412f817c3d2566ba9dbdd4ef7234cedb775333b127cfb2714a16",
+      "mode": 384
+    },
+    {
+      "path": "internal/benchmarkfixtures/data/projects/monorepo-ts/package.json",
+      "bytes": 33,
+      "sha256": "a90fc33418afa2b9cbf4768524b021135b965ecdf993457505bfae3ac44a8428",
+      "mode": 384
+    },
+    {
+      "path": "internal/benchmarkfixtures/data/projects/monorepo-ts/packages/shared/src/discount.ts",
+      "bytes": 77,
+      "sha256": "b38aaa2e1eace7b5124af69ed40b7e2e3eba9d32e1d27dd032c60d90da1aad96",
+      "mode": 384
+    },
+    {
+      "path": "internal/benchmarkfixtures/data/projects/monorepo-ts/packages/shop/src/main.ts",
+      "bytes": 185,
+      "sha256": "fecb0a42c532600a59fce2a5139f35bb159096240c166e1f9d262dfbd5654891",
+      "mode": 384
+    },
+    {
+      "path": "internal/benchmarkfixtures/data/projects/non-code/milestones.json",
+      "bytes": 118,
+      "sha256": "316f57d7c1a7cf0d05200ac987464ec98c56a66b07d0d1357056030697449c40",
+      "mode": 384
+    },
+    {
+      "path": "internal/benchmarkfixtures/data/projects/python-deps/app/checkout.py",
+      "bytes": 121,
+      "sha256": "c999dd62569e22fff6f1c3ecf83cfefec63bd86cc87f91563653c216eed38b23",
+      "mode": 384
+    },
+    {
+      "path": "internal/benchmarkfixtures/data/projects/python-deps/pricing/__init__.py",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "mode": 384
+    },
+    {
+      "path": "internal/benchmarkfixtures/data/projects/python-deps/pricing/tax.py",
+      "bytes": 58,
+      "sha256": "7577a91dd1b998cf5752319d148d313ea205a717db8ee28a8ebe1061a15c01f1",
+      "mode": 384
+    },
+    {
+      "path": "internal/benchmarkfixtures/data/projects/python-deps/pricing/totals.py",
+      "bytes": 92,
+      "sha256": "f433f238ba483a6e1d8e9f2e6b785504bde3e3eeda5a44557698b15b5490b939",
+      "mode": 384
+    },
+    {
+      "path": "internal/benchmarkfixtures/data/projects/rules-shell/check.sh",
+      "bytes": 264,
+      "sha256": "8ba53660e4c5c4d510c633796f2385d1e4e4b778af473183139d76053d0e9e44",
+      "mode": 384
+    },
+    {
+      "path": "internal/benchmarkfixtures/data/projects/rules-shell/policy/discount.ivo-fixture",
+      "bytes": 30,
+      "sha256": "a1dadd390a9c51ee61d5e7e37cb6999423095f0b34bb8d25020e89127b4327ad",
+      "mode": 384
+    },
+    {
+      "path": "internal/benchmarkfixtures/edit_oracle.go",
+      "bytes": 13797,
+      "sha256": "8f907857f8a2c91bc4464ae55ad8b0728e3b11621ade776808e953a7f7b85514",
+      "mode": 384
+    },
+    {
+      "path": "internal/benchmarkfixtures/edit_oracle_test.go",
+      "bytes": 7733,
+      "sha256": "ccc79f8f1bdb2b19b0741d0708b1680fc404f3b2c8b0b78cf189b99c7f48fd60",
+      "mode": 384
+    },
+    {
+      "path": "internal/benchmarkfixtures/exec_observation.go",
+      "bytes": 9702,
+      "sha256": "6188106799ed44eeb260d322f46f1d9e1e4fcdbbcd4c69e759a18137fba977e3",
+      "mode": 384
+    },
+    {
+      "path": "internal/benchmarkfixtures/exec_observation_test.go",
+      "bytes": 6466,
+      "sha256": "3af8a54f9e2cff361ac86c32e7cff8cf0db4880bb489ff2ec3f2159824e798ff",
+      "mode": 384
+    },
+    {
+      "path": "internal/benchmarkfixtures/fixtures.go",
+      "bytes": 9170,
+      "sha256": "36d96121f59a734f25989db9d43f6d4c39e0a0160bbb676f82d7c5bea1a5fc86",
+      "mode": 384
+    },
+    {
+      "path": "internal/benchmarkfixtures/fixtures_test.go",
+      "bytes": 3025,
+      "sha256": "40434624cd0b3c6699e9a8eebddc93c32557d543b25858cf55825b7cc1403b3d",
+      "mode": 384
+    },
+    {
+      "path": "scripts/benchmark-economic-runtime.py",
+      "bytes": 36644,
+      "sha256": "3e7a469b68c5116ddb056ed49adfa8ede61c467967f5fb58718801579c9f8773",
+      "mode": 384
+    },
+    {
+      "path": "scripts/benchmark-rtk-generated.py",
+      "bytes": 10908,
+      "sha256": "0dad3e270df6206dd2cb7cd2014851388803a25531465b592253c52b78e957f9",
+      "mode": 384
+    },
+    {
+      "path": "scripts/benchmark_catalog.py",
+      "bytes": 10781,
+      "sha256": "4611c0f0ca6d05ecc4854caf8f79be9fbdac0f85313864cfe8426cb5dfbf9e95",
+      "mode": 384
+    },
+    {
+      "path": "scripts/benchmark_concurrent_contract.py",
+      "bytes": 6579,
+      "sha256": "b51ca4c5eb9d39fe303b5b63c2ee8a9ac96c7a48078cd6c94804b1243fb407d0",
+      "mode": 384
+    },
+    {
+      "path": "scripts/benchmark_concurrent_runtime.py",
+      "bytes": 21069,
+      "sha256": "473403362c890875428f10aaf62dfbc6dfe36666d43913fb36298a13c87a44b9",
+      "mode": 384
+    },
+    {
+      "path": "scripts/benchmark_process_sampler.py",
+      "bytes": 7229,
+      "sha256": "5ebaaa4c8b18e4a24b85bd35b9c57fc992b972cbb529530e86e266ca15a5a3cd",
+      "mode": 384
+    },
+    {
+      "path": "scripts/test_benchmark_catalog.py",
+      "bytes": 15051,
+      "sha256": "6fe281717f3ec041b445d91fd426e4cc9ef04f535c90c6778f9f747f03648208",
+      "mode": 384
+    },
+    {
+      "path": "scripts/test_benchmark_concurrent_contract.py",
+      "bytes": 6240,
+      "sha256": "f27b358ef3789c1a5d4993f91a0c1977b58140dd7b9edb6f0a55d724f100721c",
+      "mode": 384
+    },
+    {
+      "path": "scripts/test_benchmark_concurrent_runtime.py",
+      "bytes": 23809,
+      "sha256": "eb4919e76b2266394a93192593e4d6b2bcc494f930d325f2ed909df384285ea1",
+      "mode": 384
+    },
+    {
+      "path": "scripts/test_benchmark_economic_runtime.py",
+      "bytes": 26535,
+      "sha256": "9dcdbeace9d4ee257af11ef1134205cb6882976fa3df8de5acb9874a9fe8c7e2",
+      "mode": 384
+    },
+    {
+      "path": "scripts/test_benchmark_process_sampler.py",
+      "bytes": 4374,
+      "sha256": "1533e24174a74b56e9b189880d15d9778d0c35baba787a9737dffe45637351fe",
+      "mode": 384
+    },
+    {
+      "path": "scripts/test_benchmark_rtk_generated.py",
+      "bytes": 2841,
+      "sha256": "03b5c53635798ada044a860e085b41286328bb8f86ef17cfdd475974dee783b4",
+      "mode": 384
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "source_order": [
+    "IVOAI memory_read_page once(query only,current project)",
+    "IVOAI context_search once(empty)",
+    "official OpenAI documentation via OpenAI Docs skill",
+    "read-only selected source files from independently reviewed official tag cache"
+  ],
+  "memory_page": "decisions/backend-first-validation-9874dbdf-2026-10-27",
+  "context_results": 0,
+  "official_documentation": [
+    "https://learn.chatgpt.com/docs/config-file/config-reference",
+    "https://learn.chatgpt.com/docs/app-server",
+    "https://learn.chatgpt.com/docs/auth"
+  ],
+  "current_docs_not_pin162_attestation": true,
+  "source_tag": "rust-v0.162.1",
+  "source_commit": "092d3acd6bec3e3a14bdc7e7a2810ab628ab759d",
+  "selected_source_sha256": {
+    "codex-rs__core__src__config__mod.rs": "32babb117ff4bf0dc08050c4a755f5996f57f51fcebb82595c81648420394259",
+    "codex-rs__model-provider-info__src__lib.rs": "93ce6cd0a65477dff89545b8b48853455da0654c4bcc5a1092596d88d9dfe25c",
+    "codex-rs__login__src__auth__manager.rs": "d2081e3e4f2f339a7a1aa52ea62d8485e7785c2b0a12dde1a7f470019d56dc2a",
+    "codex-rs__exec__src__lib.rs": "51b62cef4893c6d07b51753fc2716fc05985cdc9de6673f2fa2d974779454d4b",
+    "codex-rs__app-server__src__request_processors__account_processor__workspace_routing.rs": "2d2e1badd55ac8805ac344f8b921ac10d7f6bc0b8b9679108ddb3bb288f09c92"
+  },
+  "normal_official_client_OAuth_refresh_cache_within_existing_authorization": true,
+  "provider_guard_implemented": false,
+  "manual_personal_credential_configuration_file_reads_copies_hashes": 0,
+  "new_account_config_RPC_official_status_or_real_model_calls": 0
+}

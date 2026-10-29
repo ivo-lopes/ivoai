@@ -1,0 +1,72 @@
+{
+  "status": "PASS_SOURCE_ONLY_HELPER_UNWIRED_OFFICIAL_SCOPE_NOT_YET_TESTED",
+  "source_base": "6cc9af6c31dc6e084b243fe9e1232bb83e0a403b",
+  "source_manifest_sha256": "90874386b24ae999a3d847ffd7a9b52e54720c7e70c3e658fb7593ca8a15f666",
+  "gates": {
+    "candidate_direct_helper_race": "PASS 1.048s, three selected top-level tests plus adverse subtests",
+    "baseline_direct_helper_race": "PASS 1.050s, same common harness against unchanged3ff runtime",
+    "existing_catalog_measurement_gateway_contracts_race": "PASS 1.055s",
+    "candidate_app_vet": "PASS",
+    "CGO0_amd64v1_fresh_App_test_builds": "PASS both arms",
+    "fresh_discovery_schema4": "PASS identical, no client authentication/execution",
+    "private_offline_overlay_build": "PASS",
+    "private_Go_preparation_only": "PASS actual helper argv/Dir/Env matches plan; runner synthetic, Cmd.Run never called",
+    "Python_pure_contracts": "PASS 21 cases",
+    "diff_check": "PASS"
+  },
+  "production_projection": {
+    "status": "SOURCE_ONLY_FINAL_NO_OFFICIAL_EXEC",
+    "harness_sha256": "70ccfa8a3728282a7c168bbb567583516d8a2f999918187931e78ba9334fdd1d",
+    "original_harness_except_added_helper_imports_identical": true,
+    "client_observer_prompt_lifecycle_existing_metrics_unchanged": true,
+    "production": {
+      "baseline": {
+        "base": "3ff6db8bb0174b1ae6f781f6754e2653a6dae5db",
+        "non_test_go_and_modules_verified": 241,
+        "all_original_bytes_unchanged": true
+      },
+      "candidate": {
+        "base": "6cc9af6c31dc6e084b243fe9e1232bb83e0a403b",
+        "non_test_go_and_modules_verified": 286,
+        "all_original_bytes_unchanged": true
+      }
+    },
+    "discovery4_identical": true
+  },
+  "historical_adverse": {
+    "initial_bounded_writer_control": "FAIL promoted bytes.Buffer.WriteString bypassed new writer; immutable private source/log and copied receipt preserved; fixed by private named buffer",
+    "pre_inventory_binding_gate": "candidate1.056s/baseline1.046s, source720c8777495e721e1bcdc618a154d0d8351ff7d02d3744f98af3eb788681569f; not final70cc source gates",
+    "initial_design_correction": "ProjectTrustArgs inline-table body is already identical in3ff/current, contrary to initial audit caveat; initial design/hash preserved and adendum corrects it"
+  },
+  "offline_proposal": {
+    "status": "FROZEN_PREPARED_NOT_EXECUTED_ROOT_REVIEW_REQUIRED",
+    "input_pins": 34,
+    "frozen_inputs_sha256": "fc18e5cfa8030ca9f875434701dff7b72fc1db2bea368d53bb8861ba5b439599",
+    "plan_sha256": "c3e9a73e51703903e9b5d5dc0bc25b21abb79ef16d7fce2e3bbcceb3d7bdf9b4",
+    "JS_sha256": "88abca315796085995abfc501c152ea6de9fdc8d7a602937215d9a8c668fe9b4",
+    "wire_sha256": "571e62f9d13469c457b5312caa83ef41b844752bef3bff136bf57d515e62dadf",
+    "contract_sha256": "a834ffb8bb94ce474a517417161e8e7581b7d310b821352fe8f45588bc3986ce",
+    "host_sha256": "036222e29a2b68ffd3d9e1661cd494ba7a9ec5ed0e31c396426492dda55026e2",
+    "app_test_ELF_sha256": "f304fd6277bf49c5189651024237e060fdfb6ebbd14079409007a7cb6a713d6d",
+    "official_CLI_inventory_exec_HTTP_MCP_namespace_runs": 0,
+    "Go_preparation_only_test": "PASS actual helper argv/Dir/Env matches frozen plan, no Cmd.Run",
+    "Python_pure_contract_cases": 21,
+    "cloud_context_requirements": "UNATTESTED",
+    "cohort_global_economy_gate": "BLOCKED/INCOMPLETE"
+  },
+  "official_CLI_inventory_exec_provider_HTTP_MCP_namespace_runs": 0,
+  "real_auth_status_model_calls": 0,
+  "not_certified": [
+    "official ignore-user-config inventory syntax/scope",
+    "cloud/context-policy isolation",
+    "cohort admission",
+    "global economics",
+    "task quality or client/TUI parity",
+    "native ARM or physical noAVX execution",
+    "full current-source CI/full App race"
+  ],
+  "catalog": "concurrent_distinct_projects remains UNSUPPORTED",
+  "economic_gate": "INCOMPLETE; MCP isolation remains blocker",
+  "source_helper_connected_to_live_benchmark": false,
+  "future_requirements": "root review and specific offline authorization; any future cohort needs both arms rebuilt, discovery and freeze, with configuration scope proven"
+}

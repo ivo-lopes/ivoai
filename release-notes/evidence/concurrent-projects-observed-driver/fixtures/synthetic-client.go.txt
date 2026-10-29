@@ -1,0 +1,17 @@
+// SYNTHETIC LOCAL CLIENT PROTOCOL FIXTURE. No provider, credentials or network.
+package main
+import("encoding/json";"os";"path/filepath";"strings";"time")
+func main(){
+ root:="";readonly,ephemeral,ignore:=false,false,false
+ for i,a:=range os.Args {if a=="-C"&&i+1<len(os.Args){root=os.Args[i+1]};if a=="--sandbox"&&i+1<len(os.Args){readonly=os.Args[i+1]=="read-only"};ephemeral=ephemeral||a=="--ephemeral";ignore=ignore||a=="--ignore-user-config"}
+ if root==""||!readonly||!ephemeral||!ignore||os.Getenv("IVOAI_CONCURRENT_ATTEMPT_ID")!=""||os.Getenv("OPENAI_API_KEY")!=""{os.Exit(3)}
+ var answer any
+ if body,err:=os.ReadFile(filepath.Join(root,"mathpkg/scale.go"));err==nil&&strings.Contains(string(body),"x * 2"){answer=map[string]any{"symbol":"Scale","file":"mathpkg/scale.go","input":3,"result":6}}else if body,err:=os.ReadFile(filepath.Join(root,"pricing/totals.py"));err==nil&&strings.Contains(string(body),"def total"){answer=map[string]any{"modules":[]string{"pricing.tax","pricing.totals"},"total":108}}else{os.Exit(4)}
+ time.Sleep(700*time.Millisecond)
+ emit:=func(v any){_ = json.NewEncoder(os.Stdout).Encode(v)}
+ text,_:=json.Marshal(answer)
+ emit(map[string]any{"type":"thread.started","thread_id":"synthetic_local_thread"})
+ emit(map[string]any{"type":"turn.started"})
+ emit(map[string]any{"type":"item.completed","item":map[string]any{"id":"synthetic_local_answer","type":"agent_message","text":string(text)}})
+ emit(map[string]any{"type":"turn.completed","usage":map[string]int{"input_tokens":100,"cached_input_tokens":0,"output_tokens":20}})
+}

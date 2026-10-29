@@ -1,0 +1,168 @@
+{
+  "schema": "ivoai.concurrent-client-driver.measurement-provenance.v1",
+  "status": "LOCAL_PYTHON_PROVENANCE_CORRECTION_SYNTHETIC_VALIDATION_ONLY",
+  "date": "2026-10-28",
+  "base_revision": "0ba301e238ff38239bd90ff2025ac649728d2bf9",
+  "source_manifest": "source-manifest.json",
+  "source_manifest_sha256": "b783d92ad82c6d0dcc47048ba844ba2e841f1829e4b40bde37ae204fff4729a4",
+  "changed_source_files": [
+    "scripts/benchmark_concurrent_runtime.py",
+    "scripts/test_benchmark_concurrent_runtime.py"
+  ],
+  "previous_epoch_receipt_sha256": "e4652306d65cf047d42ebfece5601bbd856cbc420f0020d4275c54ea13503e4e",
+  "previous_epoch_reassigned": false,
+  "previous_release_note_files_byte_identical": 623,
+  "fixed_measurement_conditions": {
+    "sample_processes": false,
+    "experimental_evidence_gateway": false,
+    "experimental_evidence_recovery": false
+  },
+  "sampler_source_sha256": "5ebaaa4c8b18e4a24b85bd35b9c57fc992b972cbb529530e86e266ca15a5a3cd",
+  "allowlist_semantics": "Existing benchmark_environment forwards Gateway only at literal1 and does not forward Recovery; native CLI environment excludes both. No forwarding/default changed.",
+  "cache_isolation": "private_App_worktree_session_state_and_caches",
+  "official_client_cache_equivalence": "UNVERIFIED",
+  "provider_cache_equivalence": "UNVERIFIED",
+  "quota_equivalence": "UNVERIFIED",
+  "scenario_status": "UNSUPPORTED",
+  "real_provider_attempts": 0,
+  "real_official_client_execution": "NOT_RUN",
+  "economic_gate": "INCOMPLETE",
+  "checks": [
+    {
+      "command": "python3 -m unittest discover -s scripts -p 'test_*.py'",
+      "exit": 0,
+      "result": "PASS_FULL_CURRENT_PYTHON_SUITE_SYNTHETIC_CLIENT_FIXTURES",
+      "tests": 93,
+      "seconds": 29.864,
+      "log": "logs/python.log"
+    },
+    {
+      "command": "focused concurrent runtime suite before final missing-sampler subcase",
+      "exit": 0,
+      "result": "PASS20_PRE_FINAL_SOURCE_FOCUSED_TESTS_NOT_REASSIGNED",
+      "log": "logs/focused.log"
+    },
+    {
+      "command": "actual compiled App driver entrypoint with local synthetic protocol client and new Python driver",
+      "exit": 0,
+      "result": "PASS_A_B_BOTH_CHILDREN_PIDFD_AND_NEW_MANIFEST_CONDITIONS",
+      "log": "synthetic-app-entrypoint/runtime-comparison.json",
+      "real_inference": false,
+      "fabricated_token_fixture_values": true
+    },
+    {
+      "command": "same-path synthetic ELF replacement after A with current conditions-bound driver",
+      "repro_exit": 0,
+      "inner_driver_exit": 1,
+      "result": "EXPECTED_REJECTION_COMPLETED_A_CHILDREN_PRESERVED_B_BOTH_NOT_RUN",
+      "log": "logs/cohort-after.log"
+    },
+    {
+      "command": "verify all prior notes/artifacts and unchanged Go/harness/native guard/allowlists/sampler/modules against0ba",
+      "exit": 0,
+      "result": "PASS_BYTE_IDENTITY_AND_HASH_INVENTORY"
+    }
+  ],
+  "condition_regressions": {
+    "sample_flag_change_aborts": true,
+    "admitted_gateway_change_aborts": true,
+    "sampler_private_copy_bytes_change_aborts": true,
+    "sampler_private_copy_missing_aborts": true,
+    "non_admitted_recovery_does_not_enable_or_change_false_condition": true,
+    "raw_HOME_auth_config_env_values_not_recorded": true,
+    "completed_children_preserved": true,
+    "remaining_two_children_NOT_RUN_without_retry": true
+  },
+  "Go_validation": {
+    "rerun_claimed": false,
+    "reason": "Only two Python source files changed; all Go/observer/harness bytes identical to0ba. Prior fullGo/affectedrace/vet/amd64v1+ARM builds remain scoped to0ba.",
+    "prior_receipt": "../validation.json",
+    "reused_actual_App_test_sha256": "20518c1ccbf7f3aedcac52d8011d3fbcc0494f4f5f5a0ca9f8b0a7a32dc158b8",
+    "Go_source_hashes_verified": [
+      "internal/app/primary_prefetch_live_test.go",
+      "internal/benchmarkfixtures/client_lifecycle.go",
+      "internal/benchmarkfixtures/client_lifecycle_linux.go",
+      "internal/benchmarkfixtures/client_lifecycle_linux_test.go",
+      "internal/benchmarkfixtures/client_lifecycle_other.go"
+    ]
+  },
+  "limitations": [
+    "No new fullGo/race/build/official-client/provider/cache/quota/economic certification is claimed in this Python-only epoch.",
+    "Actual App executable is reused only after exact artifact and current Go source SHA verification; it is not reclassified as a new build.",
+    "CLI protocol client and token values are explicitly synthetic; no auth, network provider, official cohort or production ingestion.",
+    "Catalog, defaults, NativeRunner synthetic guard and old pin-substitution before/after receipts remain unchanged.",
+    "Independent review and exact-head hosted CI remain required before publication."
+  ],
+  "inventory": [
+    {
+      "path": "adverse-cohort-substitution/cohort-final.json",
+      "bytes": 90,
+      "sha256": "a3aca9f318d6ac7a83951cae6fc6fc7944b0e29124ea8f1515c3d303b45f7a75"
+    },
+    {
+      "path": "adverse-cohort-substitution/manifest.json",
+      "bytes": 6663,
+      "sha256": "50d15543e65bb3b371a88db8ddb38a326919152dc5075b13efb4f7f0a50d05dd"
+    },
+    {
+      "path": "adverse-cohort-substitution/preflight.json",
+      "bytes": 4954,
+      "sha256": "d048d69f14482ca3b4d17dfab0dff412585d5eb30ea7317d6c08a52dcf0a2287"
+    },
+    {
+      "path": "adverse-cohort-substitution/runtime-comparison.json",
+      "bytes": 8654,
+      "sha256": "87804064ed8ad7a3a4472a528661012a6eb9045d1205e9850a6f5f608c7e56e5"
+    },
+    {
+      "path": "cohort-repro.py.txt",
+      "bytes": 2667,
+      "sha256": "f55338ed7bd943866c525ad6310ef3a24ed49fccf80105c925c48b6345ab6b97"
+    },
+    {
+      "path": "logs/cohort-after.log",
+      "bytes": 749,
+      "sha256": "a7b91b3782a3b9cf6f08a88d5a1f65c6387cdae275e6e145358b9351c2184e4a"
+    },
+    {
+      "path": "logs/focused.log",
+      "bytes": 120,
+      "sha256": "d160d9a3a7306671a1a59d03ab3167d7e3b91699a9141dbfa3eb419fe038915b"
+    },
+    {
+      "path": "logs/python.log",
+      "bytes": 193,
+      "sha256": "085886a09b5b9ce7a4242a00f6d5c2b8ab7bba54ba7aa31e64478fd3dcd6ed0f"
+    },
+    {
+      "path": "logs/synthetic-app-entrypoint.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "source-manifest.json",
+      "bytes": 858,
+      "sha256": "b783d92ad82c6d0dcc47048ba844ba2e841f1829e4b40bde37ae204fff4729a4"
+    },
+    {
+      "path": "synthetic-app-entrypoint/cohort-final.json",
+      "bytes": 88,
+      "sha256": "105242fe183f5de21be170f8101d1c61e348c501f130686965923e36f0b9c0bc"
+    },
+    {
+      "path": "synthetic-app-entrypoint/manifest.json",
+      "bytes": 6663,
+      "sha256": "b6cb12d74818132090637f3e99c4199d983c8c6f00a8a27361da85147ecc4dc8"
+    },
+    {
+      "path": "synthetic-app-entrypoint/preflight.json",
+      "bytes": 4954,
+      "sha256": "d048d69f14482ca3b4d17dfab0dff412585d5eb30ea7317d6c08a52dcf0a2287"
+    },
+    {
+      "path": "synthetic-app-entrypoint/runtime-comparison.json",
+      "bytes": 15677,
+      "sha256": "24f14cf20531f444594cbc6c53a567977d713b806dce3eb290f45502bca50d68"
+    }
+  ]
+}

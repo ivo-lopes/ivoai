@@ -1,0 +1,10 @@
+{
+  "base": "47681060671267d5b9746925f6cf0f1236af6511",
+  "files": {
+    "internal/app/primary_prefetch_live_test.go": "685af2187a93d5bf26fe2300fe0fbc76bbf91810f2bb32879505e9d145bd6849",
+    "scripts/benchmark_catalog.py": "2fd9d08b5467992ba2f07839a9dbc241d149a8ed7850f75cb47fde41ff18d080",
+    "scripts/test_benchmark_catalog.py": "9728ffa703a582c7c0149a88e42527175c2141e21a95e19cc18154d4ea9f4a2b"
+  },
+  "scope": "USER_CONFIG_INCLUDED_SHARED_SCOPE",
+  "helper_connected_to_live_benchmark": false
+}

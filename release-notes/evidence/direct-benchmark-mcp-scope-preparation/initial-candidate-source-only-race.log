@@ -1,0 +1,8 @@
+--- FAIL: TestPrimaryPrefetchDirectMCPInventoryFailureClosed (0.01s)
+    --- FAIL: TestPrimaryPrefetchDirectMCPInventoryFailureClosed/stdout_overflow (0.00s)
+        primary_prefetch_live_test.go:752: stdout writer did not enforce bound
+    --- FAIL: TestPrimaryPrefetchDirectMCPInventoryFailureClosed/stderr_overflow (0.00s)
+        primary_prefetch_live_test.go:757: stderr writer did not enforce bound
+FAIL
+FAIL	github.com/ivo-lopes/ivoai/internal/app	0.050s
+FAIL

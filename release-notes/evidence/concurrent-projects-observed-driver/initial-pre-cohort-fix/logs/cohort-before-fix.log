@@ -1,0 +1,22 @@
+{
+  "scope": "SYNTHETIC_ADVERSE_COHORT_PIN_REPRO_NO_PROVIDER",
+  "exit": 0,
+  "pair_verdicts": [
+    true,
+    true
+  ],
+  "initial_client_sha256": "2d7c3c441edd89aabc237e8ccde9960afb7723eb7e602769579a218fdef7bf83",
+  "manifest_client_sha256": "2d7c3c441edd89aabc237e8ccde9960afb7723eb7e602769579a218fdef7bf83",
+  "final_client_sha256": "8bda04530a82007e6cd616333a60ca3588c7ea7d45280024bb0aff934f9e9e49",
+  "observed_child_client_sha256": [
+    "2d7c3c441edd89aabc237e8ccde9960afb7723eb7e602769579a218fdef7bf83",
+    "2d7c3c441edd89aabc237e8ccde9960afb7723eb7e602769579a218fdef7bf83",
+    "8bda04530a82007e6cd616333a60ca3588c7ea7d45280024bb0aff934f9e9e49",
+    "8bda04530a82007e6cd616333a60ca3588c7ea7d45280024bb0aff934f9e9e49"
+  ]
+}
+Traceback (most recent call last):
+  File "/var/tmp/ivoai-concurrent-driver.GLeqqW0w/repro-cohort-substitution.py", line 23, in <module>
+    assert code != 0, 'cohort accepted substituted same-path executable across A/B with stale manifest pin'
+           ^^^^^^^^^
+AssertionError: cohort accepted substituted same-path executable across A/B with stale manifest pin

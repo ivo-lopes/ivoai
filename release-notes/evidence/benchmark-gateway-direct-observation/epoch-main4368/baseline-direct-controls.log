@@ -1,0 +1,15 @@
+=== RUN   TestPrimaryPrefetchLiveMeasurementContract
+--- PASS: TestPrimaryPrefetchLiveMeasurementContract (0.47s)
+=== RUN   TestPrimaryPrefetchGatewayObservationContract
+--- PASS: TestPrimaryPrefetchGatewayObservationContract (0.00s)
+=== RUN   TestPrimaryPrefetchGatewayObservationOffline
+=== RUN   TestPrimaryPrefetchGatewayObservationOffline/flag_0
+    primary_prefetch_live_test.go:735: offline direct events call=1 gateway_resolves=0 hits=0 misses=0 code_inspect=1; first call cold, second mechanism-only reuse; no provider/economy
+    primary_prefetch_live_test.go:735: offline direct events call=2 gateway_resolves=0 hits=0 misses=0 code_inspect=2; first call cold, second mechanism-only reuse; no provider/economy
+=== RUN   TestPrimaryPrefetchGatewayObservationOffline/flag_1
+    primary_prefetch_live_test.go:735: offline direct events call=1 gateway_resolves=0 hits=0 misses=0 code_inspect=1; first call cold, second mechanism-only reuse; no provider/economy
+    primary_prefetch_live_test.go:735: offline direct events call=2 gateway_resolves=0 hits=0 misses=0 code_inspect=2; first call cold, second mechanism-only reuse; no provider/economy
+--- PASS: TestPrimaryPrefetchGatewayObservationOffline (1.21s)
+    --- PASS: TestPrimaryPrefetchGatewayObservationOffline/flag_0 (0.92s)
+    --- PASS: TestPrimaryPrefetchGatewayObservationOffline/flag_1 (0.29s)
+PASS

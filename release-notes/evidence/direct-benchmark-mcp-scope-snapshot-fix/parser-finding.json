@@ -1,0 +1,16 @@
+{
+  "status": "KNOWN_OFFICIAL_PARSER_INCOMPATIBLE_NOT_RUN",
+  "root_help_source": "official pinned CLI628e; fresh HOME/etc/network namespace; root-owned three help-only calls",
+  "root_help_validation_sha256": "3523d9dd41cc43fa602cca2dbb7ca33ca696ddeb3acea253bf526f0859b80ce1",
+  "parser_observed": "--ignore-user-config is listed under exec, absent root; root ignore mcp list --help rejected unexpected argument with exit2",
+  "exec_task_inventory_status_auth_model_calls_in_root_help": 0,
+  "original_plan_sha256": "c3e9a73e51703903e9b5d5dc0bc25b21abb79ef16d7fce2e3bbcceb3d7bdf9b4",
+  "original_freeze_sha256": "fc18e5cfa8030ca9f875434701dff7b72fc1db2bea368d53bb8861ba5b439599",
+  "new_clone_plan_byte_identical": true,
+  "original34pins_unchanged": true,
+  "new_freeze_emitted": false,
+  "official_exec_inventory_calls_in_either_package": 0,
+  "no_approval_or_execution_markers": true,
+  "pre_finding_builds": "Build/preparation pipeline launched before parser finding; observed complete at next poll; no new rebuild launched afterward. Source/build compatibility only, not official contract qualification.",
+  "next": "separately review explicit same-arm user-config inclusion and scoped inventory/exec; no aliases or silent flag removal"
+}

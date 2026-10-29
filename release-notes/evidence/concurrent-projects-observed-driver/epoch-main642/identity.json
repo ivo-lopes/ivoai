@@ -1,0 +1,7 @@
+{
+  "prior_notes_unchanged": 700,
+  "driver_source_entries_unchanged": 11,
+  "all_non_note_tree_differences_exactly_nine_reviewed_driver_paths": true,
+  "docs_assets_guarded_orchestrator_session_exact_incoming_main": true,
+  "adaptive_primary_enabled": false
+}

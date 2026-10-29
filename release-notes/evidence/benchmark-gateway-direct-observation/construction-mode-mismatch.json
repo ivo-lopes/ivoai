@@ -1,0 +1,253 @@
+{
+  "status": "INITIAL_PROJECTION_MODE_VERIFICATION_FAILED_NOT_PASS",
+  "cause": "Private source worktree checkout used umask077 (0600); projection utility reused old lab manifest0644 instead of capturing current source read permissions. Bytes/executable bits were identical.",
+  "initial_manifest_sha256": "1b9890c55c61e6b9e1bf3ded9b8c571b035ddf728ab71067927cf102fc8be395",
+  "mismatches": [
+    {
+      "path": "internal/app/primary_prefetch_live_test.go",
+      "source_mode": "0o600",
+      "initial_copied_mode": "0o644"
+    },
+    {
+      "path": "internal/benchmarkfixtures/client_lifecycle.go",
+      "source_mode": "0o600",
+      "initial_copied_mode": "0o644"
+    },
+    {
+      "path": "internal/benchmarkfixtures/client_lifecycle_linux.go",
+      "source_mode": "0o600",
+      "initial_copied_mode": "0o644"
+    },
+    {
+      "path": "internal/benchmarkfixtures/client_lifecycle_linux_test.go",
+      "source_mode": "0o600",
+      "initial_copied_mode": "0o644"
+    },
+    {
+      "path": "internal/benchmarkfixtures/client_lifecycle_other.go",
+      "source_mode": "0o600",
+      "initial_copied_mode": "0o644"
+    },
+    {
+      "path": "internal/benchmarkfixtures/concurrent.go",
+      "source_mode": "0o600",
+      "initial_copied_mode": "0o644"
+    },
+    {
+      "path": "internal/benchmarkfixtures/concurrent_test.go",
+      "source_mode": "0o600",
+      "initial_copied_mode": "0o644"
+    },
+    {
+      "path": "internal/benchmarkfixtures/data/catalog.json",
+      "source_mode": "0o600",
+      "initial_copied_mode": "0o644"
+    },
+    {
+      "path": "internal/benchmarkfixtures/data/concurrent-projects.json",
+      "source_mode": "0o600",
+      "initial_copied_mode": "0o644"
+    },
+    {
+      "path": "internal/benchmarkfixtures/data/projects/go-clamp-edit/go.mod.fixture",
+      "source_mode": "0o600",
+      "initial_copied_mode": "0o644"
+    },
+    {
+      "path": "internal/benchmarkfixtures/data/projects/go-clamp-edit/mathpkg/clamp.go.fixture",
+      "source_mode": "0o600",
+      "initial_copied_mode": "0o644"
+    },
+    {
+      "path": "internal/benchmarkfixtures/data/projects/go-clamp-edit/mathpkg/clamp_test.go.fixture",
+      "source_mode": "0o600",
+      "initial_copied_mode": "0o644"
+    },
+    {
+      "path": "internal/benchmarkfixtures/data/projects/go-core/app/entry.go.fixture",
+      "source_mode": "0o600",
+      "initial_copied_mode": "0o644"
+    },
+    {
+      "path": "internal/benchmarkfixtures/data/projects/go-core/go.mod.fixture",
+      "source_mode": "0o600",
+      "initial_copied_mode": "0o644"
+    },
+    {
+      "path": "internal/benchmarkfixtures/data/projects/go-core/mathpkg/scale.go.fixture",
+      "source_mode": "0o600",
+      "initial_copied_mode": "0o644"
+    },
+    {
+      "path": "internal/benchmarkfixtures/data/projects/go-core/service/process.go.fixture",
+      "source_mode": "0o600",
+      "initial_copied_mode": "0o644"
+    },
+    {
+      "path": "internal/benchmarkfixtures/data/projects/monorepo-refactor-ts/package.json",
+      "source_mode": "0o600",
+      "initial_copied_mode": "0o644"
+    },
+    {
+      "path": "internal/benchmarkfixtures/data/projects/monorepo-refactor-ts/packages/admin/src/report.ts",
+      "source_mode": "0o600",
+      "initial_copied_mode": "0o644"
+    },
+    {
+      "path": "internal/benchmarkfixtures/data/projects/monorepo-refactor-ts/packages/shared/src/discount.ts",
+      "source_mode": "0o600",
+      "initial_copied_mode": "0o644"
+    },
+    {
+      "path": "internal/benchmarkfixtures/data/projects/monorepo-refactor-ts/packages/shop/src/main.ts",
+      "source_mode": "0o600",
+      "initial_copied_mode": "0o644"
+    },
+    {
+      "path": "internal/benchmarkfixtures/data/projects/monorepo-ts/check.sh",
+      "source_mode": "0o600",
+      "initial_copied_mode": "0o644"
+    },
+    {
+      "path": "internal/benchmarkfixtures/data/projects/monorepo-ts/package.json",
+      "source_mode": "0o600",
+      "initial_copied_mode": "0o644"
+    },
+    {
+      "path": "internal/benchmarkfixtures/data/projects/monorepo-ts/packages/shared/src/discount.ts",
+      "source_mode": "0o600",
+      "initial_copied_mode": "0o644"
+    },
+    {
+      "path": "internal/benchmarkfixtures/data/projects/monorepo-ts/packages/shop/src/main.ts",
+      "source_mode": "0o600",
+      "initial_copied_mode": "0o644"
+    },
+    {
+      "path": "internal/benchmarkfixtures/data/projects/non-code/milestones.json",
+      "source_mode": "0o600",
+      "initial_copied_mode": "0o644"
+    },
+    {
+      "path": "internal/benchmarkfixtures/data/projects/python-deps/app/checkout.py",
+      "source_mode": "0o600",
+      "initial_copied_mode": "0o644"
+    },
+    {
+      "path": "internal/benchmarkfixtures/data/projects/python-deps/pricing/__init__.py",
+      "source_mode": "0o600",
+      "initial_copied_mode": "0o644"
+    },
+    {
+      "path": "internal/benchmarkfixtures/data/projects/python-deps/pricing/tax.py",
+      "source_mode": "0o600",
+      "initial_copied_mode": "0o644"
+    },
+    {
+      "path": "internal/benchmarkfixtures/data/projects/python-deps/pricing/totals.py",
+      "source_mode": "0o600",
+      "initial_copied_mode": "0o644"
+    },
+    {
+      "path": "internal/benchmarkfixtures/data/projects/rules-shell/check.sh",
+      "source_mode": "0o600",
+      "initial_copied_mode": "0o644"
+    },
+    {
+      "path": "internal/benchmarkfixtures/data/projects/rules-shell/policy/discount.ivo-fixture",
+      "source_mode": "0o600",
+      "initial_copied_mode": "0o644"
+    },
+    {
+      "path": "internal/benchmarkfixtures/edit_oracle.go",
+      "source_mode": "0o600",
+      "initial_copied_mode": "0o644"
+    },
+    {
+      "path": "internal/benchmarkfixtures/edit_oracle_test.go",
+      "source_mode": "0o600",
+      "initial_copied_mode": "0o644"
+    },
+    {
+      "path": "internal/benchmarkfixtures/exec_observation.go",
+      "source_mode": "0o600",
+      "initial_copied_mode": "0o644"
+    },
+    {
+      "path": "internal/benchmarkfixtures/exec_observation_test.go",
+      "source_mode": "0o600",
+      "initial_copied_mode": "0o644"
+    },
+    {
+      "path": "internal/benchmarkfixtures/fixtures.go",
+      "source_mode": "0o600",
+      "initial_copied_mode": "0o644"
+    },
+    {
+      "path": "internal/benchmarkfixtures/fixtures_test.go",
+      "source_mode": "0o600",
+      "initial_copied_mode": "0o644"
+    },
+    {
+      "path": "scripts/benchmark-economic-runtime.py",
+      "source_mode": "0o600",
+      "initial_copied_mode": "0o644"
+    },
+    {
+      "path": "scripts/benchmark-rtk-generated.py",
+      "source_mode": "0o600",
+      "initial_copied_mode": "0o644"
+    },
+    {
+      "path": "scripts/benchmark_catalog.py",
+      "source_mode": "0o600",
+      "initial_copied_mode": "0o644"
+    },
+    {
+      "path": "scripts/benchmark_concurrent_contract.py",
+      "source_mode": "0o600",
+      "initial_copied_mode": "0o644"
+    },
+    {
+      "path": "scripts/benchmark_concurrent_runtime.py",
+      "source_mode": "0o600",
+      "initial_copied_mode": "0o644"
+    },
+    {
+      "path": "scripts/benchmark_process_sampler.py",
+      "source_mode": "0o600",
+      "initial_copied_mode": "0o644"
+    },
+    {
+      "path": "scripts/test_benchmark_catalog.py",
+      "source_mode": "0o600",
+      "initial_copied_mode": "0o644"
+    },
+    {
+      "path": "scripts/test_benchmark_concurrent_contract.py",
+      "source_mode": "0o600",
+      "initial_copied_mode": "0o644"
+    },
+    {
+      "path": "scripts/test_benchmark_concurrent_runtime.py",
+      "source_mode": "0o600",
+      "initial_copied_mode": "0o644"
+    },
+    {
+      "path": "scripts/test_benchmark_economic_runtime.py",
+      "source_mode": "0o600",
+      "initial_copied_mode": "0o644"
+    },
+    {
+      "path": "scripts/test_benchmark_process_sampler.py",
+      "source_mode": "0o600",
+      "initial_copied_mode": "0o644"
+    },
+    {
+      "path": "scripts/test_benchmark_rtk_generated.py",
+      "source_mode": "0o600",
+      "initial_copied_mode": "0o644"
+    }
+  ],
+  "resolution": "Only new baseline common file read modes aligned to current source0600; no source production bytes/Git modes changed; candidate gates unchanged. Baseline focused checks will repeat on final modes."
+}

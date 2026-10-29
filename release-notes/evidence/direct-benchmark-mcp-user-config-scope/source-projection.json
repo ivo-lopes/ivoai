@@ -1,0 +1,23 @@
+{
+  "common_source_sha256": {
+    "internal/app/primary_prefetch_live_test.go": "685af2187a93d5bf26fe2300fe0fbc76bbf91810f2bb32879505e9d145bd6849",
+    "scripts/benchmark_catalog.py": "2fd9d08b5467992ba2f07839a9dbc241d149a8ed7850f75cb47fde41ff18d080",
+    "scripts/test_benchmark_catalog.py": "9728ffa703a582c7c0149a88e42527175c2141e21a95e19cc18154d4ea9f4a2b"
+  },
+  "live_invocation_prompt_observer_lifecycle_unchanged": true,
+  "scope": "USER_CONFIG_INCLUDED_SHARED_SCOPE",
+  "helper_connected_to_live_benchmark": false,
+  "production": {
+    "baseline": {
+      "base": "3ff6db8bb0174b1ae6f781f6754e2653a6dae5db",
+      "original_non_test_go_and_modules_verified": 241,
+      "original_bytes_unchanged": true
+    },
+    "candidate": {
+      "base": "6cc9af6c31dc6e084b243fe9e1232bb83e0a403b",
+      "original_non_test_go_and_modules_verified": 286,
+      "original_bytes_unchanged": true
+    }
+  },
+  "matching_discovery4": true
+}

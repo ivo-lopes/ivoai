@@ -1,0 +1,72 @@
+{
+  "base_revision": "4368d5495a5be4ce425f4ab89849df0296fc6f9b",
+  "merge_commit": "4634eb0e0686bd2686919ef2330bfbe5fe80ead8",
+  "previous_driver_epoch": "d550c641f7e2950fedc149e82771c424712c8125",
+  "scope": "All10 reviewed driver/test source differences to actual main plus unchanged module manifests; all other tracked source/assets exact incoming main",
+  "files": [
+    {
+      "path": "go.mod",
+      "bytes": 568,
+      "sha256": "d1c486bcfb3a5e1127b4f47de7e62001c768ee744c42b6f96627f6895d026705"
+    },
+    {
+      "path": "go.sum",
+      "bytes": 2537,
+      "sha256": "44f145c4f9477395f29442a17757c7de7b24df282e19c7e6ffddb58662e2553c"
+    },
+    {
+      "path": "internal/app/primary_prefetch_live_test.go",
+      "bytes": 43092,
+      "sha256": "2aac078cf6d3cfeb6da118a8c9eeb78fc0bb17ce5297a2262f4c28aa6dd7f7fe"
+    },
+    {
+      "path": "internal/benchmarkfixtures/client_lifecycle.go",
+      "bytes": 1456,
+      "sha256": "66c915beece2f0f68ae73a2205bab02d03dc338bb96c7f4eb04bb39363d3c1ea"
+    },
+    {
+      "path": "internal/benchmarkfixtures/client_lifecycle_linux.go",
+      "bytes": 4467,
+      "sha256": "de6e0f675bbf13bc43f48c648cdd022f6a7b2ceb4e5c7de780f13cf8cef31003"
+    },
+    {
+      "path": "internal/benchmarkfixtures/client_lifecycle_linux_test.go",
+      "bytes": 4715,
+      "sha256": "249e017079e6d94cf7400d5a83fa69f1ef2d1d55245fa3ecf3bce81c3bb4717f"
+    },
+    {
+      "path": "internal/benchmarkfixtures/client_lifecycle_other.go",
+      "bytes": 247,
+      "sha256": "cf1394878c27f63e581ae3ab219075b9e720052148fdfe3536d620a287b4343f"
+    },
+    {
+      "path": "scripts/benchmark-economic-runtime.py",
+      "bytes": 36644,
+      "sha256": "3e7a469b68c5116ddb056ed49adfa8ede61c467967f5fb58718801579c9f8773"
+    },
+    {
+      "path": "scripts/benchmark_concurrent_contract.py",
+      "bytes": 6579,
+      "sha256": "b51ca4c5eb9d39fe303b5b63c2ee8a9ac96c7a48078cd6c94804b1243fb407d0"
+    },
+    {
+      "path": "scripts/benchmark_concurrent_runtime.py",
+      "bytes": 21069,
+      "sha256": "473403362c890875428f10aaf62dfbc6dfe36666d43913fb36298a13c87a44b9"
+    },
+    {
+      "path": "scripts/test_benchmark_concurrent_runtime.py",
+      "bytes": 23809,
+      "sha256": "eb4919e76b2266394a93192593e4d6b2bcc494f930d325f2ed909df384285ea1"
+    },
+    {
+      "path": "scripts/test_benchmark_economic_runtime.py",
+      "bytes": 26535,
+      "sha256": "9dcdbeace9d4ee257af11ef1134205cb6882976fa3df8de5acb9874a9fe8c7e2"
+    }
+  ],
+  "source_entries_identical_to_previous_epoch": true,
+  "incoming_production_exact_except_existing_test_only_benchmark_package": true,
+  "client_tail_sha256": "985d27269a1b62b3b147a96239d527704db15fdd98d2d5b03efc031c176bafa5",
+  "prior_release_note_files_unchanged": 830
+}

@@ -1,0 +1,18 @@
+{
+  "status": "PASS_SOURCE_ONLY_SNAPSHOT_FIX_NO_OFFICIAL_EXEC",
+  "harness_sha256": "ca0ef78c2e9111efbadaf601c289bced2f4910d431dd19cef4d6aeca3b514004",
+  "delta_only": "two slice clones before inventory command and caller-mutation regression; original invocation/prompt/observer/metrics unchanged",
+  "production": {
+    "baseline": {
+      "base": "3ff6db8bb0174b1ae6f781f6754e2653a6dae5db",
+      "original_non_test_go_and_modules_verified": 241,
+      "all_original_bytes_unchanged": true
+    },
+    "candidate": {
+      "base": "6cc9af6c31dc6e084b243fe9e1232bb83e0a403b",
+      "original_non_test_go_and_modules_verified": 286,
+      "all_original_bytes_unchanged": true
+    }
+  },
+  "matching_discovery4": true
+}

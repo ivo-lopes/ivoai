@@ -1,0 +1,71 @@
+{
+  "status": "PASS_SOURCE_ONLY_SNAPSHOT_FIX_OFFICIAL_PLAN_INCOMPATIBLE_NOT_RUN",
+  "source_manifest_sha256": "73bd4522b9f532101c42e21486acaa379635e22e8abcb78f97b7260630f03eb7",
+  "harness_sha256": "ca0ef78c2e9111efbadaf601c289bced2f4910d431dd19cef4d6aeca3b514004",
+  "change": "clone environment/globals before inventory command; successful result retains exclusive frozen scope",
+  "adverse": {
+    "old_source": "ed79d4815ba13339b429fa63a6212f06850d6a53",
+    "old_harness_sha256": "70ccfa8a3728282a7c168bbb567583516d8a2f999918187931e78ba9334fdd1d",
+    "old_control": "FAIL both during_inventory/after_inventory mutate caller globals/env; one pre-fix source-only run, no CLI",
+    "original_fc18_package": "all34pins intact, approval/execution absent",
+    "initial_writer_failure": "preserved unchanged in parent ed79 receipt/old worktree"
+  },
+  "gates": {
+    "candidate_helper_and_existing_contracts_race": "PASS1.078s",
+    "baseline_helper_race": "PASS1.060s",
+    "candidate_App_vet": "PASS",
+    "fresh_baseline_candidate_App_builds": "PASS CGO0 amd64v1",
+    "discovery4": "PASS identical new harness and unchanged observer/catalog/oracle pins",
+    "private_overlay_preparation": "PASS exact Go helper argv/Dir/Env versus old plan, zero Cmd.Run; build/preparation pipeline initiated before parser finding and observed complete at next poll; not an official contract qualification",
+    "diff_check": "PASS"
+  },
+  "source_projection": {
+    "status": "PASS_SOURCE_ONLY_SNAPSHOT_FIX_NO_OFFICIAL_EXEC",
+    "harness_sha256": "ca0ef78c2e9111efbadaf601c289bced2f4910d431dd19cef4d6aeca3b514004",
+    "delta_only": "two slice clones before inventory command and caller-mutation regression; original invocation/prompt/observer/metrics unchanged",
+    "production": {
+      "baseline": {
+        "base": "3ff6db8bb0174b1ae6f781f6754e2653a6dae5db",
+        "original_non_test_go_and_modules_verified": 241,
+        "all_original_bytes_unchanged": true
+      },
+      "candidate": {
+        "base": "6cc9af6c31dc6e084b243fe9e1232bb83e0a403b",
+        "original_non_test_go_and_modules_verified": 286,
+        "all_original_bytes_unchanged": true
+      }
+    },
+    "matching_discovery4": true
+  },
+  "official_parser_finding": {
+    "status": "KNOWN_OFFICIAL_PARSER_INCOMPATIBLE_NOT_RUN",
+    "root_help_source": "official pinned CLI628e; fresh HOME/etc/network namespace; root-owned three help-only calls",
+    "root_help_validation_sha256": "3523d9dd41cc43fa602cca2dbb7ca33ca696ddeb3acea253bf526f0859b80ce1",
+    "parser_observed": "--ignore-user-config is listed under exec, absent root; root ignore mcp list --help rejected unexpected argument with exit2",
+    "exec_task_inventory_status_auth_model_calls_in_root_help": 0,
+    "original_plan_sha256": "c3e9a73e51703903e9b5d5dc0bc25b21abb79ef16d7fce2e3bbcceb3d7bdf9b4",
+    "original_freeze_sha256": "fc18e5cfa8030ca9f875434701dff7b72fc1db2bea368d53bb8861ba5b439599",
+    "new_clone_plan_byte_identical": true,
+    "original34pins_unchanged": true,
+    "new_freeze_emitted": false,
+    "official_exec_inventory_calls_in_either_package": 0,
+    "no_approval_or_execution_markers": true,
+    "pre_finding_builds": "Build/preparation pipeline launched before parser finding; observed complete at next poll; no new rebuild launched afterward. Source/build compatibility only, not official contract qualification.",
+    "next": "separately review explicit same-arm user-config inclusion and scoped inventory/exec; no aliases or silent flag removal"
+  },
+  "current_proposal_state": "RETIRED_NOT_RUN; no new qualifying freeze emitted",
+  "real_official_CLI_inventory_exec_auth_status_model_provider_calls_by_this_agent": 0,
+  "root_independent_help_calls": 3,
+  "root_help_inventory_exec_task_auth_status_model_calls": 0,
+  "source_helper_connected_to_live_benchmark": false,
+  "new_cohort_or_catalog_admission": false,
+  "economic_gate": "INCOMPLETE",
+  "concurrent_distinct_projects": "UNSUPPORTED",
+  "limitations": [
+    "test-only source correctness; official current global-ignore inventory syntax is incompatible",
+    "no runtime/client/auth/TUI parity or performance proof",
+    "no full App race/fullGo/CI claimed for this narrow test-only delta",
+    "cloud/context policies and configuration changes between calls unverified"
+  ],
+  "next_design": "explicit same scope condition in both arms, potentially including user config; separate review before implementation/calls, no alias or silent removal"
+}

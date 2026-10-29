@@ -7,11 +7,13 @@ import (
 	_ "embed"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 	"testing"
@@ -28,6 +30,8 @@ import (
 )
 
 type prefetchLiveRow struct {
+	GatewayCodeResolves, GatewayCodeCacheHits, GatewayCodeCacheMisses, GatewayCodeCacheUnknown                     int
+	GatewayObservationBasis, GatewayCacheCondition                                                                 string
 	CatalogSHA256, HarnessSHA256, FixtureSHA256                                                                    string
 	Scenario, Arm, Model, Effort, DistributionInventorySHA256                                                      string
 	TotalMS, ProviderMS, PrefetchMS, ValidationMS                                                                  int64
@@ -38,12 +42,50 @@ type prefetchLiveRow struct {
 	Execution, OracleToolsSHA256, NativeWorkerObservation                                                          string
 	EditFiles                                                                                                      int
 	NativeEventMetrics                                                                                             benchmarkfixtures.ExecObservation
-	Error                                                                                                          string `json:",omitempty"`
+	ClientLifecycle                                                                                                *benchmarkfixtures.ClientLifecycle `json:",omitempty"`
+	Error                                                                                                          string                             `json:",omitempty"`
+}
+
+// Snapshot completed session observations once; code.inspect and Gateway
+// capability.resolve are separate events, not additive estimates of savings.
+// These existing Event fields also compile against the v0.12.1 baseline.
+func prefetchLiveObserveHost(row *prefetchLiveRow, events []observability.Event) {
+	row.PrefetchCalls, row.StructuralCalls, row.CacheHits = 0, 0, 0
+	row.NativeCPUMS, row.NativePeakMemoryBytes = nil, nil
+	row.GatewayCodeResolves, row.GatewayCodeCacheHits, row.GatewayCodeCacheMisses, row.GatewayCodeCacheUnknown = 0, 0, 0, 0
+	row.GatewayObservationBasis = "COMPLETED_SESSION_EVENTS_NOT_ECONOMY"
+	for _, event := range events {
+		if event.State != observability.StateCompleted {
+			continue
+		}
+		if event.Operation == observability.OperationCodeInspect {
+			row.PrefetchCalls++
+			if event.Provider == "graft" {
+				row.StructuralCalls++
+			}
+			if event.CacheHit != nil && *event.CacheHit {
+				row.CacheHits++
+			}
+			row.NativeCPUMS, row.NativePeakMemoryBytes = event.CPUMilliseconds, event.PeakMemoryBytes
+		}
+		if event.Operation == observability.OperationCapabilityResolve && event.Capability == "evidence.code" {
+			row.GatewayCodeResolves++
+			switch {
+			case event.CacheHit == nil:
+				row.GatewayCodeCacheUnknown++
+			case *event.CacheHit:
+				row.GatewayCodeCacheHits++
+			default:
+				row.GatewayCodeCacheMisses++
+			}
+		}
+	}
 }
 
 // This paired benchmark exercises the actual host prefetch/ArtifactStore
 // contract. It does not claim a full frontend lifecycle or statistically powered
-// savings. No MCP is exposed in either arm: B receives production host evidence.
+// savings. Native collaboration features are disabled; ambient system/cloud MCP
+// isolation is unverified and blocks real cohorts. B receives host evidence.
 func TestLivePrimaryCodePrefetchBenchmark(t *testing.T) {
 	if os.Getenv("IVOAI_GRAFT_PREFETCH_LIVE") != "1" {
 		t.Skip("explicit official subscription benchmark opt-in required")
@@ -120,7 +162,7 @@ func TestLivePrimaryCodePrefetchBenchmark(t *testing.T) {
 						t.Fatal("edit fixture host admission unavailable")
 					}
 				}
-				row := prefetchLiveRow{Scenario: scenario.name, Arm: arm, Model: "gpt-6.1-sol", Effort: "low", DistributionInventorySHA256: hex.EncodeToString(inventoryHash[:]), Execution: definition.Execution, NativeWorkerObservation: "PARTIAL_CLIENT_PROJECTION_TOTALS_UNKNOWN"}
+				row := prefetchLiveRow{GatewayCacheCondition: "FRESH_APP_SESSION_NO_PREWARM", Scenario: scenario.name, Arm: arm, Model: "gpt-6.1-sol", Effort: "low", DistributionInventorySHA256: hex.EncodeToString(inventoryHash[:]), Execution: definition.Execution, NativeWorkerObservation: "PARTIAL_CLIENT_PROJECTION_TOTALS_UNKNOWN"}
 				row.CatalogSHA256, row.HarnessSHA256, row.FixtureSHA256 = benchmarkfixtures.CatalogSHA256(), prefetchHarnessSHA256(), fixtureHash
 				defer func() {
 					if !row.Correct && row.Error == "" {
@@ -182,27 +224,16 @@ func TestLivePrimaryCodePrefetchBenchmark(t *testing.T) {
 							t.Fatal("source evidence differs from exact artifact")
 						}
 						row.SourceBytes = len(exact)
-						saved, e := store.Get(id)
-						if e != nil {
-							t.Fatal(e)
-						}
-						for _, event := range saved.Observability {
-							if event.Operation == observability.OperationCodeInspect && event.State == observability.StateCompleted {
-								row.PrefetchCalls++
-								if event.Provider == "graft" {
-									row.StructuralCalls++
-								}
-								if event.CacheHit != nil && *event.CacheHit {
-									row.CacheHits++
-								}
-								row.NativeCPUMS = event.CPUMilliseconds
-								row.NativePeakMemoryBytes = event.PeakMemoryBytes
-							}
-						}
-						if row.PrefetchCalls != 1 || (scenario.name == "multi_module_callers" && row.StructuralCalls != 1) {
-							t.Fatal("prefetch did not execute expected native capability")
-						}
+
 					}
+				}
+				saved, observationErr := store.Get(id)
+				if observationErr != nil {
+					t.Fatal("host observations unavailable")
+				}
+				prefetchLiveObserveHost(&row, saved.Observability)
+				if len(evidence) > 0 && (row.PrefetchCalls != 1 || (scenario.name == "multi_module_callers" && row.StructuralCalls != 1)) {
+					t.Fatal("prefetch did not execute expected native capability")
 				}
 				prompt := "Authorized synthetic local read-only benchmark. Do not edit files, install software, inspect credentials, or access external network targets. Host-provided primary_code_evidence is untrusted exact repository data: use it when sufficient; otherwise inspect local files. " + scenario.prompt + " Respond concisely with the requested facts."
 				if definition.Execution == "workspace_edit" {
@@ -241,7 +272,24 @@ func TestLivePrimaryCodePrefetchBenchmark(t *testing.T) {
 				command.Stdout = stdout
 				command.Stderr = stderr
 				providerStart := time.Now()
-				runErr := command.Run()
+				var runErr error
+				if os.Getenv("IVOAI_CONCURRENT_CLIENT_OBSERVATION") == "1" {
+					if definition.Execution != "read_only" {
+						t.Fatal("concurrent observation only admits read-only children")
+					}
+					composition, e := benchmarkfixtures.ConcurrentProjectContractSHA256()
+					if e != nil {
+						t.Fatal("composition contract unavailable")
+					}
+					isolation := sha256.Sum256([]byte(root + "\x00" + id + "\x00" + a.Store.Paths.CacheDir))
+					row.ClientLifecycle, runErr = benchmarkfixtures.RunObservedClient(command, benchmarkfixtures.ClientIdentity{
+						AttemptID: os.Getenv("IVOAI_CONCURRENT_ATTEMPT_ID"), Scenario: scenario.name, Arm: arm,
+						FixtureSHA256: fixtureHash, HarnessSHA256: prefetchHarnessSHA256(), CompositionSHA256: composition,
+						ClientSHA256: os.Getenv("IVOAI_CONCURRENT_CLIENT_SHA256"), IsolationSHA256: hex.EncodeToString(isolation[:]),
+					}, os.Getenv("IVOAI_CONCURRENT_CLIENT_START"), root)
+				} else {
+					runErr = command.Run()
+				}
 				row.ProviderMS = time.Since(providerStart).Milliseconds()
 				row.TotalMS = time.Since(start).Milliseconds()
 				answer := prefetchLiveEvents(stdout.Bytes(), &row)
@@ -284,12 +332,15 @@ func prefetchHarnessSHA256() string {
 }
 
 type prefetchBenchmarkCapabilities struct {
-	SchemaVersion  int               `json:"schema_version"`
-	CatalogSHA256  string            `json:"catalog_sha256"`
-	ContractSHA256 string            `json:"fixture_contract_sha256"`
-	HarnessSHA256  string            `json:"harness_sha256"`
-	Supported      []string          `json:"supported_scenarios"`
-	Fixtures       map[string]string `json:"fixtures"`
+	DirectMCPHelperConfigurationScope string            `json:"direct_mcp_helper_configuration_scope"`
+	DirectMCPHelperConnected          bool              `json:"direct_mcp_helper_connected"`
+	SchemaVersion                     int               `json:"schema_version"`
+	CatalogSHA256                     string            `json:"catalog_sha256"`
+	ContractSHA256                    string            `json:"fixture_contract_sha256"`
+	HarnessSHA256                     string            `json:"harness_sha256"`
+	Supported                         []string          `json:"supported_scenarios"`
+	Fixtures                          map[string]string `json:"fixtures"`
+	ClientLifecycleSHA256             string            `json:"client_lifecycle_sha256,omitempty"`
 }
 
 // This discovery test never reads HOME or authenticates/starts a client.
@@ -298,7 +349,11 @@ func TestPrimaryPrefetchBenchmarkCatalog(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	value := prefetchBenchmarkCapabilities{SchemaVersion: 3, CatalogSHA256: benchmarkfixtures.CatalogSHA256(), ContractSHA256: benchmarkfixtures.ContractSHA256(), HarnessSHA256: prefetchHarnessSHA256(), Fixtures: map[string]string{}}
+	value := prefetchBenchmarkCapabilities{DirectMCPHelperConfigurationScope: string(prefetchDirectUserConfigIncluded), SchemaVersion: 3, CatalogSHA256: benchmarkfixtures.CatalogSHA256(), ContractSHA256: benchmarkfixtures.ContractSHA256(), HarnessSHA256: prefetchHarnessSHA256(), Fixtures: map[string]string{}}
+	if os.Getenv("IVOAI_CONCURRENT_DISCOVERY") == "1" {
+		value.SchemaVersion = 4
+		value.ClientLifecycleSHA256 = benchmarkfixtures.ClientLifecycleSHA256()
+	}
 	for _, scenario := range catalog {
 		if scenario.RunnerSupported {
 			value.Supported = append(value.Supported, scenario.ID)
@@ -476,6 +531,325 @@ func prefetchLiveEvents(body []byte, row *prefetchLiveRow) string {
 	return result.Answer
 }
 
+// Standalone benchmark only: this deliberately does not enter the managed
+// Adapter API, whose unsupported --ignore-user-config scope remains rejected.
+// This helper explicitly includes user config in the same scope for inventory
+// and exec. It remains UNWIRED: official MCP isolation and provider-route
+// admission require separate proofs before any real cohort can use it.
+type prefetchDirectConfigurationScope string
+
+const prefetchDirectUserConfigIncluded prefetchDirectConfigurationScope = "USER_CONFIG_INCLUDED_SHARED_SCOPE"
+
+type prefetchDirectScope struct {
+	configurationScope    prefetchDirectConfigurationScope
+	executable, directory string
+	environment, globals  []string
+}
+
+type prefetchDirectRunner func(*exec.Cmd) error
+
+// A successful bounded inventory is required to construct an exec command.
+// Its scope is the frozen scope actually passed to the inventory runner.
+type prefetchDirectInventoryResult struct {
+	scope prefetchDirectScope
+	names []string
+}
+
+var prefetchDirectServerName = regexp.MustCompile(`^[a-zA-Z0-9_-]{1,128}$`)
+
+func prefetchNewDirectScope(executable, directory, model, sandbox string, environment []string) (prefetchDirectScope, error) {
+	if !filepath.IsAbs(executable) || !filepath.IsAbs(directory) || model == "" || strings.ContainsAny(model, "\x00\r\n") || sandbox != "read-only" && sandbox != "workspace-write" || environment == nil {
+		return prefetchDirectScope{}, errors.New("direct benchmark configuration scope unavailable")
+	}
+	for _, entry := range environment {
+		if strings.ContainsRune(entry, '\x00') || !strings.Contains(entry, "=") {
+			return prefetchDirectScope{}, errors.New("direct benchmark environment unavailable")
+		}
+	}
+	globals := []string{"--sandbox", sandbox, "-m", model, "-C", directory, "-c", `model_reasoning_effort="low"`}
+	globals = append(globals, codexresolver.ProjectTrustArgs(directory)...)
+	globals = append(globals, "-c", "agents.enabled=false", "-c", "features.multi_agent_v2=false", "-c", "features.multi_agent=false", "-c", "features.plugins=false", "-c", "features.hooks=false", "-c", "features.apps=false", "-c", "features.remote_plugin=false", "-c", "sandbox_workspace_write.network_access=false")
+	return prefetchDirectScope{configurationScope: prefetchDirectUserConfigIncluded, executable: executable, directory: directory, environment: append([]string{}, environment...), globals: append([]string{}, globals...)}, nil
+}
+
+func (scope prefetchDirectScope) command(ctx context.Context, prefix, suffix []string) *exec.Cmd {
+	args := append([]string{}, prefix...)
+	args = append(args, scope.globals...)
+	args = append(args, suffix...)
+	command := exec.CommandContext(ctx, scope.executable, args...)
+	command.Dir = scope.directory
+	command.Env = append([]string{}, scope.environment...)
+	return command
+}
+
+// This writer stops accepting bytes at the boundary instead of accumulating
+// unbounded output and checking its length only after the process has finished.
+type prefetchDirectBoundedOutput struct {
+	buffer   bytes.Buffer
+	limit    int
+	overflow bool
+}
+
+func (out *prefetchDirectBoundedOutput) Write(body []byte) (int, error) {
+	left := out.limit - out.buffer.Len()
+	if len(body) > left {
+		out.overflow = true
+		_, _ = out.buffer.Write(body[:left])
+		return left, io.ErrShortBuffer
+	}
+	return out.buffer.Write(body)
+}
+
+func prefetchDirectInventory(ctx context.Context, scope prefetchDirectScope, run prefetchDirectRunner) (*prefetchDirectInventoryResult, error) {
+	if run == nil {
+		return nil, errors.New("direct benchmark inventory runner unavailable")
+	}
+	// Own the exact scope before the runner can mutate any caller-owned slice.
+	// The result must retain this snapshot, not aliases to the input scope.
+	scope.environment = append([]string{}, scope.environment...)
+	scope.globals = append([]string{}, scope.globals...)
+	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
+	defer cancel()
+	command := scope.command(ctx, nil, []string{"mcp", "list", "--json"})
+	stdout := &prefetchDirectBoundedOutput{limit: 256 << 10}
+	stderr := &prefetchDirectBoundedOutput{limit: 64 << 10}
+	command.Stdout, command.Stderr = stdout, stderr
+	if err := run(command); err != nil || ctx.Err() != nil || stdout.overflow || stderr.overflow {
+		return nil, errors.New("direct benchmark inventory failed")
+	}
+	// Do not retain or forward inventory/error contents: transports can include
+	// URLs, environment values and other private client configuration metadata.
+	names, err := prefetchDirectInventoryNames(stdout.buffer.Bytes())
+	if err != nil {
+		return nil, err
+	}
+	return &prefetchDirectInventoryResult{scope: scope, names: names}, nil
+}
+
+func prefetchDirectInventoryNames(body []byte) ([]string, error) {
+	invalid := errors.New("direct benchmark inventory invalid")
+	if len(body) > 256<<10 {
+		return nil, invalid
+	}
+	decoder := json.NewDecoder(bytes.NewReader(body))
+	var servers []json.RawMessage
+	if err := decoder.Decode(&servers); err != nil || servers == nil || len(servers) > 128 {
+		return nil, invalid
+	}
+	var extra any
+	if !errors.Is(decoder.Decode(&extra), io.EOF) {
+		return nil, invalid
+	}
+	names, seen := []string{}, map[string]bool{}
+	for _, raw := range servers {
+		item := json.NewDecoder(bytes.NewReader(raw))
+		token, err := item.Token()
+		if err != nil || token != json.Delim('{') {
+			return nil, invalid
+		}
+		name, keys := "", map[string]bool{}
+		for item.More() {
+			token, err = item.Token()
+			key, ok := token.(string)
+			if err != nil || !ok || keys[key] {
+				return nil, invalid
+			}
+			keys[key] = true
+			var value json.RawMessage
+			if item.Decode(&value) != nil {
+				return nil, invalid
+			}
+			if key == "name" && json.Unmarshal(value, &name) != nil {
+				return nil, invalid
+			}
+		}
+		if token, err = item.Token(); err != nil || token != json.Delim('}') || !prefetchDirectServerName.MatchString(name) || seen[name] {
+			return nil, invalid
+		}
+		seen[name] = true
+		names = append(names, name)
+	}
+	return names, nil
+}
+
+func prefetchDirectExec(ctx context.Context, inventory *prefetchDirectInventoryResult, schema, prompt string) (*exec.Cmd, error) {
+	// No projection/re-enable input exists in the direct benchmark. Managed Core
+	// projections remain exclusively the responsibility of the managed Adapter.
+	if inventory == nil || len(inventory.names) > 128 || schema == "" || strings.ContainsRune(schema, '\x00') {
+		return nil, errors.New("direct benchmark exec unavailable")
+	}
+	deny, seen := []string{}, map[string]bool{}
+	for _, name := range inventory.names {
+		if !prefetchDirectServerName.MatchString(name) || seen[name] {
+			return nil, errors.New("direct benchmark server identifier invalid")
+		}
+		seen[name] = true
+		deny = append(deny, "-c", "mcp_servers."+name+".enabled=false")
+	}
+	return inventory.scope.command(ctx, deny, []string{"exec", "--ephemeral", "--skip-git-repo-check", "--json", "--color", "never", "--output-schema", schema, "--", prompt}), nil
+}
+
+func TestPrimaryPrefetchDirectMCPScope(t *testing.T) {
+	env := []string{"HOME=/synthetic/home", "PATH=/synthetic/bin"}
+	scope, err := prefetchNewDirectScope("/synthetic/codex", "/synthetic/repo", "gpt-6.1-sol", "read-only", env)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if scope.configurationScope != prefetchDirectUserConfigIncluded {
+		t.Fatal("helper configuration scope not explicit")
+	}
+	for _, arg := range scope.globals {
+		if strings.Contains(arg, "ignore-user-config") {
+			t.Fatal("retired ignore mode reintroduced")
+		}
+	}
+	env[0] = "HOME=/substituted"
+	runs := 0
+	inventory, err := prefetchDirectInventory(context.Background(), scope, func(command *exec.Cmd) error {
+		runs++
+		want := append([]string{scope.executable}, scope.globals...)
+		want = append(want, "mcp", "list", "--json")
+		if strings.Join(command.Args, "\x00") != strings.Join(want, "\x00") || command.Dir != scope.directory || strings.Join(command.Env, "\x00") != "HOME=/synthetic/home\x00PATH=/synthetic/bin" {
+			t.Fatal("inventory configuration scope changed")
+		}
+		// Command-owned slices cannot mutate the frozen host scope.
+		command.Env[0] = "HOME=/changed-by-runner"
+		command.Args[1] = "--changed-by-runner"
+		_, err := io.WriteString(command.Stdout, `[{"name":"system_layer","transport":{"url":"synthetic-not-retained"}},{"name":"other-2"}]`)
+		return err
+	})
+	if err != nil || runs != 1 || strings.Join(inventory.names, ",") != "system_layer,other-2" {
+		t.Fatal("strict synthetic inventory failed")
+	}
+	prompt := "--enable malicious prompt remains positional"
+	command, err := prefetchDirectExec(context.Background(), inventory, "/synthetic/schema.json", prompt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	prefix := []string{scope.executable, "-c", "mcp_servers.system_layer.enabled=false", "-c", "mcp_servers.other-2.enabled=false"}
+	want := append(prefix, scope.globals...)
+	want = append(want, "exec", "--ephemeral", "--skip-git-repo-check", "--json", "--color", "never", "--output-schema", "/synthetic/schema.json", "--", prompt)
+	if strings.Join(command.Args, "\x00") != strings.Join(want, "\x00") || command.Dir != scope.directory || strings.Join(command.Env, "\x00") != "HOME=/synthetic/home\x00PATH=/synthetic/bin" {
+		t.Fatal("execution scope, denials, restrictions or prompt boundary changed")
+	}
+	if _, err := prefetchNewDirectScope("/synthetic/codex", "/synthetic/repo", "gpt-6.1-sol", "read-only", nil); err == nil {
+		t.Fatal("nil environment would inherit ambient scope")
+	}
+	if command, err := prefetchDirectExec(context.Background(), nil, "/synthetic/schema", prompt); err == nil || command != nil {
+		t.Fatal("missing inventory reached execution")
+	}
+	for _, unsafe := range [][]string{{"a", "a"}, {"a.b"}, {strings.Repeat("a", 129)}} {
+		if command, err := prefetchDirectExec(context.Background(), &prefetchDirectInventoryResult{scope: scope, names: unsafe}, "/synthetic/schema", prompt); err == nil || command != nil {
+			t.Fatal("unsafe names reached execution")
+		}
+	}
+}
+
+func TestPrimaryPrefetchDirectMCPInventoryStrict(t *testing.T) {
+	valid := []string{`[]`, `[{"name":"server_1"}]`, `[{"name":"a","transport":{"env":{"FIXTURE":"not-retained"}}}]`}
+	many := make([]string, 128)
+	for i := range many {
+		many[i] = fmt.Sprintf(`{"name":"server_%d"}`, i)
+	}
+	valid = append(valid, "["+strings.Join(many, ",")+"]")
+	for _, body := range valid {
+		if _, err := prefetchDirectInventoryNames([]byte(body)); err != nil {
+			t.Fatal("valid bounded inventory rejected")
+		}
+	}
+	invalid := []string{`null`, `{}`, `[null]`, `["a"]`, `[{}]`, `[{"name":null}]`, `[{"name":1}]`, `[{"name":""}]`, `[{"name":"a","name":"b"}]`, `[{"name":"a","name":"a"}]`, `[{"name":"a"},{"name":"a"}]`, `[{"name":"a.b"}]`, `[{"name":"a b"}]`, `[{"name":"a\\b"}]`, `[{"name":"ç"}]`, `[{"name":"a\"b"}]`, `[{"name":"a"}] []`, `[{"name":"a"}`, `[{"name":"` + strings.Repeat("a", 129) + `"}]`, "[" + strings.Join(append(many, `{"name":"over"}`), ",") + "]", strings.Repeat(" ", 256<<10) + "[]"}
+	for i, body := range invalid {
+		t.Run(fmt.Sprintf("invalid_%02d", i), func(t *testing.T) {
+			if names, err := prefetchDirectInventoryNames([]byte(body)); err == nil || names != nil || strings.Contains(err.Error(), body) {
+				t.Fatal("unsafe inventory accepted or raw contents disclosed")
+			}
+		})
+	}
+}
+
+func TestPrimaryPrefetchDirectMCPInventoryFailureClosed(t *testing.T) {
+	scope, err := prefetchNewDirectScope("/synthetic/codex", "/synthetic/repo", "gpt-6.1-sol", "read-only", []string{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, kind := range []string{"exit", "stdout_overflow", "stderr_overflow", "partial", "canceled"} {
+		t.Run(kind, func(t *testing.T) {
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			names, err := prefetchDirectInventory(ctx, scope, func(command *exec.Cmd) error {
+				switch kind {
+				case "exit":
+					return errors.New("synthetic private failure")
+				case "stdout_overflow":
+					_, err := io.WriteString(command.Stdout, strings.Repeat(" ", (256<<10)+1))
+					if err == nil || command.Stdout.(*prefetchDirectBoundedOutput).buffer.Len() != 256<<10 {
+						t.Fatal("stdout writer did not enforce bound")
+					}
+				case "stderr_overflow":
+					_, err := io.WriteString(command.Stderr, strings.Repeat("x", (64<<10)+1))
+					if err == nil || command.Stderr.(*prefetchDirectBoundedOutput).buffer.Len() != 64<<10 {
+						t.Fatal("stderr writer did not enforce bound")
+					}
+				case "partial":
+					_, _ = io.WriteString(command.Stdout, `[{"name":`)
+				case "canceled":
+					cancel()
+					_, _ = io.WriteString(command.Stdout, `[]`)
+				}
+				return nil
+			})
+			if err == nil || names != nil || strings.Contains(err.Error(), "private") {
+				t.Fatal("failed inventory admitted or disclosed raw diagnostic")
+			}
+		})
+	}
+	if _, err := prefetchDirectInventory(context.Background(), scope, nil); err == nil {
+		t.Fatal("missing runner admitted")
+	}
+}
+
+func TestPrimaryPrefetchDirectMCPScopeCallerAlias(t *testing.T) {
+	for _, when := range []string{"during_inventory", "after_inventory"} {
+		t.Run(when, func(t *testing.T) {
+			scope, err := prefetchNewDirectScope("/synthetic/codex", "/synthetic/repo", "gpt-6.1-sol", "read-only", []string{"HOME=/synthetic/home"})
+			if err != nil {
+				t.Fatal(err)
+			}
+			var inventoriedArgs, inventoriedEnv []string
+			mutate := func() { scope.globals[0] = "--substituted-scope"; scope.environment[0] = "HOME=/substituted-scope" }
+			inventory, err := prefetchDirectInventory(context.Background(), scope, func(command *exec.Cmd) error {
+				inventoriedArgs = append([]string{}, command.Args[:len(command.Args)-3]...)
+				inventoriedEnv = append([]string{}, command.Env...)
+				if when == "during_inventory" {
+					mutate()
+				}
+				_, e := command.Stdout.Write([]byte(`[]`))
+				return e
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if when == "after_inventory" {
+				mutate()
+			}
+			command, err := prefetchDirectExec(context.Background(), inventory, "/synthetic/schema", "synthetic prompt")
+			if err != nil {
+				t.Fatal(err)
+			}
+			execIndex := -1
+			for i, v := range command.Args {
+				if v == "exec" {
+					execIndex = i
+					break
+				}
+			}
+			if execIndex < 0 || strings.Join(command.Args[:execIndex], "\x00") != strings.Join(inventoriedArgs, "\x00") || strings.Join(command.Env, "\x00") != strings.Join(inventoriedEnv, "\x00") {
+				t.Fatal("exec scope differs from actual inventory after caller slice mutation")
+			}
+		})
+	}
+}
+
 type prefetchLiveBuffer struct {
 	bytes.Buffer
 	max      int
@@ -609,6 +983,81 @@ func TestPrimaryPrefetchLiveMeasurementContract(t *testing.T) {
 	})
 	if err != nil || len(body) == 0 || !strings.Contains(string(body), "Scale") {
 		t.Fatal("production fixture prefetch contract failed")
+	}
+}
+
+func TestPrimaryPrefetchGatewayObservationContract(t *testing.T) {
+	hit, miss := true, false
+	events := []observability.Event{
+		{Operation: observability.OperationCodeInspect, State: observability.StateCompleted, Provider: "direct", CacheHit: &hit},
+		{Operation: observability.OperationCapabilityResolve, State: observability.StateCompleted, Capability: "evidence.code", CacheHit: &hit},
+		{Operation: observability.OperationCapabilityResolve, State: observability.StateCompleted, Capability: "evidence.code", CacheHit: &miss},
+		{Operation: observability.OperationCapabilityResolve, State: observability.StateCompleted, Capability: "evidence.code"},
+		{Operation: observability.OperationCapabilityResolve, State: observability.StateSelected, Capability: "evidence.code", CacheHit: &hit},
+		{Operation: observability.OperationCapabilityResolve, State: observability.StateCompleted, Capability: "tool.projection", CacheHit: &hit},
+		{Operation: observability.OperationCodeInspect, State: observability.StateSelected, CacheHit: &hit},
+	}
+	var row prefetchLiveRow
+	for range 2 { // A snapshot replaces counters; re-observation must not add them.
+		prefetchLiveObserveHost(&row, events)
+		if row.PrefetchCalls != 1 || row.CacheHits != 1 || row.StructuralCalls != 0 || row.GatewayCodeResolves != 3 || row.GatewayCodeCacheHits != 1 || row.GatewayCodeCacheMisses != 1 || row.GatewayCodeCacheUnknown != 1 || row.GatewayObservationBasis != "COMPLETED_SESSION_EVENTS_NOT_ECONOMY" {
+			t.Fatal("Gateway events conflated with CodeIntel, unrelated, incomplete or prior observations")
+		}
+	}
+	body, err := json.Marshal(row)
+	var decoded prefetchLiveRow
+	if err != nil || json.Unmarshal(body, &decoded) != nil || decoded.GatewayCodeResolves != 3 || decoded.GatewayCodeCacheUnknown != 1 {
+		t.Fatal("JSON lost direct observations")
+	}
+	prefetchLiveObserveHost(&row, nil)
+	if row.PrefetchCalls != 0 || row.GatewayCodeResolves != 0 || row.GatewayCodeCacheHits != 0 {
+		t.Fatal("empty observed snapshot reused prior event counts")
+	}
+}
+
+// The caller pins the expected runtime contract, not an inferred activation.
+// Baseline3ff expects0 even with flag1; the candidate expects1. Both compile
+// this identical test-only source without importing a newer production API.
+func TestPrimaryPrefetchGatewayObservationOffline(t *testing.T) {
+	expectedRuntime := os.Getenv("IVOAI_BENCHMARK_EXPECT_GATEWAY_EVENTS")
+	if expectedRuntime == "" {
+		t.Skip("NOT_RUN: explicit source-pinned runtime expectation0/1 required")
+	}
+	if expectedRuntime != "0" && expectedRuntime != "1" {
+		t.Fatal("invalid source-pinned Gateway expectation")
+	}
+	for _, flag := range []string{"0", "1"} {
+		t.Run("flag_"+flag, func(t *testing.T) {
+			t.Setenv("IVOAI_EXPERIMENTAL_EVIDENCE_GATEWAY", flag)
+			root := prefetchLiveRepository(t)
+			a, store, id, task := prefetchLiveHost(t, root, "Inspect API mathpkg/scale.go")
+			factory := func(_ context.Context, directory, scope string) (*codeintel.Provider, error) {
+				return &codeintel.Provider{Root: directory, Scope: scope, Permissions: "filesystem.read", Allowed: true}, nil
+			}
+			for call := 1; call <= 2; call++ {
+				body, err := a.preparePrimaryCodeEvidence(context.Background(), store, id, task, 4094, factory)
+				if err != nil || len(body) == 0 {
+					t.Fatal("direct-only offline prefetch failed")
+				}
+				value, err := store.Get(id)
+				if err != nil {
+					t.Fatal(err)
+				}
+				var row prefetchLiveRow
+				prefetchLiveObserveHost(&row, value.Observability)
+				wantGateway, wantInspections := 0, call
+				if flag == "1" && expectedRuntime == "1" {
+					wantGateway, wantInspections = call, 1
+				}
+				if row.GatewayCodeResolves != wantGateway || row.PrefetchCalls != wantInspections || row.StructuralCalls != 0 || row.GatewayCodeCacheUnknown != 0 {
+					t.Fatalf("unexpected directly observed counts: gateway=%d inspect=%d", row.GatewayCodeResolves, row.PrefetchCalls)
+				}
+				if wantGateway > 0 && (row.GatewayCodeCacheMisses != 1 || row.GatewayCodeCacheHits != call-1) {
+					t.Fatal("cold miss and subsequent reuse not directly observed")
+				}
+				t.Logf("offline direct events call=%d gateway_resolves=%d hits=%d misses=%d code_inspect=%d; first call cold, second mechanism-only reuse; no provider/economy", call, row.GatewayCodeResolves, row.GatewayCodeCacheHits, row.GatewayCodeCacheMisses, row.PrefetchCalls)
+			}
+		})
 	}
 }
 

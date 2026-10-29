@@ -1,0 +1,10 @@
+{
+  "source": "58639394dca7b38d2b61a918cbe1e594ab126326",
+  "source_freeze_sha256": "17c5d0a35a369e1f0a225d3e40c027b292a803131a3b191290f474f6e3d01984",
+  "command": [
+    "/var/tmp/ivoai-validation-toolchain-20261028/go/bin/go",
+    "vet",
+    "./..."
+  ],
+  "once": true
+}

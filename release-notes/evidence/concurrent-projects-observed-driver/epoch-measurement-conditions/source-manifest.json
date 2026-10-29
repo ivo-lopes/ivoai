@@ -1,0 +1,26 @@
+{
+  "base_revision": "0ba301e238ff38239bd90ff2025ac649728d2bf9",
+  "scope": "Two changed Python sources and unchanged module manifests; Go/harness/catalog/observer and all prior artifacts fixed by base",
+  "files": [
+    {
+      "path": "scripts/benchmark_concurrent_runtime.py",
+      "bytes": 21069,
+      "sha256": "473403362c890875428f10aaf62dfbc6dfe36666d43913fb36298a13c87a44b9"
+    },
+    {
+      "path": "scripts/test_benchmark_concurrent_runtime.py",
+      "bytes": 23809,
+      "sha256": "eb4919e76b2266394a93192593e4d6b2bcc494f930d325f2ed909df384285ea1"
+    },
+    {
+      "path": "go.mod",
+      "bytes": 568,
+      "sha256": "d1c486bcfb3a5e1127b4f47de7e62001c768ee744c42b6f96627f6895d026705"
+    },
+    {
+      "path": "go.sum",
+      "bytes": 2537,
+      "sha256": "44f145c4f9477395f29442a17757c7de7b24df282e19c7e6ffddb58662e2553c"
+    }
+  ]
+}
