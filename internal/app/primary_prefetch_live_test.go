@@ -596,6 +596,10 @@ func prefetchDirectInventory(ctx context.Context, scope prefetchDirectScope, run
 	if run == nil {
 		return nil, errors.New("direct benchmark inventory runner unavailable")
 	}
+	// Own the exact scope before the runner can mutate any caller-owned slice.
+	// The result must retain this snapshot, not aliases to the input scope.
+	scope.environment = append([]string{}, scope.environment...)
+	scope.globals = append([]string{}, scope.globals...)
 	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
 	defer cancel()
 	command := scope.command(ctx, nil, []string{"mcp", "list", "--json"})
@@ -785,6 +789,48 @@ func TestPrimaryPrefetchDirectMCPInventoryFailureClosed(t *testing.T) {
 	}
 	if _, err := prefetchDirectInventory(context.Background(), scope, nil); err == nil {
 		t.Fatal("missing runner admitted")
+	}
+}
+
+func TestPrimaryPrefetchDirectMCPScopeCallerAlias(t *testing.T) {
+	for _, when := range []string{"during_inventory", "after_inventory"} {
+		t.Run(when, func(t *testing.T) {
+			scope, err := prefetchNewDirectScope("/synthetic/codex", "/synthetic/repo", "gpt-6.1-sol", "read-only", []string{"HOME=/synthetic/home"})
+			if err != nil {
+				t.Fatal(err)
+			}
+			var inventoriedArgs, inventoriedEnv []string
+			mutate := func() { scope.globals[0] = "--substituted-scope"; scope.environment[0] = "HOME=/substituted-scope" }
+			inventory, err := prefetchDirectInventory(context.Background(), scope, func(command *exec.Cmd) error {
+				inventoriedArgs = append([]string{}, command.Args[:len(command.Args)-3]...)
+				inventoriedEnv = append([]string{}, command.Env...)
+				if when == "during_inventory" {
+					mutate()
+				}
+				_, e := command.Stdout.Write([]byte(`[]`))
+				return e
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if when == "after_inventory" {
+				mutate()
+			}
+			command, err := prefetchDirectExec(context.Background(), inventory, "/synthetic/schema", "synthetic prompt")
+			if err != nil {
+				t.Fatal(err)
+			}
+			execIndex := -1
+			for i, v := range command.Args {
+				if v == "exec" {
+					execIndex = i
+					break
+				}
+			}
+			if execIndex < 0 || strings.Join(command.Args[:execIndex], "\x00") != strings.Join(inventoriedArgs, "\x00") || strings.Join(command.Env, "\x00") != strings.Join(inventoriedEnv, "\x00") {
+				t.Fatal("exec scope differs from actual inventory after caller slice mutation")
+			}
+		})
 	}
 }
 
