@@ -1,0 +1,26 @@
+{
+  "source": "1f58745811b9a5f3ad7d483a06e41a1f25837bc1",
+  "command": [
+    "/var/tmp/ivoai-validation-toolchain-20261028/go/bin/go",
+    "test",
+    "-count=1",
+    "-json",
+    "./internal/docsserver"
+  ],
+  "environment": {
+    "HOME": "/var/tmp/ivoai-benchmark-main-v015-proof-20261029/home",
+    "PATH": "/var/tmp/ivoai-validation-toolchain-20261028/go/bin:/usr/bin:/bin",
+    "GOENV": "off",
+    "GOWORK": "off",
+    "GOPROXY": "off",
+    "GOSUMDB": "off",
+    "GOMAXPROCS": "2",
+    "GOCACHE": "/home/ivo/.cache/go-build",
+    "GOMODCACHE": "/home/ivo/go/pkg/mod",
+    "TMPDIR": "/var/tmp/ivoai-benchmark-main-v015-proof-20261029",
+    "GOTMPDIR": "/var/tmp/ivoai-benchmark-main-v015-proof-20261029",
+    "LANG": "C.UTF-8"
+  },
+  "official_optins": "ABSENT",
+  "once": true
+}
