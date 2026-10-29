@@ -1,0 +1,65 @@
+{
+  "schema_version": 1,
+  "scope": "POST_OPERATION_ALLOWLIST_ARCHIVAL_NO_OFFICIAL_EXECUTION",
+  "executed_source_commit": "3c80a2325f4c1d7b56ffd0422090f12ff91c17e2",
+  "executed_source_tree": "e5e4db233fe5ac901fdfad672fb729cb8e8fb1ab",
+  "guarded_transport_source": "ed9b659693d8aeb3cd51c42492078371769a6f6c",
+  "source_clean_before_and_after_archival": true,
+  "existing_guarded_Go_files": 594,
+  "guarded_Go_files_unchanged": true,
+  "executed_source_Go_files": 596,
+  "source_inputs_sha256": {
+    "internal/app/primary_prefetch_subscription_authenticated_linux_test.go": "bc7e2be3bb688f28b5ddd3b903710f515bb58a3c8d0ff3f6b713d4ec0a6f0372",
+    "internal/app/primary_prefetch_subscription_authenticated_contract_linux_test.go": "2b80ad6a150aa5874d133bc1c9ab7ce2804a0085bd46e0cebbf6341983e1bc04",
+    "release-notes/evidence/subscription-authenticated-metadata/run_authenticated_once.py": "096adb046cdb482841d341f9a209f269cc30736e455b87d23ec02ac42f8df481",
+    "release-notes/evidence/subscription-authenticated-metadata/test_recipe_contract.py": "93b36646d677e74d5530ddde5406fe2af1db537340129e66ddd8c5beaf3f12d3",
+    "release-notes/evidence/subscription-authenticated-metadata/RECIPE.md": "33427b4d7dc07a58f9144bd3c54e96e1797f6d6028564c400237534d5f89493a"
+  },
+  "code_components": {
+    "executed_test_ELF": {
+      "sha256": "51e4e1cd467ef860ae8f5aa485657adab8b5cb63d463efe786facdf95aa8c626",
+      "size": 29607321,
+      "expected_match": true,
+      "executed_during_archival": false
+    },
+    "codex": {
+      "sha256": "628e35487d888a28f0427fc37501da529dd3d81fcbad7a2c3421c1e8670d92e1",
+      "size": 294415048,
+      "expected_match": true,
+      "executed_during_archival": false
+    },
+    "codex-code-mode-host": {
+      "sha256": "ec71830690a7c0024916ee0c99fbdc635bc6e747ff665ea4f03a8389bbcb6b30",
+      "size": 74036112,
+      "expected_match": true,
+      "executed_during_archival": false
+    },
+    "Go_compiler": {
+      "sha256": "5f5eb6d0b2fb6aa0bb5d5f8c5f1c944e0de955c925f0111af92a9d8f79680b5b",
+      "size": 17164222,
+      "expected_match": true,
+      "executed_during_archival": false
+    }
+  },
+  "receipts": {
+    "result.json": "2149fa97be8c7dd1e1dc9e6fd5582da8c0fcffc93fd592b4f2ca7db6b153bc22",
+    "qualification.json": "3d89fa8e42c7e587a2cd39c1e88b82b0ee76d6262c115ccbf8c1a59de7c265f4"
+  },
+  "receipt_validation": {
+    "bounded_no_follow_owner_regular": true,
+    "duplicate_keys_rejected": true,
+    "closed_schema_enums_types": true,
+    "qualification_equals_nested_result": true,
+    "raw_receipts_byte_exact": true
+  },
+  "operation_executor": "ROOT_ONE_PREVIOUSLY_AUTHORIZED_OPERATION",
+  "official_operations_during_archival": 0,
+  "personal_auth_config_keyring_reads_copies_hashes": 0,
+  "runtime_argv_env_personal_values_retained": false,
+  "raw_RPC_or_stderr_retained": false,
+  "supplementary_groups": "NOT_CERTIFIED; preparatory_OS_probe_recorded_changed_groups",
+  "measured_duration_cost": "NOT_RECORDED",
+  "cohort_connected": false,
+  "future_exec_atomic_authorization": false,
+  "prior_preparation_negative_and_adverse_receipts_modified": false
+}
