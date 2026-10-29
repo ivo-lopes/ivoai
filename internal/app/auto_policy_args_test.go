@@ -43,3 +43,13 @@ func TestAutoReportsUnsupportedCodexConfigScopeBeforeFrontend(t *testing.T) {
 		t.Fatalf("startup did not expose the fixed migration diagnostic: %v", err)
 	}
 }
+
+func TestAutoReportsManagedDirectoryScopeBeforeFrontend(t *testing.T) {
+	a := &App{}
+	for _, args := range [][]string{{"--cd", "/synthetic-private"}, {"--cd=/synthetic-private"}, {"-C", "/synthetic-private"}, {"-C/synthetic-private"}} {
+		_, err := a.autoBridgeArgs("codex", args, "fixture", "unused", "unused", config.Default())
+		if err == nil || !strings.Contains(err.Error(), "CODEX_MANAGED_CONFIG_SCOPE_UNSUPPORTED") || !strings.Contains(err.Error(), "omit --cd/-C") || strings.Contains(err.Error(), "synthetic-private") {
+			t.Fatalf("directory startup migration unavailable: %v", err)
+		}
+	}
+}

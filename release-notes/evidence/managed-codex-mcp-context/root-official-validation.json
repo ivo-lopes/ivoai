@@ -1,0 +1,40 @@
+{
+  "result": "PASS_PINNED_CLI_MANAGED_BOUNDARY_FINAL_V3",
+  "source_base": "4368d5495a5be4ce425f4ab89849df0296fc6f9b",
+  "source_freeze_sha256": "ebd3a852223fc9a82c6be03f1f0f0cad2dd22bc71375d3c998d62895957ffdd5",
+  "source_paths_verified_before_and_after": 589,
+  "official_pair": [
+    "628e35487d888a28f0427fc37501da529dd3d81fcbad7a2c3421c1e8670d92e1",
+    "ec71830690a7c0024916ee0c99fbdc635bc6e747ff665ea4f03a8389bbcb6b30"
+  ],
+  "Go": "1.27.3",
+  "package_exit": 0,
+  "package_seconds": 5.996,
+  "count": 1,
+  "race": true,
+  "passed_top_level_tests": 1,
+  "passed_cases": 6,
+  "skips": 0,
+  "failures": 0,
+  "passed": [
+    "TestPinnedCodexManagedNativeWorkerBoundary/legacy_flags_positive",
+    "TestPinnedCodexManagedNativeWorkerBoundary/v2_overrides_agents_false",
+    "TestPinnedCodexManagedNativeWorkerBoundary/cli_enable_overrides_config",
+    "TestPinnedCodexManagedNativeWorkerBoundary/hostile_profile_positive",
+    "TestPinnedCodexManagedNativeWorkerBoundary/managed_clean",
+    "TestPinnedCodexManagedNativeWorkerBoundary/managed_hostile_profile_and_compact_config",
+    "TestPinnedCodexManagedNativeWorkerBoundary"
+  ],
+  "tested": "Four synthetic native-worker execution positives and two managed denials, including hostile profile and compact config; real official inventory/exec with scoped Dir/Env/trust. Child requests are fixture observations, not complete native event totals.",
+  "provider": "httptest local synthetic only; no real model inference or subscription status/login invoked",
+  "new_downloads_installs_personal_config_edits": 0,
+  "isolation_limit": "env-i with fresh private HOME, per-case HOME/CODEX_HOME, explicit fake provider; this test does NOT install a separate network namespace or replace host /etc. It does not certify external MCP/cloud/system-layer isolation.",
+  "not_claimed": [
+    "real auth/quota parity",
+    "performance savings",
+    "real concurrent cohort admission",
+    "Core orchestration full native-TUI parity",
+    "byte-pinned config files against concurrent writers"
+  ],
+  "log_sha256": "d70da4615defd61b497b5d2c7cfde2e7e71d3645cd5585adab0dca93013a23ca"
+}

@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "recorded_utc": "2026-10-29T01:30:48.848605+00:00",
+  "status": "LOCAL_ALIGNMENT_GATES_PASS_EXACT_HEAD_CI_PENDING_REVIEW",
+  "base": "4368d5495a5be4ce425f4ab89849df0296fc6f9b",
+  "final_source_freeze_sha256": "ebd3a852223fc9a82c6be03f1f0f0cad2dd22bc71375d3c998d62895957ffdd5",
+  "final_source_paths": 589,
+  "final_source_identity_verified": true,
+  "runtime_callers": "App and Adapter.Run pass explicit context; opt-in fixtures migrated; legacy wrapper current-process only; private scoped fallback derives Request",
+  "v2_epoch": {
+    "freeze_sha256": "51f3bb2c27710615a8412b37cb4e51a15cb817a49de49fc57a2a242986a44ffb",
+    "full_go_passing_packages": 59,
+    "packages_without_tests": 3,
+    "test_pass_events_including_subtests": 2052,
+    "opt_in_skips_not_passes": 69,
+    "vet": "PASS",
+    "race_packages": 4,
+    "race_pass_events_including_subtests": 249,
+    "race_opt_in_skips_not_passes": 9,
+    "app_race_top_tests": 4,
+    "app_race_subtests": 4,
+    "cross_builds": "PASS_LINUX_AMD64v1_ARM64_NO_EXECUTION"
+  },
+  "v3_epoch": {
+    "changed_from_v2": [
+      "internal/workers/access.go",
+      "internal/workers/inventory_context_test.go"
+    ],
+    "managed_runtime_calls_already_explicit_in_v2": true,
+    "workers_race": "PASS",
+    "workers_pass_events_including_subtests": 42,
+    "workers_opt_in_skips_not_passes": 2,
+    "workers_vet": "PASS",
+    "exact_full_suite": "NOT_RERUN_PENDING_EXACT_HEAD_CI",
+    "root_official_offline_test": {
+      "receipt": "root-official-validation.json",
+      "receipt_sha256": "473a79b8aca4d30eedf3e97e23521d14ea99d86c7c8424ce3695c8b687909a4a",
+      "race": true,
+      "count": 1,
+      "passed_cases": 6,
+      "skips": 0,
+      "scope": "synthetic local provider only; no netns/system/cloud certification"
+    }
+  },
+  "adverse_evidence_preserved": [
+    "old execution-config regression FAIL",
+    "old CleanEnv nil/empty real-process regression FAIL",
+    "intermediate App import compilation FAIL",
+    "old arguments overlay generic-directory-diagnostic FAIL",
+    "initial draft incomplete-option7cases FAIL",
+    "v2 implicit private fallback context FAIL"
+  ],
+  "unchanged": {
+    "prior_tracked_evidence": true,
+    "benchmark_data_and_scripts": true,
+    "website_embed_inputs": true,
+    "modules_pins_workflows": true,
+    "SplitExecArguments_ConfigurationArgs_autoBridgeArgs": true,
+    "Core_nativecodex_session": true
+  },
+  "auth_or_real_provider_or_native_status_calls_by_implementation_agent": 0,
+  "root_official_run": "separate proof, not counted in historical126",
+  "production_installer_dependency_download_personal_config_mutation": 0,
+  "scope_limits": [
+    "invocation snapshot only, not filesystem/config/cloud snapshot",
+    "legacy wrapper cannot match separately chosen exec Dir/Env",
+    "directory overrides now explicit unsupported; migrate by cwd and scoped API",
+    "CleanEnv=true nil/empty now genuinely empty; nonempty existing call sites retain intended behavior",
+    "general startup/lifecycle/auth/parity/economics not certified"
+  ],
+  "delivery": "LOCAL_ONLY_NO_PUSH_MERGE_TAG_RELEASE"
+}

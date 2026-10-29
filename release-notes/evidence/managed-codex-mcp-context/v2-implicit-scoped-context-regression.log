@@ -1,0 +1,5 @@
+--- FAIL: TestScopedCodexImplicitContextUsesRequestDirectory (0.00s)
+    inventory_context_test.go:177: implicit scoped inventory lost request directory
+FAIL
+FAIL	github.com/ivo-lopes/ivoai/internal/workers	0.009s
+FAIL

@@ -1,0 +1,5 @@
+ok  	github.com/ivo-lopes/ivoai/internal/platform	0.010s
+ok  	github.com/ivo-lopes/ivoai/internal/codexresolver	0.006s
+ok  	github.com/ivo-lopes/ivoai/internal/workers	0.020s
+ok  	github.com/ivo-lopes/ivoai/internal/opencodebridge	0.010s
+ok  	github.com/ivo-lopes/ivoai/internal/app	0.016s

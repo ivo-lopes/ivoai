@@ -1,0 +1,5 @@
+--- FAIL: TestAutoReportsManagedDirectoryScopeBeforeFrontend (0.00s)
+    auto_policy_args_test.go:52: directory startup migration unavailable: AUTO primary write policy is controlled by IVOAI; use planned worker write paths
+FAIL
+FAIL	github.com/ivo-lopes/ivoai/internal/app	0.007s
+FAIL

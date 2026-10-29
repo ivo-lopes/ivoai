@@ -11,6 +11,7 @@ import (
 
 	"github.com/ivo-lopes/ivoai/internal/agents"
 	"github.com/ivo-lopes/ivoai/internal/codeintel"
+	"github.com/ivo-lopes/ivoai/internal/codexresolver"
 	"github.com/ivo-lopes/ivoai/internal/config"
 	"github.com/ivo-lopes/ivoai/internal/core"
 	"github.com/ivo-lopes/ivoai/internal/externalmcp"
@@ -347,13 +348,20 @@ func (a *App) scopeAutoRunner(base core.ExecutorRunner, original config.Config, 
 				if executor == "claude" {
 					spec = &cli.Claude
 				}
+				spec.Env = inheritHookSessionEnvironment(executorBridgeEnvironment(k.environment), spec.Env)
 				if executor == "codex" && spec.Path != "" {
-					args, err = (workers.Adapter{Runner: a.Runner}).IsolateCodexMCPs(ctx, spec.Path, args)
+					scope, scopeErr := codexresolver.NewConfigContext(platform.RunOptions{Dir: spec.Dir, Env: spec.Env, CleanEnv: spec.Env != nil})
+					if scopeErr != nil {
+						return fail(scopeErr)
+					}
+					spec.CodexConfigContext = &scope
+					spec.Dir, spec.Env = scope.Directory(), scope.Environment()
+					args, err = (workers.Adapter{Runner: a.Runner}).IsolateCodexMCPsInContext(ctx, spec.Path, args, scope)
 					if err != nil {
 						return fail(err)
 					}
 				}
-				spec.Args, spec.Env = args, inheritHookSessionEnvironment(executorBridgeEnvironment(k.environment), spec.Env)
+				spec.Args = args
 				spec.ObserveProgress = func(trace core.ExecutionTrace) {
 					encoded, err := json.Marshal(trace)
 					if err == nil {

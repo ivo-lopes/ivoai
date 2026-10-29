@@ -1,0 +1,21 @@
+{
+  "old-regression.log": "efd4955ae63be02a836ad422d4f836f350ad8ceac64266a92a9e03452803abf5",
+  "v3-workers-vet.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "initial-incomplete-options-regression.log": "05702c01f03539e4ea7aba12371d0cd415f82f49df06abe37f6f749046a2bd96",
+  "root-official-validation.json": "473a79b8aca4d30eedf3e97e23521d14ea99d86c7c8424ce3695c8b687909a4a",
+  "v2-vet.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "test-results.json": "3efa9a413cd4f5b6434457a47d7433a3c73c6cd0fc83c8c175eebe5a00738033",
+  "old-directory-diagnostic.log": "c7a079311f2758db89191a9118396464a1cf8465770e4765a700c8b6e5f77e38",
+  "cross-builds-v2.json": "f7349a73db710794c5bfe1d104cc5fe949cece92adef3d10a20811d6e504ff4c",
+  "v2-implicit-scoped-context-regression.log": "0a14b79aaf8fc6f685009341a38d52535a6061a161b9a3a349c58a016b7713d0",
+  "old-cleanenv-regression.log": "15fadcc291bed7d61653805b3d02381bcc32192d610d05642bb04a7973df9803",
+  "source-freeze-v3.json": "ebd3a852223fc9a82c6be03f1f0f0cad2dd22bc71375d3c998d62895957ffdd5",
+  "source-freeze-v2.json": "51f3bb2c27710615a8412b37cb4e51a15cb817a49de49fc57a2a242986a44ffb",
+  "prior-offline-reproducer.json": "7f264ddd09199ad26f8ee446e38412375b9e0f27c1a7cdca1d1d7f2cc865d9b3",
+  "source-freeze.json": "767c95934bfc3ee8f42add197651c642b874847e09555e00eab8e102bff2b256",
+  "root-official-boundary.jsonl": "d70da4615defd61b497b5d2c7cfde2e7e71d3645cd5585adab0dca93013a23ca",
+  "toolchain.json": "8eb53079e3144a975709b07da9ff613c375e262a1b2b0c4da84d0e69d1d1a723",
+  "complete-regressions.log": "8a8bc119be76bd5034c47d06c6f1489be6bda10b2eb1cd56ca89578c58809111",
+  "validation.json": "2bcddedb148b34e765d516255c29b30d9be2803f26cd57302ddb485b019f0f16",
+  "old-directory-diagnostic-semantic.log": "259da9c84b3a5d42a7ee5397be4a7640d9ecb344730d772e3ecfbaec6cdf055f"
+}
