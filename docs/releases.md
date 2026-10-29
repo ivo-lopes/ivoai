@@ -2,15 +2,18 @@
 
 ## v0.15.0 — local candidate, not published
 
-**PUBLICATION HOLD: lifecycle qualification, final-head CI and distribution gates
-remain pending.** The new supported-source `55ec7ab9` canary completed one bounded
-read-only turn and its math oracle. After intentional SIGINT, however, session
-and frontend state were persisted failed with fallback code1. That stored code
-maps context cancellation; it is not a measured frontend process exit.
-Distinguishing driver cancellation from normal TUI exit remains INVESTIGATION_PENDING. This is a
-narrow turn result, not a zero-exit lifecycle or general native TUI qualification.
-The original `0bab9b34` real failure and its UNKNOWN cause remain preserved,
-separately from the new run and the 126 historical backend-first turns.
+**PUBLICATION HOLD: MCP configuration-scope correction, process-cleanup CI
+investigation, final-head CI and distribution gates remain pending.** A supported
+`55ec7ab9` real turn passed its math oracle; its intentional SIGINT cleanup
+persisted failed/fallback1, which is not a measured frontend process exit.
+A separate public startup with only `/quit` + Enter completed naturally in
+2.147s: Core Wait0, Session/frontend completed0 and no owned SID residue, with
+zero question/attempt/worker and no forced signal. This qualifies normal idle
+startup/quit for those exact inputs. A real turn followed by normal quit in one
+session was not run. The original `0bab9b34` failure and UNKNOWN cause remain
+preserved; none of these observations joins the 126 comparative turns.
+See the [normal-exit report](https://github.com/ivo-lopes/ivoai/blob/release/v0.15.0-candidate/release-notes/native-normal-quit-validation.md).
+No general TUI/client/model parity or economic result follows.
 
 A separate scoped offline Core Code Mode proof now passed on `55ec7ab9`: one
 actual Core tool call, matching non-error result, same read-only receipt,

@@ -7,16 +7,18 @@ migração pertencem às evidências versionadas de implementação e validaçã
 
 ## Candidata local v0.15.0 — publicação HOLD
 
-A candidata compõe a recusa revisada do main58 e cleanup de PID somente de teste
-no PR59. Codex gerenciado recusa `--ignore-user-config`; omita a flag sem editar
-configuração pessoal. Core e políticas normais seguem, sem escopo ignore equivalente.
-A prova offline separada de chamada/resultado Core Code Mode passou no seu escopo
-de provedor falso; falhas anteriores ficam preservadas e Wait0 do filho Core não
-foi observado. Um novo turno real suportado passou, mas sessão/frontend ficaram
-failed, com código fallback1 após cancelamento intencional, não exit medido do
-frontend. Classificação de lifecycle segue
-INVESTIGATION_PENDING, junto aos gates de CI final/distribuição. Não comprova
-paridade geral de TUI/clientes/modelos nem economia.
+**PUBLICAÇÃO EM HOLD: correção do escopo MCP, investigação da CI de limpeza
+de processos, CI da fonte final e distribuição continuam pendentes.** Um turno
+real suportado em `55ec7ab9` passou no oráculo matemático; seu cleanup intencional
+por SIGINT persistiu failed/fallback1, sem medir o exit real do frontend.
+Outra inicialização pública, com apenas `/quit` + Enter, terminou naturalmente
+em 2,147s: WaitCore0, Session/frontend completed0 e nenhum resíduo no SID próprio,
+sem pergunta/tentativa/worker ou sinal forçado. Isso qualifica startup/quit ocioso
+nesses inputs exatos. Turno real seguido de quit normal na mesma sessão não foi
+executado. A falha original `0bab9b34` e sua causa UNKNOWN são preservadas; estas
+observações não entram nos 126 turnos comparativos. Consulte o
+[relatório de saída normal](https://github.com/ivo-lopes/ivoai/blob/release/v0.15.0-candidate/release-notes/native-normal-quit-validation.md).
+Não comprova paridade geral de TUI/clientes/modelos nem economia.
 
 G0 está ligado ao prefetch admitido sob flag OFF por padrão, com recuperação exata
 Core/MCP protegida e opt-in separado de criação protegida. G1 Memory permanece SPI

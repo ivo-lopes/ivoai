@@ -2,15 +2,18 @@
 
 ## v0.15.0 — candidata local, não publicada
 
-**PUBLICAÇÃO EM HOLD: qualificação de lifecycle, CI do head final e distribuição
-continuam pendentes.** O novo canário no fonte suportado `55ec7ab9` completou um
-turno somente leitura e seu oráculo matemático. Após SIGINT intencional, porém,
-sessão e frontend foram persistidos failed, com código fallback1. Esse valor
-mapeia cancelamento do contexto; não é exit medido do processo frontend.
-Distinguir cancelamento do driver de saída normal da TUI segue INVESTIGATION_PENDING. É resultado limitado
-a um turno, não qualificação de lifecycle exit0 nem da TUI nativa geral.
-A falha real original `0bab9b34` e sua causa UNKNOWN permanecem preservadas,
-separadas da nova execução e dos 126 turnos históricos backend-first.
+**PUBLICAÇÃO EM HOLD: correção do escopo MCP, investigação da CI de limpeza
+de processos, CI da fonte final e distribuição continuam pendentes.** Um turno
+real suportado em `55ec7ab9` passou no oráculo matemático; seu cleanup intencional
+por SIGINT persistiu failed/fallback1, sem medir o exit real do frontend.
+Outra inicialização pública, com apenas `/quit` + Enter, terminou naturalmente
+em 2,147s: WaitCore0, Session/frontend completed0 e nenhum resíduo no SID próprio,
+sem pergunta/tentativa/worker ou sinal forçado. Isso qualifica startup/quit ocioso
+nesses inputs exatos. Turno real seguido de quit normal na mesma sessão não foi
+executado. A falha original `0bab9b34` e sua causa UNKNOWN são preservadas; estas
+observações não entram nos 126 turnos comparativos. Consulte o
+[relatório de saída normal](https://github.com/ivo-lopes/ivoai/blob/release/v0.15.0-candidate/release-notes/native-normal-quit-validation.md).
+Não comprova paridade geral de TUI/clientes/modelos nem economia.
 
 Uma prova offline separada Core Code Mode passou no fonte `55ec7ab9`: uma chamada
 real ao Core, resultado correspondente sem erro, mesmo receipt readonly,

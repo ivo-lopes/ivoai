@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="generator" content="Docusaurus v3.10.2">
 <title data-rh="true">Arquitetura do ivoai | IVOAI</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="http://localhost:7780/pt-BR/docs/next/architecture"><meta data-rh="true" property="og:locale" content="pt_BR"><meta data-rh="true" property="og:locale:alternate" content="en_US"><meta data-rh="true" name="docusaurus_locale" content="pt-BR"><meta data-rh="true" name="docsearch:language" content="pt-BR"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="Arquitetura do ivoai | IVOAI"><meta data-rh="true" name="description" content="Esta página preserva descrições históricas da arquitetura, originalmente baseadas"><meta data-rh="true" property="og:description" content="Esta página preserva descrições históricas da arquitetura, originalmente baseadas"><link data-rh="true" rel="icon" href="/pt-BR/img/favicon.svg"><link data-rh="true" rel="canonical" href="http://localhost:7780/pt-BR/docs/next/architecture"><link data-rh="true" rel="alternate" href="http://localhost:7780/docs/next/architecture" hreflang="en-US"><link data-rh="true" rel="alternate" href="http://localhost:7780/pt-BR/docs/next/architecture" hreflang="pt-BR"><link data-rh="true" rel="alternate" href="http://localhost:7780/docs/next/architecture" hreflang="x-default"><script data-rh="true" type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Arquitetura do ivoai","item":"http://localhost:7780/pt-BR/docs/next/architecture"}]}</script><link rel="stylesheet" href="/pt-BR/assets/css/styles.ef9ae034.css">
-<script src="/pt-BR/assets/js/runtime~main.34c5c9eb.js" defer="defer"></script>
+<script src="/pt-BR/assets/js/runtime~main.26eeef00.js" defer="defer"></script>
 <script src="/pt-BR/assets/js/main.1b5f3623.js" defer="defer"></script>
 </head>
 <body>
@@ -17,16 +17,18 @@ na v0.5.0, e registra separadamente o estado incremental atual abaixo. As versõ
 exatas estão em <code>manifest/components.yaml</code>; comportamento entregue e limites da
 migração pertencem às evidências versionadas de implementação e validação.</p>
 <h2 class="anchor anchorTargetStickyNavbar_J2Vv" id="candidata-local-v0150--publicação-hold">Candidata local v0.15.0 — publicação HOLD<a href="#candidata-local-v0150--publicação-hold" class="hash-link" aria-label="Link direto para Candidata local v0.15.0 — publicação HOLD" title="Link direto para Candidata local v0.15.0 — publicação HOLD" translate="no">​</a></h2>
-<p>A candidata compõe a recusa revisada do main58 e cleanup de PID somente de teste
-no PR59. Codex gerenciado recusa <code>--ignore-user-config</code>; omita a flag sem editar
-configuração pessoal. Core e políticas normais seguem, sem escopo ignore equivalente.
-A prova offline separada de chamada/resultado Core Code Mode passou no seu escopo
-de provedor falso; falhas anteriores ficam preservadas e Wait0 do filho Core não
-foi observado. Um novo turno real suportado passou, mas sessão/frontend ficaram
-failed, com código fallback1 após cancelamento intencional, não exit medido do
-frontend. Classificação de lifecycle segue
-INVESTIGATION_PENDING, junto aos gates de CI final/distribuição. Não comprova
-paridade geral de TUI/clientes/modelos nem economia.</p>
+<p><strong>PUBLICAÇÃO EM HOLD: correção do escopo MCP, investigação da CI de limpeza
+de processos, CI da fonte final e distribuição continuam pendentes.</strong> Um turno
+real suportado em <code>55ec7ab9</code> passou no oráculo matemático; seu cleanup intencional
+por SIGINT persistiu failed/fallback1, sem medir o exit real do frontend.
+Outra inicialização pública, com apenas <code>/quit</code> + Enter, terminou naturalmente
+em 2,147s: WaitCore0, Session/frontend completed0 e nenhum resíduo no SID próprio,
+sem pergunta/tentativa/worker ou sinal forçado. Isso qualifica startup/quit ocioso
+nesses inputs exatos. Turno real seguido de quit normal na mesma sessão não foi
+executado. A falha original <code>0bab9b34</code> e sua causa UNKNOWN são preservadas; estas
+observações não entram nos 126 turnos comparativos. Consulte o
+<a href="https://github.com/ivo-lopes/ivoai/blob/release/v0.15.0-candidate/release-notes/native-normal-quit-validation.md" target="_blank" rel="noopener noreferrer" class="">relatório de saída normal</a>.
+Não comprova paridade geral de TUI/clientes/modelos nem economia.</p>
 <p>G0 está ligado ao prefetch admitido sob flag OFF por padrão, com recuperação exata
 Core/MCP protegida e opt-in separado de criação protegida. G1 Memory permanece SPI
 sem ligação. Adaptação segue OFF, com admissão de envelope literal e DAG/aprovações

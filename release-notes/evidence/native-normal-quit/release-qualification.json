@@ -1,0 +1,22 @@
+{
+  "scope_result": "PUBLIC_NORMAL_START_IDLE_QUIT_QUALIFIED_FOR_EXACT_INPUTS",
+  "source": "55ec7ab98683bf0c8784b93baebc966f2910772b",
+  "binary_sha256": "5973758fb84bb2abe77ca39cbdd4f48d309ef7433d06b34fe5c646d55f54f6c7",
+  "pin": "official0.162.1 reviewed pair",
+  "proved": "One actual public managed CLI startup with declaredgpt-6.1-sol/low, noLLMprompt/attempt, official/quit+Enter, actualCoreWait0, persisted Session/frontendcompleted0, fixtureunchanged and ownedSIDresidue0.",
+  "effect": "Resolve the concrete question whether this supported normal zero-prompt public exit can finish the session as completed0. Do not infer prior post-SIGINT persisted1 was actual native process exit1. No production state/API change needed solely for this distinction.",
+  "not_combined": [
+    "Earlier single real read-only question correctness PASS had intentionalSIGINT cleanup and persistedfailed1; it remains a separate immutable outcome.",
+    "A single real-model turn followed by normal/quit and completed0 in the same session has NOT been run.",
+    "Initial CoreMCP child-cleanup baseline remainsUNKNOWN."
+  ],
+  "publication": "PARTIAL_QUALIFICATION_ONLY; no automatic release approval. New CI56 TestNativeCloseStopsBackgroundDirectoryWriters/closed_writer failure is an independent unresolved quality gate, plus final combined-source CI/review still apply.",
+  "not_proved": [
+    "Global client/TUI parity",
+    "Global OpenCode removal",
+    "Economic savings orAB/BA equivalence",
+    "Provider/quotaconsumption0",
+    "All subprocesses exit0"
+  ],
+  "new_authorizations": "This one zero-prompt execution is consumed. No additional status/model/client execution authorized."
+}

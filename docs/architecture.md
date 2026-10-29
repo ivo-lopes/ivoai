@@ -7,16 +7,18 @@ to versioned implementation and validation evidence.
 
 ## Local v0.15.0 candidate — publication HOLD
 
-The candidate composes reviewed main58 guard and test-only PR59 PID cleanup.
-Managed Codex refuses `--ignore-user-config`; omit it without editing personal
-config. Normal Core projection and policy remain, without equivalent ignore scope.
-The separate offline Core Code Mode call/result proof passed in its narrow fake
-provider scope; earlier failed receipts stay unchanged and Core child Wait0 remains
-unobserved. A new real supported turn passed, but session/frontend became failed
-with stored fallback code1 after intentional cancellation, not a measured frontend
-exit. Lifecycle classification remains
-INVESTIGATION_PENDING, alongside final-head CI/distribution gates. No general
-TUI/client/model parity or economic result follows.
+**PUBLICATION HOLD: MCP configuration-scope correction, process-cleanup CI
+investigation, final-head CI and distribution gates remain pending.** A supported
+`55ec7ab9` real turn passed its math oracle; its intentional SIGINT cleanup
+persisted failed/fallback1, which is not a measured frontend process exit.
+A separate public startup with only `/quit` + Enter completed naturally in
+2.147s: Core Wait0, Session/frontend completed0 and no owned SID residue, with
+zero question/attempt/worker and no forced signal. This qualifies normal idle
+startup/quit for those exact inputs. A real turn followed by normal quit in one
+session was not run. The original `0bab9b34` failure and UNKNOWN cause remain
+preserved; none of these observations joins the 126 comparative turns.
+See the [normal-exit report](https://github.com/ivo-lopes/ivoai/blob/release/v0.15.0-candidate/release-notes/native-normal-quit-validation.md).
+No general TUI/client/model parity or economic result follows.
 
 G0 is wired into admitted code prefetch behind its default-OFF flag, with protected
 Core/MCP exact recovery and separate protected creation opt-in. G1 Memory remains
