@@ -332,13 +332,15 @@ func prefetchHarnessSHA256() string {
 }
 
 type prefetchBenchmarkCapabilities struct {
-	SchemaVersion         int               `json:"schema_version"`
-	CatalogSHA256         string            `json:"catalog_sha256"`
-	ContractSHA256        string            `json:"fixture_contract_sha256"`
-	HarnessSHA256         string            `json:"harness_sha256"`
-	Supported             []string          `json:"supported_scenarios"`
-	Fixtures              map[string]string `json:"fixtures"`
-	ClientLifecycleSHA256 string            `json:"client_lifecycle_sha256,omitempty"`
+	DirectMCPHelperConfigurationScope string            `json:"direct_mcp_helper_configuration_scope"`
+	DirectMCPHelperConnected          bool              `json:"direct_mcp_helper_connected"`
+	SchemaVersion                     int               `json:"schema_version"`
+	CatalogSHA256                     string            `json:"catalog_sha256"`
+	ContractSHA256                    string            `json:"fixture_contract_sha256"`
+	HarnessSHA256                     string            `json:"harness_sha256"`
+	Supported                         []string          `json:"supported_scenarios"`
+	Fixtures                          map[string]string `json:"fixtures"`
+	ClientLifecycleSHA256             string            `json:"client_lifecycle_sha256,omitempty"`
 }
 
 // This discovery test never reads HOME or authenticates/starts a client.
@@ -347,7 +349,7 @@ func TestPrimaryPrefetchBenchmarkCatalog(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	value := prefetchBenchmarkCapabilities{SchemaVersion: 3, CatalogSHA256: benchmarkfixtures.CatalogSHA256(), ContractSHA256: benchmarkfixtures.ContractSHA256(), HarnessSHA256: prefetchHarnessSHA256(), Fixtures: map[string]string{}}
+	value := prefetchBenchmarkCapabilities{DirectMCPHelperConfigurationScope: string(prefetchDirectUserConfigIncluded), SchemaVersion: 3, CatalogSHA256: benchmarkfixtures.CatalogSHA256(), ContractSHA256: benchmarkfixtures.ContractSHA256(), HarnessSHA256: prefetchHarnessSHA256(), Fixtures: map[string]string{}}
 	if os.Getenv("IVOAI_CONCURRENT_DISCOVERY") == "1" {
 		value.SchemaVersion = 4
 		value.ClientLifecycleSHA256 = benchmarkfixtures.ClientLifecycleSHA256()
@@ -531,9 +533,15 @@ func prefetchLiveEvents(body []byte, row *prefetchLiveRow) string {
 
 // Standalone benchmark only: this deliberately does not enter the managed
 // Adapter API, whose unsupported --ignore-user-config scope remains rejected.
-// The official inventory syntax/effective scope still requires an independently
-// reviewed offline proof before this helper can be connected to real cohorts.
+// This helper explicitly includes user config in the same scope for inventory
+// and exec. It remains UNWIRED: official MCP isolation and provider-route
+// admission require separate proofs before any real cohort can use it.
+type prefetchDirectConfigurationScope string
+
+const prefetchDirectUserConfigIncluded prefetchDirectConfigurationScope = "USER_CONFIG_INCLUDED_SHARED_SCOPE"
+
 type prefetchDirectScope struct {
+	configurationScope    prefetchDirectConfigurationScope
 	executable, directory string
 	environment, globals  []string
 }
@@ -558,10 +566,10 @@ func prefetchNewDirectScope(executable, directory, model, sandbox string, enviro
 			return prefetchDirectScope{}, errors.New("direct benchmark environment unavailable")
 		}
 	}
-	globals := []string{"--ignore-user-config", "--sandbox", sandbox, "-m", model, "-C", directory, "-c", `model_reasoning_effort="low"`}
+	globals := []string{"--sandbox", sandbox, "-m", model, "-C", directory, "-c", `model_reasoning_effort="low"`}
 	globals = append(globals, codexresolver.ProjectTrustArgs(directory)...)
 	globals = append(globals, "-c", "agents.enabled=false", "-c", "features.multi_agent_v2=false", "-c", "features.multi_agent=false", "-c", "features.plugins=false", "-c", "features.hooks=false", "-c", "features.apps=false", "-c", "features.remote_plugin=false", "-c", "sandbox_workspace_write.network_access=false")
-	return prefetchDirectScope{executable: executable, directory: directory, environment: append([]string{}, environment...), globals: append([]string{}, globals...)}, nil
+	return prefetchDirectScope{configurationScope: prefetchDirectUserConfigIncluded, executable: executable, directory: directory, environment: append([]string{}, environment...), globals: append([]string{}, globals...)}, nil
 }
 
 func (scope prefetchDirectScope) command(ctx context.Context, prefix, suffix []string) *exec.Cmd {
@@ -686,6 +694,14 @@ func TestPrimaryPrefetchDirectMCPScope(t *testing.T) {
 	scope, err := prefetchNewDirectScope("/synthetic/codex", "/synthetic/repo", "gpt-6.1-sol", "read-only", env)
 	if err != nil {
 		t.Fatal(err)
+	}
+	if scope.configurationScope != prefetchDirectUserConfigIncluded {
+		t.Fatal("helper configuration scope not explicit")
+	}
+	for _, arg := range scope.globals {
+		if strings.Contains(arg, "ignore-user-config") {
+			t.Fatal("retired ignore mode reintroduced")
+		}
 	}
 	env[0] = "HOME=/substituted"
 	runs := 0
