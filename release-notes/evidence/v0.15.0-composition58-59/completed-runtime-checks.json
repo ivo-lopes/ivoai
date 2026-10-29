@@ -1,0 +1,35 @@
+{
+  "runtime_source": "122642e1bbbd79cbbd0d1793d2a350675e3759b2",
+  "full_go": {
+    "status": "PASS",
+    "packages": 59,
+    "without_tests": 3,
+    "cached": 0
+  },
+  "python": {
+    "status": "PASS",
+    "tests": 73
+  },
+  "vet": "PASS",
+  "race_packages": {
+    "status": "PASS",
+    "packages": [
+      "internal/agents",
+      "internal/codexresolver",
+      "internal/workers"
+    ]
+  },
+  "app_policy_race": {
+    "status": "PASS",
+    "tests": 2
+  },
+  "protected_evidence_rollback": {
+    "status": "PASS",
+    "named_runs": 1,
+    "named_passes": 1,
+    "skips": 0
+  },
+  "generated_cli_reference": "PASS",
+  "new_official_client_provider_auth_status_calls": 0,
+  "updated_fact_documentation_checks": "NOT_RUN_PENDING_FINAL_ALLOWLISTED_SUMMARY"
+}
