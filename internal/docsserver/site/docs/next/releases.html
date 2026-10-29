@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="generator" content="Docusaurus v3.10.2">
 <title data-rh="true">Releases | IVOAI</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="http://localhost:7780/docs/next/releases"><meta data-rh="true" property="og:locale" content="en_US"><meta data-rh="true" property="og:locale:alternate" content="pt_BR"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="Releases | IVOAI"><meta data-rh="true" name="description" content="v0.15.0 — local candidate, not published"><meta data-rh="true" property="og:description" content="v0.15.0 — local candidate, not published"><link data-rh="true" rel="icon" href="/img/favicon.svg"><link data-rh="true" rel="canonical" href="http://localhost:7780/docs/next/releases"><link data-rh="true" rel="alternate" href="http://localhost:7780/docs/next/releases" hreflang="en-US"><link data-rh="true" rel="alternate" href="http://localhost:7780/pt-BR/docs/next/releases" hreflang="pt-BR"><link data-rh="true" rel="alternate" href="http://localhost:7780/docs/next/releases" hreflang="x-default"><script data-rh="true" type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Releases","item":"http://localhost:7780/docs/next/releases"}]}</script><link rel="stylesheet" href="/assets/css/styles.c768eb50.css">
-<script src="/assets/js/runtime~main.f6821fe2.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.a174337f.js" defer="defer"></script>
 <script src="/assets/js/main.6c7444d6.js" defer="defer"></script>
 </head>
 <body>
@@ -21,7 +21,16 @@ UNAVAILABLE and startup cause UNKNOWN. Core workers/tasks/failovers were zero;
 there was no second Core/CLI attempt. Native retries remain UNKNOWN. The canary
 is separate from the 126 historical turns and proves no absence of provider
 requests. See the <a href="https://github.com/ivo-lopes/ivoai/blob/release/v0.15.0-candidate/release-notes/v0.15.0-canary-failure.md" target="_blank" rel="noopener noreferrer" class="">failed-canary record</a>.</p>
-<p>Candidate source <code>0bab9b34</code> includes native-provider/default-setup independence,
+<p>The local candidate now composes main58 <code>eb30d6ca</code>/reviewed runtime <code>55ec7ab9</code>
+and PR59 <code>5683c922</code> with PR57 <code>dc9dc587</code>. Managed Codex explicitly refuses
+<code>--ignore-user-config</code>: omit the flag to migrate; config files stay unchanged.
+This does not implement equivalent scope or skip MCP inventory. PR59 changes
+only PID publication/cleanup in a test fixture. The original failed CI57 remains
+FAIL; <a href="https://github.com/ivo-lopes/ivoai/actions/runs/40788883401" target="_blank" rel="noopener noreferrer" class="">CI59</a> passed
+16/16 at attempt1 on <code>5683c922</code>, now merged as main <code>4368d549</code> with the same tree.
+That is not CI for this candidate composition. Core Code Mode proof remains
+NOT_MET; publication stays BLOCKED.</p>
+<p>The candidate includes native-provider/default-setup independence,
 default-OFF Gateway code-prefetch with protected G0 Core/MCP recovery, unwired
 G1a Memory snapshot SPI, offline benchmark
 controls/preflight and the optional adaptive primary pilot. Native paths exclude

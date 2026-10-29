@@ -11,7 +11,17 @@ there was no second Core/CLI attempt. Native retries remain UNKNOWN. The canary
 is separate from the 126 historical turns and proves no absence of provider
 requests. See the [failed-canary record](https://github.com/ivo-lopes/ivoai/blob/release/v0.15.0-candidate/release-notes/v0.15.0-canary-failure.md).
 
-Candidate source `0bab9b34` includes native-provider/default-setup independence,
+The local candidate now composes main58 `eb30d6ca`/reviewed runtime `55ec7ab9`
+and PR59 `5683c922` with PR57 `dc9dc587`. Managed Codex explicitly refuses
+`--ignore-user-config`: omit the flag to migrate; config files stay unchanged.
+This does not implement equivalent scope or skip MCP inventory. PR59 changes
+only PID publication/cleanup in a test fixture. The original failed CI57 remains
+FAIL; [CI59](https://github.com/ivo-lopes/ivoai/actions/runs/40788883401) passed
+16/16 at attempt1 on `5683c922`, now merged as main `4368d549` with the same tree.
+That is not CI for this candidate composition. Core Code Mode proof remains
+NOT_MET; publication stays BLOCKED.
+
+The candidate includes native-provider/default-setup independence,
 default-OFF Gateway code-prefetch with protected G0 Core/MCP recovery, unwired
 G1a Memory snapshot SPI, offline benchmark
 controls/preflight and the optional adaptive primary pilot. Native paths exclude

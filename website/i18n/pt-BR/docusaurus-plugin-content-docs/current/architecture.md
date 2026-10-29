@@ -18,6 +18,13 @@ do PR57 se aplica somente ao head `03492d1d`; CI desta atualização e artefatos
 validações próprias. O estado publicado
 da v0.14.0 abaixo é histórico. Consulte [releases](releases.md).
 
+Esta composição inclui a recusa revisada do main58: Codex gerenciado não aceita
+`--ignore-user-config`; omita a flag sem editar configuração pessoal. Não há
+inventário de escopo equivalente nem bypass de política. PR59 altera somente a
+fixture de PID; seu CI passou 16/16 no head `5683c922`, incorporado ao main
+`4368d549`. A falha original fica preservada e a candidata exige novo CI;
+prova Core Code Mode NOT_MET e publicação BLOCKED.
+
 ## Release atual: v0.14.0
 
 O mesmo Core agora fornece um [console administrativo local de consulta](admin-console.md).

@@ -17,6 +17,13 @@ The earlier PR57 CI pass applies only to head `03492d1d`; follow-up CI and distr
 validation remain separate gates. The published
 v0.14.0 status below is historical. See [releases](releases.md).
 
+This composition includes the reviewed main58 guard: managed Codex refuses
+`--ignore-user-config`; omit it without editing personal config. No equivalent
+inventory scope or policy bypass is introduced. PR59 changes only the fake PID
+fixture; its own CI passed 16/16 on `5683c922`, merged as main `4368d549`.
+The original failed CI remains preserved and this candidate requires new CI;
+Core Code Mode proof is NOT_MET and publication remains BLOCKED.
+
 ## Current release: v0.14.0
 
 The same Core now supplies a [local read-only admin console](admin-console.md).

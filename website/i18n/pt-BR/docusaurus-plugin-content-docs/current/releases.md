@@ -11,7 +11,17 @@ zero; não houve segunda tentativa Core/CLI. Retries nativos seguem UNKNOWN.
 O canário fica fora dos 126 turnos históricos e não prova ausência de chamadas
 ao provedor. Consulte o [registro do canário reprovado](https://github.com/ivo-lopes/ivoai/blob/release/v0.15.0-candidate/release-notes/v0.15.0-canary-failure.md).
 
-A fonte candidata `0bab9b34` inclui independência dos provedores/setup nativos,
+A candidata local agora compõe main58 `eb30d6ca`/runtime revisado `55ec7ab9`
+e PR59 `5683c922` com PR57 `dc9dc587`. Codex gerenciado recusa explicitamente
+`--ignore-user-config`: migre omitindo a flag; configurações ficam intactas.
+Isso não implementa escopo equivalente nem dispensa inventário MCP. PR59 altera
+somente publicação de PID/cleanup de uma fixture. A falha original do CI57 fica
+FAIL; [CI59](https://github.com/ivo-lopes/ivoai/actions/runs/40788883401) passou
+16/16 na tentativa1 no head `5683c922`, incorporado ao main `4368d549` com a mesma
+árvore. Esse CI não é desta composição. Prova Core Code Mode continua NOT_MET;
+publicação permanece BLOCKED.
+
+A candidata inclui independência dos provedores/setup nativos,
 Gateway no prefetch de código já admitido sob flag OFF por padrão, recuperação
 exata G0 Core/MCP protegida e SPI G1a de snapshots Memory sem ligação ao App,
 controles/preflight offline e piloto adaptativo opcional. Caminhos nativos excluem
