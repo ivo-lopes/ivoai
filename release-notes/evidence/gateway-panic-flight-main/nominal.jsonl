@@ -1,0 +1,12 @@
+{"Time":"2026-10-28T22:57:07.60695688-03:00","Action":"start","Package":"github.com/ivo-lopes/ivoai/internal/evidence"}
+{"Time":"2026-10-28T22:57:07.623370211-03:00","Action":"run","Package":"github.com/ivo-lopes/ivoai/internal/evidence","Test":"TestGatewayRecoveredProviderPanicReleasesFlight"}
+{"Time":"2026-10-28T22:57:07.62343599-03:00","Action":"output","Package":"github.com/ivo-lopes/ivoai/internal/evidence","Test":"TestGatewayRecoveredProviderPanicReleasesFlight","Output":"=== RUN   TestGatewayRecoveredProviderPanicReleasesFlight\n","OutputType":"frame"}
+{"Time":"2026-10-28T22:57:07.635898618-03:00","Action":"output","Package":"github.com/ivo-lopes/ivoai/internal/evidence","Test":"TestGatewayRecoveredProviderPanicReleasesFlight","Output":"--- PASS: TestGatewayRecoveredProviderPanicReleasesFlight (0.01s)\n","OutputType":"frame"}
+{"Time":"2026-10-28T22:57:07.635921938-03:00","Action":"pass","Package":"github.com/ivo-lopes/ivoai/internal/evidence","Test":"TestGatewayRecoveredProviderPanicReleasesFlight","Elapsed":0.01}
+{"Time":"2026-10-28T22:57:07.635959378-03:00","Action":"run","Package":"github.com/ivo-lopes/ivoai/internal/evidence","Test":"TestGatewayDeadlineAfterArtifactPutRemainsFailClosed"}
+{"Time":"2026-10-28T22:57:07.635965448-03:00","Action":"output","Package":"github.com/ivo-lopes/ivoai/internal/evidence","Test":"TestGatewayDeadlineAfterArtifactPutRemainsFailClosed","Output":"=== RUN   TestGatewayDeadlineAfterArtifactPutRemainsFailClosed\n","OutputType":"frame"}
+{"Time":"2026-10-28T22:57:07.641778775-03:00","Action":"output","Package":"github.com/ivo-lopes/ivoai/internal/evidence","Test":"TestGatewayDeadlineAfterArtifactPutRemainsFailClosed","Output":"--- PASS: TestGatewayDeadlineAfterArtifactPutRemainsFailClosed (0.01s)\n","OutputType":"frame"}
+{"Time":"2026-10-28T22:57:07.641794425-03:00","Action":"pass","Package":"github.com/ivo-lopes/ivoai/internal/evidence","Test":"TestGatewayDeadlineAfterArtifactPutRemainsFailClosed","Elapsed":0.01}
+{"Time":"2026-10-28T22:57:07.641936704-03:00","Action":"output","Package":"github.com/ivo-lopes/ivoai/internal/evidence","Output":"PASS\n","OutputType":"frame"}
+{"Time":"2026-10-28T22:57:08.646697409-03:00","Action":"output","Package":"github.com/ivo-lopes/ivoai/internal/evidence","Output":"ok  \tgithub.com/ivo-lopes/ivoai/internal/evidence\t1.040s\n"}
+{"Time":"2026-10-28T22:57:08.646770608-03:00","Action":"pass","Package":"github.com/ivo-lopes/ivoai/internal/evidence","Elapsed":1.04}

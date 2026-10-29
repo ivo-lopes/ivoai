@@ -1,0 +1,34 @@
+{
+  "source": "b523055dcbcb833df1f1d903e0b823e1a0376b2c",
+  "parents": [
+    "571006e953edbb48bd1577fb61fab92c75dc3d73",
+    "8a956f7a00632c2dfef757bc5b8eda62a7c19bfe"
+  ],
+  "composition_conflicts": 0,
+  "full_go": "FAIL_PRESERVED_NO_UNCHANGED_RETRY",
+  "packages": {
+    "skip": 3,
+    "pass": 58,
+    "fail": 1
+  },
+  "failed_test": {
+    "Time": "2026-10-28T22:36:49.165208228-03:00",
+    "Action": "fail",
+    "Package": "github.com/ivo-lopes/ivoai/internal/evidence",
+    "Test": "TestGatewayRecoveredProviderPanicReleasesFlight",
+    "Elapsed": 1.34
+  },
+  "failed_output": "=== RUN   TestGatewayRecoveredProviderPanicReleasesFlight\n    gateway_test.go:579: recovered provider panic poisoned subsequent request: evidence source or authorization changed\n--- FAIL: TestGatewayRecoveredProviderPanicReleasesFlight (1.34s)\n",
+  "opt_in_test_skips": 69,
+  "vet": "PASS_EXIT0",
+  "raw_log_sha256": "16ded281de58f46f197aff5b553634ef16a907e26c073d0dea5716d080a5c5a0",
+  "raw_log_bytes": 2142187,
+  "raw_log_compression": "gzip mtime0; decompress byte-exact",
+  "compressed_log_bytes": 162781,
+  "failed_subsystem_change": "NONE; internal/evidence production and test bytes exact4368",
+  "diagnosis": "Static: fixture authorization and generation stay constant. ErrChanged is produced by packet context/revalidation before or after ArtifactStore.Put; a stuck-flight wait instead returns ctx.Err directly. Exact latency/failed check location was not observed. Investigation pending; not a causal runtime diagnosis.",
+  "original_failing_CI56": "40795567122 unchanged",
+  "quality": "BLOCKED_PENDING_INVESTIGATION_AND_EXACT_HEAD_CI",
+  "new_CLI_provider_status_auth_model_calls": 0,
+  "publication": "NONE"
+}

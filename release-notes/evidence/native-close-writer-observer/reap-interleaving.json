@@ -1,0 +1,10 @@
+{
+  "between_reads_action": "Wait/reap owned zombie",
+  "official_client_auth_model_calls": 0,
+  "original_fixture_final_alive": true,
+  "original_fixture_first_alive": false,
+  "own_child_actual_Wait_zero": true,
+  "production_Close_mutated": false,
+  "second_read_enum": "PROC_GONE_AFTER_IDENTITY_READ",
+  "single_snapshot_terminal_alive": false
+}

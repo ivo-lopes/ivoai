@@ -1,0 +1,11 @@
+{
+  "source": "19cf11b1a46926ac77e5d02208d1305001fd227d",
+  "source_freeze_sha256": "93dae44d238a452f3288b685d68889a49796ab6b8455ec852860d585a740b76b",
+  "command": [
+    "/var/tmp/ivoai-validation-toolchain-20261028/go/bin/go",
+    "vet",
+    "./internal/app",
+    "./internal/benchmarkfixtures"
+  ],
+  "once": true
+}

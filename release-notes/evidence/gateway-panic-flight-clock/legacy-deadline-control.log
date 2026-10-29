@@ -1,0 +1,8 @@
+=== RUN   TestGatewayRecoveredProviderPanicReleasesFlight
+    gateway_test.go:581: PANIC_FLIGHT_RELEASED_BEFORE_STORAGE
+    gateway_test.go:589: PUT_COMPLETED_THEN_ORIGINAL_ONE_SECOND_CONTEXT_EXPIRED
+    gateway_test.go:594: recovered provider panic poisoned subsequent request: evidence source or authorization changed
+--- FAIL: TestGatewayRecoveredProviderPanicReleasesFlight (0.00s)
+FAIL
+FAIL	github.com/ivo-lopes/ivoai/internal/evidence	0.006s
+FAIL

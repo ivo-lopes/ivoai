@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ivo-lopes/ivoai/internal/codexresolver"
 	"github.com/ivo-lopes/ivoai/internal/externalmcp"
 	"github.com/ivo-lopes/ivoai/internal/opencodebridge"
 	"github.com/ivo-lopes/ivoai/internal/platform"
@@ -134,14 +135,24 @@ func (a *Access) tokenVariable(i int) string {
 	return "IVOAI_WORKER_MCP_TOKEN_" + string(rune('A'+i))
 }
 
-func (a Adapter) isolateScopedMCPs(ctx context.Context, executable string, request Request, args []string) ([]string, error) {
+func (a Adapter) isolateScopedMCPs(ctx context.Context, executable string, request Request, args []string, scopes ...codexresolver.ConfigContext) ([]string, error) {
 	access := request.Access
 	if request.Executor == "codex" {
 		// Reuse the official inventory/disable boundary, then add uniquely named
 		// task-local projections. No personal server can supply transport fields
 		// to a managed alias through TOML merging.
 		a.KnowledgeServers = nil
-		isolated, err := a.isolateMCPs(ctx, executable, request.Executor, args)
+		if len(scopes) == 0 {
+			// Direct legacy/private callers still have a Request with the intended
+			// child directory and capability-filtered environment. Never substitute
+			// the host process's cwd for that worker context.
+			scope, err := codexresolver.NewConfigContext(platform.RunOptions{Dir: request.Directory, Env: access.environment(workerEnvironment(executable, request.Executor)), CleanEnv: true})
+			if err != nil {
+				return nil, err
+			}
+			scopes = []codexresolver.ConfigContext{scope}
+		}
+		isolated, err := a.isolateMCPs(ctx, executable, request.Executor, args, scopes...)
 		if err != nil {
 			return nil, err
 		}

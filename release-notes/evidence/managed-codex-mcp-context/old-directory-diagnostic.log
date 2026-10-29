@@ -1,0 +1,4 @@
+# github.com/ivo-lopes/ivoai/internal/app [github.com/ivo-lopes/ivoai/internal/app.test]
+internal/app/adaptive_primary_live_test.go:407:17: undefined: codexresolver
+FAIL	github.com/ivo-lopes/ivoai/internal/app [build failed]
+FAIL

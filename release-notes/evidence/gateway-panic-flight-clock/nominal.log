@@ -1,0 +1,6 @@
+=== RUN   TestGatewayRecoveredProviderPanicReleasesFlight
+--- PASS: TestGatewayRecoveredProviderPanicReleasesFlight (0.00s)
+=== RUN   TestGatewayDeadlineAfterArtifactPutRemainsFailClosed
+--- PASS: TestGatewayDeadlineAfterArtifactPutRemainsFailClosed (0.00s)
+PASS
+ok  	github.com/ivo-lopes/ivoai/internal/evidence	0.006s

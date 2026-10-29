@@ -1,0 +1,45 @@
+# Managed Codex MCP invocation context
+
+This local change is based on `4368d5495a5be4ce425f4ab89849df0296fc6f9b`. Managed Codex inventory now uses the same captured working directory, effective environment, process-local project policy and explicit configuration overrides as execution. It fixes a reproduced project-only MCP startup mismatch; it does not establish the cause of an earlier real canary failure or qualify general native-client parity.
+
+Previously `workers.Adapter` inventoried `mcp list --json` with feature restrictions but no caller directory, environment, project policy or configuration. Worker execution and `CLIRunner` then applied `ProjectTrustArgs` setting the execution project untrusted. In a private offline fixture, synthetic user trust admitted a project-only MCP into inventory, but the execution policy excluded its transport. The generated `enabled=false` table therefore failed startup with `CONFIG_INVALID_TRANSPORT` before any provider request.
+
+That earlier one-shot comparison is preserved separately: A inventoried `synthetic_project` and exited1 with0 JSON/HTTP; B inventoried no project server and completed with4 JSON events/1 fake HTTP request. No MCP process started. B also canonicalized configuration argument placement, so that pair alone did not independently isolate argv position. See the prior-reproducer receipt for hashes and limitations. It was not a real-model or economic comparison and was not added to the126 backend-first historical attempts.
+
+## Shared invocation scope
+
+`codexresolver.NewConfigContext(platform.RunOptions)` captures an absolute cwd once, the effective environment under existing inheritance/override rules, and project-trust arguments once. Its fields are private, accessors copy slices, and ordinary formatting redacts the context. This is an invocation snapshot: files, symlink targets, external configuration and cloud policy may still change between operations. No configuration file or credential is copied or modified.
+
+`Adapter.IsolateCodexMCPsInContext` shares that context with the managed `ExecutorSpec.CodexConfigContext`. The App assembles its final environment before inventory; the worker adapter captures its filtered environment once, including only its own capability projection where applicable, and reuses it for execution and fallback. Claude execution does not acquire a Codex context or project policy.
+
+Inventory receives every explicit `-c`/`--config` spelling in its original relative order, plus profile/disable selection. Forwarding the same settings to the same local official client avoids guessing that an unknown configuration key cannot affect scope. These values can contain instructions or secrets: production does not log the context, argv, environment or raw inventory here. Inventory does not perform model inference. Exec-only flags, option values that resemble flags, and data after a literal `--` are not reinterpreted as inventory options. Profiles/disable precede `mcp`; inherited config options follow it. No TOML parser, shell evaluation, global MCP clear, alternate credential store or inventory bypass is introduced.
+
+The managed untrusted project policy and feature denials retain their precedence. External-server denials still precede the caller's Core-owned transport/projection arguments, so those endpoints may be explicitly re-enabled. The existing128-server/256KiB/JSON-shape/name/duplicate checks remain fail closed. `--ignore-user-config` remains explicitly unsupported.
+
+The original `IsolateCodexMCPs` method remains compatible and captures the current process cwd/environment. It cannot guarantee equivalence for an external caller that later executes with another Dir, Env or config scope. Such callers must migrate to the scoped method and reuse the same context. All production managed callers in this repository pass an explicit context; both opt-in official fixtures were migrated too. The private scoped-worker fallback without an explicit context derives it from its Request and filtered worker environment.
+
+## Directory and environment compatibility
+
+Managed `--cd`/`-C` overrides, including attached forms, are rejected with `CODEX_MANAGED_CONFIG_SCOPE_UNSUPPORTED` before inventory. They can conflict with the controlled executor directory. Omit the native-client directory flag and start IVOAI from the desired directory (ordinary shell `cd`); existing sessions retain their recorded workspace contract. The fixed migration message is available through the App's existing argument-validation path before frontend construction; earlier ordinary setup/preflight can still have occurred. Values such as `--output-schema '--cd'` and a literal boundary retain their argument roles. Incomplete options are rejected before host policy is appended, so they cannot consume its first argument. Neither `SplitExecArguments`, `ConfigurationArgs` nor `autoBridgeArgs` was changed.
+
+A necessary platform correction accompanies the snapshot: `ExecRunner` previously converted `CleanEnv=true` with a nil/empty environment back to a nil `exec.Cmd.Env`, which inherits the parent environment. It now preserves an explicit empty slice. Six real `/bin/sh` subprocess cases verify nil/empty inheritance, overriding, and clean nil/empty/explicit environments. Existing production callers of CleanEnv in setup, component update, doctor, hook rendering, inventory and orchestration provide nonempty explicit environments; their intended behavior remains unchanged. New scoped contexts can intentionally represent a genuinely empty child environment.
+
+## Validation epochs
+
+The implementation agent ran no official client, authentication/status call, real provider/model request, installer or dependency download. Opt-in integration skips are NOT integration passes. Root independently ran the separately authorized `TestPinnedCodexManagedNativeWorkerBoundary` once with race/count1 on the final v3 freeze: six cases plus the top-level test PASS, zero failures/skips, package5.996s. The exact receipt/log are archived separately with hashes. Four controls observed native child requests to the synthetic local provider, and two managed cases denied delegation, including a hostile profile and compact config. These are fixture observations, not complete native event/worker totals or real task quality.
+
+The official fixture exercises Adapter inventory plus direct official exec; local fake-process tests separately cover CLIRunner context/trace reuse. It does not pass through or certify `internal/nativecodex.NativeRunner`, a public TUI startup, or a Core MCP tool call.
+
+That independent run used env-i and fresh private HOME/CODEX_HOME with an explicit local httptest provider. It did not install a network namespace or replace host `/etc`; it does not certify system/cloud/external MCP-layer isolation, real auth/quota parity or eligibility for a real concurrent cohort.
+
+The original negative tests and intermediate working-tree failures are retained. An intermediate App test command failed compilation because an opt-in fixture import had not yet been added; that was corrected, then a base-arguments overlay reproduced the old generic directory diagnostic. The first draft also failed seven incomplete-option cases, and its implicit private fallback used host cwd; both failures were preserved and corrected without relaxing assertions.
+
+The final receipt separates source epochs:
+
+- Initial freeze `767c95934bfc3ee8f42add197651c642b874847e09555e00eab8e102bff2b256`: earlier full Go/vet/race checks, retained as historical checks of that draft.
+- Freeze v2 `51f3bb2c27710615a8412b37cb4e51a15cb817a49de49fc57a2a242986a44ffb`: full Go59 packages PASS,3 packages without tests;2052 passing test events including subtests and69 opt-in skips. Vet PASS. Race4 packages PASS (249 passing test events/9 opt-in skips); selected App race tests PASS (4 top-level tests plus4 subtests). Linux amd64v1/ARM64 cross-builds passed for this source, without executing either binary.
+- Final v3 `ebd3a852223fc9a82c6be03f1f0f0cad2dd22bc71375d3c998d62895957ffdd5`: only `workers/access.go` and its regression differ from v2, correcting the private no-context fallback. Workers race/vet passed on this final source. The v2 full suite and cross-builds are not relabelled as runs on v3. Exact final-head full CI remains pending review.
+
+Website/embed inputs, module locks, pins, workflows and benchmark scripts/data were not changed. Node/docs-site rebuild and Python benchmark tests were not required by these Go changes. No AVX/ARM execution, lifecycle qualification, system/cloud policy equivalence, global economic gain or release readiness is claimed. PR57 and the frozen lab/reproducer artifacts remain separate. Review and an exact final-source CI/integration gate are required before delivery.
+
+Rollback is a code revert and rebuild of this isolated change, with the matching prior source and tests. Do not delete client configuration, credentials, session history or checkpoints, and do not replay a failed turn automatically.

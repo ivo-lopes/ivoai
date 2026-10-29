@@ -1,0 +1,56 @@
+{
+  "source": "4368d5495a5be4ce425f4ab89849df0296fc6f9b",
+  "prior_private_validation_sha256": "a083e8f560ac2220bd3c3e5ab859bade7dec51c509a6f6e8ac0f3d6b4bc3ea04",
+  "frozen_inputs_sha256": "53802693133cdbbeb75326535e36f9372716eb9db19d876d81305f08ee9f5e93",
+  "result": "SCOPED_PROJECT_TRUST_MISMATCH_REPRODUCED_OFFLINE",
+  "runs": {
+    "inventory": 2,
+    "official_exec": 2,
+    "real_auth_status_provider": 0,
+    "retry_or_retune": 0
+  },
+  "limits": [
+    "B also canonicalizes identical feature overrides; no isolated test of raw argv-position-only effect",
+    "Only project/user-trust layers and pinned official0.162.1 were tested; system/cloud requirements equivalence remains unverified",
+    "No inference about original canary cause or historical126 attempts",
+    "No real provider, auth, status, task quality, economics, public TUI, full App lifecycle, or security vulnerability certification",
+    "Fixture final SYNTHETIC_FINAL is provider-generated test data; no real model ran",
+    "Zero tripwire starts establish exclusion in these two fixtures, not universal MCP isolation"
+  ],
+  "arm_observations": [
+    {
+      "arm": "A",
+      "inventory_names_synthetic": [
+        "synthetic_project"
+      ],
+      "client_exit": 1,
+      "seconds": 0.501,
+      "stdout_bytes": 0,
+      "stderr_bytes": 81,
+      "json_events": {},
+      "diagnostic_enum": "CONFIG_INVALID_TRANSPORT",
+      "http_requests": 0,
+      "mcp_events": {},
+      "synthetic_final_valid": false
+    },
+    {
+      "arm": "B",
+      "inventory_names_synthetic": [],
+      "client_exit": 0,
+      "seconds": 5.673,
+      "stdout_bytes": 350,
+      "stderr_bytes": 39,
+      "json_events": {
+        "thread.started": 1,
+        "turn.started": 1,
+        "item.completed": 1,
+        "turn.completed": 1
+      },
+      "diagnostic_enum": "SYNTHETIC_FINAL",
+      "http_requests": 1,
+      "mcp_events": {},
+      "synthetic_final_valid": true
+    }
+  ],
+  "raw_argv_order_qualification": "B applies production ConfigurationArgs after prepending trust; the same seven feature -c overrides move before mcp list. A keeps production inventory argv. No third run isolates argv position alone."
+}
