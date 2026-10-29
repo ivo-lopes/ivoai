@@ -1,0 +1,55 @@
+{
+  "status": "LOCAL_DOCUMENTATION_COMPOSITION_PASS_PRODUCTION_SOURCE_UNCHANGED",
+  "source": "1f58745811b9a5f3ad7d483a06e41a1f25837bc1",
+  "source_tree": "af940419aed1615faeaacb5968fc26c1c96f0031",
+  "parents": [
+    "fbba2412e186379e6e8e9fc5087f01fb5b6202c5",
+    "8f688e26f0c4570b6a2b30c7e052672f102703f3"
+  ],
+  "frozen_paths_before_and_after": 3928,
+  "source_freeze_sha256": "4f0429c830e8358f95a09d6e9ebf5b35ba3118f7aa0308ac0597edb53eeb21b6",
+  "non_doc_non_release_paths_exact_fbba": 1082,
+  "doc_input_and_embed_paths_exact_main8f": 1524,
+  "historical_record_union_unchanged": 1322,
+  "Go_scripts_modules_fixtures_exact_fbba": true,
+  "PR63_and_PR64_not_included": true,
+  "docsserver": {
+    "source": "1f58745811b9a5f3ad7d483a06e41a1f25837bc1",
+    "exit": 0,
+    "wall_seconds": 1.129,
+    "passed": [
+      "TestEmbeddedProductionSiteAndHealth",
+      "TestNetworkForAddressPreservesConfiguredFamily"
+    ],
+    "failed": [],
+    "skipped": [],
+    "all_frozen_paths_verified_after": 3928,
+    "official_client_auth_model_or_deployed_service_calls": 0,
+    "local_HTTP_listener_fixture": true,
+    "full_Go_Python_vet_Node_repeated": false,
+    "comparative_pair_rebuild": false
+  },
+  "full_Go_Python_vet_Node_new_run": "NOT_RUN; no changed source/input requiring repetition",
+  "root_reported_inherited_CI": {
+    "source": "fbba2412e186379e6e8e9fc5087f01fb5b6202c5",
+    "run": 40812925389,
+    "passed_jobs": 16,
+    "not_independently_queried_here": true,
+    "not_reassigned_to_composition": true
+  },
+  "possible_original_head_merge_binding": {
+    "PR_head": "fbba2412e186379e6e8e9fc5087f01fb5b6202c5",
+    "base_main": "8f688e26f0c4570b6a2b30c7e052672f102703f3",
+    "composition_tree": "af940419aed1615faeaacb5968fc26c1c96f0031",
+    "root_decision_and_remote_state_review_required": true
+  },
+  "tag_v015_local_object": "00b2c533eed1bf6be33aff3e27135b3c725a5dee",
+  "tag_v015_local_peel": "8f688e26f0c4570b6a2b30c7e052672f102703f3",
+  "official_client_auth_model_or_deployed_service_calls": 0,
+  "local_HTTP_fixture_only": true,
+  "comparative_pair_rebuild": "NOT_RUN",
+  "helper_connected": false,
+  "economic_acceptance": "INCOMPLETE_NO_NEW_COMPARISON",
+  "publication": "NO_PUSH_MERGE_TAG_RELEASE_OR_ASSET_CHANGE_IN_THIS_TASK",
+  "recorded_utc": "2026-10-29T04:24:17.629517+00:00"
+}

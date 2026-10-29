@@ -1,0 +1,16 @@
+{
+  "source": "1f58745811b9a5f3ad7d483a06e41a1f25837bc1",
+  "exit": 0,
+  "wall_seconds": 1.129,
+  "passed": [
+    "TestEmbeddedProductionSiteAndHealth",
+    "TestNetworkForAddressPreservesConfiguredFamily"
+  ],
+  "failed": [],
+  "skipped": [],
+  "all_frozen_paths_verified_after": 3928,
+  "official_client_auth_model_or_deployed_service_calls": 0,
+  "local_HTTP_listener_fixture": true,
+  "full_Go_Python_vet_Node_repeated": false,
+  "comparative_pair_rebuild": false
+}
