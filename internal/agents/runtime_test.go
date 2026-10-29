@@ -550,8 +550,8 @@ func TestFixtureCompressionCancellationLeavesNoOwnedFakeProcesses(t *testing.T) 
 	ready := filepath.Join(root, "ready")
 	cleaned := filepath.Join(root, "cleaned")
 	agent := writeExecutable(t, root, "claude", `#!/bin/sh
-printf '%s' "$$" > "$IVOAI_FAKE_AGENT_PID"
 trap 'exit 0' TERM HUP INT
+printf '%s' "$$" > "$IVOAI_FAKE_AGENT_PID.tmp" && mv "$IVOAI_FAKE_AGENT_PID.tmp" "$IVOAI_FAKE_AGENT_PID"
 while :; do sleep 0.02; done
 `)
 	headroom := writeExecutable(t, root, "headroom", `#!/bin/sh
@@ -561,7 +561,7 @@ if [ "$1" != "wrap" ]; then exit 2; fi
 agent=$2
 shift 3
 sleep 30 & proxy=$!
-printf '%s' "$proxy" > "$IVOAI_FAKE_PROXY_PID"
+printf '%s' "$proxy" > "$IVOAI_FAKE_PROXY_PID.tmp" && mv "$IVOAI_FAKE_PROXY_PID.tmp" "$IVOAI_FAKE_PROXY_PID"
 "$agent" "$@" & child=$!
 cleanup() {
   kill "$child" "$proxy" 2>/dev/null || true
@@ -577,12 +577,26 @@ cleanup
 `)
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan error, 1)
+	finished := make(chan struct{})
 	runtime := Runtime{Runner: platform.ExecRunner{}, AgentPath: agent, Compression: fixtureCompressionProvider{path: headroom}}
 	t.Setenv("IVOAI_FAKE_PROXY_PID", proxyPIDPath)
 	t.Setenv("IVOAI_FAKE_AGENT_PID", agentPIDPath)
 	t.Setenv("IVOAI_FAKE_READY", ready)
 	t.Setenv("IVOAI_FAKE_CLEANED", cleaned)
-	go func() { done <- runtime.Launch(ctx, "claude", nil, true) }()
+	// Cancel and join even when readiness or PID validation fails, before the
+	// environment and temporary fixture directory are restored by test cleanup.
+	t.Cleanup(func() {
+		cancel()
+		select {
+		case <-finished:
+		case <-time.After(3 * time.Second):
+			t.Error("Headroom fixture runtime did not finish test cleanup")
+		}
+	})
+	go func() {
+		defer close(finished)
+		done <- runtime.Launch(ctx, "claude", nil, true)
+	}()
 	waitForFile(t, proxyPIDPath, time.Second)
 	waitForFile(t, agentPIDPath, time.Second)
 	waitForFile(t, ready, time.Second)

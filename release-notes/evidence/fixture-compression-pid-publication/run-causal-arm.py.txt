@@ -1,0 +1,49 @@
+"""One predeclared synthetic fixture arm. Never executes an official client."""
+from pathlib import Path
+import ctypes,errno,json,os,signal,subprocess,sys,time,hashlib
+lab=Path(__file__).resolve().parent;arm=sys.argv[1];assert arm in ['old','new']
+assert not (lab/(arm+'-control-result.json')).exists(),'Do not rerun or overwrite this arm'
+libc=ctypes.CDLL(None,use_errno=True)
+if libc.prctl(36,1,0,0,0)!=0:raise OSError(ctypes.get_errno(),'subreaper unavailable; control must not weaken cleanup')
+home=lab/'control-home';home.mkdir(mode=0o700,exist_ok=True)
+exe=lab/(arm+'-control.test');log=lab/(arm+'-control.log')
+def members(group):
+ found=[]
+ for entry in Path('/proc').iterdir():
+  if not entry.name.isdigit():continue
+  try:
+   data=(entry/'stat').read_text();rest=data[data.rfind(')')+2:].split()
+   if int(rest[2])==group and int(rest[3])==group:found.append(int(entry.name))
+  except (FileNotFoundError,ProcessLookupError,PermissionError,ValueError,IndexError):pass
+ return found
+def reap(group):
+ count=0
+ while True:
+  try:pid,_=os.waitpid(-group,os.WNOHANG)
+  except ChildProcessError:break
+  if pid==0:break
+  count+=1
+ return count
+with log.open('xb')as stream:
+ process=subprocess.Popen([str(exe),'-test.run=^TestFixtureCompressionCancellationLeavesNoOwnedFakeProcesses$','-test.count=1','-test.v'],stdin=subprocess.DEVNULL,stdout=stream,stderr=subprocess.STDOUT,start_new_session=True,env={'PATH':'/usr/bin:/bin','HOME':str(home),'TMPDIR':str(lab),'LANG':'C.UTF-8'})
+ group=process.pid;timed_out=False;reaped=0
+ try:
+  try:code=process.wait(timeout=10)
+  except subprocess.TimeoutExpired:timed_out=True;code=None
+ finally:
+  for sig,duration in [(signal.SIGTERM,.5),(signal.SIGKILL,1.5)]:
+   if members(group):
+    try:os.killpg(group,sig)
+    except ProcessLookupError:pass
+   deadline=time.monotonic()+duration
+   while time.monotonic()<deadline:
+    reaped+=reap(group)
+    if not members(group):break
+    time.sleep(.01)
+  if process.poll()is None:process.wait(timeout=1)
+  reaped+=reap(group);remaining=members(group)
+body=log.read_text();result={'scope':'EXPLICITLY_SYNTHETIC_FIXTURE_CAUSAL_DELAY_NO_PROVIDER','arm':arm,'fixture_intervention_delay_seconds':.15,'exit':code,'timed_out':timed_out,'owned_group_remaining_processes':len(remaining),'adopted_owned_children_reaped':reaped,'executable_sha256':hashlib.sha256(exe.read_bytes()).hexdigest(),'log_sha256':hashlib.sha256(log.read_bytes()).hexdigest(),'observed_empty_pid_failure':'invalid PID marker ""'in body,'observed_named_test_pass':'--- PASS: TestFixtureCompressionCancellationLeavesNoOwnedFakeProcesses'in body}
+(lab/(arm+'-control-result.json')).write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2))
+assert not timed_out and not remaining
+if arm=='old':assert code==1 and result['observed_empty_pid_failure']
+else:assert code==0 and result['observed_named_test_pass'] and not result['observed_empty_pid_failure']

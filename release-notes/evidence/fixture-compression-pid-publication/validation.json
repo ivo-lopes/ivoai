@@ -1,0 +1,197 @@
+{
+  "schema": "ivoai.fixture-compression-pid-publication.v1",
+  "status": "LOCAL_TEST_FIX_VALIDATED_REAL_CI_FAILURE_PRESERVED",
+  "date": "2026-10-28",
+  "base_revision": "dc9dc5870847b6b416e06b9800eb9c912ef5c5d3",
+  "source_manifest_sha256": "da2fb68a39c723ec566427ce7f58a863ccddc4a2d922744b2fb35b2682c543e4",
+  "historical_failure": {
+    "PR": 57,
+    "run": 40784670844,
+    "job": 123154759458,
+    "test": "TestFixtureCompressionCancellationLeavesNoOwnedFakeProcesses",
+    "error": "runtime_test.go:590 invalid PID marker empty: strconv.Atoi parsing empty invalid syntax",
+    "duration_seconds": 0.01,
+    "original_full_log_sha256": "15ab83651eae40a3d34716e801171a928bf43b348e46bb5417fb5904a5121089",
+    "compressed_log": "ci-unit-failure.log.gz",
+    "reclassified": false
+  },
+  "diagnosis": "Shell redirection creates the final PID marker before printf writes its body; existence-only readiness permits an empty read. Wrapper ready does not synchronize agent write. Early t.Fatal also omitted cancellation/join.",
+  "fix_scope": "Only fixture PID atomic publication, signal-trap readiness ordering and t.Cleanup cancellation/join; production runtime.go unchanged.",
+  "unchanged_assertions": [
+    "readPID rejects empty/non-numeric/non-positive PID",
+    "Kill(pid,0) must return ESRCH for both owned proxy and agent",
+    "waitForFile readiness1second",
+    "main cancellation wait3seconds",
+    "production cancellation grace2seconds"
+  ],
+  "causal_control": {
+    "plan": "causal-plan.json",
+    "number_of_arms": 2,
+    "executions_per_arm": 1,
+    "intervention_delay_seconds": 0.15,
+    "old": {
+      "scope": "EXPLICITLY_SYNTHETIC_FIXTURE_CAUSAL_DELAY_NO_PROVIDER",
+      "arm": "old",
+      "fixture_intervention_delay_seconds": 0.15,
+      "exit": 1,
+      "timed_out": false,
+      "owned_group_remaining_processes": 0,
+      "adopted_owned_children_reaped": 2,
+      "executable_sha256": "079dbcba2ab1aeb6ae888ebf087f2ba22264faf215075eb5542c6dd2c1c9649d",
+      "log_sha256": "f3fb5282bf98242fdabcf1fb52e7677cac18d4aae3a1a6296d51c59328e960ed",
+      "observed_empty_pid_failure": true,
+      "observed_named_test_pass": false
+    },
+    "new": {
+      "scope": "EXPLICITLY_SYNTHETIC_FIXTURE_CAUSAL_DELAY_NO_PROVIDER",
+      "arm": "new",
+      "fixture_intervention_delay_seconds": 0.15,
+      "exit": 0,
+      "timed_out": false,
+      "owned_group_remaining_processes": 0,
+      "adopted_owned_children_reaped": 0,
+      "executable_sha256": "4d583fef6b6ee2d64b48300bf7d10a6f125e7fd646818b7735589aa1cc666e77",
+      "log_sha256": "7997958f43c9af87acef4f8de068bc653396601efdc1d0f21845c416a180bf12",
+      "observed_empty_pid_failure": false,
+      "observed_named_test_pass": true
+    },
+    "same_intervention": "Delay inside agent printf shell group while preserving each original redirection target: final old versus temp new.",
+    "meaning": "Synthetic scheduling-window proof, not official-client/provider behavior"
+  },
+  "checks": [
+    {
+      "command": "go test -race -p2 ./internal/agents -count=1 -json",
+      "exit": 0,
+      "package_seconds": 2.402,
+      "test_event_counts_including_subtests": {
+        "pass": 37,
+        "skip": 5
+      },
+      "explicit_skips": [
+        "TestLiveOpenCodeExecutorHTTPContract",
+        "TestLiveOpenCodeExecutorNativeLifecycle",
+        "TestLiveNativeOpenCodeAUTOExecutor",
+        "TestNativeMCPEnvironmentHelper",
+        "TestAuthenticatedExecutorsThroughPinnedCaveman"
+      ],
+      "skips_are_not_successful_integrations": true,
+      "log": "agents-race.jsonl.gz"
+    },
+    {
+      "command": "go vet ./internal/agents",
+      "exit": 0,
+      "log": "agents-vet.log"
+    }
+  ],
+  "toolchain": "Reviewed Go1.27.3; GOTOOLCHAIN=local, GOENV/GOWORK/GOPROXY/GOSUMDB/GOVCS off, mod=readonly, private HOME/GOCACHE/TMPDIR, existing module cache, GOMAXPROCS2. Host/cache trust, not hermetic attestation.",
+  "real_official_client_model_provider_auth_calls": 0,
+  "personal_config_or_auth_read_copied": false,
+  "production_changes": false,
+  "limitations": [
+    "Historical CI remains FAIL; local correction requires final review/integrated-head hosted CI.",
+    "Only affected agents package race/vet and the two-arm causal fixture control ran; no new full-repository Go/race, provider or release certification.",
+    "Fixture protocol fix does not claim generic production descendant cleanup or strengthen/change runtime cancellation semantics."
+  ],
+  "inventory": [
+    {
+      "path": "agents-race.exit",
+      "bytes": 2,
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "agents-race.jsonl.gz",
+      "bytes": 3486,
+      "sha256": "aa4ca7b7d8aec66427e1560cbc8bab19135dd30a81173de26262bb919b1956f2"
+    },
+    {
+      "path": "agents-race.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "agents-vet.exit",
+      "bytes": 2,
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "agents-vet.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "causal-plan.json",
+      "bytes": 1146,
+      "sha256": "bcc068d2bca1d2762a01013013f864eb97e7a0b2733813c80979aaa60c05fff6"
+    },
+    {
+      "path": "ci-unit-failure.log.gz",
+      "bytes": 21585,
+      "sha256": "a4996998885e0d83bc5ae3d2f76337b4abd900deab1b718b50c474f980c27669"
+    },
+    {
+      "path": "new-build.exit",
+      "bytes": 2,
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "new-build.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "new-control-result.json",
+      "bytes": 496,
+      "sha256": "66ce0d07d3ed8755dce839c4a30d48af5914493b1e21a2cebcbed126008ed7da"
+    },
+    {
+      "path": "new-control.log",
+      "bytes": 155,
+      "sha256": "7997958f43c9af87acef4f8de068bc653396601efdc1d0f21845c416a180bf12"
+    },
+    {
+      "path": "new-delayed-runtime_test.go.txt",
+      "bytes": 23490,
+      "sha256": "7f6bca2d23ec2cd6e99e182b7af908be93a5313ca62b968e7dbeac34b6e2601f"
+    },
+    {
+      "path": "old-build.exit",
+      "bytes": 2,
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+    },
+    {
+      "path": "old-build.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "old-control-result.json",
+      "bytes": 496,
+      "sha256": "14162d5abe3a1c066aff0200b1f85bc000fa1519c3f518bfbe82df3611f6f80e"
+    },
+    {
+      "path": "old-control.log",
+      "bytes": 244,
+      "sha256": "f3fb5282bf98242fdabcf1fb52e7677cac18d4aae3a1a6296d51c59328e960ed"
+    },
+    {
+      "path": "old-delayed-runtime_test.go.txt",
+      "bytes": 22978,
+      "sha256": "014e0c60172079989fe4fdb30686c527bf21ccfed6a28651cc8f2da948fcf1d8"
+    },
+    {
+      "path": "original-runtime_test.go.txt",
+      "bytes": 22961,
+      "sha256": "4707a7e1f5f91cd040b36f46c4159799be42a1ccb7ef7e8ad18a3e35023cbd4b"
+    },
+    {
+      "path": "run-causal-arm.py.txt",
+      "bytes": 2926,
+      "sha256": "a0bc66940ac20a81d02c2cdddbb4bced4127600a8dc0ea19c3fa49a9796d65ed"
+    },
+    {
+      "path": "source-manifest.json",
+      "bytes": 482,
+      "sha256": "da2fb68a39c723ec566427ce7f58a863ccddc4a2d922744b2fb35b2682c543e4"
+    }
+  ]
+}

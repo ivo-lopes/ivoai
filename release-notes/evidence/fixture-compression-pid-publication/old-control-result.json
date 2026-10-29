@@ -1,0 +1,13 @@
+{
+  "scope": "EXPLICITLY_SYNTHETIC_FIXTURE_CAUSAL_DELAY_NO_PROVIDER",
+  "arm": "old",
+  "fixture_intervention_delay_seconds": 0.15,
+  "exit": 1,
+  "timed_out": false,
+  "owned_group_remaining_processes": 0,
+  "adopted_owned_children_reaped": 2,
+  "executable_sha256": "079dbcba2ab1aeb6ae888ebf087f2ba22264faf215075eb5542c6dd2c1c9649d",
+  "log_sha256": "f3fb5282bf98242fdabcf1fb52e7677cac18d4aae3a1a6296d51c59328e960ed",
+  "observed_empty_pid_failure": true,
+  "observed_named_test_pass": false
+}
