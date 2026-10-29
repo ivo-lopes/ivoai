@@ -1,0 +1,74 @@
+{
+  "App-hermetic": {
+    "packages": {
+      "pass": 1
+    },
+    "test_events": {
+      "pass": 117
+    },
+    "top_level_passes": 18,
+    "tests": [
+      "TestPrimaryPrefetchDirectMCPScope",
+      "TestPrimaryPrefetchDirectMCPInventoryStrict",
+      "TestPrimaryPrefetchDirectMCPInventoryFailureClosed",
+      "TestPrimaryPrefetchDirectMCPScopeCallerAlias",
+      "TestPrimaryPrefetchSubscriptionEnvironment",
+      "TestPrimaryPrefetchSubscriptionCanonicalScope",
+      "TestPrimaryPrefetchSubscriptionProtocolRequests",
+      "TestPrimaryPrefetchSubscriptionScopeRefusals",
+      "TestPrimaryPrefetchSubscriptionProjectionAndCleanup",
+      "TestPrimaryPrefetchSubscriptionNegativeProjection",
+      "TestPrimaryPrefetchSubscriptionRPCBounds",
+      "TestPrimaryPrefetchSubscriptionLifecycleFailures",
+      "TestPrimaryPrefetchSubscriptionCancellationDelivery",
+      "TestPrimaryPrefetchSubscriptionCallerScopeSnapshot",
+      "TestPrimaryPrefetchSubscriptionStdioControlledProtocols",
+      "TestPrimaryPrefetchSubscriptionStdioPinnedScopeAndWhitelist",
+      "TestPrimaryPrefetchSubscriptionStdioCancelHeldPipes",
+      "TestPrimaryPrefetchSubscriptionStdioRejectsEffectsAndWrongOrder"
+    ]
+  },
+  "server-docs": {
+    "packages": {
+      "pass": 2
+    },
+    "test_events": {
+      "pass": 52
+    },
+    "top_level_passes": 32,
+    "tests": [
+      "TestServerCanonicalHelpCoversPublicCommandStructure",
+      "TestConnectorAddReportsRestartFailureWithoutLosingRegistry",
+      "TestDockerRuntimeVersionsRequireGatewayPrioritySupport",
+      "TestEnsureDockerChecksTheDaemonVersionBeforeProvisioning",
+      "TestDockerComposePinsMatchReviewedManifest",
+      "TestInstallVerifiedComposePlugin",
+      "TestInstallVerifiedComposePluginPreservesPreExistingPaths",
+      "TestInstallVerifiedComposePluginRejectsCorruptDownload",
+      "TestDockerRepositoryFingerprintAndCandidateParsing",
+      "TestLXCDetectionUsesSystemdAndCgroupEvidence",
+      "TestEmbeddedProductionSiteAndHealth",
+      "TestNetworkForAddressPreservesConfiguredFamily",
+      "TestInstallCommandCancellationKillsChildProcessGroup",
+      "TestRemoteRevalidatesStoredServerOrigin",
+      "TestServerSetupEnrollmentAndConnectorsAreIdempotent",
+      "TestServerRootOverrideRequiresTestMode",
+      "TestSupportedServerOSUsesNumericVersions",
+      "TestSupportedServerArchitectures",
+      "TestServerPreflightReportsPrimaryPrerequisite",
+      "TestServerSetupStateTreatsMissingSecretsAsIncompleteSetup",
+      "TestSecureChownTreeRefusesSymlinkEntries",
+      "TestApplyRestoredServiceOwnershipRejectsLinks",
+      "TestManagedDataRootOwnershipPreservesApplicationSymlinks",
+      "TestWaitForServerStartReportsProgress",
+      "TestWaitForServicesStableRejectsTransientAndInactiveServices",
+      "TestSecureRegularOwnershipUsesNoFollowDescriptor",
+      "TestGatewayStateOwnershipCoversEnrollmentAndWebOAuth",
+      "TestGatewayConfigurePersistsHTTPSWithoutManualEditing",
+      "TestOAuthAuditLogsNoSecrets",
+      "TestTrustedHTTPSProxyOnlyValidatesPeerAndScheme",
+      "TestMemoryProxyAllowsOnlyStableOperationalRoutesAndStripsCredentials",
+      "TestMemoryMCPProbeUsesAuthenticatedToolsList"
+    ]
+  }
+}
