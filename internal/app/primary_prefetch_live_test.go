@@ -82,7 +82,8 @@ func prefetchLiveObserveHost(row *prefetchLiveRow, events []observability.Event)
 
 // This paired benchmark exercises the actual host prefetch/ArtifactStore
 // contract. It does not claim a full frontend lifecycle or statistically powered
-// savings. No MCP is exposed in either arm: B receives production host evidence.
+// savings. Native collaboration features are disabled; ambient system/cloud MCP
+// isolation is unverified and blocks real cohorts. B receives host evidence.
 func TestLivePrimaryCodePrefetchBenchmark(t *testing.T) {
 	if os.Getenv("IVOAI_GRAFT_PREFETCH_LIVE") != "1" {
 		t.Skip("explicit official subscription benchmark opt-in required")
