@@ -1,0 +1,9 @@
+{
+  "source": "360a9de83e32414ffe894b38c60888dddca62d2c",
+  "gate": "vet",
+  "exit": 0,
+  "wall_seconds": 0.834,
+  "source_unchanged_after": true,
+  "official_client_auth_model_or_service_calls": 0,
+  "external_Context_sync": "BLOCKED_NOT_EXECUTED"
+}

@@ -1,0 +1,38 @@
+import collections, hashlib, json, pathlib, subprocess, time
+
+proof = pathlib.Path(__file__).resolve().parent
+root = pathlib.Path('/home/ivo/Downloads/PROJETOS/MINDSITE/ivoai-release-v015-candidate')
+frozen = json.loads((proof / 'frozen.json').read_text())
+recipe = json.loads((proof / 'recipe.json').read_text())
+
+def verify():
+    assert subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=root, text=True).strip() == frozen['source_commit']
+    for name, digest in frozen['files'].items():
+        assert hashlib.sha256((root / name).read_bytes()).hexdigest() == digest, name
+    for name, digest in frozen['pins'].items():
+        assert hashlib.sha256(pathlib.Path(name).read_bytes()).hexdigest() == digest
+
+verify()
+home = proof / 'home'
+home.mkdir(mode=0o700)
+environment = {'HOME': str(home), 'PATH': '/var/tmp/ivoai-validation-toolchain-20261028/go/bin:/usr/bin:/bin',
+               'GOCACHE': '/home/ivo/.cache/go-build', 'GOMODCACHE': '/home/ivo/go/pkg/mod',
+               'GOENV': 'off', 'GOWORK': 'off', 'GOPROXY': 'off', 'GOSUMDB': 'off', 'GOMAXPROCS': '2',
+               'TMPDIR': str(proof), 'GOTMPDIR': str(proof), 'LANG': 'C.UTF-8', 'IVOAI_ADAPTIVE_LIVE': '1',
+               'IVOAI_ADAPTIVE_REAL_CODEX': next(n for n in frozen['pins'] if n.endswith('/codex')),
+               'IVOAI_ADAPTIVE_REAL_COMPANION': next(n for n in frozen['pins'] if n.endswith('/codex-code-mode-host'))}
+(proof / 'started.json').open('x').write(json.dumps({'recipe_sha256': hashlib.sha256((proof / 'recipe.json').read_bytes()).hexdigest(), 'once': True}) + '\n')
+start = time.monotonic()
+with (proof / 'tests.jsonl').open('xb') as stdout, (proof / 'tests.stderr').open('xb') as stderr:
+    result = subprocess.run(recipe['command'], cwd=root, env=environment, stdout=stdout, stderr=stderr)
+verify()
+events = [json.loads(line) for line in (proof / 'tests.jsonl').read_text().splitlines()]
+counts = collections.Counter(e['Action'] for e in events if e.get('Test') and e['Action'] in ['pass', 'fail', 'skip'])
+record = {'source': frozen['source_commit'], 'exit': result.returncode, 'wall_seconds': round(time.monotonic() - start, 3),
+          'test_events': dict(counts), 'passed': [e['Test'] for e in events if e.get('Test') and e['Action'] == 'pass'],
+          'package_results': [{k: e[k] for k in ['Package', 'Action', 'Elapsed'] if k in e} for e in events if not e.get('Test') and e['Action'] in ['pass', 'fail', 'skip']],
+          'pins_and_source_unchanged': True, 'real_model': False, 'no_subscription_login_status_or_account_RPC': True,
+          'scope': 'two existing tests; official CLI with synthetic provider plus actual Core bootstrap; not public TUI/auth/cloud/egress isolation certification'}
+(proof / 'validation.json').write_text(json.dumps(record, indent=2) + '\n')
+print(json.dumps(record))
+raise SystemExit(result.returncode or (0 if counts['pass'] == 4 and not counts['skip'] and not counts['fail'] else 1))

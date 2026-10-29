@@ -1,0 +1,9 @@
+{
+  "control014-positive/verification.json": "813538087a4b18467b4bd954328a4d1888ab059d4fd8935d5260cf1446138a59",
+  "control014-negative-oversize-api/verification.json": "bdde403c1a930ae743a2fe29c5167772a62ef3ca252ab9b6dad17dcfe62fbc45",
+  "control014-negative-wrong-commit/verification.json": "b1b264ce0881b73103a57bcfc2917a537cda0f30168ecb5bdd4b9099e21ff4ce",
+  "control014-negative-wrong-digest/verification.json": "bac9b0e2c050fad49ac595d732f2132cc4eeddf8ac1d5ab322fde25f0e8e201f",
+  "control014-negative-wrong-publication-time/verification.json": "727f2137dff202cc50a0951084539ca62d8ac2d8fd3cf17e0a9f06b487c791f0",
+  "control014-negative-wrong-release-id/verification.json": "873a10ecb928381b6e3d6655a15374917602974bc7de45978bc0eb751ea0efda",
+  "control014-negative-wrong-version/verification.json": "ca46a8baedfdd7c6920691e293d2d8d15eb1aad52925b2e34aacbb44a2518d09"
+}

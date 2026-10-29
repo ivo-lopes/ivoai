@@ -1,0 +1,24 @@
+✓ Lockfile passes supply-chain policies (verified 5h ago)
+Lockfile is up to date, resolution step is skipped
+Done in 98ms using pnpm v12.11.2
+$ node scripts/check-i18n.mjs
+DOCS_I18N_PARITY=PASS current=51 release=0.9.2:44
+$ docusaurus build
+[INFO] Website will be built for all these locales: 
+- en
+- pt-BR
+[INFO] [en] Creating an optimized production build...
+[webpackbar] ℹ Compiling Client
+[webpackbar] ℹ Compiling Server
+[webpackbar] ✔ Server: Compiled successfully in 5.37s
+[webpackbar] ✔ Client: Compiled successfully in 5.50s
+(node:872855) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[SUCCESS] Generated static files in "build".
+[INFO] [pt-BR] Creating an optimized production build...
+[webpackbar] ℹ Compiling Client
+[webpackbar] ℹ Compiling Server
+[webpackbar] ✔ Server: Compiled successfully in 3.87s
+[webpackbar] ✔ Client: Compiled successfully in 4.04s
+[SUCCESS] Generated static files in "build/pt-BR".
+[INFO] Use `npm run serve` command to test your build locally.

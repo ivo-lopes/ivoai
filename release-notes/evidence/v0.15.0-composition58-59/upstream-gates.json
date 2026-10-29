@@ -1,0 +1,22 @@
+{
+  "record_type": "root-confirmed upstream CI provenance, not independently fetched by this composition task",
+  "prior57_head": "dc9dc5870847b6b416e06b9800eb9c912ef5c5d3",
+  "prior57_run": 40784670844,
+  "prior57_conclusion": "FAIL_ORIGINAL_PID_MARKER_PRESERVED_NO_UNCHANGED_RERUN",
+  "main58": "eb30d6caf0c21ea0fb0b358e8a976d65dcf17b72",
+  "source58": "55ec7ab98683bf0c8784b93baebc966f2910772b",
+  "source58_tree": "22c13b12573b23ed0292f91eb03f4b0476df3e06",
+  "root_reported58_gates": {
+    "original_passed": 15,
+    "guarded_network_job_retry_passed": 1,
+    "not_claimed_all_first_attempt": true
+  },
+  "head59": "5683c92276203f7f861ec3b0aa04932701a32ee7",
+  "run59": 40788883401,
+  "attempt59": 1,
+  "passed_jobs59": 16,
+  "conclusion59": "SUCCESS",
+  "merged_main59": "4368d5495a5be4ce425f4ab89849df0296fc6f9b",
+  "tree59_head_and_main_verified_equal": "9fee82c1e209e2c65b7734cafa2834a4691b7373",
+  "new_candidate_head_ci": "PENDING_NOT_INHERITED"
+}

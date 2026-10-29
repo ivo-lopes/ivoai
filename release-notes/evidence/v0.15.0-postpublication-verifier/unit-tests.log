@@ -1,0 +1,40 @@
+test_api_all_digests (test_verifier.VerifierTests.test_api_all_digests) ... ok
+test_api_missing_digest_unknown (test_verifier.VerifierTests.test_api_missing_digest_unknown) ... ok
+test_bounded_reader_prevents_overread (test_verifier.VerifierTests.test_bounded_reader_prevents_overread) ... ok
+test_component_and_embedded_association (test_verifier.VerifierTests.test_component_and_embedded_association) ... ok
+test_compressed_core_cap_before_parser (test_verifier.VerifierTests.test_compressed_core_cap_before_parser) ... ok
+test_duplicate_json_rejected (test_verifier.VerifierTests.test_duplicate_json_rejected) ... ok
+test_manifest_duplicate (test_verifier.VerifierTests.test_manifest_duplicate) ... ok
+test_manifest_positive (test_verifier.VerifierTests.test_manifest_positive) ... ok
+test_manifest_symlink (test_verifier.VerifierTests.test_manifest_symlink) ... ok
+test_manifest_traversal (test_verifier.VerifierTests.test_manifest_traversal) ... ok
+test_module_mutations (test_verifier.VerifierTests.test_module_mutations) ... ok
+test_module_positive (test_verifier.VerifierTests.test_module_positive) ... ok
+test_safe_core_extra (test_verifier.VerifierTests.test_safe_core_extra) ... ok
+test_safe_core_link (test_verifier.VerifierTests.test_safe_core_link) ... ok
+test_safe_core_positive (test_verifier.VerifierTests.test_safe_core_positive) ... ok
+test_safe_core_traversal (test_verifier.VerifierTests.test_safe_core_traversal) ... ok
+test_safe_core_wrong_arch (test_verifier.VerifierTests.test_safe_core_wrong_arch) ... ok
+test_skill_positive (test_verifier.VerifierTests.test_skill_positive) ... ok
+test_small_asset_cap_before_hashing (test_verifier.VerifierTests.test_small_asset_cap_before_hashing) ... ok
+test_tar_gnu_extension_refused (test_verifier.VerifierTests.test_tar_gnu_extension_refused) ... ok
+test_tar_oversized_header_refused (test_verifier.VerifierTests.test_tar_oversized_header_refused) ... ok
+test_tar_pax_refused_before_body_read (test_verifier.VerifierTests.test_tar_pax_refused_before_body_read) ... ok
+test_zip_count_before_parser (test_verifier.VerifierTests.test_zip_count_before_parser) ... ok
+test_zip_deflate_refused_before_member_read (test_verifier.VerifierTests.test_zip_deflate_refused_before_member_read) ... ok
+test_zip_directory_budget_before_parser (test_verifier.VerifierTests.test_zip_directory_budget_before_parser) ... ok
+test_zip_size_before_parser (test_verifier.VerifierTests.test_zip_size_before_parser) ... ok
+test_all_limits_and_reader_bytes_preserved (test_runner.RunnerTests.test_all_limits_and_reader_bytes_preserved) ... ok
+test_api_size_bound_before_parser (test_runner.RunnerTests.test_api_size_bound_before_parser) ... ok
+test_duplicate_api_key_rejected (test_runner.RunnerTests.test_duplicate_api_key_rejected) ... ok
+test_expected_fields_bounded_and_canonical (test_runner.RunnerTests.test_expected_fields_bounded_and_canonical) ... ok
+test_missing_digest_remains_unknown (test_runner.RunnerTests.test_missing_digest_remains_unknown) ... ok
+test_positive_expected_metadata_and_digest (test_runner.RunnerTests.test_positive_expected_metadata_and_digest) ... ok
+test_saved_api_required (test_runner.RunnerTests.test_saved_api_required) ... ok
+test_version_identity_publication_and_stable_mismatch (test_runner.RunnerTests.test_version_identity_publication_and_stable_mismatch) ... ok
+test_wrong_digest_rejected (test_runner.RunnerTests.test_wrong_digest_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 35 tests in 0.096s
+
+OK
