@@ -36,7 +36,7 @@ func TestNativeCloseStopsBackgroundDirectoryWriters(t *testing.T) {
 			binary := filepath.Join(root, "fake-codex")
 			// The writer cannot write the marker until the test releases it. A
 			// slow scheduler can no longer make it write before Close is called.
-			body := "#!/bin/sh\n(touch '" + ready + "'; while [ ! -f '" + trigger + "' ]; do sleep 0.01; done; touch '" + leaked + "') &\nprintf '%s' \"$!\" > '" + pidFile + "'\ncat >/dev/null\n"
+			body := "#!/bin/sh\n(touch '" + ready + "'; while [ ! -f '" + trigger + "' ]; do sleep 0.01; done; touch '" + leaked + "') &\nprintf '%s' \"$!\" > '" + pidFile + ".tmp'\nmv '" + pidFile + ".tmp' '" + pidFile + "'\ncat >/dev/null\n"
 			if err := os.WriteFile(binary, []byte(body), 0700); err != nil {
 				t.Fatal(err)
 			}
@@ -75,19 +75,9 @@ func TestNativeCloseStopsBackgroundDirectoryWriters(t *testing.T) {
 				t.Fatal("fixture process identity unavailable")
 			}
 			writerAlive := func() bool {
-				if !session.ProcessMatches(pid, identity) {
-					return false
-				}
-				stat, err := os.ReadFile("/proc/" + strconv.Itoa(pid) + "/stat")
-				if err != nil {
-					return true
-				}
-				end := strings.LastIndexByte(string(stat), ')')
-				if end < 0 {
-					return true
-				}
-				fields := strings.Fields(string(stat[end+1:]))
-				return len(fields) == 0 || fields[0] != "Z" && fields[0] != "X"
+				return nativeFixtureWriterAlive(identity, func() ([]byte, error) {
+					return os.ReadFile("/proc/" + strconv.Itoa(pid) + "/stat")
+				})
 			}
 			t.Cleanup(func() {
 				f.Close()
