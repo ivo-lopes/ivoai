@@ -430,17 +430,24 @@ func (s *prefetchSubscriptionStdioSession) Close() error {
 		defer close(s.closed)
 		_ = s.input.Close()
 		_ = s.output.Close()
-		if !s.waitExit(prefetchSubscriptionEOFGrace) {
+		exitedBeforeTERM := s.waitExit(prefetchSubscriptionEOFGrace)
+		exitedBeforeKILL := exitedBeforeTERM
+		termMayExplainExit := false
+		if !exitedBeforeTERM {
 			s.termRequested = true
-			if e := syscall.Kill(-s.command.Process.Pid, syscall.SIGTERM); e != nil && !errors.Is(e, syscall.ESRCH) {
+			signalErr := syscall.Kill(-s.command.Process.Pid, syscall.SIGTERM)
+			termMayExplainExit = signalErr == nil
+			if signalErr != nil && !errors.Is(signalErr, syscall.ESRCH) {
 				s.closeErr = prefetchSubscriptionCleanupFailed
 			}
-			_ = s.waitExit(prefetchSubscriptionTERMGrace)
+			exitedBeforeKILL = s.waitExit(prefetchSubscriptionTERMGrace)
 		}
 		// Signal all remaining members before reaping the leader: its PID/PGID
 		// is still reserved, including when it is already a zombie.
 		s.killRequested = true
-		if e := syscall.Kill(-s.command.Process.Pid, syscall.SIGKILL); e != nil && !errors.Is(e, syscall.ESRCH) {
+		killErr := syscall.Kill(-s.command.Process.Pid, syscall.SIGKILL)
+		killMayExplainExit := !exitedBeforeKILL && killErr == nil
+		if killErr != nil && !errors.Is(killErr, syscall.ESRCH) {
 			s.closeErr = prefetchSubscriptionCleanupFailed
 		}
 		done := make(chan error, 1)
@@ -454,7 +461,12 @@ func (s *prefetchSubscriptionStdioSession) Close() error {
 					s.closeErr = prefetchSubscriptionCleanupFailed
 				} else {
 					status, ok := exit.Sys().(syscall.WaitStatus)
-					if !ok || !status.Signaled() || status.Signal() != syscall.SIGKILL && (!s.termRequested || status.Signal() != syscall.SIGTERM) {
+					// A cleanup group signal does not explain a leader already
+					// observed exited. In particular a spontaneous SIGKILL must
+					// never become successful cleanup merely because we also
+					// signaled remaining group members before reaping.
+					explained := ok && status.Signaled() && (status.Signal() == syscall.SIGKILL && killMayExplainExit || status.Signal() == syscall.SIGTERM && termMayExplainExit && !exitedBeforeTERM)
+					if !explained {
 						s.closeErr = prefetchSubscriptionCleanupFailed
 					}
 				}

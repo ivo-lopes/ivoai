@@ -95,7 +95,7 @@ func TestPrimaryPrefetchSubscriptionStdioControlledProtocols(t *testing.T) {
 		mode string
 		want error
 	}{
-		{"success", nil}, {"notifications", nil}, {"no_auth", prefetchSubscriptionAuthDenied}, {"wrong_id", prefetchSubscriptionRPCError}, {"remote_error", prefetchSubscriptionRPCError}, {"partial", prefetchSubscriptionRPCError}, {"oversize", prefetchSubscriptionRPCError}, {"deep", prefetchSubscriptionRPCError}, {"nodes", prefetchSubscriptionRPCError}, {"large_notification", prefetchSubscriptionRPCError}, {"duplicate", prefetchSubscriptionRPCError}, {"server_request", prefetchSubscriptionRPCError}, {"notification_flood", prefetchSubscriptionRPCError}, {"early_eof", prefetchSubscriptionRPCError}, {"nonzero_exit", prefetchSubscriptionCleanupFailed},
+		{"success", nil}, {"notifications", nil}, {"no_auth", prefetchSubscriptionAuthDenied}, {"wrong_id", prefetchSubscriptionRPCError}, {"remote_error", prefetchSubscriptionRPCError}, {"partial", prefetchSubscriptionRPCError}, {"oversize", prefetchSubscriptionRPCError}, {"deep", prefetchSubscriptionRPCError}, {"nodes", prefetchSubscriptionRPCError}, {"large_notification", prefetchSubscriptionRPCError}, {"duplicate", prefetchSubscriptionRPCError}, {"server_request", prefetchSubscriptionRPCError}, {"notification_flood", prefetchSubscriptionRPCError}, {"early_eof", prefetchSubscriptionRPCError}, {"nonzero_exit", prefetchSubscriptionCleanupFailed}, {"self_kill", prefetchSubscriptionCleanupFailed},
 	}
 	for _, tc := range cases {
 		t.Run(tc.mode, func(t *testing.T) {
@@ -106,6 +106,9 @@ func TestPrimaryPrefetchSubscriptionStdioControlledProtocols(t *testing.T) {
 				s, e := open(ctx, cmd)
 				if s != nil {
 					owned = s.(*prefetchSubscriptionStdioSession)
+					if tc.mode == "self_kill" {
+						return &subscriptionExitedBeforeClose{prefetchSubscriptionStdioSession: owned}, e
+					}
 				}
 				return s, e
 			}
@@ -301,4 +304,18 @@ func TestPrimaryPrefetchSubscriptionStdioRejectsEffectsAndWrongOrder(t *testing.
 	if e = s.Notify(ctx, "initialized"); e == nil {
 		t.Fatal("failed notification allowed replay")
 	}
+}
+
+// Deterministically observe the controlled self-signal before the host cleanup
+// can signal the group; this is a causal fixture barrier, not a timeout relax.
+type subscriptionExitedBeforeClose struct {
+	*prefetchSubscriptionStdioSession
+}
+
+func (s *subscriptionExitedBeforeClose) Close() error {
+	if !s.waitExit(time.Second) {
+		_ = s.prefetchSubscriptionStdioSession.Close()
+		return prefetchSubscriptionCleanupFailed
+	}
+	return s.prefetchSubscriptionStdioSession.Close()
 }
