@@ -44,3 +44,17 @@ GOTOOLCHAIN=local GOENV=off GOPROXY=off GOSUMDB=off go test -race -count=1 ./int
 The preserved overlay inputs have `.go.txt` extensions to avoid adding Go packages. For a separately authorized replay, create a new private output directory and a new Go overlay map using current absolute repository paths. Map only `internal/evidence/gateway.go` to the selected mutant `.go.txt`, and run only its matching test: panic cleanup for the no-cleanup mutant, deadline-after-Put for the no-recheck mutant. Both must exit1. The legacy overlay maps only `gateway_test.go` and reproduces the expected old assertion failure. Never run historical absolute-path overlay maps or replace their output files; preserve these epochs unchanged.
 
 Rollback is a revert of this isolated test/docs commit. No production data, histories, credentials or client configuration should be removed or replayed.
+## Independent test-only target
+
+Root transplanted author commit `6411360f` without conflicts onto PR60 source
+`8a956f7a`, producing `2b96397d`. This target imports no production context fix
+from PR61. Its only Go change is `gateway_test.go`; all281 production Go files
+match target base8a. Evidence and workingcontext sources match the authored
+test epoch exactly. Earlier broader checks remain attributed to that epoch.
+
+Two named tests passed with race/count1 on this target (package1.040s), zero
+failures/skips; evidence vet passed. The target
+[receipt](evidence/gateway-panic-flight-main/validation.json) and
+[hashes](evidence/gateway-panic-flight-main/artifacts-sha256.json) retain those
+checks separately. Fresh exact-head hosted CI is pending. No client, provider,
+authentication, status, runtime timeout/TTL change or publication followed.
