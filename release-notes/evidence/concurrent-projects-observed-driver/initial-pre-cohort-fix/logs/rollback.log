@@ -1,0 +1,12 @@
+fc913780355621826b49aa03455cdf0b743294acfccaf6dbfc10db755bee27e2  /var/tmp/ivoai-concurrent-driver.GLeqqW0w/ivoai-evidence-rollback.Bl3uXqUb/legacy-core.test
+PROTECTED_EVIDENCE_ROLLBACK_GATE=PASS named_test=1 skips=0
+{"Time":"2026-10-28T18:12:59.014869902-03:00","Action":"start","Package":"github.com/ivo-lopes/ivoai/internal/workingcontext"}
+{"Time":"2026-10-28T18:12:59.022259776-03:00","Action":"run","Package":"github.com/ivo-lopes/ivoai/internal/workingcontext","Test":"TestLiveProtectedArtifactsDoNotPoisonLegacyCoreRollback"}
+{"Time":"2026-10-28T18:12:59.022367995-03:00","Action":"output","Package":"github.com/ivo-lopes/ivoai/internal/workingcontext","Test":"TestLiveProtectedArtifactsDoNotPoisonLegacyCoreRollback","Output":"=== RUN   TestLiveProtectedArtifactsDoNotPoisonLegacyCoreRollback\n","OutputType":"frame"}
+{"Time":"2026-10-28T18:12:59.083358542-03:00","Action":"output","Package":"github.com/ivo-lopes/ivoai/internal/workingcontext","Test":"TestLiveProtectedArtifactsDoNotPoisonLegacyCoreRollback","Output":"    protected_rollback_live_test.go:60: LEGACY_CORE_ROLLBACK=PASS old_full_and_range_denied legacy_put_read_gc_worked protected_bytes_preserved; old_inventory_excludes_protected_disk\n"}
+{"Time":"2026-10-28T18:12:59.083760138-03:00","Action":"output","Package":"github.com/ivo-lopes/ivoai/internal/workingcontext","Test":"TestLiveProtectedArtifactsDoNotPoisonLegacyCoreRollback","Output":"--- PASS: TestLiveProtectedArtifactsDoNotPoisonLegacyCoreRollback (0.06s)\n","OutputType":"frame"}
+{"Time":"2026-10-28T18:12:59.084662269-03:00","Action":"pass","Package":"github.com/ivo-lopes/ivoai/internal/workingcontext","Test":"TestLiveProtectedArtifactsDoNotPoisonLegacyCoreRollback","Elapsed":0.06}
+{"Time":"2026-10-28T18:12:59.084713548-03:00","Action":"output","Package":"github.com/ivo-lopes/ivoai/internal/workingcontext","Output":"PASS\n","OutputType":"frame"}
+{"Time":"2026-10-28T18:12:59.085406481-03:00","Action":"output","Package":"github.com/ivo-lopes/ivoai/internal/workingcontext","Output":"ok  \tgithub.com/ivo-lopes/ivoai/internal/workingcontext\t0.069s\n"}
+{"Time":"2026-10-28T18:12:59.08544412-03:00","Action":"pass","Package":"github.com/ivo-lopes/ivoai/internal/workingcontext","Elapsed":0.071}
+Protected evidence rollback proof: /var/tmp/ivoai-concurrent-driver.GLeqqW0w/ivoai-evidence-rollback.Bl3uXqUb

@@ -1,0 +1,8 @@
+--- FAIL: TestPrimaryPrefetchDirectMCPScopeCallerAlias (0.00s)
+    --- FAIL: TestPrimaryPrefetchDirectMCPScopeCallerAlias/during_inventory (0.00s)
+        review_scope_alias_test.go:30: exec scope differs from actual inventory after caller slice mutation
+    --- FAIL: TestPrimaryPrefetchDirectMCPScopeCallerAlias/after_inventory (0.00s)
+        review_scope_alias_test.go:30: exec scope differs from actual inventory after caller slice mutation
+FAIL
+FAIL	github.com/ivo-lopes/ivoai/internal/app	0.025s
+FAIL

@@ -1,0 +1,82 @@
+{
+  "verify_release014.py": {
+    "archive": "verify_release014.py",
+    "sha256": "15c166f204ddaaf776a0b5a891dcb5fba06fc37bd82e9a39d81bd30e49763976"
+  },
+  "buildinfo_reader.go": {
+    "archive": "buildinfo_reader.go.txt",
+    "sha256": "ed9718c5e503d11c70ebbc25fe887ce7ae5abf578faadbe450e334d0503e0eb1"
+  },
+  "test_verifier.py": {
+    "archive": "test_verifier.py",
+    "sha256": "515e3211777db477b54f9e3fa929e9c801aa88c1e2f01be15dacd668c9ef7fa1"
+  },
+  "old-pax-4MiB-fixture.tar.gz": {
+    "archive": "old-pax-4MiB-fixture.tar.gz",
+    "sha256": "e2ab494487248ca04e3008b627722636ad7d76c188888e6ceb033036dc4726e6"
+  },
+  "verify_release.py": {
+    "archive": "verify_release.py",
+    "sha256": "e0a9dbbe495937c2f3851ffd8f9b7191df86a82c06965fc9cf6b0f22b9f58c36"
+  },
+  "test_runner.py": {
+    "archive": "test_runner.py",
+    "sha256": "cb048c8eab8231dae1c99ae726bef8e3cccef2faa337ad80f17b8c3a8e578e6d"
+  },
+  "frozen-source-manifest.json": {
+    "archive": "frozen-source-manifest.json",
+    "sha256": "d526e5866d5f123346c7082d28b175e08074c0651293ec1b01b90f04556ad8f0"
+  },
+  "unit-tests.log": {
+    "archive": "unit-tests.log",
+    "sha256": "2efc2e45b8c9f1ab28689f44ac802a569af404de27990f10dcd7701893fcaad3"
+  },
+  "control014-asset-hashes-before.json": {
+    "archive": "control014-asset-hashes-before.json",
+    "sha256": "f3c808c121b0236373069ef8345cba438c14806ca946eabe46d940571a1bd048"
+  },
+  "control014-asset-hashes-after.json": {
+    "archive": "control014-asset-hashes-after.json",
+    "sha256": "f3c808c121b0236373069ef8345cba438c14806ca946eabe46d940571a1bd048"
+  },
+  "negative-controls.json": {
+    "archive": "negative-controls.json",
+    "sha256": "1f165b58503bc18fb2ceb02cb2e357c241343df57a881404608fcf7bdae20734"
+  },
+  "validation.json": {
+    "archive": "validation.json",
+    "sha256": "6bab48a1b3ded725d1d19e9aaf8264629b7ef18311c93c629e13c1e49a01adf0"
+  },
+  "control-report-hashes.json": {
+    "archive": "control-report-hashes.json",
+    "sha256": "23aadb2c7745e34ec28f5333055a4dd453bd1299eca2e53324fd20b9a3bcddf1"
+  },
+  "control014-positive.log": {
+    "archive": "control014-positive.log",
+    "sha256": "0b824d58b46ee0567ffdfede1f2bb3f2da6f4afbbf8a915cc9b8d030344c5414"
+  },
+  "control014-negative-oversize-api.log": {
+    "archive": "control014-negative-oversize-api.log",
+    "sha256": "139e45d4a9e60f7805844e672d3cd8e8a1faf62bf0937286e380a98352ffe48f"
+  },
+  "control014-negative-wrong-commit.log": {
+    "archive": "control014-negative-wrong-commit.log",
+    "sha256": "c2607c27dcbeafdae1696b53cd0611fedff87300fc9bfca451b88cdd9bbf2e1f"
+  },
+  "control014-negative-wrong-digest.log": {
+    "archive": "control014-negative-wrong-digest.log",
+    "sha256": "659e91f7ed03d91c5b79b96b93a6899ceaaf7c8da6bdaf326788d1de4d73ffc4"
+  },
+  "control014-negative-wrong-publication-time.log": {
+    "archive": "control014-negative-wrong-publication-time.log",
+    "sha256": "88c4cb8f9b3b994eeccc1a577d31897796c2d52e600fbe640f88c7c5fce3636c"
+  },
+  "control014-negative-wrong-release-id.log": {
+    "archive": "control014-negative-wrong-release-id.log",
+    "sha256": "96b8e6c5ab42898eb78dd6ab80a2bb3704ca54d35b230b2fad1897b9d931c1e0"
+  },
+  "control014-negative-wrong-version.log": {
+    "archive": "control014-negative-wrong-version.log",
+    "sha256": "9daaae3e75a75e66506659de8f17be7e012cd5aa4ac5276540629951971a7bfd"
+  }
+}

@@ -1,0 +1,7 @@
+=== RUN   TestClientLifecycleObservesActualChildAndReaps
+    client_lifecycle_linux_test.go:45: private mode=775 canonical=true outside=true
+    client_lifecycle_linux_test.go:48: actual synthetic child observation failed: client lifecycle observation unavailable
+--- FAIL: TestClientLifecycleObservesActualChildAndReaps (0.01s)
+FAIL
+FAIL	github.com/ivo-lopes/ivoai/internal/benchmarkfixtures	0.008s
+FAIL

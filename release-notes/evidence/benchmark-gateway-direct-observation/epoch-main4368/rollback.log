@@ -1,0 +1,12 @@
+fc913780355621826b49aa03455cdf0b743294acfccaf6dbfc10db755bee27e2  /var/tmp/ivoai-gateway-observation-main4368.iUKN5Adb/ivoai-evidence-rollback.BcbbgPR5/legacy-core.test
+PROTECTED_EVIDENCE_ROLLBACK_GATE=PASS named_test=1 skips=0
+{"Time":"2026-10-28T21:29:52.794974293-03:00","Action":"start","Package":"github.com/ivo-lopes/ivoai/internal/workingcontext"}
+{"Time":"2026-10-28T21:29:52.798855876-03:00","Action":"run","Package":"github.com/ivo-lopes/ivoai/internal/workingcontext","Test":"TestLiveProtectedArtifactsDoNotPoisonLegacyCoreRollback"}
+{"Time":"2026-10-28T21:29:52.799015094-03:00","Action":"output","Package":"github.com/ivo-lopes/ivoai/internal/workingcontext","Test":"TestLiveProtectedArtifactsDoNotPoisonLegacyCoreRollback","Output":"=== RUN   TestLiveProtectedArtifactsDoNotPoisonLegacyCoreRollback\n","OutputType":"frame"}
+{"Time":"2026-10-28T21:29:52.833336217-03:00","Action":"output","Package":"github.com/ivo-lopes/ivoai/internal/workingcontext","Test":"TestLiveProtectedArtifactsDoNotPoisonLegacyCoreRollback","Output":"    protected_rollback_live_test.go:60: LEGACY_CORE_ROLLBACK=PASS old_full_and_range_denied legacy_put_read_gc_worked protected_bytes_preserved; old_inventory_excludes_protected_disk\n"}
+{"Time":"2026-10-28T21:29:52.834673424-03:00","Action":"output","Package":"github.com/ivo-lopes/ivoai/internal/workingcontext","Test":"TestLiveProtectedArtifactsDoNotPoisonLegacyCoreRollback","Output":"--- PASS: TestLiveProtectedArtifactsDoNotPoisonLegacyCoreRollback (0.04s)\n","OutputType":"frame"}
+{"Time":"2026-10-28T21:29:52.834717663-03:00","Action":"pass","Package":"github.com/ivo-lopes/ivoai/internal/workingcontext","Test":"TestLiveProtectedArtifactsDoNotPoisonLegacyCoreRollback","Elapsed":0.04}
+{"Time":"2026-10-28T21:29:52.834751303-03:00","Action":"output","Package":"github.com/ivo-lopes/ivoai/internal/workingcontext","Output":"PASS\n","OutputType":"frame"}
+{"Time":"2026-10-28T21:29:52.8361599-03:00","Action":"output","Package":"github.com/ivo-lopes/ivoai/internal/workingcontext","Output":"ok  \tgithub.com/ivo-lopes/ivoai/internal/workingcontext\t0.041s\n"}
+{"Time":"2026-10-28T21:29:52.836212039-03:00","Action":"pass","Package":"github.com/ivo-lopes/ivoai/internal/workingcontext","Elapsed":0.041}
+Protected evidence rollback proof: /var/tmp/ivoai-gateway-observation-main4368.iUKN5Adb/ivoai-evidence-rollback.BcbbgPR5

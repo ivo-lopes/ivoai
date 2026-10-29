@@ -1,0 +1,16 @@
+{
+  "source": "520463c3f3d4501a727aa76967960b2f9ec82e49",
+  "test": "TestLiveProtectedArtifactsDoNotPoisonLegacyCoreRollback",
+  "runs": 1,
+  "passes": 1,
+  "skips": 0,
+  "failures": 0,
+  "legacy_source": "3be82befea6ed3875373afcb1bfaa450710310ac",
+  "legacy_source_manifest_sha256": "28eeb86068f75de7d60ca7a0702723c63519dc844a8b593bab8441f986050389",
+  "legacy_binary_sha256": "fc913780355621826b49aa03455cdf0b743294acfccaf6dbfc10db755bee27e2",
+  "current_jsonl_sha256": "49ced04e2490a9d467f5c4bbeed1e4a0c18a42e1cd25fe942c6c8ef55183e109",
+  "module_verify_log_sha256": "825b49c0a1aed492845664a8431f4e28b0d076f39c2021dbaeb7f55df10b27ed",
+  "current_and_legacy_modules_verified": true,
+  "official_clients_models": "NOT_RUN_TRUSTED_LOCAL_LEGACY_READER_ONLY",
+  "proof_directory": "/var/tmp/ivoai-v015-context-composition.iqA1ju1x/go-tmp/ivoai-evidence-rollback.KkOlhrqW"
+}

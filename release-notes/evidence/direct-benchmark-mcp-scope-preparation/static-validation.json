@@ -1,0 +1,11 @@
+{
+  "status": "PREPARED_STATIC_VALIDATION_ONLY",
+  "pure_contract_cases": 21,
+  "AST_all_Python_sources": "PASS",
+  "JS_source_only": "fixed ALL_TOOLS metadata, no nested invocation; runtime NOT_RUN",
+  "max_inventory_CLI_runs": 2,
+  "max_exec_CLI_runs": 2,
+  "official_CLI_MCP_HTTP_namespace_executions": 0,
+  "approval_present": false,
+  "root_review_required": true
+}

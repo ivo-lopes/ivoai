@@ -1,0 +1,63 @@
+{
+  "base_revision": "6421f2c43f41c2bc8257a0ed49196e47ea55cb93",
+  "merge_commit": "04c90963bca3429d0f274c891d92cd7db4691bbf",
+  "driver_revision": "c826cf709bf4a2c16c07eb37dcbca28bc853bbbe",
+  "scope": "All driver/harness/observer Python/Go changes relative to actual reviewed main plus module manifests; other source fixed by base",
+  "files": [
+    {
+      "path": "go.mod",
+      "bytes": 568,
+      "sha256": "d1c486bcfb3a5e1127b4f47de7e62001c768ee744c42b6f96627f6895d026705"
+    },
+    {
+      "path": "go.sum",
+      "bytes": 2537,
+      "sha256": "44f145c4f9477395f29442a17757c7de7b24df282e19c7e6ffddb58662e2553c"
+    },
+    {
+      "path": "internal/app/primary_prefetch_live_test.go",
+      "bytes": 37362,
+      "sha256": "c6d032c00932397c67db7b05fc55faa119398018112f31bc75a893c1c50c82e3"
+    },
+    {
+      "path": "internal/benchmarkfixtures/client_lifecycle.go",
+      "bytes": 1456,
+      "sha256": "66c915beece2f0f68ae73a2205bab02d03dc338bb96c7f4eb04bb39363d3c1ea"
+    },
+    {
+      "path": "internal/benchmarkfixtures/client_lifecycle_linux.go",
+      "bytes": 4467,
+      "sha256": "de6e0f675bbf13bc43f48c648cdd022f6a7b2ceb4e5c7de780f13cf8cef31003"
+    },
+    {
+      "path": "internal/benchmarkfixtures/client_lifecycle_linux_test.go",
+      "bytes": 4715,
+      "sha256": "249e017079e6d94cf7400d5a83fa69f1ef2d1d55245fa3ecf3bce81c3bb4717f"
+    },
+    {
+      "path": "internal/benchmarkfixtures/client_lifecycle_other.go",
+      "bytes": 247,
+      "sha256": "cf1394878c27f63e581ae3ab219075b9e720052148fdfe3536d620a287b4343f"
+    },
+    {
+      "path": "scripts/benchmark-economic-runtime.py",
+      "bytes": 35508,
+      "sha256": "e7b577d3e2f64cf6e1e409231b08beef0be2d031f3fa86aeb4bb93a7a9eb9e14"
+    },
+    {
+      "path": "scripts/benchmark_concurrent_contract.py",
+      "bytes": 6579,
+      "sha256": "b51ca4c5eb9d39fe303b5b63c2ee8a9ac96c7a48078cd6c94804b1243fb407d0"
+    },
+    {
+      "path": "scripts/benchmark_concurrent_runtime.py",
+      "bytes": 21069,
+      "sha256": "473403362c890875428f10aaf62dfbc6dfe36666d43913fb36298a13c87a44b9"
+    },
+    {
+      "path": "scripts/test_benchmark_concurrent_runtime.py",
+      "bytes": 23809,
+      "sha256": "eb4919e76b2266394a93192593e4d6b2bcc494f930d325f2ed909df384285ea1"
+    }
+  ]
+}

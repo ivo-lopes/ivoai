@@ -1,0 +1,8 @@
+{
+  "status": "PASS",
+  "new40pins_verified": 40,
+  "old_fc18_pins_verified": 34,
+  "initial_cases_exact_files_no_auth": true,
+  "no_execution_marker_before_approval": true,
+  "source_package_approved_by_root": true
+}

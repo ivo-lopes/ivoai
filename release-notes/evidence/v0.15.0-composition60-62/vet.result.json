@@ -1,0 +1,10 @@
+{
+  "source": "520463c3f3d4501a727aa76967960b2f9ec82e49",
+  "exit": 0,
+  "count": 1,
+  "wall_seconds": 9.322,
+  "finished_utc": "2026-10-29T02:54:29.292672+00:00",
+  "frozen_source_unchanged_after": true,
+  "live_optin_environment": "ABSENT; explicit environment, no official-client optins",
+  "official_executor_auth_status_model_calls": 0
+}

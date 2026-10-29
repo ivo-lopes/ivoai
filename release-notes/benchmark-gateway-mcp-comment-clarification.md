@@ -1,0 +1,9 @@
+# Benchmark harness: MCP isolation limitation
+
+The harness comment now states that native collaboration features are disabled, while ambient system/cloud MCP isolation remains unverified and blocks real cohorts. The earlier statement that neither arm exposes MCP was not demonstrated. Client invocation, configuration projection, isolation behavior and all production code are unchanged; this correction does not resolve the separate MCP blocker.
+
+Commit `c455e02c7b36ac4c4aface4fed224091892cadc1` and its [original receipt](evidence/benchmark-gateway-direct-observation/validation.json) remain the source epoch for the full App race (177.189s, 403 PASS/20 explicit SKIP events), Python94 and App vet. Those checks are not reassigned to this comment delta or repeated as new certification. A normalized Go AST comparison confirms unchanged non-comment code. The embedded harness text and identity intentionally change.
+
+The [follow-up receipt](evidence/benchmark-gateway-direct-observation/epoch-mcp-comment-clarification/validation.json) covers new builds, identical discovery4 and source-pinned direct-only Gateway controls for both arms, plus the focused JSON projection regression. New harness SHA256 is `2aac078cf6d3cfeb6da118a8c9eeb78fc0bb17ce5297a2262f4c28aa6dd7f7fe`; observer/fixture/oracle/client-tail identities remain unchanged. The identical common projection preserves baseline3ff production without a shim. Both arms still require a new reviewed input freeze before any separately authorized future cohort; old projections, receipts and closed labs remain intact.
+
+No official CLI, status, authentication, model, provider, real cohort or structural Graft query ran. The concurrent catalog remains UNSUPPORTED and global economics INCOMPLETE. This follow-up is local validation only; final review and integrated-head hosted CI remain required.

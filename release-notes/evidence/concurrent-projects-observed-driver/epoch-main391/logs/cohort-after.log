@@ -1,0 +1,29 @@
+{
+  "scope": "SYNTHETIC_ADVERSE_COHORT_PIN_REPRO_NO_PROVIDER",
+  "exit": 1,
+  "pair_verdicts": [
+    false,
+    false
+  ],
+  "pair_execution": [
+    "EXECUTED",
+    "NOT_RUN"
+  ],
+  "child_verdicts": [
+    [
+      true,
+      true
+    ],
+    [
+      false,
+      false
+    ]
+  ],
+  "initial_client_sha256": "2d7c3c441edd89aabc237e8ccde9960afb7723eb7e602769579a218fdef7bf83",
+  "manifest_client_sha256": "2d7c3c441edd89aabc237e8ccde9960afb7723eb7e602769579a218fdef7bf83",
+  "final_client_sha256": "8bda04530a82007e6cd616333a60ca3588c7ea7d45280024bb0aff934f9e9e49",
+  "observed_child_client_sha256": [
+    "2d7c3c441edd89aabc237e8ccde9960afb7723eb7e602769579a218fdef7bf83",
+    "2d7c3c441edd89aabc237e8ccde9960afb7723eb7e602769579a218fdef7bf83"
+  ]
+}

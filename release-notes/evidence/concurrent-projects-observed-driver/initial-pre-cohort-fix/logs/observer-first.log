@@ -1,0 +1,24 @@
+=== RUN   TestClientLifecycleObservesActualChildAndReaps
+    client_lifecycle_linux_test.go:46: actual synthetic child observation failed: client lifecycle observation unavailable
+--- FAIL: TestClientLifecycleObservesActualChildAndReaps (0.02s)
+=== RUN   TestClientLifecycleRejectsWorkspaceReceiptOverwriteAndUnknownIdentity
+=== RUN   TestClientLifecycleRejectsWorkspaceReceiptOverwriteAndUnknownIdentity/workspace
+=== RUN   TestClientLifecycleRejectsWorkspaceReceiptOverwriteAndUnknownIdentity/existing
+=== RUN   TestClientLifecycleRejectsWorkspaceReceiptOverwriteAndUnknownIdentity/symlink
+=== RUN   TestClientLifecycleRejectsWorkspaceReceiptOverwriteAndUnknownIdentity/unknown
+=== RUN   TestClientLifecycleRejectsWorkspaceReceiptOverwriteAndUnknownIdentity/public
+--- PASS: TestClientLifecycleRejectsWorkspaceReceiptOverwriteAndUnknownIdentity (0.10s)
+    --- PASS: TestClientLifecycleRejectsWorkspaceReceiptOverwriteAndUnknownIdentity/workspace (0.02s)
+    --- PASS: TestClientLifecycleRejectsWorkspaceReceiptOverwriteAndUnknownIdentity/existing (0.02s)
+    --- PASS: TestClientLifecycleRejectsWorkspaceReceiptOverwriteAndUnknownIdentity/symlink (0.03s)
+    --- PASS: TestClientLifecycleRejectsWorkspaceReceiptOverwriteAndUnknownIdentity/unknown (0.02s)
+    --- PASS: TestClientLifecycleRejectsWorkspaceReceiptOverwriteAndUnknownIdentity/public (0.02s)
+=== RUN   TestClientLifecycleRejectsSubstitutedExecutableAndReaps
+    client_lifecycle_linux_test.go:98: substituted executable admitted or unreaped
+--- FAIL: TestClientLifecycleRejectsSubstitutedExecutableAndReaps (0.02s)
+=== RUN   TestClientLifecycleCancellationReapsOnlyOwnedChild
+    client_lifecycle_linux_test.go:115: cancelled synthetic client did not reap with failure
+--- FAIL: TestClientLifecycleCancellationReapsOnlyOwnedChild (0.02s)
+FAIL
+FAIL	github.com/ivo-lopes/ivoai/internal/benchmarkfixtures	0.187s
+FAIL

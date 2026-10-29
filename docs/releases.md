@@ -1,5 +1,69 @@
 # Releases
 
+## v0.15.0 — local candidate, not published
+
+**Publication is conditional on exact final-head CI and the existing Release/distribution
+gates; this candidate is not published.** A new restricted qualification on
+`77d5fd6c` passed both named official-client/Core protocol tests and both CLI
+subcases under race detection, with zero failures/skips. It used the reviewed
+0.162.1 client/companion, fresh fixture homes and a local fake provider without
+subscription authentication or real-model calls. The checks cover managed MCP
+scope/receipt/replay behavior and a separate actual Core bootstrap; they do not
+certify public TUI lifecycle, system/cloud isolation or general client/model
+parity. See the [final-source qualification](https://github.com/ivo-lopes/ivoai/blob/release/v0.15.0-candidate/release-notes/v0.15.0-final-runtime-qualification.md).
+Consult [GitHub releases](https://github.com/ivo-lopes/ivoai/releases) and the
+[workflow status](https://github.com/ivo-lopes/ivoai/actions) for subsequent
+publication/gate status; this record does not authorize a tag.
+
+The following observations remain historical and bound to their own sources. A supported
+`55ec7ab9` real turn passed its math oracle; its intentional SIGINT cleanup
+persisted failed/fallback1, which is not a measured frontend process exit.
+A separate public startup with only `/quit` + Enter completed naturally in
+2.147s: Core Wait0, Session/frontend completed0 and no owned SID residue, with
+zero question/attempt/worker and no forced signal. This qualifies normal idle
+startup/quit for those exact inputs. A real turn followed by normal quit in one
+session was not run. The original `0bab9b34` failure and UNKNOWN cause remain
+preserved; none of these observations joins the 126 comparative turns.
+See the [normal-exit report](https://github.com/ivo-lopes/ivoai/blob/release/v0.15.0-candidate/release-notes/native-normal-quit-validation.md).
+No general TUI/client/model parity or economic result follows.
+
+A separate scoped offline Core Code Mode proof now passed on `55ec7ab9`: one
+actual Core tool call, matching non-error result, same read-only receipt,
+closed final receipt, NoReplay and duplicate409. It used a fake provider and
+proves no real-model, account, TUI or economic parity. Core child Wait0 was not
+observed; lifecycle remains UNKNOWN. Earlier FAIL/NOT_MET receipts are unchanged.
+
+This candidate composes actual main `bcdb3466` (PR60/62) and PR61 head
+`83df882b`. Its Go/module bytes match that reviewed PR61 composition; no benchmark
+PR54/56 or subscription-guard pilot is imported. PR61 merged as main `ccc48a05` after [CI40805624155](https://github.com/ivo-lopes/ivoai/actions/runs/40805624155)
+passed16/16 at attempt1 on `83df882b`. That result retains its source identity;
+this candidate still needs its own final-head CI and distribution gates.
+
+Managed MCP inventory and execution now share captured cwd, environment, project
+policy and explicit config/profile settings. This snapshot does not freeze config
+files or cloud policy. Managed `-C`/`--cd` overrides and `--ignore-user-config` are
+refused with a migration diagnostic: start IVOAI after shell `cd` and omit those
+native flags. Existing sessions retain their recorded workspace; personal files
+stay unchanged. Inventory is not skipped. See [setup](setup.md).
+
+PR60 corrects a test process-state observer/PID publication; PR62 separates panic
+flight cleanup from a storage deadline fixture. Production cleanup, TTL and
+security thresholds are unchanged. Old PR57/56 CI failures, the prior Gateway
+composition FAIL and causal/mutant controls remain historical evidence.
+
+Native paths exclude OpenCode discovery/fallback and default client setup omits
+it; explicit `ivoai setup --mode client --legacy-opencode`, deprecated commands
+and retained histories/checkpoints remain. G0 code prefetch and protected Core/MCP
+recovery remain experimental/default-OFF with a separate creation opt-in; G1
+Memory stays unwired. Adaptive remains OFF: first eligible literal envelope,
+no prompt classifier, existing Core DAG/approvals. PR55 is offline preflight,
+not concurrent client execution; PR54/56 are excluded.
+
+Global economics remains INCOMPLETE. General model/TUI/Claude/Antigravity/admin
+parity is unproven, Context remains BLOCKED/IVOAI-175, and LOW docs deepmerge stays
+needs_review. See the [draft notes](https://github.com/ivo-lopes/ivoai/blob/release/v0.15.0-candidate/release-notes/v0.15.0.md) and [source-bound report](https://github.com/ivo-lopes/ivoai/blob/release/v0.15.0-candidate/release-notes/v0.15.0-composition60-62.md)
+for exact scopes, adverse evidence and migration without deleting or replaying data.
+
 ## v0.14.0
 
 Published [v0.14.0](https://github.com/ivo-lopes/ivoai/releases/tag/v0.14.0) on

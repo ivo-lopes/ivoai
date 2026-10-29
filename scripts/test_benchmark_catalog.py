@@ -31,6 +31,8 @@ class CatalogTests(unittest.TestCase):
 
     def test_hashes_bind_every_project_format(self):
         capabilities = CATALOG.expected_capabilities(CATALOG.ROOT / "internal/app/primary_prefetch_live_test.go")
+        self.assertEqual(capabilities["direct_mcp_helper_configuration_scope"], "USER_CONFIG_INCLUDED_SHARED_SCOPE")
+        self.assertIs(capabilities["direct_mcp_helper_connected"], False)
         self.assertEqual(len(capabilities["supported_scenarios"]), 9)
         self.assertEqual(len(capabilities["fixtures"]), 7)
         self.assertTrue(all(len(value) == 64 for value in capabilities["fixtures"].values()))
@@ -61,6 +63,9 @@ class PreflightTests(unittest.TestCase):
             " output=Path(os.environ['IVOAI_BENCHMARK_CATALOG_OUTPUT'])\n"
             " if mode=='skipped': sys.exit(0)\n"
             " if mode=='mismatch': capabilities['harness_sha256']='b'*64\n"
+            " if mode=='scope_mismatch': capabilities['direct_mcp_helper_configuration_scope']='UNKNOWN'\n"
+            " if mode=='scope_missing': del capabilities['direct_mcp_helper_configuration_scope']\n"
+            " if mode=='scope_connected': capabilities['direct_mcp_helper_connected']=True\n"
             " if mode=='bool_version': capabilities['schema_version']=True\n"
             " if mode=='oversized': output.write_text('x'*32769);sys.exit(0)\n"
             " if mode=='duplicate': output.write_text('{\"schema_version\":1,\"schema_version\":1}');sys.exit(0)\n"
@@ -136,7 +141,7 @@ class PreflightTests(unittest.TestCase):
         self.assertEqual(len(manifest["process_sampler_sha256"]), 64)
 
     def test_default_scenarios_require_discovery_before_any_client_turn(self):
-        for mode in ("mismatch", "skipped", "bool_version", "duplicate", "bad_exit"):
+        for mode in ("mismatch", "scope_mismatch", "scope_missing", "scope_connected", "skipped", "bool_version", "duplicate", "bad_exit"):
             with self.subTest(mode=mode):
                 code, output, marker = self.execute(mode, selection=[], preflight=False)
                 attempts = len(marker.read_text().splitlines()) if marker.exists() else 0
@@ -167,7 +172,7 @@ class PreflightTests(unittest.TestCase):
         self.assertTrue(all(row["status"] == "READY" for row in report["scenarios"]))
 
     def test_missing_skipped_wrong_or_unbounded_discovery_blocks_client(self):
-        for mode in ("skipped", "mismatch", "bool_version", "oversized", "duplicate", "bad_exit"):
+        for mode in ("skipped", "mismatch", "scope_mismatch", "scope_missing", "scope_connected", "bool_version", "oversized", "duplicate", "bad_exit"):
             with self.subTest(mode=mode):
                 code, output, marker = self.execute(mode, ["--scenarios", "dependencies"], preflight=False)
                 self.assertEqual(code, 1)

@@ -1,0 +1,7 @@
+{
+  "status": "FAIL_SOURCE_ONLY_CONTROL",
+  "cause": "embedded bytes.Buffer promotes WriteString; io.WriteString bypasses custom bounded Write",
+  "source_sha256": "8ad90b766234102c73bfafb7d704fd46eaa5b7a636fb4752bf6ae0d78cf3fa98",
+  "log_sha256": "d9eaab6b37359616cb4969a893e9c37501fbc85974c6d16da97381738e7d79c4",
+  "official_CLI_runs": 0
+}

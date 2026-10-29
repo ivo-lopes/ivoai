@@ -1,0 +1,10 @@
+{
+  "source": "520463c3f3d4501a727aa76967960b2f9ec82e49",
+  "version": "0.15.0",
+  "operations": [
+    "trusted Go buildinfo read amd64/arm64",
+    "local source-built amd64 Core version",
+    "local source-built amd64 Core help"
+  ],
+  "native_executors_auth_status_models": 0
+}

@@ -19,6 +19,12 @@ available temporarily as a compatibility and rollback provider. The same Go bina
 an optional private server and expose its memory and context to desktop agents,
 ChatGPT Web, and Claude Web.
 
+The v0.15.0 candidate has restricted official-client/Core protocol qualification
+with a local fake provider and no subscription authentication. Publication remains
+conditional on final-head CI and Release/distribution gates; it is not a general
+TUI/model parity or economic claim. See the [qualification report](release-notes/v0.15.0-final-runtime-qualification.md)
+and [GitHub releases](https://github.com/ivo-lopes/ivoai/releases) for publication status.
+
 ## How it fits together
 
 Conversation continuity uses a stable IVOAI session ID. Inside `ivoai codex`,

@@ -1,0 +1,7 @@
+{
+  "base": "6cc9af6c31dc6e084b243fe9e1232bb83e0a403b",
+  "files": {
+    "internal/app/primary_prefetch_live_test.go": "70ccfa8a3728282a7c168bbb567583516d8a2f999918187931e78ba9334fdd1d"
+  },
+  "live_invocation_prompt_existing_observer_metrics_unchanged": true
+}

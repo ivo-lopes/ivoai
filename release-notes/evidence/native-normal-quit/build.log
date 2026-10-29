@@ -1,0 +1,3 @@
+Usage Error: Network access disabled by the environment; can't reach https://registry.npmjs.org/pnpm/-/pnpm-12.11.2.tgz
+
+$ pnpm ...

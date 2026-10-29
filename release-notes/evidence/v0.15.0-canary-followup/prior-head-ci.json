@@ -1,0 +1,12 @@
+{
+  "record_type": "root-confirmed prior-head CI provenance; not independently re-fetched by this docs-only task",
+  "pull_request": 57,
+  "run_id": 40780164326,
+  "url": "https://github.com/ivo-lopes/ivoai/actions/runs/40780164326",
+  "head": "03492d1dbc5a640454c39f65172a44dad4c33feb",
+  "passed_jobs": 16,
+  "conclusion": "success",
+  "applies_to_new_followup_head": false,
+  "new_followup_head_ci": "PENDING",
+  "publication": "BLOCKED_BY_FAILED_CANARY"
+}
