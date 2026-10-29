@@ -20,8 +20,9 @@ This operation issued no manual login/status command and no model prompt.
 Ordinary Core startup authentication/catalog/quota metadata probes still ran;
 their aggregate retries or quota effects are not certified. Requested model and
 effort were startup declarations only. Tokens are NULL/NOT_APPLICABLE for this
-zero-prompt observation, not provider usage0 or a savings result. No personal
-configuration or credentials were extracted, copied or rewritten. Live terminal
+zero-prompt observation, not provider usage0 or a savings result. The driver did
+not extract, copy or rewrite personal configuration or credentials; ordinary
+official-client authentication remains client-owned. Live terminal
 bytes stayed in bounded RAM and were discarded; no raw transcript or backend
 stderr is archived.
 
