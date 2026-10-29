@@ -1,0 +1,9 @@
+{
+  "base_revision": "dc9dc5870847b6b416e06b9800eb9c912ef5c5d3",
+  "changed_test": "internal/agents/runtime_test.go",
+  "changed_test_sha256": "e0427f8bd3e5a6b89ff2138b52c600e5fc600f68b2ded83ce678a2656d72118f",
+  "original_test_sha256": "4707a7e1f5f91cd040b36f46c4159799be42a1ccb7ef7e8ad18a3e35023cbd4b",
+  "production_runtime_sha256": "bde4d7acfb1e4100011bec4210d3f2bfcb426283f2b5fff8dc78866eb0fc9121",
+  "production_runtime_byte_identical": true,
+  "go_mod_sum_unchanged": true
+}
