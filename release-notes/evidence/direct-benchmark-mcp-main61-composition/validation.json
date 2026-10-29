@@ -1,0 +1,57 @@
+{
+  "status": "LOCAL_SOURCE_TESTS_PASS_HELPER_UNWIRED",
+  "source": "58639394dca7b38d2b61a918cbe1e594ab126326",
+  "source_tree": "36260217211bb44c7167b0110acd6542816b7419",
+  "main": "ccc48a055ae3099a2027cfc8f31210c172baf247",
+  "helper_parent": "496523c6403464cb751542c168dbf7fb39d8c326",
+  "frozen_paths": 3704,
+  "source_freeze_sha256": "17c5d0a35a369e1f0a225d3e40c027b292a803131a3b191290f474f6e3d01984",
+  "full_go": {
+    "source": "58639394dca7b38d2b61a918cbe1e594ab126326",
+    "gate": "fullGo",
+    "exit": 0,
+    "wall_seconds": 123.828,
+    "source_unchanged_after": true,
+    "native_client_auth_status_model": 0,
+    "paired_build": false
+  },
+  "go_summary": {
+    "packages": {
+      "skip": 3,
+      "pass": 59
+    },
+    "test_events": {
+      "pass": 2111,
+      "skip": 71
+    },
+    "top_level_passes": 1190
+  },
+  "Python": {
+    "source": "58639394dca7b38d2b61a918cbe1e594ab126326",
+    "gate": "Python",
+    "exit": 0,
+    "wall_seconds": 28.791,
+    "source_unchanged_after": true,
+    "native_client_auth_status_model": 0,
+    "paired_build": false
+  },
+  "vet": {
+    "source": "58639394dca7b38d2b61a918cbe1e594ab126326",
+    "gate": "vet",
+    "exit": 0,
+    "wall_seconds": 4.129,
+    "source_unchanged_after": true,
+    "native_client_auth_status_model": 0,
+    "paired_build": false
+  },
+  "historical_records_unchanged": 1098,
+  "main_non_test_Go_and_modules_exact": 284,
+  "common_helper_paths_exact_e425": true,
+  "raw_Go_log_sha256": "2848c6f24bf89b8c8bc5e6f19d0687c58b7b188f924d342ce5d1cfbfe1eae1cd",
+  "official_client_or_auth_or_model_calls": 0,
+  "comparative_pair_rebuilt": false,
+  "helper_connected": false,
+  "provider_route_guard": "NOT_WIRED_BLOCKS_REAL_COHORT",
+  "economic_result": "NOT_RUN",
+  "recorded_utc": "2026-10-29T03:33:53.928079+00:00"
+}

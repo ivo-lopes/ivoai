@@ -1,0 +1,37 @@
+=== RUN   TestNativeCloseStopsBackgroundDirectoryWriters
+=== RUN   TestNativeCloseStopsBackgroundDirectoryWriters/live_writer_control
+=== RUN   TestNativeCloseStopsBackgroundDirectoryWriters/closed_writer
+--- PASS: TestNativeCloseStopsBackgroundDirectoryWriters (0.02s)
+    --- PASS: TestNativeCloseStopsBackgroundDirectoryWriters/live_writer_control (0.02s)
+    --- PASS: TestNativeCloseStopsBackgroundDirectoryWriters/closed_writer (0.01s)
+=== RUN   TestNativeFixtureWriterCannotReviveAfterReap
+    fixture_process_test.go:101: owned zero-exit child remains terminated after reap; proc snapshots=1
+--- PASS: TestNativeFixtureWriterCannotReviveAfterReap (0.01s)
+=== RUN   TestNativeFixtureWriterSnapshotStates
+=== RUN   TestNativeFixtureWriterSnapshotStates/live_identity
+=== RUN   TestNativeFixtureWriterSnapshotStates/zombie_identity
+=== RUN   TestNativeFixtureWriterSnapshotStates/dead_identity
+=== RUN   TestNativeFixtureWriterSnapshotStates/other_generation
+=== RUN   TestNativeFixtureWriterSnapshotStates/known_gone
+=== RUN   TestNativeFixtureWriterSnapshotStates/no_such_process
+=== RUN   TestNativeFixtureWriterSnapshotStates/permission_unknown
+=== RUN   TestNativeFixtureWriterSnapshotStates/other_error_unknown
+=== RUN   TestNativeFixtureWriterSnapshotStates/malformed_unknown
+=== RUN   TestNativeFixtureWriterSnapshotStates/short_unknown
+=== RUN   TestNativeFixtureWriterSnapshotStates/invalid_start_unknown
+=== RUN   TestNativeFixtureWriterSnapshotStates/missing_identity_unknown
+--- PASS: TestNativeFixtureWriterSnapshotStates (0.00s)
+    --- PASS: TestNativeFixtureWriterSnapshotStates/live_identity (0.00s)
+    --- PASS: TestNativeFixtureWriterSnapshotStates/zombie_identity (0.00s)
+    --- PASS: TestNativeFixtureWriterSnapshotStates/dead_identity (0.00s)
+    --- PASS: TestNativeFixtureWriterSnapshotStates/other_generation (0.00s)
+    --- PASS: TestNativeFixtureWriterSnapshotStates/known_gone (0.00s)
+    --- PASS: TestNativeFixtureWriterSnapshotStates/no_such_process (0.00s)
+    --- PASS: TestNativeFixtureWriterSnapshotStates/permission_unknown (0.00s)
+    --- PASS: TestNativeFixtureWriterSnapshotStates/other_error_unknown (0.00s)
+    --- PASS: TestNativeFixtureWriterSnapshotStates/malformed_unknown (0.00s)
+    --- PASS: TestNativeFixtureWriterSnapshotStates/short_unknown (0.00s)
+    --- PASS: TestNativeFixtureWriterSnapshotStates/invalid_start_unknown (0.00s)
+    --- PASS: TestNativeFixtureWriterSnapshotStates/missing_identity_unknown (0.00s)
+PASS
+ok  	github.com/ivo-lopes/ivoai/internal/codexfrontend	0.038s

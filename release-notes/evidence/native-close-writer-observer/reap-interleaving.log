@@ -1,0 +1,5 @@
+=== RUN   TestPrivateLegacyWriterObserverReapInterleaving
+    facade_test.go:572: LEGACY_OBSERVER_FALSE_POSITIVE_REPRODUCED: Z→reaped between identity/state reads; actual childWait0; snapshot control dead
+--- PASS: TestPrivateLegacyWriterObserverReapInterleaving (0.00s)
+PASS
+ok  	github.com/ivo-lopes/ivoai/internal/codexfrontend	0.005s

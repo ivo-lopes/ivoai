@@ -1,0 +1,32 @@
+[
+  {
+    "path": "internal/docsserver/site/docs/next/architecture.html",
+    "sha256": "45a3ddf2c7950af59cb02677a5b3eade95746778ae834189e59399b8b928b3ee",
+    "result": "PASS"
+  },
+  {
+    "path": "internal/docsserver/site/docs/next/releases.html",
+    "sha256": "0582bb96d46e6811f8e6a1bf73f64014e3fe35c0b815832d525eebbdb3cb6a04",
+    "result": "PASS"
+  },
+  {
+    "path": "internal/docsserver/site/docs/next/setup.html",
+    "sha256": "aaf60a6890d1df4809e5729272b09c60bf49ac77b83f8acecac088954af81230",
+    "result": "PASS"
+  },
+  {
+    "path": "internal/docsserver/site/pt-BR/docs/next/architecture.html",
+    "sha256": "b647e30a6cb5a31c54445e4d2e13e91545802a61489acfbf6d869ed0370c84cc",
+    "result": "PASS"
+  },
+  {
+    "path": "internal/docsserver/site/pt-BR/docs/next/releases.html",
+    "sha256": "2dec17c1be2187c1d2bfde9b49e00f73b9a497e6de5b8da5ad406284b8d10f96",
+    "result": "PASS"
+  },
+  {
+    "path": "internal/docsserver/site/pt-BR/docs/next/setup.html",
+    "sha256": "21ca4209ac5d198c6b06c95d804fe84197b12459b3a68215783ee5031045b4dc",
+    "result": "PASS"
+  }
+]

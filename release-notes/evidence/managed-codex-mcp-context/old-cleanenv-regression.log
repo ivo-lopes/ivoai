@@ -1,0 +1,8 @@
+--- FAIL: TestSnapshotEnvironmentMatchesExecRunner (0.01s)
+    --- FAIL: TestSnapshotEnvironmentMatchesExecRunner/clean_nil_empty (0.00s)
+        environment_snapshot_test.go:38: snapshot diverged from process environment semantics
+    --- FAIL: TestSnapshotEnvironmentMatchesExecRunner/clean_empty (0.00s)
+        environment_snapshot_test.go:38: snapshot diverged from process environment semantics
+FAIL
+FAIL	github.com/ivo-lopes/ivoai/internal/platform	0.009s
+FAIL

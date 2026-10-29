@@ -1,0 +1,12 @@
+{
+  "source": "360a9de83e32414ffe894b38c60888dddca62d2c",
+  "command": [
+    "/var/tmp/ivoai-validation-toolchain-20261028/go/bin/go",
+    "test",
+    "-c",
+    "-o",
+    "/var/tmp/ivoai-context-connector-restart-proof-20261029/servercmd-linux-arm64.test",
+    "./internal/servercmd"
+  ],
+  "once": true
+}

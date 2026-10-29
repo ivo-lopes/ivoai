@@ -1,0 +1,11 @@
+{
+  "mutation": "Omit fixture f.Close action before liveness check; actual production Close unchanged, invoked by cleanup defers after expected assertionFAIL",
+  "expected": "closed_writer fails native writer survived after unchanged100x5ms budget",
+  "purpose": "Prove repaired observer does not accept an actually live writer or weaken cleanup assertion",
+  "executions": 1,
+  "real_official_auth_model_calls": 0,
+  "source_files": {
+    "fixture": "d357486923c43dd8566168d5730b4e884501edfac8acc89d1a178b7b973d9495",
+    "observer": "5dc87c8d51eef1923b5d0cbbcbf98c721a0580493aaa55fcdeaaf48295d22205"
+  }
+}

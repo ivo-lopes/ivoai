@@ -1,0 +1,98 @@
+{
+  "status": "LOCAL_TEST_ONLY_COMPOSITION_PASS_HELPER_UNWIRED",
+  "source": "c42e12b15c8ece4f9fc9fe4cdfe97e5ccb59bf46",
+  "source_tree": "e95b99ab5eaba93bec2c69b0a6a9007c4016d246",
+  "parents": [
+    "7747ac86c748bbbbbddfe3457499fbef8f6f661c",
+    "fbba2412e186379e6e8e9fc5087f01fb5b6202c5"
+  ],
+  "main": "ccc48a055ae3099a2027cfc8f31210c172baf247",
+  "frozen_Go_script_module_paths": 661,
+  "source_freeze_sha256": "da0650ca29fd150bc2434a772fa8e6aff17eaac7e5cd380d96cc0e2006d9533f",
+  "fixture_supplemental_check": {
+    "path": "internal/app/testdata/subscription_stdio_fixture.go.txt",
+    "sha256": "2dc2c16591e2d300e529b368021efc0544acea6e7c55aae046b32882aa7d778a",
+    "checked_utc": "2026-10-29T04:09:14.675325+00:00",
+    "before_controlled_stdio_first_test": "2026-10-29T01:09:36.132337984-03:00",
+    "verified_after_gates": true,
+    "not_claimed_before_entire_Go_invocation": true
+  },
+  "Go_summary": {
+    "packages": {
+      "skip": 3,
+      "pass": 59
+    },
+    "test_events": {
+      "pass": 2195,
+      "skip": 72
+    },
+    "top_level_passes": 1203,
+    "new_official_optin": "SKIP",
+    "controlled_stdio_first_run_time": "2026-10-29T01:09:36.132337984-03:00",
+    "controlled_stdio_top_passes": [
+      "TestPrimaryPrefetchSubscriptionStdioControlledProtocols",
+      "TestPrimaryPrefetchSubscriptionStdioPinnedScopeAndWhitelist",
+      "TestPrimaryPrefetchSubscriptionStdioCancelHeldPipes",
+      "TestPrimaryPrefetchSubscriptionStdioRejectsEffectsAndWrongOrder"
+    ]
+  },
+  "gates": {
+    "full-go": {
+      "source": "c42e12b15c8ece4f9fc9fe4cdfe97e5ccb59bf46",
+      "gate": "full-go",
+      "exit": 0,
+      "wall_seconds": 127.5,
+      "source_unchanged_after": true,
+      "official_client_auth_model_cohort_or_service_calls": 0,
+      "comparative_binary_pair_rebuilt": false
+    },
+    "Python": {
+      "source": "c42e12b15c8ece4f9fc9fe4cdfe97e5ccb59bf46",
+      "gate": "Python",
+      "exit": 0,
+      "wall_seconds": 29.351,
+      "source_unchanged_after": true,
+      "official_client_auth_model_cohort_or_service_calls": 0,
+      "comparative_binary_pair_rebuilt": false
+    },
+    "vet": {
+      "source": "c42e12b15c8ece4f9fc9fe4cdfe97e5ccb59bf46",
+      "gate": "vet",
+      "exit": 0,
+      "wall_seconds": 11.067,
+      "source_unchanged_after": true,
+      "official_client_auth_model_cohort_or_service_calls": 0,
+      "comparative_binary_pair_rebuilt": false
+    }
+  },
+  "historical_record_union_unchanged": 1210,
+  "existing_main_runtime_Go_and_modules_exact": 284,
+  "common_helper_and_guard_transport_exact_parent": {
+    "internal/app/primary_prefetch_live_test.go": "685af2187a93d5bf26fe2300fe0fbc76bbf91810f2bb32879505e9d145bd6849",
+    "scripts/benchmark_catalog.py": "2fd9d08b5467992ba2f07839a9dbc241d149a8ed7850f75cb47fde41ff18d080",
+    "scripts/test_benchmark_catalog.py": "9728ffa703a582c7c0149a88e42527175c2141e21a95e19cc18154d4ea9f4a2b",
+    "internal/app/primary_prefetch_subscription_contract_test.go": "4cbc8682a3da9badbb036a45053a59b67d3d81c9b383426a26fb041be092f6d5",
+    "internal/app/primary_prefetch_subscription_guard_test.go": "4204708a830577c425d180e1cff57278e38078b5f6683ee3ed3fbee6f39ab42a",
+    "internal/app/primary_prefetch_subscription_offline_linux_test.go": "17b7c74f28d56ca392cf11698bc15f06b5df1849b779a9c1917281e831003483",
+    "internal/app/primary_prefetch_subscription_stdio_contract_linux_test.go": "38c42c0fe919ee14e9751581eb11668bf1a0c1153b8fd725dab586b7faab18a4",
+    "internal/app/primary_prefetch_subscription_stdio_linux_test.go": "cb58907eb52b864a674a562a38fb2e0e9b5b4df4fbc2a9a0ebd816826994447c"
+  },
+  "mapper_files_exact_b495": true,
+  "transport_and_fixture_exact_ed9": true,
+  "source_changes_vs_benchmark": [
+    "internal/app/primary_prefetch_subscription_contract_test.go",
+    "internal/app/primary_prefetch_subscription_guard_test.go",
+    "internal/app/primary_prefetch_subscription_offline_linux_test.go",
+    "internal/app/primary_prefetch_subscription_stdio_contract_linux_test.go",
+    "internal/app/primary_prefetch_subscription_stdio_linux_test.go",
+    "internal/app/testdata/subscription_stdio_fixture.go.txt"
+  ],
+  "raw_Go_log_sha256": "6488803fd3f433dcc5e197b33e2b6620af0796f865adea4c8a5ad761dd35422e",
+  "new_official_qualification": "NOT_RUN; default optin SKIP, inherited ed9 negative stays its own source",
+  "official_client_auth_model_cohort_or_service_calls": 0,
+  "comparative_pair_build": "NOT_RUN",
+  "helper_connected": false,
+  "economic_acceptance": "INCOMPLETE_NO_NEW_COMPARISON",
+  "publication": "NOT_PUSHED_NOT_RELEASED",
+  "recorded_utc": "2026-10-29T04:11:53.892514+00:00"
+}

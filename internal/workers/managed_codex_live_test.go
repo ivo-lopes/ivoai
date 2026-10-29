@@ -178,7 +178,11 @@ func TestPinnedCodexManagedNativeWorkerBoundary(t *testing.T) {
 			}
 			if tc.managed {
 				var err error
-				args, err = (Adapter{Runner: sterilePolicyRunner{environment}}).IsolateCodexMCPs(context.Background(), binary, args)
+				scope, scopeErr := codexresolver.NewConfigContext(platform.RunOptions{Dir: filepath.Join(root, "repo"), Env: environment, CleanEnv: true})
+				if scopeErr != nil {
+					t.Fatal(scopeErr)
+				}
+				args, err = (Adapter{Runner: platform.ExecRunner{}}).IsolateCodexMCPsInContext(context.Background(), binary, args, scope)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -209,15 +213,4 @@ func TestPinnedCodexManagedNativeWorkerBoundary(t *testing.T) {
 			t.Logf("JSONL terminal collaboration events=%d; actual worker/delegation/retry totals=UNKNOWN; fixture child requests are a separate scoped observation", projection.ToolCompletions["collab_tool_call"])
 		})
 	}
-}
-
-type sterilePolicyRunner struct{ environment []string }
-
-func (r sterilePolicyRunner) LookPath(name string) (string, error) {
-	return (platform.ExecRunner{}).LookPath(name)
-}
-func (r sterilePolicyRunner) Run(ctx context.Context, command string, args []string, opts platform.RunOptions) (platform.Result, error) {
-	opts.Env = append([]string(nil), r.environment...)
-	opts.CleanEnv = true
-	return (platform.ExecRunner{}).Run(ctx, command, args, opts)
 }

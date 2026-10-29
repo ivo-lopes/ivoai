@@ -1,0 +1,9 @@
+{
+  "source": "19cf11b1a46926ac77e5d02208d1305001fd227d",
+  "gate": "vet",
+  "exit": 0,
+  "wall_seconds": 4.495,
+  "source_unchanged_after": true,
+  "native_client_auth_status_model": 0,
+  "not_fullGo_or_paired_build": true
+}

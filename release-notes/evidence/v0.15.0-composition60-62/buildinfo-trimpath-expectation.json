@@ -1,0 +1,8 @@
+{
+  "Go": "1.27.3",
+  "local_toolchain_source": "cmd/go/internal/load/pkg.go",
+  "source_sha256": "d6e1adb610ec55f2e8bc0afd361eedd6e38689684bca122b02873da1d0ed1584",
+  "observation": "Lines2470-2480 omit -ldflags build setting when BuildTrimpath is true",
+  "initial_failure_preserved": "initial-buildinfo-expectation-failure.json",
+  "no_binary_rebuild_or_source_edit": true
+}

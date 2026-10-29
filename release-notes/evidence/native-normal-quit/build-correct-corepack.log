@@ -1,0 +1,47 @@
+? Verifying lockfile against supply-chain policies (1336 entries)...
+Update available! 12.11.2 → 12.16.1.
+Changelog: https://pnpm.io/v/12.16.1
+To update, run: curl -fsSL https://get.pnpm.io/install.sh | sh -
+[WARN] Request took 10030ms: https://registry.npmjs.org/@babel%2Fplugin-bugfix-firefox-class-in-computed-class-key
+[WARN] Request took 10168ms: https://registry.npmjs.org/@babel%2Fplugin-bugfix-safari-class-field-initializer-scope
+[WARN] Request took 10228ms: https://registry.npmjs.org/@babel%2Fplugin-bugfix-safari-rest-destructuring-rhs-array
+[WARN] Request took 10241ms: https://registry.npmjs.org/@babel%2Fplugin-bugfix-safari-id-destructuring-collision-in-function-expression
+[WARN] Request took 10300ms: https://registry.npmjs.org/@babel%2Fplugin-proposal-private-property-in-object
+[WARN] Request took 10304ms: https://registry.npmjs.org/@babel%2Fplugin-syntax-dynamic-import
+[WARN] Request took 10351ms: https://registry.npmjs.org/@babel%2Fplugin-bugfix-v8-static-class-fields-redefine-readonly
+[WARN] Request took 10517ms: https://registry.npmjs.org/@babel%2Fplugin-syntax-import-attributes
+[WARN] Request took 10665ms: https://registry.npmjs.org/@babel%2Fplugin-syntax-import-assertions
+[WARN] Request took 10695ms: https://registry.npmjs.org/@babel%2Fplugin-syntax-jsx
+[WARN] Request took 10736ms: https://registry.npmjs.org/@babel%2Fplugin-syntax-typescript
+[WARN] Request took 10773ms: https://registry.npmjs.org/@babel%2Fplugin-transform-arrow-functions
+[WARN] Request took 10791ms: https://registry.npmjs.org/@babel%2Fplugin-syntax-unicode-sets-regex
+[WARN] Request took 10841ms: https://registry.npmjs.org/@babel%2Fplugin-transform-async-generator-functions
+[WARN] Request took 11012ms: https://registry.npmjs.org/@babel%2Fplugin-transform-async-to-generator
+[WARN] Request took 11132ms: https://registry.npmjs.org/@babel%2Fplugin-transform-block-scoped-functions
+[WARN] Request took 11183ms: https://registry.npmjs.org/@babel%2Fplugin-transform-block-scoping
+[WARN] Request took 11217ms: https://registry.npmjs.org/@babel%2Fhelper-member-expression-to-functions
+[WARN] Request took 11251ms: https://registry.npmjs.org/@babel%2Fhelper-module-imports
+✓ Lockfile passes supply-chain policies (1336 entries in 32.3s)
+Lockfile is up to date, resolution step is skipped
+Done in 32.5s using pnpm v12.11.2
+$ node scripts/check-i18n.mjs
+DOCS_I18N_PARITY=PASS current=51 release=0.9.2:44
+$ docusaurus build
+[INFO] Website will be built for all these locales: 
+- en
+- pt-BR
+[INFO] [en] Creating an optimized production build...
+[webpackbar] ℹ Compiling Client
+[webpackbar] ℹ Compiling Server
+[webpackbar] ✔ Server: Compiled successfully in 5.98s
+[webpackbar] ✔ Client: Compiled successfully in 9.48s
+(node:731642) ExperimentalWarning: localStorage is not available because --localstorage-file was not provided.
+(Use `node --trace-warnings ...` to show where the warning was created)
+[SUCCESS] Generated static files in "build".
+[INFO] [pt-BR] Creating an optimized production build...
+[webpackbar] ℹ Compiling Client
+[webpackbar] ℹ Compiling Server
+[webpackbar] ✔ Server: Compiled successfully in 4.71s
+[webpackbar] ✔ Client: Compiled successfully in 8.07s
+[SUCCESS] Generated static files in "build/pt-BR".
+[INFO] Use `npm run serve` command to test your build locally.

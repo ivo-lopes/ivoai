@@ -1,0 +1,8 @@
+--- FAIL: TestConnectorAddReportsRestartFailureWithoutLosingRegistry (0.01s)
+    --- FAIL: TestConnectorAddReportsRestartFailureWithoutLosingRegistry/restart_succeeds (0.01s)
+        connector_restart_test.go:63: restart was skipped, retried, or targeted unrelated services
+    --- FAIL: TestConnectorAddReportsRestartFailureWithoutLosingRegistry/restart_fails (0.01s)
+        connector_restart_test.go:54: failed restart did not report the persisted-registry/unknown-ingestion state
+FAIL
+FAIL	github.com/ivo-lopes/ivoai/internal/servercmd	0.020s
+FAIL

@@ -1,0 +1,60 @@
+{
+  "pass": false,
+  "verifier_sha256": "15c166f204ddaaf776a0b5a891dcb5fba06fc37bd82e9a39d81bd30e49763976",
+  "private_runner_sha256": "e0a9dbbe495937c2f3851ffd8f9b7191df86a82c06965fc9cf6b0f22b9f58c36",
+  "immutable_baseline_sha256": "15c166f204ddaaf776a0b5a891dcb5fba06fc37bd82e9a39d81bd30e49763976",
+  "release_expectations": {
+    "tag": "v0.14.0",
+    "release_id": 427082748,
+    "published_at": "2026-10-28T19:10:11Z",
+    "prerelease": false
+  },
+  "private_output_created": true,
+  "output": "/var/tmp/ivoai-v015-postpublication-verifier.nn8FRWPy/control014-negative-oversize-api",
+  "tag": "v0.14.0",
+  "source_commit": "6d99e320912f3f7325c3009209a10e9df86610d4",
+  "network_calls": false,
+  "downloaded_code_executed": false,
+  "asset_limits_bytes": {
+    "ivoai-graft_linux_amd64.tar.gz": 536870912,
+    "ivoai-opencode_linux_arm64.tar.gz": 268435456,
+    "ivoai-opencode_linux_amd64.tar.gz": 268435456,
+    "ivoai-graft_linux_arm64.tar.gz": 536870912,
+    "managed-opencode-amd64.json": 65536,
+    "managed-graft-arm64.json": 65536,
+    "checksums.txt": 65536,
+    "ivoai_linux_amd64.tar.gz": 134217728,
+    "ivoai-memory-context.zip": 524288,
+    "managed-graft-amd64.json": 65536,
+    "ivoai_linux_arm64.tar.gz": 134217728,
+    "managed-opencode-arm64.json": 65536
+  },
+  "core_decompressed_limit_bytes": 268500992,
+  "resource_limits": {
+    "python_soft_address_space": 1073741824,
+    "wall_seconds": 300,
+    "reader_address_space": 4294967296,
+    "reader_cpu_seconds": 20,
+    "reader_wall_seconds": 30,
+    "reader_output_bytes": 2097152,
+    "core_dumps": false,
+    "gzip_read_bytes": 1048576,
+    "zip_directory_bytes": 4096,
+    "zip_entries": 2
+  },
+  "asset_sha256": {
+    "checksums.txt": "21eeca8f21ed0c83166c14d08911b5d08afc17782ee1f712564565d4c9ba66fd",
+    "ivoai-graft_linux_amd64.tar.gz": "85cd3b4f5a06e99a683739aa6fe7325951d3343834ef5ad18a37e30e9bfac441",
+    "ivoai-graft_linux_arm64.tar.gz": "cb8253465889f48af8d0a63a10ac1115215542eb8674aa4090e529506e00af93",
+    "ivoai-memory-context.zip": "6e5bc28cb02d5557dbe16b2e2ffae7fc954c5e783c14a4dcd0fb6c08c364b378",
+    "ivoai-opencode_linux_amd64.tar.gz": "9f38b0507bdf295b34c7faf58f91fd402c5a102b76e8867242503d2e4db46b61",
+    "ivoai-opencode_linux_arm64.tar.gz": "98e8de34c37c6640581e4ec4381c18f97dda63287188c4ef6fec123c4141e990",
+    "ivoai_linux_amd64.tar.gz": "5ef73a8bbb71f14556ac49d8fcda466f559c11581d21c6dfb08d0d098b7e9e51",
+    "ivoai_linux_arm64.tar.gz": "22c3d3175af87f831fbdb350d345675fdb4538b80edd8790c979cb699e522226",
+    "managed-graft-amd64.json": "6fc5af54dd963e8d0af58b6a8dc051a52fef9e0447ef25630da669f394b6f6d7",
+    "managed-graft-arm64.json": "ea612e7e9e8c5e352f78a91fe3c597dec2530eb023b00346087c24a91390a106",
+    "managed-opencode-amd64.json": "4870643e5ed08a5b1f09ddcd7b1d8d4d4a9fe07cc61374c9cb782f7c125fc751",
+    "managed-opencode-arm64.json": "a68a0af70c7e11121ee6f3ced3124465a8684b8df773e23ee37af476437aafbc"
+  },
+  "error": "invalid asset size: negative-api-oversize.json"
+}

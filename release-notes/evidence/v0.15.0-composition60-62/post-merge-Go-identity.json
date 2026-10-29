@@ -1,0 +1,7 @@
+{
+  "target": "83df882b38e9cdf8158b69623aa58f6001124355",
+  "actual_main": "bcdb3466dd105286abd1d739600d2fb2224a93a2",
+  "merge_head": "1654c0d6e5a6df4ccb13e99f738078fabaf07f99",
+  "Go_and_modules_equal_target": 592,
+  "ref_precision": "62 was PR number, not SHA prefix"
+}

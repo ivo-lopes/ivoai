@@ -1,0 +1,16 @@
+{
+  "source": "360a9de83e32414ffe894b38c60888dddca62d2c",
+  "command": [
+    "/var/tmp/ivoai-validation-toolchain-20261028/go/bin/go",
+    "test",
+    "-race",
+    "-count=1",
+    "-timeout",
+    "120s",
+    "-json",
+    "./internal/servercmd",
+    "./internal/server",
+    "./internal/context"
+  ],
+  "once": true
+}

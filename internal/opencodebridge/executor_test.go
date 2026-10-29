@@ -2,6 +2,8 @@ package opencodebridge
 
 import (
 	"context"
+	"github.com/ivo-lopes/ivoai/internal/codexresolver"
+	"github.com/ivo-lopes/ivoai/internal/platform"
 	"os"
 	"path/filepath"
 	"strings"
@@ -170,4 +172,34 @@ func fixtureExecutable(t *testing.T, root, name, body string) string {
 		t.Fatal(err)
 	}
 	return path
+}
+
+func TestCLIRunnerUsesFrozenConfigContextForExecAndTrace(t *testing.T) {
+	root := t.TempDir()
+	argsPath := filepath.Join(root, "args")
+	scope, err := codexresolver.NewConfigContext(platform.RunOptions{Dir: root, Env: []string{"PATH=/usr/bin:/bin", "ARGS_PATH=" + argsPath, "SCOPE_FIXTURE=frozen"}, CleanEnv: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	script := fixtureExecutable(t, root, "codex", `#!/bin/sh
+[ "$PWD" = '`+root+`' ] || exit 70
+[ "$SCOPE_FIXTURE" = "frozen" ] || exit 71
+printf '%s\n' "$*" > "$ARGS_PATH"
+cat >/dev/null
+printf '%s\n' '{"type":"thread.started","thread_id":"synthetic"}' '{"type":"item.completed","item":{"type":"agent_message","text":"frozen"}}' '{"type":"turn.completed"}'
+`)
+	runner := CLIRunner{Codex: ExecutorSpec{Path: script, Dir: filepath.Join(root, "does-not-exist"), Env: []string{"SCOPE_FIXTURE=wrong"}, CodexConfigContext: &scope}}
+	result, err := runner.Run(context.Background(), ExecutorRequest{Executor: "codex", Prompt: "synthetic"}, func(string) error { return nil })
+	if err != nil || result.Trace == nil || result.Trace.Directory != root {
+		t.Fatalf("frozen context not used by executor/trace: %v", err)
+	}
+	args, _ := os.ReadFile(argsPath)
+	if !strings.Contains(string(args), scope.ProjectTrustArguments()[1]) || !strings.Contains(string(args), "-C "+root) {
+		t.Fatal("exec used another directory/trust context")
+	}
+	zero := codexresolver.ConfigContext{}
+	runner.Codex.CodexConfigContext = &zero
+	if _, err := runner.Run(context.Background(), ExecutorRequest{Executor: "codex"}, func(string) error { return nil }); FailureClass(err) != "CODEX_MANAGED_CONFIG_CONTEXT_UNAVAILABLE" {
+		t.Fatal("invalid context reached exec")
+	}
 }
