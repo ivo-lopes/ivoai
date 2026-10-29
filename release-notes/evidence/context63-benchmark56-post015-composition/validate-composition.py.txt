@@ -1,0 +1,26 @@
+from pathlib import Path
+import subprocess,json,hashlib
+proof=Path('/var/tmp/ivoai-context63-benchmark56-proof-20261029')
+a='9049947a00e84c4442a4bb1ce8084d8b4630a732';b='1f58745811b9a5f3ad7d483a06e41a1f25837bc1'
+def tree(ref):
+ out={}
+ for row in subprocess.check_output(['git','ls-tree','-r','-z',ref]).split(b'\0'):
+  if not row:continue
+  meta,path=row.split(b'\t',1);out[path.decode()]=meta.decode()
+ return out
+at,bt,ct=tree(a),tree(b),tree('HEAD'); owned={'internal/servercmd/runner.go','internal/servercmd/connector_restart_test.go'}
+inputs={p for p in ct if p.endswith(('.go','.go.txt')) or p in ('go.mod','go.sum') or p.startswith('scripts/')};expected={p:(at if p in owned or p not in bt and p.startswith('release-notes/evidence/') else bt).get(p) for p in inputs};assert all(ct[p]==v for p,v in expected.items())
+assert {p for p in inputs if not p.startswith('release-notes/evidence/') and ct[p]!=bt.get(p)}==owned
+site={p for p in ct if p.startswith(('docs/','website/','internal/docsserver/site/'))};assert {p:ct[p] for p in site}=={p:v for p,v in bt.items() if p.startswith(('docs/','website/','internal/docsserver/site/'))}
+prior={p:v for p,v in bt.items() if p.startswith('release-notes/evidence/')}
+for p,v in at.items():
+ if p.startswith('release-notes/evidence/'):
+  assert p not in prior or prior[p]==v,p
+  prior[p]=v
+assert all(ct.get(p)==v for p,v in prior.items())
+assert not subprocess.check_output(['git','status','--porcelain'])
+freeze={p:hashlib.sha256(Path(p).read_bytes()).hexdigest() for p in sorted(ct)}
+(proof/'source-freeze.json').write_text(json.dumps({'source':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'tree':subprocess.check_output(['git','rev-parse','HEAD^{tree}'],text=True).strip(),'parents':[a,b],'files':freeze},indent=2)+'\n')
+fixture={p:h for p,h in freeze.items() if p.endswith('.go.txt')};(proof/'fixture-inputs.json').write_text(json.dumps(fixture,indent=2)+'\n')
+summary={'source_union':'PASS','Go_modules_scripts_and_literal_Go_fixtures_checked':len(inputs),'only_changed_Go_vs_1f':sorted(owned),'docs_and_embed_equal_1f':len(site),'prior_evidence_union_unchanged':len(prior),'all_frozen_paths':len(freeze),'literal_Go_fixtures':len(fixture),'CI_attribution':{'PR63':{'head':a,'run':'40814705813','result':'16/16PASS'},'PR56':{'head':'fbba2412e186379e6e8e9fc5087f01fb5b6202c5','result':'16/16PASS as reported by root'}},'combined_source_CI':'NOT_RUN','release015_tag_contains_PR63':False}
+(proof/'composition.json').write_text(json.dumps(summary,indent=2)+'\n');print(json.dumps(summary,indent=2))

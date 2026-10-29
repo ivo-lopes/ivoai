@@ -1,0 +1,25 @@
+{
+  "source_union": "PASS",
+  "Go_modules_scripts_and_literal_Go_fixtures_checked": 692,
+  "only_changed_Go_vs_1f": [
+    "internal/servercmd/connector_restart_test.go",
+    "internal/servercmd/runner.go"
+  ],
+  "docs_and_embed_equal_1f": 1523,
+  "prior_evidence_union_unchanged": 1243,
+  "all_frozen_paths": 3948,
+  "CI_attribution": {
+    "PR63": {
+      "head": "9049947a00e84c4442a4bb1ce8084d8b4630a732",
+      "run": "40814705813",
+      "result": "16/16PASS"
+    },
+    "PR56": {
+      "head": "fbba2412e186379e6e8e9fc5087f01fb5b6202c5",
+      "result": "16/16PASS as reported by root"
+    }
+  },
+  "combined_source_CI": "NOT_RUN",
+  "release015_tag_contains_PR63": false,
+  "literal_Go_text_files_including_archived_proofs": 35
+}
