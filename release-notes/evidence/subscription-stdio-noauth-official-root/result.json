@@ -1,0 +1,21 @@
+{
+  "result": "PASS_NOAUTH_NEGATIVE_ONLY",
+  "source_commit": "ed9b659693d8aeb3cd51c42492078371769a6f6c",
+  "official_client_starts_maximum": 1,
+  "authenticated_positive_certified": false,
+  "test_ELF_sha256": "b9b5f83b9b0c4c51c29f08fb44bef35f27851c23dc4ab0cb4c1e493d4b77fc65",
+  "namespace_exit_zero": true,
+  "qualification": {
+    "Outcome": "PASS_NOAUTH_NEGATIVE_NOT_AUTHENTICATED",
+    "Reason": "AUTH_DENIED",
+    "SourceConstructorConfigObserved": true,
+    "UserMCPDeclared": true,
+    "SystemMCPDeclared": true,
+    "NoMCPTripwire": true,
+    "NoAPIRouteTripwire": true,
+    "NoAuthFile": true,
+    "OwnedReaped": true,
+    "NativeWaitZero": true,
+    "AuthenticatedPositiveCertified": false
+  }
+}

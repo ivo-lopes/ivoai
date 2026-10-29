@@ -1,0 +1,26 @@
+{
+  "child-qualification.json": {
+    "sha256": "677b32d10fc4eb542075890a4ed9816af02992000305644d3c1fcdb036504ca6",
+    "bytes": 308
+  },
+  "namespace-argv.json": {
+    "sha256": "2f99bf257d31a36dc9412118eaa708292c7a3fd9cde0883e1d72b5463f943e70",
+    "bytes": 1274
+  },
+  "result.json": {
+    "sha256": "8d36ebaea2a91a696ce19af1bf6b88eec1f157fea45c71618f498b577b80095d",
+    "bytes": 708
+  },
+  "root-recipe.json": {
+    "sha256": "8c3d7acbd0641ff4f5f3cb6cea34c1212be5996343b8835d4d0ae77daa3dc7cb",
+    "bytes": 1339
+  },
+  "run_offline_once.py.txt": {
+    "sha256": "d9a4eec35eec072017db5cd73c5ed2d47928a37933ec881efb124de08b4b188c",
+    "bytes": 9164
+  },
+  "validation.json": {
+    "sha256": "f18f0c96006781bc0785437a8ce5961266ddb05b2d3545e9d5df4d66893742d1",
+    "bytes": 1508
+  }
+}

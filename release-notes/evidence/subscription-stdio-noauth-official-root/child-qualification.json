@@ -1,0 +1,1 @@
+{"Outcome":"PASS_NOAUTH_NEGATIVE_NOT_AUTHENTICATED","Reason":"AUTH_DENIED","SourceConstructorConfigObserved":true,"UserMCPDeclared":true,"SystemMCPDeclared":true,"NoMCPTripwire":true,"NoAPIRouteTripwire":true,"NoAuthFile":true,"OwnedReaped":true,"NativeWaitZero":true,"AuthenticatedPositiveCertified":false}
