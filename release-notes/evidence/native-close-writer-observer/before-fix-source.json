@@ -1,0 +1,9 @@
+{
+  "source_base": "4368d5495a5be4ce425f4ab89849df0296fc6f9b",
+  "source_only": true,
+  "production_diff": "",
+  "files": {
+    "facade_test.go": "d357486923c43dd8566168d5730b4e884501edfac8acc89d1a178b7b973d9495",
+    "fixture_process_test.go": "3563216815e83d93c7fdbb2866a5a1f33db7c40ff35cc9d4c6323d461afbeaf3"
+  }
+}
