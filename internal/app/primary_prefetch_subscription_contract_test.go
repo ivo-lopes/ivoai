@@ -1,0 +1,426 @@
+package app
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
+	"os/exec"
+	"reflect"
+	"strings"
+	"testing"
+)
+
+func subscriptionFixturePlan(t *testing.T) prefetchSubscriptionPlan {
+	t.Helper()
+	s, err := prefetchNewDirectScope("/synthetic/codex", "/synthetic/repo", "gpt-6.1-sol", "read-only", []string{"HOME=/synthetic/private-home", "PATH=/synthetic/bin"})
+	if err != nil {
+		t.Fatal("fixture scope construction failed")
+	}
+	p, err := prefetchPrepareSubscription(s, prefetchSubscriptionHostPolicy{PermitFilteredEnvironment: true})
+	if err != nil {
+		t.Fatal("fixture plan construction failed")
+	}
+	return p
+}
+
+func subscriptionFixtureValues() map[int]map[string]any {
+	return map[int]map[string]any{
+		1: {"userAgent": "synthetic-official-schema"},
+		2: {"config": map[string]any{"model_provider": "openai", "openai_base_url": prefetchSubscriptionInference, "chatgpt_base_url": prefetchSubscriptionBackend, "forced_login_method": nil, "forced_chatgpt_workspace_id": nil, "model_providers": map[string]any{"unused_custom": map[string]any{"experimental_bearer_token": "fixture-private-value", "auth": map[string]any{"command": "/synthetic/do-not-run"}}}}},
+		3: {"requirements": nil},
+		4: {"account": map[string]any{"type": "chatgpt", "email": "fixture-private-value", "planType": "fixture-private-value"}, "requiresOpenaiAuth": true, "workspaceRouting": map[string]any{"chatgptAccountId": "fixture-private-value", "backendOrigin": "https://chatgpt.com", "accountRoutingOverride": "NO_CONSTRAINT"}},
+	}
+}
+
+type subscriptionFixtureSession struct {
+	values    map[int]map[string]any
+	raw       map[int]string
+	called    []string
+	closed    int
+	closeErr  error
+	notifyErr error
+	callErr   error
+	mutate    func(prefetchSubscriptionRequest)
+	onClose   func()
+}
+
+func (s *subscriptionFixtureSession) Call(_ context.Context, r prefetchSubscriptionRequest) (io.ReadCloser, error) {
+	s.called = append(s.called, r.Method)
+	if s.mutate != nil {
+		s.mutate(r)
+	}
+	if s.callErr != nil {
+		return nil, s.callErr
+	}
+	if raw, ok := s.raw[r.ID]; ok {
+		return io.NopCloser(strings.NewReader(raw)), nil
+	}
+	body, _ := json.Marshal(map[string]any{"id": r.ID, "result": s.values[r.ID]})
+	return io.NopCloser(strings.NewReader(string(body))), nil
+}
+func (s *subscriptionFixtureSession) Notify(_ context.Context, method string) error {
+	s.called = append(s.called, method)
+	return s.notifyErr
+}
+func (s *subscriptionFixtureSession) Close() error {
+	s.closed++
+	if s.onClose != nil {
+		s.onClose()
+	}
+	return s.closeErr
+}
+
+func TestPrimaryPrefetchSubscriptionCanonicalScope(t *testing.T) {
+	p := subscriptionFixturePlan(t)
+	command := p.probeCommand(context.Background())
+	if command.Dir != "/synthetic/repo" || !reflect.DeepEqual(command.Env, p.scope.environment) {
+		t.Fatal("probe lost explicit directory or environment")
+	}
+	for _, value := range []string{`model_provider="openai"`, `openai_base_url="` + prefetchSubscriptionInference + `"`, `chatgpt_base_url="` + prefetchSubscriptionBackend + `"`} {
+		count := 0
+		for _, arg := range command.Args {
+			if arg == value {
+				count++
+			}
+		}
+		if count != 1 {
+			t.Fatal("canonical setting missing or repeated")
+		}
+	}
+	for _, arg := range command.Args {
+		if strings.Contains(arg, "forced_login_method") || strings.Contains(arg, "respect_system_proxy") || strings.Contains(arg, "ignore-user-config") {
+			t.Fatal("probe changes forbidden auth/proxy/config policy")
+		}
+	}
+	s := p.inventoryScope()
+	s.environment[0] = "HOME=/synthetic/changed"
+	s.globals[0] = "--forged"
+	if p.scope.environment[0] != "HOME=/synthetic/private-home" || p.scope.globals[0] != "--sandbox" {
+		t.Fatal("inventory aliases retained probe scope")
+	}
+	inventory, err := prefetchDirectInventory(context.Background(), p.inventoryScope(), func(cmd *exec.Cmd) error {
+		_, err := io.WriteString(cmd.Stdout, `[{"name":"synthetic_user"},{"name":"synthetic_system"}]`)
+		return err
+	})
+	if err != nil {
+		t.Fatal("synthetic inventory failed")
+	}
+	cmd, err := prefetchDirectExec(context.Background(), inventory, "/synthetic/schema.json", "synthetic-question")
+	if err != nil {
+		t.Fatal("synthetic exec construction failed")
+	}
+	for _, arg := range p.scope.globals {
+		found := false
+		for _, a := range cmd.Args {
+			if a == arg {
+				found = true
+			}
+		}
+		if !found {
+			t.Fatal("exec discarded shared scope setting")
+		}
+	}
+	if !reflect.DeepEqual(cmd.Env, command.Env) || cmd.Dir != command.Dir {
+		t.Fatal("inventory/exec changed probe scope")
+	}
+	for _, setting := range []string{"mcp_servers.synthetic_user.enabled=false", "mcp_servers.synthetic_system.enabled=false"} {
+		count := 0
+		for _, arg := range cmd.Args {
+			if arg == setting {
+				count++
+			}
+		}
+		if count != 1 {
+			t.Fatal("shared scope lost an MCP denial")
+		}
+	}
+}
+
+func TestPrimaryPrefetchSubscriptionProtocolRequests(t *testing.T) {
+	p := subscriptionFixturePlan(t)
+	s := &subscriptionFixtureSession{values: subscriptionFixtureValues()}
+	s.mutate = func(r prefetchSubscriptionRequest) {
+		switch r.ID {
+		case 1:
+			if r.Method != "initialize" || r.Params["capabilities"].(map[string]any)["experimentalApi"] != true {
+				t.Fatal("missing explicit route-schema capability")
+			}
+		case 2:
+			if r.Method != "config/read" || !reflect.DeepEqual(r.Params, map[string]any{"includeLayers": false, "cwd": p.scope.directory}) {
+				t.Fatal("config projection scope changed")
+			}
+		case 3:
+			if r.Method != "configRequirements/read" || len(r.Params) != 0 {
+				t.Fatal("unexpected requirements request")
+			}
+		case 4:
+			if r.Method != "account/read" || !reflect.DeepEqual(r.Params, map[string]any{"refreshToken": false}) {
+				t.Fatal("account request changed refresh contract")
+			}
+		default:
+			t.Fatal("unapproved RPC")
+		}
+	}
+	if _, err := prefetchSubscriptionProbe(context.Background(), p, func(context.Context, *exec.Cmd) (prefetchSubscriptionSession, error) { return s, nil }); err != nil {
+		t.Fatal("synthetic request contract failed")
+	}
+	s = &subscriptionFixtureSession{values: subscriptionFixtureValues()}
+	s.values[3]["requirements"] = map[string]any{"modelProvider": "openai", "chatgptBaseUrl": prefetchSubscriptionBackend, "allowedLoginMethods": []any{"chatgpt"}}
+	if _, err := prefetchSubscriptionProbe(context.Background(), p, func(context.Context, *exec.Cmd) (prefetchSubscriptionSession, error) { return s, nil }); err != nil {
+		t.Fatal("explicit compatible requirements refused")
+	}
+	s = &subscriptionFixtureSession{values: subscriptionFixtureValues()}
+	s.values[3]["requirements"] = map[string]any{"allowedLoginMethods": []any{"api", "chatgpt"}}
+	if _, err := prefetchSubscriptionProbe(context.Background(), p, func(context.Context, *exec.Cmd) (prefetchSubscriptionSession, error) { return s, nil }); err != nil {
+		t.Fatal("compatible policy permitting both login methods refused")
+	}
+}
+
+func TestPrimaryPrefetchSubscriptionScopeRefusals(t *testing.T) {
+	p := subscriptionFixturePlan(t)
+	base := p.scope
+	base.globals = base.globals[:len(base.globals)-6]
+	if _, err := prefetchPrepareSubscription(base, prefetchSubscriptionHostPolicy{}); err != prefetchSubscriptionProxyPolicyUnknown {
+		t.Fatal("unknown institutional proxy policy admitted")
+	}
+	for _, entry := range []string{"OPENAI_API_KEY=fixture-private-value", "HTTPS_PROXY=fixture-private-value", "LD_PRELOAD=fixture-private-value", "HOME=/synthetic/duplicate"} {
+		s := base
+		s.environment = append(append([]string{}, base.environment...), entry)
+		if _, err := prefetchPrepareSubscription(s, prefetchSubscriptionHostPolicy{PermitFilteredEnvironment: true}); err != prefetchSubscriptionScopeDenied {
+			t.Fatal("injected/duplicate environment admitted")
+		}
+	}
+	base.globals = append(append([]string{}, base.globals...), "-c", `model_provider="custom"`)
+	if _, err := prefetchPrepareSubscription(base, prefetchSubscriptionHostPolicy{PermitFilteredEnvironment: true}); err != prefetchSubscriptionScopeDenied {
+		t.Fatal("changed argument scope admitted")
+	}
+	called := false
+	if _, err := prefetchSubscriptionProbe(context.Background(), prefetchSubscriptionPlan{}, func(context.Context, *exec.Cmd) (prefetchSubscriptionSession, error) { called = true; return nil, nil }); err != prefetchSubscriptionScopeDenied || called {
+		t.Fatal("zero plan reached transport")
+	}
+}
+
+func TestPrimaryPrefetchSubscriptionProjectionAndCleanup(t *testing.T) {
+	p := subscriptionFixturePlan(t)
+	s := &subscriptionFixtureSession{values: subscriptionFixtureValues()}
+	a, err := prefetchSubscriptionProbe(context.Background(), p, func(context.Context, *exec.Cmd) (prefetchSubscriptionSession, error) { return s, nil })
+	if err != nil || a == nil || !a.summary.Accepted || a.summary.Connected || a.summary.Auth != "CHATGPT_COMPATIBLE" || s.closed != 1 {
+		t.Fatal("synthetic projection or owned cleanup failed")
+	}
+	if !reflect.DeepEqual(s.called, []string{"initialize", "initialized", "config/read", "configRequirements/read", "account/read"}) {
+		t.Fatal("unexpected RPC sequence")
+	}
+	for _, value := range []any{a, p} {
+		body, _ := json.Marshal(value)
+		for _, rendered := range []string{string(body), fmt.Sprintf("%v", value), fmt.Sprintf("%+v", value), fmt.Sprintf("%#v", value)} {
+			for _, private := range []string{"fixture-private-value", "/synthetic/", "https://", "email", "header", "bearer", "accountId"} {
+				if strings.Contains(rendered, private) {
+					t.Fatal("projection or formatting retains private data")
+				}
+			}
+		}
+	}
+	// The public data cannot be mistaken for a subtype/lifecycle qualification.
+	body, _ := json.Marshal(a)
+	if strings.Contains(string(body), "SUBSCRIPTION_PROVEN") {
+		t.Fatal("account union overclaimed")
+	}
+}
+
+func TestPrimaryPrefetchSubscriptionNegativeProjection(t *testing.T) {
+	cases := []struct {
+		name   string
+		change func(map[int]map[string]any)
+		want   prefetchSubscriptionReason
+		last   string
+	}{
+		{"custom_provider", func(v map[int]map[string]any) { v[2]["config"].(map[string]any)["model_provider"] = "custom" }, prefetchSubscriptionConfigDenied, "config/read"},
+		{"api_endpoint", func(v map[int]map[string]any) {
+			v[2]["config"].(map[string]any)["openai_base_url"] = "https://api.openai.com/v1"
+		}, prefetchSubscriptionConfigDenied, "config/read"},
+		{"custom_auth_endpoint", func(v map[int]map[string]any) {
+			v[2]["config"].(map[string]any)["chatgpt_base_url"] = "https://synthetic.invalid/"
+		}, prefetchSubscriptionConfigDenied, "config/read"},
+		{"forced_login", func(v map[int]map[string]any) { v[2]["config"].(map[string]any)["forced_login_method"] = "chatgpt" }, prefetchSubscriptionConfigDenied, "config/read"},
+		{"workspace_restriction", func(v map[int]map[string]any) {
+			v[2]["config"].(map[string]any)["forced_chatgpt_workspace_id"] = "fixture-private-value"
+		}, prefetchSubscriptionConfigDenied, "config/read"},
+		{"missing_restriction_contract", func(v map[int]map[string]any) { delete(v[2]["config"].(map[string]any), "forced_login_method") }, prefetchSubscriptionConfigDenied, "config/read"},
+		{"raw_layers", func(v map[int]map[string]any) { v[2]["layers"] = []any{} }, prefetchSubscriptionConfigDenied, "config/read"},
+		{"required_custom_provider", func(v map[int]map[string]any) { v[3]["requirements"] = map[string]any{"modelProvider": "custom"} }, prefetchSubscriptionRequirementsDenied, "configRequirements/read"},
+		{"required_builtin_definition", func(v map[int]map[string]any) {
+			v[3]["requirements"] = map[string]any{"modelProviders": map[string]any{"openai": map[string]any{}}}
+		}, prefetchSubscriptionRequirementsDenied, "configRequirements/read"},
+		{"required_api", func(v map[int]map[string]any) {
+			v[3]["requirements"] = map[string]any{"allowedLoginMethods": []any{"api"}}
+		}, prefetchSubscriptionRequirementsDenied, "configRequirements/read"},
+		{"unknown_required_policy", func(v map[int]map[string]any) { v[3]["requirements"] = map[string]any{"unknown_policy": true} }, prefetchSubscriptionRequirementsDenied, "configRequirements/read"},
+		{"missing_requirements_contract", func(v map[int]map[string]any) { delete(v[3], "requirements") }, prefetchSubscriptionRequirementsDenied, "configRequirements/read"},
+		{"missing_login_policy", func(v map[int]map[string]any) { v[3]["requirements"] = map[string]any{} }, prefetchSubscriptionRequirementsDenied, "configRequirements/read"},
+		{"null_login_policy", func(v map[int]map[string]any) { v[3]["requirements"] = map[string]any{"allowedLoginMethods": nil} }, prefetchSubscriptionRequirementsDenied, "configRequirements/read"},
+		{"duplicate_login_policy", func(v map[int]map[string]any) {
+			v[3]["requirements"] = map[string]any{"allowedLoginMethods": []any{"chatgpt", "chatgpt"}}
+		}, prefetchSubscriptionRequirementsDenied, "configRequirements/read"},
+		{"unknown_login_policy", func(v map[int]map[string]any) {
+			v[3]["requirements"] = map[string]any{"allowedLoginMethods": []any{"chatgpt", "unknown"}}
+		}, prefetchSubscriptionRequirementsDenied, "configRequirements/read"},
+		{"api_account", func(v map[int]map[string]any) { v[4]["account"].(map[string]any)["type"] = "apiKey" }, prefetchSubscriptionAuthDenied, "account/read"},
+		{"no_auth_required", func(v map[int]map[string]any) { v[4]["requiresOpenaiAuth"] = false }, prefetchSubscriptionAuthDenied, "account/read"},
+		{"unknown_account", func(v map[int]map[string]any) { v[4]["account"] = nil }, prefetchSubscriptionAuthDenied, "account/read"},
+		{"missing_experimental_route", func(v map[int]map[string]any) { delete(v[4], "workspaceRouting") }, prefetchSubscriptionRouteDenied, "account/read"},
+		{"foreign_backend", func(v map[int]map[string]any) {
+			v[4]["workspaceRouting"].(map[string]any)["backendOrigin"] = "https://synthetic.invalid"
+		}, prefetchSubscriptionRouteDenied, "account/read"},
+		{"regional_route", func(v map[int]map[string]any) {
+			v[4]["workspaceRouting"].(map[string]any)["accountRoutingOverride"] = "us"
+		}, prefetchSubscriptionRouteDenied, "account/read"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			v := subscriptionFixtureValues()
+			tc.change(v)
+			s := &subscriptionFixtureSession{values: v}
+			a, err := prefetchSubscriptionProbe(context.Background(), subscriptionFixturePlan(t), func(context.Context, *exec.Cmd) (prefetchSubscriptionSession, error) { return s, nil })
+			if a != nil || err != tc.want || s.closed != 1 || s.called[len(s.called)-1] != tc.last {
+				t.Fatal("denial did not stop before next RPC with safe cleanup")
+			}
+		})
+	}
+}
+
+func TestPrimaryPrefetchSubscriptionRPCBounds(t *testing.T) {
+	valid := `{"id":2,"result":{}}`
+	cases := []struct {
+		name, raw string
+		want      prefetchSubscriptionReason
+	}{
+		{"mismatched_id", `{"id":3,"result":{}}`, prefetchSubscriptionRPCInvalid},
+		{"string_id", `{"id":"2","result":{}}`, prefetchSubscriptionRPCInvalid},
+		{"duplicate_id", `{"id":2,"id":2,"result":{}}`, prefetchSubscriptionRPCInvalid},
+		{"nested_duplicate", `{"id":2,"result":{"x":{"a":1,"\u0061":2}}}`, prefetchSubscriptionRPCInvalid},
+		{"error_with_result", `{"id":2,"result":{},"error":{"message":"fixture-private-value"}}`, prefetchSubscriptionRPCError},
+		{"truncated", `{"id":2,"result":{`, prefetchSubscriptionRPCInvalid},
+		{"trailing_message", valid + valid, prefetchSubscriptionRPCInvalid},
+		{"request_not_response", `{"id":2,"method":"config/read","result":{}}`, prefetchSubscriptionRPCInvalid},
+		{"wrong_version", `{"id":2,"jsonrpc":"1.0","result":{}}`, prefetchSubscriptionRPCInvalid},
+		{"null_result", `{"id":2,"result":null}`, prefetchSubscriptionRPCInvalid},
+		{"depth", `{"id":2,"result":{"x":` + strings.Repeat("[", 40) + "0" + strings.Repeat("]", 40) + `}}`, prefetchSubscriptionResponseBounds},
+		{"nodes", `{"id":2,"result":{"x":[` + strings.Repeat("0,", prefetchSubscriptionMaxNodes) + `0]}}`, prefetchSubscriptionResponseBounds},
+		{"string", `{"id":2,"result":{"x":"` + strings.Repeat("x", prefetchSubscriptionMaxString+1) + `"}}`, prefetchSubscriptionResponseBounds},
+		{"bytes", strings.Repeat(" ", prefetchSubscriptionMaxBytes+1), prefetchSubscriptionResponseBounds},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := prefetchSubscriptionRPC(context.Background(), strings.NewReader(tc.raw), 2)
+			if err != tc.want {
+				t.Fatal("malformed/overbound response was not rejected with closed reason")
+			}
+			if strings.Contains(err.Error(), "fixture-private-value") {
+				t.Fatal("raw error leaked")
+			}
+		})
+	}
+}
+
+type subscriptionReadFailure struct{ done bool }
+
+func (r *subscriptionReadFailure) Read(p []byte) (int, error) {
+	if r.done {
+		return 0, errors.New("fixture-private-value")
+	}
+	r.done = true
+	return copy(p, `{"id":2,"result":{}}`), nil
+}
+
+type subscriptionNoProgress struct{}
+
+func (subscriptionNoProgress) Read([]byte) (int, error) { return 0, nil }
+
+func TestPrimaryPrefetchSubscriptionLifecycleFailures(t *testing.T) {
+	for _, r := range []io.Reader{&subscriptionReadFailure{}, subscriptionNoProgress{}} {
+		if _, err := prefetchSubscriptionRPC(context.Background(), r, 2); err != prefetchSubscriptionRPCInvalid {
+			t.Fatal("partial/read failure accepted")
+		}
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+	called := false
+	if _, err := prefetchSubscriptionProbe(ctx, subscriptionFixturePlan(t), func(context.Context, *exec.Cmd) (prefetchSubscriptionSession, error) { called = true; return nil, nil }); err != prefetchSubscriptionCanceled || called {
+		t.Fatal("canceled plan reached transport")
+	}
+	for _, kind := range []string{"close", "notify", "call", "scope"} {
+		t.Run(kind, func(t *testing.T) {
+			s := &subscriptionFixtureSession{values: subscriptionFixtureValues()}
+			want := prefetchSubscriptionRPCError
+			if kind == "close" {
+				s.closeErr = errors.New("fixture-private-value")
+				want = prefetchSubscriptionCleanupFailed
+			}
+			if kind == "notify" {
+				s.notifyErr = errors.New("fixture-private-value")
+			}
+			if kind == "call" {
+				s.callErr = errors.New("fixture-private-value")
+			}
+			a, err := prefetchSubscriptionProbe(context.Background(), subscriptionFixturePlan(t), func(_ context.Context, cmd *exec.Cmd) (prefetchSubscriptionSession, error) {
+				if kind == "scope" {
+					cmd.Env[0] = "HOME=/synthetic/changed"
+					want = prefetchSubscriptionScopeDenied
+				}
+				return s, nil
+			})
+			if a != nil || err != want || s.closed != 1 || strings.Contains(err.Error(), "fixture-private-value") {
+				t.Fatal("lifecycle failure retained admission or leaked error")
+			}
+		})
+	}
+}
+
+func TestPrimaryPrefetchSubscriptionCancellationDelivery(t *testing.T) {
+	for _, stage := range []string{"during_callback", "during_close"} {
+		t.Run(stage, func(t *testing.T) {
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			s := &subscriptionFixtureSession{values: subscriptionFixtureValues()}
+			if stage == "during_callback" {
+				s.mutate = func(r prefetchSubscriptionRequest) {
+					if r.ID == 4 {
+						cancel()
+					}
+				}
+			} else {
+				s.onClose = cancel
+			}
+			a, err := prefetchSubscriptionProbe(ctx, subscriptionFixturePlan(t), func(context.Context, *exec.Cmd) (prefetchSubscriptionSession, error) { return s, nil })
+			if a != nil || err != prefetchSubscriptionCanceled || s.closed != 1 {
+				t.Fatal("cancellation allowed projection delivery")
+			}
+		})
+	}
+}
+
+func TestPrimaryPrefetchSubscriptionCallerScopeSnapshot(t *testing.T) {
+	p := subscriptionFixturePlan(t)
+	expectedEnv := append([]string{}, p.scope.environment...)
+	expectedGlobals := append([]string{}, p.scope.globals...)
+	s := &subscriptionFixtureSession{values: subscriptionFixtureValues()}
+	s.mutate = func(r prefetchSubscriptionRequest) {
+		if r.ID == 2 {
+			p.scope.environment[0] = "HOME=/synthetic/caller-changed"
+			p.scope.globals[3] = "synthetic-other-model"
+		}
+	}
+	a, err := prefetchSubscriptionProbe(context.Background(), p, func(context.Context, *exec.Cmd) (prefetchSubscriptionSession, error) { return s, nil })
+	if err != nil || a == nil {
+		t.Fatal("synthetic snapshot probe failed")
+	}
+	if !reflect.DeepEqual(a.plan.scope.environment, expectedEnv) || !reflect.DeepEqual(a.plan.scope.globals, expectedGlobals) {
+		t.Fatal("admission retained caller-mutated scope instead of probed snapshot")
+	}
+	p.scope.environment[0] = "HOME=/synthetic/changed-again"
+	if !reflect.DeepEqual(a.plan.scope.environment, expectedEnv) {
+		t.Fatal("post-probe caller mutation changed retained scope")
+	}
+}

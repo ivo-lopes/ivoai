@@ -1,0 +1,5 @@
+--- FAIL: TestPrimaryPrefetchSubscriptionCallerScopeSnapshot (0.00s)
+    primary_prefetch_subscription_contract_test.go:407: admission retained caller-mutated scope instead of probed snapshot
+FAIL
+FAIL	github.com/ivo-lopes/ivoai/internal/app	0.007s
+FAIL

@@ -1,0 +1,84 @@
+{
+  "schema_version": 1,
+  "recorded_utc": "2026-10-29T02:45:52.910777+00:00",
+  "result": "SOURCE_ONLY_SYNTHETIC_PASS_UNWIRED_NOT_CLIENT_QUALIFIED",
+  "candidate_base": "e4250ab0497f4366cb80b7ce03aa21608f58dd34",
+  "baseline_projection_commit": "378d9075c500a41163a7d496815070600ff4ce9b",
+  "final_source_freeze": "source-freeze-v3.json",
+  "final_source_freeze_sha256": "2035d94aea6c1f3b23a51c36d98a8e5ff870336a9d7383eac6073649291e51e7",
+  "existing_go_identity": {
+    "candidate": {
+      "base": "e4250ab0497f4366cb80b7ce03aa21608f58dd34",
+      "existing_go_paths": 589,
+      "existing_go_mismatches": [],
+      "non_test_go_paths": 284,
+      "new_helpers_match_v3": true
+    },
+    "baseline": {
+      "base": "b45354791f1d28632e8094b82d1fe5f9c568eba1",
+      "existing_go_paths": 493,
+      "existing_go_mismatches": [],
+      "non_test_go_paths": 246,
+      "new_helpers_match_v3": true
+    }
+  },
+  "final_tests": {
+    "v3-candidate-race.jsonl": {
+      "events_including_subtests": {
+        "pass": 84
+      },
+      "top_level": 14,
+      "package": [
+        {
+          "Action": "pass",
+          "Elapsed": 1.177
+        }
+      ]
+    },
+    "v3-baseline-race.jsonl": {
+      "events_including_subtests": {
+        "pass": 84
+      },
+      "top_level": 14,
+      "package": [
+        {
+          "Action": "pass",
+          "Elapsed": 1.174
+        }
+      ]
+    }
+  },
+  "vet": {
+    "candidate_exit": 0,
+    "baseline_exit": 0,
+    "output_bytes": {
+      "candidate": 0,
+      "baseline": 0
+    }
+  },
+  "negative_controls": [
+    {
+      "case": "scope_alias_before_snapshot",
+      "exit": 1,
+      "package_seconds": 0.007,
+      "ordinary_pass": false
+    },
+    {
+      "case": "requirements_snake_case_before_pinned_camelCase_correction",
+      "exit": 1,
+      "package_seconds": 0.012,
+      "ordinary_pass": false
+    }
+  ],
+  "earlier_source_epochs_preserved": true,
+  "real_cli_RPC_status_auth_model_provider_calls": 0,
+  "personal_config_auth_keyring_reads_copies_hashes": 0,
+  "paid_fallbacks_retries": 0,
+  "production_wiring": false,
+  "concrete_official_transport": "NOT_IMPLEMENTED; injected session adapter only; existing Facade rewrites provider so is not reused for direct-route evidence",
+  "pin_client_execution": "NOT_RUN",
+  "cohort_economics": "NOT_RUN",
+  "public_release_change": "NONE",
+  "full_go_suite": "NOT_RUN_TEST_ONLY_CHANGE_FOCUSED_RACE_AND_VET",
+  "website_CLI_docs_inputs": "UNCHANGED"
+}

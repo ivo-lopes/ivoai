@@ -1,0 +1,44 @@
+{
+  "state": "PROPOSAL_ONLY_NOT_EXECUTED_NOT_CLIENT_QUALIFIED",
+  "missing_before_execution": [
+    "Review a concrete adapter to the existing owned/cancellable official stdio lifecycle; this increment supplies only an injected session",
+    "Freeze the exact fixture, code, client pair, command, network namespace and cleanup assertions",
+    "Parent review and bounded execution authorization"
+  ],
+  "client": {
+    "version": "0.162.1",
+    "binary_sha256_from_prior_evidence": "628e35487d888a28f0427fc37501da529dd3d81fcbad7a2c3421c1e8670d92e1",
+    "companion_sha256_from_prior_evidence": "ec71830690a7c0024916ee0c99fbdc635bc6e747ff665ea4f03a8389bbcb6b30",
+    "reverify_before_any_future_execution": true
+  },
+  "scope": {
+    "home": "NEW_OWNED_EMPTY_SYNTHETIC_HOME_NO_AUTH",
+    "network": "NAMESPACE_LOOPBACK_ONLY_NO_EXTERNAL_ROUTE",
+    "personal_home_or_config_or_auth_mounts": false,
+    "shared_profile": "USER_CONFIG_INCLUDED_SHARED_SCOPE",
+    "source_of_commands": "prefetchSubscriptionPlan plus existing prefetchDirectScope constructor",
+    "proxy_policy": "EXPLICIT_SYNTHETIC_HOST_PERMISSION_ONLY_NO_RESPECT_SYSTEM_PROXY_OVERRIDE",
+    "model_submission": false,
+    "max_client_starts": 1,
+    "retry_or_fallback": false,
+    "raw_synthetic_capture": "Only if separately reviewed, bounded and credential-free; real raw config capture remains prohibited"
+  },
+  "protocol": [
+    {"id": 1, "method": "initialize", "capabilities": {"experimentalApi": true}},
+    {"notification": "initialized"},
+    {"id": 2, "method": "config/read", "params": {"includeLayers": false, "cwd": "EXACT_OWNED_FIXTURE"}},
+    {"id": 3, "method": "configRequirements/read", "params": {}},
+    {"id": 4, "method": "account/read", "params": {"refreshToken": false}}
+  ],
+  "expected_no_auth_outcome": "AUTH_DENIED_OR_EXPLICIT_UNKNOWN_WITH_NO_PROMPT; never substitute fake account success",
+  "separate_positive_scope": "Synthetic projector accepts official-shape response data only; that is not an authenticated client proof",
+  "must_assert": [
+    "Canonical settings shared without re-enabling any MCP",
+    "No API/custom-endpoint tripwire hit and no model turn",
+    "No auth/login/logout/config-write RPC",
+    "Bounded frames and exact request IDs",
+    "Owned session close, read cancellation and process reap without personal state mutation",
+    "Preserve every failure and stop without rerun-only success"
+  ],
+  "real_client_or_provider_execution_authorized_by_this_file": false
+}

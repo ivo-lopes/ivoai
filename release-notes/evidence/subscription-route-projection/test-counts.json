@@ -1,0 +1,86 @@
+{
+  "candidate-nominal.jsonl": {
+    "events_including_subtests": {
+      "pass": 46
+    },
+    "top_level": 8,
+    "package": [
+      {
+        "Action": "pass",
+        "Elapsed": 0.019
+      }
+    ]
+  },
+  "candidate-race.jsonl": {
+    "events_including_subtests": {
+      "pass": 79
+    },
+    "top_level": 13,
+    "package": [
+      {
+        "Action": "pass",
+        "Elapsed": 1.219
+      }
+    ]
+  },
+  "baseline-race.jsonl": {
+    "events_including_subtests": {
+      "pass": 79
+    },
+    "top_level": 13,
+    "package": [
+      {
+        "Action": "pass",
+        "Elapsed": 1.18
+      }
+    ]
+  },
+  "final-candidate-race.jsonl": {
+    "events_including_subtests": {
+      "pass": 80
+    },
+    "top_level": 14,
+    "package": [
+      {
+        "Action": "pass",
+        "Elapsed": 1.157
+      }
+    ]
+  },
+  "final-baseline-race.jsonl": {
+    "events_including_subtests": {
+      "pass": 80
+    },
+    "top_level": 14,
+    "package": [
+      {
+        "Action": "pass",
+        "Elapsed": 1.18
+      }
+    ]
+  },
+  "v3-candidate-race.jsonl": {
+    "events_including_subtests": {
+      "pass": 84
+    },
+    "top_level": 14,
+    "package": [
+      {
+        "Action": "pass",
+        "Elapsed": 1.177
+      }
+    ]
+  },
+  "v3-baseline-race.jsonl": {
+    "events_including_subtests": {
+      "pass": 84
+    },
+    "top_level": 14,
+    "package": [
+      {
+        "Action": "pass",
+        "Elapsed": 1.174
+      }
+    ]
+  }
+}
