@@ -1,0 +1,15 @@
+{
+  "source": "520463c3f3d4501a727aa76967960b2f9ec82e49",
+  "frozen3491_unchanged": true,
+  "Go_and_modules_equal83": 592,
+  "Go_paths": 590,
+  "actual_main_ccc48_ancestor": true,
+  "historical_proof_parents": {
+    "9e7f24e700ef77158c8463e68805c29d05eaea5a": 714,
+    "83df882b38e9cdf8158b69623aa58f6001124355": 698
+  },
+  "historical_proof_union_preserved": 808,
+  "v014_tag_peeled_unchanged": true,
+  "NativeGuard_perf56_not_composed": true,
+  "source_code_edits": false
+}

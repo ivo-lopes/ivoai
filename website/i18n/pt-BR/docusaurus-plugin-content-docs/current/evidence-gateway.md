@@ -5,6 +5,21 @@ Esta é uma camada transitória de recuperação dentro do backend Go existente.
 Ela não substitui scheduler, Memory, Context, provedores de código ou ArtifactStore.
 A migração e a certificação completas continuam pendentes.
 
+## Candidata local v0.15.0: limites G0 e G1
+
+G0 está ligado ao prefetch de código já admitido sob a flag
+`IVOAI_EXPERIMENTAL_EVIDENCE_GATEWAY`, OFF por padrão. Criação protegida exige o
+opt-in separado `IVOAI_EXPERIMENTAL_EVIDENCE_RECOVERY=1`. Recuperação exata Core/MCP
+protegida usa bindings vivos do host e checa proprietário, grants e geração;
+leitores do primary completo também revalidam Core/receipt ativo. Projeções
+privadas de worker expõem apenas dois leitores protegidos vinculados ao proprietário.
+Bindings perdidos recusam leitura, inclusive após reinício ou remoção da flag de
+criação; fallback legado não reconstrói autoridade. Snapshots G1a Memory seguem
+SPI do host sem ligação a App/scheduler/clientes. A candidata não comprova
+recuperação universal de ferramentas/clientes nem ingestão Context. Implementação
+inicial e comparações adversas abaixo preservam sua época. Consulte
+[releases](releases.md) para estado da candidata e limites de rollback.
+
 ## Habilitação e rollback
 
 Defina `IVOAI_EXPERIMENTAL_EVIDENCE_GATEWAY=1` apenas no processo host IVOAI para

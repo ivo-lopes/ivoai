@@ -1,0 +1,25 @@
+{
+  "source": "77d5fd6c0c75effcf34e34a440e199c9344a96b0",
+  "exit": 0,
+  "wall_seconds": 26.638,
+  "test_events": {
+    "pass": 4
+  },
+  "passed": [
+    "TestLiveAdaptivePrimaryCoreReadBootstrapWithoutChildFlag",
+    "TestLiveAdaptivePrimaryOfficialCLIWithoutDAG/usage_absent",
+    "TestLiveAdaptivePrimaryOfficialCLIWithoutDAG/usage_complete",
+    "TestLiveAdaptivePrimaryOfficialCLIWithoutDAG"
+  ],
+  "package_results": [
+    {
+      "Package": "github.com/ivo-lopes/ivoai/internal/app",
+      "Action": "pass",
+      "Elapsed": 15.381
+    }
+  ],
+  "pins_and_source_unchanged": true,
+  "real_model": false,
+  "no_subscription_login_status_or_account_RPC": true,
+  "scope": "two existing tests; official CLI with synthetic provider plus actual Core bootstrap; not public TUI/auth/cloud/egress isolation certification"
+}

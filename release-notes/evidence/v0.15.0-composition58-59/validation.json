@@ -1,0 +1,107 @@
+{
+  "status": "LOCAL_COMPOSITION_CHECKS_PASS_PUBLICATION_HOLD",
+  "base57": "dc9dc5870847b6b416e06b9800eb9c912ef5c5d3",
+  "runtime_source": "122642e1bbbd79cbbd0d1793d2a350675e3759b2",
+  "documentation_source": "615a0a1287f9c0d00d0ac55110a97aa8b34abae0",
+  "local_merges": [
+    "ac48f4cbab5259072d938c08a9a0fc76fc4f7180",
+    "abcf622a04ba2ce554c6b36b377ce950a0f0e7a4",
+    "667723af09937a93db5119060153d1756aa656a9"
+  ],
+  "main59": "4368d5495a5be4ce425f4ab89849df0296fc6f9b",
+  "upstream59_CI": "SUCCESS_16_OF_16_ATTEMPT1_ON_5683_ONLY",
+  "new_candidate_head_CI": "PENDING_NOT_INHERITED",
+  "runtime_checks": {
+    "runtime_source": "122642e1bbbd79cbbd0d1793d2a350675e3759b2",
+    "full_go": {
+      "status": "PASS",
+      "packages": 59,
+      "without_tests": 3,
+      "cached": 0
+    },
+    "python": {
+      "status": "PASS",
+      "tests": 73
+    },
+    "vet": "PASS",
+    "race_packages": {
+      "status": "PASS",
+      "packages": [
+        "internal/agents",
+        "internal/codexresolver",
+        "internal/workers"
+      ]
+    },
+    "app_policy_race": {
+      "status": "PASS",
+      "tests": 2
+    },
+    "protected_evidence_rollback": {
+      "status": "PASS",
+      "named_runs": 1,
+      "named_passes": 1,
+      "skips": 0
+    },
+    "generated_cli_reference": "PASS",
+    "new_official_client_provider_auth_status_calls": 0
+  },
+  "current_documentation_checks": {
+    "own_offline_frozen_Node_build_en_pt": "PASS",
+    "full_embedded_rebuild_comparison": "PASS",
+    "i18n": "PASS_CURRENT51_RELEASE0.9.2_44",
+    "affected_Go_packages": [
+      "internal/docsserver",
+      "internal/cli",
+      "internal/servercmd"
+    ],
+    "affected_Go_status": "PASS",
+    "rendered_qualified_hold_notices": 4,
+    "docs_input_sha256": "e8db3d15faf0be4bf69a8db11a4d5044ca3b0c4c317a2213995ddeabe77022cd"
+  },
+  "external_observations": {
+    "scoped_Core_Code_Mode_positive": "PASS_55EC_SYNTHETIC_ONLY_WAIT0_NOT_OBSERVED",
+    "new_supported_real_canary": "NARROW_TURN_ORACLE_PASS_55EC_POST_CANCEL_LIFECYCLE_NOT_CERTIFIED",
+    "original_0bab_real_canary": "FAIL_CAUSE_UNKNOWN_PRESERVED",
+    "stored_session_frontend_failed_code1": "CONTEXT_CANCEL_FALLBACK_NOT_MEASURED_FRONTEND_EXIT",
+    "lifecycle_qualification": "INVESTIGATION_PENDING"
+  },
+  "publication": "HOLD_LIFECYCLE_QUALIFICATION_FINAL_HEAD_CI_RELEASE_DISTRIBUTION",
+  "defaults": "ADAPTIVE_GATEWAY_PROTECTED_CREATION_OFF_G1_UNWIRED",
+  "excluded_prs": [
+    54,
+    56
+  ],
+  "context_sync": "BLOCKED_IVOAI_175",
+  "global_economics": "INCOMPLETE",
+  "docs_LOW": "needs_review_UNCHANGED_NO_NEW_AUDIT_OR_THRESHOLD_CHANGE",
+  "native_client_provider_auth_status_calls_by_this_docs_task": 0,
+  "new_downloads_installers_dependency_updates_tags_releases_deployments": 0,
+  "historical_backend_first_turns": 126,
+  "new_canaries_or_synthetic_proofs_added_to_tally": false,
+  "preservation": {
+    "runtime_check_source": "122642e1bbbd79cbbd0d1793d2a350675e3759b2",
+    "documentation_source": "615a0a1287f9c0d00d0ac55110a97aa8b34abae0",
+    "production_source58": "55ec7ab98683bf0c8784b93baebc966f2910772b",
+    "fixture59_head": "5683c92276203f7f861ec3b0aa04932701a32ee7",
+    "all_go_source_equal_5683": true,
+    "only_go_diff_from_55ec": [
+      "internal/agents/runtime_test.go"
+    ],
+    "runtime_go_sha256": "bde4d7acfb1e4100011bec4210d3f2bfcb426283f2b5fff8dc78866eb0fc9121",
+    "runtime_test_sha256": "e0427f8bd3e5a6b89ff2138b52c600e5fc600f68b2ded83ce678a2656d72118f",
+    "runtime_go_and_modules_frozen_122_paths": 587,
+    "all_unchanged_after_documentation_updates": true,
+    "prior_dc9_evidence_preserved": 631,
+    "including_incoming58_59_preserved": 672,
+    "original57_CI40784670844": "FAIL_PRESERVED_NO_UNCHANGED_RERUN"
+  },
+  "not_claimed": [
+    "full_App_race_or_all_package_race",
+    "new_native_ARM_or_noAVX_execution",
+    "general_TUI_client_or_model_parity",
+    "provider_direct_usage_cost_or_quota_consumption",
+    "resolved_original_real_canary_cause",
+    "zero_exit_session_lifecycle",
+    "READY_release_or_final_head_CI_success"
+  ]
+}

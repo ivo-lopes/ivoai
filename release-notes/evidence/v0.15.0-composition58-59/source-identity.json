@@ -1,0 +1,17 @@
+{
+  "runtime_check_source": "122642e1bbbd79cbbd0d1793d2a350675e3759b2",
+  "documentation_source": "615a0a1287f9c0d00d0ac55110a97aa8b34abae0",
+  "production_source58": "55ec7ab98683bf0c8784b93baebc966f2910772b",
+  "fixture59_head": "5683c92276203f7f861ec3b0aa04932701a32ee7",
+  "all_go_source_equal_5683": true,
+  "only_go_diff_from_55ec": [
+    "internal/agents/runtime_test.go"
+  ],
+  "runtime_go_sha256": "bde4d7acfb1e4100011bec4210d3f2bfcb426283f2b5fff8dc78866eb0fc9121",
+  "runtime_test_sha256": "e0427f8bd3e5a6b89ff2138b52c600e5fc600f68b2ded83ce678a2656d72118f",
+  "runtime_go_and_modules_frozen_122_paths": 587,
+  "all_unchanged_after_documentation_updates": true,
+  "prior_dc9_evidence_preserved": 631,
+  "including_incoming58_59_preserved": 672,
+  "original57_CI40784670844": "FAIL_PRESERVED_NO_UNCHANGED_RERUN"
+}

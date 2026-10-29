@@ -1,0 +1,11 @@
+{
+  "affected-go.log": "8e6e95c422d0f3433c50dd6cb5bdd48db0e78cf77d7f8adb29bcc866faaa4441",
+  "build-correct-corepack.log": "c3ed346ec14d7965eab41f78f948dea8e8e31baa260ec4028c3ee1fa4e38f2a5",
+  "build.log": "f9a956dbd3ac0ac6317aa1be7ab80b9267f8b553545271f592c25670d53fde04",
+  "check.log": "dbf39156f33f93a2ca3a39480b27a734bc2fc4bc013000902eba56ee6546c05f",
+  "documentation-validation.json": "534e4d3e44b5192c503b9a7c58e97a201786b55d129a707132d9df56c3053225",
+  "public-stage-summary.json": "03840922f4e99e533ddc4eb9f73778244ca3f873fdf00808a7c5085f91901157",
+  "release-qualification.json": "c5a71158fa860e5890fa547e7321ff334026fe8ea07990a91d7cbaa61dbfc19a",
+  "validation.json": "8c82be55e862c119efd0bb5247f0683a3a9ff303a23f4d490890332eeda0fa69",
+  "zero-prompt-result.json": "8291154696c0674626048fe588c96a4fb87325cb8f1dd9b9cde13012917082a0"
+}

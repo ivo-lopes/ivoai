@@ -1,0 +1,56 @@
+[
+  {
+    "case": "wrong-version",
+    "exit_code": 1,
+    "pass": false,
+    "expected_refusal": "API tag/publication mismatch",
+    "matched": true,
+    "reader_compiled": false,
+    "core_extracted": false
+  },
+  {
+    "case": "wrong-commit",
+    "exit_code": 1,
+    "pass": false,
+    "expected_refusal": "source checkout differs",
+    "matched": true,
+    "reader_compiled": false,
+    "core_extracted": false
+  },
+  {
+    "case": "wrong-digest",
+    "exit_code": 1,
+    "pass": false,
+    "expected_refusal": "API asset digest mismatch",
+    "matched": true,
+    "reader_compiled": false,
+    "core_extracted": false
+  },
+  {
+    "case": "oversize-api",
+    "exit_code": 1,
+    "pass": false,
+    "expected_refusal": "invalid asset size",
+    "matched": true,
+    "reader_compiled": false,
+    "core_extracted": false
+  },
+  {
+    "case": "wrong-release-id",
+    "exit_code": 1,
+    "pass": false,
+    "expected_refusal": "API release identity mismatch",
+    "matched": true,
+    "reader_compiled": false,
+    "core_extracted": false
+  },
+  {
+    "case": "wrong-publication-time",
+    "exit_code": 1,
+    "pass": false,
+    "expected_refusal": "API publication time mismatch",
+    "matched": true,
+    "reader_compiled": false,
+    "core_extracted": false
+  }
+]

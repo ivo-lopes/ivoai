@@ -1,0 +1,44 @@
+{
+  "status": "DOCS_ONLY_PUBLICATION_BLOCKED",
+  "base_head": "03492d1dbc5a640454c39f65172a44dad4c33feb",
+  "prior_ci_run": 40780164326,
+  "prior_ci_head": "03492d1dbc5a640454c39f65172a44dad4c33feb",
+  "prior_ci_passed_jobs": 16,
+  "followup_head_ci": "PENDING_NOT_INHERITED",
+  "docs_input_sha256": "023b8fb35a264d82a5d4696268cca4728a23eb2cb249cecaeeb219abd040d7e8",
+  "publication": "BLOCKED_FAILED_REAL_CANARY",
+  "canary_cause": "UNKNOWN",
+  "canary_summary_projection": "allowlisted no auth/config/prompt/raw-session/stderr",
+  "new_client_provider_auth_download_or_asset_execution": false,
+  "historical_backend_first_turns": 126,
+  "canary_added_to_historical_turns": false,
+  "preserved_prior_evidence_files": 589,
+  "private_wrapper_sources_unchanged": true,
+  "core_workflow_pins_dependencies_unchanged": true,
+  "own_checks": {
+    "production_docs_en_pt_build": "PASS",
+    "embedded_site_full_rebuild_check": "PASS",
+    "i18n": "PASS_51_CURRENT_44_VERSIONED",
+    "rendered_current_next_notices": 4,
+    "archive_materialization_tests": 35,
+    "embedded_docs_negative_fixtures": 4,
+    "affected_go_packages": 3,
+    "generated_cli_reference": "PASS"
+  },
+  "not_rerun": [
+    "full_go_suite",
+    "race",
+    "full_browser_a11y",
+    "crossbuilds",
+    "dependency_audit",
+    "real_canary",
+    "release_pipeline"
+  ],
+  "limits": [
+    "previous source03492CI16PASS is not assigned to follow-up",
+    "private v014 verifier positive/negative asset proofs remain their original epoch",
+    "v015 asset verification NOT_RUN",
+    "candidate/adaptive/Gateway/protected-creation default flags OFF",
+    "G1 unwired; Context BLOCKED175; global economics INCOMPLETE; docs LOW needs_review"
+  ]
+}

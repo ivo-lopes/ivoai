@@ -1,0 +1,16 @@
+{
+  "source": "520463c3f3d4501a727aa76967960b2f9ec82e49",
+  "source_freeze_sha256": "b404ddc5ed2db441886a32f8a583fa6ad5421b9b3288cb61ae5df3aaf9a8f4ec",
+  "max_runs": 1,
+  "command": [
+    "go",
+    "build",
+    "-trimpath",
+    "-ldflags",
+    "-s -w -X main.version=0.15.0",
+    "-o",
+    "/var/tmp/ivoai-v015-context-composition.iqA1ju1x/ivoai-0.15.0-linux-amd64v1",
+    "./cmd/ivoai"
+  ],
+  "started_utc": "2026-10-29T03:04:25.235918+00:00"
+}

@@ -1,0 +1,123 @@
+{
+  "epoch": "REAL_PUBLIC_ZERO_PROMPT_NORMAL_QUIT_55ec",
+  "overall": "PASS_SCOPED_ZERO_PROMPT_NORMAL_EXIT",
+  "source": "55ec7ab98683bf0c8784b93baebc966f2910772b",
+  "runner_sha256": "a375559af7e7209ab45d23809d280a39c874fab13bbf0fc50458b005783dfa43",
+  "recipe_sha256": "daa5e8cea6ba1fc10beb4929bdd3f760afd86cae9553bf21106f3fb2d13d504b",
+  "preparation_sha256": "e968e8c91dc973c03133e1eb27764f42143a1c65443f65d3152f82cb101d18d9",
+  "result": {
+    "result": "PASS_PUBLIC_ZERO_PROMPT_NORMAL_QUIT",
+    "failure_enum": "",
+    "source": "55ec7ab98683bf0c8784b93baebc966f2910772b",
+    "core_sha256": "5973758fb84bb2abe77ca39cbdd4f48d309ef7433d06b34fe5c646d55f54f6c7",
+    "codex_sha256": "628e35487d888a28f0427fc37501da529dd3d81fcbad7a2c3421c1e8670d92e1",
+    "duration_seconds": 2.147,
+    "declared_model": "gpt-6.1-sol",
+    "declared_effort": "low",
+    "model_prompt_submissions_by_driver": 0,
+    "LLM_execution_assertion": "NO_CORE_ATTEMPT_OR_TRACE_OBSERVED",
+    "quit_typed_once": true,
+    "Enter_sent_once": true,
+    "composer_ready": true,
+    "fresh_quit_menu_ready": true,
+    "root_actual_wait_exit": 0,
+    "session_state": "completed",
+    "session_exit_code": 0,
+    "frontend_state": "completed",
+    "frontend_exit_code": 0,
+    "Core_attempts": 0,
+    "workers": 0,
+    "tasks": 0,
+    "decisions": 0,
+    "DAG": false,
+    "provider_trace_present": false,
+    "checkpoint": false,
+    "failovers": 0,
+    "fixture_content_metadata_unchanged": true,
+    "driver_SIGINT_SIGTERM_sent": false,
+    "failure_only_pidfd_SIGKILL_cleanup": false,
+    "owned_SID_residue_count": 0,
+    "raw_terminal_status_backend_stderr_retained": false,
+    "manual_status_operations": 0,
+    "tokens": null,
+    "token_basis": "NOT_APPLICABLE_NO_LLM_PROMPT_ISSUED",
+    "native_model_retries": null,
+    "native_retry_basis": "NOT_APPLICABLE_NO_LLM_PROMPT_BY_DRIVER; startup readonly retries UNKNOWN",
+    "real_canary_history": "Original FAIL,turnPASS/postSIGINTfailed and lifecycleUNKNOWN preserved; this smoke would certify only zeroPrompt normal exit",
+    "TUI_parity_or_release_claim": false
+  },
+  "limits_config_pins_and_seed_manifest_unchanged": true,
+  "new_manual_status_or_model_prompts": 0,
+  "tokens": "NOT_APPLICABLE_NO_LLM_PROMPT_ISSUED; never assumed0",
+  "capture_policy": "Real PTY bounded RAM only; no raw transcript/status/backendstderr retained. Only allowlisted result/controlmetadata saved.",
+  "old_proofs_hashes_unchanged": {
+    "offline_normal_quit": {
+      "path": "/var/tmp/ivoai-native-normal-quit-offline-20261028/validation.json",
+      "sha256": "1cd891e60f2b97794117311ecf7962f3912ce3f8d61bd2141a0e722ef593d765"
+    },
+    "prior_real_turn_and_post_SIGINT_states": {
+      "path": "/var/tmp/ivoai-adaptive-supported-config-fixture-20261028-1/execution-summary.json",
+      "sha256": "44df9bbf2a7c1a27d06e684169c558fba22f6d5d022d4f16b3011c61ed5819e4"
+    }
+  },
+  "release_qualification": {
+    "scope_result": "PUBLIC_NORMAL_START_IDLE_QUIT_QUALIFIED_FOR_EXACT_INPUTS",
+    "source": "55ec7ab98683bf0c8784b93baebc966f2910772b",
+    "binary_sha256": "5973758fb84bb2abe77ca39cbdd4f48d309ef7433d06b34fe5c646d55f54f6c7",
+    "pin": "official0.162.1 reviewed pair",
+    "proved": "One actual public managed CLI startup with declaredgpt-6.1-sol/low, noLLMprompt/attempt, official/quit+Enter, actualCoreWait0, persisted Session/frontendcompleted0, fixtureunchanged and ownedSIDresidue0.",
+    "effect": "Resolve the concrete question whether this supported normal zero-prompt public exit can finish the session as completed0. Do not infer prior post-SIGINT persisted1 was actual native process exit1. No production state/API change needed solely for this distinction.",
+    "not_combined": [
+      "Earlier single real read-only question correctness PASS had intentionalSIGINT cleanup and persistedfailed1; it remains a separate immutable outcome.",
+      "A single real-model turn followed by normal/quit and completed0 in the same session has NOT been run.",
+      "Initial CoreMCP child-cleanup baseline remainsUNKNOWN."
+    ],
+    "publication": "PARTIAL_QUALIFICATION_ONLY; no automatic release approval. New CI56 TestNativeCloseStopsBackgroundDirectoryWriters/closed_writer failure is an independent unresolved quality gate, plus final combined-source CI/review still apply.",
+    "not_proved": [
+      "Global client/TUI parity",
+      "Global OpenCode removal",
+      "Economic savings orAB/BA equivalence",
+      "Provider/quotaconsumption0",
+      "All subprocesses exit0"
+    ],
+    "new_authorizations": "This one zero-prompt execution is consumed. No additional status/model/client execution authorized."
+  },
+  "files": {
+    "zero-prompt-result.json": {
+      "sha256": "8291154696c0674626048fe588c96a4fb87325cb8f1dd9b9cde13012917082a0",
+      "bytes": 1579
+    },
+    "execution-authorization.json": {
+      "sha256": "f1cd6afad6f8243c7a60e4335e42b6cdc153565c6aec681bc2c73e8d2c5be4ba",
+      "bytes": 549
+    },
+    "run-intent.json": {
+      "sha256": "88f7b435151c99b7d3e624c9db1924afb33a680a03591cc15fff559d5018ed5c",
+      "bytes": 289
+    },
+    "driver-outcome.jsonl": {
+      "sha256": "c863a7a16fe3cc80ced2a441b8906bfb51b9129b6f04d1ca635b20added4c13c",
+      "bytes": 1499
+    },
+    "driver-error.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "driver-exit.txt": {
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "bytes": 2
+    },
+    "fixture-manifest.json": {
+      "sha256": "402728464e8fd673c77794cbc7ac491921d42df42b6da7aead94d28f00be8e2b",
+      "bytes": 518
+    },
+    "seed-manifest.json": {
+      "sha256": "dfe71125b8901e144231f7321a213cba1db53db4b0d18cffafce3ab9814e3c26",
+      "bytes": 299
+    },
+    "release-qualification.json": {
+      "sha256": "c5a71158fa860e5890fa547e7321ff334026fe8ea07990a91d7cbaa61dbfc19a",
+      "bytes": 1685
+    }
+  }
+}

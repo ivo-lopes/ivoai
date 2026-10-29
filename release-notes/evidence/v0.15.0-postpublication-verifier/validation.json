@@ -1,0 +1,103 @@
+{
+  "status": "PRIVATE_READY_FOR_REVIEW_NOT_PUBLICATION",
+  "target_version": "v0.15.0",
+  "target_assets": "NOT_RUN_NOT_AVAILABLE_TO_THIS_TASK",
+  "network_calls": false,
+  "downloaded_code_executed": false,
+  "frozen_pr57_modified": false,
+  "v014_archived_sources_modified": false,
+  "workflow_changed": false,
+  "immutable_archive_source_commit": "03492d1dbc5a640454c39f65172a44dad4c33feb",
+  "original_source_manifest": "release-notes/evidence/v0.14.0-publication/verifier/source-manifest.sha256",
+  "immutable_baseline_sha256": "15c166f204ddaaf776a0b5a891dcb5fba06fc37bd82e9a39d81bd30e49763976",
+  "immutable_helper_sha256": "ed9718c5e503d11c70ebbc25fe887ce7ae5abf578faadbe450e334d0503e0eb1",
+  "wrapper_sha256": "e0a9dbbe495937c2f3851ffd8f9b7191df86a82c06965fc9cf6b0f22b9f58c36",
+  "tests": {
+    "immutable_baseline": 26,
+    "new_wrapper": 9,
+    "total": 35,
+    "status": "PASS"
+  },
+  "real_local_positive_control": {
+    "tag": "v0.14.0",
+    "source": "6d99e320912f3f7325c3009209a10e9df86610d4",
+    "release_id": 427082748,
+    "published_at": "2026-10-28T19:10:11Z",
+    "assets": 12,
+    "payload_checksums": 11,
+    "api_digests": 12,
+    "status": "PASS"
+  },
+  "negative_controls": [
+    {
+      "case": "wrong-version",
+      "exit_code": 1,
+      "pass": false,
+      "expected_refusal": "API tag/publication mismatch",
+      "matched": true,
+      "reader_compiled": false,
+      "core_extracted": false
+    },
+    {
+      "case": "wrong-commit",
+      "exit_code": 1,
+      "pass": false,
+      "expected_refusal": "source checkout differs",
+      "matched": true,
+      "reader_compiled": false,
+      "core_extracted": false
+    },
+    {
+      "case": "wrong-digest",
+      "exit_code": 1,
+      "pass": false,
+      "expected_refusal": "API asset digest mismatch",
+      "matched": true,
+      "reader_compiled": false,
+      "core_extracted": false
+    },
+    {
+      "case": "oversize-api",
+      "exit_code": 1,
+      "pass": false,
+      "expected_refusal": "invalid asset size",
+      "matched": true,
+      "reader_compiled": false,
+      "core_extracted": false
+    },
+    {
+      "case": "wrong-release-id",
+      "exit_code": 1,
+      "pass": false,
+      "expected_refusal": "API release identity mismatch",
+      "matched": true,
+      "reader_compiled": false,
+      "core_extracted": false
+    },
+    {
+      "case": "wrong-publication-time",
+      "exit_code": 1,
+      "pass": false,
+      "expected_refusal": "API publication time mismatch",
+      "matched": true,
+      "reader_compiled": false,
+      "core_extracted": false
+    }
+  ],
+  "limits": "all unchanged, inherited immutable main/run/helper: total compressed 2GiB; Core/OpenCode/Graft compressed128/256/512MiB; Core extracted256MiB; API2MiB; metadata/checksum64KiB; ZIP512KiB/2entries/4096byte directory; gzip bounded reads1MiB; readerCPU20s/AS4GiB/output2MiB/wall30s; compilerCPU120s/AS4GiB/output64MiB/wall120s; overallwall300s/PythonAS1GiB",
+  "differences": [
+    "TAG provided explicitly and used by existing main-module/API/embedded-release URL checks",
+    "saved API metadata now mandatory for runner",
+    "explicit expected positive release ID and canonical publication time; prerelease must be false",
+    "wrapper and baseline identities recorded; no changes to archive/metadata/source readers or safety limits"
+  ],
+  "original_adverse_pax_fixture_retained": true,
+  "assets_hashes_before_after_equal": true,
+  "limitations": [
+    "actual v0.15 tag, source, ID, publication time and assets not yet verified",
+    "future source/metadata/component pin differences fail closed and require review",
+    "Go metadata and embedded-byte association are not runtime pointer binding, reproducible build or independent source attestation",
+    "no Core/native-client/provider/runtime/ARM/no-AVX execution",
+    "absent API digests stay UNKNOWN, preserving baseline semantics"
+  ]
+}
