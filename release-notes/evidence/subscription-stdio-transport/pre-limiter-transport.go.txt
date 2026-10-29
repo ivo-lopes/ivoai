@@ -1,0 +1,470 @@
+//go:build linux
+
+package app
+
+// Private benchmark transport only; no production/live-cohort caller.
+
+import (
+	"bufio"
+	"bytes"
+	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
+	"errors"
+	"io"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"reflect"
+	"strconv"
+	"strings"
+	"sync"
+	"syscall"
+	"time"
+
+	"golang.org/x/sys/unix"
+)
+
+const (
+	prefetchSubscriptionApprovedMain      = "628e35487d888a28f0427fc37501da529dd3d81fcbad7a2c3421c1e8670d92e1"
+	prefetchSubscriptionApprovedCompanion = "ec71830690a7c0024916ee0c99fbdc635bc6e747ff665ea4f03a8389bbcb6b30"
+	prefetchSubscriptionMaxNotifications  = 16
+	prefetchSubscriptionNotificationBytes = 64 << 10
+	prefetchSubscriptionEOFGrace          = 100 * time.Millisecond
+	prefetchSubscriptionTERMGrace         = 300 * time.Millisecond
+	prefetchSubscriptionReapBound         = time.Second
+)
+
+type prefetchSubscriptionExecutablePin struct{ main, companion, mainSHA, companionSHA string }
+
+func (prefetchSubscriptionExecutablePin) String() string   { return "subscription-executable-pin" }
+func (prefetchSubscriptionExecutablePin) GoString() string { return "subscription-executable-pin" }
+
+// Merely constructing this closure does not read files or execute the client.
+// The official pair cannot be selected by a model/config field. Fixture tests
+// call the private pin constructor with hashes of their own compiled fake.
+func prefetchSubscriptionOfficialStdio(plan prefetchSubscriptionPlan) prefetchSubscriptionOpen {
+	return prefetchSubscriptionPinnedStdio(plan, prefetchSubscriptionExecutablePin{
+		main: plan.scope.executable, companion: filepath.Join(filepath.Dir(plan.scope.executable), "codex-code-mode-host"), mainSHA: prefetchSubscriptionApprovedMain, companionSHA: prefetchSubscriptionApprovedCompanion,
+	})
+}
+
+func prefetchSubscriptionFileMatches(path, digest string) bool {
+	if !filepath.IsAbs(path) || len(digest) != 64 {
+		return false
+	}
+	expected, e := hex.DecodeString(digest)
+	if e != nil || len(expected) != sha256.Size {
+		return false
+	}
+	f, e := os.OpenFile(path, os.O_RDONLY|syscall.O_NOFOLLOW, 0)
+	if e != nil {
+		return false
+	}
+	defer f.Close()
+	stat, e := f.Stat()
+	if e != nil || !stat.Mode().IsRegular() || stat.Size() > 512<<20 {
+		return false
+	}
+	h := sha256.New()
+	n, e := io.Copy(h, io.LimitReader(f, (512<<20)+1))
+	return e == nil && n <= 512<<20 && bytes.Equal(h.Sum(nil), expected)
+}
+
+func prefetchSubscriptionPinnedStdio(plan prefetchSubscriptionPlan, pin prefetchSubscriptionExecutablePin) prefetchSubscriptionOpen {
+	plan.scope.environment = append([]string{}, plan.scope.environment...)
+	plan.scope.globals = append([]string{}, plan.scope.globals...)
+	validPlan := false
+	if len(plan.scope.globals) >= 6 {
+		base := plan.scope
+		base.globals = append([]string{}, base.globals[:len(base.globals)-6]...)
+		checked, err := prefetchPrepareSubscription(base, prefetchSubscriptionHostPolicy{PermitFilteredEnvironment: true})
+		validPlan = err == nil && reflect.DeepEqual(checked.scope, plan.scope)
+	}
+	return func(ctx context.Context, incoming *exec.Cmd) (prefetchSubscriptionSession, error) {
+		if !validPlan || ctx == nil || ctx.Err() != nil || incoming == nil {
+			return nil, prefetchSubscriptionTransportUnavailable
+		}
+		expected := plan.probeCommand(ctx)
+		if incoming.Path != pin.main || incoming.Path != expected.Path || incoming.Dir != expected.Dir || !reflect.DeepEqual(incoming.Args, expected.Args) || !reflect.DeepEqual(incoming.Env, expected.Env) || incoming.Stdin != nil || incoming.Stdout != nil || incoming.Stderr != nil {
+			return nil, prefetchSubscriptionScopeDenied
+		}
+		if !prefetchSubscriptionFileMatches(pin.main, pin.mainSHA) || !prefetchSubscriptionFileMatches(pin.companion, pin.companionSHA) {
+			return nil, prefetchSubscriptionTransportUnavailable
+		}
+		if ctx.Err() != nil {
+			return nil, prefetchSubscriptionCanceled
+		}
+		// Deliberately use exec.Command: CommandContext's immediate child kill
+		// would race the owned EOF/TERM/KILL cleanup ordering below.
+		cmd := exec.Command(incoming.Path, incoming.Args[1:]...)
+		cmd.Args = append([]string{}, incoming.Args...)
+		cmd.Dir = incoming.Dir
+		cmd.Env = append([]string{}, incoming.Env...)
+		cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+		cmd.Stderr = io.Discard
+		cmd.WaitDelay = prefetchSubscriptionReapBound
+		inR, inW, e := os.Pipe()
+		if e != nil {
+			return nil, prefetchSubscriptionTransportUnavailable
+		}
+		outR, outW, e := os.Pipe()
+		if e != nil {
+			_ = inR.Close()
+			_ = inW.Close()
+			return nil, prefetchSubscriptionTransportUnavailable
+		}
+		cmd.Stdin, cmd.Stdout = inR, outW
+		if cmd.Start() != nil {
+			_ = inR.Close()
+			_ = inW.Close()
+			_ = outR.Close()
+			_ = outW.Close()
+			return nil, prefetchSubscriptionTransportUnavailable
+		}
+		_ = inR.Close()
+		_ = outW.Close()
+		s := &prefetchSubscriptionStdioSession{command: cmd, input: inW, output: outR, reader: bufio.NewReaderSize(outR, 4096), closed: make(chan struct{}), pidfd: -1}
+		if fd, pidErr := unix.PidfdOpen(cmd.Process.Pid, 0); pidErr == nil {
+			s.pidfd = fd
+		}
+		// The child remains unreaped until Close, so its identity cannot be
+		// reused before our last group signal. Verify the actual running ELF.
+		if !prefetchSubscriptionRunningMatches(cmd.Process.Pid, pin.mainSHA) {
+			_ = s.Close()
+			return nil, prefetchSubscriptionTransportUnavailable
+		}
+		go func() {
+			select {
+			case <-ctx.Done():
+				_ = s.Close()
+			case <-s.closed:
+			}
+		}()
+		return s, nil
+	}
+}
+
+func prefetchSubscriptionPID(pid int) string { return strconv.Itoa(pid) }
+
+func prefetchSubscriptionRunningMatches(pid int, digest string) bool {
+	f, e := os.Open("/proc/" + prefetchSubscriptionPID(pid) + "/exe")
+	if e != nil {
+		return false
+	}
+	defer f.Close()
+	h := sha256.New()
+	n, e := io.Copy(h, io.LimitReader(f, (512<<20)+1))
+	return e == nil && n <= 512<<20 && hex.EncodeToString(h.Sum(nil)) == digest
+}
+
+type prefetchSubscriptionStdioSession struct {
+	command                                 *exec.Cmd
+	input, output                           *os.File
+	reader                                  *bufio.Reader
+	callMu                                  sync.Mutex
+	closeOnce                               sync.Once
+	closed                                  chan struct{}
+	closeErr                                error
+	pidfd                                   int
+	next                                    int
+	notified                                bool
+	failed                                  bool
+	total, notifications, notificationBytes int
+	reaped, termRequested, killRequested    bool // host-only lifecycle assertions
+}
+
+func (*prefetchSubscriptionStdioSession) String() string   { return "subscription-stdio-session" }
+func (*prefetchSubscriptionStdioSession) GoString() string { return "subscription-stdio-session" }
+
+func (s *prefetchSubscriptionStdioSession) Call(ctx context.Context, r prefetchSubscriptionRequest) (io.ReadCloser, error) {
+	if ctx == nil || ctx.Err() != nil {
+		_ = s.Close()
+		return nil, prefetchSubscriptionCanceled
+	}
+	s.callMu.Lock()
+	defer s.callMu.Unlock()
+	if ctx.Err() != nil {
+		_ = s.Close()
+		return nil, prefetchSubscriptionCanceled
+	}
+	if s.failed {
+		return nil, prefetchSubscriptionRPCError
+	}
+	select {
+	case <-s.closed:
+		return nil, prefetchSubscriptionRPCError
+	default:
+	}
+	success := false
+	defer func() {
+		if !success {
+			s.failed = true
+			_ = s.Close()
+		}
+	}()
+	expectedMethods := []string{"initialize", "config/read", "configRequirements/read", "account/read"}
+	if s.next >= len(expectedMethods) || r.ID != s.next+1 || r.Method != expectedMethods[s.next] || s.next > 0 && !s.notified {
+		return nil, prefetchSubscriptionRPCInvalid
+	}
+	// Enforce the prepared request data as well as the method whitelist.
+	valid := false
+	switch r.ID {
+	case 1:
+		valid = reflect.DeepEqual(r.Params, map[string]any{"clientInfo": map[string]any{"name": "ivoai-benchmark-route-probe", "version": "1"}, "capabilities": map[string]any{"experimentalApi": true}})
+	case 2:
+		valid = reflect.DeepEqual(r.Params, map[string]any{"includeLayers": false, "cwd": s.command.Dir})
+	case 3:
+		valid = len(r.Params) == 0
+	case 4:
+		valid = reflect.DeepEqual(r.Params, map[string]any{"refreshToken": false})
+	}
+	if !valid {
+		return nil, prefetchSubscriptionRPCInvalid
+	}
+	result := make(chan prefetchSubscriptionFrameResult, 1)
+	go func() { result <- s.exchange(r) }()
+	select {
+	case value := <-result:
+		if value.err != nil {
+			return nil, value.err
+		}
+		s.next++
+		success = true
+		return &prefetchSubscriptionMemoryFrame{body: value.body, Reader: bytes.NewReader(value.body)}, nil
+	case <-ctx.Done():
+		_ = s.Close()
+		value := <-result
+		clear(value.body)
+		return nil, prefetchSubscriptionCanceled
+	case <-s.closed:
+		value := <-result
+		clear(value.body)
+		return nil, prefetchSubscriptionRPCError
+	}
+}
+
+type prefetchSubscriptionMemoryFrame struct {
+	body []byte
+	*bytes.Reader
+}
+
+func (f *prefetchSubscriptionMemoryFrame) Close() error {
+	clear(f.body)
+	f.body = nil
+	f.Reader = bytes.NewReader(nil)
+	return nil
+}
+
+type prefetchSubscriptionFrameResult struct {
+	body []byte
+	err  error
+}
+
+func (s *prefetchSubscriptionStdioSession) Notify(ctx context.Context, method string) error {
+	if ctx == nil || ctx.Err() != nil {
+		_ = s.Close()
+		return prefetchSubscriptionCanceled
+	}
+	s.callMu.Lock()
+	defer s.callMu.Unlock()
+	if s.failed {
+		return prefetchSubscriptionRPCError
+	}
+	select {
+	case <-s.closed:
+		return prefetchSubscriptionRPCError
+	default:
+	}
+	success := false
+	defer func() {
+		if !success {
+			s.failed = true
+			_ = s.Close()
+		}
+	}()
+	if method != "initialized" || s.next != 1 || s.notified {
+		return prefetchSubscriptionRPCInvalid
+	}
+	done := make(chan error, 1)
+	go func() { _, e := s.input.Write([]byte("{\"method\":\"initialized\",\"params\":{}}\n")); done <- e }()
+	select {
+	case e := <-done:
+		if e != nil {
+			return prefetchSubscriptionRPCError
+		}
+		s.notified = true
+		success = true
+		return nil
+	case <-ctx.Done():
+		_ = s.Close()
+		<-done
+		return prefetchSubscriptionCanceled
+	case <-s.closed:
+		<-done
+		return prefetchSubscriptionRPCError
+	}
+}
+
+func (s *prefetchSubscriptionStdioSession) exchange(r prefetchSubscriptionRequest) prefetchSubscriptionFrameResult {
+	body, e := json.Marshal(map[string]any{"id": r.ID, "method": r.Method, "params": r.Params})
+	if e != nil {
+		return prefetchSubscriptionFrameResult{err: prefetchSubscriptionRPCInvalid}
+	}
+	body = append(body, '\n')
+	_, e = s.input.Write(body)
+	clear(body)
+	if e != nil {
+		return prefetchSubscriptionFrameResult{err: prefetchSubscriptionRPCError}
+	}
+	for {
+		frame, e := s.frame()
+		if e != nil {
+			return prefetchSubscriptionFrameResult{err: e}
+		}
+		decoder := json.NewDecoder(bytes.NewReader(frame))
+		decoder.UseNumber()
+		nodes := 0
+		value, e := prefetchSubscriptionValue(decoder, 0, &nodes)
+		if e != nil {
+			clear(frame)
+			return prefetchSubscriptionFrameResult{err: e}
+		}
+		if _, e = decoder.Token(); e != io.EOF {
+			clear(frame)
+			return prefetchSubscriptionFrameResult{err: prefetchSubscriptionRPCInvalid}
+		}
+		obj, ok := value.(map[string]any)
+		if !ok {
+			clear(frame)
+			return prefetchSubscriptionFrameResult{err: prefetchSubscriptionRPCInvalid}
+		}
+		if version, present := obj["jsonrpc"]; present && version != "2.0" {
+			clear(frame)
+			return prefetchSubscriptionFrameResult{err: prefetchSubscriptionRPCInvalid}
+		}
+		if _, id := obj["id"]; !id {
+			method, ok := obj["method"].(string)
+			_, hasResult := obj["result"]
+			_, hasError := obj["error"]
+			if !ok || method == "" || hasResult || hasError {
+				s.erase(frame)
+				return prefetchSubscriptionFrameResult{err: prefetchSubscriptionRPCInvalid}
+			}
+			s.notifications++
+			s.notificationBytes += len(frame)
+			clear(frame)
+			if s.notifications > prefetchSubscriptionMaxNotifications || s.notificationBytes > prefetchSubscriptionNotificationBytes {
+				return prefetchSubscriptionFrameResult{err: prefetchSubscriptionResponseBounds}
+			}
+			continue
+		}
+		// The common strict RPC parser checks IDs/errors/shape too. Run it now
+		// so a response cannot advance protocol state before validation.
+		if _, e = prefetchSubscriptionRPC(context.Background(), bytes.NewReader(frame), r.ID); e != nil {
+			clear(frame)
+			return prefetchSubscriptionFrameResult{err: e}
+		}
+		return prefetchSubscriptionFrameResult{body: frame}
+	}
+}
+func (*prefetchSubscriptionStdioSession) erase(b []byte) { clear(b) }
+
+func (s *prefetchSubscriptionStdioSession) frame() ([]byte, error) {
+	var out []byte
+	for {
+		part, e := s.reader.ReadSlice('\n')
+		s.total += len(part)
+		if s.total > prefetchSubscriptionMaxBytes || len(out)+len(part) > prefetchSubscriptionMaxBytes {
+			clear(out)
+			return nil, prefetchSubscriptionResponseBounds
+		}
+		out = append(out, part...)
+		if e == nil {
+			return out, nil
+		}
+		if e != bufio.ErrBufferFull {
+			clear(out)
+			return nil, prefetchSubscriptionRPCInvalid
+		}
+	}
+}
+
+func (s *prefetchSubscriptionStdioSession) leaderExited() bool {
+	if s.pidfd >= 0 {
+		fds := []unix.PollFd{{Fd: int32(s.pidfd), Events: unix.POLLIN}}
+		n, e := unix.Poll(fds, 0)
+		return e == nil && n > 0 && fds[0].Revents&unix.POLLIN != 0
+	}
+	// Fallback inspects only our unreaped child; no global process search.
+	body, e := os.ReadFile("/proc/" + prefetchSubscriptionPID(s.command.Process.Pid) + "/stat")
+	if e != nil || len(body) > 16384 {
+		return false
+	}
+	i := bytes.LastIndexByte(body, ')')
+	if i < 0 {
+		return false
+	}
+	fields := strings.Fields(string(body[i+1:]))
+	return len(fields) >= 20 && (fields[0] == "Z" || fields[0] == "X")
+}
+func (s *prefetchSubscriptionStdioSession) waitExit(bound time.Duration) bool {
+	timer := time.NewTimer(bound)
+	defer timer.Stop()
+	tick := time.NewTicker(5 * time.Millisecond)
+	defer tick.Stop()
+	for {
+		if s.leaderExited() {
+			return true
+		}
+		select {
+		case <-timer.C:
+			return s.leaderExited()
+		case <-tick.C:
+		}
+	}
+}
+func (s *prefetchSubscriptionStdioSession) Close() error {
+	s.closeOnce.Do(func() {
+		defer close(s.closed)
+		_ = s.input.Close()
+		_ = s.output.Close()
+		if !s.waitExit(prefetchSubscriptionEOFGrace) {
+			s.termRequested = true
+			if e := syscall.Kill(-s.command.Process.Pid, syscall.SIGTERM); e != nil && !errors.Is(e, syscall.ESRCH) {
+				s.closeErr = prefetchSubscriptionCleanupFailed
+			}
+			_ = s.waitExit(prefetchSubscriptionTERMGrace)
+		}
+		// Signal all remaining members before reaping the leader: its PID/PGID
+		// is still reserved, including when it is already a zombie.
+		s.killRequested = true
+		if e := syscall.Kill(-s.command.Process.Pid, syscall.SIGKILL); e != nil && !errors.Is(e, syscall.ESRCH) {
+			s.closeErr = prefetchSubscriptionCleanupFailed
+		}
+		done := make(chan error, 1)
+		go func() { done <- s.command.Wait() }()
+		select {
+		case e := <-done:
+			s.reaped = s.command.ProcessState != nil
+			if e != nil {
+				var exit *exec.ExitError
+				if !errors.As(e, &exit) {
+					s.closeErr = prefetchSubscriptionCleanupFailed
+				} else {
+					status, ok := exit.Sys().(syscall.WaitStatus)
+					if !ok || !status.Signaled() || status.Signal() != syscall.SIGKILL && (!s.termRequested || status.Signal() != syscall.SIGTERM) {
+						s.closeErr = prefetchSubscriptionCleanupFailed
+					}
+				}
+			}
+		case <-time.After(prefetchSubscriptionReapBound):
+			s.closeErr = prefetchSubscriptionCleanupFailed
+		}
+		if s.pidfd >= 0 {
+			_ = unix.Close(s.pidfd)
+		}
+	})
+	return s.closeErr
+}

@@ -1,0 +1,14 @@
+{
+  "base": "b495e7499514acbb43aaa770735a5f5b335e482b",
+  "baseline_base": "378d9075c500a41163a7d496815070600ff4ce9b",
+  "files": {
+    "internal/app/primary_prefetch_subscription_stdio_linux_test.go": "0870402cf5d1aef6e001b443aed5918c74622ec0b8e611734da7e634bd069678",
+    "internal/app/primary_prefetch_subscription_stdio_contract_linux_test.go": "857d4ec6ca44e027f496b68f26eaab4795b1816be89f74cef64954c9cd29c5cb",
+    "internal/app/primary_prefetch_subscription_offline_linux_test.go": "a2acf6ee2a1801b368f9767b5ab0d8a3e61ebc77ea18bfb00cca109651df100f",
+    "internal/app/testdata/subscription_stdio_fixture.go.txt": "621d329230cb744c3c38f4dfc8b53e19acb22fd7638df17bb2e683618267107b",
+    "release-notes/evidence/subscription-stdio-transport/run_offline_once.py": "73683c1efc8127073a202fbe6fe9b33f5579fa558239fd4f4b3d313d0c68b1b3"
+  },
+  "official_client_calls": 0,
+  "optin_official_test": "PREPARED_NOT_EXECUTED",
+  "selected_source_only_regex": "^TestPrimaryPrefetchSubscription"
+}

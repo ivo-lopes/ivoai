@@ -1,0 +1,13 @@
+{
+  "files": {
+    "internal/app/primary_prefetch_subscription_stdio_linux_test.go": "cb58907eb52b864a674a562a38fb2e0e9b5b4df4fbc2a9a0ebd816826994447c",
+    "internal/app/primary_prefetch_subscription_stdio_contract_linux_test.go": "38c42c0fe919ee14e9751581eb11668bf1a0c1153b8fd725dab586b7faab18a4",
+    "internal/app/primary_prefetch_subscription_offline_linux_test.go": "17b7c74f28d56ca392cf11698bc15f06b5df1849b779a9c1917281e831003483",
+    "internal/app/testdata/subscription_stdio_fixture.go.txt": "2dc2c16591e2d300e529b368021efc0544acea6e7c55aae046b32882aa7d778a",
+    "release-notes/evidence/subscription-stdio-transport/run_offline_once.py": "7a73cb4304829b564bc3a01750a360879ab3552ba37388c3c59d10e5f1402a27",
+    "release-notes/evidence/subscription-stdio-transport/RECIPE.md": "d7f2fc7576e422229f2b6cfb458f450f79874a2c55cf4d43d0b9eb0fed3a3b36"
+  },
+  "go_check_epoch": "source-freeze-v3.json",
+  "recipe_status": "PREPARED_NOT_EXECUTED",
+  "official_client_executions": 0
+}

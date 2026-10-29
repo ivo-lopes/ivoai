@@ -1,0 +1,10 @@
+{
+  "initial_fake_only_nominal_before_additional_bounds_and_optin_preparation": {
+    "exit": 0,
+    "package_seconds": 1.584,
+    "provenance": "tool-observed output; stdout not captured to a file"
+  },
+  "source_never_edited_while_check_running": true,
+  "historical_b495_unchanged": true,
+  "official_client_calls": 0
+}
