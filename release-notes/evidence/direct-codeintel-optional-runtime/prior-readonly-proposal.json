@@ -1,0 +1,63 @@
+{
+  "status": "READ_ONLY_AUDIT_IMPLEMENTATION_NOT_AUTHORIZED_YET",
+  "source": "d6111e50b607de2bec950fbb4185609699ccab3c",
+  "scope": "INTEL IVOAI-190/198/191 functional availability; no economic acceptance",
+  "current_findings": [
+    {
+      "source": "internal/app/code_intelligence.go:43-81",
+      "finding": "Common scope/inventory/read-policy admission is already independent; every successful factory return nevertheless requires managed Graft identity and Node."
+    },
+    {
+      "source": "internal/codeintel/routing.go:69-98,107-155",
+      "finding": "Direct exact Go AST, small-file and literal routes exist, but cached structural preference and the structural candidate currently presume availability."
+    },
+    {
+      "source": "internal/codeintel/provider.go:74-170",
+      "finding": "Query currently creates/locks/invalidates cache and snapshots before runProcess refuses missing runtime paths. A factory-only early return is insufficient."
+    },
+    {
+      "source": "internal/codeintel/mcp.go:77-98",
+      "finding": "code_inspect/graft_find_code/graft_file_api use Inspect; grouped literal/call graph/map/check aliases use Query. The error response is already bounded and avoids claiming inferred structural evidence."
+    }
+  ],
+  "recommended_minimal_design": [
+    "Retain public App factory/Core/MCP signatures, schemas and exact grants. Add only an internal, host-created immutable Direct-only restriction in codeintel.Provider via a small internal-package constructor/helper; do not infer permission from missing runtime fields, model input or prompt.",
+    "Keep Identity, Inventory and filesystem policy admission, state parsing failures and source bounds. Produce Direct-only only for a narrowly proven optional-absence condition; clear Node/Distribution/Executable and retain normal scoped CacheRoot/Allowed. No auto-install, index build, configuration write or external executable.",
+    "Conservative absence rule for the first increment: missing/zero-value uninstalled component plus no active supply-chain object, or genuinely ENOENT managed Node after the existing Graft identity validation. An installed/managed record with missing active artifact, malformed state, unknown version, unexpected path/revision, unsafe directory/symlink, unreadable metadata or failed payload integrity remains the existing error, not a silent fallback. External/unmanaged installs are never adopted; ambiguous state stays unavailable pending an explicit contract.",
+    "Direct-only Query returns a typed bounded structural-unavailable error after normal policy/scope/query validation but before cache mutation, queue/index/result reuse or execution. The existing deferred observation must not mark an unattempted Graft process as attempted.",
+    "Direct-only Inspect skips the warm structural-result preference and marks the structural routing candidate unavailable. Preserve exact grep/small-file/unique valid Go declaration paths; missing/ambiguous declarations, malformed/mixed-language identity, large-file skeleton and relational operations refuse when no permitted exact Direct answer exists.",
+    "Preserve the full valid-managed-runtime path and its current supply-chain checks. Do not alter structural policy or reclassify literal matches as caller/dependency evidence.",
+    "Keep MCP names/contracts stable: direct-capable aliases may succeed through Inspect; structural aliases keep the existing bounded IsError. Existing tool projection and per-turn authorization remain outside and authoritative. Availability does not grant capabilities.",
+    "Keep exact ArtifactStore/Gateway provenance, owner and generation checks. Clear runtime paths for Direct-only so its existing Gateway query namespace differs from validated Graft; test that an old structural cache cannot satisfy a Direct-only structural request. Primary/worker admission and post-read refresh are unchanged."
+  ],
+  "meaningful_tests": [
+    "Public App factory on a real disposable Git fixture with no Graft/Node returns authorized Direct-only; direct API, literal and exact Go declaration retain exact bytes and ProviderVersion=direct, with zero executable tripwire calls.",
+    "Structural/malformed/ambiguous/large-file requests fail before structural cache or index/result mutation and before any runner call, including a previously populated structural result cache.",
+    "A cost history that favors Graft cannot route a Direct-only literal query to it. A warm structural cache cannot defeat exact Direct availability.",
+    "Existing TestNativeCodeProviderRequiresExpectedVerifiedArtifact wrong-revision and tampered-payload refusals remain strict; add explicit absent-versus-corrupt/missing-managed-object/unsafe-Node cases rather than weakening its assertions.",
+    "Exercise actual public factory through primary admitted evidence and MCP direct-capable alias, plus worker allowed/denied exact grants; recover exact owner-bound bytes, reject unauthorized owner/scope/task and preserve no source-to-instruction escalation.",
+    "Retain verified structural control using existing synthetic testProvider without installing/launching Graft, plus MCP structural IsError/no inference assertions. Focused App/CodeIntel race and vet; Linux amd64/v1 and ARM64 compilation. A final broader CI belongs to its exact frozen head, not an inherited receipt."
+  ],
+  "compatibility_and_license": [
+    "No new package/module/database/framework/orchestrator or external license: Direct is existing repository code using Go standard parser and existing MIT repository license. Do not change Graft notices/license or distribution pins.",
+    "No feature flag appears necessary for the built-in already-authorized read capability; the change widens functional availability, not grants. Existing Gateway/protected creation flags remain independent and unchanged.",
+    "Native MCP endpoint can now appear in repositories with supported sources even without optional Graft; ensure it is freshly host-projected after the persisted endpoint was removed, never adopted from configuration. Structural names may be listed but must return explicit unavailable rather than execute.",
+    "Rollback is a cohesive code/test revert; no schema/data migration, cache deletion, credential or personal configuration changes. No performance/token benefit is asserted."
+  ],
+  "preserved_activation_gate_proposal": {
+    "scenario": "existing api / go-core; identical catalog Task/Prompt/Expected both arms",
+    "source": "internal/app/primary_prefetch_live_test.go:1021-1061; internal/app/evidence_gateway_control_test.go:186-249; scripts/benchmark-economic-runtime.py:471-506",
+    "change_proposed_not_implemented": "Reuse existing offline Direct/Gateway controls and exact-envelope assertions; produce a bounded per-scenario source/fixture/harness-bound receipt; an opt-in predeclared activation gate must pass before any signed turn and recheck actual pre-client row evidence.",
+    "OFF_expected": "one direct code.inspect; zero Gateway",
+    "ON_expected": "one direct code.inspect; one Gateway resolve/MISS; zero HIT/unknown; equal exact source text and fidelity; owner-bound recovery",
+    "limits": "A second warm read is a separate offline mechanism control, never LLM prewarming. NONE/PRIMARY compares prefetch already present; Gateway OFF/ON cold same-data may add overhead and predicts no token saving. Keep unactivated scenarios as controls, all16 catalog cases and historical126 rows; no selective exclusion or reclassification. PR64 route guard remains test-only/unwired and is a separate real-cohort blocker."
+  },
+  "executions_in_this_audit": {
+    "tests": 0,
+    "official_clients": 0,
+    "auth_status_models": 0,
+    "services_ingestion": 0,
+    "network_download_install_index": 0
+  },
+  "repository_mutations": 0
+}

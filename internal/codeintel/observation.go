@@ -24,6 +24,10 @@ func Observation(r core.CodeResult, err error) observability.Event {
 		state = observability.StateUnavailable
 		reason = observability.ReasonCapabilityMatch
 	}
+	if errors.Is(err, ErrStructuralUnavailable) {
+		provider = ""
+		state = observability.StateUnavailable
+	}
 	e := observability.Event{Category: observability.CategoryCapability, Operation: observability.OperationCodeInspect, State: state, Component: core.ComponentID("code_intelligence"), Provider: provider, RoutingReason: reason, DurationMilliseconds: r.DurationMS, BytesAfter: int64(len(r.Text)), Truncated: r.Truncated, FidelityClass: "exact_required", TokenBasis: "unavailable", PeakMemoryBytes: r.PeakMemoryBytes, CPUMilliseconds: r.CPUMS}
 	switch r.Operation {
 	case "ask", "skeleton", "callers", "grep", "map", "blast", "check", "viz", "build":

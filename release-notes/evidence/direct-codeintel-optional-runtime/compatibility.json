@@ -1,0 +1,25 @@
+{
+  "source": "0939edaca25d6ad6de801c8f0040bce0eab72da6",
+  "unchanged_existing_integrity_assertions": "PASS byte-identical original assertion tail",
+  "unchanged_paths": [
+    "go.mod",
+    "go.sum",
+    "manifest",
+    "scripts",
+    "docs",
+    "website",
+    "internal/docsserver/site",
+    "internal/core",
+    "internal/policy",
+    "internal/skillgate",
+    "internal/workingcontext",
+    "internal/evidence"
+  ],
+  "binary_sha256": {
+    "amd64v1": "fad6a4164a95408b2725d61789bb338e163b64a47ccb6918f238d98a0bc73b3f",
+    "arm64": "418779621ee9cbab460d0884089033949e7f30d7ce523fe8bd257e234f55bf93"
+  },
+  "build_metadata": "CGO0 linux amd64v1/arm64 source0939 clean",
+  "target_runtime_execution": "NOT_RUN",
+  "Go_toolchain_sha256": "5f5eb6d0b2fb6aa0bb5d5f8c5f1c944e0de955c925f0111af92a9d8f79680b5b"
+}

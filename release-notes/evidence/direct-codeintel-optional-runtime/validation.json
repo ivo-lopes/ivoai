@@ -1,0 +1,134 @@
+{
+  "source": "0939edaca25d6ad6de801c8f0040bce0eab72da6",
+  "base": "26394c57e9b3284b8b937b68d6580d1982850e9a",
+  "tree": "d35bc20e19f266d7b0c2ae501ca157b0e44e44e5",
+  "source_freeze_paths": 4072,
+  "same_source_four_final_gates": true,
+  "changed_Go_paths": [
+    "internal/app/code_intelligence.go",
+    "internal/app/code_intelligence_direct_test.go",
+    "internal/app/code_intelligence_test.go",
+    "internal/app/evidence_direct_mode_test.go",
+    "internal/app/evidence_gateway.go",
+    "internal/codeintel/direct_only_mcp_test.go",
+    "internal/codeintel/direct_only_test.go",
+    "internal/codeintel/observation.go",
+    "internal/codeintel/provider.go",
+    "internal/codeintel/routing.go"
+  ],
+  "race": {
+    "exit": 0,
+    "wall_seconds": 187.4,
+    "source_unchanged_after": true,
+    "official_client_auth_model_or_production_service_calls": 0,
+    "test_events": {
+      "skip": 31,
+      "pass": 595
+    },
+    "top_level_passes": 273,
+    "package_results": [
+      {
+        "package": "github.com/ivo-lopes/ivoai/internal/codeintel",
+        "result": "pass",
+        "seconds": 26.774
+      },
+      {
+        "package": "github.com/ivo-lopes/ivoai/internal/app",
+        "result": "pass",
+        "seconds": 174.962
+      }
+    ],
+    "skips": [
+      "TestEfficiencyEvidence",
+      "TestStructuralConcurrencyEvidence",
+      "TestLiveAdaptivePrimaryCoreEscalationWithoutChildFlag",
+      "TestLiveAdaptivePrimaryCoreReadBootstrapWithoutChildFlag",
+      "TestLiveAdaptivePrimaryOfficialCLIWithoutDAG/usage_absent",
+      "TestLiveAdaptivePrimaryOfficialCLIWithoutDAG/usage_complete",
+      "TestExtendedLiveCodexBenchmark",
+      "TestLiveCodexStructuralCapability",
+      "TestReviewedNativeMCP",
+      "TestStructuralPerformanceEvidence",
+      "TestReviewedGraftSandbox",
+      "TestReviewedGraftOperationsAndIncremental",
+      "TestReviewedGraftScenarios",
+      "TestExportEvidenceGatewayOfflineControls",
+      "TestFrontendArtifactDirectModes",
+      "TestOrchestratedFrontendSessionRollbackCompatibility",
+      "TestLiveGraftManagedOpenCode",
+      "TestLiveLocalMetadataOfficialAppServer",
+      "TestMCPArtifactWorkerHelper",
+      "TestMCPArtifactTaskGrants",
+      "TestLiveMCPArtifactConfigUpgrade",
+      "TestLiveNativeAUTOArtifact",
+      "TestNativeCapabilityPublishedArtifact",
+      "TestOrchestrationPublishedBinaryConfigUpgradeRollback",
+      "TestLiveP0VoicehubThroughManagedOpenCode",
+      "TestLiveP0MCPReference",
+      "TestLivePrimaryCodePrefetchBenchmark",
+      "TestPrimaryPrefetchMatrixHostPrefetch",
+      "TestPrimaryPrefetchGatewayObservationOffline",
+      "TestPrimaryPrefetchBenchmarkEditPreflight",
+      "TestLiveSubscriptionStdioNoAuthQualification"
+    ]
+  },
+  "vet": {
+    "exit": 0,
+    "wall_seconds": 2.169,
+    "source_unchanged_after": true,
+    "official_client_auth_model_or_production_service_calls": 0
+  },
+  "builds": {
+    "build-amd64v1": {
+      "exit": 0,
+      "wall_seconds": 4.874,
+      "source_unchanged_after": true,
+      "official_client_auth_model_or_production_service_calls": 0
+    },
+    "build-arm64": {
+      "exit": 0,
+      "wall_seconds": 4.274,
+      "source_unchanged_after": true,
+      "official_client_auth_model_or_production_service_calls": 0
+    }
+  },
+  "adverse_epochs": [
+    {
+      "control": "original factory from26394 overlaid on initial WIP",
+      "expected_result": "FAIL",
+      "observed_exit": 1,
+      "package_seconds": 0.027,
+      "meaning": "public factory did not admit builtin Direct without optional runtime; not a full original-base suite"
+    },
+    {
+      "epoch": "focused-v1",
+      "result": "FAIL",
+      "cause": "Public wrapper refused before common factory because the unversioned build has no release-injected Graft metadata; one failing assertion,24PASS; source snapshot archived"
+    },
+    {
+      "epoch": "focused-v2",
+      "result": "PASS",
+      "scope": "25PASSevents/15top/0skip on its WIP freeze, not attributed to final0939; final added Gateway public-factory and ancestor-symlink regressions are covered by final race"
+    }
+  ],
+  "full_suite_and_hosted_CI": "NOT_RUN for0939",
+  "runtime_execution_amd64_noAVX_or_ARM64": "NOT_RUN; compile metadata only",
+  "actual_Graft_or_official_client_integration": "NOT_RUN",
+  "economic_comparative_turns_added": 0,
+  "global_economic_gate": "INCOMPLETE",
+  "source_unchanged_after_final_checks": true,
+  "new_regressions": {
+    "top_level_passed": [
+      "TestDirectOnlyCannotReuseStructuralCacheOrExecute",
+      "TestDirectOnlyHistoryAndAmbiguityCannotEnableGraft",
+      "TestDirectOnlyMCPPreservesAliasesAndRefusesStructuralResults",
+      "TestDirectProviderFactoryWithoutOptionalRuntime",
+      "TestDirectProviderFactoryGatewayExactWithoutOptionalRuntime",
+      "TestDirectFactoryDoesNotTreatIntegrityFailuresAsAbsence",
+      "TestVerifiedGraftWithoutNodeAllowsOnlyDirect",
+      "TestGatewayExecutionModeSeparatesForgedManagedCache"
+    ],
+    "passing_events_including_subtests": 19,
+    "failed_or_skipped": 0
+  }
+}

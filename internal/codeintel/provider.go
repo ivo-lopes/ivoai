@@ -19,6 +19,7 @@ import (
 )
 
 var ErrNoSupportedSources = errors.New("repository has no supported source files")
+var ErrStructuralUnavailable = errors.New("structural code intelligence runtime unavailable")
 
 const Version = "0.21.1-ivoai.1"
 const MaxResultBytes = 32768
@@ -48,6 +49,27 @@ type Provider struct {
 	Allowed                             bool
 	Observe                             func(core.CodeResult, error)
 	run                                 func(context.Context, adapterRequest) (adapterResponse, error)
+	directOnly                          bool
+}
+
+// WithoutStructuralRuntime returns a restricted host-owned copy. It cannot
+// enable a capability or adopt an unverified executable. Keep the restriction
+// private: missing paths alone are not evidence of a permitted execution mode.
+func (p *Provider) WithoutStructuralRuntime() *Provider {
+	limited := *p
+	limited.directOnly = true
+	limited.Node, limited.Distribution, limited.Executable = "", "", ""
+	limited.run = nil
+	return &limited
+}
+
+// ExecutionMode binds caches to the host's admitted provider capabilities.
+// The zero value preserves the existing validated-managed provider contract.
+func (p *Provider) ExecutionMode() string {
+	if p.directOnly {
+		return "direct_only"
+	}
+	return "managed"
 }
 
 type indexReceipt struct {
@@ -84,6 +106,9 @@ func (p *Provider) Query(ctx context.Context, q core.CodeQuery) (result core.Cod
 	key, err := Identity(p.Root, p.Scope, p.Permissions)
 	if err != nil {
 		return result, err
+	}
+	if p.directOnly {
+		return result, ErrStructuralUnavailable
 	}
 	if err = platform.EnsurePrivateDir(p.CacheRoot); err != nil {
 		return result, err
@@ -220,7 +245,7 @@ func (p *Provider) Query(ctx context.Context, q core.CodeQuery) (result core.Cod
 // inventory. Binding the path also invalidates indices across reviewed rebuilds
 // of the same upstream version and across rollback, not just adapter changes.
 func (p *Provider) runtimeIdentity() string {
-	return digest([]byte(Version + "\n" + p.Distribution))
+	return digest([]byte(Version + "\n" + p.Distribution + "\nexecution_mode=" + p.ExecutionMode()))
 }
 
 func syncSnapshot(root string, snap SourceSnapshot) error {

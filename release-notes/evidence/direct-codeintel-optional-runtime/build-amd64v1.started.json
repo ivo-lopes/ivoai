@@ -1,0 +1,33 @@
+{
+  "base": "0939edaca25d6ad6de801c8f0040bce0eab72da6",
+  "command": [
+    "/var/tmp/ivoai-validation-toolchain-20261028/go/bin/go",
+    "build",
+    "-trimpath",
+    "-o",
+    "/var/tmp/ivoai-direct-codeintel-proof-20261029/core-linux-amd64v1",
+    "./cmd/ivoai"
+  ],
+  "environment": {
+    "HOME": "/var/tmp/ivoai-direct-codeintel-proof-20261029/home",
+    "PATH": "/var/tmp/ivoai-validation-toolchain-20261028/go/bin:/usr/bin:/bin",
+    "GOCACHE": "/home/ivo/.cache/go-build",
+    "GOMODCACHE": "/home/ivo/go/pkg/mod",
+    "GOPATH": "/home/ivo/go",
+    "GOENV": "off",
+    "GOWORK": "off",
+    "GOPROXY": "off",
+    "GOSUMDB": "off",
+    "GOFLAGS": "-mod=readonly",
+    "GOTOOLCHAIN": "local",
+    "GOMAXPROCS": "2",
+    "LANG": "C.UTF-8",
+    "GOTMPDIR": "/var/tmp/ivoai-direct-codeintel-proof-20261029/go-tmp",
+    "TMPDIR": "/var/tmp/ivoai-direct-codeintel-proof-20261029/go-tmp",
+    "CGO_ENABLED": "0",
+    "GOOS": "linux",
+    "GOARCH": "amd64",
+    "GOAMD64": "v1"
+  },
+  "source_paths": 4072
+}

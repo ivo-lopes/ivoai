@@ -1,0 +1,5 @@
+{
+  "Replace": {
+    "/var/tmp/ivoai-direct-codeintel-optional-runtime-20261029/internal/app/code_intelligence.go": "/var/tmp/ivoai-direct-codeintel-proof-20261029/old-factory.go.txt"
+  }
+}
