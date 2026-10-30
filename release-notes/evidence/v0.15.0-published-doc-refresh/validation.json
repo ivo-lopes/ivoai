@@ -1,0 +1,24 @@
+{
+  "status": "DOCS_REFRESH_VALIDATED",
+  "base": "9ebd0d72773cd105602ac5139d968ee6999dfdde",
+  "docs": {
+    "README.md": "07dd11472c096a14bde7745715dcac3000adab665cb027f96635a9ab29e3b731",
+    "docs/architecture.md": "72197bf29816f8acf9267519dcf4a7756291501cbea8347811c836bed15a51c8",
+    "docs/setup.md": "1b97430cbb10d3a359187a37ca1693d8a0c547ffdb023afe4438cba616f4740a",
+    "docs/releases.md": "f1c95fafb94f90652d6dab3a71acc520aa4a8a4f59a6fda6a81252f0ab2ee22d",
+    "website/i18n/pt-BR/docusaurus-plugin-content-docs/current/architecture.md": "46ca394852bf23e30df6601ef4961dd150617bde4360809e41c2f15a074b0fc3",
+    "website/i18n/pt-BR/docusaurus-plugin-content-docs/current/setup.md": "753d62196813830bd9593d746fe7b2f917a3fb23c3815e664c72a48c72f1c5dd",
+    "website/i18n/pt-BR/docusaurus-plugin-content-docs/current/releases.md": "bc9f4bb032407507a7fab567419b378148b9e21f0864fb53254fbdc32fc93f83"
+  },
+  "build_and_check_exit": 0,
+  "i18n_current": 51,
+  "i18n_092": 44,
+  "docsserver_passes": 2,
+  "docsserver_skips": 0,
+  "rendered_current_pages": 6,
+  "prior_release_note_records_unchanged": 1520,
+  "install": "own frozen lock and integrity; normal public metadata allowed after strict offline metadata miss",
+  "initial_offline_failure_preserved": true,
+  "official_client_auth_model_calls": 0,
+  "release_tag_or_assets_changed": false
+}

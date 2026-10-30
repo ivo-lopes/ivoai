@@ -1,0 +1,10 @@
+{
+  "base": "9ebd0d72773cd105602ac5139d968ee6999dfdde",
+  "gate": "docs-build-network",
+  "exit": 0,
+  "wall_seconds": 224.059,
+  "immutable_source_and_records_unchanged_after": true,
+  "document_inputs_unchanged_after": true,
+  "official_client_auth_model_or_production_service_calls": 0,
+  "dependencies": "own frozen lock/integrity; normal public package metadata allowed; no dependency/version change"
+}

@@ -1,0 +1,118 @@
+? Verifying lockfile against supply-chain policies (1336 entries)...
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Packages are copied from the content-addressable store to the virtual store.
+  Content-addressable store is at: /media/ivo/ARQUIVOS/.pnpm-store/v11
+  Virtual store is at:             node_modules/.pnpm
+Progress: resolved 99, reused 99, downloaded 0, added 84
+Progress: resolved 152, reused 152, downloaded 0, added 137
+Progress: resolved 257, reused 257, downloaded 0, added 242
+Progress: resolved 386, reused 386, downloaded 0, added 371
+Progress: resolved 761, reused 761, downloaded 0, added 746
+Progress: resolved 1046, reused 1046, downloaded 0, added 1031
+Progress: resolved 1267, reused 1267, downloaded 0, added 1257
+Progress: resolved 1298, reused 1298, downloaded 0, added 1295
+[WARN] Request took 12821ms: https://registry.npmjs.org/@11ty%2Fgray-matter
+[WARN] Request took 12725ms: https://registry.npmjs.org/@algolia%2Fabtesting
+[WARN] Request took 12725ms: https://registry.npmjs.org/@algolia%2Fautocomplete-core
+[WARN] Request took 12725ms: https://registry.npmjs.org/@algolia%2Fautocomplete-plugin-algolia-insights
+[WARN] Request took 13304ms: https://registry.npmjs.org/@algolia%2Fautocomplete-shared
+[WARN] Request took 13318ms: https://registry.npmjs.org/@algolia%2Fclient-abtesting
+[WARN] Request took 13327ms: https://registry.npmjs.org/@algolia%2Fclient-common
+[WARN] Request took 13335ms: https://registry.npmjs.org/@algolia%2Fclient-analytics
+[WARN] Request took 13919ms: https://registry.npmjs.org/@algolia%2Fclient-insights
+[WARN] Request took 13941ms: https://registry.npmjs.org/@algolia%2Fclient-query-suggestions
+[WARN] Request took 13947ms: https://registry.npmjs.org/@algolia%2Fclient-personalization
+[WARN] Request took 14053ms: https://registry.npmjs.org/@algolia%2Fclient-search
+[WARN] Request took 14539ms: https://registry.npmjs.org/@algolia%2Fevents
+[WARN] Request took 14568ms: https://registry.npmjs.org/@algolia%2Fingestion
+[WARN] Request took 14583ms: https://registry.npmjs.org/@algolia%2Fmonitoring
+[WARN] Request took 14688ms: https://registry.npmjs.org/@algolia%2Frequester-browser-xhr
+[WARN] Request took 14696ms: https://registry.npmjs.org/@algolia%2Frecommend
+[WARN] Request took 14814ms: https://registry.npmjs.org/@algolia%2Frequester-fetch
+[WARN] Request took 14932ms: https://registry.npmjs.org/@algolia%2Frequester-node-http
+[WARN] Request took 14933ms: https://registry.npmjs.org/@babel%2Fhelper-compilation-targets
+[WARN] Request took 15073ms: https://registry.npmjs.org/@antfu%2Finstall-pkg
+[WARN] Request took 15036ms: https://registry.npmjs.org/@babel%2Fcode-frame
+[WARN] Request took 15139ms: https://registry.npmjs.org/@babel%2Fhelper-annotate-as-pure
+[WARN] Request took 15065ms: https://registry.npmjs.org/@babel%2Fgenerator
+[WARN] Request took 15183ms: https://registry.npmjs.org/@axe-core%2Fplaywright
+[WARN] Request took 15281ms: https://registry.npmjs.org/@babel%2Fhelper-create-class-features-plugin
+[WARN] Request took 15404ms: https://registry.npmjs.org/@babel%2Fhelper-create-regexp-features-plugin
+[WARN] Request took 15412ms: https://registry.npmjs.org/@babel%2Fhelper-globals
+[WARN] Request took 15507ms: https://registry.npmjs.org/@babel%2Fhelper-define-polyfill-provider
+[WARN] Request took 15533ms: https://registry.npmjs.org/@babel%2Fhelper-member-expression-to-functions
+[WARN] Request took 15527ms: https://registry.npmjs.org/@babel%2Fhelper-module-imports
+[WARN] Request took 15627ms: https://registry.npmjs.org/@babel%2Fhelper-optimise-call-expression
+[WARN] Request took 15658ms: https://registry.npmjs.org/@babel%2Fhelper-plugin-utils
+[WARN] Request took 15869ms: https://registry.npmjs.org/@babel%2Fhelper-skip-transparent-expression-wrappers
+[WARN] Request took 15854ms: https://registry.npmjs.org/@babel%2Fhelper-replace-supers
+[WARN] Request took 15786ms: https://registry.npmjs.org/@babel%2Fhelper-remap-async-to-generator
+[WARN] Request took 15991ms: https://registry.npmjs.org/@babel%2Fhelper-string-parser
+[WARN] Request took 16002ms: https://registry.npmjs.org/@babel%2Fhelper-validator-option
+[WARN] Request took 16018ms: https://registry.npmjs.org/@babel%2Fhelper-validator-identifier
+[WARN] Request took 16106ms: https://registry.npmjs.org/@babel%2Fhelper-wrap-function
+[WARN] Request took 16137ms: https://registry.npmjs.org/@babel%2Fhelpers
+[WARN] Request took 16236ms: https://registry.npmjs.org/@babel%2Fplugin-bugfix-safari-rest-destructuring-rhs-array
+[WARN] Request took 16259ms: https://registry.npmjs.org/@babel%2Fparser
+[WARN] Request took 16266ms: https://registry.npmjs.org/@babel%2Fplugin-proposal-private-property-in-object
+[WARN] Request took 16311ms: https://registry.npmjs.org/@babel%2Fplugin-bugfix-firefox-class-in-computed-class-key
+[WARN] Request took 16330ms: https://registry.npmjs.org/@babel%2Fplugin-transform-arrow-functions
+[WARN] Request took 16354ms: https://registry.npmjs.org/@babel%2Fplugin-bugfix-safari-class-field-initializer-scope
+[WARN] Request took 16480ms: https://registry.npmjs.org/@babel%2Fplugin-bugfix-safari-id-destructuring-collision-in-function-expression
+[WARN] Request took 16514ms: https://registry.npmjs.org/@babel%2Fplugin-syntax-typescript
+[WARN] Request took 16563ms: https://registry.npmjs.org/@babel%2Fplugin-syntax-unicode-sets-regex
+[WARN] Request took 16587ms: https://registry.npmjs.org/@babel%2Fplugin-syntax-dynamic-import
+[WARN] Request took 16613ms: https://registry.npmjs.org/@babel%2Fplugin-syntax-import-attributes
+[WARN] Request took 16727ms: https://registry.npmjs.org/@babel%2Fplugin-syntax-import-assertions
+[WARN] Request took 16738ms: https://registry.npmjs.org/@babel%2Fplugin-syntax-jsx
+[WARN] Request took 16808ms: https://registry.npmjs.org/@babel%2Fplugin-transform-block-scoped-functions
+[WARN] Request took 16845ms: https://registry.npmjs.org/@babel%2Fhelper-module-transforms
+[WARN] Request took 16863ms: https://registry.npmjs.org/@babel%2Fplugin-transform-async-generator-functions
+[WARN] Request took 16971ms: https://registry.npmjs.org/@babel%2Fplugin-transform-async-to-generator
+[WARN] Request took 17005ms: https://registry.npmjs.org/@babel%2Fplugin-transform-block-scoping
+[WARN] Request took 17076ms: https://registry.npmjs.org/@babel%2Fcompat-data
+[WARN] Request took 17191ms: https://registry.npmjs.org/@babel%2Fplugin-bugfix-v8-spread-parameters-in-optional-chaining
+✓ Lockfile passes supply-chain policies (1336 entries in 37.5s)
+Lockfile is up to date, resolution step is skipped
+Packages: +1298
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Progress: resolved 1298, reused 1298, downloaded 0, added 1298, done
+
+dependencies:
++ @docusaurus/core 3.10.2
++ @docusaurus/preset-classic 3.10.2
++ @docusaurus/theme-mermaid 3.10.2
++ @easyops-cn/docusaurus-search-local 0.55.3
++ @fontsource/bpmf-huninn 5.3.1
++ @mdx-js/react 3.1.1
++ @mermaid-js/layout-elk 1.0.1
++ clsx 2.1.1
++ prism-react-renderer 2.4.1
++ react 19.3.0
++ react-dom 19.3.0
+
+devDependencies:
++ @axe-core/playwright 4.13.0
++ @docusaurus/module-type-aliases 3.10.2
++ @docusaurus/tsconfig 3.10.2
++ @playwright/test 1.64.0
++ typescript 7.0.2
+
+Done in 37.8s using pnpm v12.11.2
+DOCS_I18N_PARITY=PASS current=51 release=0.9.2:44
+[INFO] Website will be built for all these locales: 
+- en
+- pt-BR
+[INFO] [en] Creating an optimized production build...
+[info] [webpackbar] Compiling Client
+[info] [webpackbar] Compiling Server
+[success] [webpackbar] Server: Compiled successfully in 29.02s
+[success] [webpackbar] Client: Compiled successfully in 1.24m
+[SUCCESS] Generated static files in "build".
+[INFO] [pt-BR] Creating an optimized production build...
+[info] [webpackbar] Compiling Client
+[info] [webpackbar] Compiling Server
+[success] [webpackbar] Server: Compiled successfully in 19.43s
+[success] [webpackbar] Client: Compiled successfully in 1.10m
+[SUCCESS] Generated static files in "build/pt-BR".
+[INFO] Use `npm run serve` command to test your build locally.

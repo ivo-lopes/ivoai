@@ -1,0 +1,32 @@
+{
+  "docs/next/architecture.html": {
+    "published_marker": true,
+    "has_version": true,
+    "old_hold": false
+  },
+  "docs/next/releases.html": {
+    "published_marker": true,
+    "has_version": true,
+    "old_hold": false
+  },
+  "docs/next/setup.html": {
+    "published_marker": true,
+    "has_version": true,
+    "old_hold": false
+  },
+  "pt-BR/docs/next/architecture.html": {
+    "published_marker": true,
+    "has_version": true,
+    "old_hold": false
+  },
+  "pt-BR/docs/next/releases.html": {
+    "published_marker": true,
+    "has_version": true,
+    "old_hold": false
+  },
+  "pt-BR/docs/next/setup.html": {
+    "published_marker": true,
+    "has_version": true,
+    "old_hold": false
+  }
+}

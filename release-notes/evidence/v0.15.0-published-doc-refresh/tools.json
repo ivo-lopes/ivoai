@@ -1,0 +1,22 @@
+{
+  "node": {
+    "exit": 0,
+    "stdout": "v26.11.1",
+    "stderr": ""
+  },
+  "corepack": {
+    "exit": 0,
+    "stdout": "0.36.0",
+    "stderr": ""
+  },
+  "pnpm": {
+    "exit": 0,
+    "stdout": "12.11.2",
+    "stderr": ""
+  },
+  "store": {
+    "exit": 0,
+    "stdout": "/var/tmp/ivoai-v015-publication-docs-20261029/xdg-data/pnpm/store/v11",
+    "stderr": ""
+  }
+}

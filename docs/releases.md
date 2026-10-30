@@ -1,19 +1,24 @@
 # Releases
 
-## v0.15.0 — local candidate, not published
+## v0.15.0 — published and verified
 
-**Publication is conditional on exact final-head CI and the existing Release/distribution
-gates; this candidate is not published.** A new restricted qualification on
-`77d5fd6c` passed both named official-client/Core protocol tests and both CLI
-subcases under race detection, with zero failures/skips. It used the reviewed
-0.162.1 client/companion, fresh fixture homes and a local fake provider without
-subscription authentication or real-model calls. The checks cover managed MCP
-scope/receipt/replay behavior and a separate actual Core bootstrap; they do not
-certify public TUI lifecycle, system/cloud isolation or general client/model
-parity. See the [final-source qualification](https://github.com/ivo-lopes/ivoai/blob/release/v0.15.0-candidate/release-notes/v0.15.0-final-runtime-qualification.md).
-Consult [GitHub releases](https://github.com/ivo-lopes/ivoai/releases) and the
-[workflow status](https://github.com/ivo-lopes/ivoai/actions) for subsequent
-publication/gate status; this record does not authorize a tag.
+**Published and independently verified.** [v0.15.0](https://github.com/ivo-lopes/ivoai/releases/tag/v0.15.0)
+was published on 2026-10-29 at 04:51:24 UTC from immutable source `8f688e26`.
+All five [Release jobs](https://github.com/ivo-lopes/ivoai/actions/runs/40817035302) passed.
+Independent downloaded-asset verification matched all 12 API sizes/digests and
+all 11 payload checksums. The verified downloaded amd64 Core returned version
+`0.15.0` and help successfully; native ARM and amd64/QEMU non-AVX execution belong
+to the workflow, not a local ARM run. See the [publication and verification report](https://github.com/ivo-lopes/ivoai/blob/main/release-notes/v0.15.0-published-validation.md).
+This documentation follow-up changes neither the tag nor its published assets.
+
+The separate pre-publication qualification on `77d5fd6c` passed both named
+official-client/Core protocol tests and both CLI subcases under race detection,
+with zero failures/skips. It used the reviewed 0.162.1 client/companion, fresh
+fixture homes and a local fake provider without subscription authentication or
+real-model calls. These checks cover managed MCP scope/receipt/replay behavior
+and a separate actual Core bootstrap; they do not certify public TUI lifecycle,
+system/cloud isolation or general client/model parity. See the
+[final-source qualification](https://github.com/ivo-lopes/ivoai/blob/v0.15.0/release-notes/v0.15.0-final-runtime-qualification.md).
 
 The following observations remain historical and bound to their own sources. A supported
 `55ec7ab9` real turn passed its math oracle; its intentional SIGINT cleanup
@@ -24,7 +29,7 @@ zero question/attempt/worker and no forced signal. This qualifies normal idle
 startup/quit for those exact inputs. A real turn followed by normal quit in one
 session was not run. The original `0bab9b34` failure and UNKNOWN cause remain
 preserved; none of these observations joins the 126 comparative turns.
-See the [normal-exit report](https://github.com/ivo-lopes/ivoai/blob/release/v0.15.0-candidate/release-notes/native-normal-quit-validation.md).
+See the [normal-exit report](https://github.com/ivo-lopes/ivoai/blob/v0.15.0/release-notes/native-normal-quit-validation.md).
 No general TUI/client/model parity or economic result follows.
 
 A separate scoped offline Core Code Mode proof now passed on `55ec7ab9`: one
@@ -33,11 +38,14 @@ closed final receipt, NoReplay and duplicate409. It used a fake provider and
 proves no real-model, account, TUI or economic parity. Core child Wait0 was not
 observed; lifecycle remains UNKNOWN. Earlier FAIL/NOT_MET receipts are unchanged.
 
-This candidate composes actual main `bcdb3466` (PR60/62) and PR61 head
-`83df882b`. Its Go/module bytes match that reviewed PR61 composition; no benchmark
-PR54/56 or subscription-guard pilot is imported. PR61 merged as main `ccc48a05` after [CI40805624155](https://github.com/ivo-lopes/ivoai/actions/runs/40805624155)
-passed16/16 at attempt1 on `83df882b`. That result retains its source identity;
-this candidate still needs its own final-head CI and distribution gates.
+The release source retains PR60/62 and the reviewed PR61 runtime composition;
+its Go/module bytes match `83df882b`. PR61's CI40805624155 passed16/16 on that
+head and remains bound to it. The final candidate `1ac` passed16/16 in
+[CI40814231189](https://github.com/ivo-lopes/ivoai/actions/runs/40814231189) before
+PR57 merged as `8f688e26`; Release/distribution and independent asset checks above
+then completed on the actual tagged source. PR54/56/63/64, authenticated metadata
+qualification and the separate Direct-only factory evolution are excluded from
+the tag; post-tag main builds must be assessed separately.
 
 Managed MCP inventory and execution now share captured cwd, environment, project
 policy and explicit config/profile settings. This snapshot does not freeze config
@@ -61,8 +69,10 @@ not concurrent client execution; PR54/56 are excluded.
 
 Global economics remains INCOMPLETE. General model/TUI/Claude/Antigravity/admin
 parity is unproven, Context remains BLOCKED/IVOAI-175, and LOW docs deepmerge stays
-needs_review. See the [draft notes](https://github.com/ivo-lopes/ivoai/blob/release/v0.15.0-candidate/release-notes/v0.15.0.md) and [source-bound report](https://github.com/ivo-lopes/ivoai/blob/release/v0.15.0-candidate/release-notes/v0.15.0-composition60-62.md)
-for exact scopes, adverse evidence and migration without deleting or replaying data.
+needs_review. The [tagged pre-publication notes](https://github.com/ivo-lopes/ivoai/blob/v0.15.0/release-notes/v0.15.0.md) and [source-bound report](https://github.com/ivo-lopes/ivoai/blob/v0.15.0/release-notes/v0.15.0-composition60-62.md)
+preserve their original checkpoint language. The separate publication report above
+records the delivered assets; the tagged source-bound report retains exact scopes,
+adverse evidence and migration without deleting or replaying data.
 
 ## v0.14.0
 

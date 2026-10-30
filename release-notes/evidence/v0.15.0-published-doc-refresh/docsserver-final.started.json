@@ -1,0 +1,48 @@
+{
+  "base": "9ebd0d72773cd105602ac5139d968ee6999dfdde",
+  "command": [
+    "/var/tmp/ivoai-validation-toolchain-20261028/go/bin/go",
+    "test",
+    "-count=1",
+    "-json",
+    "./internal/docsserver"
+  ],
+  "documents": {
+    "README.md": "07dd11472c096a14bde7745715dcac3000adab665cb027f96635a9ab29e3b731",
+    "docs/architecture.md": "72197bf29816f8acf9267519dcf4a7756291501cbea8347811c836bed15a51c8",
+    "docs/setup.md": "1b97430cbb10d3a359187a37ca1693d8a0c547ffdb023afe4438cba616f4740a",
+    "docs/releases.md": "f1c95fafb94f90652d6dab3a71acc520aa4a8a4f59a6fda6a81252f0ab2ee22d",
+    "website/i18n/pt-BR/docusaurus-plugin-content-docs/current/architecture.md": "46ca394852bf23e30df6601ef4961dd150617bde4360809e41c2f15a074b0fc3",
+    "website/i18n/pt-BR/docusaurus-plugin-content-docs/current/setup.md": "753d62196813830bd9593d746fe7b2f917a3fb23c3815e664c72a48c72f1c5dd",
+    "website/i18n/pt-BR/docusaurus-plugin-content-docs/current/releases.md": "bc9f4bb032407507a7fab567419b378148b9e21f0864fb53254fbdc32fc93f83"
+  },
+  "environment": {
+    "HOME": "/var/tmp/ivoai-v015-publication-docs-20261029/home",
+    "PATH": "/var/tmp/ivoai-validation-toolchain-20261028/go/bin:/var/tmp/ivoai-validation-toolchain-20261028/node-v26.11.1-linux-x64/bin:/var/tmp/ivoai-validation-toolchain-20261028/corepack-runtime/node_modules/.bin:/usr/bin:/bin",
+    "XDG_CONFIG_HOME": "/var/tmp/ivoai-v015-publication-docs-20261029/xdg-config",
+    "XDG_DATA_HOME": "/var/tmp/ivoai-v015-publication-docs-20261029/xdg-data",
+    "XDG_CACHE_HOME": "/var/tmp/ivoai-v015-publication-docs-20261029/xdg-cache",
+    "COREPACK_HOME": "/var/tmp/ivoai-v015-candidate.EFiORfHB/corepack-cache",
+    "COREPACK_ENABLE_NETWORK": "0",
+    "COREPACK_ENABLE_DOWNLOAD_PROMPT": "0",
+    "npm_config_cache": "/var/tmp/ivoai-v015-publication-docs-20261029/npm-cache",
+    "npm_config_store_dir": "/media/ivo/ARQUIVOS/.pnpm-store",
+    "npm_config_userconfig": "/dev/null",
+    "npm_config_globalconfig": "/dev/null",
+    "CI": "true",
+    "LANG": "C.UTF-8",
+    "TMPDIR": "/var/tmp/ivoai-v015-publication-docs-20261029/tmp",
+    "GOTMPDIR": "/var/tmp/ivoai-v015-publication-docs-20261029/go-tmp",
+    "GOENV": "off",
+    "GOWORK": "off",
+    "GOPROXY": "off",
+    "GOSUMDB": "off",
+    "GOMAXPROCS": "2",
+    "GOCACHE": "/home/ivo/.cache/go-build",
+    "GOMODCACHE": "/home/ivo/go/pkg/mod",
+    "NO_UPDATE_NOTIFIER": "1",
+    "DOCUSAURUS_NO_TELEMETRY": "1"
+  },
+  "once": true,
+  "package_metadata_network_allowed": true
+}
