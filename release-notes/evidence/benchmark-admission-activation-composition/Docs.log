@@ -1,0 +1,12 @@
+{"Time":"2026-10-30T12:02:34.752061715-03:00","Action":"start","Package":"github.com/ivo-lopes/ivoai/internal/docsserver"}
+{"Time":"2026-10-30T12:02:34.772022866-03:00","Action":"run","Package":"github.com/ivo-lopes/ivoai/internal/docsserver","Test":"TestEmbeddedProductionSiteAndHealth"}
+{"Time":"2026-10-30T12:02:34.772094536-03:00","Action":"output","Package":"github.com/ivo-lopes/ivoai/internal/docsserver","Test":"TestEmbeddedProductionSiteAndHealth","Output":"=== RUN   TestEmbeddedProductionSiteAndHealth\n","OutputType":"frame"}
+{"Time":"2026-10-30T12:02:34.804414425-03:00","Action":"output","Package":"github.com/ivo-lopes/ivoai/internal/docsserver","Test":"TestEmbeddedProductionSiteAndHealth","Output":"--- PASS: TestEmbeddedProductionSiteAndHealth (0.03s)\n","OutputType":"frame"}
+{"Time":"2026-10-30T12:02:34.804457005-03:00","Action":"pass","Package":"github.com/ivo-lopes/ivoai/internal/docsserver","Test":"TestEmbeddedProductionSiteAndHealth","Elapsed":0.03}
+{"Time":"2026-10-30T12:02:34.804483405-03:00","Action":"run","Package":"github.com/ivo-lopes/ivoai/internal/docsserver","Test":"TestNetworkForAddressPreservesConfiguredFamily"}
+{"Time":"2026-10-30T12:02:34.804487465-03:00","Action":"output","Package":"github.com/ivo-lopes/ivoai/internal/docsserver","Test":"TestNetworkForAddressPreservesConfiguredFamily","Output":"=== RUN   TestNetworkForAddressPreservesConfiguredFamily\n","OutputType":"frame"}
+{"Time":"2026-10-30T12:02:34.804498185-03:00","Action":"output","Package":"github.com/ivo-lopes/ivoai/internal/docsserver","Test":"TestNetworkForAddressPreservesConfiguredFamily","Output":"--- PASS: TestNetworkForAddressPreservesConfiguredFamily (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-30T12:02:34.804515535-03:00","Action":"pass","Package":"github.com/ivo-lopes/ivoai/internal/docsserver","Test":"TestNetworkForAddressPreservesConfiguredFamily","Elapsed":0}
+{"Time":"2026-10-30T12:02:34.804536875-03:00","Action":"output","Package":"github.com/ivo-lopes/ivoai/internal/docsserver","Output":"PASS\n","OutputType":"frame"}
+{"Time":"2026-10-30T12:02:35.808063424-03:00","Action":"output","Package":"github.com/ivo-lopes/ivoai/internal/docsserver","Output":"ok  \tgithub.com/ivo-lopes/ivoai/internal/docsserver\t1.056s\n"}
+{"Time":"2026-10-30T12:02:35.808099394-03:00","Action":"pass","Package":"github.com/ivo-lopes/ivoai/internal/docsserver","Elapsed":1.056}

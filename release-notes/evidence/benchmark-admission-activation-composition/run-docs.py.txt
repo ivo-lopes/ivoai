@@ -1,0 +1,15 @@
+import pathlib,json,hashlib,subprocess,time,sys
+p=pathlib.Path(__file__).resolve().parent
+r=pathlib.Path('/var/tmp/ivoai-benchmark-admission-activation-composition-20261030')
+f=json.loads((p/'source-frozen.json').read_text())
+def verify():
+ for n,h in f['files'].items(): assert hashlib.sha256((r/n).read_bytes()).hexdigest()==h,n
+name=sys.argv[1]
+cmds={'Docs':['/var/tmp/ivoai-validation-toolchain-20261028/go/bin/go','test','-race','-count=1','-json','./internal/docsserver'], 'Python':['/usr/bin/python3','-m','unittest','discover','-s','scripts','-p','test_benchmark*.py']}
+verify()
+home=p/(name+'-home');home.mkdir(mode=0o700)
+env={'HOME':str(home),'PATH':'/var/tmp/ivoai-validation-toolchain-20261028/go/bin:/usr/bin:/bin','GOCACHE':'/home/ivo/.cache/go-build','GOMODCACHE':'/home/ivo/go/pkg/mod','GOENV':'off','GOWORK':'off','GOPROXY':'off','GOSUMDB':'off','GOMAXPROCS':'2','TMPDIR':str(p),'GOTMPDIR':str(p),'PYTHONDONTWRITEBYTECODE':'1','LANG':'C.UTF-8'}
+(p/(name+'.started.json')).open('x').write(json.dumps({'command':cmds[name],'source_sha256':hashlib.sha256((p/'source-frozen.json').read_bytes()).hexdigest()})+'\n')
+start=time.monotonic()
+with (p/(name+'.log')).open('xb') as out,(p/(name+'.stderr')).open('xb') as err: result=subprocess.run(cmds[name],cwd=r,env=env,stdout=out,stderr=err)
+verify();record={'exit':result.returncode,'wall_seconds':round(time.monotonic()-start,3),'source_unchanged':True,'official_auth_model_calls':0};(p/(name+'.result.json')).write_text(json.dumps(record)+'\n');print(json.dumps(record));sys.exit(result.returncode)

@@ -1,0 +1,48 @@
+{
+  "status": "PASS_COMPOSED_DOCS_COLD_ACTIVATION_COMMON_ADMISSION",
+  "source": "aaab08f50220579ddc704d826b36116aaa042891",
+  "tree": "48cc6134a972f1ca6523a8097695c63f770e4a59",
+  "parents_pr_heads": {
+    "66": "abbdb09d5fdf696867cd46b620d4ad02b96867d4",
+    "67": "02ebbb5a3b42fba05ff3b624335fc5022411e62c",
+    "68": "150f596cecb7febf1498c4cc83f4187ce0cf5cc7"
+  },
+  "counts": {
+    "Go": {
+      "pass:top": 18,
+      "pass:sub": 57,
+      "pass:package": 2
+    },
+    "Docs": {
+      "pass:top": 2,
+      "pass:package": 1
+    }
+  },
+  "python_tests": 82,
+  "results": {
+    "Go": {
+      "exit": 0,
+      "wall_seconds": 21.804,
+      "source_unchanged": true,
+      "official_auth_model_calls": 0
+    },
+    "Docs": {
+      "exit": 0,
+      "wall_seconds": 1.846,
+      "source_unchanged": true,
+      "official_auth_model_calls": 0
+    },
+    "Python": {
+      "exit": 0,
+      "wall_seconds": 29.905,
+      "source_unchanged": true,
+      "official_auth_model_calls": 0
+    }
+  },
+  "original_docs_regex_matched_no_tests": true,
+  "separate_docs_gate_required_and_passed": true,
+  "all_source_unchanged": true,
+  "official_client_auth_model_calls": 0,
+  "cohort": "NOT_RUN",
+  "CI_attributed_to_this_composition": false
+}
