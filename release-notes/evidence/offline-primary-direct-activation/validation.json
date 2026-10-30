@@ -1,0 +1,19 @@
+{
+  "source_commit": "ffc326b1818352be56c75a60771cfd16681074cf",
+  "main_composition": "c9409b12aca68eebfe54d88643189655b667f7c4",
+  "status": "OFFLINE_COLD_PUBLIC_FACTORY_QUALIFIED",
+  "initial_go_failure_preserved": true,
+  "fix": "private output-directory test fixture chmod0700; validator unchanged",
+  "go_top_pass": 3,
+  "go_skip": 0,
+  "go_wall_seconds": 13.221,
+  "python_pass": 7,
+  "actual_export_pass": 1,
+  "host_expectations_independently_computed": true,
+  "cross_version_pair_qualified": false,
+  "launcher_wired": false,
+  "model_auth_calls": 0,
+  "prewarm": false,
+  "session_token_savings": "NOT_MEASURED",
+  "baseline_without_direct_only_mode": "UNSUPPORTED"
+}

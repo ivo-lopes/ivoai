@@ -1,0 +1,1 @@
+{"command": ["/usr/bin/python3", "-m", "unittest", "discover", "-s", "scripts", "-p", "test_benchmark_direct_activation_receipt.py"], "source_sha256": "a071e9b0d370fcb7b29cd15abd5f83200982b4e5515ab1b56baf14a220b18a48"}

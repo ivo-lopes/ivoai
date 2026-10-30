@@ -1,0 +1,13 @@
+# Cold Direct activation: offline qualification
+
+The opt-in exporter exercises the public App factory with the unchanged catalog API/go-core question. Each arm creates a separate cold App/session: Gateway OFF observes one Direct inspection and zero gateway resolves; Gateway ON observes one Direct inspection, one resolve, one MISS and zero HIT/unknown. Both produce the same127-byte exact declaration, preserve untrusted provenance and fixture identity, recover the owner's original artifact and refuse another owner. No Node, Graft runtime, client, authentication or model is started; Git inventory remains an ordinary process.
+
+Code source is `ffc326b1818352be56c75a60771cfd16681074cf`; composition with validated main65 is `c9409b12aca68eebfe54d88643189655b667f7c4`. Only the three added test/exporter files differ from main; no production policy, public contract or default changes. Go focused race tests passed3top-level/0skip in13.221s; Python contract tests passed7. The initial Go epoch failed because its output-directory test fixture lacked explicit0700; that failure is retained and the fixture was corrected without relaxing the directory validator.
+
+The actual race executable exported one receipt with a fresh host challenge. Independent host expectations recomputed executable, reviewed harness/exporter, catalog, fixture, Task, Prompt and canonical Expected hashes; Python validated the receipt and later rechecked the existing export. The archive includes the original failed epoch, passing epoch, receipt, host inputs and recheck recipe. Binaries are not stored in Git.
+
+The reader enforces bounded strict JSON, exact fields/types/counts/identities, a private owned directory,0600 regular file, no symlink traversal and a non-overwriting export. These are consistency checks for a reviewed local run, not attestation of arbitrary supplied JSON. The host must supply fresh independent expectations. No mutable operation is cached or replayed.
+
+This v1 checks one current executable, not a cross-version baseline/candidate pair. Baselines without the public Direct-only mode are UNSUPPORTED; they must not be scored as passing. The exporter is not connected to a model launcher or benchmark driver. No prewarm occurs, and equal small evidence text does not predict whole-session token or latency savings. Historical unclassified edit scenarios remain unactivated controls. Economic gate INCOMPLETE; CONTEXT_SYNC=BLOCKED/IVOAI-175.
+
+Evidence: [validation](evidence/offline-primary-direct-activation/validation.json), [manifest](evidence/offline-primary-direct-activation/manifest.json). Plane IVOAI-198/199/190. Rollback removes the three test-only files; runtime behavior is unaffected.
