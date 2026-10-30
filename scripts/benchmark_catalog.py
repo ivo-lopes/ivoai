@@ -107,10 +107,34 @@ def oracle_identity(scenario, go, node, bwrap):
         return None
 
 
+def admission_capabilities(harness):
+    """Bind all common launch behavior; no client/auth/configuration access."""
+    directory = harness.parent
+    name = "testdata/prefetch-admission-contract.json"
+    body = (directory / name).read_bytes()
+    spec = json.loads(body)
+    expected_files = ["primary_prefetch_common_admission_linux_test.go",
+        "primary_prefetch_common_admission_other_test.go", "primary_prefetch_common_admission_test.go",
+        "primary_prefetch_live_test.go", "primary_prefetch_subscription_guard_test.go",
+        "primary_prefetch_subscription_stdio_linux_test.go", name]
+    if spec != {"version": 1, "mode": "FRESH_CLIENT_REPORTED_ROUTE_THEN_SHARED_SCOPE_MCP_DENY_ONLY",
+                "source_wired": True, "source_files": expected_files} or type(spec.get("version")) is not int or type(spec.get("source_wired")) is not bool:
+        raise ValueError("admission_contract_unavailable")
+    result = hashlib.sha256()
+    files = {}
+    for relative in expected_files:
+        data = (directory / relative).read_bytes()
+        files[relative] = hashlib.sha256(data).hexdigest()
+        result.update(relative.encode() + b"\0" + data + b"\0")
+    return {"version": 1, "mode": spec["mode"], "source_wired": True,
+            "files": files, "source_sha256": result.hexdigest(),
+            "driver_contract_sha256": hashlib.sha256(body).hexdigest()}
+
+
 def expected_capabilities(harness):
     cases = [s for s in load_catalog() if s.runner_supported]
     return {"schema_version": 3, "direct_mcp_helper_configuration_scope": "USER_CONFIG_INCLUDED_SHARED_SCOPE",
-            "direct_mcp_helper_connected": False, "catalog_sha256": digest(CATALOG),
+            "direct_mcp_helper_connected": True, "admission": admission_capabilities(harness), "catalog_sha256": digest(CATALOG),
             "fixture_contract_sha256": contract_digest(),
             "harness_sha256": digest(harness), "supported_scenarios": sorted(s.id for s in cases),
             "fixtures": {s.fixture: fixture_digest(s.fixture) for s in cases}}
