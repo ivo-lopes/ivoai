@@ -1,0 +1,33 @@
+{
+  "main": "16914dbf8a9d9de66fefc998261f624cb688d48a",
+  "tree": "48cc6134a972f1ca6523a8097695c63f770e4a59",
+  "equals_qualified_composition": "aaab08f50220579ddc704d826b36116aaa042891",
+  "exact_tree_verified_by_git": true,
+  "merges": [
+    {
+      "pr": 66,
+      "merge": "ee856a125ac38ed7048bf3e352df3ee6b251936e",
+      "head": "abbdb09d5fdf696867cd46b620d4ad02b96867d4",
+      "run": 41075457721,
+      "tree": "d7d92b13974a02405793303665b5f70c9c58a03c"
+    },
+    {
+      "pr": 67,
+      "merge": "42e2eb20a9b1a8314af184490f77e1f727fe8508",
+      "head": "02ebbb5a3b42fba05ff3b624335fc5022411e62c",
+      "run": 41076121502,
+      "tree": "e63353cbacb54acfa107f6237ed0cbfe82017cb0"
+    },
+    {
+      "pr": 68,
+      "merge": "16914dbf8a9d9de66fefc998261f624cb688d48a",
+      "head": "150f596cecb7febf1498c4cc83f4187ce0cf5cc7",
+      "run": 41076459539,
+      "tree": "48cc6134a972f1ca6523a8097695c63f770e4a59"
+    }
+  ],
+  "no_ci_reattribution": true,
+  "no_new_release_or_model_cohort": true,
+  "plane_updates": "NOT_SENT_REAUTH_REQUIRED",
+  "context_sync": "BLOCKED_IVOAI_175"
+}

@@ -1,5 +1,7 @@
 # Publication, cold activation and admission composition
 
+Final update: PR66,67and68 were merged as ee856a12,42e2eb20and16914dbf after their respective exact-head CI runs41075457721,41076121502and41076459539 each completed16distinct jobs successfully on attempt1. Main `16914dbf8a9d9de66fefc998261f624cb688d48a` has tree `48cc6134a972f1ca6523a8097695c63f770e4a59`, exactly equal to the isolated composition qualified below. Git also verified each predicted intermediate tree and actual parent pair. The [merge archive](evidence/benchmark-admission-activation-merges/actual-merges.json) preserves independently attributed run/job metadata. These hosted runs belong to their PR heads, not to the composition commit or the evidence-only archive. No new release or model cohort occurred. Plane comments remain unsent pending reauthentication.
+
 Source `aaab08f50220579ddc704d826b36116aaa042891`, tree `48cc6134a972f1ca6523a8097695c63f770e4a59`, composes PR66/headabbdb09d, PR67/head02ebbb5a and PR68/head150f596c. This isolated qualification is not hosted CI for that composition and does not presume the pending PRs have merged.
 
 All4401tracked files were frozen before checks and verified unchanged afterwards. Targeted Go race checks passed18top-level and57subtests,0fail/0skip in21.804s. The original combined regex matched no docsserver tests; the separate full docsserver gate subsequently passed2tests/0skip in1.846s. Python passed82tests in29.905s. No client, authentication, model, production service or ingestion ran.

@@ -1,0 +1,13 @@
+{
+  "id": 41076121502,
+  "head_sha": "02ebbb5a3b42fba05ff3b624335fc5022411e62c",
+  "head_branch": "test/offline-primary-direct-activation",
+  "event": "pull_request",
+  "status": "completed",
+  "conclusion": "success",
+  "run_attempt": 1,
+  "html_url": "https://github.com/ivo-lopes/ivoai/actions/runs/41076121502",
+  "created_at": "2026-10-30T14:56:36Z",
+  "run_started_at": "2026-10-30T14:56:36Z",
+  "updated_at": "2026-10-30T15:21:44Z"
+}
