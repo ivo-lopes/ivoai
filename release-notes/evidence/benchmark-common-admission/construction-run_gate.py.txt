@@ -1,0 +1,20 @@
+import os,sys,json,time,subprocess,hashlib
+from pathlib import Path
+name,source,*command=sys.argv[1:]
+lab=Path('/var/tmp/ivoai-common-admission-checks-20261029')
+source=Path(source)
+env={'PATH':'/var/tmp/ivoai-validation-toolchain-20261028/go/bin:/usr/bin:/bin','HOME':str(lab/'home'),'GOCACHE':str(lab/'cache'),'GOMODCACHE':'/home/ivo/go/pkg/mod','GOPATH':str(lab/'gopath'),'TMPDIR':str(lab/'tmp'),'GOENV':'off','GOWORK':'off','GOTOOLCHAIN':'local','GOPROXY':'off','GOSUMDB':'off','GOMAXPROCS':'2','PYTHONDONTWRITEBYTECODE':'1'}
+def hashes():
+ paths=set(source.glob('**/*.go'))|set(source.glob('scripts/benchmark*.py'))|set(source.glob('scripts/test_benchmark*.py'))
+ paths.add(source/'internal/app/testdata/subscription_stdio_fixture.go.txt');paths.add(source/'internal/app/testdata/prefetch-admission-contract.json')
+ return {str(p.relative_to(source)):hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(paths)}
+before=hashes()
+(lab/(name+'.started.json')).write_text(json.dumps({'source_files':before,'command':command,'profile':'PRIVATE_HOME_CACHES_EXPLICIT_ENV_NO_LIVE_OPTINS_NO_NETWORK_DEPENDENCIES','official_operations':0},indent=2)+'\n')
+start=time.monotonic()
+with (lab/(name+'.stdout')).open('wb') as out,(lab/(name+'.stderr')).open('wb') as err:
+ try: code=subprocess.run(command,cwd=source,env=env,stdout=out,stderr=err,timeout=600).returncode
+ except subprocess.TimeoutExpired: code=124
+result={'exit':code,'elapsed_seconds':round(time.monotonic()-start,3),'source_inputs_unchanged':before==hashes(),'official_operations':0}
+(lab/(name+'.result.json')).write_text(json.dumps(result,indent=2)+'\n')
+print(name,json.dumps(result))
+sys.exit(code if result['source_inputs_unchanged'] else 125)

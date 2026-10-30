@@ -1,0 +1,130 @@
+=== RUN   TestPrimaryPrefetchCommonAdmissionClosedFailures
+=== RUN   TestPrimaryPrefetchCommonAdmissionClosedFailures/policy
+=== RUN   TestPrimaryPrefetchCommonAdmissionClosedFailures/missing_transport
+=== RUN   TestPrimaryPrefetchCommonAdmissionClosedFailures/pin
+=== RUN   TestPrimaryPrefetchCommonAdmissionClosedFailures/auth
+=== RUN   TestPrimaryPrefetchCommonAdmissionClosedFailures/requirements
+=== RUN   TestPrimaryPrefetchCommonAdmissionClosedFailures/route
+=== RUN   TestPrimaryPrefetchCommonAdmissionClosedFailures/rpc
+=== RUN   TestPrimaryPrefetchCommonAdmissionClosedFailures/cleanup
+=== RUN   TestPrimaryPrefetchCommonAdmissionClosedFailures/nonzero
+=== RUN   TestPrimaryPrefetchCommonAdmissionClosedFailures/not_reaped
+=== RUN   TestPrimaryPrefetchCommonAdmissionClosedFailures/scope
+=== RUN   TestPrimaryPrefetchCommonAdmissionClosedFailures/inventory_error
+=== RUN   TestPrimaryPrefetchCommonAdmissionClosedFailures/inventory_partial
+=== RUN   TestPrimaryPrefetchCommonAdmissionClosedFailures/inventory_duplicate
+=== RUN   TestPrimaryPrefetchCommonAdmissionClosedFailures/inventory_mutation
+=== RUN   TestPrimaryPrefetchCommonAdmissionClosedFailures/inventory_argv_mutation
+=== RUN   TestPrimaryPrefetchCommonAdmissionClosedFailures/inventory_dir_mutation
+=== RUN   TestPrimaryPrefetchCommonAdmissionClosedFailures/cancel
+--- PASS: TestPrimaryPrefetchCommonAdmissionClosedFailures (0.02s)
+    --- PASS: TestPrimaryPrefetchCommonAdmissionClosedFailures/policy (0.00s)
+    --- PASS: TestPrimaryPrefetchCommonAdmissionClosedFailures/missing_transport (0.00s)
+    --- PASS: TestPrimaryPrefetchCommonAdmissionClosedFailures/pin (0.00s)
+    --- PASS: TestPrimaryPrefetchCommonAdmissionClosedFailures/auth (0.00s)
+    --- PASS: TestPrimaryPrefetchCommonAdmissionClosedFailures/requirements (0.00s)
+    --- PASS: TestPrimaryPrefetchCommonAdmissionClosedFailures/route (0.00s)
+    --- PASS: TestPrimaryPrefetchCommonAdmissionClosedFailures/rpc (0.00s)
+    --- PASS: TestPrimaryPrefetchCommonAdmissionClosedFailures/cleanup (0.00s)
+    --- PASS: TestPrimaryPrefetchCommonAdmissionClosedFailures/nonzero (0.00s)
+    --- PASS: TestPrimaryPrefetchCommonAdmissionClosedFailures/not_reaped (0.00s)
+    --- PASS: TestPrimaryPrefetchCommonAdmissionClosedFailures/scope (0.00s)
+    --- PASS: TestPrimaryPrefetchCommonAdmissionClosedFailures/inventory_error (0.00s)
+    --- PASS: TestPrimaryPrefetchCommonAdmissionClosedFailures/inventory_partial (0.00s)
+    --- PASS: TestPrimaryPrefetchCommonAdmissionClosedFailures/inventory_duplicate (0.00s)
+    --- PASS: TestPrimaryPrefetchCommonAdmissionClosedFailures/inventory_mutation (0.00s)
+    --- PASS: TestPrimaryPrefetchCommonAdmissionClosedFailures/inventory_argv_mutation (0.00s)
+    --- PASS: TestPrimaryPrefetchCommonAdmissionClosedFailures/inventory_dir_mutation (0.00s)
+    --- PASS: TestPrimaryPrefetchCommonAdmissionClosedFailures/cancel (0.00s)
+=== RUN   TestPrimaryPrefetchCommonAdmissionScopeAndNoReplay
+=== RUN   TestPrimaryPrefetchCommonAdmissionScopeAndNoReplay/A
+=== RUN   TestPrimaryPrefetchCommonAdmissionScopeAndNoReplay/B
+--- PASS: TestPrimaryPrefetchCommonAdmissionScopeAndNoReplay (0.00s)
+    --- PASS: TestPrimaryPrefetchCommonAdmissionScopeAndNoReplay/A (0.00s)
+    --- PASS: TestPrimaryPrefetchCommonAdmissionScopeAndNoReplay/B (0.00s)
+=== RUN   TestPrimaryPrefetchCommonAdmissionPostProbeAndCommandChanges
+=== RUN   TestPrimaryPrefetchCommonAdmissionPostProbeAndCommandChanges/pin_changed
+=== RUN   TestPrimaryPrefetchCommonAdmissionPostProbeAndCommandChanges/scope_changed
+=== RUN   TestPrimaryPrefetchCommonAdmissionPostProbeAndCommandChanges/cancelled
+=== RUN   TestPrimaryPrefetchCommonAdmissionPostProbeAndCommandChanges/wrong_context
+--- PASS: TestPrimaryPrefetchCommonAdmissionPostProbeAndCommandChanges (0.01s)
+    --- PASS: TestPrimaryPrefetchCommonAdmissionPostProbeAndCommandChanges/pin_changed (0.00s)
+    --- PASS: TestPrimaryPrefetchCommonAdmissionPostProbeAndCommandChanges/scope_changed (0.00s)
+    --- PASS: TestPrimaryPrefetchCommonAdmissionPostProbeAndCommandChanges/cancelled (0.00s)
+    --- PASS: TestPrimaryPrefetchCommonAdmissionPostProbeAndCommandChanges/wrong_context (0.00s)
+=== RUN   TestPrimaryPrefetchCommonAdmissionControlledProcess
+    primary_prefetch_common_admission_process_linux_test.go:22: fixture source unavailable
+--- FAIL: TestPrimaryPrefetchCommonAdmissionControlledProcess (0.00s)
+=== RUN   TestPrimaryPrefetchCommonInventoryCancellationReapsOwnedGroup
+    primary_prefetch_common_admission_process_linux_test.go:93: fixture source unavailable
+--- FAIL: TestPrimaryPrefetchCommonInventoryCancellationReapsOwnedGroup (0.00s)
+=== RUN   TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission
+    primary_prefetch_common_admission_process_linux_test.go:133: fixture source unavailable
+--- FAIL: TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission (0.00s)
+=== RUN   TestPrimaryPrefetchCommonDescendantObservationConservative
+--- PASS: TestPrimaryPrefetchCommonDescendantObservationConservative (0.00s)
+=== RUN   TestPrimaryPrefetchDirectMCPScope
+--- PASS: TestPrimaryPrefetchDirectMCPScope (0.00s)
+=== RUN   TestPrimaryPrefetchDirectMCPInventoryStrict
+=== RUN   TestPrimaryPrefetchDirectMCPInventoryStrict/invalid_00
+=== RUN   TestPrimaryPrefetchDirectMCPInventoryStrict/invalid_01
+=== RUN   TestPrimaryPrefetchDirectMCPInventoryStrict/invalid_02
+=== RUN   TestPrimaryPrefetchDirectMCPInventoryStrict/invalid_03
+=== RUN   TestPrimaryPrefetchDirectMCPInventoryStrict/invalid_04
+=== RUN   TestPrimaryPrefetchDirectMCPInventoryStrict/invalid_05
+=== RUN   TestPrimaryPrefetchDirectMCPInventoryStrict/invalid_06
+=== RUN   TestPrimaryPrefetchDirectMCPInventoryStrict/invalid_07
+=== RUN   TestPrimaryPrefetchDirectMCPInventoryStrict/invalid_08
+=== RUN   TestPrimaryPrefetchDirectMCPInventoryStrict/invalid_09
+=== RUN   TestPrimaryPrefetchDirectMCPInventoryStrict/invalid_10
+=== RUN   TestPrimaryPrefetchDirectMCPInventoryStrict/invalid_11
+=== RUN   TestPrimaryPrefetchDirectMCPInventoryStrict/invalid_12
+=== RUN   TestPrimaryPrefetchDirectMCPInventoryStrict/invalid_13
+=== RUN   TestPrimaryPrefetchDirectMCPInventoryStrict/invalid_14
+=== RUN   TestPrimaryPrefetchDirectMCPInventoryStrict/invalid_15
+=== RUN   TestPrimaryPrefetchDirectMCPInventoryStrict/invalid_16
+=== RUN   TestPrimaryPrefetchDirectMCPInventoryStrict/invalid_17
+=== RUN   TestPrimaryPrefetchDirectMCPInventoryStrict/invalid_18
+=== RUN   TestPrimaryPrefetchDirectMCPInventoryStrict/invalid_19
+=== RUN   TestPrimaryPrefetchDirectMCPInventoryStrict/invalid_20
+--- PASS: TestPrimaryPrefetchDirectMCPInventoryStrict (0.01s)
+    --- PASS: TestPrimaryPrefetchDirectMCPInventoryStrict/invalid_00 (0.00s)
+    --- PASS: TestPrimaryPrefetchDirectMCPInventoryStrict/invalid_01 (0.00s)
+    --- PASS: TestPrimaryPrefetchDirectMCPInventoryStrict/invalid_02 (0.00s)
+    --- PASS: TestPrimaryPrefetchDirectMCPInventoryStrict/invalid_03 (0.00s)
+    --- PASS: TestPrimaryPrefetchDirectMCPInventoryStrict/invalid_04 (0.00s)
+    --- PASS: TestPrimaryPrefetchDirectMCPInventoryStrict/invalid_05 (0.00s)
+    --- PASS: TestPrimaryPrefetchDirectMCPInventoryStrict/invalid_06 (0.00s)
+    --- PASS: TestPrimaryPrefetchDirectMCPInventoryStrict/invalid_07 (0.00s)
+    --- PASS: TestPrimaryPrefetchDirectMCPInventoryStrict/invalid_08 (0.00s)
+    --- PASS: TestPrimaryPrefetchDirectMCPInventoryStrict/invalid_09 (0.00s)
+    --- PASS: TestPrimaryPrefetchDirectMCPInventoryStrict/invalid_10 (0.00s)
+    --- PASS: TestPrimaryPrefetchDirectMCPInventoryStrict/invalid_11 (0.00s)
+    --- PASS: TestPrimaryPrefetchDirectMCPInventoryStrict/invalid_12 (0.00s)
+    --- PASS: TestPrimaryPrefetchDirectMCPInventoryStrict/invalid_13 (0.00s)
+    --- PASS: TestPrimaryPrefetchDirectMCPInventoryStrict/invalid_14 (0.00s)
+    --- PASS: TestPrimaryPrefetchDirectMCPInventoryStrict/invalid_15 (0.00s)
+    --- PASS: TestPrimaryPrefetchDirectMCPInventoryStrict/invalid_16 (0.00s)
+    --- PASS: TestPrimaryPrefetchDirectMCPInventoryStrict/invalid_17 (0.00s)
+    --- PASS: TestPrimaryPrefetchDirectMCPInventoryStrict/invalid_18 (0.00s)
+    --- PASS: TestPrimaryPrefetchDirectMCPInventoryStrict/invalid_19 (0.00s)
+    --- PASS: TestPrimaryPrefetchDirectMCPInventoryStrict/invalid_20 (0.00s)
+=== RUN   TestPrimaryPrefetchDirectMCPInventoryFailureClosed
+=== RUN   TestPrimaryPrefetchDirectMCPInventoryFailureClosed/exit
+=== RUN   TestPrimaryPrefetchDirectMCPInventoryFailureClosed/stdout_overflow
+=== RUN   TestPrimaryPrefetchDirectMCPInventoryFailureClosed/stderr_overflow
+=== RUN   TestPrimaryPrefetchDirectMCPInventoryFailureClosed/partial
+=== RUN   TestPrimaryPrefetchDirectMCPInventoryFailureClosed/canceled
+--- PASS: TestPrimaryPrefetchDirectMCPInventoryFailureClosed (0.01s)
+    --- PASS: TestPrimaryPrefetchDirectMCPInventoryFailureClosed/exit (0.00s)
+    --- PASS: TestPrimaryPrefetchDirectMCPInventoryFailureClosed/stdout_overflow (0.00s)
+    --- PASS: TestPrimaryPrefetchDirectMCPInventoryFailureClosed/stderr_overflow (0.00s)
+    --- PASS: TestPrimaryPrefetchDirectMCPInventoryFailureClosed/partial (0.00s)
+    --- PASS: TestPrimaryPrefetchDirectMCPInventoryFailureClosed/canceled (0.00s)
+=== RUN   TestPrimaryPrefetchDirectMCPScopeCallerAlias
+=== RUN   TestPrimaryPrefetchDirectMCPScopeCallerAlias/during_inventory
+=== RUN   TestPrimaryPrefetchDirectMCPScopeCallerAlias/after_inventory
+--- PASS: TestPrimaryPrefetchDirectMCPScopeCallerAlias (0.00s)
+    --- PASS: TestPrimaryPrefetchDirectMCPScopeCallerAlias/during_inventory (0.00s)
+    --- PASS: TestPrimaryPrefetchDirectMCPScopeCallerAlias/after_inventory (0.00s)
+FAIL

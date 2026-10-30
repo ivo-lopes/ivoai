@@ -1,0 +1,57 @@
+{
+  "status": "COMMON_SOURCE_WIRED_OFFLINE_QUALIFIED_NO_COHORT",
+  "source_commit": "c8a13bad7b9e17ae902569d73952bba6e93c5161",
+  "current_main_composition": "811f0ee66ae348defd09ee34340d4ffd876f4c54",
+  "baseline_projection": "7e04af7f16b8dca6419059c810bba4a371a584b0",
+  "full_go_race_source": "c8a13bad7b9e17ae902569d73952bba6e93c5161",
+  "full_go_race": {
+    "exit": 0,
+    "wall_seconds": 503.924,
+    "package_pass": 59,
+    "package_no_tests": 3,
+    "top_pass": 1214,
+    "sub_pass": 1035,
+    "top_skip": 68,
+    "sub_skip": 5,
+    "fail": 0
+  },
+  "composed_focused_candidate": {
+    "exit": 0,
+    "wall_seconds": 8.057
+  },
+  "composed_focused_baseline": {
+    "exit": 0,
+    "wall_seconds": 7.918
+  },
+  "python": {
+    "exit": 0,
+    "tests_pass": 75,
+    "wall_seconds": 29.751
+  },
+  "vet": {
+    "exit": 0,
+    "wall_seconds": 5.247
+  },
+  "two_fresh_reviewed_binaries_discovered": true,
+  "shared29files_equal": true,
+  "independent_go_python_discovery_equal": true,
+  "initial_source_test_failures_preserved": true,
+  "initial_direct_binary_wrong_cwd_failure_preserved": true,
+  "old_freeze_correctly_refused_later_source": true,
+  "old_prepared_snapshots_not_promoted": true,
+  "official_auth_model_calls_in_new_validation": 0,
+  "new_model_cohort": "NOT_RUN",
+  "cross_version_activation": "NOT_QUALIFIED",
+  "effective_model_observation": null,
+  "provider_cache_equivalence": "UNVERIFIED",
+  "global_economic_gate": "INCOMPLETE",
+  "plane_updates": "BLOCKED_REAUTHENTICATION",
+  "context_sync": "BLOCKED_IVOAI_175",
+  "arm64_test_compile": {
+    "exit": 0,
+    "wall_seconds": 9.012,
+    "source_unchanged": true,
+    "official_auth_model_calls": 0
+  },
+  "arm64_test_execution": "NOT_RUN"
+}

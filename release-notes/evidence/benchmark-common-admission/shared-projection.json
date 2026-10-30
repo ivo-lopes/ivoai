@@ -1,0 +1,18 @@
+{
+  "candidate_integration_base": "22b9921fcb9e29bf8852fe619b799faf6e2180e8",
+  "baseline_projection_base": "cbfb139d1c016db789dae170bf0c40f682a5c406",
+  "files": {
+    "internal/app/primary_prefetch_live_test.go": "9af71130beeb1905ead52ed36ba133953cda03593408f93240407c7a637bf790",
+    "internal/app/testdata/subscription_stdio_fixture.go.txt": "a2763febf6992a974f6fbfb8d3388fa2681381f4542a451ba94cc5a637681b4f",
+    "internal/app/testdata/prefetch-admission-contract.json": "ffce3b0e1a88c7696aaad87e40784636c1d9364a89ad6647b5a4cf14aca6ea44",
+    "internal/app/primary_prefetch_common_admission_contract_test.go": "f8a9b49812c701457241f119e19d51aa4e6889726f4788de793f6c0ad16ac371",
+    "internal/app/primary_prefetch_common_admission_linux_test.go": "b3e24cd21e3ce48c4cd2afc036f16d2239fdc68e9fc66d9c988a1919b516e02a",
+    "internal/app/primary_prefetch_common_admission_other_test.go": "3c2dfcf3d043327a467de6a3a537dc4ca28f6f85049d566803e37f788b5652a2",
+    "internal/app/primary_prefetch_common_admission_process_linux_test.go": "63ad3fdb0a1969606eb1ef5449c9ab57dc4111d1d5e467b92b738b66bbb6259b",
+    "internal/app/primary_prefetch_common_admission_test.go": "1c0353cd6cdac2686bbe849428647d76a6ab64ec749eb02781b0fa38059b54af",
+    "internal/app/primary_prefetch_subscription_guard_test.go": "4204708a830577c425d180e1cff57278e38078b5f6683ee3ed3fbee6f39ab42a",
+    "internal/app/primary_prefetch_subscription_stdio_linux_test.go": "cb58907eb52b864a674a562a38fb2e0e9b5b4df4fbc2a9a0ebd816826994447c"
+  },
+  "all_shared_bytes_equal": true,
+  "live_operations": 0
+}

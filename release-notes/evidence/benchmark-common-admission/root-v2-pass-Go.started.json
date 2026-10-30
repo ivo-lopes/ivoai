@@ -1,0 +1,1 @@
+{"command": ["/var/tmp/ivoai-validation-toolchain-20261028/go/bin/go", "test", "-race", "-count=1", "-json", "./internal/app", "-run", "^TestPrimaryPrefetch(DirectMCP.*|Common.*)$"], "source_sha256": "6576c60e19a7a336997689fbf40841ab54666d2c2bf6d1d06e9183494fd51d46"}

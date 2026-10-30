@@ -1,0 +1,1 @@
+{"command": ["/usr/bin/python3", "-m", "unittest", "discover", "-s", "scripts", "-p", "test_benchmark*.py"], "source_sha256": "d32e4782937336339bdc0fedd2ba67b05bee3f70b3ffcb3c35b3849aee6112c8"}
