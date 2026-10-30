@@ -1,0 +1,15 @@
+# Authenticated metadata qualification: implementation prepared, no official execution
+
+This test-only increment prepares the next minimum observation after the successful official logged-out refusal of source ed9, archived in7747. It adds a default-skipped adapter around the exact existing Probe/OfficialStdio and a one-shot reviewable recipe. No mapper, transport, deadline, approved client pin, production interface or live benchmark wiring changes.
+
+There is no missing official contract preventing a contextual qualifier. The available account and route responses can support “client-reported ChatGPT-compatible and canonical route during this probe.” They cannot establish exclusive interactive credential provenance, billing or an atomic route snapshot; this increment does not require or claim those stronger properties.
+
+The adapter retains ordinary client-owned HOME/CODEX_HOME/XDG/DBus in place, creates only an untrusted disposable workspace and calls at most the same four metadata requests. It never opens, copies or hashes personal config/auth/keyrings, writes client settings, adds forced login or suppresses normal OAuth refresh/cache updates. Strict data predicates, actual native Wait0, owned reap, active context and unchanged fixture are required. Synthetic data alone cannot set `AuthenticatedPositiveCertified`.
+
+The recipe compiles with a read-only host/source/module cache and new-lab-only Go caches, GOWORK off and a pinned compiler. Runtime has only PID/user containment while sharing normal host filesystem/network paths and primary UID/GID. A source-only OS probe verified primary identities/shared network/private PID namespace, but supplementary groups changed. This is a concrete limitation: auth/capability failures in this envelope cannot be generalized to the account or route. The wrapper does not alter proxy policy, client settings or permissions to obtain success.
+
+The [recipe](evidence/subscription-authenticated-metadata/RECIPE.md) defines exact inputs, once-only behavior, bounded cleanup and output filtering. Runtime argv/env and raw configuration/account data are not captured or hashed. Only closed enums/booleans are emitted, plus code-provenance hashes in the wrapper receipt. `Connected=false`/cohort disconnected remains intact. A positive flag after an actual future pass would certify only its contextual client report.
+
+Implementation validation uses pure fake observations and recipe parsing, plus compilation/vet in a read-only source-validation namespace. The [receipt](evidence/subscription-authenticated-metadata/validation.json) records actual scope and source identity. The official opt-in, wrapper and any `--prepare` operation were not executed. No status/login/account/models/provider call, inference, cohort, token saving or release readiness is claimed. A separate review of the final recipe and source must precede the one official operation.
+
+Rollback is a revert of this isolated test/docs increment; no personal state should be reset, deleted or replayed. Existing no-auth proof, older adverse canaries, economic history and published releases remain unchanged.

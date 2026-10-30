@@ -1,0 +1,123 @@
+//go:build linux
+
+package app
+
+import (
+	"context"
+	"encoding/json"
+	"github.com/ivo-lopes/ivoai/internal/session"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strconv"
+	"testing"
+	"time"
+)
+
+func TestPrimaryPrefetchCommonAdmissionControlledProcess(t *testing.T) {
+	binary := subscriptionStdioFixtureBinary(t)
+	for _, mode := range []string{"success", "no_auth", "nonzero_exit", "inventory_invalid", "inventory_nonzero"} {
+		t.Run(mode, func(t *testing.T) {
+			p, pin, home := subscriptionStdioFixture(t, binary, mode)
+			base := p.scope
+			base.globals = append([]string{}, base.globals[:len(base.globals)-6]...)
+			ctx, cancel := context.WithTimeout(context.Background(), 4*time.Second)
+			defer cancel()
+			probe := func(ctx context.Context, p prefetchSubscriptionPlan) (*prefetchSubscriptionAdmission, prefetchCommonLifecycle, error) {
+				var owned *prefetchSubscriptionStdioSession
+				open := prefetchSubscriptionPinnedStdio(p, pin)
+				a, e := prefetchSubscriptionProbe(ctx, p, func(ctx context.Context, c *exec.Cmd) (prefetchSubscriptionSession, error) {
+					s, e := open(ctx, c)
+					if s != nil {
+						owned = s.(*prefetchSubscriptionStdioSession)
+					}
+					return s, e
+				})
+				life := prefetchCommonLifecycle{}
+				if owned != nil {
+					life.reaped = owned.reaped
+					life.nativeWaitZero = owned.reaped && owned.command.ProcessState != nil && owned.command.ProcessState.Success()
+				}
+				return a, life, e
+			}
+			permit, obs := prefetchCommonPrepare(ctx, base, prefetchSubscriptionHostPolicy{true}, probe, prefetchCommonInventoryOwned, func(prefetchDirectScope) bool { return true })
+			if mode == "success" {
+				if permit == nil || !obs.NativeWaitZero || !obs.OwnedReaped {
+					t.Fatal("controlled composed lifecycle did not pass")
+				}
+				command, e := permit.takeCommand(ctx, filepath.Join(home, "schema"), "--literal-question")
+				if e != nil || command.Run() != nil {
+					t.Fatal("controlled fake exec did not complete")
+				}
+				if _, e = os.Stat(filepath.Join(home, "model.started")); e != nil {
+					t.Fatal("positive fake model-start oracle absent")
+				}
+			} else {
+				if permit != nil || obs.State != "NOT_RUN" || obs.ModelAttempts != 0 {
+					t.Fatal("failed process admitted exec")
+				}
+				if _, e := os.Stat(filepath.Join(home, "model.started")); !os.IsNotExist(e) {
+					t.Fatal("failed qualification reached fake model")
+				}
+				if mode == "no_auth" || mode == "nonzero_exit" {
+					if _, e := os.Stat(filepath.Join(home, "inventory.ready")); !os.IsNotExist(e) {
+						t.Fatal("route refusal reached inventory")
+					}
+				}
+			}
+			body, _ := json.Marshal(obs)
+			if string(body) == "" {
+				t.Fatal("observation unavailable")
+			}
+		})
+	}
+	// A fake executable is rejected by the live literal official-pin path before
+	// startup. The injected positive above is never an official/auth certificate.
+	p, _, home := subscriptionStdioFixture(t, binary, "success")
+	base := p.scope
+	base.globals = append([]string{}, base.globals[:len(base.globals)-6]...)
+	permit, obs := prefetchCommonLiveAdmission(context.Background(), base, prefetchSubscriptionHostPolicy{true})
+	if permit != nil || obs.Reason != "PIN_DENIED" || obs.ProbeAttempts != 0 {
+		t.Fatal("live branch accepted synthetic binary")
+	}
+	if _, e := os.Stat(filepath.Join(home, "inventory.ready")); !os.IsNotExist(e) {
+		t.Fatal("literal pin refusal started process")
+	}
+}
+
+func TestPrimaryPrefetchCommonInventoryCancellationReapsOwnedGroup(t *testing.T) {
+	binary := subscriptionStdioFixtureBinary(t)
+	p, _, home := subscriptionStdioFixture(t, binary, "inventory_held")
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	done := make(chan error, 1)
+	go func() {
+		_, e := prefetchDirectInventory(ctx, p.inventoryScope(), func(c *exec.Cmd) error { return prefetchCommonInventoryOwned(ctx, c) })
+		done <- e
+	}()
+	subscriptionWaitFixture(t, filepath.Join(home, "ready"))
+	child, e := os.ReadFile(filepath.Join(home, "child.pid"))
+	if e != nil {
+		t.Fatal("owned descendant oracle missing")
+	}
+	pid, e := strconv.Atoi(string(child))
+	if e != nil {
+		t.Fatal("invalid controlled child PID")
+	}
+	start := session.ProcessStart(pid)
+	if start == "" {
+		t.Fatal("controlled descendant identity missing")
+	}
+	cancel()
+	select {
+	case e := <-done:
+		if e == nil {
+			t.Fatal("cancelled held pipe accepted")
+		}
+	case <-time.After(3 * time.Second):
+		t.Fatal("owned inventory did not clean up within existing lifecycle bounds")
+	}
+	if session.ProcessMatches(pid, start) {
+		t.Fatal("owned held-pipe descendant survived cleanup")
+	}
+}

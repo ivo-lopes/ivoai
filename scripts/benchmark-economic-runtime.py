@@ -136,6 +136,50 @@ def gateway_observations(row):
     return {key: row[key] for key in fields}
 
 
+ADMISSION_REASONS = {"NOT_ATTEMPTED", "ACCEPTED_UNQUALIFIED", "SCOPE_DENIED", "PROXY_POLICY_UNKNOWN",
+    "TRANSPORT_UNAVAILABLE", "RPC_INVALID", "RPC_ERROR", "RESPONSE_BOUNDS", "CONFIG_DENIED",
+    "REQUIREMENTS_DENIED", "AUTH_DENIED", "ROUTE_DENIED", "CANCELED", "CLEANUP_FAILED", "UNKNOWN",
+    "PIN_DENIED", "LIFECYCLE_DENIED", "INVENTORY_FAILED", "MODEL_NOT_STARTED"}
+
+
+def admission_observation(row, capabilities):
+    """New rows require fresh per-attempt admission; old datasets stay readable."""
+    required = capabilities is not None and "admission" in capabilities
+    value = row.get("Admission")
+    if value is None and not required:
+        return None
+    keys = {"version", "source_wired", "state", "reason", "probe_attempts", "inventory_attempts",
+            "model_attempts", "automatic_fallbacks", "owned_reaped", "native_wait_zero", "scope_matched",
+            "probe_ms", "inventory_ms"}
+    if type(value) is not dict or set(value) != keys or type(value["version"]) is not int or value["version"] != 1:
+        raise ValueError("invalid admission schema")
+    if any(type(value[k]) is not bool for k in ("source_wired", "owned_reaped", "native_wait_zero", "scope_matched")) or not value["source_wired"]:
+        raise ValueError("invalid admission booleans")
+    if any(type(value[k]) is not int or not 0 <= value[k] <= 1 for k in ("probe_attempts", "inventory_attempts", "model_attempts", "automatic_fallbacks")) or value["automatic_fallbacks"] != 0:
+        raise ValueError("invalid admission attempts")
+    if value["inventory_attempts"] > value["probe_attempts"] or value["model_attempts"] > value["inventory_attempts"]:
+        raise ValueError("invalid admission ordering")
+    if any(type(value[k]) is not int or not 0 <= value[k] <= MAX_INTEGER for k in ("probe_ms", "inventory_ms")):
+        raise ValueError("invalid admission timing")
+    elapsed = row.get("AdmissionMS")
+    if type(elapsed) is not int or elapsed < value["probe_ms"] + value["inventory_ms"] or elapsed > MAX_INTEGER:
+        raise ValueError("invalid admission duration")
+    if type(value["state"]) is not str or type(value["reason"]) is not str or value["state"] not in ("NOT_RUN", "ADMITTED") or value["reason"] not in ADMISSION_REASONS:
+        raise ValueError("invalid admission outcome")
+    source = row.get("AdmissionSourceSHA256")
+    if not isinstance(source, str) or len(source) != 64 or any(c not in "0123456789abcdef" for c in source):
+        raise ValueError("invalid admission source")
+    if required and source != capabilities["admission"]["source_sha256"]:
+        raise ValueError("unbound admission source")
+    if value["state"] == "ADMITTED":
+        if value["reason"] != "ACCEPTED_UNQUALIFIED" or any(value[k] != 1 for k in ("probe_attempts", "inventory_attempts", "model_attempts")) or not all(value[k] for k in ("owned_reaped", "native_wait_zero", "scope_matched")):
+            raise ValueError("unproven admission")
+    elif value["model_attempts"] != 0 or row.get("Correct") is not False or row.get("JSONDecoded") is not False or any(row.get(k) is not None for k in OPTIONAL_COUNTS[:5]):
+        raise ValueError("nonexecuted admission has model evidence")
+    return {"Admission": value, "AdmissionMS": elapsed, "AdmissionSourceSHA256": source,
+            "ClientExecution": "NOT_RUN" if value["state"] == "NOT_RUN" else "ATTEMPTED"}
+
+
 def read_evidence(path, scenario, arm, repetition, code, inventory_hash, capabilities=None):
     """Return one allowlisted row, including a fixed-label failure for missing tests."""
     base = {"Scenario": scenario, "Arm": arm, "Repetition": repetition,
@@ -166,6 +210,9 @@ def read_evidence(path, scenario, arm, repetition, code, inventory_hash, capabil
                           "FixtureSHA256": capabilities["fixtures"][definition.fixture]}
             if any(row.get(key) != value for key, value in identities.items()):
                 raise ValueError("unexpected source or harness identity")
+        admission = admission_observation(row, capabilities)
+        if admission is not None and admission["ClientExecution"] == "NOT_RUN":
+            return {**base, **admission, "Error": "admission_not_run"}
         for key in ("Correct", "JSONDecoded"):
             if type(row.get(key)) is not bool:
                 raise ValueError("nonboolean verdict")
@@ -178,7 +225,7 @@ def read_evidence(path, scenario, arm, repetition, code, inventory_hash, capabil
         if row.get("CachedInputTokens") is not None and (
                 row.get("InputTokens") is None or row["CachedInputTokens"] > row["InputTokens"]):
             raise ValueError("cache is a subset of input")
-        if row["ProviderMS"] + row["PrefetchMS"] + row["ValidationMS"] > row["TotalMS"]:
+        if row["ProviderMS"] + row["PrefetchMS"] + row["ValidationMS"] + (row["AdmissionMS"] if admission else 0) > row["TotalMS"]:
             raise ValueError("inconsistent phase durations")
         if row["Correct"] and (not row["JSONDecoded"] or row["TotalMS"] <= 0 or
                                any(row.get(key) is None for key in
@@ -201,6 +248,8 @@ def read_evidence(path, scenario, arm, repetition, code, inventory_hash, capabil
             raise ValueError("incomplete native event stream")
         clean = {key: row.get(key) for key in COUNTS + OPTIONAL_COUNTS}
         clean.update(gateway_observations(row))
+        if admission is not None:
+            clean.update(admission)
         clean["NativeEventMetrics"] = native
         clean.update(Execution=definition.execution, EditValidated=row["EditValidated"], OracleToolsSHA256=row["OracleToolsSHA256"], NativeWorkerObservation=row["NativeWorkerObservation"])
         clean.update({key: row[key] for key in ("Model", "Effort", "DistributionInventorySHA256", "JSONDecoded")})
@@ -352,7 +401,9 @@ def run_attempt(command, env, resource_path, timeout=250, cwd=None, sample_proce
 
 def totals(rows):
     result = {"attempts": len(rows), "correct": sum(row["Correct"] for row in rows),
-              "measured_rows": sum(row["MeasurementValid"] for row in rows)}
+              "measured_rows": sum(row["MeasurementValid"] for row in rows),
+              "model_not_run_rows": sum(row.get("ClientExecution") == "NOT_RUN" for row in rows),
+              "model_attempts": sum(row.get("Admission", {}).get("model_attempts", 0) for row in rows) if all("Admission" in row for row in rows) else None}
     for metric in ("InputTokens", "CachedInputTokens", "OutputTokens", "TotalMS", "ToolCalls"):
         values = [row[metric] for row in rows if row["MeasurementValid"] and row.get(metric) is not None]
         result[metric] = {"sum": sum(values) if values else None, "observed_rows": len(values)}
@@ -488,6 +539,8 @@ def matrix_preflight(args, scenarios, inventory_hash, temporary):
         if scenario.runner_supported:
             status = "READY" if prerequisites and equivalent else "BLOCKED"
             reason = "" if status == "READY" else ("runtime_artifact_inputs_unavailable" if not prerequisites else "binary_contract_equivalence_unconfirmed")
+        if status == "READY" and not args.preflight_only and not getattr(args, "filtered_environment_permitted", False):
+            status, reason = "BLOCKED", "filtered_environment_policy_not_declared"
         if status == "READY" and scenario.execution == "workspace_edit":
             identity = benchmark_catalog.oracle_identity(scenario, args.oracle_go, args.node, args.oracle_bwrap)
             probes = {arm: discover_edit_oracle(binary, scenario, args, temporary / ("oracle-"+name+"-"+arm), identity)
@@ -502,6 +555,8 @@ def matrix_preflight(args, scenarios, inventory_hash, temporary):
         expected = {**expected, "oracle_tools": oracle_hashes}
     return {"schema_version": 3, "scope": "matrix16_discovery_preflight_no_inference",
             "global_economic_gate": "INCOMPLETE", "provider_attempts": 0,
+            "live_admission": "REQUIRED_FRESH_BEFORE_EACH_MODEL", "authentication": "UNOBSERVED_BY_STATIC_DISCOVERY",
+            "optimization_activation": "NOT_CERTIFIED_BY_METADATA_WIRING",
             "provider_cache_equivalence": "UNVERIFIED", "effective_model_observed": None,
             "discovery": discovery, "edit_oracle_probes": oracle_probes, "scenarios": rows}, expected
 
@@ -520,6 +575,7 @@ def main(argv=None):
     selection.add_argument("--matrix16", action="store_true", help="plan all 16; unsupported/blocked cases cannot pass")
     selection.add_argument("--scenarios", nargs="+", choices=[s.id for s in benchmark_catalog.load_catalog()])
     selection.add_argument("--concurrent-projects", action="store_true", help="experimental exact two-client composition; matrix remains UNSUPPORTED")
+    parser.add_argument("--filtered-environment-permitted", action="store_true", help="declare the reviewed filtered benchmark environment compatible with host policy; no policy bypass")
     parser.add_argument("--preflight-only", action="store_true", help="discover frozen binary contracts without starting a client")
     args = parser.parse_args(argv)
     if args.concurrent_projects:
@@ -533,6 +589,8 @@ def main(argv=None):
     temporary = args.output / "tmp"
     temporary.mkdir(mode=0o700)
     env = benchmark_environment()
+    if args.filtered_environment_permitted:
+        env["IVOAI_SUBSCRIPTION_HOST_POLICY"] = "FILTERED_ENV_PERMITTED"
     env.update(TMPDIR=str(temporary.resolve()), GOMAXPROCS="2", IVOAI_GRAFT_PREFETCH_LIVE="1",
                IVOAI_LIVE_CODEX_PATH=str(args.codex.resolve()), IVOAI_GRAFT_TEST_NODE=str(args.node.resolve()),
                IVOAI_GRAFT_TEST_DIST=str(args.distribution.resolve()),
@@ -559,6 +617,8 @@ def main(argv=None):
                 "candidate_test_sha256": sha256(args.candidate), "codex_sha256": sha256(args.codex),
                 "node_sha256": sha256(args.node), "sandbox_sha256": sha256(args.sandbox_binary), "oracle_go_sha256": sha256(args.oracle_go) if args.oracle_go else None, "oracle_bwrap_sha256": sha256(args.oracle_bwrap), "oracle_prlimit_sha256": sha256(Path("/usr/bin/prlimit")),
                 "distribution_inventory_sha256": inventory_hash, "harness_sha256": sha256(args.harness)}
+    manifest["admission"] = capabilities.get("admission") if capabilities else None
+    manifest["optimization_activation"] = "NOT_CERTIFIED_BY_METADATA_WIRING"
     manifest.update(requested_scenarios=list(scenarios), catalog_sha256=benchmark_catalog.digest(benchmark_catalog.CATALOG),
                     fixture_contract_sha256=capabilities.get("fixture_contract_sha256") if capabilities else None, edit_oracle_identities=capabilities.get("oracle_tools", {}) if capabilities else {},
                     preflight_only=args.preflight_only, cache_policy="cold_private_local_caches_provider_cache_unverified")
@@ -587,6 +647,8 @@ def main(argv=None):
                 write_json(args.output / "runtime-comparison.json", rows)
                 write_json(args.output / "summary.json", summarize(rows, args.repetitions, scenarios))
                 print(repetition, scenario, arm, "exit", code, "valid", row["MeasurementValid"], flush=True)
+                if row.get("ClientExecution") == "NOT_RUN":
+                    return 1  # Fail closed; no subsequent arm/retry after admission refusal.
     if not rows:
         write_json(args.output / "summary.json", summarize([], args.repetitions, scenarios))
     return int(len(ready) != len(scenarios) or any(not row["Correct"] for row in rows))

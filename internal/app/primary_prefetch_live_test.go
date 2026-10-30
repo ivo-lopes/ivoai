@@ -13,6 +13,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"sort"
 	"strings"
@@ -30,6 +31,9 @@ import (
 )
 
 type prefetchLiveRow struct {
+	Admission                                                                                                      prefetchCommonObservation
+	AdmissionSourceSHA256                                                                                          string
+	AdmissionMS                                                                                                    int64
 	GatewayCodeResolves, GatewayCodeCacheHits, GatewayCodeCacheMisses, GatewayCodeCacheUnknown                     int
 	GatewayObservationBasis, GatewayCacheCondition                                                                 string
 	CatalogSHA256, HarnessSHA256, FixtureSHA256                                                                    string
@@ -84,8 +88,9 @@ func prefetchLiveObserveHost(row *prefetchLiveRow, events []observability.Event)
 
 // This paired benchmark exercises the actual host prefetch/ArtifactStore
 // contract. It does not claim a full frontend lifecycle or statistically powered
-// savings. Native collaboration features are disabled; ambient system/cloud MCP
-// isolation is unverified and blocks real cohorts. B receives host evidence.
+// savings. Fresh route admission and same-scope MCP deny-only isolation are
+// wired for each arm; metadata wiring does not certify activation, economics or
+// atomic system/cloud state. Native retries remain unreported. B receives evidence.
 func TestLivePrimaryCodePrefetchBenchmark(t *testing.T) {
 	if os.Getenv("IVOAI_GRAFT_PREFETCH_LIVE") != "1" {
 		t.Skip("explicit official subscription benchmark opt-in required")
@@ -105,7 +110,6 @@ func TestLivePrimaryCodePrefetchBenchmark(t *testing.T) {
 		t.Fatal("reviewed distribution file inventory required")
 	}
 	inventoryHash := sha256.Sum256(inventory)
-	guardPrefetchCodexConfig(t)
 	runtimeArm := os.Getenv("IVOAI_ECONOMIC_RUNTIME_ARM")
 	if runtimeArm != "" && runtimeArm != "A" && runtimeArm != "B" {
 		t.Fatal("invalid comparison arm")
@@ -162,9 +166,13 @@ func TestLivePrimaryCodePrefetchBenchmark(t *testing.T) {
 						t.Fatal("edit fixture host admission unavailable")
 					}
 				}
-				row := prefetchLiveRow{GatewayCacheCondition: "FRESH_APP_SESSION_NO_PREWARM", Scenario: scenario.name, Arm: arm, Model: "gpt-6.1-sol", Effort: "low", DistributionInventorySHA256: hex.EncodeToString(inventoryHash[:]), Execution: definition.Execution, NativeWorkerObservation: "PARTIAL_CLIENT_PROJECTION_TOTALS_UNKNOWN"}
+				row := prefetchLiveRow{Admission: prefetchCommonNotRun(), AdmissionSourceSHA256: prefetchCommonContract().SourceSHA256, GatewayCacheCondition: "FRESH_APP_SESSION_NO_PREWARM", Scenario: scenario.name, Arm: arm, Model: "gpt-6.1-sol", Effort: "low", DistributionInventorySHA256: hex.EncodeToString(inventoryHash[:]), Execution: definition.Execution, NativeWorkerObservation: "PARTIAL_CLIENT_PROJECTION_TOTALS_UNKNOWN"}
 				row.CatalogSHA256, row.HarnessSHA256, row.FixtureSHA256 = benchmarkfixtures.CatalogSHA256(), prefetchHarnessSHA256(), fixtureHash
 				defer func() {
+					if row.Admission.ModelAttempts == 0 && row.Admission.State == "ADMITTED" {
+						row.Admission.State = "NOT_RUN"
+						row.Admission.Reason = "MODEL_NOT_STARTED"
+					}
 					if !row.Correct && row.Error == "" {
 						row.Error = "host_prefetch_or_fixture_failed"
 					}
@@ -252,22 +260,35 @@ func TestLivePrimaryCodePrefetchBenchmark(t *testing.T) {
 				if definition.Execution == "workspace_edit" {
 					sandbox = "workspace-write"
 				}
-				args := []string{"exec", "--ignore-user-config", "--ephemeral", "--sandbox", sandbox, "--skip-git-repo-check", "--json", "--color", "never", "-m", row.Model, "-c", `model_reasoning_effort="low"`, "-C", root}
 				schemaPath := filepath.Join(t.TempDir(), "response-schema.json")
 				schema, _ := json.Marshal(prefetchLiveResponseSchema(scenario.name))
 				if err := os.WriteFile(schemaPath, schema, 0600); err != nil {
-					t.Fatal(err)
+					t.Fatal("response schema unavailable")
 				}
-				args = append(args, "--output-schema", schemaPath)
-				args = append(args, codexresolver.ProjectTrustArgs(root)...)
-				// Fixed host restrictions are identical in both builds. No caller
-				// --enable/profile/config is accepted; these are not model instructions.
-				args = append(args, "-c", "agents.enabled=false", "-c", "features.multi_agent_v2=false", "-c", "features.multi_agent=false", "-c", "features.plugins=false", "-c", "features.hooks=false", "-c", "features.apps=false", "-c", "features.remote_plugin=false", "-c", "sandbox_workspace_write.network_access=false")
-				args = append(args, prompt)
 				ctx, cancel := context.WithTimeout(context.Background(), 180*time.Second)
 				defer cancel()
-				command := exec.CommandContext(ctx, codex, args...)
-				command.Env = prefetchSubscriptionEnvironment()
+				scope, scopeErr := prefetchNewDirectScope(codex, root, row.Model, sandbox, prefetchSubscriptionEnvironment())
+				if scopeErr != nil {
+					row.Admission.Reason = "SCOPE_DENIED"
+					row.Error = "admission_not_run"
+					t.Fatal("benchmark scope denied before model")
+				}
+				admissionStart := time.Now()
+				permit, observation := prefetchCommonLiveAdmission(ctx, scope, prefetchSubscriptionHostPolicy{PermitFilteredEnvironment: os.Getenv("IVOAI_SUBSCRIPTION_HOST_POLICY") == "FILTERED_ENV_PERMITTED"})
+				row.Admission = observation
+				row.AdmissionMS = time.Since(admissionStart).Milliseconds()
+				row.TotalMS = time.Since(start).Milliseconds()
+				if permit == nil {
+					row.Error = "admission_not_run"
+					t.Fatal("benchmark admission denied; model NOT_RUN; private details omitted")
+				}
+				command, commandErr := permit.takeCommand(ctx, schemaPath, prompt)
+				if commandErr != nil {
+					row.Admission.State = "NOT_RUN"
+					row.Admission.Reason = "SCOPE_DENIED"
+					row.Error = "admission_not_run"
+					t.Fatal("benchmark scope changed before model")
+				}
 				stdout, stderr := &prefetchLiveBuffer{max: 2 << 20}, &prefetchLiveBuffer{max: 64 << 10}
 				command.Stdout = stdout
 				command.Stderr = stderr
@@ -282,12 +303,14 @@ func TestLivePrimaryCodePrefetchBenchmark(t *testing.T) {
 						t.Fatal("composition contract unavailable")
 					}
 					isolation := sha256.Sum256([]byte(root + "\x00" + id + "\x00" + a.Store.Paths.CacheDir))
+					row.Admission.ModelAttempts = 1
 					row.ClientLifecycle, runErr = benchmarkfixtures.RunObservedClient(command, benchmarkfixtures.ClientIdentity{
 						AttemptID: os.Getenv("IVOAI_CONCURRENT_ATTEMPT_ID"), Scenario: scenario.name, Arm: arm,
 						FixtureSHA256: fixtureHash, HarnessSHA256: prefetchHarnessSHA256(), CompositionSHA256: composition,
 						ClientSHA256: os.Getenv("IVOAI_CONCURRENT_CLIENT_SHA256"), IsolationSHA256: hex.EncodeToString(isolation[:]),
 					}, os.Getenv("IVOAI_CONCURRENT_CLIENT_START"), root)
 				} else {
+					row.Admission.ModelAttempts = 1
 					runErr = command.Run()
 				}
 				row.ProviderMS = time.Since(providerStart).Milliseconds()
@@ -332,15 +355,16 @@ func prefetchHarnessSHA256() string {
 }
 
 type prefetchBenchmarkCapabilities struct {
-	DirectMCPHelperConfigurationScope string            `json:"direct_mcp_helper_configuration_scope"`
-	DirectMCPHelperConnected          bool              `json:"direct_mcp_helper_connected"`
-	SchemaVersion                     int               `json:"schema_version"`
-	CatalogSHA256                     string            `json:"catalog_sha256"`
-	ContractSHA256                    string            `json:"fixture_contract_sha256"`
-	HarnessSHA256                     string            `json:"harness_sha256"`
-	Supported                         []string          `json:"supported_scenarios"`
-	Fixtures                          map[string]string `json:"fixtures"`
-	ClientLifecycleSHA256             string            `json:"client_lifecycle_sha256,omitempty"`
+	DirectMCPHelperConfigurationScope string                     `json:"direct_mcp_helper_configuration_scope"`
+	DirectMCPHelperConnected          bool                       `json:"direct_mcp_helper_connected"`
+	SchemaVersion                     int                        `json:"schema_version"`
+	CatalogSHA256                     string                     `json:"catalog_sha256"`
+	ContractSHA256                    string                     `json:"fixture_contract_sha256"`
+	HarnessSHA256                     string                     `json:"harness_sha256"`
+	Supported                         []string                   `json:"supported_scenarios"`
+	Fixtures                          map[string]string          `json:"fixtures"`
+	ClientLifecycleSHA256             string                     `json:"client_lifecycle_sha256,omitempty"`
+	Admission                         prefetchCommonCapabilities `json:"admission"`
 }
 
 // This discovery test never reads HOME or authenticates/starts a client.
@@ -349,7 +373,7 @@ func TestPrimaryPrefetchBenchmarkCatalog(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	value := prefetchBenchmarkCapabilities{DirectMCPHelperConfigurationScope: string(prefetchDirectUserConfigIncluded), SchemaVersion: 3, CatalogSHA256: benchmarkfixtures.CatalogSHA256(), ContractSHA256: benchmarkfixtures.ContractSHA256(), HarnessSHA256: prefetchHarnessSHA256(), Fixtures: map[string]string{}}
+	value := prefetchBenchmarkCapabilities{Admission: prefetchCommonContract(), DirectMCPHelperConnected: true, DirectMCPHelperConfigurationScope: string(prefetchDirectUserConfigIncluded), SchemaVersion: 3, CatalogSHA256: benchmarkfixtures.CatalogSHA256(), ContractSHA256: benchmarkfixtures.ContractSHA256(), HarnessSHA256: prefetchHarnessSHA256(), Fixtures: map[string]string{}}
 	if os.Getenv("IVOAI_CONCURRENT_DISCOVERY") == "1" {
 		value.SchemaVersion = 4
 		value.ClientLifecycleSHA256 = benchmarkfixtures.ClientLifecycleSHA256()
@@ -613,8 +637,10 @@ func prefetchDirectInventory(ctx context.Context, scope prefetchDirectScope, run
 	command := scope.command(ctx, nil, []string{"mcp", "list", "--json"})
 	stdout := &prefetchDirectBoundedOutput{limit: 256 << 10}
 	stderr := &prefetchDirectBoundedOutput{limit: 64 << 10}
+	defer func() { clear(stdout.buffer.Bytes()); clear(stderr.buffer.Bytes()) }()
 	command.Stdout, command.Stderr = stdout, stderr
-	if err := run(command); err != nil || ctx.Err() != nil || stdout.overflow || stderr.overflow {
+	expectedArgs, expectedEnv := append([]string{}, command.Args...), append([]string{}, command.Env...)
+	if err := run(command); err != nil || ctx.Err() != nil || stdout.overflow || stderr.overflow || command.Path != scope.executable || command.Dir != scope.directory || !reflect.DeepEqual(command.Args, expectedArgs) || !reflect.DeepEqual(command.Env, expectedEnv) {
 		return nil, errors.New("direct benchmark inventory failed")
 	}
 	// Do not retain or forward inventory/error contents: transports can include
@@ -712,9 +738,8 @@ func TestPrimaryPrefetchDirectMCPScope(t *testing.T) {
 		if strings.Join(command.Args, "\x00") != strings.Join(want, "\x00") || command.Dir != scope.directory || strings.Join(command.Env, "\x00") != "HOME=/synthetic/home\x00PATH=/synthetic/bin" {
 			t.Fatal("inventory configuration scope changed")
 		}
-		// Command-owned slices cannot mutate the frozen host scope.
-		command.Env[0] = "HOME=/changed-by-runner"
-		command.Args[1] = "--changed-by-runner"
+		// A successful inventory must keep the command's effective scope intact.
+		// Mutated runner commands are covered by the refusal controls.
 		_, err := io.WriteString(command.Stdout, `[{"name":"system_layer","transport":{"url":"synthetic-not-retained"}},{"name":"other-2"}]`)
 		return err
 	})
@@ -910,30 +935,6 @@ func TestPrimaryPrefetchSubscriptionEnvironment(t *testing.T) {
 			t.Fatalf("unrelated environment inherited: %s", key)
 		}
 	}
-}
-func guardPrefetchCodexConfig(t *testing.T) {
-	t.Helper()
-	home := os.Getenv("CODEX_HOME")
-	if home == "" {
-		user, err := os.UserHomeDir()
-		if err != nil {
-			t.Fatal(err)
-		}
-		home = filepath.Join(user, ".codex")
-	}
-	path := filepath.Join(home, "config.toml")
-	before, err := os.ReadFile(path)
-	if err != nil && !os.IsNotExist(err) {
-		t.Fatal("cannot guard personal Codex configuration")
-	}
-	exists := err == nil
-	hash := sha256.Sum256(before)
-	t.Cleanup(func() {
-		after, err := os.ReadFile(path)
-		if (err == nil) != exists || sha256.Sum256(after) != hash {
-			t.Error("personal Codex configuration changed")
-		}
-	})
 }
 func TestPrimaryPrefetchLiveFinalMessage(t *testing.T) {
 	final := `{"symbol":"Scale","file":"mathpkg/scale.go","input":3,"result":6}`

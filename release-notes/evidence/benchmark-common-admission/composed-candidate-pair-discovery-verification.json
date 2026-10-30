@@ -1,0 +1,24 @@
+{
+  "status": "PASS_FRESH_BINARIES_DISCOVERY_MATCHES_INDEPENDENT_SOURCE_EXPECTATIONS",
+  "rows": [
+    {
+      "arm": "candidate",
+      "source": "811f0ee66ae348defd09ee34340d4ffd876f4c54",
+      "binary_sha256": "558631322efe7c176125054d3b987b0b3b898068be04140175e6dff27cfa6cef",
+      "discovery_sha256": "50a4ca3eb85518f78d44d775beed14510b64af076c9e84c23b652e6977ae8162",
+      "admission_sha256": "44763e2cc04dd0d31dc785cc888cc8fb31c15f9c756cb172b1552833d3ccf4df",
+      "client_auth_model_calls": 0
+    },
+    {
+      "arm": "baseline",
+      "source": "7e04af7f16b8dca6419059c810bba4a371a584b0",
+      "binary_sha256": "3369b7213c30a1db94d4764321890ef9257ab10ee83d180738f0849a1f01a7f6",
+      "discovery_sha256": "50a4ca3eb85518f78d44d775beed14510b64af076c9e84c23b652e6977ae8162",
+      "admission_sha256": "44763e2cc04dd0d31dc785cc888cc8fb31c15f9c756cb172b1552833d3ccf4df",
+      "client_auth_model_calls": 0
+    }
+  ],
+  "cohort_executed": false,
+  "activation_pair_qualified": false,
+  "economics": "INCOMPLETE"
+}

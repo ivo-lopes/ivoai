@@ -1,0 +1,62 @@
+{
+  "RECIPE.md": {
+    "bytes": 7613,
+    "sha256": "33427b4d7dc07a58f9144bd3c54e96e1797f6d6028564c400237534d5f89493a"
+  },
+  "final-inputs-frozen.json": {
+    "bytes": 1013,
+    "sha256": "8449628ef37a6b6df04a64fa15097a6ee83fb4e9172bc237754d934c959494db"
+  },
+  "identity-envelope.json": {
+    "bytes": 270,
+    "sha256": "955d0519dc3077facbac5a6af275e485dc69b038e92724bcc7ef49c5b513665a"
+  },
+  "python-contract.log": {
+    "bytes": 105,
+    "sha256": "83166b089fbcb82fac63f22522fa6ae99bb5e46368cd35d756277fd463dd6346"
+  },
+  "race.exit": {
+    "bytes": 2,
+    "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+  },
+  "race.jsonl": {
+    "bytes": 15766,
+    "sha256": "ec9c362af2e063888897c21a99c8f0e102830f3e394ac87f564c62582da683c8"
+  },
+  "race.stderr": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "run_authenticated_once.py": {
+    "bytes": 10992,
+    "sha256": "096adb046cdb482841d341f9a209f269cc30736e455b87d23ec02ac42f8df481"
+  },
+  "source-validation-freeze.json": {
+    "bytes": 794,
+    "sha256": "dc71e431f85bd904747fb0c8d59b8e12d572c227c9507287ce81b081c4c4527f"
+  },
+  "test-compile.exit": {
+    "bytes": 2,
+    "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+  },
+  "test-compile.log": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "test_recipe_contract.py": {
+    "bytes": 2730,
+    "sha256": "93b36646d677e74d5530ddde5406fe2af1db537340129e66ddd8c5beaf3f12d3"
+  },
+  "validation.json": {
+    "bytes": 2858,
+    "sha256": "b4701e1450cbfcb6a74795c7481d6ba3a5d53bf2efd564c2eaba071028cd591e"
+  },
+  "vet.exit": {
+    "bytes": 2,
+    "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa"
+  },
+  "vet.log": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}

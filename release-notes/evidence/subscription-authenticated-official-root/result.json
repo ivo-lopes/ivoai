@@ -1,0 +1,29 @@
+{
+  "Outcome": "PASS_CLIENT_REPORTED_CHATGPT_CANONICAL_ROUTE_DURING_PROBE",
+  "OfficialClientStartsMaximum": 1,
+  "AuthenticatedPositiveCertified": true,
+  "CohortConnected": false,
+  "DriverModelPromptIssued": false,
+  "SourceCommit": "3c80a2325f4c1d7b56ffd0422090f12ff91c17e2",
+  "TestELFSHA256": "51e4e1cd467ef860ae8f5aa485657adab8b5cb63d463efe786facdf95aa8c626",
+  "OuterExitZero": true,
+  "Qualification": {
+    "Outcome": "PASS_CLIENT_REPORTED_CHATGPT_CANONICAL_ROUTE_DURING_PROBE",
+    "Reason": "ACCEPTED_UNQUALIFIED",
+    "Tokens": "NOT_APPLICABLE_NO_MODEL_PROMPT_ISSUED",
+    "ClientReported": true,
+    "OwnedReaped": true,
+    "NativeWaitZero": true,
+    "ContextActive": true,
+    "FixtureUnchanged": true,
+    "PrimaryIdentityPreserved": true,
+    "NetworkNamespacePreserved": true,
+    "PIDContained": true,
+    "AuthenticatedPositiveCertified": true,
+    "DriverModelPromptIssued": false,
+    "ExclusiveInteractiveCredentialCertified": false,
+    "BillingCertified": false,
+    "CohortConnected": false,
+    "AtomicSnapshotCertified": false
+  }
+}

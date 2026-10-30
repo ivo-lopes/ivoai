@@ -1,0 +1,8 @@
+{
+  "result": "FAIL_DESCENDANT_IDENTITY_ASSERTION",
+  "observed_owned_descendant_state": "Z",
+  "cause_scope": "controlled_inventory_fixture_parent_ignores_TERM_and_does_not_Wait_child",
+  "unknown": "no universal descendant_reap_guarantee_outside_PID_namespace",
+  "official_operations": 0,
+  "deadline_or_assertion_changes": false
+}

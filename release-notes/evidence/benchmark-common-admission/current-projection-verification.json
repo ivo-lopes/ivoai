@@ -1,0 +1,26 @@
+{
+  "candidate": "811f0ee66ae348defd09ee34340d4ffd876f4c54",
+  "baseline": "7e04af7f16b8dca6419059c810bba4a371a584b0",
+  "baseline_production_base": "cbfb139d1c016db789dae170bf0c40f682a5c406",
+  "all29_shared_files_equal": true,
+  "baseline_changed_files": [
+    "internal/app/primary_prefetch_common_admission_contract_test.go",
+    "internal/app/primary_prefetch_common_admission_linux_test.go",
+    "internal/app/primary_prefetch_common_admission_other_test.go",
+    "internal/app/primary_prefetch_common_admission_process_linux_test.go",
+    "internal/app/primary_prefetch_common_admission_test.go",
+    "internal/app/primary_prefetch_live_test.go",
+    "internal/app/primary_prefetch_subscription_authenticated_contract_linux_test.go",
+    "internal/app/primary_prefetch_subscription_authenticated_linux_test.go",
+    "internal/app/testdata/prefetch-admission-contract.json",
+    "internal/app/testdata/subscription_stdio_fixture.go.txt",
+    "scripts/benchmark-economic-runtime.py",
+    "scripts/benchmark_catalog.py",
+    "scripts/benchmark_concurrent_runtime.py",
+    "scripts/test_benchmark_catalog.py",
+    "scripts/test_benchmark_concurrent_runtime.py",
+    "scripts/test_benchmark_economic_runtime.py"
+  ],
+  "historical_records_unchanged": 1523,
+  "official_auth_model_calls": 0
+}
