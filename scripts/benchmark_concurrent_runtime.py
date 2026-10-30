@@ -289,7 +289,7 @@ def run(args, driver):
         return 1
     inputs = (args.baseline, args.candidate, args.codex, args.node, args.sandbox_binary)
     pidfd = sys.platform.startswith("linux") and pidfd_available()
-    admitted = (pidfd and cohort_unchanged(cohort,args,driver) and all(p.is_file() and os.access(p, os.X_OK) for p in inputs)
+    admitted = ((args.preflight_only or getattr(args,"filtered_environment_permitted",False)) and pidfd and cohort_unchanged(cohort,args,driver) and all(p.is_file() and os.access(p, os.X_OK) for p in inputs)
                 and driver.sha256(args.distribution / "files.json") is not None
                 and all(row["status"] == "READY" for row in discovery.values())
                 and oracle["preflight_status"] == "OFFLINE_ORACLES_VERIFIED")
@@ -314,6 +314,8 @@ def run(args, driver):
         driver.write_json(args.output/'cohort-final.json',{'cohort_pins_stable':stable,'scenario_status':'UNSUPPORTED','client_execution':'NOT_RUN','preflight_verified':admitted and stable})
         return int(not admitted or not stable)
     environment = driver.benchmark_environment()
+    if getattr(args,"filtered_environment_permitted",False):
+        environment["IVOAI_SUBSCRIPTION_HOST_POLICY"]="FILTERED_ENV_PERMITTED"
     environment.update(GOMAXPROCS="2", IVOAI_GRAFT_PREFETCH_LIVE="1", IVOAI_LIVE_CODEX_PATH=str(args.codex.resolve()),
         IVOAI_GRAFT_TEST_NODE=str(args.node.resolve()), IVOAI_GRAFT_TEST_DIST=str(args.distribution.resolve()),
         IVOAI_GRAFT_SMOKE_BINARY=str(args.sandbox_binary.resolve()))

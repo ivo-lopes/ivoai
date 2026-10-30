@@ -36,6 +36,51 @@ func main() {
 			directory = os.Args[i+1]
 		}
 	}
+	for _, arg := range os.Args[1:] {
+		if arg == "mcp" {
+			publish("inventory.ready", "yes")
+			if mode == "inventory_held" || mode == "inventory_resistant" {
+				publish("inventory.pid", strconv.Itoa(os.Getpid()))
+				term := make(chan os.Signal, 1)
+				if mode == "inventory_resistant" {
+					signal.Ignore(syscall.SIGTERM)
+				} else {
+					signal.Notify(term, syscall.SIGTERM)
+				}
+				child := exec.Command(os.Args[0], "--pipe-child")
+				child.Env = os.Environ()
+				child.Stdout = os.Stdout
+				child.Stderr = os.Stderr
+				if child.Start() != nil {
+					os.Exit(11)
+				}
+				publish("child.pid", strconv.Itoa(child.Process.Pid))
+				publish("ready", "yes")
+				if mode == "inventory_held" {
+					<-term
+					_ = child.Wait()
+					return
+				}
+				for {
+					time.Sleep(time.Hour)
+				}
+			}
+			if mode == "inventory_invalid" {
+				fmt.Print(`[{"name":`)
+				return
+			}
+			fmt.Println(`[{"name":"synthetic_user","env":{"SECRET":"fixture-private-secret-canary"}},{"name":"synthetic_system"}]`)
+			if mode == "inventory_nonzero" {
+				os.Exit(12)
+			}
+			return
+		}
+		if arg == "exec" {
+			publish("model.started", "fake-executable-only")
+			fmt.Println(`{"fixture":true}`)
+			return
+		}
+	}
 	signal.Ignore(syscall.SIGPIPE)
 	fmt.Fprintln(os.Stderr, "fixture-private-secret-canary")
 	scanner := bufio.NewScanner(os.Stdin)

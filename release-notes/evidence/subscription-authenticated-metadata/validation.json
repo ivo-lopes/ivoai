@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "recorded_utc": "2026-10-29T04:43:14.431860+00:00",
+  "result": "TEST_ONLY_IMPLEMENTATION_PASS_AUTHENTICATED_OPERATION_NOT_EXECUTED",
+  "base": "7747ac86c748bbbbbddfe3457499fbef8f6f661c",
+  "guarded_transport_source": "ed9b659693d8aeb3cd51c42492078371769a6f6c",
+  "official_noauth_evidence": "7747ac86c748bbbbbddfe3457499fbef8f6f661c; prior negative only",
+  "existing_go_paths": 594,
+  "existing_non_test_go_paths": 284,
+  "existing_go_mismatches": [],
+  "new_Go_files": [
+    "internal/app/primary_prefetch_subscription_authenticated_linux_test.go",
+    "internal/app/primary_prefetch_subscription_authenticated_contract_linux_test.go"
+  ],
+  "race": {
+    "exit": 0,
+    "top_level": 3,
+    "events_including_subtests": {
+      "pass": 15
+    },
+    "package": [
+      {
+        "Action": "pass",
+        "Elapsed": 1.029
+      }
+    ],
+    "selected_regex": "^TestPrimaryPrefetchSubscriptionAuthenticated",
+    "real_optin_not_invoked": true
+  },
+  "vet_exit": 0,
+  "test_ELF_compile": {
+    "exit": 0,
+    "executed": false,
+    "sha256": "51e4e1cd467ef860ae8f5aa485657adab8b5cb63d463efe786facdf95aa8c626",
+    "buildvcs": false,
+    "compiled_from_frozen_uncommitted_test_source": true
+  },
+  "source_validation_envelope": {
+    "host_source_modules_readonly": true,
+    "only_new_validation_lab_writable": true,
+    "private_Go_cache_HOME_GOPATH_TMPDIR": true,
+    "network_unshared_for_source_validation_only": true
+  },
+  "python": {
+    "final_pure_tests": 7,
+    "exit": 0,
+    "initial_5_tests_tool_observed_before_semantic_cases": true,
+    "wrapper_Main_never_invoked": true
+  },
+  "OS_only_runtime_envelope_probe": {
+    "source_only_os_probe": true,
+    "official_client_calls": 0,
+    "result": {
+      "NetworkNamespacePreserved": true,
+      "PIDContained": true,
+      "PrimaryGIDPreserved": true,
+      "PrimaryUIDPreserved": true,
+      "SupplementaryGroupsPreserved": false
+    },
+    "exit": 0
+  },
+  "supplementary_groups_limit": "False observed; primary IDs preserved. Auth/capability failure would be envelope-specific, not global route/account unavailability. No group values retained.",
+  "source_freeze_sha256": "8449628ef37a6b6df04a64fa15097a6ee83fb4e9172bc237754d934c959494db",
+  "actual_official_Client_RPC_status_login_account_models_inference_executions": 0,
+  "personal_config_auth_keyring_agent_reads_copies_hashes": 0,
+  "source_test_observations_not_authentication_proof": true,
+  "AuthenticatedPositiveCertified": false,
+  "CohortConnected": false,
+  "production_changes": false,
+  "new_dependencies_authstores_orchestrators": false,
+  "wrapper_or_prepare_execution": false,
+  "normal_OAuth_cache_updates": "authorized client-owned behavior; no authenticated client run here",
+  "full_Go_CI_or_release": "NOT_RUN_NOT_CLEARED",
+  "economic_metrics": "NOT_APPLICABLE_NO_MODEL_PROMPT_ISSUED"
+}

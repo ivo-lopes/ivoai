@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "mode": "FRESH_CLIENT_REPORTED_ROUTE_THEN_SHARED_SCOPE_MCP_DENY_ONLY",
+  "source_wired": true,
+  "source_files": [
+    "primary_prefetch_common_admission_linux_test.go",
+    "primary_prefetch_common_admission_other_test.go",
+    "primary_prefetch_common_admission_test.go",
+    "primary_prefetch_live_test.go",
+    "primary_prefetch_subscription_guard_test.go",
+    "primary_prefetch_subscription_stdio_linux_test.go",
+    "testdata/prefetch-admission-contract.json"
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "source_only_os_probe": true,
+  "official_client_calls": 0,
+  "result": {
+    "NetworkNamespacePreserved": true,
+    "PIDContained": true,
+    "PrimaryGIDPreserved": true,
+    "PrimaryUIDPreserved": true,
+    "SupplementaryGroupsPreserved": false
+  },
+  "exit": 0
+}

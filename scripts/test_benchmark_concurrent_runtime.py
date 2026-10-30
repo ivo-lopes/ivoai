@@ -14,7 +14,7 @@ from unittest import mock
 import benchmark_catalog as catalog
 import benchmark_concurrent_contract as contract
 import benchmark_concurrent_runtime as runtime
-from test_benchmark_economic_runtime import valid_row
+from test_benchmark_economic_runtime import valid_row, admitted_row
 
 SPEC = importlib.util.spec_from_file_location("concurrent_fixture_driver", Path(__file__).with_name("benchmark-economic-runtime.py"))
 DRIVER = importlib.util.module_from_spec(SPEC)
@@ -31,7 +31,7 @@ class SyntheticConcurrentRuntimeTests(unittest.TestCase):
         capabilities = catalog.expected_capabilities(catalog.ROOT / "internal/app/primary_prefetch_live_test.go")
         capabilities.update(schema_version=4, client_lifecycle_sha256=contract.client_lifecycle_digest())
         harness.write_text("#!/usr/bin/python3\nimport os,sys,time,json,hashlib,subprocess\nfrom pathlib import Path\n"
-            f"mode={mode!r}\ncapabilities={capabilities!r}\nrow={valid_row()!r}\n"
+            f"mode={mode!r}\ncapabilities={capabilities!r}\nrow={admitted_row(capabilities)!r}\n"
             "if any('TestPrimaryPrefetchBenchmarkCatalog' in a for a in sys.argv):\n"
             " if mode=='old_discovery': capabilities['schema_version']=3;capabilities.pop('client_lifecycle_sha256')\n"
             " p=Path(os.environ['IVOAI_BENCHMARK_CATALOG_OUTPUT']); p.write_text(json.dumps(capabilities));sys.exit(0)\n"
@@ -60,14 +60,14 @@ class SyntheticConcurrentRuntimeTests(unittest.TestCase):
             "if mode=='zero':value['reaped_ns']=value['started_ns']\n"
             "row.update(Scenario=scenario,Arm=arm,CatalogSHA256=capabilities['catalog_sha256'],\n"
             " HarnessSHA256=capabilities['harness_sha256'],FixtureSHA256=identity['fixture_sha256'],ClientLifecycle=value,\n"
-            " TotalMS=(time.monotonic_ns()-start)//1000000,ProviderMS=(time.monotonic_ns()-start)//1000000-1,PrefetchMS=0,ValidationMS=0)\n"
+            " TotalMS=(time.monotonic_ns()-start)//1000000,ProviderMS=(time.monotonic_ns()-start)//1000000-3,PrefetchMS=0,ValidationMS=0)\n"
             "row['DistributionInventorySHA256']=hashlib.sha256((Path(os.environ['IVOAI_GRAFT_TEST_DIST'])/'files.json').read_bytes()).hexdigest()\n"
             "if mode=='one_fail' and scenario=='implementation':row['Correct']=False\n"
             "save(os.environ['IVOAI_GRAFT_PREFETCH_OUTPUT'],[5] if mode=='invalid_row' and scenario=='implementation' else [row])\n"
             "sys.exit(1 if mode=='one_fail' and scenario=='implementation' else 0)\n")
         harness.chmod(0o700)
         distribution = root / "distribution"; distribution.mkdir(); (distribution / "files.json").write_text("{}")
-        args = SimpleNamespace(baseline=harness, candidate=harness, codex=Path("/bin/sleep"), distribution=distribution, sample_processes=False)
+        args = SimpleNamespace(baseline=harness, candidate=harness, codex=Path("/bin/sleep"), distribution=distribution, sample_processes=False,filtered_environment_permitted=True)
         private = root / "private"; private.mkdir(mode=0o700)
         env = {"PATH": "/usr/bin:/bin", "IVOAI_GRAFT_TEST_DIST": str(distribution)}
         for flag in ('IVOAI_EXPERIMENTAL_EVIDENCE_GATEWAY','IVOAI_EXPERIMENTAL_EVIDENCE_RECOVERY'):
@@ -184,7 +184,7 @@ class SyntheticConcurrentRuntimeTests(unittest.TestCase):
     def run_main(self, mode="valid", repetitions=1, preflight=False):
         args, _, _, private = self.fixture(mode)
         output=private.parent/'public-evidence'
-        argv=['--concurrent-projects','--baseline',str(args.baseline),'--candidate',str(args.candidate),
+        argv=['--concurrent-projects','--filtered-environment-permitted','--baseline',str(args.baseline),'--candidate',str(args.candidate),
               '--codex',str(args.codex),'--node','/bin/true','--sandbox-binary','/bin/true',
               '--distribution',str(args.distribution),'--output',str(output),'--repetitions',str(repetitions)]
         if preflight: argv.append('--preflight-only')

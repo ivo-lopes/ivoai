@@ -1,0 +1,1 @@
+{"command": ["/var/tmp/ivoai-common-final-composed-baseline-20261030/app.test", "-test.run=^TestPrimaryPrefetch(DirectMCP.*|Common.*)$", "-test.count=1", "-test.v"], "source_sha256": "1229139479dfb0a2541cf168b1302f3fcdcc3dfbcde0f66642bc939b9bffa7a1"}

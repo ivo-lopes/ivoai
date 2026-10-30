@@ -1,0 +1,9 @@
+{"Time":"2026-10-29T02:21:54.410780708-03:00","Action":"start","Package":"github.com/ivo-lopes/ivoai/internal/app"}
+{"Time":"2026-10-29T02:21:54.419825402-03:00","Action":"run","Package":"github.com/ivo-lopes/ivoai/internal/app","Test":"TestPrimaryPrefetchCommonInventoryCancellationReapsOwnedGroup"}
+{"Time":"2026-10-29T02:21:54.419879012-03:00","Action":"output","Package":"github.com/ivo-lopes/ivoai/internal/app","Test":"TestPrimaryPrefetchCommonInventoryCancellationReapsOwnedGroup","Output":"=== RUN   TestPrimaryPrefetchCommonInventoryCancellationReapsOwnedGroup\n","OutputType":"frame"}
+{"Time":"2026-10-29T02:21:55.043864552-03:00","Action":"output","Package":"github.com/ivo-lopes/ivoai/internal/app","Test":"TestPrimaryPrefetchCommonInventoryCancellationReapsOwnedGroup","Output":"    primary_prefetch_common_admission_process_linux_test.go:134: owned held-pipe descendant identity remains; synthetic state=Z\n","OutputType":"error"}
+{"Time":"2026-10-29T02:21:55.046165431-03:00","Action":"output","Package":"github.com/ivo-lopes/ivoai/internal/app","Test":"TestPrimaryPrefetchCommonInventoryCancellationReapsOwnedGroup","Output":"--- FAIL: TestPrimaryPrefetchCommonInventoryCancellationReapsOwnedGroup (0.63s)\n","OutputType":"frame"}
+{"Time":"2026-10-29T02:21:55.0462152-03:00","Action":"fail","Package":"github.com/ivo-lopes/ivoai/internal/app","Test":"TestPrimaryPrefetchCommonInventoryCancellationReapsOwnedGroup","Elapsed":0.63}
+{"Time":"2026-10-29T02:21:55.04628065-03:00","Action":"output","Package":"github.com/ivo-lopes/ivoai/internal/app","Output":"FAIL\n","OutputType":"frame"}
+{"Time":"2026-10-29T02:21:55.050171113-03:00","Action":"output","Package":"github.com/ivo-lopes/ivoai/internal/app","Output":"FAIL\tgithub.com/ivo-lopes/ivoai/internal/app\t0.639s\n","OutputType":"frame"}
+{"Time":"2026-10-29T02:21:55.050217983-03:00","Action":"fail","Package":"github.com/ivo-lopes/ivoai/internal/app","Elapsed":0.639}

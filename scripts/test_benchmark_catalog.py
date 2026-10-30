@@ -8,7 +8,7 @@ import tempfile
 import unittest
 
 import benchmark_catalog as CATALOG
-from test_benchmark_economic_runtime import valid_row
+from test_benchmark_economic_runtime import valid_row, admitted_row
 
 SPEC = importlib.util.spec_from_file_location("matrix_driver", Path(__file__).with_name("benchmark-economic-runtime.py"))
 DRIVER = importlib.util.module_from_spec(SPEC)
@@ -32,7 +32,8 @@ class CatalogTests(unittest.TestCase):
     def test_hashes_bind_every_project_format(self):
         capabilities = CATALOG.expected_capabilities(CATALOG.ROOT / "internal/app/primary_prefetch_live_test.go")
         self.assertEqual(capabilities["direct_mcp_helper_configuration_scope"], "USER_CONFIG_INCLUDED_SHARED_SCOPE")
-        self.assertIs(capabilities["direct_mcp_helper_connected"], False)
+        self.assertIs(capabilities["direct_mcp_helper_connected"], True)
+        self.assertIs(capabilities["admission"]["source_wired"], True)
         self.assertEqual(len(capabilities["supported_scenarios"]), 9)
         self.assertEqual(len(capabilities["fixtures"]), 7)
         self.assertTrue(all(len(value) == 64 for value in capabilities["fixtures"].values()))
@@ -49,7 +50,7 @@ class CatalogTests(unittest.TestCase):
 
 
 class PreflightTests(unittest.TestCase):
-    def execute(self, mode="valid", selection=None, preflight=True, oracles=False):
+    def execute(self, mode="valid", selection=None, preflight=True, oracles=False, policy=True):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         root = Path(temporary.name)
@@ -57,7 +58,7 @@ class PreflightTests(unittest.TestCase):
         fake = root / "test-binary"
         marker = root / "client-attempts.txt"
         fake.write_text("#!/usr/bin/python3\nimport os,sys,json,hashlib\nfrom pathlib import Path\n"
-            f"mode={mode!r}\ncapabilities={expected!r}\nbase={valid_row()!r}\nmarker=Path({str(marker)!r})\n"
+            f"mode={mode!r}\ncapabilities={expected!r}\nbase={admitted_row(expected)!r}\nmarker=Path({str(marker)!r})\n"
             "print('PRIVATE_SENTINEL')\nprint('PRIVATE_SENTINEL',file=sys.stderr)\n"
             "if any('TestPrimaryPrefetchBenchmarkCatalog' in a for a in sys.argv):\n"
             " output=Path(os.environ['IVOAI_BENCHMARK_CATALOG_OUTPUT'])\n"
@@ -65,8 +66,11 @@ class PreflightTests(unittest.TestCase):
             " if mode=='mismatch': capabilities['harness_sha256']='b'*64\n"
             " if mode=='scope_mismatch': capabilities['direct_mcp_helper_configuration_scope']='UNKNOWN'\n"
             " if mode=='scope_missing': del capabilities['direct_mcp_helper_configuration_scope']\n"
-            " if mode=='scope_connected': capabilities['direct_mcp_helper_connected']=True\n"
+            " if mode=='scope_connected': capabilities['direct_mcp_helper_connected']=False\n"
             " if mode=='bool_version': capabilities['schema_version']=True\n"
+            " if mode=='old_admission': capabilities.pop('admission')\n"
+            " if mode=='forged_admission': capabilities['admission']['source_wired']=1\n"
+            " if mode=='admission_source': capabilities['admission']['source_sha256']='f'*64\n"
             " if mode=='oversized': output.write_text('x'*32769);sys.exit(0)\n"
             " if mode=='duplicate': output.write_text('{\"schema_version\":1,\"schema_version\":1}');sys.exit(0)\n"
             " output.write_text(json.dumps(capabilities));sys.exit(7 if mode=='bad_exit' else 0)\n"
@@ -91,6 +95,9 @@ class PreflightTests(unittest.TestCase):
             f"fixtures={dict((s.id,s.fixture) for s in CATALOG.load_catalog())!r}\n"
             "base['FixtureSHA256']=capabilities['fixtures'][fixtures[scenario]]\n"
             "if mode=='wrong_fixture': base['FixtureSHA256']='f'*64\n"
+            "if mode=='admission_refused':\n"
+            " base.update(Correct=False,JSONDecoded=False,InputTokens=None,CachedInputTokens=None,OutputTokens=None)\n"
+            " base['Admission'].update(state='NOT_RUN',reason='AUTH_DENIED',inventory_attempts=0,model_attempts=0,scope_matched=False,inventory_ms=0)\n"
             "if scenario in ('small_known_file_correction','cross_module_refactor'):\n"
             " base.update(Execution='workspace_edit',EditValidated=True,EditFiles=1 if scenario=='small_known_file_correction' else 3,OracleToolsSHA256=oracle_identity(scenario))\n"
             "Path(os.environ['IVOAI_GRAFT_PREFETCH_OUTPUT']).write_text(json.dumps([base]))\n")
@@ -103,6 +110,8 @@ class PreflightTests(unittest.TestCase):
         for key in ("baseline", "candidate", "codex", "node", "sandbox-binary"):
             args += ["--" + key, str(fake)]
         args += ["--distribution", str(distribution), "--output", str(output), "--repetitions", "1"]
+        if policy:
+            args += ["--filtered-environment-permitted"]
         if oracles:
             args += ["--oracle-go", str(fake), "--oracle-bwrap", str(fake)]
         args += ["--matrix16"] if selection is None else selection
@@ -141,7 +150,7 @@ class PreflightTests(unittest.TestCase):
         self.assertEqual(len(manifest["process_sampler_sha256"]), 64)
 
     def test_default_scenarios_require_discovery_before_any_client_turn(self):
-        for mode in ("mismatch", "scope_mismatch", "scope_missing", "scope_connected", "skipped", "bool_version", "duplicate", "bad_exit"):
+        for mode in ("mismatch", "scope_mismatch", "scope_missing", "scope_connected", "old_admission", "forged_admission", "admission_source", "skipped", "bool_version", "duplicate", "bad_exit"):
             with self.subTest(mode=mode):
                 code, output, marker = self.execute(mode, selection=[], preflight=False)
                 attempts = len(marker.read_text().splitlines()) if marker.exists() else 0
@@ -172,7 +181,7 @@ class PreflightTests(unittest.TestCase):
         self.assertTrue(all(row["status"] == "READY" for row in report["scenarios"]))
 
     def test_missing_skipped_wrong_or_unbounded_discovery_blocks_client(self):
-        for mode in ("skipped", "mismatch", "scope_mismatch", "scope_missing", "scope_connected", "bool_version", "oversized", "duplicate", "bad_exit"):
+        for mode in ("skipped", "mismatch", "scope_mismatch", "scope_missing", "scope_connected", "old_admission", "forged_admission", "admission_source", "bool_version", "oversized", "duplicate", "bad_exit"):
             with self.subTest(mode=mode):
                 code, output, marker = self.execute(mode, ["--scenarios", "dependencies"], preflight=False)
                 self.assertEqual(code, 1)
@@ -191,6 +200,25 @@ class PreflightTests(unittest.TestCase):
         self.assertTrue(all(x["MeasurementValid"] and len(x["FixtureSHA256"]) == 64 for x in rows))
         summary = json.loads((output / "summary.json").read_text())
         self.assertEqual(summary["global_economic_gate"], "INCOMPLETE")
+
+    def test_missing_environment_policy_does_not_start_client_or_probe(self):
+        status, output, marker = self.execute(selection=['--scenarios','api'], preflight=False, policy=False)
+        self.assertEqual(status,1)
+        self.assertFalse(marker.exists())
+        preflight=json.loads((output/'preflight.json').read_text())
+        self.assertEqual(preflight['scenarios'][0]['reason'],'filtered_environment_policy_not_declared')
+        self.assertEqual(preflight['authentication'],'UNOBSERVED_BY_STATIC_DISCOVERY')
+
+    def test_admission_refusal_stops_before_next_arm_and_preserves_zero_model(self):
+        status, output, marker = self.execute('admission_refused', selection=['--scenarios', 'api'], preflight=False)
+        self.assertEqual(status, 1)
+        self.assertEqual(len(marker.read_text().splitlines()), 1)
+        rows=json.loads((output/'runtime-comparison.json').read_text())
+        self.assertEqual(len(rows),1)
+        self.assertEqual(rows[0]['ClientExecution'],'NOT_RUN')
+        self.assertEqual(rows[0]['Admission']['model_attempts'],0)
+        self.assertEqual(rows[0]['Admission']['automatic_fallbacks'],0)
+        self.assertEqual(rows[0]['Admission']['reason'],'AUTH_DENIED')
 
     def test_unavailable_cases_never_become_fake_attempts_or_success(self):
         code, output, marker = self.execute(preflight=False)

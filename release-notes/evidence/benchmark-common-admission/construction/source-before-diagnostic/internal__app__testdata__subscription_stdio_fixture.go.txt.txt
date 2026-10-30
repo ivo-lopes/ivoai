@@ -1,0 +1,195 @@
+package main
+
+// Credential-free stdio fixture. It implements no network, auth or model API.
+import (
+	"bufio"
+	"encoding/json"
+	"fmt"
+	"os"
+	"os/exec"
+	"os/signal"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"syscall"
+	"time"
+)
+
+func publish(name, value string) {
+	p := filepath.Join(os.Getenv("HOME"), name)
+	_ = os.WriteFile(p+".tmp", []byte(value), 0600)
+	_ = os.Rename(p+".tmp", p)
+}
+func main() {
+	if len(os.Args) > 1 && os.Args[1] == "--pipe-child" {
+		for {
+			time.Sleep(time.Hour)
+		}
+	}
+	mode := "success"
+	directory := ""
+	for i := 1; i+1 < len(os.Args); i++ {
+		if os.Args[i] == "-m" {
+			mode = os.Args[i+1]
+		}
+		if os.Args[i] == "-C" {
+			directory = os.Args[i+1]
+		}
+	}
+	for _, arg := range os.Args[1:] {
+		if arg == "mcp" {
+			publish("inventory.ready", "yes")
+			if mode == "inventory_held" {
+				signal.Ignore(syscall.SIGTERM)
+				child := exec.Command(os.Args[0], "--pipe-child")
+				child.Env = os.Environ()
+				child.Stdout = os.Stdout
+				child.Stderr = os.Stderr
+				if child.Start() != nil {
+					os.Exit(11)
+				}
+				publish("child.pid", strconv.Itoa(child.Process.Pid))
+				publish("ready", "yes")
+				for {
+					time.Sleep(time.Hour)
+				}
+			}
+			if mode == "inventory_invalid" {
+				fmt.Print(`[{"name":`)
+				return
+			}
+			fmt.Println(`[{"name":"synthetic_user","env":{"SECRET":"fixture-private-secret-canary"}},{"name":"synthetic_system"}]`)
+			if mode == "inventory_nonzero" {
+				os.Exit(12)
+			}
+			return
+		}
+		if arg == "exec" {
+			publish("model.started", "fake-executable-only")
+			fmt.Println(`{"fixture":true}`)
+			return
+		}
+	}
+	signal.Ignore(syscall.SIGPIPE)
+	fmt.Fprintln(os.Stderr, "fixture-private-secret-canary")
+	scanner := bufio.NewScanner(os.Stdin)
+	scanner.Buffer(make([]byte, 4096), 65536)
+	for scanner.Scan() {
+		var r struct {
+			ID     int            `json:"id"`
+			Method string         `json:"method"`
+			Params map[string]any `json:"params"`
+		}
+		if json.Unmarshal(scanner.Bytes(), &r) != nil {
+			os.Exit(10)
+		}
+		if r.Method == "initialized" {
+			continue
+		}
+		if mode == "held_pipe" {
+			term := make(chan os.Signal, 1)
+			signal.Notify(term, syscall.SIGTERM)
+			child := exec.Command(os.Args[0], "--pipe-child")
+			child.Env = os.Environ()
+			child.Stdout = os.Stdout
+			child.Stderr = os.Stderr
+			if child.Start() != nil {
+				os.Exit(11)
+			}
+			publish("child.pid", strconv.Itoa(child.Process.Pid))
+			publish("ready", "yes")
+			<-term
+			_ = child.Wait()
+			return
+		}
+		if mode == "ignore_term" {
+			signal.Ignore(syscall.SIGTERM)
+			publish("ready", "yes")
+			for {
+				time.Sleep(time.Hour)
+			}
+		}
+		if mode == "partial" {
+			fmt.Print(`{"id":1,"result":`)
+			return
+		}
+		if mode == "oversize" {
+			fmt.Println(strings.Repeat("x", (2<<20)+2))
+			return
+		}
+		if mode == "deep" {
+			fmt.Println(`{"id":1,"result":{"x":` + strings.Repeat("[", 40) + "0" + strings.Repeat("]", 40) + `}}`)
+			return
+		}
+		if mode == "nodes" {
+			fmt.Println(`{"id":1,"result":{"x":[` + strings.Repeat("0,", 32768) + `0]}}`)
+			return
+		}
+		if mode == "large_notification" {
+			fmt.Println(`{"method":"synthetic/notice","params":{"private":"` + strings.Repeat("x", 65536) + `"}}`)
+			return
+		}
+		if mode == "duplicate" {
+			fmt.Println(`{"id":1,"id":1,"result":{}}`)
+			return
+		}
+		if mode == "wrong_id" {
+			fmt.Println(`{"id":99,"result":{}}`)
+			return
+		}
+		if mode == "remote_error" {
+			fmt.Println(`{"id":1,"error":{"message":"fixture-private-secret-canary"}}`)
+			return
+		}
+		if mode == "server_request" {
+			fmt.Println(`{"id":"server-owned","method":"tools/call","params":{}}`)
+			return
+		}
+		if mode == "early_eof" {
+			return
+		}
+		if mode == "notifications" || mode == "notification_flood" {
+			n := 1
+			if mode == "notification_flood" {
+				n = 17
+			}
+			for i := 0; i < n; i++ {
+				fmt.Println(`{"method":"synthetic/notice","params":{"private":"fixture-private-secret-canary"}}`)
+			}
+		}
+		var result any
+		switch r.ID {
+		case 1:
+			result = map[string]any{"userAgent": "synthetic-no-auth-client"}
+		case 2:
+			cwd, _ := os.Getwd()
+			provider := "openai"
+			if cwd != directory || os.Getenv("HOME") == "" {
+				provider = "scope-mismatch"
+			}
+			result = map[string]any{"config": map[string]any{"model_provider": provider, "openai_base_url": "https://chatgpt.com/backend-api/codex", "chatgpt_base_url": "https://chatgpt.com/backend-api/", "forced_login_method": nil, "forced_chatgpt_workspace_id": nil}}
+		case 3:
+			result = map[string]any{"requirements": nil}
+		case 4:
+			if mode == "no_auth" {
+				result = map[string]any{"account": nil, "requiresOpenaiAuth": true, "workspaceRouting": nil}
+			} else {
+				result = map[string]any{"account": map[string]any{"type": "chatgpt", "email": "fixture-private-secret-canary", "planType": "plus"}, "requiresOpenaiAuth": true, "workspaceRouting": map[string]any{"chatgptAccountId": "fixture-private-secret-canary", "backendOrigin": "https://chatgpt.com", "accountRoutingOverride": "NO_CONSTRAINT"}}
+			}
+		default:
+			os.Exit(12)
+		}
+		if json.NewEncoder(os.Stdout).Encode(map[string]any{"id": r.ID, "result": result}) != nil {
+			return
+		}
+		if mode == "self_kill" && r.ID == 4 {
+			_ = syscall.Kill(os.Getpid(), syscall.SIGKILL)
+			for {
+				time.Sleep(time.Hour)
+			}
+		}
+	}
+	if mode == "nonzero_exit" {
+		os.Exit(12)
+	}
+}
