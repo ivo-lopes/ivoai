@@ -34,6 +34,16 @@ def valid_row(scenario="api", arm="A", **changes):
     return row
 
 
+def admitted_row(capabilities, **changes):
+    row = valid_row(Admission={"version": 1, "source_wired": True, "state": "ADMITTED",
+        "reason": "ACCEPTED_UNQUALIFIED", "probe_attempts": 1, "inventory_attempts": 1,
+        "model_attempts": 1, "automatic_fallbacks": 0, "owned_reaped": True, "native_wait_zero": True,
+        "scope_matched": True, "probe_ms": 1, "inventory_ms": 1},
+        AdmissionMS=2, AdmissionSourceSHA256=capabilities["admission"]["source_sha256"], TotalMS=102)
+    row.update(changes)
+    return row
+
+
 class EvidenceTests(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
@@ -297,7 +307,7 @@ class DriverTests(unittest.TestCase):
                         "scenario=next(x for x in sys.argv if x.startswith('-test.run=')).split('/')[1]\n"
                         "output=Path(os.environ['IVOAI_GRAFT_PREFETCH_OUTPUT'])\n"
                         f"mode={mode!r}\n"
-                        f"row={valid_row()!r}\n" +
+                        f"row={admitted_row(capabilities)!r}\n" +
                         "row.update(Scenario=scenario,Arm=arm,Private='SECRET',Error='SECRET')\n"
                         "row.update(CatalogSHA256=capabilities['catalog_sha256'],HarnessSHA256=capabilities['harness_sha256'],FixtureSHA256=capabilities['fixtures'][fixtures[scenario]])\n"
                         "row['DistributionInventorySHA256']=hashlib.sha256((Path(os.environ['IVOAI_GRAFT_TEST_DIST'])/'files.json').read_bytes()).hexdigest()\n"
@@ -313,7 +323,7 @@ class DriverTests(unittest.TestCase):
         argv = []
         for name in ("baseline", "candidate", "codex", "node", "sandbox-binary"):
             argv.extend(["--" + name, str(fake)])
-        argv.extend(["--distribution", str(distribution), "--output", str(output), "--repetitions", "1"])
+        argv.extend(["--filtered-environment-permitted", "--distribution", str(distribution), "--output", str(output), "--repetitions", "1"])
         captured = io.StringIO()
         with contextlib.redirect_stdout(captured):
             status = BENCHMARK.main(argv)
@@ -440,6 +450,67 @@ class DriverTests(unittest.TestCase):
             code, _ = BENCHMARK.run_attempt(["/usr/bin/python3", "-c", "import time; time.sleep(30)"],
                                              os.environ.copy(), Path(directory) / "resource.json", timeout=0.05)
             self.assertEqual(code, 124)
+
+class CommonAdmissionEvidenceTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        self.path = Path(self.tmp.name) / 'row.json'
+        self.capabilities = BENCHMARK.benchmark_catalog.expected_capabilities(
+            BENCHMARK.benchmark_catalog.ROOT / 'internal/app/primary_prefetch_live_test.go')
+
+    def row(self):
+        row = admitted_row(self.capabilities)
+        row.update(CatalogSHA256=self.capabilities['catalog_sha256'],
+                   HarnessSHA256=self.capabilities['harness_sha256'],
+                   FixtureSHA256=self.capabilities['fixtures']['go-core'])
+        return row
+
+    def read(self, row, code=0):
+        self.path.write_text(json.dumps([row]))
+        return BENCHMARK.read_evidence(self.path, 'api', 'A', 0, code, 'a'*64, self.capabilities)
+
+    def test_fresh_admission_and_noauth_refusal_keep_closed_outcomes(self):
+        passed = self.read(self.row())
+        self.assertTrue(passed['Correct'])
+        self.assertEqual(passed['Admission']['model_attempts'], 1)
+        self.assertEqual(passed['ClientExecution'], 'ATTEMPTED')
+        failed = self.row()
+        failed.update(Correct=False, JSONDecoded=False, Private='SECRET')
+        for key in BENCHMARK.OPTIONAL_COUNTS: failed[key] = None
+        failed['Admission'].update(state='NOT_RUN', reason='AUTH_DENIED', inventory_attempts=0,
+                                   model_attempts=0, scope_matched=False, inventory_ms=0)
+        clean = self.read(failed, 1)
+        self.assertFalse(clean['Correct'])
+        self.assertFalse(clean['MeasurementValid'])
+        self.assertEqual(clean['ClientExecution'], 'NOT_RUN')
+        self.assertEqual(clean['Admission']['reason'], 'AUTH_DENIED')
+        self.assertNotIn('SECRET', json.dumps(clean))
+        summary = BENCHMARK.totals([clean])
+        self.assertEqual(summary['model_attempts'], 0)
+        self.assertEqual(summary['model_not_run_rows'], 1)
+
+    def test_unbound_old_forged_partial_or_replayed_admission_rejected(self):
+        for changes in ({'version': True}, {'source_wired': 1}, {'source_wired': False},
+                        {'native_wait_zero': False}, {'owned_reaped': False}, {'scope_matched': False},
+                        {'probe_attempts': 0}, {'inventory_attempts': 0}, {'model_attempts': 0},
+                        {'model_attempts': True}, {'automatic_fallbacks': 1}, {'reason': []},
+                        {'reason': 'SECRET'}, {'private': 'SECRET'}):
+            with self.subTest(changes=changes):
+                row = self.row(); row['Admission'].update(changes)
+                clean = self.read(row)
+                self.assertFalse(clean['MeasurementValid'])
+                self.assertNotIn('SECRET', json.dumps(clean))
+        for key in self.row()['Admission']:
+            row=self.row();del row['Admission'][key]
+            self.assertFalse(self.read(row)['MeasurementValid'])
+        for field in ('Admission', 'AdmissionMS', 'AdmissionSourceSHA256'):
+            row=self.row();del row[field]
+            self.assertFalse(self.read(row)['MeasurementValid'])
+        row=self.row();row['AdmissionSourceSHA256']='f'*64
+        self.assertFalse(self.read(row)['MeasurementValid'])
+        row=self.row();row['TotalMS']=100
+        self.assertFalse(self.read(row)['MeasurementValid'])
 
 
 if __name__ == "__main__":
