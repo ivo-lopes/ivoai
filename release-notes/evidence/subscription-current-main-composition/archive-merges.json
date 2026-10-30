@@ -1,0 +1,58 @@
+{
+  "tested_source": "b7e616c6a1898fec91ecc618c16ff0777fa57193",
+  "tested_tree": "559ac264fe87e6b738d25d4527de2949cb783862",
+  "first_archive_merge": "0547d0f75c8a54557b46c47a86148c22b9356534",
+  "second_archive_merge": "fd792fb170150abb80164e5b11481da7e8a8241a",
+  "after_archive_tree": "50364c755bd3e8090e8b3270e759d5529b426d70",
+  "archived_heads": [
+    "1a63afde1a7b2627bc352e0261c19dca6354959a",
+    "ae61cbdd43cb7994a7d71c15bbb6a40a11f7751d"
+  ],
+  "all_original_b7_paths_unchanged": 4068,
+  "only_added_release_records": 22,
+  "changed_paths": [
+    "A\trelease-notes/benchmark-main-v015-composition.md",
+    "A\trelease-notes/context63-benchmark56-post015-composition.md",
+    "A\trelease-notes/evidence/benchmark-main-v015-composition/artifacts-sha256.json",
+    "A\trelease-notes/evidence/benchmark-main-v015-composition/docsserver.jsonl",
+    "A\trelease-notes/evidence/benchmark-main-v015-composition/docsserver.result.json",
+    "A\trelease-notes/evidence/benchmark-main-v015-composition/docsserver.started.json",
+    "A\trelease-notes/evidence/benchmark-main-v015-composition/docsserver.stderr",
+    "A\trelease-notes/evidence/benchmark-main-v015-composition/historical-records.json",
+    "A\trelease-notes/evidence/benchmark-main-v015-composition/run-docsserver.py.txt",
+    "A\trelease-notes/evidence/benchmark-main-v015-composition/source-frozen.json",
+    "A\trelease-notes/evidence/benchmark-main-v015-composition/validation.json",
+    "A\trelease-notes/evidence/context63-benchmark56-post015-composition/composition.json",
+    "A\trelease-notes/evidence/context63-benchmark56-post015-composition/fixture-inputs.json",
+    "A\trelease-notes/evidence/context63-benchmark56-post015-composition/focused.jsonl",
+    "A\trelease-notes/evidence/context63-benchmark56-post015-composition/focused.result.json",
+    "A\trelease-notes/evidence/context63-benchmark56-post015-composition/focused.started.json",
+    "A\trelease-notes/evidence/context63-benchmark56-post015-composition/focused.stderr",
+    "A\trelease-notes/evidence/context63-benchmark56-post015-composition/initial-manifest-scope-failure.json",
+    "A\trelease-notes/evidence/context63-benchmark56-post015-composition/manifest.json",
+    "A\trelease-notes/evidence/context63-benchmark56-post015-composition/run-focused.py.txt",
+    "A\trelease-notes/evidence/context63-benchmark56-post015-composition/source-freeze.json",
+    "A\trelease-notes/evidence/context63-benchmark56-post015-composition/validate-composition.py.txt"
+  ],
+  "new_runtime_test_execution": false,
+  "qualified_sources_and_actual_main_trees": [
+    {
+      "source": "1f58745811b9a5f3ad7d483a06e41a1f25837bc1",
+      "actual_main": "740cfa63c787acfaeb8b32e206110f0ca4e1401b",
+      "same_tree": "af940419aed1615faeaacb5968fc26c1c96f0031",
+      "reachable_after_archive_merges": true
+    },
+    {
+      "source": "e80273d981632ec32ba60f8d534619ac1cf0bf18",
+      "actual_main": "d6111e50b607de2bec950fbb4185609699ccab3c",
+      "same_tree": "2ee4f51d76503aac13b0b44ba10cdaa55d6246fc",
+      "reachable_after_archive_merges": true
+    }
+  ],
+  "unchanged_input_counts": {
+    "Go": 600,
+    "root_modules": 2,
+    "scripts_paths": 61,
+    "literal_go_txt": 41
+  }
+}

@@ -1,0 +1,37 @@
+import hashlib, json, os, pathlib, subprocess, time
+
+proof = pathlib.Path(__file__).resolve().parent
+root = pathlib.Path('/var/tmp/ivoai-benchmark-main-v015-composition-20261029')
+frozen = json.loads((proof / 'source-frozen.json').read_text())
+
+def verify():
+    for name, record in frozen['files'].items():
+        path = root / name
+        assert path.is_symlink() == (record['kind'] == 'symlink'), name
+        body = os.readlink(path).encode() if path.is_symlink() else path.read_bytes()
+        assert hashlib.sha256(body).hexdigest() == record['sha256'], name
+
+verify()
+home = proof / 'home'
+home.mkdir(mode=0o700)
+command = ['/var/tmp/ivoai-validation-toolchain-20261028/go/bin/go', 'test', '-count=1', '-json', './internal/docsserver']
+environment = {'HOME': str(home), 'PATH': '/var/tmp/ivoai-validation-toolchain-20261028/go/bin:/usr/bin:/bin',
+               'GOENV': 'off', 'GOWORK': 'off', 'GOPROXY': 'off', 'GOSUMDB': 'off', 'GOMAXPROCS': '2',
+               'GOCACHE': '/home/ivo/.cache/go-build', 'GOMODCACHE': '/home/ivo/go/pkg/mod',
+               'TMPDIR': str(proof), 'GOTMPDIR': str(proof), 'LANG': 'C.UTF-8'}
+(proof / 'docsserver.started.json').open('x').write(json.dumps({'source': frozen['source'], 'command': command, 'environment': environment, 'official_optins': 'ABSENT', 'once': True}, indent=2) + '\n')
+start = time.monotonic()
+with (proof / 'docsserver.jsonl').open('xb') as out, (proof / 'docsserver.stderr').open('xb') as err:
+    result = subprocess.run(command, cwd=root, env=environment, stdout=out, stderr=err)
+verify()
+events = [json.loads(line) for line in (proof / 'docsserver.jsonl').read_text().splitlines()]
+passed = [event['Test'] for event in events if event.get('Test') and event['Action'] == 'pass']
+failed = [event['Test'] for event in events if event.get('Test') and event['Action'] == 'fail']
+skipped = [event['Test'] for event in events if event.get('Test') and event['Action'] == 'skip']
+record = {'source': frozen['source'], 'exit': result.returncode, 'wall_seconds': round(time.monotonic() - start, 3),
+          'passed': passed, 'failed': failed, 'skipped': skipped, 'all_frozen_paths_verified_after': len(frozen['files']),
+          'official_client_auth_model_or_deployed_service_calls': 0, 'local_HTTP_listener_fixture': True,
+          'full_Go_Python_vet_Node_repeated': False, 'comparative_pair_rebuild': False}
+(proof / 'docsserver.result.json').write_text(json.dumps(record, indent=2) + '\n')
+print(json.dumps(record))
+raise SystemExit(result.returncode or (0 if len(passed) == 2 and not failed and not skipped else 1))

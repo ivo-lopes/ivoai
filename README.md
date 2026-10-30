@@ -19,11 +19,14 @@ available temporarily as a compatibility and rollback provider. The same Go bina
 an optional private server and expose its memory and context to desktop agents,
 ChatGPT Web, and Claude Web.
 
-The v0.15.0 candidate has restricted official-client/Core protocol qualification
-with a local fake provider and no subscription authentication. Publication remains
-conditional on final-head CI and Release/distribution gates; it is not a general
-TUI/model parity or economic claim. See the [qualification report](release-notes/v0.15.0-final-runtime-qualification.md)
-and [GitHub releases](https://github.com/ivo-lopes/ivoai/releases) for publication status.
+[v0.15.0](https://github.com/ivo-lopes/ivoai/releases/tag/v0.15.0) is published and independently
+verified from immutable source `8f688e26`: all 12 API asset sizes/digests and 11
+payload checksums passed. See the [publication report](release-notes/v0.15.0-published-validation.md)
+for distribution and downloaded-Core checks, and the separate
+[restricted protocol qualification](release-notes/v0.15.0-final-runtime-qualification.md)
+for its fake-provider scope. Experimental flags remain OFF; general TUI/model
+parity and global economic gains are unproven. PR56/63/64 and the separate
+Direct-only factory evolution are post-tag work, excluded from this release.
 
 ## How it fits together
 

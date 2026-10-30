@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="generator" content="Docusaurus v3.10.2">
 <title data-rh="true">Setup | IVOAI</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="http://localhost:7780/docs/next/setup"><meta data-rh="true" property="og:locale" content="en_US"><meta data-rh="true" property="og:locale:alternate" content="pt_BR"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="Setup | IVOAI"><meta data-rh="true" name="description" content="Client setup"><meta data-rh="true" property="og:description" content="Client setup"><link data-rh="true" rel="icon" href="/img/favicon.svg"><link data-rh="true" rel="canonical" href="http://localhost:7780/docs/next/setup"><link data-rh="true" rel="alternate" href="http://localhost:7780/docs/next/setup" hreflang="en-US"><link data-rh="true" rel="alternate" href="http://localhost:7780/pt-BR/docs/next/setup" hreflang="pt-BR"><link data-rh="true" rel="alternate" href="http://localhost:7780/docs/next/setup" hreflang="x-default"><script data-rh="true" type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Setup","item":"http://localhost:7780/docs/next/setup"}]}</script><link rel="stylesheet" href="/assets/css/styles.c768eb50.css">
-<script src="/assets/js/runtime~main.28556c60.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.c7b82f09.js" defer="defer"></script>
 <script src="/assets/js/main.6c7444d6.js" defer="defer"></script>
 </head>
 <body>
@@ -15,14 +15,16 @@
 <h2 class="anchor anchorTargetStickyNavbar_J2Vv" id="client-setup">Client setup<a href="#client-setup" class="hash-link" aria-label="Direct link to Client setup" title="Direct link to Client setup" translate="no">​</a></h2>
 <p><code>ivoai setup</code> provisions managed components transactionally and preserves external
 executor installations and their authentication.</p>
-<p>The local v0.15.0 candidate omits OpenCode from ordinary client setup and updater
+<p>The published v0.15.0 omits OpenCode from ordinary client setup and updater
 candidate setup. To explicitly provision the retained compatibility component,
 use <code>ivoai setup --mode client --legacy-opencode</code>; server setup refuses this flag.
 Ordinary setup preserves existing OpenCode ownership, binaries and history; it
 does not uninstall, repair or adopt that component. See <a class="" href="/docs/next/releases">releases</a>
-for conditional publication status and native migration limits. The restricted
-official-client/Core qualification uses a local fake provider without subscription
-authentication; it does not certify general TUI, auth or model behavior.</p>
+and the <a href="https://github.com/ivo-lopes/ivoai/blob/main/release-notes/v0.15.0-published-validation.md" target="_blank" rel="noopener noreferrer" class="">publication report</a>
+for verified source/assets and native migration limits. The restricted official-client/Core
+qualification uses a local fake provider without subscription authentication; it
+does not certify general TUI, auth or model behavior. Post-tag main changes are
+separate from the downloaded v0.15.0 payloads.</p>
 <h2 class="anchor anchorTargetStickyNavbar_J2Vv" id="managed-native-configuration-scope">Managed native configuration scope<a href="#managed-native-configuration-scope" class="hash-link" aria-label="Direct link to Managed native configuration scope" title="Direct link to Managed native configuration scope" translate="no">​</a></h2>
 <p>For managed Codex, start IVOAI from the required workspace using shell <code>cd</code>:</p>
 <div class="language-sh codeBlockContainer_Jx85 theme-code-block" style="--prism-color:#bfc7d5;--prism-background-color:#292d3e"><div class="codeBlockContent_qLEI"><pre tabindex="0" class="prism-code language-sh codeBlock_SoU2 thin-scrollbar" style="color:#bfc7d5;background-color:#292d3e"><code class="codeBlockLines_Ct5X"><div class="token-line" style="color:#bfc7d5"><span class="token builtin class-name" style="color:rgb(255, 203, 107)">cd</span><span class="token plain"> /path/to/project</span><br></div><div class="token-line" style="color:#bfc7d5"><span class="token plain">ivoai codex</span><br></div></code></pre></div></div>

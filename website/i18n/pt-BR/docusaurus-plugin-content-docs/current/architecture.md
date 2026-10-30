@@ -5,20 +5,26 @@ na v0.5.0, e registra separadamente o estado incremental atual abaixo. As versõ
 exatas estão em `manifest/components.yaml`; comportamento entregue e limites da
 migração pertencem às evidências versionadas de implementação e validação.
 
-## Candidata local v0.15.0 — publicação condicionada
+## Release atual: v0.15.0 — publicada e verificada
 
-**Publicação condicionada à CI da fonte final exata e aos gates existentes de
-Release/distribuição; esta candidata não está publicada.** A nova qualificação
-restrita em `77d5fd6c` passou nos dois testes nomeados de protocolo CLI oficial/Core
-e nos dois subcasos CLI, com race e zero falhas/skips. Usou o par cliente/companion
-0.162.1 revisado, homes novos de fixtures e provedor falso local, sem autenticação
-de assinatura ou chamadas a modelo real. Verifica escopo MCP/receipt/recusa de
-replay e bootstrap real separado do Core; não certifica lifecycle da TUI pública,
+**Publicada e verificada independentemente.** A [v0.15.0](https://github.com/ivo-lopes/ivoai/releases/tag/v0.15.0)
+foi publicada em 29/10/2026 às 04:51:24 UTC, do fonte imutável `8f688e26`.
+Os cinco [jobs Release](https://github.com/ivo-lopes/ivoai/actions/runs/40817035302) passaram.
+A verificação independente dos assets baixados conferiu os 12 tamanhos/digests
+da API e os 11 checksums de payload. O Core amd64 baixado e verificado retornou
+versão `0.15.0` e help com sucesso; a execução ARM nativa e amd64/QEMU sem AVX
+pertence ao workflow, não a uma execução ARM local. Consulte o
+[relatório de publicação e verificação](https://github.com/ivo-lopes/ivoai/blob/main/release-notes/v0.15.0-published-validation.md).
+Esta atualização documental não muda a tag nem os assets publicados.
+
+A qualificação separada anterior à publicação em `77d5fd6c` passou nos dois
+testes nomeados de protocolo CLI oficial/Core e nos dois subcasos CLI, com race
+e zero falhas/skips. Usou o par cliente/companion 0.162.1 revisado, homes novos
+de fixtures e provedor falso local, sem autenticação de assinatura ou chamadas
+a modelo real. Esses testes verificam escopo MCP/receipt/recusa de replay e
+bootstrap real separado do Core; não certificam lifecycle da TUI pública,
 isolamento system/cloud ou paridade geral de clientes/modelos. Consulte a
-[qualificação da fonte final](https://github.com/ivo-lopes/ivoai/blob/release/v0.15.0-candidate/release-notes/v0.15.0-final-runtime-qualification.md).
-Consulte [releases no GitHub](https://github.com/ivo-lopes/ivoai/releases) e o
-[estado dos workflows](https://github.com/ivo-lopes/ivoai/actions) para publicação e
-gates posteriores; este registro não autoriza uma tag.
+[qualificação da fonte final](https://github.com/ivo-lopes/ivoai/blob/v0.15.0/release-notes/v0.15.0-final-runtime-qualification.md).
 
 As observações seguintes permanecem históricas, vinculadas a suas próprias fontes. Um turno
 real suportado em `55ec7ab9` passou no oráculo matemático; seu cleanup intencional
@@ -29,7 +35,7 @@ sem pergunta/tentativa/worker ou sinal forçado. Isso qualifica startup/quit oci
 nesses inputs exatos. Turno real seguido de quit normal na mesma sessão não foi
 executado. A falha original `0bab9b34` e sua causa UNKNOWN são preservadas; estas
 observações não entram nos 126 turnos comparativos. Consulte o
-[relatório de saída normal](https://github.com/ivo-lopes/ivoai/blob/release/v0.15.0-candidate/release-notes/native-normal-quit-validation.md).
+[relatório de saída normal](https://github.com/ivo-lopes/ivoai/blob/v0.15.0/release-notes/native-normal-quit-validation.md).
 Não comprova paridade geral de TUI/clientes/modelos nem economia.
 
 Inventário/execução MCP gerenciados compartilham cwd/ambiente capturados e escopo
@@ -43,10 +49,12 @@ G0 está ligado ao prefetch admitido sob flag OFF por padrão, com recuperação
 Core/MCP protegida e opt-in separado de criação protegida. G1 Memory permanece SPI
 sem ligação. Adaptação segue OFF, com admissão de envelope literal e DAG/aprovações
 Core existentes. PR55 é preflight offline; PR54/56 ficam excluídos. Consulte
-[releases](releases.md) para épocas exatas e condições de publicação. A descrição da v0.14.0
-publicada abaixo continua histórica.
+[releases](releases.md) para os limites exatos da entrega. PR56/63/64, qualificação
+de metadados autenticados e a evolução separada da factory Direct-only estão fora
+da tag v0.15.0. Builds do main posterior à tag têm qualificação própria por fonte.
+A descrição da v0.14.0 abaixo continua histórica.
 
-## Release atual: v0.14.0
+## Release histórica: v0.14.0
 
 O mesmo Core agora fornece um [console administrativo local de consulta](admin-console.md).
 Ele reutiliza App, stores de sessões/OAuth e DTOs limitados; JavaScript não cria

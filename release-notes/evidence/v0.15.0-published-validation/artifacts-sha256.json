@@ -1,0 +1,78 @@
+{
+  "Core-help.stderr": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "Core-help.stdout": {
+    "bytes": 3722,
+    "sha256": "112885f1cdcab1d5b06dcac38a4dd50b26e6824e1e95f26952446f1384cffced"
+  },
+  "Core-version.stderr": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "Core-version.stdout": {
+    "bytes": 7,
+    "sha256": "f8405a7330c287028d470c3ee3506f878f1ad85ed79c1d1adc19df2ff7398915"
+  },
+  "buildinfo-amd64.json": {
+    "bytes": 1930,
+    "sha256": "e2f1f426146fc60070d62e265435cb96cd5c9bd5c6fa2c154e946aa8ba67e4e0"
+  },
+  "buildinfo-amd64.stderr": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "buildinfo-arm64.json": {
+    "bytes": 1932,
+    "sha256": "c0176ca5283198da9db058dd428921e5cb1df6fec122ac691434b3b42b428a44"
+  },
+  "buildinfo-arm64.stderr": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "download-result.json": {
+    "bytes": 3243,
+    "sha256": "c4ee0ed957d62170b88ff5e29c38fa932535e218d8df099c36ad1002c5200243"
+  },
+  "download.py.txt": {
+    "bytes": 2798,
+    "sha256": "49b61e29aa4509fbb5789813d4622e5a4c82714d4fcb1b59972057fb3b98b29b"
+  },
+  "local-Core-smoke.json": {
+    "bytes": 541,
+    "sha256": "a35333ddc4a2aa219716eecbd19fea8f6c7c8c70d5c06b89b53e525ffdef3748"
+  },
+  "published-notes.md": {
+    "bytes": 3209,
+    "sha256": "9993278ebd60e14d5a5fc5886e57fd8331e22abc23d2394269bbb6ea5e63575e"
+  },
+  "published-tag.json": {
+    "bytes": 1560,
+    "sha256": "6ebc36b4b0ed3355a54404a59d8cc8f627c4023a1b43886d9db05267c1396fb7"
+  },
+  "release-api-after-notes.json": {
+    "bytes": 24853,
+    "sha256": "916b379d4433f6cee9b8096800ce6a2e821cc0929b1b80f979b7fa7e7cbe54d3"
+  },
+  "release-api.json": {
+    "bytes": 39602,
+    "sha256": "5a2c11ac94e2d6eaaa44160cfa8696ef63ca2e55a22c8335e8c2b749b8f46fc1"
+  },
+  "validation.json": {
+    "bytes": 937,
+    "sha256": "282de30342b662149b30897217731dcb2082e1e5ee7b69456340525f25fd709d"
+  },
+  "verification.json": {
+    "bytes": 13834,
+    "sha256": "c6cf95e97ce7b18c5e27d52f812a607e8fdf160324e971e52c0ec0b6e18a338c"
+  },
+  "workflow-jobs.json": {
+    "bytes": 17051,
+    "sha256": "9c3d48722ce00c501c6dbf222302d40747297882eadb1d7113c2f10cd6039874"
+  },
+  "workflow-run.json": {
+    "bytes": 11944,
+    "sha256": "922716151ad108f17274c2e4947664b3a03eebd416122c959f87780d47a0b968"
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "stage": "private pnpm config set --global offline true",
+  "outer_python_exit": 1,
+  "pnpm_exit": "NONZERO; exact code/raw diagnostic not retained before assertion",
+  "dependencies_install_started": false,
+  "source_changed": false
+}

@@ -1,0 +1,33 @@
+{
+  "source": "e80273d981632ec32ba60f8d534619ac1cf0bf18",
+  "command": [
+    "/var/tmp/ivoai-validation-toolchain-20261028/go/bin/go",
+    "test",
+    "-count=1",
+    "-timeout=120s",
+    "-json",
+    "./cmd/ivoai",
+    "./internal/servercmd",
+    "./internal/docsserver"
+  ],
+  "environment": {
+    "HOME": "/var/tmp/ivoai-context63-benchmark56-proof-20261029/home",
+    "PATH": "/var/tmp/ivoai-validation-toolchain-20261028/go/bin:/usr/bin:/bin",
+    "GOCACHE": "/home/ivo/.cache/go-build",
+    "GOMODCACHE": "/home/ivo/go/pkg/mod",
+    "GOPATH": "/home/ivo/go",
+    "GOENV": "off",
+    "GOWORK": "off",
+    "GOPROXY": "off",
+    "GOSUMDB": "off",
+    "GOFLAGS": "-mod=readonly",
+    "GOTOOLCHAIN": "local",
+    "GOMAXPROCS": "2",
+    "LANG": "C.UTF-8",
+    "GOTMPDIR": "/var/tmp/ivoai-context63-benchmark56-proof-20261029/go-tmp",
+    "TMPDIR": "/var/tmp/ivoai-context63-benchmark56-proof-20261029/go-tmp",
+    "GIT_NO_REPLACE_OBJECTS": "1",
+    "GIT_NO_LAZY_FETCH": "1"
+  },
+  "invocations": 1
+}

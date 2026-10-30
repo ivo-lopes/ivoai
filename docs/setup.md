@@ -5,14 +5,16 @@
 `ivoai setup` provisions managed components transactionally and preserves external
 executor installations and their authentication.
 
-The local v0.15.0 candidate omits OpenCode from ordinary client setup and updater
+The published v0.15.0 omits OpenCode from ordinary client setup and updater
 candidate setup. To explicitly provision the retained compatibility component,
 use `ivoai setup --mode client --legacy-opencode`; server setup refuses this flag.
 Ordinary setup preserves existing OpenCode ownership, binaries and history; it
 does not uninstall, repair or adopt that component. See [releases](releases.md)
-for conditional publication status and native migration limits. The restricted
-official-client/Core qualification uses a local fake provider without subscription
-authentication; it does not certify general TUI, auth or model behavior.
+and the [publication report](https://github.com/ivo-lopes/ivoai/blob/main/release-notes/v0.15.0-published-validation.md)
+for verified source/assets and native migration limits. The restricted official-client/Core
+qualification uses a local fake provider without subscription authentication; it
+does not certify general TUI, auth or model behavior. Post-tag main changes are
+separate from the downloaded v0.15.0 payloads.
 
 ## Managed native configuration scope
 

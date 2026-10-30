@@ -1,0 +1,20 @@
+✓ Lockfile passes supply-chain policies (verified 20m ago)
+Lockfile is up to date, resolution step is skipped
+Done in 98ms using pnpm v12.11.2
+DOCS_I18N_PARITY=PASS current=51 release=0.9.2:44
+[INFO] Website will be built for all these locales: 
+- en
+- pt-BR
+[INFO] [en] Creating an optimized production build...
+[info] [webpackbar] Compiling Client
+[info] [webpackbar] Compiling Server
+[success] [webpackbar] Server: Compiled successfully in 4.62s
+[success] [webpackbar] Client: Compiled successfully in 8.00s
+[SUCCESS] Generated static files in "build".
+[INFO] [pt-BR] Creating an optimized production build...
+[info] [webpackbar] Compiling Client
+[info] [webpackbar] Compiling Server
+[success] [webpackbar] Server: Compiled successfully in 4.71s
+[success] [webpackbar] Client: Compiled successfully in 8.14s
+[SUCCESS] Generated static files in "build/pt-BR".
+[INFO] Use `npm run serve` command to test your build locally.

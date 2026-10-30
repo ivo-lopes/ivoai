@@ -1,0 +1,3 @@
+? Verifying lockfile against supply-chain policies (1336 entries)...
+✗ Lockfile failed supply-chain policy check (1336 entries in 54ms)
+Lockfile is up to date, resolution step is skipped

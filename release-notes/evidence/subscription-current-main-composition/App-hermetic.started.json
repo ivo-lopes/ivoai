@@ -1,0 +1,29 @@
+{
+  "source": "b7e616c6a1898fec91ecc618c16ff0777fa57193",
+  "source_freeze_sha256": "7a4a48e79e51bf7d2f37408c6787bd2044f0bb0a4d463a8b4e344c758b2bfaa2",
+  "command": [
+    "/var/tmp/ivoai-validation-toolchain-20261028/go/bin/go",
+    "test",
+    "-count=1",
+    "-json",
+    "./internal/app",
+    "-run",
+    "^TestPrimaryPrefetch(DirectMCP.*|Subscription.*)$"
+  ],
+  "environment": {
+    "HOME": "/var/tmp/ivoai-subscription-current-main-proof-20261029/App-hermetic-home",
+    "PATH": "/var/tmp/ivoai-validation-toolchain-20261028/go/bin:/usr/bin:/bin",
+    "GOENV": "off",
+    "GOWORK": "off",
+    "GOPROXY": "off",
+    "GOSUMDB": "off",
+    "GOMAXPROCS": "2",
+    "GOCACHE": "/home/ivo/.cache/go-build",
+    "GOMODCACHE": "/home/ivo/go/pkg/mod",
+    "TMPDIR": "/var/tmp/ivoai-subscription-current-main-proof-20261029",
+    "GOTMPDIR": "/var/tmp/ivoai-subscription-current-main-proof-20261029",
+    "LANG": "C.UTF-8"
+  },
+  "once": true,
+  "all_official_optins": "ABSENT"
+}

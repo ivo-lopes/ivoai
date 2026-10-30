@@ -5,20 +5,25 @@ v0.5.0 and records the current incremental status separately below. Exact pins
 live in `manifest/components.yaml`; delivered behavior and migration limits belong
 to versioned implementation and validation evidence.
 
-## Local v0.15.0 candidate — conditional publication
+## Current release: v0.15.0 — published and verified
 
-**Publication is conditional on exact final-head CI and the existing Release/distribution
-gates; this candidate is not published.** A new restricted qualification on
-`77d5fd6c` passed both named official-client/Core protocol tests and both CLI
-subcases under race detection, with zero failures/skips. It used the reviewed
-0.162.1 client/companion, fresh fixture homes and a local fake provider without
-subscription authentication or real-model calls. The checks cover managed MCP
-scope/receipt/replay behavior and a separate actual Core bootstrap; they do not
-certify public TUI lifecycle, system/cloud isolation or general client/model
-parity. See the [final-source qualification](https://github.com/ivo-lopes/ivoai/blob/release/v0.15.0-candidate/release-notes/v0.15.0-final-runtime-qualification.md).
-Consult [GitHub releases](https://github.com/ivo-lopes/ivoai/releases) and the
-[workflow status](https://github.com/ivo-lopes/ivoai/actions) for subsequent
-publication/gate status; this record does not authorize a tag.
+**Published and independently verified.** [v0.15.0](https://github.com/ivo-lopes/ivoai/releases/tag/v0.15.0)
+was published on 2026-10-29 at 04:51:24 UTC from immutable source `8f688e26`.
+All five [Release jobs](https://github.com/ivo-lopes/ivoai/actions/runs/40817035302) passed.
+Independent downloaded-asset verification matched all 12 API sizes/digests and
+all 11 payload checksums. The verified downloaded amd64 Core returned version
+`0.15.0` and help successfully; native ARM and amd64/QEMU non-AVX execution belong
+to the workflow, not a local ARM run. See the [publication and verification report](https://github.com/ivo-lopes/ivoai/blob/main/release-notes/v0.15.0-published-validation.md).
+This documentation follow-up changes neither the tag nor its published assets.
+
+The separate pre-publication qualification on `77d5fd6c` passed both named
+official-client/Core protocol tests and both CLI subcases under race detection,
+with zero failures/skips. It used the reviewed 0.162.1 client/companion, fresh
+fixture homes and a local fake provider without subscription authentication or
+real-model calls. These checks cover managed MCP scope/receipt/replay behavior
+and a separate actual Core bootstrap; they do not certify public TUI lifecycle,
+system/cloud isolation or general client/model parity. See the
+[final-source qualification](https://github.com/ivo-lopes/ivoai/blob/v0.15.0/release-notes/v0.15.0-final-runtime-qualification.md).
 
 The following observations remain historical and bound to their own sources. A supported
 `55ec7ab9` real turn passed its math oracle; its intentional SIGINT cleanup
@@ -29,7 +34,7 @@ zero question/attempt/worker and no forced signal. This qualifies normal idle
 startup/quit for those exact inputs. A real turn followed by normal quit in one
 session was not run. The original `0bab9b34` failure and UNKNOWN cause remain
 preserved; none of these observations joins the 126 comparative turns.
-See the [normal-exit report](https://github.com/ivo-lopes/ivoai/blob/release/v0.15.0-candidate/release-notes/native-normal-quit-validation.md).
+See the [normal-exit report](https://github.com/ivo-lopes/ivoai/blob/v0.15.0/release-notes/native-normal-quit-validation.md).
 No general TUI/client/model parity or economic result follows.
 
 Managed MCP inventory/execution share one captured cwd/environment and explicit
@@ -43,10 +48,12 @@ G0 is wired into admitted code prefetch behind its default-OFF flag, with protec
 Core/MCP exact recovery and separate protected creation opt-in. G1 Memory remains
 an unwired host SPI. Adaptive stays OFF, using literal-envelope admission and the
 existing Core DAG/approvals. PR55 is offline preflight; PR54/56 remain excluded.
-See [releases](releases.md) for precise source epochs and publication conditions. The
-published v0.14.0 description below remains historical.
+PR56/63/64, authenticated metadata qualification and the separate Direct-only
+factory proposal are outside the v0.15.0 tag. Post-tag main builds have their own
+source qualifications. See [releases](releases.md) for exact release boundaries;
+the v0.14.0 description below remains historical.
 
-## Current release: v0.14.0
+## Historical release: v0.14.0
 
 The same Core now supplies a [local read-only admin console](admin-console.md).
 It reuses the App, session/OAuth stores and bounded DTOs; JavaScript adds no
