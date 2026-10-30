@@ -163,7 +163,8 @@ func TestNativeCodeOpenCodeProjectionPreservesConfiguration(t *testing.T) {
 	}
 }
 
-func TestNativeCodeProviderRequiresExpectedVerifiedArtifact(t *testing.T) {
+func verifiedCodeRuntimeFixture(t *testing.T) (*App, string, components.Spec, string, string) {
+	t.Helper()
 	a := autoTestApp(t, t.TempDir(), "#!/bin/sh\nexit 0\n", "#!/bin/sh\nexit 0\n")
 	var archive bytes.Buffer
 	gz := gzip.NewWriter(&archive)
@@ -222,6 +223,11 @@ func TestNativeCodeProviderRequiresExpectedVerifiedArtifact(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(root, "main.go"), []byte("package fixture"), 0600); err != nil {
 		t.Fatal(err)
 	}
+	return a, root, spec, distribution, node
+}
+
+func TestNativeCodeProviderRequiresExpectedVerifiedArtifact(t *testing.T) {
+	a, root, spec, distribution, _ := verifiedCodeRuntimeFixture(t)
 	provider, err := a.codeIntelligenceProvider(context.Background(), root, "cs_fixture", spec)
 	if err != nil {
 		t.Fatal(err)

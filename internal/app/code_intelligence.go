@@ -33,7 +33,10 @@ func (a *App) CodeIntelligenceProvider(ctx context.Context, root, scope string) 
 			return a.codeIntelligenceProvider(ctx, root, scope, spec)
 		}
 	}
-	return nil, errors.New("code intelligence unavailable: managed Graft metadata absent")
+	// An unversioned build may have no reviewed Graft artifact metadata. The
+	// same admission checks can still prove optional absence for builtin Direct;
+	// a claimed/active installation cannot pass without its compiled identity.
+	return a.codeIntelligenceProvider(ctx, root, scope, components.Spec{})
 }
 
 func (a *App) codeIntelligenceProvider(ctx context.Context, root, scope string, spec components.Spec) (*codeintel.Provider, error) {
@@ -54,31 +57,62 @@ func (a *App) codeIntelligenceProvider(ctx context.Context, root, scope string, 
 	if decision.Decision != policy.Allow {
 		return nil, errors.New("code intelligence denied by filesystem policy")
 	}
-	expected, err := components.ResolvedSource(spec)
-	if err != nil {
-		return nil, err
-	}
 	state, err := a.Store.LoadState()
 	if err != nil {
 		return nil, err
 	}
 	component := state.Components["graft"]
+	provider := &codeintel.Provider{Root: root, Scope: scope, Permissions: "filesystem.read", CacheRoot: filepath.Join(a.Store.Paths.CacheDir, "code-intelligence"), Allowed: true}
+	active, distribution, activeErr := (supplychain.Manager{Root: filepath.Join(a.Store.Paths.DataDir, "supply-chain")}).Active("graft")
+	// Only proven absence is optional. A leftover active object, malformed state,
+	// unsafe path or a claimed managed installation still requires verification.
+	if component == (config.ComponentState{}) && errors.Is(activeErr, os.ErrNotExist) {
+		return provider.WithoutStructuralRuntime(), nil
+	}
 	if !component.Managed || !component.Installed || component.Version != codeintel.Version {
 		return nil, errors.New("managed code runtime unavailable")
 	}
-	active, distribution, err := (supplychain.Manager{Root: filepath.Join(a.Store.Paths.DataDir, "supply-chain")}).Active("graft")
-	if err != nil || !reflect.DeepEqual(active, expected) || component.Path != filepath.Join(distribution, "graft-runtime") {
+	expected, err := components.ResolvedSource(spec)
+	if err != nil {
+		return nil, err
+	}
+	if activeErr != nil || !reflect.DeepEqual(active, expected) || component.Path != filepath.Join(distribution, "graft-runtime") {
 		return nil, errors.New("managed code runtime integrity or identity mismatch")
 	}
 	node := components.ManagedNodePath(a.Store.Paths.DataDir)
 	if info, err := os.Lstat(node); err != nil || !info.Mode().IsRegular() || info.Mode()&0111 == 0 {
+		if errors.Is(err, os.ErrNotExist) && absentCodeRuntimePath(node) {
+			return provider.WithoutStructuralRuntime(), nil
+		}
 		return nil, errors.New("managed code Node runtime unavailable")
 	}
 	executable, err := os.Executable()
 	if err != nil {
 		return nil, err
 	}
-	return &codeintel.Provider{Root: root, Scope: scope, Permissions: "filesystem.read", CacheRoot: filepath.Join(a.Store.Paths.CacheDir, "code-intelligence"), Node: node, Distribution: distribution, Executable: executable, Allowed: true}, nil
+	provider.Node, provider.Distribution, provider.Executable = node, distribution, executable
+	return provider, nil
+}
+
+// A broken symlink in an existing ancestor is not proof of optional absence.
+// Check every prefix without creating directories or following any symlinks.
+func absentCodeRuntimePath(path string) bool {
+	if !filepath.IsAbs(path) {
+		return false
+	}
+	for current := path; ; current = filepath.Dir(current) {
+		info, err := os.Lstat(current)
+		if err == nil {
+			if info.Mode()&os.ModeSymlink != 0 || current == path || !info.IsDir() {
+				return false
+			}
+		} else if !errors.Is(err, os.ErrNotExist) {
+			return false
+		}
+		if filepath.Dir(current) == current {
+			return true
+		}
+	}
 }
 
 func nativeCodeTool(name string) bool { return slices.Contains(codeintel.ToolNames(), name) }
