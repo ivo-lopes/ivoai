@@ -1,0 +1,12 @@
+import pathlib,json,hashlib,sys
+r=pathlib.Path('/var/tmp/ivoai-offline-primary-direct-activation-20261029');p=pathlib.Path(__file__).resolve().parent
+sys.path.insert(0,str(r/'scripts'))
+import benchmark_catalog as c
+import benchmark_direct_activation_receipt as a
+case=next(x for x in c.load_catalog() if x.id=='api');host=json.loads((p/'export/host-input.json').read_text())
+def sha(b):return hashlib.sha256(b).hexdigest()
+assert c.digest(p/'app.test') == host['executable_sha256']
+e=a.ExpectedColdActivation(scenario=case.id,fixture=case.fixture,executable_sha256=host['executable_sha256'],harness_sha256=c.digest(r/'internal/app/primary_prefetch_live_test.go'),exporter_sha256=c.digest(r/'internal/app/primary_direct_activation_export_test.go'),catalog_sha256=c.digest(c.CATALOG),fixture_sha256=c.fixture_digest(case.fixture),task_sha256=sha(case.task.encode()),prompt_sha256=sha(case.prompt.encode()),expected_sha256=sha(json.dumps(case.expected,sort_keys=True,separators=(',',':')).encode()),challenge_sha256=host['challenge_sha256'])
+v=a.read_receipt(p/'export/receipt.json',e)
+assert v.text_sha256 == 'c2262762379a7ae96a5f3407399166a613aed217d91f11155347fa530dd50a9d' and v.text_bytes == 127
+print(json.dumps({'status':'PASS_EXISTING_EXPORT_RECHECKED','source_of_expectation':'host_challenge_executable_and_reviewed_source_not_receipt','cross_version_pair_qualified':False,'model_auth_calls':0,'text_bytes':v.text_bytes,'text_sha256':v.text_sha256}))

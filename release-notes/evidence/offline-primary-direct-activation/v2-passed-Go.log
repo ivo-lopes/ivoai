@@ -1,0 +1,16 @@
+{"Time":"2026-10-30T11:19:04.435903796-03:00","Action":"start","Package":"github.com/ivo-lopes/ivoai/internal/app"}
+{"Time":"2026-10-30T11:19:04.476632616-03:00","Action":"run","Package":"github.com/ivo-lopes/ivoai/internal/app","Test":"TestPrimaryDirectActivationColdContract"}
+{"Time":"2026-10-30T11:19:04.476725295-03:00","Action":"output","Package":"github.com/ivo-lopes/ivoai/internal/app","Test":"TestPrimaryDirectActivationColdContract","Output":"=== RUN   TestPrimaryDirectActivationColdContract\n","OutputType":"frame"}
+{"Time":"2026-10-30T11:19:04.716073376-03:00","Action":"output","Package":"github.com/ivo-lopes/ivoai/internal/app","Test":"TestPrimaryDirectActivationColdContract","Output":"--- PASS: TestPrimaryDirectActivationColdContract (0.24s)\n","OutputType":"frame"}
+{"Time":"2026-10-30T11:19:04.716228644-03:00","Action":"pass","Package":"github.com/ivo-lopes/ivoai/internal/app","Test":"TestPrimaryDirectActivationColdContract","Elapsed":0.24}
+{"Time":"2026-10-30T11:19:04.716345083-03:00","Action":"run","Package":"github.com/ivo-lopes/ivoai/internal/app","Test":"TestPrimaryDirectActivationRejectsUnclassifiedTask"}
+{"Time":"2026-10-30T11:19:04.716354463-03:00","Action":"output","Package":"github.com/ivo-lopes/ivoai/internal/app","Test":"TestPrimaryDirectActivationRejectsUnclassifiedTask","Output":"=== RUN   TestPrimaryDirectActivationRejectsUnclassifiedTask\n","OutputType":"frame"}
+{"Time":"2026-10-30T11:19:04.726918933-03:00","Action":"output","Package":"github.com/ivo-lopes/ivoai/internal/app","Test":"TestPrimaryDirectActivationRejectsUnclassifiedTask","Output":"--- PASS: TestPrimaryDirectActivationRejectsUnclassifiedTask (0.01s)\n","OutputType":"frame"}
+{"Time":"2026-10-30T11:19:04.726970162-03:00","Action":"pass","Package":"github.com/ivo-lopes/ivoai/internal/app","Test":"TestPrimaryDirectActivationRejectsUnclassifiedTask","Elapsed":0.01}
+{"Time":"2026-10-30T11:19:04.726983572-03:00","Action":"run","Package":"github.com/ivo-lopes/ivoai/internal/app","Test":"TestPrimaryDirectActivationOutputRefusesReuseAndSymlinks"}
+{"Time":"2026-10-30T11:19:04.726988092-03:00","Action":"output","Package":"github.com/ivo-lopes/ivoai/internal/app","Test":"TestPrimaryDirectActivationOutputRefusesReuseAndSymlinks","Output":"=== RUN   TestPrimaryDirectActivationOutputRefusesReuseAndSymlinks\n","OutputType":"frame"}
+{"Time":"2026-10-30T11:19:04.727752943-03:00","Action":"output","Package":"github.com/ivo-lopes/ivoai/internal/app","Test":"TestPrimaryDirectActivationOutputRefusesReuseAndSymlinks","Output":"--- PASS: TestPrimaryDirectActivationOutputRefusesReuseAndSymlinks (0.00s)\n","OutputType":"frame"}
+{"Time":"2026-10-30T11:19:04.727841501-03:00","Action":"pass","Package":"github.com/ivo-lopes/ivoai/internal/app","Test":"TestPrimaryDirectActivationOutputRefusesReuseAndSymlinks","Elapsed":0}
+{"Time":"2026-10-30T11:19:04.728151008-03:00","Action":"output","Package":"github.com/ivo-lopes/ivoai/internal/app","Output":"PASS\n","OutputType":"frame"}
+{"Time":"2026-10-30T11:19:05.734097648-03:00","Action":"output","Package":"github.com/ivo-lopes/ivoai/internal/app","Output":"ok  \tgithub.com/ivo-lopes/ivoai/internal/app\t1.298s\n"}
+{"Time":"2026-10-30T11:19:05.734187416-03:00","Action":"pass","Package":"github.com/ivo-lopes/ivoai/internal/app","Elapsed":1.298}
