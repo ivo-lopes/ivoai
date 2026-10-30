@@ -1,0 +1,56 @@
+{
+  "exit": 0,
+  "wall_seconds": 187.4,
+  "source_unchanged_after": true,
+  "official_client_auth_model_or_production_service_calls": 0,
+  "test_events": {
+    "skip": 31,
+    "pass": 595
+  },
+  "top_level_passes": 273,
+  "package_results": [
+    {
+      "package": "github.com/ivo-lopes/ivoai/internal/codeintel",
+      "result": "pass",
+      "seconds": 26.774
+    },
+    {
+      "package": "github.com/ivo-lopes/ivoai/internal/app",
+      "result": "pass",
+      "seconds": 174.962
+    }
+  ],
+  "skips": [
+    "TestEfficiencyEvidence",
+    "TestStructuralConcurrencyEvidence",
+    "TestLiveAdaptivePrimaryCoreEscalationWithoutChildFlag",
+    "TestLiveAdaptivePrimaryCoreReadBootstrapWithoutChildFlag",
+    "TestLiveAdaptivePrimaryOfficialCLIWithoutDAG/usage_absent",
+    "TestLiveAdaptivePrimaryOfficialCLIWithoutDAG/usage_complete",
+    "TestExtendedLiveCodexBenchmark",
+    "TestLiveCodexStructuralCapability",
+    "TestReviewedNativeMCP",
+    "TestStructuralPerformanceEvidence",
+    "TestReviewedGraftSandbox",
+    "TestReviewedGraftOperationsAndIncremental",
+    "TestReviewedGraftScenarios",
+    "TestExportEvidenceGatewayOfflineControls",
+    "TestFrontendArtifactDirectModes",
+    "TestOrchestratedFrontendSessionRollbackCompatibility",
+    "TestLiveGraftManagedOpenCode",
+    "TestLiveLocalMetadataOfficialAppServer",
+    "TestMCPArtifactWorkerHelper",
+    "TestMCPArtifactTaskGrants",
+    "TestLiveMCPArtifactConfigUpgrade",
+    "TestLiveNativeAUTOArtifact",
+    "TestNativeCapabilityPublishedArtifact",
+    "TestOrchestrationPublishedBinaryConfigUpgradeRollback",
+    "TestLiveP0VoicehubThroughManagedOpenCode",
+    "TestLiveP0MCPReference",
+    "TestLivePrimaryCodePrefetchBenchmark",
+    "TestPrimaryPrefetchMatrixHostPrefetch",
+    "TestPrimaryPrefetchGatewayObservationOffline",
+    "TestPrimaryPrefetchBenchmarkEditPreflight",
+    "TestLiveSubscriptionStdioNoAuthQualification"
+  ]
+}

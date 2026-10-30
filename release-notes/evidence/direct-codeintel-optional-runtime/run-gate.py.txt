@@ -1,0 +1,15 @@
+from pathlib import Path
+import sys,subprocess,json,time,hashlib,collections
+p=Path('/var/tmp/ivoai-direct-codeintel-proof-20261029');name=sys.argv[1];command=['/var/tmp/ivoai-validation-toolchain-20261028/go/bin/go',*sys.argv[2:]]
+assert not (p/(name+'.started.json')).exists()
+paths=set(subprocess.check_output(['git','ls-files'],text=True).splitlines()+subprocess.check_output(['git','ls-files','--others','--exclude-standard'],text=True).splitlines());freeze={n:hashlib.sha256(Path(n).read_bytes()).hexdigest() for n in sorted(paths) if Path(n).is_file()}
+env={'HOME':str(p/'home'),'PATH':'/var/tmp/ivoai-validation-toolchain-20261028/go/bin:/usr/bin:/bin','GOCACHE':'/home/ivo/.cache/go-build','GOMODCACHE':'/home/ivo/go/pkg/mod','GOPATH':'/home/ivo/go','GOENV':'off','GOWORK':'off','GOPROXY':'off','GOSUMDB':'off','GOFLAGS':'-mod=readonly','GOTOOLCHAIN':'local','GOMAXPROCS':'2','LANG':'C.UTF-8','GOTMPDIR':str(p/'go-tmp'),'TMPDIR':str(p/'go-tmp')}
+if name.startswith('build-'):
+ env.update(CGO_ENABLED='0',GOOS='linux',GOARCH='arm64' if name=='build-arm64' else 'amd64')
+ if name=='build-amd64v1':env['GOAMD64']='v1'
+(p/(name+'.source.json')).write_text(json.dumps(freeze,indent=2)+'\n');(p/(name+'.started.json')).write_text(json.dumps({'base':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),'command':command,'environment':env,'source_paths':len(freeze)},indent=2)+'\n');t=time.monotonic()
+with (p/(name+'.log')).open('wb') as o,(p/(name+'.stderr')).open('wb') as e:r=subprocess.run(command,env=env,stdout=o,stderr=e,timeout=300)
+result={'exit':r.returncode,'wall_seconds':round(time.monotonic()-t,3),'source_unchanged_after':all(hashlib.sha256(Path(n).read_bytes()).hexdigest()==h for n,h in freeze.items()),'official_client_auth_model_or_production_service_calls':0}
+if '-json'in command:
+ rows=[json.loads(x) for x in (p/(name+'.log')).read_text().splitlines()];result['test_events']=dict(collections.Counter(x['Action'] for x in rows if 'Test'in x and x['Action'] in ('pass','fail','skip')));result['top_level_passes']=sum(x['Action']=='pass' and 'Test'in x and '/'not in x['Test'] for x in rows);result['package_results']=[{'package':x['Package'],'result':x['Action'],'seconds':x.get('Elapsed')} for x in rows if 'Test'not in x and x['Action'] in ('pass','fail','skip')];result['skips']=[x['Test'] for x in rows if x['Action']=='skip' and 'Test'in x]
+(p/(name+'.result.json')).write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result,indent=2));raise SystemExit(r.returncode or (0 if result['source_unchanged_after'] else 1))

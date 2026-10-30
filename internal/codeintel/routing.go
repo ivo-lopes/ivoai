@@ -69,7 +69,7 @@ func (p *Provider) Inspect(ctx context.Context, q core.CodeQuery) (core.CodeResu
 	if q.Operation == "ask" {
 		key, e := Identity(p.Root, p.Scope, p.Permissions)
 		var receipt indexReceipt
-		if e == nil && p.CacheRoot != "" {
+		if !p.directOnly && e == nil && p.CacheRoot != "" {
 			body, _ := readBounded(filepath.Join(p.CacheRoot, key, "receipt.json"), 4096)
 			_ = json.Unmarshal(body, &receipt)
 		}
@@ -118,6 +118,7 @@ func (p *Provider) Inspect(ctx context.Context, q core.CodeQuery) (core.CodeResu
 	direct := toolrouting.Candidate{ID: "direct", Authorized: p.Allowed, Compatible: true, Available: true, Fresh: true, Capabilities: []string{capability}, Coverage: 1, Reliability: 1}
 	structural := direct
 	structural.ID = "graft"
+	structural.Available = !p.directOnly
 	direct.Cost.InputTokens = known(0)
 	structural.Cost.InputTokens = known(0)
 	direct.Cost.ResultTokens = known(float64(q.BudgetBytes) / 4)

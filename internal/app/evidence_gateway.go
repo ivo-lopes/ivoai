@@ -130,7 +130,7 @@ func (a *App) gatewayCodeEvidence(ctx context.Context, provider *codeintel.Provi
 	}
 	request := evidence.Request{ProtectedRecovery: protectCodeEvidence(initial, expected, workerID, root), Owner: workingcontext.Ownership{SessionID: id, TaskID: taskID, WorkerID: workerID}, Source: "code", ReadOnly: true, BudgetBytes: query.BudgetBytes,
 		Scope:       evidence.Scope{Organization: evidence.Digest(provider.Scope), Repository: evidence.Digest(root), Worktree: identity, Permissions: permissionDigest},
-		QueryDigest: evidence.Digest(query, codeintel.Version, provider.Distribution, provider.Node), Authorize: authorize,
+		QueryDigest: evidence.Digest(query, codeintel.Version, provider.Distribution, provider.Node, map[string]string{"execution_mode": provider.ExecutionMode()}), Authorize: authorize,
 		CurrentGeneration: func(ctx context.Context) (string, error) {
 			files, err := codeintel.Inventory(ctx, provider.Root)
 			if err != nil {

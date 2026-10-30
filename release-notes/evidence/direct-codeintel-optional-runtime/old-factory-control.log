@@ -1,0 +1,5 @@
+--- FAIL: TestDirectProviderFactoryWithoutOptionalRuntime (0.02s)
+    code_intelligence_direct_test.go:17: authorized builtin Direct unavailable without optional Graft/Node
+FAIL
+FAIL	github.com/ivo-lopes/ivoai/internal/app	0.027s
+FAIL
