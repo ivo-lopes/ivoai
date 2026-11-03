@@ -1,5 +1,7 @@
 # Adaptive primary pilot — integration with native provider and evidence controls
 
+> Historical pilot report. The [functional natural-turn delivery](adaptive-primary-natural-turns.md) extends this slice with certified same-process conversation turns and normal native shutdown; its separate evidence preserves these earlier results.
+
 This is a local composition of the experimental IVOAI-192/193 pilot with the
 reviewed native-provider snapshot, including actual main
 `1dcf90400f67eb960a2446ccf3c987ecf977a9d8`. The frozen tested source is merge

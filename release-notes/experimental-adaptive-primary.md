@@ -1,5 +1,7 @@
 # Experimental primary-only admission
 
+> Historical pilot report. The [functional natural-turn delivery](adaptive-primary-natural-turns.md) extends this slice with certified same-process conversation turns and normal native shutdown; its separate evidence preserves these earlier results.
+
 This is a partial IVOAI-192/193 delivery. The feature is **off by default** and
 does not establish economic savings, full native-client parity or completion of
 the backend-first roadmap.
