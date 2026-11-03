@@ -62,5 +62,17 @@
   },
   "merge_requirement": "fresh_required_CI_on_final_PR_head",
   "public_cli_inference": "PASS_V8CLI_TWO_TURNS_NO_SUBSTITUTED_ENTRYPOINT",
-  "public_cli_test_source_commit": "be0066041563b92615cbf8480569c874c458576e"
+  "public_cli_test_source_commit": "be0066041563b92615cbf8480569c874c458576e",
+  "second_hosted_gate": {
+    "head": "8efd89df71dd44d375befcdccf1b190026275f30",
+    "run": 41735875449,
+    "quality": "FAILED_RUNTIME_DEPENDENCY_AUDIT",
+    "passed_jobs": 13,
+    "dependent_jobs_skipped": 2,
+    "skipped_jobs_counted_as_success": false,
+    "high_advisories": [
+      "GHSA-mrwp-f3q8-3g9p"
+    ],
+    "reason": "separate runtime follow-redirects1.16.1 override remained after docs pins were corrected"
+  }
 }

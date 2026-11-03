@@ -114,6 +114,15 @@ signature checks, and EN/PT-BR build/embedded-site validation. Existing low
 `deepmerge` and moderate `minimatch` findings remain; high/critical counts are zero.
 No new audit exception was added. `govulncheck` found no Go vulnerabilities.
 
+The second hosted attempt passed the site gates and then found the same vulnerable
+`follow-redirects` pin in the separate runtime npm lock. That failure and its two
+skipped dependent jobs are retained; skips are not successes. The
+[runtime follow-up](evidence/adaptive-primary/natural-turns-20261103/runtime-dependency-gate.json)
+pins 1.16.2 in the runtime override/lock, passes the unchanged npm audit with zero
+vulnerabilities, installs without scripts, and passes Braces 6/6, Zod/TypeScript
+23/23 and the components race tests. The package/lock digest creates a new runtime
+profile while preserving the prior profile for rollback. No gate or ignore changed.
+
 Reported usage is **official CLI `turn.completed` usage**, not billing verification
 or estimates. Latest primary input/output/cached-input counts are respectively:
 TUI A `71,712/497/59,904`; E `84,624/517/72,576`; B `33,912/197/30,720`;
