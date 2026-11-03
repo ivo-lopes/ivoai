@@ -797,7 +797,7 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 		if err := platform.AtomicWritePrivate([]byte(instructions), path); err != nil {
 			return core.ExecutorResult{}, err
 		}
-		runner := a.scopeAutoRunner(baseRunner, originalConfig, state, store, turnID, cwd, turnDir, path, agentArgs, selectors, turnState, modelCatalog, autoTurnOptions{FreshLocalEvidenceSession: frontendName == "codex" && resumeID == "" && !hasHandoff && turnID == id})
+		runner := a.scopeAutoRunner(baseRunner, originalConfig, state, store, turnID, cwd, turnDir, path, agentArgs, selectors, turnState, modelCatalog, autoTurnOptions{FreshLocalEvidenceSession: frontendName == "codex" && resumeID == "" && !hasHandoff && turnID == id, ManagedAdaptiveSession: frontendName == "codex" && resumeID == "" && turnID == id && !hasHandoff && !recoveryRequested})
 		return runner.Run(turnCtx, request, emit)
 	})
 	bridge, err := opencodebridge.Start(opencodebridge.Options{

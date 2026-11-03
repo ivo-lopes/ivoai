@@ -187,7 +187,7 @@ esac
 	a := sessionTestApp(t, root, codex, appExecutable(t, root, "claude", "#!/bin/sh\nexit 0\n"), ruflo)
 	a.StartCodexNative = func(ctx context.Context, options codexfrontend.Options) (nativeCodexFrontend, error) {
 		text, err := options.Bridge.SubmitTurn(ctx, options.SessionID, "native_fixture_intake", "Leia VERSION\x00", "auto", "")
-		if err != nil || !strings.Contains(text, "insufficient") {
+		if err != nil || !strings.Contains(text, "PROMPT_INPUT_INVALID") {
 			t.Fatal("native frontend did not reuse shared admission")
 		}
 		return fixtureNativeFrontend{}, nil

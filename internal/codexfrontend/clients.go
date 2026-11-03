@@ -24,9 +24,15 @@ func (f *Facade) disconnect(client *websocket.Conn, primary bool) {
 			delete(f.pending, id)
 		}
 	}
+	if primary {
+		f.client = nil
+		f.closing = true
+	}
 	f.mu.Unlock()
 	if primary {
-		f.cancel()
+		// The ordinary native /exit path closes the websocket. Let App Server
+		// observe stdin EOF before resorting to bounded cancellation.
+		go f.Close()
 	}
 }
 

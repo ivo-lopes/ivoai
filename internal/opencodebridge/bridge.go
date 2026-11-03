@@ -147,8 +147,9 @@ type Options struct {
 	InitialEffort  string
 	// Frontend is trusted session metadata, never inferred from the executor.
 	Frontend string
-	// RequirePromptGate is always enabled by AUTO. Direct executor sessions keep
-	// their own intake contract; it is not a user-configurable bypass for AUTO.
+	// RequirePromptGate is the legacy option name for bounded input validation,
+	// always enabled by AUTO. It never imposes task-quality or acceptance criteria.
+	// Direct executor sessions retain their own input contract.
 	RequirePromptGate     bool
 	SelectConversation    func(string) error
 	NativePermissions     func() []PermissionView
@@ -432,14 +433,14 @@ func (b *Bridge) chat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if b.requirePromptGate {
-		readiness := promptgate.Assess(prompt)
+		inputErr := promptgate.ValidateInput(prompt)
 		b.mu.Lock()
-		b.promptReadiness = readiness
+		b.promptReadiness = promptgate.Assess(prompt) // legacy diagnostic field only
 		b.mu.Unlock()
-		if !readiness.Ready {
-			// A refusal is a completed intake response, not an executor turn.
+		if inputErr != nil {
+			// Preserve the legacy completion transport for invalid input.
 			// No selector, auth reprobe, mapping, claim, or runner is invoked.
-			writeCompletion(w, request.Model, request.Stream, readiness.Message())
+			writeCompletion(w, request.Model, request.Stream, "PROMPT_INPUT_INVALID: "+inputErr.Error())
 			return
 		}
 	}

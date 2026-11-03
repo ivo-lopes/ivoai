@@ -66,8 +66,8 @@ func (f turnRunnerFunc) Run(ctx context.Context, request core.ExecutorRequest, e
 }
 
 func (r autoTurnRunner) Run(ctx context.Context, request core.ExecutorRequest, emit func(string) error) (core.ExecutorResult, error) {
-	if !promptgate.Assess(request.Prompt).Ready {
-		return core.ExecutorResult{}, &core.ExecutorFailure{Class: "PROMPT_INSUFFICIENT", ExitCode: -1}
+	if err := promptgate.ValidateInput(request.Prompt); err != nil {
+		return core.ExecutorResult{}, &core.ExecutorFailure{Class: "PROMPT_INPUT_INVALID", ExitCode: -1}
 	}
 	if r.resolve != nil {
 		var err error
@@ -147,6 +147,9 @@ func (a *App) prepareAutoPromptKnowledge(ctx context.Context, cfg config.Config,
 type autoTurnOptions struct {
 	// Set only by the host that created a new Codex session in this process.
 	FreshLocalEvidenceSession bool
+	// The host has verified the managed frontend and conversation scope. The
+	// adaptive admission still checks every receipt, native mapping and attempt.
+	ManagedAdaptiveSession bool
 }
 
 func (a *App) scopeAutoRunner(base core.ExecutorRunner, original config.Config, state config.State, store session.Store, id, cwd, runtimeDir, instructionsPath string, agentArgs, selectors []string, current *autoTurnState, catalog opencodebridge.ModelCatalog, options ...autoTurnOptions) core.ExecutorRunner {
@@ -162,9 +165,6 @@ func (a *App) scopeAutoRunner(base core.ExecutorRunner, original config.Config, 
 		if err := store.CheckNativeProviders(value); err != nil {
 			return preparedAutoTurn{}, err
 		}
-		if err := store.RetirePrimaryTurn(id); err != nil {
-			return preparedAutoTurn{Policy: core.ExecutionPolicy{NoReplay: true, NoAutomaticFailover: true}}, err
-		}
 		if len(options) == 1 && options[0].FreshLocalEvidenceSession {
 			if local, accepted, err := a.prepareLocalMetadataTurn(ctx, original, state, store, id, cwd, selectors, request); accepted {
 				return local, err
@@ -176,7 +176,7 @@ func (a *App) scopeAutoRunner(base core.ExecutorRunner, original config.Config, 
 		fail := func(err error) (preparedAutoTurn, error) {
 			return preparedAutoTurn{Release: release, Policy: policy}, err
 		}
-		if len(options) == 1 && options[0].FreshLocalEvidenceSession {
+		if len(options) == 1 && (options[0].FreshLocalEvidenceSession || options[0].ManagedAdaptiveSession) {
 			var accepted bool
 			var err error
 			adaptive, accepted, err = a.admitAdaptivePrimary(ctx, original, state, store, id, cwd, selectors, request)
@@ -185,6 +185,15 @@ func (a *App) scopeAutoRunner(base core.ExecutorRunner, original config.Config, 
 				release = adaptive.close
 			}
 			if err != nil {
+				if value.PrimaryTurn != nil {
+					policy = core.ExecutionPolicy{NoReplay: true, NoAutomaticFailover: true}
+				}
+				return fail(err)
+			}
+		}
+		if adaptive == nil {
+			if err := store.RetirePrimaryTurn(id); err != nil {
+				policy = core.ExecutionPolicy{NoReplay: true, NoAutomaticFailover: true}
 				return fail(err)
 			}
 		}

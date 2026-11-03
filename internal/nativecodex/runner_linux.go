@@ -68,7 +68,7 @@ func (r *Runner) Run(parent context.Context, request core.ExecutorRequest, emit 
 	if !syntheticURL(o.SyntheticProviderURL) {
 		return result, failed("NATIVE_CODEX_CONFIGURATION_INVALID")
 	}
-	if o.Registry == nil || o.Registry.owner.SessionID != o.SessionID || o.Authorize == nil || o.BindThread == nil || o.Validate == nil || emit == nil || request.Executor != "codex" || !identity.MatchString(request.FrontendSessionID) || !identity.MatchString(request.Model) || !validEffort(request.Effort) || !promptgate.Assess(request.Prompt).Ready || !digestPattern.MatchString(o.SHA256) {
+	if o.Registry == nil || o.Registry.owner.SessionID != o.SessionID || o.Authorize == nil || o.BindThread == nil || o.Validate == nil || emit == nil || request.Executor != "codex" || !identity.MatchString(request.FrontendSessionID) || !identity.MatchString(request.Model) || !validEffort(request.Effort) || promptgate.ValidateInput(request.Prompt) != nil || !digestPattern.MatchString(o.SHA256) {
 		return result, failed("NATIVE_CODEX_CONFIGURATION_INVALID")
 	}
 	select {

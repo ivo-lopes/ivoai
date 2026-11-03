@@ -178,7 +178,7 @@ func TestLiveNativeTUI(t *testing.T) {
 	// unsafe control keys. The synthetic payload exceeds the 128 KiB limit.
 	send("\x1b[200~" + strings.Repeat("a", (128<<10)+1) + "\x1b[201~")
 	send("\r")
-	wait("PROMPT_INSUFFICIENT")
+	wait("PROMPT_INPUT_INVALID")
 	if runner.calls.Load() != 0 {
 		t.Fatal("oversized native input started a turn")
 	}
