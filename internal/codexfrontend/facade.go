@@ -81,6 +81,10 @@ type Facade struct {
 	done                             chan error
 	closeOnce                        sync.Once
 	lastTurnError                    error
+	closing                          bool
+	closeErr                         error
+	output                           io.ReadCloser
+	reaped                           bool
 }
 
 func randomToken() (string, error) {
@@ -153,12 +157,15 @@ func Start(ctx context.Context, options Options) (*Facade, error) {
 	// App Server may own background children (e.g. plugin discovery). Bound
 	// them to this instance so cancellation cannot leave directory writers.
 	f.process.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	signals := &ownedFrontendSignals{}
 	f.process.Cancel = func() error {
-		err := syscall.Kill(-f.process.Process.Pid, syscall.SIGKILL)
-		if errors.Is(err, syscall.ESRCH) {
-			return os.ErrProcessDone
-		}
-		return err
+		return signals.signal(func() error {
+			err := syscall.Kill(-f.process.Process.Pid, syscall.SIGKILL)
+			if errors.Is(err, syscall.ESRCH) {
+				return os.ErrProcessDone
+			}
+			return err
+		})
 	}
 	f.process.WaitDelay = time.Second
 	f.process.Dir, f.process.Env = options.Directory, f.Environment()
@@ -178,7 +185,16 @@ func Start(ctx context.Context, options Options) (*Facade, error) {
 		return nil, errors.New("CODEX_APP_SERVER_START_FAILED")
 	}
 	f.done = make(chan error, 1)
-	go func() { f.readUpstream(output); f.done <- f.process.Wait(); f.cancel() }()
+	f.output = output
+	go func() {
+		f.readUpstream(output)
+		waitErr := waitOwnedFrontend(f.process, signals.retire)
+		f.mu.Lock()
+		f.reaped = f.process.ProcessState != nil
+		f.mu.Unlock()
+		f.done <- waitErr
+		f.cancel()
+	}()
 	return f, nil
 }
 
@@ -261,11 +277,24 @@ func (f *Facade) TurnError() error {
 	return f.lastTurnError
 }
 
-func (f *Facade) close() {
-	f.cancel()
+// ShutdownError is inspected after Close. A forced shutdown cannot certify a
+// normal frontend lifetime even when the preceding model turn completed.
+func (f *Facade) ShutdownError() error {
 	f.mu.Lock()
-	if f.active != nil && f.active.cancel != nil {
-		f.active.cancel()
+	defer f.mu.Unlock()
+	return f.closeErr
+}
+
+func (f *Facade) close() {
+	f.mu.Lock()
+	f.closing = true
+	if f.active != nil {
+		if f.lastTurnError == nil {
+			f.lastTurnError = errors.New("TURN_CANCELLED")
+		}
+		if f.active.cancel != nil {
+			f.active.cancel()
+		}
 	}
 	clients := make([]*websocket.Conn, 0, len(f.clients)+1)
 	for client := range f.clients {
@@ -285,20 +314,42 @@ func (f *Facade) close() {
 		_ = f.upstream.Close()
 	}
 	if f.done != nil {
+		var shutdownErr error
 		select {
-		case <-f.done:
-		case <-time.After(3 * time.Second):
-			if f.process.Process != nil {
-				_ = f.process.Process.Kill()
+		case err := <-f.done:
+			if err != nil {
+				shutdownErr = errors.New("CODEX_APP_SERVER_SHUTDOWN_FAILED")
 			}
-			<-f.done
+		case <-time.After(3 * time.Second):
+			shutdownErr = errors.New("CODEX_APP_SERVER_SHUTDOWN_TIMEOUT")
+			// EOF is the ordinary App Server shutdown. Only an unresponsive or
+			// cancelled owner reaches process-group cancellation.
+			f.cancel()
+			// A descendant outside the owned group can retain stdout. Close
+			// this process's reader so its scanner cannot prevent native reap.
+			if f.output != nil {
+				_ = f.output.Close()
+			}
+			select {
+			case <-f.done:
+			case <-time.After(2 * time.Second):
+				shutdownErr = errors.New("CODEX_APP_SERVER_REAP_TIMEOUT")
+			}
 		}
-		// The parent can exit before its descendants; cancel the owned group
-		// before removing the private home, not only when Wait times out.
-		_ = syscall.Kill(-f.process.Process.Pid, syscall.SIGKILL)
+		f.mu.Lock()
+		f.closeErr = shutdownErr
+		f.mu.Unlock()
 	}
+	f.cancel()
+	if f.output != nil {
+		_ = f.output.Close()
+	}
+	f.mu.Lock()
+	cleaned := f.done == nil || f.reaped && f.closeErr == nil
+	f.mu.Unlock()
 	// The directory is newly allocated by this instance, never an operator path.
-	if f.options.NativeHome == "" && f.home != "" && filepath.Dir(f.home) == filepath.Clean(f.options.RuntimeDir) {
+	// Retain it if cleanup cannot prove a normally reaped owner.
+	if cleaned && f.options.NativeHome == "" && f.home != "" && filepath.Dir(f.home) == filepath.Clean(f.options.RuntimeDir) {
 		_ = os.RemoveAll(f.home)
 	}
 }
@@ -313,7 +364,7 @@ func (f *Facade) connect(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	f.mu.Lock()
-	if len(f.clients) >= 8 {
+	if f.closing || len(f.clients) >= 8 {
 		f.mu.Unlock()
 		http.Error(w, "frontend connection limit", 429)
 		return
@@ -392,9 +443,12 @@ func (f *Facade) send(message any) {
 			_ = client.CloseNow()
 			f.mu.Lock()
 			primary := client == f.client
+			if primary {
+				f.closing = true
+			}
 			f.mu.Unlock()
 			if primary {
-				f.cancel()
+				go f.Close()
 			}
 		}
 	}
@@ -654,9 +708,8 @@ func (f *Facade) admit(message rpc) {
 		parts = append(parts, input.Text)
 	}
 	prompt := strings.Join(parts, "\n")
-	readiness := promptgate.Assess(prompt)
-	if !readiness.Ready {
-		f.reject(message.ID, "PROMPT_INSUFFICIENT: "+readiness.Message())
+	if err := promptgate.ValidateInput(prompt); err != nil {
+		f.reject(message.ID, "PROMPT_INPUT_INVALID: "+err.Error())
 		return
 	}
 	f.mu.Lock()

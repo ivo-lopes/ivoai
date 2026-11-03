@@ -119,8 +119,8 @@ func TestTerminalGateBeforeExecutorAndSharedTurn(t *testing.T) {
 				calls := len(runner.requests)
 				runner.mu.Unlock()
 				if strings.ContainsRune(input, '\x00') {
-					if calls != 0 || !strings.Contains(output.String(), "insufficient") {
-						t.Fatal("gate bypass or missing rejection")
+					if calls != 0 || !strings.Contains(output.String(), "PROMPT_INPUT_INVALID") {
+						t.Fatal("input validation bypass or missing rejection")
 					}
 				} else {
 					if calls != 1 || !strings.Contains(output.String(), "bridge ok") || attempt.Frontend != frontend {

@@ -37,21 +37,25 @@ func TestBridgeIntakeRejectsBeforeSelectionAndExecution(t *testing.T) {
 			}
 			data, _ := io.ReadAll(res.Body)
 			res.Body.Close()
-			if res.StatusCode != http.StatusOK || !strings.Contains(string(data), "waiting_for_refinement") {
+			if res.StatusCode != http.StatusOK || !strings.Contains(string(data), "PROMPT_INPUT_INVALID") || strings.Contains(string(data), "waiting_for_refinement") {
 				t.Fatalf("intake: %d %s", res.StatusCode, data)
 			}
 			runner.mu.Lock()
 			count := len(runner.requests)
 			runner.mu.Unlock()
 			if count != 0 {
-				t.Fatal("executor ran for insufficient prompt")
+				t.Fatal("executor ran for invalid input")
 			}
 		})
 	}
 }
 
 func TestBridgeIntakeAcceptsInformalTextWithoutAcceptanceTemplate(t *testing.T) {
-	for _, prompt := range []string{"Qual versão deste projeto?", "corrija isso"} {
+	for _, prompt := range []string{"Qual versão deste projeto?", "corrija isso",
+		"Explique como funciona a autenticação deste projeto.",
+		"Onde estão implementados os endpoints da API?",
+		"Quais serviços dependem deste módulo?", "Corrija este bug.",
+		"Implemente paginação neste endpoint."} {
 		t.Run(prompt, func(t *testing.T) {
 			runner := &fakeRunner{result: ExecutorResult{ExecutorSessionID: "thread_intake"}}
 			bridge, err := Start(Options{RequirePromptGate: true, Runner: runner,

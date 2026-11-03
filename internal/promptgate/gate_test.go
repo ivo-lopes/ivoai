@@ -14,6 +14,11 @@ func TestIntakeContracts(t *testing.T) {
 		{"unresolved referent is input, not permission", "Corrija isso", true},
 		{"question", "Qual versão deste projeto?", true},
 		{"explanation", "Explique a função Assess", true},
+		{"authentication question", "Explique como funciona a autenticação deste projeto.", true},
+		{"API lookup", "Onde estão implementados os endpoints da API?", true},
+		{"dependencies question", "Quais serviços dependem deste módulo?", true},
+		{"bug request without acceptance", "Corrija este bug.", true},
+		{"implementation without acceptance", "Implemente paginação neste endpoint.", true},
 		{"no acceptance", "Analise o repositório fixture e gere relatório de findings.", true},
 		{"empty acceptance heading", "Objetivo: Leia VERSION e informe o valor.\nAcceptance:", true},
 		{"vague acceptance is not a grant", "Objetivo: Leia VERSION e informe o valor.\nAcceptance: tudo funcionando", true},
@@ -41,6 +46,9 @@ func TestIntakeContracts(t *testing.T) {
 		{"bidirectional isolate", "Leia VERSION\u2066", false},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
+			if err := ValidateInput(tt.prompt); (err == nil) != tt.ready {
+				t.Fatalf("input admission=%v expected=%v", err == nil, tt.ready)
+			}
 			r := Assess(tt.prompt)
 			if r.Ready != tt.ready {
 				t.Fatalf("readiness=%v missing=%v", r.Ready, r.Missing)
@@ -55,6 +63,9 @@ func TestIntakeContracts(t *testing.T) {
 func TestGateDoesNotReturnPrompt(t *testing.T) {
 	const private = "private-data-not-for-metadata"
 	for _, prompt := range []string{private, private + "\x00"} {
+		if err := ValidateInput(prompt); err != nil && strings.Contains(err.Error(), private) {
+			t.Fatal("input error leaked prompt")
+		}
 		r := Assess(prompt)
 		if strings.Contains(r.Message(), private) || strings.Contains(strings.Join(r.Missing, " "), private) {
 			t.Fatal("prompt leaked")

@@ -1,0 +1,78 @@
+{
+  "schema_version": 1,
+  "functional_source_commit": "889b74a304ef2f374a644cdd7b6b3579d09d939e",
+  "live_test_source_commit": "94ad77da",
+  "go": "1.27.3",
+  "normal_opt_in_live_tests": "SKIPPED_BY_DEFAULT_NOT_COUNTED_AS_INFERENCE",
+  "checks": [
+    {
+      "name": "full-v5-race.log",
+      "result": "PASS_59_packages_3_without_tests",
+      "log_sha256": "ac91eab888c31929b243ae27b658b906dcd287c1e699816d899a7cf12e5e3f21"
+    },
+    {
+      "name": "vet-v5.log",
+      "result": "PASS",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "focused-v6-race.log",
+      "result": "PASS",
+      "log_sha256": "fb8d80f4a25f70513125e6b9d5b05e69d6b0aeeb9add244eb8376d4f0f9bd691"
+    },
+    {
+      "name": "python-v6.log",
+      "result": "PASS_105_tests",
+      "log_sha256": "935a7020a9d9a7aba1b0ddc750b1254ebab4fdbaca8d1fcdc9f67687bc605035"
+    },
+    {
+      "name": "native-auto-python-v6.log",
+      "result": "PASS_9_tests",
+      "log_sha256": "1ceb7b0d9164b2d84de8b0e37f2951a4b0fec820f0c6b870e29d37d728caa16a"
+    },
+    {
+      "name": "govuln-v6.log",
+      "result": "PASS_NO_VULNERABILITIES_FOUND",
+      "log_sha256": "3016e51e4eac0d421674d2128bbbdefb2924b4646e0c14a1ab034977ad73fae5"
+    },
+    {
+      "name": "native-protocol-final.log",
+      "result": "PASS_SYNTHETIC_PROTOCOL_NOT_INFERENCE",
+      "log_sha256": "9c0ded47d683ef6ec05e728402e1959fcf4fe686f56695478bc139ca50a4b9f1"
+    },
+    {
+      "name": "final-helper-race.log",
+      "result": "PASS_FINAL_HELPER_CONTINUITY_AND_PRIVATE_SETUP",
+      "log_sha256": "0aa11c8690fb5782b21c8f82092c9cbbdd26979298da454686c7ab9f583521af"
+    }
+  ],
+  "compile_checks": [
+    "Linux_amd64_GOAMD64_v1_CGO0_PASS",
+    "Linux_arm64_CGO0_PASS"
+  ],
+  "cross_arch_warning": "ARM64_not_executed_locally_no_local_QEMU_certificate",
+  "initial_hosted_gate": {
+    "head": "889b74a304ef2f374a644cdd7b6b3579d09d939e",
+    "run": 41733165927,
+    "quality": "FAILED_DOCS_DEPENDENCY_AUDIT",
+    "high_advisories": [
+      "GHSA-mrwp-f3q8-3g9p",
+      "GHSA-4528-x5fx-h6hg"
+    ]
+  },
+  "merge_requirement": "fresh_required_CI_on_final_PR_head",
+  "public_cli_inference": "PASS_V8CLI_TWO_TURNS_NO_SUBSTITUTED_ENTRYPOINT",
+  "public_cli_test_source_commit": "be0066041563b92615cbf8480569c874c458576e",
+  "second_hosted_gate": {
+    "head": "8efd89df71dd44d375befcdccf1b190026275f30",
+    "run": 41735875449,
+    "quality": "FAILED_RUNTIME_DEPENDENCY_AUDIT",
+    "passed_jobs": 13,
+    "dependent_jobs_skipped": 2,
+    "skipped_jobs_counted_as_success": false,
+    "high_advisories": [
+      "GHSA-mrwp-f3q8-3g9p"
+    ],
+    "reason": "separate runtime follow-redirects1.16.1 override remained after docs pins were corrected"
+  }
+}

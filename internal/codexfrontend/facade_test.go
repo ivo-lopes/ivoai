@@ -158,6 +158,11 @@ func TestNativeIntakeAcceptsInformalTextWithoutChangingSandbox(t *testing.T) {
 	}{
 		{"question", "Qual versão deste projeto?", true},
 		{"informal", "corrija isso", true},
+		{"authentication", "Explique como funciona a autenticação deste projeto.", true},
+		{"endpoints", "Onde estão implementados os endpoints da API?", true},
+		{"dependencies", "Quais serviços dependem deste módulo?", true},
+		{"bug", "Corrija este bug.", true},
+		{"pagination", "Implemente paginação neste endpoint.", true},
 		{"empty", "", false},
 		{"unsafe", "Leia VERSION\x00", false},
 	} {
@@ -344,7 +349,7 @@ func TestLiveNativeAppServerAdmission(t *testing.T) {
 		t.Fatal("native thread missing")
 	}
 	send(3, "turn/start", map[string]any{"threadId": started.Thread.ID, "input": []any{map[string]any{"type": "text", "text": ""}}})
-	if event := waitID("3"); !bytes.Contains(event.Error, []byte("PROMPT_INSUFFICIENT")) {
+	if event := waitID("3"); !bytes.Contains(event.Error, []byte("PROMPT_INPUT_INVALID")) {
 		t.Fatal("first turn did not fail closed")
 	}
 	if runner.calls.Load() != 0 {
@@ -429,8 +434,8 @@ func TestLiveNativeAppServerAdmission(t *testing.T) {
 		t.Fatalf("native resume failed: %.600s %.600s", event.Error, event.Result)
 	}
 	send(4, "turn/start", map[string]any{"threadId": started.Thread.ID, "input": []any{map[string]any{"type": "text", "text": ""}}})
-	if event := waitID("4"); !bytes.Contains(event.Error, []byte("PROMPT_INSUFFICIENT")) {
-		t.Fatal("resume bypassed prompt gate")
+	if event := waitID("4"); !bytes.Contains(event.Error, []byte("PROMPT_INPUT_INVALID")) {
+		t.Fatal("resume bypassed input validation")
 	}
 	t.Log("native history persisted; restart/list/resume/gate PASS; no transcript copied into IVOAI metadata")
 }

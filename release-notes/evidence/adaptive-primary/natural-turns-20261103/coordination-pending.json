@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "workspace": "pessoal-ivo",
+  "project": "IVOAI",
+  "status": "PENDING_NOT_SENT",
+  "plane_error": "UNAUTHORIZED_REAUTHENTICATION_REQUIRED",
+  "pr": "https://github.com/ivo-lopes/ivoai/pull/69",
+  "requested_updates": [
+    {
+      "identifier": "IVOAI-191",
+      "action": "append_evidence_comment_preserve_history",
+      "comment": "PR69 implements the first functional managed Codex backend-first path through the existing Core, Bridge, native TUI and DAG scheduler. The wider roadmap remains open.",
+      "state_change": "NONE_PENDING_VERIFIED_ACCEPTANCE"
+    },
+    {
+      "identifier": "IVOAI-192",
+      "action": "append_evidence_comment_preserve_history",
+      "comment": "Reuses provider-neutral Session/Core/Executor contracts, existing receipt/NoReplay policies, Code Intelligence and approved workers. No new scheduler or planning protocol. Continuation checks owned mapping/account epoch/history/digests.",
+      "state_change": "NONE_PENDING_VERIFIED_ACCEPTANCE"
+    },
+    {
+      "identifier": "IVOAI-193",
+      "action": "append_evidence_comment_preserve_history",
+      "comment": "Integrity-only natural text admission; simple queries and two related native TUI turns complete without DAG. Same-turn approved one-/two-worker changes pass real official Codex inference. Adaptive flag remains OFF; exact0.162.1 Linuxamd64 pair and same-process new-session rollout only.",
+      "state_change": "NONE_PENDING_VERIFIED_ACCEPTANCE"
+    },
+    {
+      "identifier": "IVOAI-197",
+      "action": "append_evidence_comment_preserve_history",
+      "comment": "Real A/B/C/D/E/F execution receipts include native TUI /exit and clean EOF shutdown, denied read + cancellation, duplicate409/no retry/failover, changed-path and fixed executable test oracles. All earlier failed epochs retained. Cross-process resume/other runtimes/real credential revocation not certified; final hosted CI required.",
+      "state_change": "NONE_PENDING_VERIFIED_ACCEPTANCE"
+    },
+    {
+      "identifier": "IVOAI-198",
+      "action": "append_evidence_comment_preserve_history",
+      "comment": "Official CLI-reported primary input/output/cache usage recorded. Worker usage unavailable, no billing/whole-session saving claim, no comparable Gateway OFF/ON cohort. Economic gate stays INCOMPLETE.",
+      "state_change": "NONE_PENDING_VERIFIED_ACCEPTANCE"
+    },
+    {
+      "identifier": "IVOAI-199",
+      "action": "append_evidence_comment_preserve_history",
+      "comment": "Existing scoped Code Intelligence Direct path and protected evidence controls reused; no redundant gateway/store or new automatic cache/prefetch. No claim of new Gateway coverage or cache savings.",
+      "state_change": "NONE_PENDING_VERIFIED_ACCEPTANCE"
+    }
+  ],
+  "memory": {
+    "status": "BLOCKED_SERVICE_INTERNAL_ERROR",
+    "action": "append_verified_delivery_only_after_fresh_canonical_read",
+    "requested_canonical_reference": "mindsite/ivoai/arquitetura-evidence-gateway-economia-backend-first-2026-10-27",
+    "decision_reference": "mindsite/ivoai/decisao-backend-first-nativos-antigravity-remocao-opencode-2026-10-27",
+    "write_performed": false
+  },
+  "context": {
+    "status": "BLOCKED_SERVICE_INTERNAL_ERROR",
+    "ingestion_performed": false,
+    "related_task": "IVOAI-175"
+  }
+}

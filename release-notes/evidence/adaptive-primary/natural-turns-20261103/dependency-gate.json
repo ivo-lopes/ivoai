@@ -1,0 +1,90 @@
+{
+  "delivery_cherry_pick": "7a32991d",
+  "applied_to": "PR69 isolated delivery branch",
+  "original_validation": {
+    "schema_version": 1,
+    "scope": "documentation_dependency_gate_fix",
+    "commit": "b22a63b462b05349ebbc68d05f208d02fd418d53",
+    "node": "26.11.1",
+    "corepack": "0.36.0",
+    "pnpm": "12.11.2",
+    "changes": {
+      "follow-redirects": [
+        "1.16.1",
+        "1.16.2"
+      ],
+      "joi": [
+        "18.2.9",
+        "18.3.1"
+      ]
+    },
+    "validation": {
+      "build_en_pt_BR": "PASS",
+      "build_docs_check": "PASS",
+      "audit_prod_high_gate": "PASS",
+      "docsserver_go_tests": "PASS",
+      "diff_check": "PASS"
+    },
+    "advisories_before": {
+      "info": 0,
+      "low": 1,
+      "moderate": 1,
+      "high": 2,
+      "critical": 0
+    },
+    "advisories_after": {
+      "info": 0,
+      "low": 1,
+      "moderate": 1,
+      "high": 0,
+      "critical": 0
+    },
+    "remaining": [
+      {
+        "package": "deepmerge",
+        "severity": "low",
+        "advisory": "GHSA-gcqx-w48m-w2h4",
+        "url": "https://github.com/advisories/GHSA-gcqx-w48m-w2h4"
+      },
+      {
+        "package": "minimatch",
+        "severity": "moderate",
+        "advisory": "GHSA-g3hv-75wg-m249",
+        "url": "https://github.com/advisories/GHSA-g3hv-75wg-m249"
+      }
+    ],
+    "ignores_added": false,
+    "personal_configuration_modified": false,
+    "main_worktree_modified": false,
+    "registry_integrity": [
+      {
+        "name": "follow-redirects",
+        "version": "1.16.2",
+        "registry": "https://registry.npmjs.org",
+        "tarball": "https://registry.npmjs.org/follow-redirects/-/follow-redirects-1.16.2.tgz",
+        "license": "MIT",
+        "integrity": "sha512-/kVP2U8z596Ia0gwFrwyIeo74ta5aVmSeU1FfAUMAmcEP5EP7zydmag3SLiN64NaRKef3lxsq7i/g7ltJQDGow==",
+        "lock_integrity_matches": true,
+        "sha1_matches": true,
+        "sha512_matches": true,
+        "registry_signatures_checked": 2,
+        "registry_signatures_valid": 2,
+        "publisher_provenance_attestation": false
+      },
+      {
+        "name": "joi",
+        "version": "18.3.1",
+        "registry": "https://registry.npmjs.org",
+        "tarball": "https://registry.npmjs.org/joi/-/joi-18.3.1.tgz",
+        "license": "BSD-3-Clause",
+        "integrity": "sha512-mV9M4Llh4va3NT90p7KBtQhoZqjs8xLX7EWYE4y/GG3yLF6REbIBEHSUb0UX1JXRht2w5tiLSsvmpYc5akiqIw==",
+        "lock_integrity_matches": true,
+        "sha1_matches": true,
+        "sha512_matches": true,
+        "registry_signatures_checked": 2,
+        "registry_signatures_valid": 2,
+        "publisher_provenance_attestation": false
+      }
+    ]
+  }
+}

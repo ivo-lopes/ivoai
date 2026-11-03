@@ -1,0 +1,63 @@
+{
+  "delivery_cherry_pick": "1d704fa3",
+  "original_receipt_sha256": "9cebe0c0e2407d13b6457c064cc81efd84c042ddec628e397f1afc92272d69a8",
+  "integrity_evidence": "dependency-gate.json: original_validation.registry_integrity[follow-redirects@1.16.2]",
+  "original_validation": {
+    "schema_version": 1,
+    "scope": "runtime_dependency_gate_fix",
+    "commit": "cbb9392b9e8fcb003b8e720ed79ff67677e61ae2",
+    "node": "26.11.1",
+    "dependency": {
+      "name": "follow-redirects",
+      "old": "1.16.1",
+      "new": "1.16.2",
+      "advisory": "GHSA-mrwp-f3q8-3g9p"
+    },
+    "changed_files": [
+      "internal/components/assets/package.json",
+      "internal/components/assets/package-lock.json"
+    ],
+    "validation": {
+      "npm_lock_update_ignore_scripts": "PASS",
+      "npm_ci_ignore_scripts": "PASS",
+      "npm_audit_omit_dev_high_gate": "PASS",
+      "braces_tests": {
+        "passed": 6,
+        "failed": 0,
+        "skipped": 0
+      },
+      "zod3_compat_tests_with_typescript": {
+        "passed": 23,
+        "failed": 0,
+        "skipped": 0
+      },
+      "components_go_race": "PASS 8.818s",
+      "installed_matches_lock_and_prior_registry_integrity": "PASS",
+      "diff_check": "PASS"
+    },
+    "audit_before": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 1,
+      "critical": 0,
+      "total": 1
+    },
+    "audit_after": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 0
+    },
+    "runtime_profile": "SHA256(packageJSON + packageLock), existing prior-profile rollback preserved",
+    "managed_opencode_build_uses_runtime_lock": false,
+    "static_runtime_pin_hash_requiring_update": false,
+    "historical_evidence_modified": false,
+    "personal_configuration_modified": false,
+    "gates_or_ignores_modified": false,
+    "main_worktree_modified": false,
+    "documentation_rebuild": "NOT_REQUIRED: no docs or website inputs changed"
+  }
+}
