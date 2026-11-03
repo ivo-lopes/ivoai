@@ -15,6 +15,7 @@
     "toml": "5.0.1",
     "body-parser": "2.4.0",
     "fast-uri": "3.1.9",
+    "follow-redirects": "1.16.2",
     "qs": "6.16.1",
     "ip-address": "10.7.4",
     "undici@^6.0.0": "6.29.1",
