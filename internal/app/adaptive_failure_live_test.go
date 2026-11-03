@@ -31,6 +31,9 @@ type adaptiveFailureObservation struct {
 	CancelRequested     bool                     `json:"caller_cancellation_requested"`
 	CancelConfirmed     bool                     `json:"official_executor_cancellation_confirmed"`
 	Reaped              bool                     `json:"final_trace_after_executor_wait"`
+	NativeCompletion    bool                     `json:"native_completion_event_observed"`
+	ResponseTextPresent bool                     `json:"native_response_text_observed"`
+	NativeFailure       string                   `json:"native_failure_class,omitempty"`
 	ReceiptClosed       bool                     `json:"receipt_closed"`
 	Attempts            int                      `json:"primary_attempts"`
 	Workers             int                      `json:"workers"`
@@ -225,7 +228,10 @@ func TestLiveAdaptivePrimaryManagedFailure(t *testing.T) {
 			}
 			row.NoReplay, row.NoAutomaticFailover = result.Policy.NoReplay, result.Policy.NoAutomaticFailover
 			if result.Trace != nil {
-				row.CancelConfirmed = result.Trace.Executor == "codex" && result.Trace.Executable == binary && observedPID > 0 && result.Trace.PID == observedPID && result.Trace.Events > 0 && result.Trace.Failure == "executor_cancelled" && !result.Trace.Completion && !result.Trace.FinalResponse
+				row.NativeCompletion, row.ResponseTextPresent, row.NativeFailure = result.Trace.Completion, result.Trace.FinalResponse, result.Trace.Failure
+				// A native agent_message can precede an MCP call. Its text alone
+				// is not turn/completed; cancellation must preserve that distinction.
+				row.CancelConfirmed = result.Trace.Executor == "codex" && result.Trace.Executable == binary && observedPID > 0 && result.Trace.PID == observedPID && result.Trace.Events > 0 && result.Trace.Failure == "executor_cancelled" && !result.Trace.Completion
 				row.Reaped = row.CancelConfirmed // CLIRunner final trace is emitted only after cmd.Wait.
 				row.Usage = result.Trace.Usage
 			}

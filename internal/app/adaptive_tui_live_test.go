@@ -60,6 +60,8 @@ func TestLiveAdaptivePrimaryNativeTUI(t *testing.T) {
 		CleanShutdown      bool                       `json:"clean_shutdown"`
 		OfficialUsage      []*core.ReportedTokenUsage `json:"official_client_usage,omitempty"`
 		GlobalEconomicGate string                     `json:"global_economic_gate"`
+		Phase              string                     `json:"phase"`
+		Startup            adaptiveNativeStartup      `json:"startup"`
 	}
 	row := receipt{SchemaVersion: 1, Scope: "official_Codex_0.162.1_linux_amd64_native_TUI_two_turns", Outcome: "FAIL", GlobalEconomicGate: "INCOMPLETE"}
 	started := time.Now()
@@ -153,6 +155,12 @@ func TestLiveAdaptivePrimaryNativeTUI(t *testing.T) {
 		fail("NATIVE_TUI_START_FAILED")
 	}
 	defer pty.close()
+	defer func() {
+		selectedMu.Lock()
+		selected := selectedFrontend != ""
+		selectedMu.Unlock()
+		row.Startup = pty.startup(model, selected)
+	}()
 	approved := map[string]bool{}
 	approveRead := func() error {
 		pending, err := b.PendingDecisions(ctx)
@@ -198,7 +206,13 @@ func TestLiveAdaptivePrimaryNativeTUI(t *testing.T) {
 			}
 		}
 	}
-	wait(func() bool { return pty.contains(model.Name) }, 25*time.Second)
+	row.Phase = "native_startup"
+	wait(func() bool {
+		selectedMu.Lock()
+		selected := selectedFrontend != ""
+		selectedMu.Unlock()
+		return pty.startup(model, selected).ready()
+	}, 25*time.Second)
 	submit := func(text string) error {
 		if err := pty.send(text); err != nil {
 			return err
@@ -214,6 +228,7 @@ func TestLiveAdaptivePrimaryNativeTUI(t *testing.T) {
 	}
 	firstNative, firstReceipt, firstFrontend := "", "", ""
 	for i, prompt := range []string{"Explique como funciona a autenticação deste projeto.", "Qual função faz essa verificação? Informe o nome e o arquivo."} {
+		row.Phase = "turn_" + strconv.Itoa(i+1) + "_metadata"
 		if submit(prompt) != nil {
 			fail("NATIVE_INPUT_FAILED")
 		}
@@ -253,6 +268,7 @@ func TestLiveAdaptivePrimaryNativeTUI(t *testing.T) {
 		if result.Trace.Usage != nil {
 			row.OfficialUsage = append(row.OfficialUsage, result.Trace.Usage)
 		}
+		row.Phase = "turn_" + strconv.Itoa(i+1) + "_render"
 		// Metadata is the completion oracle. Rendering of the fixture answer
 		// additionally proves the result reached the real native interface.
 		wait(func() bool {
@@ -271,6 +287,7 @@ func TestLiveAdaptivePrimaryNativeTUI(t *testing.T) {
 			fail("INTEGRATION_DEADLINE")
 		}
 	}
+	row.Phase = "normal_tui_exit"
 	if submit("/exit") != nil {
 		fail("NORMAL_EXIT_INPUT_FAILED")
 	}
@@ -285,6 +302,7 @@ func TestLiveAdaptivePrimaryNativeTUI(t *testing.T) {
 	if !row.FrontendExitZero {
 		fail("NATIVE_EXIT_NONZERO")
 	}
+	row.Phase = "owned_app_server_shutdown"
 	front.Close()
 	row.CleanShutdown = front.ShutdownError() == nil
 	if !row.CleanShutdown {
@@ -294,19 +312,21 @@ func TestLiveAdaptivePrimaryNativeTUI(t *testing.T) {
 	if err != nil || len(final.TurnAttempts) != 2 || len(final.FrontendRequests) != 2 || final.PlanID != "" || len(final.Tasks) != 0 || len(final.Workers) != 0 || final.PrimaryTurn == nil || final.PrimaryTurn.Mode != core.PrimaryClosed {
 		fail("FINAL_SESSION_OR_REPLAY_INVARIANT_FAILED")
 	}
+	row.Phase = "completed"
 	row.Outcome = "PASS"
 }
 
 // Terminal content, including model responses, stays bounded in memory. No
 // transcript, command arguments, environment, prompt, or response is logged.
 type adaptiveNativeTerminal struct {
-	master *os.File
-	cmd    *exec.Cmd
-	done   chan struct{}
-	err    error // published by closing done
-	mu     sync.Mutex
-	write  sync.Mutex
-	output []byte
+	master  *os.File
+	cmd     *exec.Cmd
+	done    chan struct{}
+	err     error // published by closing done
+	mu      sync.Mutex
+	write   sync.Mutex
+	output  []byte
+	queries adaptiveNativeQueries
 }
 
 func adaptiveNativePTY(ctx context.Context, binary, directory string, args, environment []string) (*adaptiveNativeTerminal, error) {
@@ -336,7 +356,15 @@ func adaptiveNativePTY(ctx context.Context, binary, directory string, args, envi
 		return nil, err
 	}
 	cmd := exec.CommandContext(ctx, binary, args...)
-	cmd.Dir, cmd.Env = directory, environment
+	// This PTY emulates an xterm, independently of the noninteractive test
+	// runner's TERM. Do not alter the operator's or backend's environment.
+	terminalEnvironment := make([]string, 0, len(environment)+1)
+	for _, entry := range environment {
+		if !strings.HasPrefix(entry, "TERM=") {
+			terminalEnvironment = append(terminalEnvironment, entry)
+		}
+	}
+	cmd.Dir, cmd.Env = directory, append(terminalEnvironment, "TERM=xterm-256color")
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = slave, slave, slave
 	cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true, Setctty: true, Ctty: 0}
 	if err := cmd.Start(); err != nil {
@@ -346,18 +374,26 @@ func adaptiveNativePTY(ctx context.Context, binary, directory string, args, envi
 	go func() { p.err = cmd.Wait(); close(p.done) }()
 	go func() {
 		buffer := make([]byte, 32768)
+		queryTail := ""
 		for {
 			n, err := master.Read(buffer)
 			if n > 0 {
 				chunk := buffer[:n]
+				var replies []string
+				var queries adaptiveNativeQueries
+				queryTail, replies, queries = adaptiveNativeQueryReplies(queryTail, string(chunk))
 				p.mu.Lock()
 				remaining := (4 << 20) - len(p.output)
 				if remaining > 0 {
 					p.output = append(p.output, chunk[:min(n, remaining)]...)
 				}
+				p.queries.Cursor += queries.Cursor
+				p.queries.Status += queries.Status
+				p.queries.Device += queries.Device
+				p.queries.Keyboard += queries.Keyboard
 				p.mu.Unlock()
-				if strings.Contains(string(chunk), "\x1b[6n") {
-					_ = p.send("\x1b[1;1R")
+				for _, reply := range replies {
+					_ = p.send(reply)
 				}
 			}
 			if err != nil {
@@ -402,4 +438,141 @@ func (p *adaptiveNativeTerminal) close() {
 		}
 	}
 	_ = p.master.Close()
+}
+
+// Startup classifications are a bounded diagnostic, not a terminal transcript
+// or proof of inference. Unknown modals remain a timeout; no dialog is accepted.
+type adaptiveNativeStartup struct {
+	TerminalOutput  bool                  `json:"terminal_output"`
+	TerminalBytes   int                   `json:"terminal_bytes"`
+	ThreadSelected  bool                  `json:"thread_selected"`
+	ModelDisplay    bool                  `json:"model_display_seen"`
+	ModelUpstream   bool                  `json:"model_upstream_seen"`
+	Composer        bool                  `json:"composer_seen"`
+	TrustDialog     bool                  `json:"trust_dialog_seen"`
+	UpdateDialog    bool                  `json:"update_dialog_seen"`
+	AuthDialog      bool                  `json:"auth_dialog_seen"`
+	ConnectionError bool                  `json:"connection_error_seen"`
+	TerminalWarning bool                  `json:"terminal_warning_seen"`
+	Queries         adaptiveNativeQueries `json:"terminal_queries"`
+}
+
+type adaptiveNativeQueries struct {
+	Cursor   int `json:"cursor"`
+	Status   int `json:"status"`
+	Device   int `json:"device_attributes"`
+	Keyboard int `json:"keyboard"`
+}
+
+func (s adaptiveNativeStartup) ready() bool {
+	return !s.TrustDialog && !s.UpdateDialog && !s.AuthDialog && !s.ConnectionError && !s.TerminalWarning && (s.ModelDisplay || s.ModelUpstream) && (s.ThreadSelected || s.Composer)
+}
+
+func (p *adaptiveNativeTerminal) startup(model opencodebridge.ModelSpec, selected bool) adaptiveNativeStartup {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	text := strings.ToLower(strings.Join(strings.Fields(adaptiveNativeANSI.ReplaceAllString(string(p.output), "")), ""))
+	seen := func(values ...string) bool {
+		for _, value := range values {
+			value = strings.ToLower(strings.Join(strings.Fields(value), ""))
+			if value != "" && strings.Contains(text, value) {
+				return true
+			}
+		}
+		return false
+	}
+	return adaptiveNativeStartup{
+		TerminalOutput: len(p.output) != 0, TerminalBytes: len(p.output), ThreadSelected: selected,
+		ModelDisplay: seen(strings.TrimPrefix(model.Name, "Codex · ")), ModelUpstream: seen(model.UpstreamModel),
+		Composer:        seen("? for shortcuts", "›"),
+		TrustDialog:     seen("Do you trust the contents of this directory", "Do you trust this folder", "Do you trust the files in this folder", "Trust this directory"),
+		UpdateDialog:    seen("Update available", "Update now", "Skip until next version", "Remind me later"),
+		AuthDialog:      seen("Sign in with ChatGPT", "Sign in to Codex", "Paste your API key", "Log in to Codex"),
+		ConnectionError: seen("Failed to connect", "Connection refused", "WebSocket handshake failed"),
+		TerminalWarning: seen("TERM is set to dumb", "terminal does not support", "not a supported terminal"), Queries: p.queries,
+	}
+}
+
+// Recognize only standard queries emitted by the TUI. Tail handling permits
+// queries split across arbitrary PTY reads and avoids replying twice. Report
+// no advanced keyboard features and only basic VT100 device attributes.
+func adaptiveNativeQueryReplies(tail, chunk string) (string, []string, adaptiveNativeQueries) {
+	text := tail + chunk
+	var replies []string
+	var counts adaptiveNativeQueries
+	queries := []struct{ request, reply, kind string }{
+		{"\x1b[6n", "\x1b[1;1R", "cursor"}, {"\x1b[?6n", "\x1b[?1;1R", "cursor"},
+		{"\x1b[5n", "\x1b[0n", "status"},
+		{"\x1b[c", "\x1b[?1;2c", "device"}, {"\x1b[0c", "\x1b[?1;2c", "device"},
+		{"\x1b[>c", "\x1b[>0;0;0c", "device"}, {"\x1b[>0c", "\x1b[>0;0;0c", "device"},
+		{"\x1b[?u", "\x1b[?0u", "keyboard"},
+	}
+	for offset := 0; offset < len(text); offset++ {
+		for _, query := range queries {
+			if !strings.HasPrefix(text[offset:], query.request) {
+				continue
+			}
+			end := offset + len(query.request)
+			if end > len(tail) {
+				replies = append(replies, query.reply)
+				switch query.kind {
+				case "cursor":
+					counts.Cursor++
+				case "status":
+					counts.Status++
+				case "device":
+					counts.Device++
+				case "keyboard":
+					counts.Keyboard++
+				}
+			}
+			offset = end - 1
+			break
+		}
+	}
+	if len(text) > 32 {
+		text = text[len(text)-32:]
+	}
+	return text, replies, counts
+}
+
+func TestAdaptiveNativeStartupUsesObservedModelAndRejectsKnownModals(t *testing.T) {
+	model := opencodebridge.ModelSpec{Name: "Codex · Observed model", UpstreamModel: "observed-model"}
+	for _, output := range []string{"observed-model ›", "Observed model ? for shortcuts"} {
+		terminal := &adaptiveNativeTerminal{output: []byte(output)}
+		if !terminal.startup(model, false).ready() {
+			t.Fatal("real model and composer were not recognized")
+		}
+	}
+	terminal := &adaptiveNativeTerminal{output: []byte("observed-model Do you trust the contents of this directory? ›")}
+	state := terminal.startup(model, true)
+	if !state.TrustDialog || state.ready() {
+		t.Fatal("trust dialog was mistaken for an admitted composer")
+	}
+	terminal.output = []byte("observed-model unrelated private terminal content")
+	if terminal.startup(model, false).ready() {
+		t.Fatal("model label alone certified startup")
+	}
+	raw, err := json.Marshal(terminal.startup(model, true))
+	if err != nil || strings.Contains(string(raw), "private terminal content") || strings.Contains(string(raw), "observed-model") {
+		t.Fatal("startup diagnostic exported terminal text")
+	}
+}
+
+func TestAdaptiveNativeQueriesSurviveReadBoundariesWithoutReplay(t *testing.T) {
+	var tail string
+	var replies []string
+	var total adaptiveNativeQueries
+	for _, chunk := range []string{"prefix\x1b[", "6n", "suffix\x1b[?", "u\x1b[", "c"} {
+		var responses []string
+		var counts adaptiveNativeQueries
+		tail, responses, counts = adaptiveNativeQueryReplies(tail, chunk)
+		replies = append(replies, responses...)
+		total.Cursor += counts.Cursor
+		total.Device += counts.Device
+		total.Keyboard += counts.Keyboard
+	}
+	if strings.Join(replies, "|") != "\x1b[1;1R|\x1b[?0u|\x1b[?1;2c" || total.Cursor != 1 || total.Device != 1 || total.Keyboard != 1 {
+		t.Fatal("split terminal queries were missed or replayed")
+	}
 }
