@@ -95,7 +95,7 @@ func (a *App) prepareSessionKnowledgeSelection(ctx context.Context, cfg config.C
 			if observe != nil {
 				provider.Observe = func(result core.CodeResult, err error) { observe(codeintel.Observation(result, err)) }
 			}
-			targets = append(targets, externalmcp.Target{Name: nativeCodeMCP, Local: provider.Handler(), Restricted: true, AllowedTools: codeintel.ToolNames()})
+			targets = append(targets, externalmcp.Target{Name: nativeCodeMCP, Local: a.adaptiveCodeHandler(ctx, provider), Restricted: true, AllowedTools: codeintel.ToolNames()})
 		} else if observe != nil {
 			observe(codeintel.Observation(core.CodeResult{}, providerErr))
 		}

@@ -202,7 +202,11 @@ func (a *App) scopeAutoRunner(base core.ExecutorRunner, original config.Config, 
 				return fail(err)
 			}
 		}
-		k, err := a.prepareAutoPromptKnowledge(ctx, original, selectors, request.Prompt, request.Executor, runtimeDir, cwd, func(event observability.Event) {
+		knowledgeContext := ctx
+		if adaptive != nil && os.Getenv("IVOAI_EXPERIMENTAL_EVIDENCE_GATEWAY") == "1" {
+			knowledgeContext = context.WithValue(ctx, adaptiveCodeContextKey{}, adaptive)
+		}
+		k, err := a.prepareAutoPromptKnowledge(knowledgeContext, original, selectors, request.Prompt, request.Executor, runtimeDir, cwd, func(event observability.Event) {
 			_, _ = store.Update(id, func(value *session.Session) error {
 				if adaptive != nil && !adaptive.boundTo(*value) {
 					return errors.New("ADAPTIVE_PRIMARY_DENIED")
