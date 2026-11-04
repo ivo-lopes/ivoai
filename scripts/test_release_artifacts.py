@@ -401,6 +401,63 @@ class ReleaseArtifactsTests(unittest.TestCase):
         self.assertEqual(checked['verified_digests'], 0)
         self.assertEqual(len(checked['unknown_digests']), 12)
 
+    def test_real_github_draft_locator_binds_all_asset_urls(self):
+        path = self.assets()
+        hashes = v.manifest_hashes(path)
+        locator = 'untagged-897b8a4735700b0274e3'
+        document = {'tag_name': 'v0.16.0', 'draft': True, 'prerelease': False,
+                    'html_url': 'https://github.com/ivo-lopes/ivoai/releases/tag/'+locator,
+                    'assets': [{'name': name, 'size': (path/name).stat().st_size,
+                                'digest': 'sha256:'+hashes[name],
+                                'browser_download_url': 'https://github.com/ivo-lopes/ivoai/releases/download/'+locator+'/'+name}
+                               for name in sorted(v.EXPECTED)]}
+        api = self.root/'draft-api.json'
+        api.write_text(json.dumps(document))
+        checked = v.api_metadata(api, hashes, path, 'v0.16.0')
+        self.assertEqual(checked['verified_digests'], 12)
+        self.assertEqual(checked['download_locator'], locator)
+        self.assertEqual(checked['download_locator_status'], 'UNPUBLISHED_DRAFT_LOCATOR')
+        for case in ('published', 'publisher', 'query', 'fragment', 'short_locator',
+                     'userinfo', 'port', 'encoded_path', 'asset_query', 'asset_fragment',
+                     'mixed_locator', 'wrong_name', 'wrong_tag', 'mixed_page'):
+            with self.subTest(case=case):
+                bad = copy.deepcopy(document)
+                if case == 'published': bad['draft'] = False
+                elif case == 'publisher': bad['html_url'] = bad['html_url'].replace('ivo-lopes/ivoai', 'other/ivoai')
+                elif case == 'query': bad['html_url'] += '?private=synthetic'
+                elif case == 'fragment': bad['html_url'] += '#other'
+                elif case == 'short_locator': bad['html_url'] = bad['html_url'][:-1]
+                elif case == 'userinfo': bad['html_url'] = bad['html_url'].replace('https://', 'https://user@')
+                elif case == 'port': bad['html_url'] = bad['html_url'].replace('github.com/', 'github.com:443/')
+                elif case == 'encoded_path': bad['html_url'] = bad['html_url'].replace('ivo-lopes/ivoai', 'ivo-lopes%2Fivoai')
+                elif case == 'asset_query': bad['assets'][0]['browser_download_url'] += '?other=synthetic'
+                elif case == 'asset_fragment': bad['assets'][0]['browser_download_url'] += '#other'
+                elif case == 'mixed_locator': bad['assets'][0]['browser_download_url'] = bad['assets'][0]['browser_download_url'].replace(locator, 'untagged-'+'f'*20)
+                elif case == 'wrong_name': bad['assets'][0]['browser_download_url'] += '.other'
+                elif case == 'wrong_tag': bad['tag_name'] = 'v0.15.0'
+                else: bad['html_url'] = bad['html_url'].replace(locator, 'v0.16.0')
+                api.write_text(json.dumps(bad))
+                with self.assertRaises(ValueError):
+                    v.api_metadata(api, hashes, path, 'v0.16.0')
+
+    def test_published_release_requires_canonical_tag_asset_urls(self):
+        path = self.assets()
+        hashes = v.manifest_hashes(path)
+        document = {'tag_name': 'v0.16.0', 'draft': False, 'prerelease': False,
+                    'html_url': 'https://github.com/ivo-lopes/ivoai/releases/tag/v0.16.0',
+                    'assets': [{'name': name, 'size': (path/name).stat().st_size,
+                                'digest': 'sha256:'+hashes[name],
+                                'browser_download_url': 'https://github.com/ivo-lopes/ivoai/releases/download/v0.16.0/'+name}
+                               for name in sorted(v.EXPECTED)]}
+        api = self.root/'published-api.json'
+        api.write_text(json.dumps(document))
+        checked = v.api_metadata(api, hashes, path, 'v0.16.0')
+        self.assertEqual(checked['download_locator_status'], 'RELEASE_TAG')
+        document['assets'][0]['browser_download_url'] = document['assets'][0]['browser_download_url'].replace('/v0.16.0/', '/untagged-'+'f'*20+'/')
+        api.write_text(json.dumps(document))
+        with self.assertRaises(ValueError):
+            v.api_metadata(api, hashes, path, 'v0.16.0')
+
     def test_release_version_preserves_workflow_prerelease_grammar(self):
         for version in ('0.16.0', 'v0.16.0', '0.17.0-rc.1', 'v0.17.0-beta-2', '1.0.0-123'):
             with self.subTest(version=version):
