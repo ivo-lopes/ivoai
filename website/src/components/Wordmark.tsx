@@ -14,13 +14,16 @@ export default function Wordmark({className}: Props): React.JSX.Element {
       <span>I</span>
       <span>V</span>
       <span>O</span>
-      <svg
-        className="ivoai-wordmark__lambda"
-        viewBox="0 0 20 24"
-        focusable="false"
-        aria-hidden="true">
-        <path d="M2 22 L10 2 L18 22" />
-      </svg>
+      <span className="ivoai-wordmark__lambda-glyph">
+        <span className="ivoai-wordmark__lambda-text">A</span>
+        <svg
+          className="ivoai-wordmark__lambda"
+          viewBox="0 0 20 24"
+          focusable="false"
+          aria-hidden="true">
+          <path d="M2 22 L10 2 L18 22" />
+        </svg>
+      </span>
       <span>I</span>
     </span>
   );

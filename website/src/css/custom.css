@@ -121,12 +121,28 @@ body {
   line-height: 1;
 }
 
-.ivoai-wordmark__lambda {
+.ivoai-wordmark__lambda-glyph {
   align-self: center;
+  height: 0.78em;
+  position: relative;
+  width: 0.64em;
+}
+
+/* Preserve the brand's actual A in the text label while the rounded vector
+   supplies its visual glyph. Voice-control labels must spell the whole name. */
+.ivoai-wordmark__lambda-text {
+  color: transparent;
+  inset: 0;
+  position: absolute;
+}
+
+.ivoai-wordmark__lambda {
   color: inherit;
   fill: none;
   height: 0.78em;
   overflow: visible;
+  position: absolute;
+  inset: 0;
   stroke: currentColor;
   stroke-linecap: round;
   stroke-linejoin: round;

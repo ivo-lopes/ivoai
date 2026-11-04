@@ -47,3 +47,9 @@ provider certification, administrative parity or the economic gate.
 Rollback selects the previous Core and its matching component/runtime profile;
 existing profiles are retained. No system Node/npm installation or user-owned
 client credentials are replaced. Finish or cancel active work before downgrade.
+
+The updated accessibility engine also exposed a brand-label mismatch: the A
+was rendered only as a vector, leaving the text label incomplete. The wordmark
+now retains its complete text while preserving the glyph. The full browser
+suite passed152 checks with zero skips on the frozen fix; earlier failed
+candidates are retained in the [separate evidence record](evidence/dependency-consolidation-20261104/wordmark-accessibility.json).
