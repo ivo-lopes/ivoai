@@ -1011,6 +1011,13 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 		},
 		Attempt: func(attempt opencodebridge.TurnAttempt) error {
 			attempt.SessionID = currentID()
+			body, marshalErr := json.Marshal(attempt)
+			if marshalErr != nil {
+				return marshalErr
+			}
+			if err := store.AppendTurnAttempt(ctx, currentID(), body); err != nil {
+				return err
+			}
 			_, updateErr := store.Update(currentID(), func(current *session.Session) error {
 				body, err := json.Marshal(attempt)
 				if err != nil {
@@ -1132,42 +1139,7 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 			return nil
 		},
 		ClaimRequest: func(frontendID, messageID string) (bool, error) {
-			key := frontendID + ":" + messageID
-			values, listErr := store.List()
-			if listErr != nil {
-				return false, listErr
-			}
-			for _, candidate := range values {
-				if candidate.SessionID == currentID() || candidate.Frontend != frontendName || candidate.WorkingDirectory != cwd || candidate.KnowledgeScopeID != scopeID {
-					continue
-				}
-				if _, exists := candidate.FrontendRequests[key]; exists {
-					return false, nil
-				}
-			}
-			claimed := false
-			_, updateErr := store.Update(currentID(), func(currentSession *session.Session) error {
-				if currentSession.FrontendRequests == nil {
-					currentSession.FrontendRequests = map[string]time.Time{}
-				}
-				if _, exists := currentSession.FrontendRequests[key]; exists {
-					return nil
-				}
-				if len(currentSession.FrontendRequests) >= 256 {
-					oldestKey := ""
-					var oldest time.Time
-					for candidate, claimedAt := range currentSession.FrontendRequests {
-						if oldestKey == "" || claimedAt.Before(oldest) {
-							oldestKey, oldest = candidate, claimedAt
-						}
-					}
-					delete(currentSession.FrontendRequests, oldestKey)
-				}
-				currentSession.FrontendRequests[key] = time.Now().UTC()
-				claimed = true
-				return nil
-			})
-			return claimed, updateErr
+			return store.ClaimFrontendRequest(ctx, currentID(), frontendID, messageID)
 		},
 	})
 	if err != nil {

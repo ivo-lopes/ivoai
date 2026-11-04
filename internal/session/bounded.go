@@ -36,7 +36,7 @@ func (s Store) ListBounded(ctx context.Context, limit int, maxBytes int64) (Boun
 		return out, errors.New("invalid bounded session request")
 	}
 	seen := map[string]bool{}
-	for _, directory := range []string{s.Root, s.nativeDir(), s.frontendDir()} {
+	for _, directory := range []string{s.Root, s.nativeDir(), s.frontendDir(), s.journalDir()} {
 		if ctx.Err() != nil {
 			return out, ctx.Err()
 		}
