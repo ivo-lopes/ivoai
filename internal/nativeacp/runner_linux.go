@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/ivo-lopes/ivoai/internal/core"
+	"github.com/ivo-lopes/ivoai/internal/ownedprocess"
 	"github.com/ivo-lopes/ivoai/internal/platform"
 	"github.com/ivo-lopes/ivoai/internal/promptgate"
 	"golang.org/x/sys/unix"
@@ -186,7 +187,13 @@ func (r *Runner) Run(parent context.Context, request core.ExecutorRequest, emit 
 		output.Close()
 		return result, failed("ANTIGRAVITY_START_FAILED")
 	}
-	signals := &ownedSignals{}
+	group, ownerErr := ownedprocess.New(cmd)
+	if ownerErr != nil {
+		_ = cmd.Process.Kill()
+		_ = cmd.Wait()
+		return result, failed("ANTIGRAVITY_OWNERSHIP_DENIED")
+	}
+	signals := &ownedSignals{group}
 	done := make(chan struct{})
 	var exitError error
 	processCtx, stopProcess := context.WithCancel(ctx)
@@ -568,9 +575,7 @@ func (r *Runner) Run(parent context.Context, request core.ExecutorRequest, emit 
 	case <-timer.C:
 		return result, failed("ANTIGRAVITY_NORMAL_SHUTDOWN_FAILED")
 	}
-	signals.mu.Lock()
-	forced := signals.forced
-	signals.mu.Unlock()
+	forced := signals.Forced()
 	if forced {
 		return result, failed("ANTIGRAVITY_FORCED_SHUTDOWN")
 	}

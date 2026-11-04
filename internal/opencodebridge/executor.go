@@ -16,6 +16,7 @@ import (
 
 	"github.com/ivo-lopes/ivoai/internal/codexresolver"
 	"github.com/ivo-lopes/ivoai/internal/core"
+	"github.com/ivo-lopes/ivoai/internal/ownedprocess"
 	"github.com/ivo-lopes/ivoai/internal/routing"
 )
 
@@ -150,19 +151,25 @@ func (r CLIRunner) Run(ctx context.Context, request ExecutorRequest, emit func(s
 	if err := cmd.Start(); err != nil {
 		return ExecutorResult{}, failure("executor_start_failure")
 	}
+	group, ownerErr := ownedprocess.New(cmd)
+	if ownerErr != nil {
+		_ = cmd.Process.Kill()
+		_ = cmd.Wait()
+		return ExecutorResult{}, failure("executor_ownership_unavailable")
+	}
 	trace.PID = cmd.Process.Pid
 	processDone := make(chan struct{})
 	var closeDone sync.Once
 	go func() {
 		select {
 		case <-ctx.Done():
-			_ = syscall.Kill(-cmd.Process.Pid, syscall.SIGTERM)
+			_ = group.Signal(syscall.SIGTERM)
 			timer := time.NewTimer(time.Second)
 			defer timer.Stop()
 			select {
 			case <-processDone:
 			case <-timer.C:
-				_ = syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
+				_ = group.Signal(syscall.SIGKILL)
 			}
 		case <-processDone:
 		}
@@ -310,9 +317,9 @@ func (r CLIRunner) Run(ctx context.Context, request ExecutorRequest, emit func(s
 	// child is still writing. Terminate the process group before Wait so a full
 	// stdout pipe cannot deadlock the bridge.
 	if parseErr != nil {
-		_ = syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
+		_ = group.Signal(syscall.SIGKILL)
 	}
-	waitErr := cmd.Wait()
+	waitErr := group.Wait()
 	trace.StderrBytes = stderr.Len()
 	trace.FinalResponse = finalResponsePresent
 	if cmd.ProcessState != nil {
