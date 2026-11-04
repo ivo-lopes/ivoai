@@ -92,7 +92,7 @@ for (const prefix of ['', '/ivoai/admin']) {
           pending = null; committed += 1;
           if (connectionLoss) { res.destroy(); return; }
         }
-        const value = { action_id: action.id, status: 'completed', request_id: payload.request_id, output: action.kind === 'mutation' ? 'Configuração atualizada.' : '<img src=x onerror="window.fixtureInjected=true">\n' + 'Linha de resultado administrativo.\n'.repeat(100) };
+        const value = { action_id: action.id, status: 'completed', request_id: payload.request_id, truncated: action.kind !== 'mutation', output: action.kind === 'mutation' ? 'Configuração atualizada.' : '<img src=x onerror="window.fixtureInjected=true">\n' + 'Linha de resultado administrativo.\n'.repeat(100) };
         if (action.kind === 'mutation') value.one_time_code = 'DISPOSABLE_RESULT_CODE';
         if (action.kind === 'native_handoff') value.status = 'handoff';
         if (action.kind === 'information') value.status = 'information';
@@ -128,6 +128,8 @@ for (const prefix of ['', '/ivoai/admin']) {
     await page.locator('#action-result').waitFor({ state: 'visible' });
     assert.match(await page.locator('#action-result-output').innerText(), /<img/);
     assert.equal(await page.evaluate(() => window.fixtureInjected), undefined);
+    assert.match(await page.locator('.action-output-warning').innerText(), /Saída parcial/);
+    assert.match(await page.locator('.action-output-warning').innerText(), /Não repita uma alteração/);
     await axe('scrollable read result');
     const resultText = page.locator('#action-result-output pre');
     assert.equal(await resultText.evaluate((element) => element.scrollHeight > element.clientHeight), true);

@@ -29,6 +29,11 @@ serviços, conectores, backup/restauração, códigos de acesso e atualizações
 serviços e validações existentes. A configuração exibida é uma projeção sem
 segredos, não o TOML privado bruto.
 
+Testar MCP e executar Doctor completo são operações de administração: persistem
+saúde/ferramentas, descoberta de capacidades ou cache de quotas. O acesso de leitura
+continua consultando snapshots e inventário sem refresh, mas não pode atualizar
+esses registros sem preview, confirmação e claim durável da requisição.
+
 Alterações exigem `admin:manage`, origem correta, JSON, CSRF e confirmação explícita
 de um preview. A confirmação vale uma vez e está vinculada aos parâmetros, acesso
 e revisão da configuração. O ID da requisição é registrado em armazenamento
@@ -101,3 +106,8 @@ confirmação/replay/revogação, redaction, TLS/proxy/prefixo/OAuth/logout e o 
 Context em armazenamento determinístico. A prova no browser e a matriz final
 pertencem à composição com a UI. Cobertura do catálogo não comprova execução de
 todas as operações, inferência oficial, corpus Qdrant ou sincronização em produção.
+
+Se a saída atingir o limite, o resultado informa explicitamente que está parcial
+e que esse canal não reteve o conteúdo completo. Não repita uma alteração para
+recuperar texto: consulte o estado e os registros disponíveis. O aviso não é
+alegação de recuperação exata ou de armazenamento completo da saída.

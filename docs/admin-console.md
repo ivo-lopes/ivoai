@@ -40,6 +40,11 @@ permission. A non-root console cannot become root through an HTTP request;
 privileged server operations require a process already started by an authorized
 server administrator. Grants apply only to their configuration/state instance.
 
+Live MCP testing and full Doctor diagnostics are management operations: they
+persist health/tool metadata, capability discovery or quota caches. A read grant
+may inspect cached snapshots and the read-only compatibility inventory, but cannot
+refresh these records without preview/confirmation and a durable request claim.
+
 The operation catalog covers the 118 public TUI IDs and adds profile preview/apply
 and Context ingestion/search/exact-document retrieval. Every row is classified:
 
@@ -69,7 +74,9 @@ contexts; it does not undo changes already committed by the underlying service.
 
 Audit includes only action, verdict and hashed actor. Inputs, command output,
 URLs, OAuth codes, cookies and secrets are excluded. Output is bounded and
-redacted. Explicit enrollment/access creation can show its newly issued one-time
+redacted. When output is truncated, the result explicitly warns that this channel
+did not retain the full output. Do not repeat a mutation to recover missing text;
+inspect state and available records. This warning is not an exact-recovery claim. Explicit enrollment/access creation can show its newly issued one-time
 code separately; keep it private and close its result when finished. The private
 operation receipts contain status/time/action only. Receipt capacity is bounded
 at 10000 records; reaching it fails closed instead of deleting replay history.

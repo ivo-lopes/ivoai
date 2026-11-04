@@ -752,6 +752,10 @@
     $('action-result-title').textContent = handoff ? 'Continuar no cliente nativo' : 'Resultado';
     $('action-result-state').textContent = handoff ? 'Esta operação não foi executada pelo painel. Continue no terminal com o cliente nativo e suas permissões.' : outcome;
     const output = $('action-result-output'); output.replaceChildren();
+    if (data.truncated === true) {
+      const notice = node('p', 'action-output-warning', 'Saída parcial: o limite de exibição foi atingido. O painel não reteve a saída completa deste comando. Não repita uma alteração para recuperar a saída; consulte o estado atual e os registros disponíveis.');
+      notice.setAttribute('role', 'status'); output.append(notice);
+    }
     if (data.output !== undefined && data.output !== null) {
       const formatted = node('pre', '', typeof data.output === 'string' ? data.output : JSON.stringify(data.output, null, 2));
       formatted.tabIndex = 0; output.append(formatted);
