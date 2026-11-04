@@ -32,7 +32,7 @@ func model(value session.ModelInfo) session.ModelInfo {
 }
 func executor(value string) string {
 	switch value {
-	case "codex", "claude", "opencode":
+	case "codex", "claude", "antigravity", "opencode":
 		return value
 	}
 	return "unknown"
@@ -91,7 +91,7 @@ type Session struct {
 
 func projectSession(value session.Session) Session {
 	out := Session{ID: value.SessionID, State: value.State, Mode: value.Mode, Executor: executor(value.PrimaryExecutor), Model: model(value.PrimaryModel), StartedAt: value.StartedAt, UpdatedAt: value.UpdatedAt, WorkerCount: len(value.Workers), TaskCount: len(value.Tasks), LatestInvocationUsage: usage(value), Quotas: []Quota{}}
-	for _, provider := range []quota.Provider{quota.ProviderCodex, quota.ProviderClaude} {
+	for _, provider := range []quota.Provider{quota.ProviderCodex, quota.ProviderClaude, quota.Provider("antigravity")} {
 		q := value.Quota[provider]
 		for i, w := range q.Windows {
 			if i >= 8 {

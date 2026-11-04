@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/ivo-lopes/ivoai/internal/config"
+	"github.com/ivo-lopes/ivoai/internal/session"
 	"github.com/ivo-lopes/ivoai/internal/webauth"
 )
 
@@ -295,5 +296,24 @@ func TestAdministrativeConfirmationRefusesSymlinkStateAndWrongProjectScope(t *te
 	actual, _ := os.ReadFile(outside)
 	if string(actual) != "do not read or write" || calls != 0 {
 		t.Fatal("symlink or wrong scope had effects")
+	}
+}
+
+func TestAntigravityProjectionDoesNotEnableUnsupportedRouting(t *testing.T) {
+	value := session.Session{PrimaryExecutor: "antigravity"}
+	projected := projectSession(value)
+	if projected.Executor != "antigravity" || len(projected.Quotas) != 0 {
+		t.Fatal("observed executor hidden or quota fabricated")
+	}
+	for _, a := range ActionCatalog() {
+		if a.ID == "config.primary" || a.ID == "config.reviewer" || a.ID == "config.auto-planner" || a.ID == "policy.provider" {
+			for _, f := range a.Fields {
+				for _, option := range f.Options {
+					if option == "antigravity" {
+						t.Fatal("experimental headless identity enabled unsupported global routing")
+					}
+				}
+			}
+		}
 	}
 }
