@@ -1,0 +1,1119 @@
+{
+  "schema_version": 1,
+  "source_base": "d816a49220d93e3275c512b98244f4c5f535f800",
+  "coverage_basis": "UI catalog and form contract; not administrative execution parity",
+  "tui_action_count": 118,
+  "catalog_count": 123,
+  "catalog_sha256": "469621c7ea87aecc2b6f65a46d6a068d7384c2211a28b891bcbf5b785f7587a1",
+  "native_handoff_count": 11,
+  "information_count": 7,
+  "actions": [
+    {
+      "action_id": "auto",
+      "kind": "native_handoff",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "capabilities.ponytail",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "capabilities.update",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "capability.disable",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "capability.enable",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "capability.inspect",
+      "kind": "read",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "capability.pin",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "capability.rollback",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "capability.unpin",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "capability.update",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "config.auto",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "config.auto-bootstrap",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "config.auto-checkpoint",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "config.auto-escalation",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "config.auto-failover",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "config.auto-gate",
+      "kind": "information",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "config.auto-parallel",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "config.auto-plan",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "config.auto-planner",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "config.auto-policy",
+      "kind": "information",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "config.auto-profiles",
+      "kind": "read",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "config.auto-strategy",
+      "kind": "information",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "config.headroom",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "config.memory",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "config.primary",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "config.reviewer",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "config.ruflo",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "config.session-mode",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "config.show",
+      "kind": "read",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "config.workers",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "connect.chatgpt",
+      "kind": "native_handoff",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "connect.claude",
+      "kind": "native_handoff",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "connect.list",
+      "kind": "read",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "connect.server",
+      "kind": "information",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "disconnect.chatgpt",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "disconnect.claude",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "doctor",
+      "kind": "read",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "doctor.inventory",
+      "kind": "read",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "doctor.repair-hooks",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "launch.claude",
+      "kind": "native_handoff",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "launch.codex",
+      "kind": "native_handoff",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "launch.opencode",
+      "kind": "native_handoff",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "mcp.add",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "mcp.auth",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "mcp.auth.remove",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "mcp.direct-policy",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "mcp.enable",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "mcp.header",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "mcp.list",
+      "kind": "read",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "mcp.policy",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "mcp.remove",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "mcp.test",
+      "kind": "read",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "mcp.tools",
+      "kind": "read",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "memory.configure",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "memory.status",
+      "kind": "read",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "policy.concurrency",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "policy.confirmation",
+      "kind": "information",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "policy.low-quota",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "policy.mcp",
+      "kind": "information",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "policy.primary",
+      "kind": "information",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "policy.provider",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "policy.sources",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "policy.worker-cap",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "policy.writes",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "profile.apply",
+      "kind": "mutation",
+      "in_tui_inventory": false,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "profile.preview",
+      "kind": "read",
+      "in_tui_inventory": false,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "profile.restore",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "profile.show",
+      "kind": "read",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "project.init",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "project.status",
+      "kind": "read",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "remote.connector.list",
+      "kind": "read",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "remote.doctor",
+      "kind": "read",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "remote.status",
+      "kind": "read",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "rollback",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "server.backup",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "server.connector.add",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "server.connector.list",
+      "kind": "read",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "server.connector.remove",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "server.context.document",
+      "kind": "read",
+      "in_tui_inventory": false,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "server.context.ingest",
+      "kind": "mutation",
+      "in_tui_inventory": false,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "server.context.search",
+      "kind": "read",
+      "in_tui_inventory": false,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "server.context.status",
+      "kind": "read",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "server.doctor",
+      "kind": "read",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "server.enrollment.create",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "server.enrollment.list",
+      "kind": "read",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "server.enrollment.revoke",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "server.gateway.configure",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "server.logs",
+      "kind": "read",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "server.memory.status",
+      "kind": "read",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "server.restart",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "server.restore",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "server.setup",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "server.start",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "server.status",
+      "kind": "read",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "server.stop",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "server.web-access.create",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "server.web-access.list",
+      "kind": "read",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "server.web-access.revoke",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "servers.add",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "servers.edit",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "servers.list",
+      "kind": "read",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "servers.manage",
+      "kind": "read",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "servers.re-enroll",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "servers.remove",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "servers.test",
+      "kind": "read",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "servers.toggle",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "session.continuity",
+      "kind": "read",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "session.direct.claude",
+      "kind": "native_handoff",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "session.direct.codex",
+      "kind": "native_handoff",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "session.direct.opencode",
+      "kind": "native_handoff",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "session.list",
+      "kind": "read",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "session.monitor",
+      "kind": "read",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "session.orchestrated.claude",
+      "kind": "native_handoff",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "session.orchestrated.codex",
+      "kind": "native_handoff",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "session.scope.adopt",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "session.scope.restore",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "session.stop",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "setup",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "status",
+      "kind": "read",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "uninstall",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "update",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "update.dry-run",
+      "kind": "mutation",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    },
+    {
+      "action_id": "version",
+      "kind": "read",
+      "in_tui_inventory": true,
+      "ui_title_and_description": true,
+      "schema_form_supported": true,
+      "execution_certification": "not established by UI inventory",
+      "native_client_execution": false
+    }
+  ]
+}

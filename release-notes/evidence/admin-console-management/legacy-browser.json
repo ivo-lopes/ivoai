@@ -1,0 +1,14 @@
+{
+  "scope": "hermetic_ui_fixtures_only",
+  "actual_oauth_exchange": false,
+  "actual_backend_store": false,
+  "native_client_execution": false,
+  "results": [
+    "filters, unknown usage, text-only injection defense, keyboard dialog and focus restoration PASS",
+    "viewport 375: sessions/components/connections/dialog overflow + axe PASS",
+    "viewport 768: sessions/components/connections/dialog overflow + axe PASS",
+    "viewport 1024: sessions/components/connections/dialog overflow + axe PASS",
+    "viewport 1440: sessions/components/connections/dialog overflow + axe PASS",
+    "unavailability preserves stale snapshot explicitly, revocation clears data, logout only permitted mutation, no browser storage PASS"
+  ]
+}
