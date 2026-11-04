@@ -988,6 +988,9 @@ func addConfiguredConnectors(service contextConnectorAdministrator, layout serve
 }
 
 func (r *runner) context(ctx context.Context, layout server.Layout, args []string) error {
+	if len(args) > 0 && (args[0] == "ingest" || args[0] == "search" || args[0] == "get") {
+		return r.contextAdministration(ctx, layout, args)
+	}
 	if len(args) == 1 && args[0] == "serve" {
 		return serveContext(ctx, layout, r.errOut)
 	}
@@ -1008,7 +1011,7 @@ func (r *runner) context(ctx context.Context, layout server.Layout, args []strin
 		fmt.Fprintf(r.out, "Context service: %s\nDocuments: %d\nChunks: %d\nConnectors: %d\n", semanticHealth(map[bool]string{true: "healthy", false: "unhealthy"}[status.Healthy], terminalui.ColorEnabled(r.out)), status.Documents, status.Chunks, status.Connectors)
 		return nil
 	}
-	return errors.New("usage: ivoai server context [status|serve]")
+	return errors.New("usage: ivoai server context [status|serve|ingest --connector NAME|search --query QUERY|get --id ID]")
 }
 
 func (r *runner) memory(ctx context.Context, layout server.Layout, args []string) error {
