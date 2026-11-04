@@ -8,8 +8,6 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
-
-	"golang.org/x/sys/unix"
 )
 
 // GetBounded uses the canonical namespace resolution and session validator with
@@ -40,29 +38,12 @@ func (s Store) ListBounded(ctx context.Context, limit int, maxBytes int64) (Boun
 		if ctx.Err() != nil {
 			return out, ctx.Err()
 		}
-		info, err := os.Lstat(directory)
+		dir, err := openPrivateSessionReadDirectory(directory)
 		if os.IsNotExist(err) {
 			continue
 		}
 		if err != nil {
 			return out, err
-		}
-		if !info.IsDir() || info.Mode()&os.ModeSymlink != 0 || info.Mode().Perm()&0077 != 0 {
-			return out, errors.New("unsafe session directory")
-		}
-		fd, err := unix.Open(directory, unix.O_RDONLY|unix.O_DIRECTORY|unix.O_NOFOLLOW|unix.O_CLOEXEC, 0)
-		if err != nil {
-			return out, err
-		}
-		dir := os.NewFile(uintptr(fd), directory)
-		if dir == nil {
-			unix.Close(fd)
-			return out, errors.New("session directory unavailable")
-		}
-		after, err := dir.Stat()
-		if err != nil || !os.SameFile(info, after) {
-			dir.Close()
-			return out, errors.New("session directory changed")
 		}
 		entries, err := dir.ReadDir(limit + 1)
 		dir.Close()
