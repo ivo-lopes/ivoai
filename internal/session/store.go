@@ -125,23 +125,24 @@ func (s Store) Update(id string, mutate func(*Session) error) (Session, error) {
 }
 
 func (s Store) List() ([]Session, error) {
-	if err := platform.EnsurePrivateDir(s.Root); err != nil {
-		return nil, err
-	}
-	entries, err := os.ReadDir(s.Root)
-	if err != nil {
-		return nil, err
-	}
-	for _, directory := range []string{s.nativeDir(), s.frontendDir(), s.journalDir()} {
-		if err := s.validateSessionNamespace(directory); err == nil {
-			native, readErr := os.ReadDir(directory)
-			if readErr != nil {
-				return nil, readErr
-			}
-			entries = append(entries, native...)
-		} else if !errors.Is(err, fs.ErrNotExist) {
+	var entries []os.DirEntry
+	for _, directory := range []string{s.Root, s.nativeDir(), s.frontendDir(), s.journalDir()} {
+		dir, err := openPrivateSessionReadDirectory(directory)
+		if errors.Is(err, fs.ErrNotExist) {
+			continue
+		}
+		if err != nil {
 			return nil, err
 		}
+		batch, err := dir.ReadDir(-1)
+		closeErr := dir.Close()
+		if err != nil {
+			return nil, err
+		}
+		if closeErr != nil {
+			return nil, closeErr
+		}
+		entries = append(entries, batch...)
 	}
 	values := make([]Session, 0, len(entries))
 	seen := map[string]bool{}
