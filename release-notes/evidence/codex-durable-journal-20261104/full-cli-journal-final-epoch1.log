@@ -1,0 +1,4 @@
+=== RUN   TestLiveAdaptivePrimaryFullCLI
+    adaptive_cli_live_test.go:341: PUBLIC_CLI_STATE_DEADLINE
+--- FAIL: TestLiveAdaptivePrimaryFullCLI (142.28s)
+FAIL
