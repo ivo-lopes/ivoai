@@ -752,7 +752,10 @@
     $('action-result-title').textContent = handoff ? 'Continuar no cliente nativo' : 'Resultado';
     $('action-result-state').textContent = handoff ? 'Esta operação não foi executada pelo painel. Continue no terminal com o cliente nativo e suas permissões.' : outcome;
     const output = $('action-result-output'); output.replaceChildren();
-    if (data.output !== undefined && data.output !== null) output.append(node('pre', '', typeof data.output === 'string' ? data.output : JSON.stringify(data.output, null, 2)));
+    if (data.output !== undefined && data.output !== null) {
+      const formatted = node('pre', '', typeof data.output === 'string' ? data.output : JSON.stringify(data.output, null, 2));
+      formatted.tabIndex = 0; output.append(formatted);
+    }
     if (handoff && data.handoff?.executable === 'ivoai' && Array.isArray(data.handoff.args) && data.handoff.args.length <= 32 && data.handoff.args.every((arg) => typeof arg === 'string' && arg.length <= 4096 && !/[\u0000-\u001f\u007f]/.test(arg))) {
       const quoted = ['ivoai', ...data.handoff.args].map((arg) => `'${arg.replaceAll("'", "'\\''")}'`).join(' ');
       output.append(node('p', 'section-note', 'Comando para executar no terminal:'), node('pre', 'native-command', quoted));

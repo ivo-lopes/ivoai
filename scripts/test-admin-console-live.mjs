@@ -149,9 +149,12 @@ try {
     await page.locator('#actions-list article').getByRole('button').click();
     await page.locator('#action-submit').click();
     await page.locator('#action-result').waitFor({ state: 'visible' });
+    stage = 'management-fresh-read';
     const snapshot = JSON.parse(await page.locator('#action-result-output').innerText());
     assert.equal(snapshot.AutoEnabled, false, 'Actual isolated App.ConfigSet persists and a fresh MenuSnapshot observes the change.');
+    stage = 'management-result-accessibility';
     await axe('real management result');
+    stage = 'management-secret-projection';
     await safeBrowserState();
     await page.locator('#close-action').click();
     results.push('Real write grant, explicit preview/confirmation, isolated App.ConfigSet and fresh sanitized configuration read PASS.');
@@ -188,7 +191,7 @@ try {
   results.push(mode === 'logout' || mode === 'manage' ? 'Real logout revokes access and clears all administrative DOM snapshots.' : 'External grant revocation is observed on refresh and clears all administrative DOM snapshots.');
   stage = 'provenance';
   const source = {};
-  for (const path of ['internal/admin/assets/index.html', 'internal/admin/assets/admin.css', 'internal/admin/assets/admin.js', 'internal/admin/server.go', 'internal/admin/read.go', 'internal/admin/server_test.go', 'internal/webauth/http.go', 'internal/webauth/store.go']) source[path] = createHash('sha256').update(await readFile(join(root, path))).digest('hex');
+  for (const path of ['internal/admin/assets/index.html', 'internal/admin/assets/admin.css', 'internal/admin/assets/admin.js', 'internal/admin/server.go', 'internal/admin/read.go', 'internal/admin/server_test.go', 'internal/admin/actions.go', 'internal/admin/catalog.go', 'internal/admin/proxy.go', 'internal/admin/live_management_test.go', 'internal/app/app.go', 'scripts/test-admin-console-live.mjs', 'internal/webauth/http.go', 'internal/webauth/store.go']) source[path] = createHash('sha256').update(await readFile(join(root, path))).digest('hex');
   // axe's package exports intentionally hide package.json; inspect its adjacent
   // installed manifest instead of importing an unsupported package subpath.
   const axeManifest = JSON.parse(await readFile(join(dirname(require.resolve('@axe-core/playwright')), '..', 'package.json'), 'utf8'));

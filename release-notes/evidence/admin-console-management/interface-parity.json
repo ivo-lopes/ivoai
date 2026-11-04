@@ -104,7 +104,7 @@
       "in_tui_inventory": true,
       "ui_title_and_description": true,
       "schema_form_supported": true,
-      "execution_certification": "not established by UI inventory",
+      "execution_certification": "real isolated App/OAuth/Store browser, plain HTTP and TLS reverse proxy; see integrated-browser-validation.json",
       "native_client_execution": false
     },
     {
@@ -266,7 +266,7 @@
       "in_tui_inventory": true,
       "ui_title_and_description": true,
       "schema_form_supported": true,
-      "execution_certification": "not established by UI inventory",
+      "execution_certification": "real isolated App/OAuth/Store browser, plain HTTP and TLS reverse proxy; see integrated-browser-validation.json",
       "native_client_execution": false
     },
     {
@@ -1115,5 +1115,10 @@
       "execution_certification": "not established by UI inventory",
       "native_client_execution": false
     }
-  ]
+  ],
+  "live_administrative_operations_exercised": [
+    "config.auto",
+    "config.show"
+  ],
+  "all_other_operations_live_certified_by_this_ui_increment": false
 }
