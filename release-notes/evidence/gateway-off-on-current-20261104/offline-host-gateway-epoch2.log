@@ -1,0 +1,26 @@
+=== RUN   TestPrimaryPrefetchMatrixHostPrefetch
+=== RUN   TestPrimaryPrefetchMatrixHostPrefetch/dependencies
+    primary_prefetch_live_test.go:483: offline_host_prefetch factory_calls=1 evidence_bytes=669 provider_inference_attempts=0
+=== RUN   TestPrimaryPrefetchMatrixHostPrefetch/monorepo
+    primary_prefetch_live_test.go:483: offline_host_prefetch factory_calls=0 evidence_bytes=0 provider_inference_attempts=0
+=== RUN   TestPrimaryPrefetchMatrixHostPrefetch/unsupported_parser
+    primary_prefetch_live_test.go:483: offline_host_prefetch factory_calls=0 evidence_bytes=0 provider_inference_attempts=0
+=== RUN   TestPrimaryPrefetchMatrixHostPrefetch/non_code
+    primary_prefetch_live_test.go:483: offline_host_prefetch factory_calls=0 evidence_bytes=0 provider_inference_attempts=0
+--- PASS: TestPrimaryPrefetchMatrixHostPrefetch (0.02s)
+    --- PASS: TestPrimaryPrefetchMatrixHostPrefetch/dependencies (0.01s)
+    --- PASS: TestPrimaryPrefetchMatrixHostPrefetch/monorepo (0.00s)
+    --- PASS: TestPrimaryPrefetchMatrixHostPrefetch/unsupported_parser (0.00s)
+    --- PASS: TestPrimaryPrefetchMatrixHostPrefetch/non_code (0.00s)
+=== RUN   TestPrimaryPrefetchGatewayObservationOffline
+=== RUN   TestPrimaryPrefetchGatewayObservationOffline/flag_0
+    primary_prefetch_live_test.go:1059: offline direct events call=1 gateway_resolves=0 hits=0 misses=0 code_inspect=1; first call cold, second mechanism-only reuse; no provider/economy
+    primary_prefetch_live_test.go:1059: offline direct events call=2 gateway_resolves=0 hits=0 misses=0 code_inspect=2; first call cold, second mechanism-only reuse; no provider/economy
+=== RUN   TestPrimaryPrefetchGatewayObservationOffline/flag_1
+    primary_prefetch_live_test.go:1059: offline direct events call=1 gateway_resolves=1 hits=0 misses=1 code_inspect=1; first call cold, second mechanism-only reuse; no provider/economy
+    primary_prefetch_live_test.go:1059: offline direct events call=2 gateway_resolves=2 hits=1 misses=1 code_inspect=1; first call cold, second mechanism-only reuse; no provider/economy
+--- PASS: TestPrimaryPrefetchGatewayObservationOffline (0.03s)
+    --- PASS: TestPrimaryPrefetchGatewayObservationOffline/flag_0 (0.01s)
+    --- PASS: TestPrimaryPrefetchGatewayObservationOffline/flag_1 (0.02s)
+PASS
+ok  	github.com/ivo-lopes/ivoai/internal/app	0.049s

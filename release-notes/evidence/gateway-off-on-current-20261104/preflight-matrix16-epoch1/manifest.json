@@ -1,0 +1,97 @@
+{
+  "schema_version": 3,
+  "scope": "app_primary_prefetch_subset",
+  "repetitions": 3,
+  "driver_sha256": "315337c314d22d19b5c40d390757abc6791285b8e40c622e9cfe6b12ed6f9114",
+  "catalog_loader_sha256": "2c3c92345c0ea4db3e9ea9da047fead2e52b376333e1093d913ca84ee46f0cf1",
+  "process_sampler_sha256": "5ebaaa4c8b18e4a24b85bd35b9c57fc992b972cbb529530e86e266ca15a5a3cd",
+  "process_sampling": {
+    "enabled": false,
+    "schema_version": 1,
+    "interval_ms": 100,
+    "window_budget_ms": 25,
+    "max_processes": 128,
+    "max_threads_per_process": 128,
+    "max_reads_per_sample": 512,
+    "max_samples": 3000,
+    "max_observed_identities": 4096
+  },
+  "native_event_observation_schema": 1,
+  "model_requested": "gpt-6.1-sol",
+  "effort_requested": "low",
+  "effective_model_observed": null,
+  "host_mcp_tools_exposed": 0,
+  "native_tools_exposed": null,
+  "native_tools_inventory": "UNVERIFIED",
+  "native_worker_observation": "PARTIAL_CLIENT_PROJECTION_TOTALS_UNKNOWN",
+  "common_native_worker_policy": "agents.enabled=false;features.multi_agent_v2=false",
+  "runtime_flags": {
+    "experimental_evidence_gateway_by_arm": {
+      "A": false,
+      "B": true
+    }
+  },
+  "baseline_test_sha256": "b827b67f64aa587ff3e3dd137d42fe46c64999ea9ff182ffe44e7fb1c8505403",
+  "candidate_test_sha256": "b827b67f64aa587ff3e3dd137d42fe46c64999ea9ff182ffe44e7fb1c8505403",
+  "codex_sha256": "b8a11fedf24b2dfb59a70c9e52b030f9a508dcd49cd2dd0d41956f4c785156b8",
+  "node_sha256": "0adde40d1b7dfa57c8bc83cbc319758c3ec6ebba21363bb2fa752ea6b267ad1b",
+  "sandbox_sha256": "ebea4732a2b25431e3a28f18174ab206cb1eca17fbf947add6c9b9070879d9f7",
+  "oracle_go_sha256": "5f5eb6d0b2fb6aa0bb5d5f8c5f1c944e0de955c925f0111af92a9d8f79680b5b",
+  "oracle_bwrap_sha256": "573236e5328ac2ebb08f59ae3a9805b4f8d12bdef14be8af4450d5463294985f",
+  "oracle_prlimit_sha256": "06275e616ca2b721482aeb564260489be3fdc6d5f86836b4a78e96485845f060",
+  "distribution_inventory_sha256": "97a802e5e84885843f38a9e84101dabb10a7620f82b379841be99dd5a7a31b6f",
+  "harness_sha256": "71bb49cf9260259990e8fa7c6a42d8b37bec6c1b8604a290a8e6be1b1fb23881",
+  "gateway_comparison": {
+    "mode": "SAME_BINARY_OFF_ON",
+    "arms": {
+      "A": "OFF",
+      "B": "ON"
+    },
+    "activation_basis": "PER_ROW_COMPLETED_SESSION_EVENTS",
+    "same_binary_sha256": "b827b67f64aa587ff3e3dd137d42fe46c64999ea9ff182ffe44e7fb1c8505403",
+    "ambient_gateway_flag_overridden": true
+  },
+  "admission": {
+    "version": 1,
+    "mode": "FRESH_CLIENT_REPORTED_ROUTE_THEN_SHARED_SCOPE_MCP_DENY_ONLY",
+    "source_wired": true,
+    "files": {
+      "primary_prefetch_common_admission_linux_test.go": "19ce5e2edf9d5f026a0c54515a54b3cc06d380e577e31656364eda5a9341fb01",
+      "primary_prefetch_common_admission_other_test.go": "3c2dfcf3d043327a467de6a3a537dc4ca28f6f85049d566803e37f788b5652a2",
+      "primary_prefetch_common_admission_test.go": "c9c96707fa4401158d11feb8bbf0b15d8ac50086de9395edaa858f05c2b8eeee",
+      "primary_prefetch_live_test.go": "71bb49cf9260259990e8fa7c6a42d8b37bec6c1b8604a290a8e6be1b1fb23881",
+      "primary_prefetch_subscription_guard_test.go": "4204708a830577c425d180e1cff57278e38078b5f6683ee3ed3fbee6f39ab42a",
+      "primary_prefetch_subscription_stdio_linux_test.go": "94cb09025d484c5b845e399489d86c7536b6f051dc5d8221e9b37129bfbd3018",
+      "testdata/prefetch-admission-contract.json": "ffce3b0e1a88c7696aaad87e40784636c1d9364a89ad6647b5a4cf14aca6ea44"
+    },
+    "source_sha256": "4cf38baea68ac2ff9cf4f2dec62c13cb845df671d08fcd321789fc9d1af7da17",
+    "driver_contract_sha256": "ffce3b0e1a88c7696aaad87e40784636c1d9364a89ad6647b5a4cf14aca6ea44"
+  },
+  "optimization_activation": "NOT_CERTIFIED_BY_METADATA_WIRING",
+  "requested_scenarios": [
+    "small_known_file_correction",
+    "implementation",
+    "cross_module_refactor",
+    "dependencies",
+    "multi_module_callers",
+    "api",
+    "large_project",
+    "monorepo",
+    "unsupported_parser",
+    "institutional_documentation",
+    "ai_memory_history",
+    "non_code",
+    "multiple_workers",
+    "reuse_between_turns",
+    "interrupted_continuity",
+    "concurrent_distinct_projects"
+  ],
+  "catalog_sha256": "395f77bc5154c3df42cc7897feb7206bb38963a9441741ea24dbf290b08a9d7e",
+  "fixture_contract_sha256": "79cbdc665d4e301bc6057fb15dabb73cc08964e50eae1a1558b8c5e20a93678b",
+  "edit_oracle_identities": {
+    "small_known_file_correction": "148d8e727ef181a4c064c5a88a1d6fd3a859c94ca0b8dac573cf055c62278ce4",
+    "cross_module_refactor": "d9761efbee9ee1fe2c360c773f8d3ff8e343c0ab6e4c93f6e933e49b0cd36c5c"
+  },
+  "preflight_only": true,
+  "cache_policy": "cold_private_local_caches_provider_cache_unverified"
+}

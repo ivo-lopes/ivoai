@@ -1,0 +1,17 @@
+{
+  "at_utc": "2026-11-04T21:07:09.168921+00:00",
+  "loadavg": [
+    0.98046875,
+    1.68359375,
+    2.2822265625
+  ],
+  "logical_cpus": 12,
+  "host_processes_observed": 391,
+  "memory_bytes": {
+    "MemTotal": 16672931840,
+    "MemAvailable": 9154736128,
+    "SwapTotal": 20720140288,
+    "SwapFree": 18437038080
+  },
+  "cpu_ticks": "cpu  3272752 488 561567 21956907 349864 110383 40839 0 0 0"
+}

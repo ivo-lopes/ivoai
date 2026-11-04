@@ -1,0 +1,46 @@
+{
+  "at_utc_received": "2026-11-04T20:53:48.012653+00:00",
+  "reported_other_host_work": [
+    "PR73 hermetic browser6layouts already running beforecohortstart",
+    "focused Admin Go compilation/tests alreadyrunning beforecohortstart"
+  ],
+  "reported_owning_sessions": [
+    7308,
+    59296
+  ],
+  "policy": "No heavy root builds/browser after2026-11-04T20:53:21.497853Z untilcohortend; these are observer filemtimes, not independent process exit timestamps",
+  "interpretation": "Shared-host timing not causal standalone performance evidence; retain allrows includingfirstpairs",
+  "end_report_received_utc": "2026-11-04T20:54:32.610522+00:00",
+  "root_results": {
+    "browser": "exit0/hermeticPASS",
+    "focused_admin": "exit1 because synthetic request_id fixture too short, separate from cohort/provider"
+  },
+  "reported_observer_file_mtimes_utc": {
+    "focused_go_log": "2026-11-04T20:53:15.021917Z",
+    "browser_json": "2026-11-04T20:53:21.497853Z"
+  },
+  "additional_reported_interference": [
+    {
+      "received_utc": "2026-11-04T20:59:22.684784+00:00",
+      "owner": "native Antigravity integration agent",
+      "operations": [
+        "focusedGo-race",
+        "vet",
+        "compile/publicGo3cases"
+      ],
+      "GOMAXPROCS": 2,
+      "reported_window_utc_approx": "20:58\u201321:00 UTC; exact log times pending",
+      "policy": "Finish in-flight jobs and start none further until cohortend; negative rows not excluded",
+      "possible_effects": [
+        "CPU/RAM/process scheduling",
+        "official provider latency/cache/quota if publiccase invokes inference; provider conditions remain unverified"
+      ],
+      "reported_finish_bound_utc": "2026-11-04T21:00:39Z",
+      "last_public_case_wall_s": 130.82,
+      "derived_start_utc_approx": "2026-11-04T20:58:28Z; derived from elapsed, not a captured process timestamp",
+      "provider": "Antigravity account independent; no Codex worker in these three cases",
+      "result_scope": "Core metadata retention error; unrelated to cohort quality or Codex provider failure"
+    }
+  ],
+  "last_update_utc": "2026-11-04T21:01:52.644512+00:00"
+}
