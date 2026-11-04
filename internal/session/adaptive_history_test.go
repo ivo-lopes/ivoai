@@ -250,3 +250,29 @@ func TestAdaptiveHistoryNewTerminalEventRequiresOriginalTrace(t *testing.T) {
 		})
 	}
 }
+
+func TestAdaptiveHistoryPartialLegacyAuditCannotBeReclassifiedComplete(t *testing.T) {
+	s, v := requestJournalFixture(t)
+	if _, err := s.Update(v.SessionID, func(v *Session) error {
+		for i := range 32 {
+			raw, _ := json.Marshal(cleanHistoryAttempt(*v, fmt.Sprint("legacy_", i)))
+			v.TurnAttempts = append(v.TurnAttempts, raw)
+		}
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if ok, err := s.ClaimFrontendRequest(context.Background(), v.SessionID, v.FrontendSessionID, "new"); err != nil || !ok {
+		t.Fatal(err)
+	}
+	got, err := s.Get(v.SessionID)
+	if err != nil || !got.LegacyAttemptAuditPartial || !got.AdaptiveHistoryDenied || AdaptiveHistoryEligible(got) {
+		t.Fatal("migration invented complete legacy history", err)
+	}
+	if _, err := s.Update(v.SessionID, func(v *Session) error { v.LegacyAttemptAuditPartial = false; return nil }); err == nil {
+		t.Fatal("metadata reclassified partial history complete")
+	}
+	if _, err := os.Stat(filepath.Join(s.Root, "turn-attempts", v.SessionID, "adaptive-history-denied.json")); err != nil {
+		t.Fatal("partial-history denial is not durable", err)
+	}
+}

@@ -97,11 +97,15 @@ func (s Store) Update(id string, mutate func(*Session) error) (Session, error) {
 		}
 		journalVersion := value.RequestJournalVersion
 		historyDenied := value.AdaptiveHistoryDenied
+		legacyAuditPartial := value.LegacyAttemptAuditPartial
 		if err := mutate(&value); err != nil {
 			return err
 		}
 		if historyDenied && !value.AdaptiveHistoryDenied {
 			return errors.New("adaptive history taint downgrade refused")
+		}
+		if legacyAuditPartial && !value.LegacyAttemptAuditPartial {
+			return errors.New("legacy partial audit downgrade refused")
 		}
 		if journalVersion == 1 && value.RequestJournalVersion != 1 {
 			return errors.New("request journal downgrade refused")
@@ -223,7 +227,7 @@ func (s Store) CleanupRuntime(id string) error {
 }
 
 func (s Store) write(value Session) error {
-	if deniedHistoryProjection(value) {
+	if value.LegacyAttemptAuditPartial || deniedHistoryProjection(value) {
 		value.AdaptiveHistoryDenied = true
 	}
 	if filepath.Dir(s.path(value.SessionID)) == s.journalDir() {
