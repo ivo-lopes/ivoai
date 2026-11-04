@@ -239,3 +239,61 @@ func TestAdministrativeRevocationCancelsInFlightOperationWithoutReplay(t *testin
 		t.Fatal("revoked output returned or operation replayed")
 	}
 }
+
+func TestAdminInitializePreservesExistingPermissionsAndState(t *testing.T) {
+	root := t.TempDir()
+	paths := config.Paths{ConfigDir: filepath.Join(root, "config"), StateDir: filepath.Join(root, "state")}
+	if err := Initialize(paths); err != nil {
+		t.Fatal(err)
+	}
+	marker := filepath.Join(paths.ConfigDir, "private-marker")
+	if err := os.WriteFile(marker, []byte("preserve"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := Initialize(paths); err != nil {
+		t.Fatal(err)
+	}
+	if b, _ := os.ReadFile(marker); string(b) != "preserve" {
+		t.Fatal("existing state changed")
+	}
+	if err := os.Chmod(paths.ConfigDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := Initialize(paths); err == nil {
+		t.Fatal("public root silently repaired")
+	}
+	info, _ := os.Stat(paths.ConfigDir)
+	if info.Mode().Perm() != 0755 {
+		t.Fatal("existing permissions changed")
+	}
+}
+func TestAdministrativeConfirmationRefusesSymlinkStateAndWrongProjectScope(t *testing.T) {
+	a := fixtureApp(t)
+	_ = a.Store.Save(config.Default())
+	calls := 0
+	s, err := New(Options{App: a, Origin: "http://127.0.0.1:12345", Dispatch: func(context.Context, []string, io.Reader, io.Writer, io.Writer) error { calls++; return nil }})
+	if err != nil {
+		t.Fatal(err)
+	}
+	token := mintAdminToken(t, s, ScopeRead, ScopeManage)
+	if w := actionHTTP(t, s, token, "project.init", map[string]any{"phase": "preview", "input": map[string]string{"project_root": t.TempDir()}}, true); w.Code != 409 {
+		t.Fatal("wrong project scope admitted")
+	}
+	outside := filepath.Join(t.TempDir(), "private")
+	if err := os.WriteFile(outside, []byte("do not read or write"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Remove(a.Store.Paths.Config); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Symlink(outside, a.Store.Paths.Config); err != nil {
+		t.Fatal(err)
+	}
+	if w := actionHTTP(t, s, token, "config.memory", map[string]any{"phase": "preview", "input": map[string]string{"value": "false"}}, true); w.Code != 503 {
+		t.Fatal("symlink configuration admitted")
+	}
+	actual, _ := os.ReadFile(outside)
+	if string(actual) != "do not read or write" || calls != 0 {
+		t.Fatal("symlink or wrong scope had effects")
+	}
+}

@@ -123,7 +123,7 @@ func (r *runner) contextAdministration(ctx context.Context, layout server.Layout
 
 func (r *runner) ingestAndVerify(ctx context.Context, layout server.Layout, service *contextsvc.LegacyQdrantContextBackend, name string) error {
 	receipt := ingestionReceipt{SchemaVersion: 1, Connector: name, Status: "failed", Verified: []ingestionDocument{}, StartedAt: time.Now().UTC(), ContextSync: "BLOCKED"}
-	count, err := ingestContextLocked(ctx, layout, service, name)
+	count, err := ingestContextLocked(ctx, layout, initializedContextIngest{service}, name)
 	receipt.Documents = count
 	receipt.CompletedAt = time.Now().UTC()
 	if err != nil {
@@ -152,4 +152,15 @@ func (r *runner) ingestAndVerify(ctx context.Context, layout server.Layout, serv
 	// Catalog recovery is verified here. Search retrieval must be checked with
 	// an explicit source-specific query before anyone claims full synchronization.
 	return json.NewEncoder(r.out).Encode(receipt)
+}
+
+type initializedContextIngest struct {
+	*contextsvc.LegacyQdrantContextBackend
+}
+
+func (s initializedContextIngest) Ingest(ctx context.Context, name string) (int, error) {
+	if err := s.Initialize(ctx); err != nil {
+		return 0, err
+	}
+	return s.LegacyQdrantContextBackend.Ingest(ctx, name)
 }

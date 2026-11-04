@@ -1,0 +1,1937 @@
+{
+  "schema_version": 1,
+  "base": "d816a49220d93e3275c512b98244f4c5f535f800",
+  "backend_initial_commit": "d25b5369",
+  "catalog_source_sha256": "19d1567f840180c33f62ac171d56150d53e08b3392f6d4c1e30612980d2e3db2",
+  "catalog_count": 123,
+  "tui_count": 118,
+  "classification_counts": {
+    "native_handoff": 11,
+    "mutation": 71,
+    "read": 34,
+    "information": 7
+  },
+  "coverage_is_not_execution_certification": true,
+  "source": "internal/admin/catalog.go",
+  "actual_production_http_mutation_test": "internal/cli/admin_actions_test.go TestProductionAdministrativeHTTPDispatcherMutatesRealStoreAndProtectsCredentials",
+  "actions": [
+    {
+      "id": "auto",
+      "kind": "native_handoff",
+      "handler": "cli.runCommand / App existing method",
+      "cli_template": [
+        "auto"
+      ],
+      "optional_flags": {},
+      "input_fields": [],
+      "web_implementation": "native_handoff",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "capabilities.ponytail",
+      "kind": "mutation",
+      "handler": "cli.runConfig / App.ConfigSet / Store automation profiles",
+      "cli_template": [
+        "config",
+        "set",
+        "skills.ponytail",
+        "{value}"
+      ],
+      "optional_flags": {},
+      "input_fields": [
+        "value"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "capabilities.update",
+      "kind": "mutation",
+      "handler": "cli.runSkills / App.NativeCapabilityAction",
+      "cli_template": [
+        "skills",
+        "update"
+      ],
+      "optional_flags": {},
+      "input_fields": [],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "capability.disable",
+      "kind": "mutation",
+      "handler": "cli.runSkills / App.NativeCapabilityAction",
+      "cli_template": [
+        "skills",
+        "disable",
+        "{source}"
+      ],
+      "optional_flags": {},
+      "input_fields": [
+        "source"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "capability.enable",
+      "kind": "mutation",
+      "handler": "cli.runSkills / App.NativeCapabilityAction",
+      "cli_template": [
+        "skills",
+        "enable",
+        "{source}"
+      ],
+      "optional_flags": {},
+      "input_fields": [
+        "source"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "capability.inspect",
+      "kind": "read",
+      "handler": "cli.runSkills / App.NativeCapabilityAction",
+      "cli_template": [
+        "skills",
+        "show",
+        "{source}"
+      ],
+      "optional_flags": {},
+      "input_fields": [
+        "source"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "capability.pin",
+      "kind": "mutation",
+      "handler": "cli.runSkills / App.NativeCapabilityAction",
+      "cli_template": [
+        "skills",
+        "pin",
+        "{source}"
+      ],
+      "optional_flags": {},
+      "input_fields": [
+        "source"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "capability.rollback",
+      "kind": "mutation",
+      "handler": "cli.runSkills / App.NativeCapabilityAction",
+      "cli_template": [
+        "skills",
+        "rollback",
+        "{source}"
+      ],
+      "optional_flags": {},
+      "input_fields": [
+        "source"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "capability.unpin",
+      "kind": "mutation",
+      "handler": "cli.runSkills / App.NativeCapabilityAction",
+      "cli_template": [
+        "skills",
+        "unpin",
+        "{source}"
+      ],
+      "optional_flags": {},
+      "input_fields": [
+        "source"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "capability.update",
+      "kind": "mutation",
+      "handler": "cli.runSkills / App.NativeCapabilityAction",
+      "cli_template": [
+        "skills",
+        "update",
+        "{source}"
+      ],
+      "optional_flags": {},
+      "input_fields": [
+        "source"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "config.auto",
+      "kind": "mutation",
+      "handler": "cli.runConfig / App.ConfigSet / Store automation profiles",
+      "cli_template": [
+        "config",
+        "set",
+        "orchestration.auto.enabled",
+        "{value}"
+      ],
+      "optional_flags": {},
+      "input_fields": [
+        "value"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "config.auto-bootstrap",
+      "kind": "mutation",
+      "handler": "cli.runConfig / App.ConfigSet / Store automation profiles",
+      "cli_template": [
+        "config",
+        "set",
+        "orchestration.auto.optimization.shared_context_bootstrap",
+        "{value}"
+      ],
+      "optional_flags": {},
+      "input_fields": [
+        "value"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "config.auto-checkpoint",
+      "kind": "mutation",
+      "handler": "cli.runConfig / App.ConfigSet / Store automation profiles",
+      "cli_template": [
+        "config",
+        "set",
+        "orchestration.auto.checkpoint_enabled",
+        "{value}"
+      ],
+      "optional_flags": {},
+      "input_fields": [
+        "value"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "config.auto-escalation",
+      "kind": "mutation",
+      "handler": "cli.runConfig / App.ConfigSet / Store automation profiles",
+      "cli_template": [
+        "config",
+        "set",
+        "orchestration.auto.optimization.progressive_escalation",
+        "{value}"
+      ],
+      "optional_flags": {},
+      "input_fields": [
+        "value"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "config.auto-failover",
+      "kind": "mutation",
+      "handler": "cli.runConfig / App.ConfigSet / Store automation profiles",
+      "cli_template": [
+        "config",
+        "set",
+        "orchestration.auto.automatic_failover",
+        "{value}"
+      ],
+      "optional_flags": {},
+      "input_fields": [
+        "value"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "config.auto-gate",
+      "kind": "information",
+      "handler": null,
+      "cli_template": [],
+      "optional_flags": {},
+      "input_fields": [],
+      "web_implementation": "information",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "config.auto-parallel",
+      "kind": "mutation",
+      "handler": "cli.runConfig / App.ConfigSet / Store automation profiles",
+      "cli_template": [
+        "config",
+        "set",
+        "orchestration.auto.optimization.parallelism",
+        "{value}"
+      ],
+      "optional_flags": {},
+      "input_fields": [
+        "value"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "config.auto-plan",
+      "kind": "mutation",
+      "handler": "cli.runConfig / App.ConfigSet / Store automation profiles",
+      "cli_template": [
+        "config",
+        "set",
+        "orchestration.auto.plan_execution",
+        "{value}"
+      ],
+      "optional_flags": {},
+      "input_fields": [
+        "value"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "config.auto-planner",
+      "kind": "mutation",
+      "handler": "cli.runConfig / App.ConfigSet / Store automation profiles",
+      "cli_template": [
+        "config",
+        "set",
+        "orchestration.auto.default_planner",
+        "{value}"
+      ],
+      "optional_flags": {},
+      "input_fields": [
+        "value"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "config.auto-policy",
+      "kind": "information",
+      "handler": null,
+      "cli_template": [],
+      "optional_flags": {},
+      "input_fields": [],
+      "web_implementation": "information",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "config.auto-profiles",
+      "kind": "read",
+      "handler": "cli.runConfig / App.ConfigSet / Store automation profiles",
+      "cli_template": [
+        "config",
+        "profile",
+        "list"
+      ],
+      "optional_flags": {},
+      "input_fields": [],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "config.auto-strategy",
+      "kind": "information",
+      "handler": null,
+      "cli_template": [],
+      "optional_flags": {},
+      "input_fields": [],
+      "web_implementation": "information",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "config.headroom",
+      "kind": "mutation",
+      "handler": "cli.runConfig / App.ConfigSet / Store automation profiles",
+      "cli_template": [
+        "config",
+        "set",
+        "headroom.enabled",
+        "{value}"
+      ],
+      "optional_flags": {},
+      "input_fields": [
+        "value"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "config.memory",
+      "kind": "mutation",
+      "handler": "cli.runConfig / App.ConfigSet / Store automation profiles",
+      "cli_template": [
+        "config",
+        "set",
+        "memory.enabled",
+        "{value}"
+      ],
+      "optional_flags": {},
+      "input_fields": [
+        "value"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "config.primary",
+      "kind": "mutation",
+      "handler": "cli.runConfig / App.ConfigSet / Store automation profiles",
+      "cli_template": [
+        "config",
+        "set",
+        "orchestration.primary_executor",
+        "{value}"
+      ],
+      "optional_flags": {},
+      "input_fields": [
+        "value"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "config.reviewer",
+      "kind": "mutation",
+      "handler": "cli.runConfig / App.ConfigSet / Store automation profiles",
+      "cli_template": [
+        "config",
+        "set",
+        "orchestration.review_executor",
+        "{value}"
+      ],
+      "optional_flags": {},
+      "input_fields": [
+        "value"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "config.ruflo",
+      "kind": "mutation",
+      "handler": "cli.runConfig / App.ConfigSet / Store automation profiles",
+      "cli_template": [
+        "config",
+        "set",
+        "orchestration.enabled",
+        "{value}"
+      ],
+      "optional_flags": {},
+      "input_fields": [
+        "value"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "config.session-mode",
+      "kind": "mutation",
+      "handler": "cli.runConfig / App.ConfigSet / Store automation profiles",
+      "cli_template": [
+        "config",
+        "set",
+        "orchestration.default_mode",
+        "{value}"
+      ],
+      "optional_flags": {},
+      "input_fields": [
+        "value"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "config.show",
+      "kind": "read",
+      "handler": "cli.runConfig / App.ConfigSet / Store automation profiles",
+      "cli_template": [
+        "config",
+        "show"
+      ],
+      "optional_flags": {},
+      "input_fields": [],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "config.workers",
+      "kind": "mutation",
+      "handler": "cli.runConfig / App.ConfigSet / Store automation profiles",
+      "cli_template": [
+        "config",
+        "set",
+        "orchestration.max_workers",
+        "{value}"
+      ],
+      "optional_flags": {},
+      "input_fields": [
+        "value"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "connect.chatgpt",
+      "kind": "native_handoff",
+      "handler": "cli.runConnect / App connection and MCP services",
+      "cli_template": [
+        "connect",
+        "chatgpt"
+      ],
+      "optional_flags": {},
+      "input_fields": [],
+      "web_implementation": "native_handoff",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "connect.claude",
+      "kind": "native_handoff",
+      "handler": "cli.runConnect / App connection and MCP services",
+      "cli_template": [
+        "connect",
+        "claude"
+      ],
+      "optional_flags": {},
+      "input_fields": [],
+      "web_implementation": "native_handoff",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "connect.list",
+      "kind": "read",
+      "handler": "cli.runConnect / App connection and MCP services",
+      "cli_template": [
+        "connect",
+        "list"
+      ],
+      "optional_flags": {},
+      "input_fields": [],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "connect.server",
+      "kind": "information",
+      "handler": null,
+      "cli_template": [],
+      "optional_flags": {},
+      "input_fields": [],
+      "web_implementation": "information",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "disconnect.chatgpt",
+      "kind": "mutation",
+      "handler": "cli.runCommand / App existing method",
+      "cli_template": [
+        "disconnect",
+        "chatgpt"
+      ],
+      "optional_flags": {},
+      "input_fields": [],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "disconnect.claude",
+      "kind": "mutation",
+      "handler": "cli.runCommand / App existing method",
+      "cli_template": [
+        "disconnect",
+        "claude"
+      ],
+      "optional_flags": {},
+      "input_fields": [],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "doctor",
+      "kind": "read",
+      "handler": "cli.runDoctor / App diagnostics",
+      "cli_template": [
+        "doctor",
+        "--json"
+      ],
+      "optional_flags": {},
+      "input_fields": [],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "doctor.inventory",
+      "kind": "read",
+      "handler": "cli.runDoctor / App diagnostics",
+      "cli_template": [
+        "doctor",
+        "--inventory",
+        "--json"
+      ],
+      "optional_flags": {},
+      "input_fields": [],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "doctor.repair-hooks",
+      "kind": "mutation",
+      "handler": "cli.runDoctor / App diagnostics",
+      "cli_template": [
+        "doctor",
+        "--repair-hooks"
+      ],
+      "optional_flags": {},
+      "input_fields": [],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "launch.claude",
+      "kind": "native_handoff",
+      "handler": "cli.runCommand / App existing method",
+      "cli_template": [
+        "claude"
+      ],
+      "optional_flags": {},
+      "input_fields": [],
+      "web_implementation": "native_handoff",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "launch.codex",
+      "kind": "native_handoff",
+      "handler": "cli.runCommand / App existing method",
+      "cli_template": [
+        "codex"
+      ],
+      "optional_flags": {},
+      "input_fields": [],
+      "web_implementation": "native_handoff",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "launch.opencode",
+      "kind": "native_handoff",
+      "handler": "cli.runCommand / App existing method",
+      "cli_template": [
+        "opencode"
+      ],
+      "optional_flags": {},
+      "input_fields": [],
+      "web_implementation": "native_handoff",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "mcp.add",
+      "kind": "mutation",
+      "handler": "cli.runConnect / App connection and MCP services",
+      "cli_template": [
+        "connect",
+        "mcp",
+        "add",
+        "{name}",
+        "{url}"
+      ],
+      "optional_flags": {},
+      "input_fields": [
+        "name",
+        "url"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "mcp.auth",
+      "kind": "mutation",
+      "handler": "cli.runConnect / App connection and MCP services",
+      "cli_template": [
+        "connect",
+        "mcp",
+        "auth",
+        "set",
+        "{name}",
+        "--bearer-token-stdin"
+      ],
+      "optional_flags": {},
+      "input_fields": [
+        "name",
+        "secret"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "mcp.auth.remove",
+      "kind": "mutation",
+      "handler": "cli.runConnect / App connection and MCP services",
+      "cli_template": [
+        "connect",
+        "mcp",
+        "auth",
+        "remove",
+        "{name}"
+      ],
+      "optional_flags": {},
+      "input_fields": [
+        "name"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "mcp.direct-policy",
+      "kind": "mutation",
+      "handler": "cli.runConnect / App connection and MCP services",
+      "cli_template": [
+        "connect",
+        "mcp",
+        "direct-policy",
+        "{name}",
+        "{value}"
+      ],
+      "optional_flags": {},
+      "input_fields": [
+        "name",
+        "value"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "mcp.enable",
+      "kind": "mutation",
+      "handler": "cli.runConnect / App connection and MCP services",
+      "cli_template": [
+        "connect",
+        "mcp",
+        "{state}",
+        "{name}"
+      ],
+      "optional_flags": {},
+      "input_fields": [
+        "name",
+        "state"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "mcp.header",
+      "kind": "mutation",
+      "handler": "cli.runConnect / App connection and MCP services",
+      "cli_template": [
+        "connect",
+        "mcp",
+        "header",
+        "set",
+        "{name}",
+        "{header}",
+        "--value-stdin"
+      ],
+      "optional_flags": {},
+      "input_fields": [
+        "name",
+        "header",
+        "secret"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "mcp.list",
+      "kind": "read",
+      "handler": "cli.runConnect / App connection and MCP services",
+      "cli_template": [
+        "connect",
+        "mcp",
+        "list"
+      ],
+      "optional_flags": {},
+      "input_fields": [],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "mcp.policy",
+      "kind": "mutation",
+      "handler": "cli.runConnect / App connection and MCP services",
+      "cli_template": [
+        "connect",
+        "mcp",
+        "policy",
+        "{name}",
+        "{value}"
+      ],
+      "optional_flags": {},
+      "input_fields": [
+        "name",
+        "value"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "mcp.remove",
+      "kind": "mutation",
+      "handler": "cli.runConnect / App connection and MCP services",
+      "cli_template": [
+        "connect",
+        "mcp",
+        "remove",
+        "{name}"
+      ],
+      "optional_flags": {},
+      "input_fields": [
+        "name"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "mcp.test",
+      "kind": "read",
+      "handler": "cli.runConnect / App connection and MCP services",
+      "cli_template": [
+        "connect",
+        "mcp",
+        "test",
+        "{name}"
+      ],
+      "optional_flags": {},
+      "input_fields": [
+        "name"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "mcp.tools",
+      "kind": "read",
+      "handler": "cli.runConnect / App connection and MCP services",
+      "cli_template": [
+        "connect",
+        "mcp",
+        "tools",
+        "{name}"
+      ],
+      "optional_flags": {},
+      "input_fields": [
+        "name"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "memory.configure",
+      "kind": "mutation",
+      "handler": "cli.runMemory / App memory methods",
+      "cli_template": [
+        "memory",
+        "configure"
+      ],
+      "optional_flags": {},
+      "input_fields": [],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "memory.status",
+      "kind": "read",
+      "handler": "cli.runMemory / App memory methods",
+      "cli_template": [
+        "memory",
+        "status"
+      ],
+      "optional_flags": {},
+      "input_fields": [],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "policy.concurrency",
+      "kind": "mutation",
+      "handler": "cli.runConfig / App.ConfigSet / Store automation profiles",
+      "cli_template": [
+        "config",
+        "set",
+        "orchestration.auto.concurrency",
+        "{value}"
+      ],
+      "optional_flags": {},
+      "input_fields": [
+        "value"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "policy.confirmation",
+      "kind": "information",
+      "handler": null,
+      "cli_template": [],
+      "optional_flags": {},
+      "input_fields": [],
+      "web_implementation": "information",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "policy.low-quota",
+      "kind": "mutation",
+      "handler": "cli.runConfig / App.ConfigSet / Store automation profiles",
+      "cli_template": [
+        "config",
+        "set",
+        "orchestration.auto.low_quota_threshold",
+        "{value}"
+      ],
+      "optional_flags": {},
+      "input_fields": [
+        "value"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "policy.mcp",
+      "kind": "information",
+      "handler": null,
+      "cli_template": [],
+      "optional_flags": {},
+      "input_fields": [],
+      "web_implementation": "information",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "policy.primary",
+      "kind": "information",
+      "handler": null,
+      "cli_template": [],
+      "optional_flags": {},
+      "input_fields": [],
+      "web_implementation": "information",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "policy.provider",
+      "kind": "mutation",
+      "handler": "cli.runConfig / App.ConfigSet / Store automation profiles",
+      "cli_template": [
+        "config",
+        "set",
+        "orchestration.auto.provider_preference",
+        "{value}"
+      ],
+      "optional_flags": {},
+      "input_fields": [
+        "value"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "policy.sources",
+      "kind": "mutation",
+      "handler": "cli.runConfig / App.ConfigSet / Store automation profiles",
+      "cli_template": [
+        "config",
+        "set",
+        "orchestration.auto.knowledge_routing",
+        "{value}"
+      ],
+      "optional_flags": {},
+      "input_fields": [
+        "value"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "policy.worker-cap",
+      "kind": "mutation",
+      "handler": "cli.runConfig / App.ConfigSet / Store automation profiles",
+      "cli_template": [
+        "config",
+        "set",
+        "orchestration.auto.worker_cap",
+        "{value}"
+      ],
+      "optional_flags": {},
+      "input_fields": [
+        "value"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "policy.writes",
+      "kind": "mutation",
+      "handler": "cli.runConfig / App.ConfigSet / Store automation profiles",
+      "cli_template": [
+        "config",
+        "set",
+        "orchestration.auto.parallel_writes",
+        "{value}"
+      ],
+      "optional_flags": {},
+      "input_fields": [
+        "value"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "profile.apply",
+      "kind": "mutation",
+      "handler": "cli.runConfig / App.ConfigSet / Store automation profiles",
+      "cli_template": [
+        "config",
+        "profile",
+        "apply",
+        "{profile}"
+      ],
+      "optional_flags": {},
+      "input_fields": [
+        "profile"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "profile.preview",
+      "kind": "read",
+      "handler": "cli.runConfig / App.ConfigSet / Store automation profiles",
+      "cli_template": [
+        "config",
+        "profile",
+        "preview",
+        "{profile}"
+      ],
+      "optional_flags": {},
+      "input_fields": [
+        "profile"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "profile.restore",
+      "kind": "mutation",
+      "handler": "cli.runConfig / App.ConfigSet / Store automation profiles",
+      "cli_template": [
+        "config",
+        "profile",
+        "restore"
+      ],
+      "optional_flags": {},
+      "input_fields": [],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "profile.show",
+      "kind": "read",
+      "handler": "cli.runConfig / App.ConfigSet / Store automation profiles",
+      "cli_template": [
+        "config",
+        "profile",
+        "show"
+      ],
+      "optional_flags": {},
+      "input_fields": [],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "project.init",
+      "kind": "mutation",
+      "handler": "cli.runProject / App project methods",
+      "cli_template": [
+        "project",
+        "init"
+      ],
+      "optional_flags": {},
+      "input_fields": [
+        "project_root"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "project.status",
+      "kind": "read",
+      "handler": "cli.runProject / App project methods",
+      "cli_template": [
+        "project",
+        "status"
+      ],
+      "optional_flags": {},
+      "input_fields": [],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "remote.connector.list",
+      "kind": "read",
+      "handler": "servercmd.runner.run / existing server.Manager or stores",
+      "cli_template": [
+        "server",
+        "remote",
+        "connector",
+        "list"
+      ],
+      "optional_flags": {},
+      "input_fields": [],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "remote.doctor",
+      "kind": "read",
+      "handler": "servercmd.runner.run / existing server.Manager or stores",
+      "cli_template": [
+        "server",
+        "remote",
+        "doctor"
+      ],
+      "optional_flags": {},
+      "input_fields": [],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "remote.status",
+      "kind": "read",
+      "handler": "servercmd.runner.run / existing server.Manager or stores",
+      "cli_template": [
+        "server",
+        "remote",
+        "status"
+      ],
+      "optional_flags": {},
+      "input_fields": [],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "rollback",
+      "kind": "mutation",
+      "handler": "cli.runCommand / App existing method",
+      "cli_template": [
+        "update",
+        "--rollback"
+      ],
+      "optional_flags": {},
+      "input_fields": [],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "server.backup",
+      "kind": "mutation",
+      "handler": "servercmd.runner.run / existing server.Manager or stores",
+      "cli_template": [
+        "server",
+        "backup"
+      ],
+      "optional_flags": {
+        "path": "--output"
+      },
+      "input_fields": [
+        "path"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "server.connector.add",
+      "kind": "mutation",
+      "handler": "servercmd.runner.run / existing server.Manager or stores",
+      "cli_template": [
+        "server",
+        "connector",
+        "add",
+        "--name",
+        "{name}",
+        "--type",
+        "{type}",
+        "--path",
+        "{path}"
+      ],
+      "optional_flags": {},
+      "input_fields": [
+        "name",
+        "type",
+        "path"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "server.connector.list",
+      "kind": "read",
+      "handler": "servercmd.runner.run / existing server.Manager or stores",
+      "cli_template": [
+        "server",
+        "connector",
+        "list"
+      ],
+      "optional_flags": {},
+      "input_fields": [],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "server.connector.remove",
+      "kind": "mutation",
+      "handler": "servercmd.runner.run / existing server.Manager or stores",
+      "cli_template": [
+        "server",
+        "connector",
+        "remove",
+        "{name}"
+      ],
+      "optional_flags": {},
+      "input_fields": [
+        "name"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "server.context.document",
+      "kind": "read",
+      "handler": "servercmd.runner.run / existing server.Manager or stores",
+      "cli_template": [
+        "server",
+        "context",
+        "get",
+        "--id",
+        "{id}"
+      ],
+      "optional_flags": {},
+      "input_fields": [
+        "id"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "server.context.ingest",
+      "kind": "mutation",
+      "handler": "servercmd.runner.run / existing server.Manager or stores",
+      "cli_template": [
+        "server",
+        "context",
+        "ingest",
+        "--connector",
+        "{name}"
+      ],
+      "optional_flags": {},
+      "input_fields": [
+        "name"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "server.context.search",
+      "kind": "read",
+      "handler": "servercmd.runner.run / existing server.Manager or stores",
+      "cli_template": [
+        "server",
+        "context",
+        "search",
+        "--query",
+        "{query}"
+      ],
+      "optional_flags": {},
+      "input_fields": [
+        "query"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "server.context.status",
+      "kind": "read",
+      "handler": "servercmd.runner.run / existing server.Manager or stores",
+      "cli_template": [
+        "server",
+        "context",
+        "status"
+      ],
+      "optional_flags": {},
+      "input_fields": [],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "server.doctor",
+      "kind": "read",
+      "handler": "servercmd.runner.run / existing server.Manager or stores",
+      "cli_template": [
+        "server",
+        "doctor"
+      ],
+      "optional_flags": {},
+      "input_fields": [],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "server.enrollment.create",
+      "kind": "mutation",
+      "handler": "servercmd.runner.run / existing server.Manager or stores",
+      "cli_template": [
+        "server",
+        "enrollment",
+        "create",
+        "--ttl",
+        "{ttl}"
+      ],
+      "optional_flags": {},
+      "input_fields": [
+        "ttl"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "server.enrollment.list",
+      "kind": "read",
+      "handler": "servercmd.runner.run / existing server.Manager or stores",
+      "cli_template": [
+        "server",
+        "enrollment",
+        "list"
+      ],
+      "optional_flags": {},
+      "input_fields": [],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "server.enrollment.revoke",
+      "kind": "mutation",
+      "handler": "servercmd.runner.run / existing server.Manager or stores",
+      "cli_template": [
+        "server",
+        "enrollment",
+        "revoke",
+        "{id}"
+      ],
+      "optional_flags": {},
+      "input_fields": [
+        "id"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "server.gateway.configure",
+      "kind": "mutation",
+      "handler": "servercmd.runner.run / existing server.Manager or stores",
+      "cli_template": [
+        "server",
+        "gateway",
+        "configure",
+        "--public-url",
+        "{url}",
+        "--listen",
+        "{listen}"
+      ],
+      "optional_flags": {
+        "proxy": "--trusted-proxy",
+        "tls_cert": "--tls-cert",
+        "tls_key": "--tls-key"
+      },
+      "input_fields": [
+        "url",
+        "listen",
+        "proxy",
+        "tls_cert",
+        "tls_key"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "server.logs",
+      "kind": "read",
+      "handler": "servercmd.runner.run / existing server.Manager or stores",
+      "cli_template": [
+        "server",
+        "logs"
+      ],
+      "optional_flags": {
+        "service": ""
+      },
+      "input_fields": [
+        "service"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "server.memory.status",
+      "kind": "read",
+      "handler": "servercmd.runner.run / existing server.Manager or stores",
+      "cli_template": [
+        "server",
+        "memory",
+        "status"
+      ],
+      "optional_flags": {},
+      "input_fields": [],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "server.restart",
+      "kind": "mutation",
+      "handler": "servercmd.runner.run / existing server.Manager or stores",
+      "cli_template": [
+        "server",
+        "restart"
+      ],
+      "optional_flags": {},
+      "input_fields": [],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "server.restore",
+      "kind": "mutation",
+      "handler": "servercmd.runner.run / existing server.Manager or stores",
+      "cli_template": [
+        "server",
+        "restore",
+        "--input",
+        "{path}"
+      ],
+      "optional_flags": {},
+      "input_fields": [
+        "path"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "server.setup",
+      "kind": "mutation",
+      "handler": "servercmd.runner.run / existing server.Manager or stores",
+      "cli_template": [
+        "server",
+        "setup"
+      ],
+      "optional_flags": {},
+      "input_fields": [],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "server.start",
+      "kind": "mutation",
+      "handler": "servercmd.runner.run / existing server.Manager or stores",
+      "cli_template": [
+        "server",
+        "start"
+      ],
+      "optional_flags": {},
+      "input_fields": [],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "server.status",
+      "kind": "read",
+      "handler": "servercmd.runner.run / existing server.Manager or stores",
+      "cli_template": [
+        "server",
+        "status"
+      ],
+      "optional_flags": {},
+      "input_fields": [],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "server.stop",
+      "kind": "mutation",
+      "handler": "servercmd.runner.run / existing server.Manager or stores",
+      "cli_template": [
+        "server",
+        "stop"
+      ],
+      "optional_flags": {},
+      "input_fields": [],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "server.web-access.create",
+      "kind": "mutation",
+      "handler": "servercmd.runner.run / existing server.Manager or stores",
+      "cli_template": [
+        "server",
+        "web-access",
+        "create",
+        "--ttl",
+        "{ttl}"
+      ],
+      "optional_flags": {},
+      "input_fields": [
+        "ttl"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "server.web-access.list",
+      "kind": "read",
+      "handler": "servercmd.runner.run / existing server.Manager or stores",
+      "cli_template": [
+        "server",
+        "web-access",
+        "list"
+      ],
+      "optional_flags": {},
+      "input_fields": [],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "server.web-access.revoke",
+      "kind": "mutation",
+      "handler": "servercmd.runner.run / existing server.Manager or stores",
+      "cli_template": [
+        "server",
+        "web-access",
+        "revoke",
+        "{id}"
+      ],
+      "optional_flags": {},
+      "input_fields": [
+        "id"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "servers.add",
+      "kind": "mutation",
+      "handler": "cli.runConnect / App connection and MCP services",
+      "cli_template": [
+        "connect",
+        "server",
+        "add",
+        "{alias}",
+        "--url",
+        "{url}",
+        "--purpose",
+        "{purpose}",
+        "--redundancy-group",
+        "{group}",
+        "--priority",
+        "{priority}",
+        "--code-stdin"
+      ],
+      "optional_flags": {},
+      "input_fields": [
+        "alias",
+        "url",
+        "purpose",
+        "group",
+        "priority",
+        "code"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "servers.edit",
+      "kind": "mutation",
+      "handler": "cli.runConnect / App connection and MCP services",
+      "cli_template": [
+        "connect",
+        "server",
+        "edit",
+        "{alias}",
+        "--purpose",
+        "{purpose}",
+        "--redundancy-group",
+        "{group}",
+        "--priority",
+        "{priority}"
+      ],
+      "optional_flags": {},
+      "input_fields": [
+        "alias",
+        "purpose",
+        "group",
+        "priority"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "servers.list",
+      "kind": "read",
+      "handler": "cli.runConnect / App connection and MCP services",
+      "cli_template": [
+        "connect",
+        "server",
+        "list",
+        "--json"
+      ],
+      "optional_flags": {},
+      "input_fields": [],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "servers.manage",
+      "kind": "read",
+      "handler": "cli.runConnect / App connection and MCP services",
+      "cli_template": [
+        "connect",
+        "server",
+        "show",
+        "{alias}",
+        "--json"
+      ],
+      "optional_flags": {},
+      "input_fields": [
+        "alias"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "servers.re-enroll",
+      "kind": "mutation",
+      "handler": "cli.runConnect / App connection and MCP services",
+      "cli_template": [
+        "connect",
+        "server",
+        "re-enroll",
+        "{alias}",
+        "--url",
+        "{url}",
+        "--code-stdin"
+      ],
+      "optional_flags": {},
+      "input_fields": [
+        "alias",
+        "url",
+        "code"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "servers.remove",
+      "kind": "mutation",
+      "handler": "cli.runConnect / App connection and MCP services",
+      "cli_template": [
+        "connect",
+        "server",
+        "remove",
+        "{alias}"
+      ],
+      "optional_flags": {},
+      "input_fields": [
+        "alias"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "servers.test",
+      "kind": "read",
+      "handler": "cli.runConnect / App connection and MCP services",
+      "cli_template": [
+        "connect",
+        "server",
+        "test",
+        "{alias}",
+        "--json"
+      ],
+      "optional_flags": {},
+      "input_fields": [
+        "alias"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "servers.toggle",
+      "kind": "mutation",
+      "handler": "cli.runConnect / App connection and MCP services",
+      "cli_template": [
+        "connect",
+        "server",
+        "{state}",
+        "{alias}"
+      ],
+      "optional_flags": {},
+      "input_fields": [
+        "alias",
+        "state"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "session.continuity",
+      "kind": "read",
+      "handler": "cli.runSession / App session control",
+      "cli_template": [
+        "session",
+        "show",
+        "--json",
+        "{id}"
+      ],
+      "optional_flags": {},
+      "input_fields": [
+        "id"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "session.direct.claude",
+      "kind": "native_handoff",
+      "handler": "cli.runCommand / App existing method",
+      "cli_template": [
+        "claude",
+        "--direct"
+      ],
+      "optional_flags": {},
+      "input_fields": [],
+      "web_implementation": "native_handoff",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "session.direct.codex",
+      "kind": "native_handoff",
+      "handler": "cli.runCommand / App existing method",
+      "cli_template": [
+        "codex",
+        "--direct"
+      ],
+      "optional_flags": {},
+      "input_fields": [],
+      "web_implementation": "native_handoff",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "session.direct.opencode",
+      "kind": "native_handoff",
+      "handler": "cli.runCommand / App existing method",
+      "cli_template": [
+        "opencode",
+        "--direct"
+      ],
+      "optional_flags": {},
+      "input_fields": [],
+      "web_implementation": "native_handoff",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "session.list",
+      "kind": "read",
+      "handler": "cli.runSession / App session control",
+      "cli_template": [
+        "session",
+        "list",
+        "--json"
+      ],
+      "optional_flags": {},
+      "input_fields": [],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "session.monitor",
+      "kind": "read",
+      "handler": "cli.runMonitor / App session telemetry",
+      "cli_template": [
+        "monitor",
+        "--json"
+      ],
+      "optional_flags": {},
+      "input_fields": [],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "session.orchestrated.claude",
+      "kind": "native_handoff",
+      "handler": "cli.runCommand / App existing method",
+      "cli_template": [
+        "claude"
+      ],
+      "optional_flags": {},
+      "input_fields": [],
+      "web_implementation": "native_handoff",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "session.orchestrated.codex",
+      "kind": "native_handoff",
+      "handler": "cli.runCommand / App existing method",
+      "cli_template": [
+        "codex"
+      ],
+      "optional_flags": {},
+      "input_fields": [],
+      "web_implementation": "native_handoff",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "session.scope.adopt",
+      "kind": "mutation",
+      "handler": "cli.runSession / App session control",
+      "cli_template": [
+        "session",
+        "adopt-scope",
+        "{id}",
+        "--knowledge-source",
+        "{source}",
+        "--confirm",
+        "--json"
+      ],
+      "optional_flags": {},
+      "input_fields": [
+        "id",
+        "source"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "session.scope.restore",
+      "kind": "mutation",
+      "handler": "cli.runSession / App session control",
+      "cli_template": [
+        "session",
+        "restore-scope",
+        "{id}",
+        "--backup",
+        "{path}",
+        "--confirm",
+        "--json"
+      ],
+      "optional_flags": {},
+      "input_fields": [
+        "id",
+        "path"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "session.stop",
+      "kind": "mutation",
+      "handler": "cli.runSession / App session control",
+      "cli_template": [
+        "session",
+        "stop",
+        "{id}"
+      ],
+      "optional_flags": {},
+      "input_fields": [
+        "id"
+      ],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "setup",
+      "kind": "mutation",
+      "handler": "cli.runCommand / App existing method",
+      "cli_template": [
+        "setup",
+        "--mode",
+        "client"
+      ],
+      "optional_flags": {},
+      "input_fields": [],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "status",
+      "kind": "read",
+      "handler": "cli.runCommand / App existing method",
+      "cli_template": [
+        "status"
+      ],
+      "optional_flags": {},
+      "input_fields": [],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "uninstall",
+      "kind": "mutation",
+      "handler": "cli.runCommand / App existing method",
+      "cli_template": [
+        "uninstall"
+      ],
+      "optional_flags": {},
+      "input_fields": [],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "update",
+      "kind": "mutation",
+      "handler": "cli.runCommand / App existing method",
+      "cli_template": [
+        "update"
+      ],
+      "optional_flags": {},
+      "input_fields": [],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "update.dry-run",
+      "kind": "mutation",
+      "handler": "cli.runCommand / App existing method",
+      "cli_template": [
+        "update",
+        "--dry-run"
+      ],
+      "optional_flags": {},
+      "input_fields": [],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    },
+    {
+      "id": "version",
+      "kind": "read",
+      "handler": "cli.runCommand / App existing method",
+      "cli_template": [
+        "version"
+      ],
+      "optional_flags": {},
+      "input_fields": [],
+      "web_implementation": "typed_existing_services",
+      "all_operations_e2e_certified": false
+    }
+  ]
+}

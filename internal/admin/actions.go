@@ -73,6 +73,11 @@ func (s *Server) actions(r *http.Request) (any, int) {
 	}
 	rows := ActionCatalog()
 	for i := range rows {
+		if rows[i].ID == "project.init" {
+			if cwd, err := os.Getwd(); err == nil {
+				rows[i].Fields[0].Help = "Only this console working directory is eligible: " + cwd
+			}
+		}
 		if rows[i].requiresRoot && os.Geteuid() != 0 {
 			rows[i].Available = false
 			rows[i].Reason = "Requires a server administrator process started with existing OS privileges; HTTP cannot elevate privileges."
@@ -195,6 +200,13 @@ func (s *Server) action(w http.ResponseWriter, r *http.Request) {
 	if err := validateActionInput(a, in.Input); err != nil {
 		errorJSON(w, 400, "invalid_input")
 		return
+	}
+	if a.ID == "project.init" {
+		cwd, err := os.Getwd()
+		if err != nil || !filepath.IsAbs(in.Input["project_root"]) || filepath.Clean(in.Input["project_root"]) != cwd {
+			errorJSON(w, 409, "project_scope_mismatch")
+			return
+		}
 	}
 	if in.Phase != "preview" && in.Phase != "execute" {
 		errorJSON(w, 400, "invalid_phase")

@@ -1,0 +1,28 @@
+# Dedicated Caddy instance example; not a drop-in global logging change for an
+# existing multi-site installation. Retain the separate Core administrative audit.
+{
+    log {
+        output discard
+    }
+}
+
+admin.example.com {
+    redir /ivoai /ivoai/ 308
+    handle /ivoai/* {
+        # handle preserves the mount; handle_path would strip it incorrectly.
+        reverse_proxy 127.0.0.1:7781 {
+            header_up Host {http.request.hostport}
+            header_up -Forwarded
+            header_up -X-Forwarded-For
+            header_up -X-Forwarded-Host
+            header_up -X-Forwarded-Proto
+            lb_try_duration 0s
+            transport http {
+                response_header_timeout 310s
+            }
+        }
+    }
+    handle {
+        respond 404
+    }
+}

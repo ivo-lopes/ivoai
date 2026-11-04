@@ -1,66 +1,103 @@
-# Console administrativo local
+---
+sidebar_position: 17
+---
 
-O console oferece consulta autenticada e somente leitura ao backend existente
-do IVOAI. Ele funciona apenas quando iniciado explicitamente e não inicia
-executores nem substitui clientes nativos. A paridade administrativa é parcial:
-o inventário contém 118 ações da TUI, com seis projeções parciais de consulta e
-nenhuma ação completamente coberta.
+# Console administrativo
 
-## Iniciar e autorizar
-
-Use o proprietário local e as raízes de configuração/estado existentes do IVOAI.
-Inicie o listener em primeiro plano:
+O painel administra o mesmo App, configuração e serviços do IVOAI. Conversas e
+login por assinatura permanecem nos clientes oficiais; o painel não cria chat,
+scheduler ou banco de configuração paralelo.
 
 ```sh
+ivoai admin init
 ivoai admin serve --listen 127.0.0.1:7781
-```
-
-Em outro terminal, emita um código de ativação descartável:
-
-```sh
+# Em outro terminal do mesmo usuário e HOME/XDG:
 ivoai admin access create --ttl 10m
 ```
 
-Abra a URL de loopback exibida e informe o código no formulário de autorização.
-O comando mostra o código uma vez; mantenha-o fora de logs e relatórios. Não são
-solicitadas nem copiadas credenciais dos clientes nativos. A troca OAuth verifica
-PKCE, state e CSRF do formulário. O acesso usa cookie HttpOnly/Strict, sem tokens
-no armazenamento do navegador ou refresh token em JavaScript.
+O acesso padrão é somente leitura. Para autorizar alterações, emita uma ativação
+separada com `ivoai admin access create --ttl 10m --write`. Consulte e revogue com
+`ivoai admin access list` e `ivoai admin access revoke ID`. O código é mostrado uma
+vez e deve ser digitado no formulário OAuth, nunca na URL.
 
-O listener padrão usa HTTP local. Somente endereços numéricos de loopback são
-aceitos; cabeçalhos de encaminhamento não concedem autoridade. Esta entrega não
-oferece acesso remoto ou RBAC por organização. Mantenha o listener local. As raízes
-privadas existentes devem pertencer ao usuário em execução; o comando não relaxa
-suas permissões.
+O catálogo cobre os 118 IDs públicos da TUI e acrescenta preview/aplicação de
+perfis e ingestão/busca/recuperação documental do Context. As operações são
+classificadas em leitura, alteração, orientação para cliente nativo e informação.
+Navegação, política fixa e orientação para terminal não contam como operações web
+executadas. Configuração, políticas, capacidades, MCPs, conexões, sessões,
+serviços, conectores, backup/restauração, códigos de acesso e atualizações usam os
+serviços e validações existentes. A configuração exibida é uma projeção sem
+segredos, não o TOML privado bruto.
 
-## Consultar e revogar
+Alterações exigem `admin:manage`, origem correta, JSON, CSRF e confirmação explícita
+de um preview. A confirmação vale uma vez e está vinculada aos parâmetros, acesso
+e revisão da configuração. O ID da requisição é registrado em armazenamento
+privado antes da execução: repetição, falha de transporte ou reinício não podem
+reexecutar a mesma operação. Os processos do mesmo console compartilham lock de
+sistema. Não há retry automático. Em resultado incerto, inspecione estado, auditoria
+e recibo antes de autorizar uma nova operação. Revogação cancela o contexto em
+execução, mas não desfaz alterações já efetivadas pelo serviço.
 
-As sessões mostram estado, identidade do executor/modelo e uso da última execução
-registrada, quando disponível. A entrada em cache já está incluída na entrada.
-Medição ausente significa desconhecida, não zero; uso de uma execução não é total
-da sessão nem comprovação de economia. Versões de componentes e contagens de
-conexões são snapshots de configuração, não sondagens de saúde em tempo real.
+O OAuth usa PKCE e cookie HttpOnly/SameSite; não entrega token de atualização ao
+browser nem copia credenciais dos clientes oficiais. A auditoria registra somente
+ação, resultado e ator com hash. Entradas, saídas brutas, URLs e credenciais não
+entram na auditoria. Códigos emitidos deliberadamente aparecem uma vez em um campo
+separado. Recibos guardam somente ação/status/horários; o limite de 10000 recusa
+novas operações sem apagar o histórico de prevenção de replay.
 
-A listagem é limitada e pode retornar um subconjunto. A interface identifica
-snapshots parciais ou truncados; não afirma uma contagem global completa.
-Prompts, traces brutos, saídas de ferramentas, caminhos de trabalho e segredos de
-conexões são excluídos.
+O processo mantém os privilégios do usuário que o iniciou. HTTP não eleva para
+root. Operações privilegiadas de servidor exigem um processo administrativo já
+iniciado com os privilégios correspondentes. `admin init` cria apenas roots
+privadas ausentes e preserva permissões existentes; não instala clientes nem
+altera credenciais ou serviços.
+
+## Publicação com proxy reverso HTTPS
 
 ```sh
-ivoai admin access list
-ivoai admin access revoke ACCESS_ID
+ivoai admin serve --listen 127.0.0.1:7781 \
+  --public-url https://admin.example.com/ivoai \
+  --trusted-proxies 127.0.0.1/32,::1/128
 ```
 
-A revogação vale nas próximas requisições autenticadas. A ação de encerrar acesso
-no navegador revoga seu token e limpa os snapshots exibidos. Interrompa o listener
-com Ctrl+C para desativar a superfície. Metadados de grants permanecem no mecanismo
-OAuth existente, sob a raiz de estado selecionada.
+O listener continua em loopback. O proxy encerra TLS e preserva Host e o caminho
+completo `/ivoai/`. A identidade pública vem da configuração, nunca de headers
+Forwarded/X-Forwarded arbitrários. O peer real precisa pertencer aos CIDRs
+configurados; Host/Origin estrangeiros, traversal e separadores codificados são
+recusados. Redirects/cookies incluem o prefixo; em HTTPS os cookies são Secure.
+Respostas não permitem cache nem enquadramento por páginas externas.
 
-Esta fatia não configura conectores, edita segredos, aprova trabalho, inicia/para
-executores, gerencia evidências/índices ou executa setup, atualização, rollback e
-restauração. Essas operações conservam os contratos existentes da CLI/TUI. Não há
-scheduler nem autoridade de autorização em JavaScript.
+Use os exemplos versionados `deploy/admin/nginx.conf.example` e
+`deploy/admin/Caddyfile.example`. No Nginx, proxy_pass não tem URI final; no Caddy,
+handle preserva o prefixo, enquanto handle_path o removeria. Os exemplos evitam
+logs de requisições do proxy para proteger queries OAuth e mantêm a auditoria
+separada do Core. O exemplo global do Caddy é para instância dedicada; não substitua
+configuração de outros sites sem adaptar. Valide com `nginx -t` ou `caddy validate`
+antes de recarregar. Os exemplos não comprovam publicação de domínio/certificado
+em produção.
 
-O inventário de paridade ligado ao fonte, as falhas e as provas reais de navegador
-local estão no [relatório de validação](https://github.com/ivo-lopes/ivoai/blob/main/release-notes/admin-console-validation.md).
-As provas usam sessões semeadas e nenhuma inferência de provedor.
+## Administração do Context
+
+```sh
+sudo ivoai server context ingest --connector documentos-aprovados
+sudo ivoai server context search --query 'frase específica do documento aprovado'
+sudo ivoai server context get --id ID_DO_DOCUMENTO
+```
+
+Essas ações também usam o catálogo administrativo. A ingestão aproveita o serviço,
+conectores, embeddings, Qdrant e catálogo atuais. A execução manual e o daemon
+periódico compartilham lock; concorrência é recusada, sem retry implícito. O recibo
+inclui IDs, fonte, hashes e verificação de recuperação exata pelo catálogo. Corpus
+vazio/não comprovado permanece BLOCKED; documentos identificados recuperados podem
+ser PARTIAL. Para concluir IVOAI-175 ainda é preciso comprovar busca específica e
+recuperação exata no deployment real.
+
+O pipeline mantém sua semântica de falha parcial: índice e catálogo não são uma
+transação distribuída. Corrija a causa antes de autorizar nova ingestão. Conteúdo
+recuperado é dado não confiável, nunca instrução de execução. Os MCPs do agente
+permanecem somente leitura; escrever Memory não sincroniza Context automaticamente.
+
+Os testes do backend exercitam App/Store reais, separação de scopes, CSRF,
+confirmação/replay/revogação, redaction, TLS/proxy/prefixo/OAuth/logout e o pipeline
+Context em armazenamento determinístico. A prova no browser e a matriz final
+pertencem à composição com a UI. Cobertura do catálogo não comprova execução de
+todas as operações, inferência oficial, corpus Qdrant ou sincronização em produção.
