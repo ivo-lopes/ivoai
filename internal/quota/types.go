@@ -10,14 +10,20 @@ import (
 type Provider string
 
 const (
-	ProviderCodex    Provider = "codex"
-	ProviderClaude   Provider = "claude"
-	ProviderOpenCode Provider = "opencode"
+	ProviderAntigravity Provider = "antigravity"
+	ProviderCodex       Provider = "codex"
+	ProviderClaude      Provider = "claude"
+	ProviderOpenCode    Provider = "opencode"
 )
 
 // Providers is the stable compatibility order, not a claim of availability.
 func Providers() []Provider { return []Provider{ProviderCodex, ProviderClaude, ProviderOpenCode} }
 func Supported(provider Provider) bool {
+	// ACP exposes an executor identity but no authoritative quota probe. Keep it
+	// out of default automatic routing until that capability is certified.
+	if provider == ProviderAntigravity {
+		return true
+	}
 	for _, candidate := range Providers() {
 		if provider == candidate {
 			return true

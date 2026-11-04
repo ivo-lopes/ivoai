@@ -1,0 +1,23 @@
+{
+  "internal/nativeacp/runner.go": "887846b6f2a139e02b27eb239cb54a23b8e3a786ff31798a62ce4893b0c3ee4d",
+  "internal/nativeacp/runner_linux_test.go": "17718a0e918b7b77e8a9d326ae7a5f7cfe803a3eb3b6b0c32d83c493e35d344d",
+  "internal/nativeacp/runner_unsupported.go": "392204217fd77e3c70c9c8c256630aa31a9cd1d08df99e763fff78fc382c848e",
+  "internal/nativeacp/official_linux_test.go": "890a63647eda97693909e24d0fd6ab314d995fb5a214849ee6656cefacdcfc0e",
+  "internal/nativeacp/lifecycle_linux.go": "f56e1fc2c81d83d9cda94725596f4f34a38328c566b74836682d38a9baf0d3d3",
+  "internal/nativeacp/runner_linux.go": "602078af517490e89dbfb86a6846d4e74744b7930fa86015e433d1e4f1deb9cf",
+  "internal/app/native_acp.go": "8a88480e703427a22d40f23385960346f01df58b39fb2263fb0651bca2740275",
+  "internal/app/native_acp_cli_live_test.go": "7561385973ea2666c266543d9026ef058e5524be19869d3b6583c6127e86f857",
+  "internal/app/native_acp_test.go": "acccbd86beedb46bab1fd47f83f611aff38ace44f52d2e9308cfbd15106915d1",
+  "internal/app/native_mcp_proxy_test.go": "623197eaad02cc7096a3715c080b1ee78f44a7f07f8006ceabb583f04eb3116b",
+  "internal/app/native_mcp_proxy.go": "a6b92964dc4081a72d9f448dcaf58950634a369e6608173e3acacb6f15f7ed22",
+  "internal/cli/native.go": "a5f6495c993baab7fd7355a441a7453a292c9c1592c26b270f72d77c680f355a",
+  "internal/cli/cli.go": "68e957d5ac282aca46db24d8d6e235e6a9d837588dbd282779a4e6ca8710cea7",
+  "internal/app/session.go": "f9d8b0b63f05ee9b471b37695fcc4bb595e5362fdaa80a11a965ae1879431f73",
+  "internal/session/primary_turn.go": "25fcb93d76d1a212672ad0461fd2d6637d632677433a18f6129ad4f80b04061f",
+  "internal/session/store.go": "ead2d69669006ea85835035bf32e158e3b28a9c46202a415b257b9a3946bbc4d",
+  "internal/quota/types.go": "ddb89d21818bb17153358a99ed70c68b492dceb85a7e7bd530309537c33a7317",
+  "internal/observability/event.go": "acb42e4ce8a94b9ce50326928d5c34c6c99a6f44eba069ccfb4d95ca36a4170f",
+  "internal/opencodebridge/terminal.go": "bd27b0f4d5d141e15307ae7c5440f87d41cbb0c9faa73148f69f751a9aef6732",
+  "go.mod": "d1c486bcfb3a5e1127b4f47de7e62001c768ee744c42b6f96627f6895d026705",
+  "go.sum": "44f145c4f9477395f29442a17757c7de7b24df282e19c7e6ffddb58662e2553c"
+}

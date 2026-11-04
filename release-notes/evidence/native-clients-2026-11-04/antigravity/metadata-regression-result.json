@@ -1,0 +1,31 @@
+{
+  "type": "official_public_cli",
+  "real_inference": true,
+  "duration_seconds": 130.829,
+  "pass": false,
+  "cases": [
+    {
+      "name": "simple_continuation",
+      "pass": false,
+      "seconds": 15.68,
+      "failure": "executor session mapping persistence"
+    },
+    {
+      "name": "code_evidence",
+      "pass": false,
+      "seconds": 22.07,
+      "failure": "executor session mapping persistence"
+    },
+    {
+      "name": "read_denial",
+      "pass": true,
+      "seconds": 88.077549518,
+      "state": "failed",
+      "turns": 1,
+      "no_dag": true
+    }
+  ],
+  "cause": "new Session.SelectionMode=auto paired with empty requested_model violates existing validSelectionMetadata; no answer accepted",
+  "jobs_end_observed_before_utc": "2026-11-04T21:00:39Z",
+  "claimed_economy": false
+}

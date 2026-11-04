@@ -64,6 +64,10 @@ func commandHeaderEnabled(args []string) bool {
 func runCommand(ctx context.Context, a *app.App, args []string) error {
 	platform.DebugLog(a.Err, "cli.command", map[string]string{"command": args[0]})
 	switch args[0] {
+	case "_native-mcp-proxy":
+		return runNativeMCPProxy(ctx, a, args[1:])
+	case "antigravity":
+		return runAntigravity(ctx, a, args[1:])
 	case "admin":
 		return runAdmin(ctx, a, args[1:])
 	case "skills":
@@ -848,6 +852,7 @@ Usage:
   ivoai doctor [--json] [--inventory]
   ivoai update [--dry-run] | update --rollback [--force]
   ivoai update --codex [--rollback]
+  ivoai antigravity run --prompt TEXT [--directory PATH] [--model ID] [--follow-up TEXT]
   ivoai connect [list|chatgpt|claude]
   ivoai connect server [--url URL] [--purpose PURPOSE] [--redundancy-group GROUP] [--priority N] [--enrollment-code CODE|--code-stdin]
   ivoai connect server add <alias> [--url URL] [--purpose PURPOSE] [--redundancy-group GROUP] [--priority N] [--enrollment-code CODE|--code-stdin]

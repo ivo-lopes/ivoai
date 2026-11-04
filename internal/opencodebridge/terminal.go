@@ -41,6 +41,10 @@ func terminalText(value string) string {
 	}, value)
 }
 
+// TerminalText is rendering only; it never changes stored evidence or prompts.
+// Native headless administrative adapters share the existing terminal boundary.
+func TerminalText(value string) string { return terminalText(value) }
+
 func (b *Bridge) terminalRequest(ctx context.Context, method, path string, body any, result any, sessionID, messageID string) error {
 	var input io.Reader
 	if body != nil {

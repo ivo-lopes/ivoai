@@ -321,13 +321,13 @@ func (e Event) Validate() error {
 	if e.SessionID != "" && (len(e.SessionID) != 37 || !strings.HasPrefix(e.SessionID, "sess_") || !safeCanonicalID(e.SessionID, 37)) {
 		return errors.New("invalid observability session ID")
 	}
-	if !safeLabel(e.TaskID, 64) || !safeWorker(e.WorkerID) || !oneOf(e.Provider, "", "codex", "claude", "opencode", "caveman", "headroom", "direct", "graft") || !oneOf(e.RequestedProvider, "", "caveman", "headroom", "direct") || !oneOf(e.ProviderSource, "", "default", "explicit", "migration") || !oneOf(e.Executor, "", "codex", "claude", "opencode") {
+	if !safeLabel(e.TaskID, 64) || !safeWorker(e.WorkerID) || !oneOf(e.Provider, "", "codex", "claude", "opencode", "antigravity", "caveman", "headroom", "direct", "graft") || !oneOf(e.RequestedProvider, "", "caveman", "headroom", "direct") || !oneOf(e.ProviderSource, "", "default", "explicit", "migration") || !oneOf(e.Executor, "", "codex", "claude", "opencode", "antigravity") {
 		return errors.New("invalid observability correlation metadata")
 	}
 	if !safeLabel(e.SourceID, 128) || !safeLabel(e.SourceAlias, 64) || !safeLabel(e.Purpose, 64) || e.SelectedSourceCount < 0 || e.SelectedSourceCount > 8 {
 		return errors.New("invalid knowledge source observability metadata")
 	}
-	if e.Component != "" && !oneOf(string(e.Component), "codex", "claude", "opencode", "memory", "context", "compression", "orchestration", "working_context", "skills", "tools", "code_intelligence") {
+	if e.Component != "" && !oneOf(string(e.Component), "codex", "claude", "opencode", "antigravity", "memory", "context", "compression", "orchestration", "working_context", "skills", "tools", "code_intelligence") {
 		return errors.New("invalid observability component")
 	}
 	if e.Capability != "" && !safeLabel(string(e.Capability), 96) {

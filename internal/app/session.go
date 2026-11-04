@@ -442,13 +442,21 @@ func (a *App) OrchestratorServe(ctx context.Context, id string) error {
 		}
 	}
 	if value.PrimaryTurn != nil {
-		bound, err := a.bindAdaptivePrimaryServer(ctx, state, store, value)
-		if err != nil {
-			return err
-		}
 		identity := value.PrimaryTurn.Identity()
 		server.PrimaryTurnIdentity = &identity
-		server.AuthorizePrimaryTurn = func(checkCtx context.Context) error { _, err := bound.check(checkCtx); return err }
+		if value.PrimaryTurn.Executor == "antigravity" {
+			bound, err := a.bindNativeACPServer(ctx, store, value)
+			if err != nil {
+				return err
+			}
+			server.AuthorizePrimaryTurn = func(checkCtx context.Context) error { _, err := bound.check(checkCtx); return err }
+		} else {
+			bound, err := a.bindAdaptivePrimaryServer(ctx, state, store, value)
+			if err != nil {
+				return err
+			}
+			server.AuthorizePrimaryTurn = func(checkCtx context.Context) error { _, err := bound.check(checkCtx); return err }
+		}
 		server.DAGProtocol = automaticInstructions(cfg.Orchestration.Auto.CheckpointEnabled)
 	}
 	runErr := server.Run(ctx)
