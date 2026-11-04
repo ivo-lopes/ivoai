@@ -300,7 +300,12 @@ jobs:
           verify_root="$RUNNER_TEMP/ivoai-release-verification"
           download_root="$(mktemp -d "$RUNNER_TEMP/ivoai-release-download.XXXXXXXX")"
           trap 'rm -rf -- "$download_root"' EXIT
-          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$GITHUB_REF_NAME" > "$verify_root/draft-api.json"
+          # Tag lookup may return 404 for an unpublished draft. Resolve its
+          # REST database ID from the authenticated release list instead.
+          release_database_id="$(gh api "repos/$GITHUB_REPOSITORY/releases?per_page=100" \
+            --jq ".[] | select(.tag_name == \"${GITHUB_REF_NAME}\" and .draft == true) | .id")"
+          [[ "$release_database_id" =~ ^[0-9]+$ ]]
+          gh api "repos/$GITHUB_REPOSITORY/releases/$release_database_id" > "$verify_root/draft-api.json"
           gh release download "$GITHUB_REF_NAME" --dir "$download_root"
           cmp checksums.txt "$download_root/checksums.txt"
           (
