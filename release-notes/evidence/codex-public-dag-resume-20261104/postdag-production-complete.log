@@ -1,0 +1,9 @@
+--- FAIL: TestAdaptiveClosedReceiptDoesNotPoisonNextTurn (0.04s)
+    --- FAIL: TestAdaptiveClosedReceiptDoesNotPoisonNextTurn/completed_dag (0.02s)
+        adaptive_primary_test.go:194: closed receipt blocked next ordinary turn executor_failure: IVOAI executor failed (executor_failure); partial output was not accepted
+FAIL
+FAIL	github.com/ivo-lopes/ivoai/internal/app	20.943s
+ok  	github.com/ivo-lopes/ivoai/internal/session	1.544s
+ok  	github.com/ivo-lopes/ivoai/internal/core	0.002s
+ok  	github.com/ivo-lopes/ivoai/internal/opencodebridge	4.821s
+FAIL
