@@ -155,7 +155,7 @@ func (a *App) admitAdaptivePrimary(ctx context.Context, cfg config.Config, state
 		return nil, false, nil
 	}
 	v, err := store.Get(id)
-	if err != nil || !adaptivePrimarySession(v, request, cwd, v.KnowledgeScopeID) || !localMetadataNoCheckpoint(store, id) {
+	if err != nil {
 		return nil, false, nil
 	}
 	scope, err := conversationScopeID(cwd, cfg, selectors)
@@ -193,6 +193,21 @@ func (a *App) admitAdaptivePrimary(ctx context.Context, cfg config.Config, state
 	if v.PrimaryTurn != nil && (v.PrimaryTurn.ConfigDigest != r.ConfigDigest || v.PrimaryTurn.StateDigest != r.StateDigest || v.PrimaryTurn.ScopeDigest != r.ScopeDigest) {
 		return nil, false, errors.New("ADAPTIVE_PRIMARY_CONTINUITY_CHANGED")
 	}
+	if v.PrimaryTurn != nil && v.PrimaryTurn.HistoryDigest != adaptiveHistoryDigest(v.CompletedPrimaryPlan) {
+		return nil, false, errors.New("ADAPTIVE_PRIMARY_HISTORY_CHANGED")
+	}
+	initial := v
+	v, err = prepareAdaptiveCompletedPlan(ctx, store, v)
+	if err != nil {
+		return nil, false, err
+	}
+	if !adaptivePrimarySession(v, request, cwd, scope) || !adaptiveCheckpointSafe(ctx, store, v) {
+		if initial.PrimaryTurn != nil && initial.PrimaryTurn.PlanID != "" && v.PlanID == "" {
+			return nil, false, errors.New("ADAPTIVE_PRIMARY_DAG_CONTINUITY_DENIED")
+		}
+		return nil, false, nil
+	}
+	r.HistoryDigest = adaptiveHistoryDigest(v.CompletedPrimaryPlan)
 	if err := r.Validate(); err != nil {
 		return nil, false, err
 	}
@@ -200,10 +215,12 @@ func (a *App) admitAdaptivePrimary(ctx context.Context, cfg config.Config, state
 	// The Store update is admission. Errors after it must return a non-replayable
 	// prepared turn; no CLI fallback or second preparation may run the operation.
 	_, err = store.Update(id, func(latest *session.Session) error {
-		samePrior := latest.PrimaryTurn == nil && v.PrimaryTurn == nil || latest.PrimaryTurn != nil && v.PrimaryTurn != nil && *latest.PrimaryTurn == *v.PrimaryTurn
-		if !samePrior || !adaptivePrimarySession(*latest, request, cwd, scope) || !localMetadataNoCheckpoint(store, id) {
+		if evidence.Digest(*latest) != evidence.Digest(initial) || !adaptivePrimarySession(v, request, cwd, scope) || !adaptiveCheckpointSafe(ctx, store, v) {
 			return errors.New("ADAPTIVE_PRIMARY_DENIED")
 		}
+		// The immutable snapshot is already durable. Only now retire the active
+		// plan/worker/decision pointers and issue the new read-only capability.
+		*latest = v
 		latest.PrimaryTurn = &r
 		latest.CurrentPhase = string(core.PrimaryReadOnly)
 		return nil
@@ -221,10 +238,10 @@ func (a *App) admitAdaptivePrimary(ctx context.Context, cfg config.Config, state
 // continue a read-only conversation. DAG/checkpoint recovery stays separate.
 func adaptivePrimarySession(v session.Session, request core.ExecutorRequest, cwd, scope string) bool {
 	if v.PrimaryTurn == nil {
-		return request.ExecutorSessionID == "" && localMetadataSession(v, request, cwd, scope)
+		return v.CompletedPrimaryPlan == nil && request.ExecutorSessionID == "" && localMetadataSession(v, request, cwd, scope)
 	}
 	r := v.PrimaryTurn
-	if r.Validate() != nil || r.Mode != core.PrimaryClosed || r.Executor != "codex" || r.PlanID != "" || r.FrontendSessionID != request.FrontendSessionID || r.TurnID == v.ObservationTurnID || r.AttemptID == v.ObservationAttemptID {
+	if r.Validate() != nil || r.Mode != core.PrimaryClosed || r.Executor != "codex" || r.PlanID != "" && (v.CompletedPrimaryPlan == nil || v.CompletedPrimaryPlan.ReceiptID != r.ID || v.CompletedPrimaryPlan.PlanID != r.PlanID) || r.FrontendSessionID != request.FrontendSessionID || r.TurnID == v.ObservationTurnID || r.AttemptID == v.ObservationAttemptID {
 		return false
 	}
 	if v.State != session.StateRunning || v.Mode != session.ModeAuto || !v.Auto || v.Coordinator != "native" || v.ProviderExecution || v.Frontend != "codex" || v.CurrentPrimary != "codex" || v.PrimaryExecutor != "codex" || v.InitialPlanner != "codex" || v.WorkingDirectory != cwd || v.KnowledgeScopeID != scope {
@@ -292,6 +309,14 @@ func (t *adaptivePrimaryTurn) check(ctx context.Context) (session.Session, error
 	if err != nil || !t.boundTo(v) {
 		return deny()
 	}
+	if v.CompletedPrimaryPlan != nil {
+		if _, err := t.store.ReadCompletedPrimaryPlan(ctx, t.id, *v.CompletedPrimaryPlan); err != nil {
+			return deny()
+		}
+		if v.PrimaryTurn.Mode == core.PrimaryReadOnly && !adaptiveCheckpointSafe(ctx, t.store, v) {
+			return deny()
+		}
+	}
 	cfg, err := t.app.Store.Load()
 	if err != nil || evidence.Digest(cfg) != t.receipt.ConfigDigest {
 		return deny()
@@ -324,7 +349,7 @@ func (t *adaptivePrimaryTurn) check(ctx context.Context) (session.Session, error
 // and runtime I/O checks stay outside that lock; late metadata cannot attach to
 // a replacement or consumed receipt while those checks complete.
 func (t *adaptivePrimaryTurn) boundTo(v session.Session) bool {
-	if !session.PrimaryTurnActive(v) || v.WorkingDirectory != t.cwd || v.CodexPath != t.runtime.executable || v.CodexSHA256 != t.runtime.sha {
+	if !session.PrimaryTurnActive(v) || v.WorkingDirectory != t.cwd || v.CodexPath != t.runtime.executable || v.CodexSHA256 != t.runtime.sha || adaptiveHistoryDigest(v.CompletedPrimaryPlan) != t.receipt.HistoryDigest {
 		return false
 	}
 	r := *v.PrimaryTurn
@@ -398,7 +423,7 @@ func (t *adaptivePrimaryTurn) validate(ctx context.Context) error {
 			if err := validateAutoDAG(*latest); err != nil {
 				return err
 			}
-		} else if latest.PrimaryTurn.Mode != core.PrimaryReadOnly || latest.CurrentPhase != string(core.PrimaryReadOnly) || latest.PlanID != "" || len(latest.Tasks) != 0 || len(latest.Workers) != 0 || len(latest.Decisions) != 0 || !localMetadataNoCheckpoint(t.store, t.id) {
+		} else if latest.PrimaryTurn.Mode != core.PrimaryReadOnly || latest.CurrentPhase != string(core.PrimaryReadOnly) || latest.PlanID != "" || len(latest.Tasks) != 0 || len(latest.Workers) != 0 || len(latest.Decisions) != 0 || !adaptiveCheckpointSafe(ctx, t.store, *latest) {
 			return &core.ExecutorFailure{Class: "ADAPTIVE_PRIMARY_INCOMPLETE", ExitCode: 1}
 		}
 		// Consume the receipt before the final text reaches a possibly slow
