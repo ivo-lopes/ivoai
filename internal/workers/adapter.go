@@ -450,6 +450,14 @@ func workerArgs(request Request) ([]string, string, error) {
 	if request.Executor == "codex" {
 		file := filepath.Join(request.Runtime, "codex-result-"+requestID()+".txt")
 		args := []string{"-c", "developer_instructions=" + strconv.Quote(instructions)}
+		if request.Access != nil {
+			// Managed workers inherit the host's projected toolchain environment.
+			// Login startup and personal shell snapshots can replace that PATH
+			// or import aliases/functions outside the task's controlled context.
+			// These official client settings grant no additional filesystem,
+			// network, execution or approval capability.
+			args = append(args, "-c", "allow_login_shell=false", "-c", "features.shell_snapshot=false")
+		}
 		args = append(args, codexresolver.ProjectTrustArgs(request.Directory)...)
 		if request.Effort != "" {
 			args = append(args, "-c", "model_reasoning_effort="+strconv.Quote(request.Effort))
