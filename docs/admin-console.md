@@ -74,9 +74,15 @@ contexts; it does not undo changes already committed by the underlying service.
 
 Audit includes only action, verdict and hashed actor. Inputs, command output,
 URLs, OAuth codes, cookies and secrets are excluded. Output is bounded and
-redacted. When output is truncated, the result explicitly warns that this channel
-did not retain the full output. Do not repeat a mutation to recover missing text;
-inspect state and available records. This warning is not an exact-recovery claim. Explicit enrollment/access creation can show its newly issued one-time
+redacted. Results larger than the 256 KiB display limit offer an explicit download
+of the complete **sanitized projection**, retained for 15 minutes in the existing
+ArtifactStore. The original OAuth credential/client/grant and configured resource
+must remain authorized; a download URL alone grants no access. Logout/revocation
+blocks downloads. No raw output, credential or one-time code is archived. Capture
+is limited to 16 MiB, with 64 MiB per credential and 256 MiB per instance; exhausted
+storage or incomplete capture is explicitly reported without a complete reference.
+Expired artifacts are inaccessible and collected on subsequent retention. Do not
+repeat a mutation to recover missing text; inspect state and available records. Explicit enrollment/access creation can show its newly issued one-time
 code separately; keep it private and close its result when finished. The private
 operation receipts contain status/time/action only. Receipt capacity is bounded
 at 10000 records; reaching it fails closed instead of deleting replay history.

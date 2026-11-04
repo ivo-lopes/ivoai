@@ -26,6 +26,7 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/app"
 	"github.com/ivo-lopes/ivoai/internal/config"
 	"github.com/ivo-lopes/ivoai/internal/webauth"
+	"github.com/ivo-lopes/ivoai/internal/workingcontext"
 )
 
 const ScopeRead = "admin:read"
@@ -58,6 +59,7 @@ type Server struct {
 	listenerOrigin, basePath             string
 	trustedProxies                       []*net.IPNet
 	dispatch                             Dispatch
+	outputs                              workingcontext.ArtifactStore
 	actionMu                             sync.Mutex
 	confirmations                        map[string]confirmation
 	csrfSecret                           string
@@ -167,6 +169,10 @@ func New(opts Options) (*Server, error) {
 	cookieSum := sha256.Sum256([]byte(origin + basePath + instance))
 	cookie := "ivoai_admin_" + hex.EncodeToString(cookieSum[:8])
 	s := &Server{app: opts.App, auth: store, origin: origin, listenerOrigin: opts.Origin, basePath: basePath, trustedProxies: proxies, dispatch: opts.Dispatch, confirmations: map[string]confirmation{}, instance: instance, cookie: cookie, flowCookie: cookie + "_flow", paths: paths, configRoot: cfgRoot, stateRoot: stateRoot, slots: make(chan struct{}, 8), audit: opts.Audit, flows: map[string]flow{}}
+	s.outputs, err = s.newOutputStore()
+	if err != nil {
+		return nil, errors.New("admin output store unavailable")
+	}
 	s.csrfSecret, err = randomString()
 	if err != nil {
 		return nil, errors.New("admin entropy unavailable")
@@ -246,6 +252,7 @@ func (s *Server) Handler() http.Handler {
 	})
 	mux.HandleFunc("GET /api/admin/v1/actions", s.protected("actions", s.actions))
 	mux.HandleFunc("GET /api/admin/v1/csrf", s.protected("csrf", s.csrf))
+	mux.HandleFunc("GET /api/admin/v1/outputs/{id}", s.downloadOutput)
 	mux.HandleFunc("POST /api/admin/v1/actions/{id}", s.action)
 	mux.HandleFunc("GET /api/admin/v1/overview", s.protected("overview", s.overview))
 	mux.HandleFunc("GET /api/admin/v1/sessions", s.protected("sessions", s.sessions))

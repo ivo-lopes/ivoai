@@ -40,6 +40,7 @@ for (const prefix of ['', '/ivoai/admin']) {
   let committed = 0;
   let previewCount = 0;
   let connectionLoss = false;
+  let outputDownloads = 0;
   let pending;
   const methods = [];
   const errors = [];
@@ -61,7 +62,13 @@ for (const prefix of ['', '/ivoai/admin']) {
       const reply = (status, value) => res.writeHead(status).end(JSON.stringify(value));
       if (path === '/api/admin/v1/meta') { reply(200, { schema_version: 1, authentication: 'oauth_pkce_cookie', access: 'local_owner_read_only', base_path: prefix }); return; }
       if (!authorized) { reply(401, { error: 'unauthorized' }); return; }
-      if (path === '/auth/logout' && req.method === 'POST') { authorized = false; res.writeHead(204).end(); return; }
+      if (path === '/api/admin/v1/outputs/artifact_0123456789abcdef0123456789abcdef' && req.method === 'GET') {
+        outputDownloads += 1;
+        res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+        res.setHeader('Content-Disposition', 'attachment; filename="ivoai-administrative-output.txt"');
+        res.end('SANITIZED COMPLETE FIXTURE OUTPUT'); return;
+      }
+      if (path === '/auth/logout'  && req.method === 'POST') { authorized = false; res.writeHead(204).end(); return; }
       const snapshots = {
         overview: { schema_version: 1, version: 'fixture', read_only: !manage, generated_at: generated },
         sessions: { sessions: [], partial: false }, components: { components: [], partial: false }, connections: { connections: [], partial: false },
@@ -93,6 +100,7 @@ for (const prefix of ['', '/ivoai/admin']) {
           if (connectionLoss) { res.destroy(); return; }
         }
         const value = { action_id: action.id, status: 'completed', request_id: payload.request_id, truncated: action.kind !== 'mutation', output: action.kind === 'mutation' ? 'Configuração atualizada.' : '<img src=x onerror="window.fixtureInjected=true">\n' + 'Linha de resultado administrativo.\n'.repeat(100) };
+        if (action.kind === 'read') value.output_ref = { sanitized: true, download_url: `${prefix}/api/admin/v1/outputs/artifact_0123456789abcdef0123456789abcdef`, result: { artifact: { id: 'artifact_0123456789abcdef0123456789abcdef', complete: true, expires_at: new Date(Date.now() + 900000).toISOString() } } };
         if (action.kind === 'mutation') value.one_time_code = 'DISPOSABLE_RESULT_CODE';
         if (action.kind === 'native_handoff') value.status = 'handoff';
         if (action.kind === 'information') value.status = 'information';
@@ -130,6 +138,13 @@ for (const prefix of ['', '/ivoai/admin']) {
     assert.equal(await page.evaluate(() => window.fixtureInjected), undefined);
     assert.match(await page.locator('.action-output-warning').innerText(), /Saída parcial/);
     assert.match(await page.locator('.action-output-warning').innerText(), /Não repita uma alteração/);
+    const downloadPromise = page.waitForEvent('download');
+    await page.getByRole('link', { name: 'Baixar saída integral sanitizada', exact: true }).click();
+    const download = await downloadPromise;
+    assert.equal(download.suggestedFilename(), 'ivoai-administrative-output.txt');
+    const saved = join(home, 'sanitized-output.txt'); await download.saveAs(saved);
+    assert.equal(await readFile(saved, 'utf8'), 'SANITIZED COMPLETE FIXTURE OUTPUT');
+    assert.equal(outputDownloads, 1); assert.equal(committed, 0);
     await axe('scrollable read result');
     const resultText = page.locator('#action-result-output pre');
     assert.equal(await resultText.evaluate((element) => element.scrollHeight > element.clientHeight), true);

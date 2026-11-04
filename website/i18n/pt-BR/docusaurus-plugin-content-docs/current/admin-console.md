@@ -107,7 +107,19 @@ Context em armazenamento determinístico. A prova no browser e a matriz final
 pertencem à composição com a UI. Cobertura do catálogo não comprova execução de
 todas as operações, inferência oficial, corpus Qdrant ou sincronização em produção.
 
-Se a saída atingir o limite, o resultado informa explicitamente que está parcial
-e que esse canal não reteve o conteúdo completo. Não repita uma alteração para
-recuperar texto: consulte o estado e os registros disponíveis. O aviso não é
-alegação de recuperação exata ou de armazenamento completo da saída.
+Saídas maiores que o limite visual de 256 KiB oferecem download explícito da
+**projeção integral sanitizada**, retida por 15 minutos no ArtifactStore existente.
+A credencial, cliente/grant OAuth e recurso originais precisam continuar
+autorizados; conhecer a URL não concede acesso. Logout/revogação bloqueiam o
+download. Saída bruta, credenciais e códigos de uso único não são arquivados.
+A captura tem limite de 16 MiB, com quota de 64 MiB por credencial e 256 MiB por
+instância. Captura incompleta ou falha de armazenamento recebe aviso explícito,
+sem referência de conteúdo completo. Artefatos expirados ficam inacessíveis e são
+coletados na próxima retenção. Não repita uma alteração para recuperar texto;
+consulte o estado e os registros disponíveis.
+
+O gate opt-in `IVOAI_TEST_NGINX=/caminho/absoluto/nginx go test ./internal/admin
+-run TestRealNginxAdministrative -v` executa Nginx real com configuração,
+certificado, PID e temporários privados em loopback. Valida TLS, prefixo, OAuth,
+CSRF, alteração de configuração pelo App, download e recusas. Não usa nem
+substitui configuração pessoal do Nginx e não certifica domínio de produção.

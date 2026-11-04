@@ -326,7 +326,8 @@ func (s *Server) action(w http.ResponseWriter, r *http.Request) {
 		response(w, map[string]any{"action_id": a.ID, "status": "completed", "output": snapshot, "request_id": in.RequestID})
 		return
 	}
-	out := &boundedOutput{limit: maxResponseBytes / 2}
+	out := &boundedOutput{limit: maxAdministrativeOutputBytes}
+	privateOutputValues, initialPrivateError := s.outputSecrets(r)
 	s.emit(a.ID, "started", p.ClientID)
 	operationContext, stopOperation := context.WithCancel(r.Context())
 	watchDone := make(chan struct{})
@@ -359,9 +360,50 @@ func (s *Server) action(w http.ResponseWriter, r *http.Request) {
 	if r.Context().Err() != nil || operationCancelled {
 		status = "cancelled"
 	}
-	result := map[string]any{"action_id": a.ID, "status": status, "request_id": in.RequestID, "output": sanitizeOutput(out.String(), in.Input), "truncated": out.truncated}
-	if a.sensitiveResult && err == nil { // Only explicitly requested one-time codes, separate from logs/output.
-		if secret := oneTimeCode(out.String()); secret != "" {
+	currentPrivateValues, currentPrivateError := s.outputSecrets(r)
+	privateOutputValues = append(privateOutputValues, currentPrivateValues...)
+	rawOutput := out.String()
+	sanitizationInput := rawOutput
+	if out.truncated {
+		// Incomplete captures are never archived. Inspect enough lookahead to redact
+		// any known credential starting within the visible prefix, without spending
+		// unbounded sanitization work on output that cannot be recovered completely.
+		lookahead := 8192
+		for _, value := range privateOutputValues {
+			if len(value) > lookahead {
+				lookahead = len(value)
+			}
+		}
+		for _, value := range in.Input {
+			if len(value) > lookahead {
+				lookahead = len(value)
+			}
+		}
+		if budget := maxResponseBytes/2 + lookahead; len(sanitizationInput) > budget {
+			sanitizationInput = sanitizationInput[:budget]
+		}
+	}
+	sanitized := sanitizedAdministrativeOutput(sanitizationInput, in.Input, privateOutputValues)
+	redactionAvailable := initialPrivateError == nil && currentPrivateError == nil
+	if !redactionAvailable {
+		sanitized = "Administrative output withheld: private redaction context unavailable. Inspect current state without repeating the operation."
+	}
+	preview := administrativeOutputPreview(sanitized)
+	truncated := out.truncated || len(preview) < len(sanitized)
+	result := map[string]any{"action_id": a.ID, "status": status, "request_id": in.RequestID, "output": preview, "truncated": truncated}
+	if truncated {
+		if !out.truncated && redactionAvailable {
+			if ref, retainErr := s.retainOutput(r.Context(), r, a.ID, sanitized); retainErr == nil {
+				result["output_ref"] = ref
+			} else {
+				result["output_warning"] = "Sanitized output could not be retained (quota, storage or authorization); inspect current state without repeating the operation."
+			}
+		} else {
+			result["output_warning"] = "Capture exceeded the 16 MiB safety limit; complete output was not retained. Inspect current state without repeating the operation."
+		}
+	}
+	if a.sensitiveResult && err == nil && redactionAvailable { // Only explicitly requested one-time codes, separate from logs/output.
+		if secret := oneTimeCode(rawOutput); secret != "" {
 			result["one_time_code"] = secret
 			result["one_time_code_warning"] = "Shown once; keep private. It is never written to the audit log."
 		}
@@ -474,8 +516,10 @@ func oneTimeCode(out string) string {
 	return ""
 }
 func sanitizeOutput(out string, input map[string]string) string {
-	out = platform.Redact(out)
-	out = sensitiveLine.ReplaceAllString(out, "[REDACTED]")
+	if potentiallySensitiveOutput(out) {
+		out = platform.Redact(out)
+		out = sensitiveLine.ReplaceAllString(out, "[REDACTED]")
+	}
 	for name, value := range input {
 		if len(value) > 0 && (name == "secret" || name == "code" || name == "token" || name == "value" && len(value) > 24) {
 			out = strings.ReplaceAll(out, value, "[REDACTED]")
@@ -606,4 +650,22 @@ func (s *Server) lockAdministration() (func(), error) {
 		return nil, err
 	}
 	return func() { _ = unix.Flock(fd, unix.LOCK_UN); _ = unix.Close(fd) }, nil
+}
+
+// All current redaction patterns contain at least one of these ASCII markers.
+// Avoid expensive case-folding regex machines for long, plain compiler lines.
+// Non-ASCII always takes the original regex path, preserving Unicode folding.
+func potentiallySensitiveOutput(out string) bool {
+	for i := 0; i < len(out); i++ {
+		if out[i] >= 0x80 {
+			return true
+		}
+	}
+	lower := strings.ToLower(out)
+	for _, marker := range []string{"authorization", "cookie", "api", "secret", "access", "refresh", "oauth", "id", "client", "enrollment", "activation", "bearer", "sk-", "ivo", "plane_api_"} {
+		if strings.Contains(lower, marker) {
+			return true
+		}
+	}
+	return false
 }
