@@ -70,7 +70,7 @@ func (r *nodeOnlyRunner) Run(_ context.Context, path string, args []string, opti
 	if r.fail {
 		return platform.Result{Stderr: "node: libatomic.so.1: private-error-body", ExitCode: 127}, errors.New("private-error-body")
 	}
-	return platform.Result{Stdout: "v26.11.1\n"}, nil
+	return platform.Result{Stdout: "v26.13.0\n"}, nil
 }
 func TestCodeIntelligenceDoctorChecksIntegrityAndOnlyPrivateNode(t *testing.T) {
 	root := t.TempDir()

@@ -1,0 +1,5 @@
+=== RUN   TestLiveRufloProfileInstallation
+    ruflo_live_test.go:93: real locked Ruflo 3.71.1 installed, promoted and admitted idempotently; no inference
+--- PASS: TestLiveRufloProfileInstallation (38.51s)
+PASS
+ok  	github.com/ivo-lopes/ivoai/internal/components	38.512s

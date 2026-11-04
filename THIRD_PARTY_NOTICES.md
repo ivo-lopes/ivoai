@@ -14,8 +14,8 @@ consult the linked project for the complete text.
 | OpenCode | 1.19.0 (`733b2c627e5aec39cb33cc22373bdce33053ef2c`) | MIT | Legacy managed frontend; private `1.19.0-ivoai.3` adds reviewed local-plugin/offline-install controls; upstream source and MIT notices remain intact | <https://github.com/anomalyco/opencode/releases/tag/v1.19.0> |
 | Headroom | 0.40.0 | Apache-2.0 | Optional local context-optimization proxy/wrapper | <https://github.com/headroomlabs-ai/headroom> |
 | ai-memory | 2.6.3 | MIT | Persistent cross-session/cross-agent operational memory and hooks | <https://github.com/akitaonrails/ai-memory> |
-| Ruflo | 3.56.5 | MIT | Workflow, skills and temporary orchestration state | <https://github.com/ruvnet/ruflo> |
-| Node.js | 26.11.1 | MIT | Isolated runtime for the managed Ruflo installation | <https://nodejs.org/> |
+| Ruflo | 3.71.1 | MIT | Workflow, skills and temporary orchestration state | <https://github.com/ruvnet/ruflo> |
+| Node.js | 26.13.0 | MIT | Isolated runtime for the managed Ruflo installation | <https://nodejs.org/> |
 | uv | 0.13.0 | Apache-2.0 OR MIT | Isolated Python/tool runtime used to install Headroom | <https://github.com/astral-sh/uv> |
 | CPython | 3.14.8 | Python Software Foundation License 2.0 | Managed interpreter for Headroom | <https://www.python.org/downloads/release/python-3148/> |
 | Docker Compose | 5.6.0 | Apache-2.0 | Container dependency orchestration for the server | <https://github.com/docker/compose> |
@@ -28,8 +28,8 @@ consult the linked project for the complete text.
 | golang.org/x/sys | 0.49.0 | BSD-3-Clause | Indirect operating-system support linked into ivoai | <https://pkg.go.dev/golang.org/x/sys> |
 | Docusaurus | 3.10.2 | MIT | Build-time generator for the embedded product documentation portal | <https://docusaurus.io/> |
 | docusaurus-search-local | 0.55.3 | MIT | Build-time local/offline search index and browser search UI | <https://github.com/easyops-cn/docusaurus-search-local> |
-| Mermaid layout ELK | 1.0.1 | MIT | Build-time diagram layout support for Docusaurus | <https://github.com/mermaid-js/mermaid> |
-| React / React DOM | 19.3.0 | MIT | Documentation portal browser runtime bundled into the static site | <https://react.dev/> |
+| Mermaid layout ELK | 1.0.2 | MIT | Build-time diagram layout support for Docusaurus | <https://github.com/mermaid-js/mermaid> |
+| React / React DOM | 19.3.1 | MIT | Documentation portal browser runtime bundled into the static site | <https://react.dev/> |
 | Bpmf Huninn (Fontsource package) | 5.3.1 | SIL OFL-1.1 | Self-hosted regular Latin webfont used only for the IVOAI visual wordmark | <https://fonts.google.com/specimen/Bpmf+Huninn> |
 
 Claude Code is not represented as open-source software. ivoai downloads the official external binary and does not redistribute or modify its credential material. Use is governed by [Anthropic's legal and compliance guidance](https://code.claude.com/docs/en/legal-and-compliance), including Consumer Terms for Free/Pro/Max users and Commercial Terms for Team/Enterprise/API users.
@@ -66,7 +66,7 @@ Upstream installers, converters, hooks and build tools are not included or run.
 ## Managed Graft
 
 Graft 0.21.1, revision `fe30ead39d5e6f0c921018d364da2bdbc9d4b3ad`,
-is incorporated as the MIT-licensed managed library `0.21.1-ivoai.1`.
+is incorporated as the MIT-licensed managed library `0.21.1-ivoai.2`.
 Its archive preserves upstream LICENSE, per-package notices, dependency integrity
 inventories, build inputs and reviewed patches. The whole archive is not uniformly
 MIT: its 16 retained WASM grammars include MIT, Apache-2.0 and CC0-1.0 components.
@@ -81,3 +81,7 @@ those binaries. Native bindings are built from locked npm sources using reviewed
 network-isolated compilation. Unused grammars/editor queries and the unused
 `js-yaml` CLI with its vulnerable `argparse`/`sprintf-js` chain are excluded.
 The preserved build lock and the shipped runtime inventory remain distinct.
+
+## Reviewed deepmerge mitigation
+
+The documentation resolves deepmerge4.3.1 to the local MIT-licensed `@ivoai/deepmerge-safe@4.3.1-ivoai.1` fork for GHSA-gcqx-w48m-w2h4. This is not an upstream release. Original license, exact source/patch/archive integrity and reproducible build instructions are preserved in [patches/deepmerge](patches/deepmerge/README.md). Both CJS and UMD artifacts reject unsafe destination prototype writes; tests preserve the failing original controls. No advisory ignore is used.

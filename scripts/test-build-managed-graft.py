@@ -36,7 +36,7 @@ class GraftBuildTests(unittest.TestCase):
         import subprocess
         probe = ROOT/"patches/graft/graft-runtime"
         ok = subprocess.run(["/bin/sh", str(probe), "--version"], capture_output=True, text=True)
-        self.assertEqual((ok.returncode, ok.stdout), (0, "0.21.1-ivoai.1\n"))
+        self.assertEqual((ok.returncode, ok.stdout), (0, "0.21.1-ivoai.2\n"))
         for args in ([], ["init"], ["--version", "extra"], ["mcp"]):
             result = subprocess.run(["/bin/sh", str(probe), *args], capture_output=True, text=True)
             self.assertEqual((result.returncode, result.stdout, result.stderr), (2, "", ""))

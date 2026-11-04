@@ -1,0 +1,32 @@
+RUFLO_ZOD_CONSUMER=NOT_RUN (provide IVOAI_ZOD_SECURITY_VALIDATOR from reviewed isolated prefix)
+✔ root ESM: reject oversized constrained arrays/sets before any element or outer refinement (18.638386ms)
+✔ root ESM: nested error paths, contextual error maps and invalid types remain V3 (1.973133ms)
+✔ root ESM: admitted outputs, defaults, transforms, refinements and minima retain semantics (3.984295ms)
+✔ root ESM: nonempty without an upper bound intentionally remains unbounded (0.926732ms)
+✔ V3 ESM: reject oversized constrained arrays/sets before any element or outer refinement (9.375799ms)
+✔ V3 ESM: nested error paths, contextual error maps and invalid types remain V3 (0.386016ms)
+✔ V3 ESM: admitted outputs, defaults, transforms, refinements and minima retain semantics (1.176049ms)
+✔ V3 ESM: nonempty without an upper bound intentionally remains unbounded (1.10842ms)
+✔ root CJS: reject oversized constrained arrays/sets before any element or outer refinement (13.923848ms)
+✔ root CJS: nested error paths, contextual error maps and invalid types remain V3 (1.503557ms)
+✔ root CJS: admitted outputs, defaults, transforms, refinements and minima retain semantics (3.666718ms)
+✔ root CJS: nonempty without an upper bound intentionally remains unbounded (1.466847ms)
+✔ V3 CJS: reject oversized constrained arrays/sets before any element or outer refinement (11.208231ms)
+✔ V3 CJS: nested error paths, contextual error maps and invalid types remain V3 (0.350507ms)
+✔ V3 CJS: admitted outputs, defaults, transforms, refinements and minima retain semantics (0.977511ms)
+✔ V3 CJS: nonempty without an upper bound intentionally remains unbounded (0.980491ms)
+✔ published V4 exports retain the upstream fix for arrays, maps and sets (72.589104ms)
+✔ fork identity and license are explicit; entry points share V3 constructors (9.0244ms)
+✔ published mini aliases retain string parsing in ESM and CJS (11.006654ms)
+✔ published compile entry retains its upstream side-effect-only export contract (0.620015ms)
+✔ published locale entry points retain English error maps in ESM and CJS (1.374118ms)
+✔ published core retains its direct parser and string constructor in ESM and CJS (2.375729ms)
+✔ root/V3/V4/mini declarations type-check for ESM and CJS consumers (1095.846633ms)
+ℹ tests 23
+ℹ suites 0
+ℹ pass 23
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1421.249553

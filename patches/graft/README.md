@@ -6,13 +6,13 @@ The source tar SHA-256 is
 `d39598390324ad0076a88ab593b63ad2ba352370ea07c073e31f11327979f8e1`;
 the npm lock SHA-256 is
 `c05064ea18ed1b538e27cc788f1d6ea2cae00b2c00c79ef552fc1bb4c54fd5f5`.
-The managed artifact identity is `0.21.1-ivoai.1`. No upstream tag is moved.
+The managed artifact identity is `0.21.1-ivoai.2`. No upstream tag is moved.
 
 Run `scripts/build-managed-graft.sh OUTPUT_DIRECTORY` on Linux amd64 or arm64.
 It requires bubblewrap, Python 3, curl, GNU tar/patch, binutils, make and a C++20 compiler.
 Release and CI builds select the native GCC 12 toolchain with
 `GRAFT_GCC_MAJOR=12`, installed only in ephemeral runners.
-The pinned Node 26.11.1 distribution provides both the runtime and build headers.
+The pinned Node 26.13.0 distribution provides both the runtime and build headers.
 The runtime is an external managed component; it is not duplicated in this tar.
 An amd64 build uses `-march=x86-64 -mtune=generic -mno-avx -mno-avx2`;
 an arm64 build uses `-march=armv8-a`. Cross compilation is not supported.
@@ -21,7 +21,7 @@ To use already verified downloads and the npm content cache without a network:
 
 ```sh
 GRAFT_SOURCE_ARCHIVE=/cache/upstream.tar.gz \
-GRAFT_NODE_ARCHIVE=/cache/node-v26.11.1-linux-x64.tar.gz \
+GRAFT_NODE_ARCHIVE=/cache/node-v26.13.0-linux-x64.tar.gz \
 GRAFT_NPM_CACHE=/cache/npm-cache GRAFT_OFFLINE=1 \
   scripts/build-managed-graft.sh /cache/artifacts
 ```

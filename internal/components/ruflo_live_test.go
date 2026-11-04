@@ -31,9 +31,9 @@ func TestLiveRufloProfileInstallation(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := "15fc043a51a5783f2f4b634561091658f5a7f0e3db03f997dca3a8033a33e45b"
+	want := "5848553868b402d3fabb5b09270649977780a390f832155721025a08b5104455"
 	if runtime.GOARCH == "arm64" {
-		want = "170454fb022f5e9b5f6cc76c25fa32ef5100895be44eb04e92f9780591491bbf"
+		want = "439e9c438acdf6a6ffe47418da709153d66c4bed812e30a473faacb107dd2791"
 	}
 	digest := sha256.Sum256(body)
 	if hex.EncodeToString(digest[:]) != want {
