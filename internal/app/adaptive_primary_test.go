@@ -118,6 +118,38 @@ func adaptiveBridgePath(t *testing.T, f *localMetadataFixture, base core.Executo
 	return b, results
 }
 
+func TestAdaptivePrimaryDurableClaimStorageFailureDoesNotExecute(t *testing.T) {
+	f := newAdaptiveFixture(t)
+	outside := t.TempDir()
+	if err := os.Symlink(outside, filepath.Join(f.store.Root, "request-claims")); err != nil {
+		t.Fatal(err)
+	}
+	var calls, alternate atomic.Int32
+	base := turnRunnerFunc(func(context.Context, core.ExecutorRequest, func(string) error) (core.ExecutorResult, error) {
+		calls.Add(1)
+		return core.ExecutorResult{}, nil
+	})
+	b, _ := adaptiveBridge(t, f, base, func(o *opencodebridge.Options) {
+		o.ClaimRequest = func(frontend, message string) (bool, error) {
+			return f.store.ClaimFrontendRequest(context.Background(), f.id, frontend, message)
+		}
+		o.SelectAlternate = func(context.Context, string, []string) (string, error) {
+			alternate.Add(1)
+			return "claude", nil
+		}
+	})
+	for range 2 {
+		status, _ := metadataHTTP(t, b, []map[string]string{{"role": "user", "content": "Explain the authentication code"}})
+		if status == http.StatusOK || calls.Load() != 0 || alternate.Load() != 0 {
+			t.Fatal("durable claim failure dispatched or fell back")
+		}
+	}
+	entries, err := os.ReadDir(outside)
+	if err != nil || len(entries) != 0 {
+		t.Fatal("failed claim followed an untrusted path", err)
+	}
+}
+
 func TestAdaptivePrimaryPreparationFailureDoesNotExecuteOrReplay(t *testing.T) {
 	f := newAdaptiveFixture(t)
 	parent := filepath.Join(t.TempDir(), "not-a-directory")

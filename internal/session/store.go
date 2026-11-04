@@ -1,6 +1,7 @@
 package session
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
@@ -95,13 +96,18 @@ func (s Store) Update(id string, mutate func(*Session) error) (Session, error) {
 			return err
 		}
 		journalVersion := value.RequestJournalVersion
+		historyDenied := value.AdaptiveHistoryDenied
 		if err := mutate(&value); err != nil {
 			return err
+		}
+		if historyDenied && !value.AdaptiveHistoryDenied {
+			return errors.New("adaptive history taint downgrade refused")
 		}
 		if journalVersion == 1 && value.RequestJournalVersion != 1 {
 			return errors.New("request journal downgrade refused")
 		}
 		value.UpdatedAt = time.Now().UTC()
+		value.AdaptiveHistoryDenied = value.AdaptiveHistoryDenied || deniedHistoryProjection(value)
 		if err := validate(value); err != nil {
 			return err
 		}
@@ -217,6 +223,9 @@ func (s Store) CleanupRuntime(id string) error {
 }
 
 func (s Store) write(value Session) error {
+	if deniedHistoryProjection(value) {
+		value.AdaptiveHistoryDenied = true
+	}
 	if filepath.Dir(s.path(value.SessionID)) == s.journalDir() {
 		value.RequestJournalVersion = 1
 	}
@@ -228,6 +237,11 @@ func (s Store) write(value Session) error {
 	}
 	if err := validate(value); err != nil {
 		return err
+	}
+	if value.AdaptiveHistoryDenied {
+		if err := s.markHistoryDenied(context.Background(), value.SessionID); err != nil {
+			return err
+		}
 	}
 	disk := diskSession{Session: value}
 	if native, exists := value.Quota[quota.ProviderOpenCode]; exists {
@@ -344,6 +358,15 @@ func (s Store) readBounded(path string, limit int64) (Session, error) {
 	if err := validate(value); err != nil {
 		return Session{}, err
 	}
+	// Read paths derive only in memory; no journal, migration or write here.
+	if deniedHistoryProjection(value) {
+		value.AdaptiveHistoryDenied = true
+	}
+	denied, err := s.historyMarkerDenied(value.SessionID)
+	if err != nil {
+		return Session{}, err
+	}
+	value.AdaptiveHistoryDenied = value.AdaptiveHistoryDenied || denied
 	return value, nil
 }
 
