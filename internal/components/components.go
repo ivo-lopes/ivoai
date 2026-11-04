@@ -73,10 +73,10 @@ type Spec struct {
 }
 
 const (
-	managedUVVersion     = "0.13.0"
-	managedPythonVersion = "3.14.8"
+	managedUVVersion     = "0.13.7"
+	managedPythonVersion = "3.14.10"
 	managedNodeVersion   = "26.13.0"
-	dependencyCutoff     = "2026-10-12T00:00:00Z"
+	dependencyCutoff     = "2026-11-04T20:35:00Z"
 )
 
 // DefaultCatalog mirrors manifest/components.yaml. Release CI compares the
@@ -95,9 +95,9 @@ func DefaultCatalog() []Spec {
 			"linux/amd64": {URL: "https://github.com/anthropics/claude-code/releases/download/v2.1.318/claude-linux-x64.tar.gz", SHA256: "e6d426ca0c123f61fad58a361da0329f2a93cd206bc87040ed8d9576dd9eb583"},
 			"linux/arm64": {URL: "https://github.com/anthropics/claude-code/releases/download/v2.1.318/claude-linux-arm64.tar.gz", SHA256: "0f4fb66a2af3bf02d114099727e4a7745f117b1e63d2f77c8aff165590197421"},
 		}},
-		{Name: "headroom", Executable: "headroom", Version: "0.40.0", Package: "headroom-ai[proxy]", Strategy: StrategyUVIsolated, Assets: map[string]Asset{
-			"linux/amd64": {URL: "https://github.com/headroomlabs-ai/headroom/releases/download/v0.40.0/headroom_ai-0.40.0-cp310-abi3-manylinux_2_28_x86_64.whl", SHA256: "49b6d8a01c8eceb5b9e9a675720ed5e4cb24e467282642653aac7f2fd8faf47f"},
-			"linux/arm64": {URL: "https://github.com/headroomlabs-ai/headroom/releases/download/v0.40.0/headroom_ai-0.40.0-cp310-abi3-manylinux_2_28_aarch64.whl", SHA256: "140811066bfb7afe888f471be4a587375779af9de8dd76bb9a8126b52b8e930f"},
+		{Name: "headroom", Executable: "headroom", Version: "0.42.0", Package: "headroom-ai[proxy]", Strategy: StrategyUVIsolated, Assets: map[string]Asset{
+			"linux/amd64": {URL: "https://github.com/headroomlabs-ai/headroom/releases/download/v0.42.0/headroom_ai-0.42.0-cp310-abi3-manylinux_2_28_x86_64.whl", SHA256: "fbb3ceb8f6c3f208edcc3aad43c0e03e0db45636d9d2061525ad0d0a166da146"},
+			"linux/arm64": {URL: "https://github.com/headroomlabs-ai/headroom/releases/download/v0.42.0/headroom_ai-0.42.0-cp310-abi3-manylinux_2_28_aarch64.whl", SHA256: "82972c52804f7d691dcf73b8f32acbd754b8c2262e56b2365d0741d99e517db8"},
 		}},
 		{Name: "caveman", Executable: "caveman-proxy", Version: "2.1.0", Strategy: StrategySupplyChain,
 			Revision: "e20f07e8152a0c0360f58c09e79d30ac94329991", DefaultBranch: "main", License: "Apache-2.0", PayloadFormat: "raw", PayloadPath: "bin/caveman-proxy", NoVersionProbe: true,
@@ -480,20 +480,26 @@ func (i *Installer) installUVTool(ctx context.Context, spec Spec) (string, error
 		return "", err
 	}
 	asset := spec.Assets[runtime.GOOS+"/"+runtime.GOARCH]
-	toolDir := filepath.Join(i.Store.Paths.DataDir, "components", "headroom")
+	lock := headroomAMD64Lock
+	if runtime.GOARCH == "arm64" {
+		lock = headroomARM64Lock
+	}
+	// Keep previously installed wheels/interpreters available for rollback.
+	// The exact reviewed graph, asset and runtime identify the new profile.
+	toolDir := i.headroomProfilePath(spec, lock)
 	binDir := filepath.Join(toolDir, "bin")
+	if err := rufloSafePath(toolDir); err != nil {
+		return "", err
+	}
 	if err := platform.EnsurePrivateDir(toolDir); err != nil {
 		return "", err
 	}
+
 	sandboxHome := filepath.Join(i.Store.Paths.DataDir, "installer-home")
 	if err := platform.EnsurePrivateDir(sandboxHome); err != nil {
 		return "", err
 	}
 	argument := spec.Package + " @ " + asset.URL + "#sha256=" + asset.SHA256
-	lock := headroomAMD64Lock
-	if runtime.GOARCH == "arm64" {
-		lock = headroomARM64Lock
-	}
 	if !bytes.Contains(lock, []byte(asset.URL)) || !bytes.Contains(lock, []byte(asset.SHA256)) {
 		return "", errors.New("embedded Headroom dependency lock does not match reviewed wheel")
 	}
@@ -507,6 +513,19 @@ func (i *Installer) installUVTool(ctx context.Context, spec Spec) (string, error
 		return "", err
 	}
 	return i.installWrapper(spec.Executable, filepath.Join(binDir, spec.Executable), "")
+}
+
+// headroomProfilePath binds an optional tool environment to its reviewed
+// runtime and dependency graph. It never overwrites the previous tool profile.
+func (i *Installer) headroomProfilePath(spec Spec, lock []byte) string {
+	hash := sha256.New()
+	asset := spec.Assets[runtime.GOOS+"/"+runtime.GOARCH]
+	for _, value := range []string{spec.Version, spec.Package, asset.URL, asset.SHA256, managedUVVersion, managedPythonVersion, dependencyCutoff} {
+		_, _ = hash.Write([]byte(value))
+		_, _ = hash.Write([]byte{0})
+	}
+	_, _ = hash.Write(lock)
+	return filepath.Join(i.Store.Paths.DataDir, "components", "headroom-runtime-"+hex.EncodeToString(hash.Sum(nil)))
 }
 
 // rufloProfilePath identifies the reviewed dependency graph, independently of
@@ -1021,9 +1040,9 @@ func (i *Installer) ensureUV(ctx context.Context) (string, error) {
 	if err := platform.EnsurePrivateDir(root); err != nil {
 		return "", err
 	}
-	arch, sha := "x86_64", "1468ebd5a5541121837c5a2817b9972ba6090fa6caa3d142620850a47fb75154"
+	arch, sha := "x86_64", "c5221ff41b7892bfc223543883600125f6a47fe845093e0f5bdff4f359196d83"
 	if runtime.GOARCH == "arm64" {
-		arch, sha = "aarch64", "3ccfb6af6e242433eb552f7d9676abd5412c6595c497e990d9c8cb7b5bd4d2c3"
+		arch, sha = "aarch64", "71279f8d3c67241e807b9d8db872d1bf541579fb9f08b7d1eb1682196d1e57dc"
 	}
 	asset := Asset{URL: "https://github.com/astral-sh/uv/releases/download/" + managedUVVersion + "/uv-" + arch + "-unknown-linux-gnu.tar.gz", SHA256: sha}
 	archive, err := i.downloadVerified(ctx, asset)

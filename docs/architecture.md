@@ -378,24 +378,24 @@ requested agent
                 direct or failed preflight -> official agent [argv...]
 ```
 
-Headroom 0.40.0 is deprecated but retained during the Caveman observation window.
+Headroom 0.42.0 is deprecated but retained during the Caveman observation window.
 It officially supplies `wrap codex` and `wrap claude` and is installed
-into an isolated tool environment using uv 0.13.0 and the exact managed CPython
-3.14.8 runtime below the ivoai data root. An unavailable, unhealthy, or incompatible
+into an isolated tool environment using uv 0.13.7 and the exact managed CPython
+3.14.10 runtime below the ivoai data root. An unavailable, unhealthy, or incompatible
 preflight selects the direct agent. After a compatible wrapper process has started,
 ivoai propagates its exit status; it does not silently retry a failed interactive
 session. ivoai does not rewrite the user's aliases or replace third-party launchers.
-Headroom 0.40.0 can apply lossy compression to Codex Code Mode
+Headroom 0.42.0 can apply lossy compression to Codex Code Mode
 `custom_tool_call_output` items without reliably associating them with the originating
 MCP tool name. IvoAI therefore bypasses any lossy compression provider whenever
 authoritative shared knowledge is active for the session. This provider-neutral
 policy preserves exact Memory and Context results; session telemetry records the
 requested provider, effective Direct path and bounded reason.
 Sources: [Headroom CLI](https://headroomlabs-ai.github.io/headroom/cli/),
-[Headroom v0.40.0](https://github.com/headroomlabs-ai/headroom/releases/tag/v0.40.0),
+[Headroom v0.42.0](https://github.com/headroomlabs-ai/headroom/releases/tag/v0.42.0),
 [Headroom issue 940](https://github.com/headroomlabs-ai/headroom/issues/940),
-[uv 0.13.0](https://github.com/astral-sh/uv/releases/tag/0.13.0), and
-[Python 3.14.8](https://www.python.org/downloads/release/python-3148/).
+[uv 0.13.7](https://github.com/astral-sh/uv/releases/tag/0.13.7), and
+[Python 3.14.10](https://www.python.org/downloads/release/python-31410/).
 
 ### Session control plane
 
@@ -789,8 +789,8 @@ registry and no external skill can assume orchestrator authority.
 |---|---:|---|
 | Codex CLI + code-mode host | 0.162.1 | Official same-release assets; `codex login` supports ChatGPT subscriptions and the separately checksummed host preserves the managed tool/MCP surface. |
 | Claude Code | 2.1.296 | Reviewed official release. Proprietary external binary subject to Anthropic terms. |
-| Headroom | 0.40.0 | Current PyPI/GitHub release with amd64/arm64 wheels; fast-moving integration requires a setup smoke probe and direct fallback. |
-| uv / CPython | 0.13.0 / 3.14.8 | Exact private installer/runtime pair for Headroom with embedded architecture-specific hashed constraints. |
+| Headroom | 0.42.0 | Current PyPI/GitHub release with amd64/arm64 wheels; fast-moving integration requires a setup smoke probe and direct fallback. |
+| uv / CPython | 0.13.7 / 3.14.10 | Exact private installer/runtime pair for Headroom with embedded architecture-specific hashed constraints. |
 | ai-memory | 2.6.3 | Newly released on the validation date, with changelog and per-arch hashes reviewed. Limited burn-in is mitigated by exact pin, hook timeout and failure isolation. |
 | Ruflo | 3.56.5 | Exact npm integrity pin. Direct inference/provider routing remains unsuitable for the no-PAYG default and is disabled. Package/repository naming has moved historically, so updates require provenance review. |
 | Qdrant | 1.19.2 | Current Apache-2.0 release and multi-arch OCI digest; internal only. |
