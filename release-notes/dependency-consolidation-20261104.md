@@ -53,3 +53,10 @@ was rendered only as a vector, leaving the text label incomplete. The wordmark
 now retains its complete text while preserving the glyph. The full browser
 suite passed152 checks with zero skips on the frozen fix; earlier failed
 candidates are retained in the [separate evidence record](evidence/dependency-consolidation-20261104/wordmark-accessibility.json).
+
+CI41907394705 passed the native Graft/architecture/install gates but failed
+the separate administrative UI accessibility check. Both downstream server
+gates were skipped, and are not successes. Local reproduction identified the
+old administrative brand aria-label; removing that redundant label passed all
+six hermetic UI layouts/check groups with the same axe engine. Fresh full CI
+is required; see the separate admin-brand-followup evidence.
