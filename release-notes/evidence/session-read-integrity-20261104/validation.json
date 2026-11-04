@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "scope": "read-only SessionStore enumeration, separate from frozen e3b43138d public-inference proof",
+  "full_Session_race": "PASS7.674s",
+  "complete_Session_App_Admin_packages": "PASS1.655s/22.792s/.050s",
+  "stronger_returned_identity_assertions_focused_race": "PASS1.040s",
+  "checks": [
+    "missingroot does not create directory or change parentctime",
+    "List/ListBounded/Active/FindFrontend return owned expectedsession and preserve filesystemtree,bytes,modes,ctime",
+    "nonprivate root or namespace rejects without chmodrepair",
+    "symlink root/namespace and regularfile root refused without target changes",
+    "directory descriptor OpenNOFOLLOW+Fstat effectiveUID/mode checked; no migration/lock/database initialization"
+  ],
+  "real_inference": "NOT_RERUN: read-only directory validation follow-up; e3b official publicTUI-DAG-resume receipt retained on original frozen source",
+  "evidence_sha256": {
+    "session-read-identity-focused.log": "3f2e836b7ead612355b4875c867d44b9ca5028bfd782f7d614ca1e97ffeabc5f",
+    "session-read-no-mutation-packages.log": "245c5db744a0d3d2091dbf18ea12b3f44888d8ed862e17b777a32f2b742f6081",
+    "session-read-no-mutation-race.log": "304035e7579e00a96ace8f3d6d538ba07e2afacd77369c6bf84a0cbdab41ac93"
+  }
+}
