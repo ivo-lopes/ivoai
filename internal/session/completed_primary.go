@@ -65,6 +65,18 @@ func (s Store) completedPrimaryDirectory(id string, create bool) (int, error) {
 	if ValidateID(id) != nil {
 		return -1, errors.New("invalid completed history owner")
 	}
+	return s.privateJournalDirectory("completed-primary", id, create)
+}
+
+func validJournalHash(value string) bool {
+	decoded, err := hex.DecodeString(value)
+	return err == nil && len(decoded) == sha256.Size && strings.ToLower(value) == value
+}
+
+func (s Store) privateJournalDirectory(namespace, owner string, create bool) (int, error) {
+	if namespace != "completed-primary" && namespace != "request-claims" && namespace != "turn-attempts" || ValidateID(owner) != nil && !validJournalHash(owner) {
+		return -1, errors.New("invalid completed history owner")
+	}
 	fd, err := unix.Open(s.Root, unix.O_RDONLY|unix.O_DIRECTORY|unix.O_NOFOLLOW|unix.O_CLOEXEC, 0)
 	if err != nil {
 		return -1, err
@@ -74,9 +86,13 @@ func (s Store) completedPrimaryDirectory(id string, create bool) (int, error) {
 		unix.Close(fd)
 		return -1, errors.New("unsafe completed history root")
 	}
-	for _, name := range []string{"completed-primary", id} {
+	for _, name := range []string{namespace, owner} {
 		if create {
 			if err := unix.Mkdirat(fd, name, 0700); err != nil && !errors.Is(err, unix.EEXIST) {
+				unix.Close(fd)
+				return -1, err
+			}
+			if err := unix.Fsync(fd); err != nil {
 				unix.Close(fd)
 				return -1, err
 			}

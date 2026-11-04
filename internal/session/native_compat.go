@@ -14,6 +14,7 @@ import (
 
 const nativeDirectory = ".native-opencode"
 const frontendDirectory = ".orchestrated-frontends"
+const requestJournalDirectory = ".request-journal-sessions"
 
 type diskSession struct {
 	Session
@@ -46,8 +47,9 @@ func (s Store) validateNativeDir() error {
 }
 
 func (s Store) frontendDir() string { return filepath.Join(s.Root, frontendDirectory) }
+func (s Store) journalDir() string  { return filepath.Join(s.Root, requestJournalDirectory) }
 func (s Store) validateSessionNamespace(directory string) error {
-	if directory != s.nativeDir() && directory != s.frontendDir() {
+	if directory != s.nativeDir() && directory != s.frontendDir() && directory != s.journalDir() {
 		return errors.New("invalid session namespace")
 	}
 	info, err := os.Lstat(directory)
@@ -103,6 +105,10 @@ func (s Store) ReconcileNativeMetadata() error {
 }
 
 func (s Store) path(id string) string {
+	journalPath := filepath.Join(s.journalDir(), id+".json")
+	if _, err := os.Lstat(journalPath); !errors.Is(err, fs.ErrNotExist) {
+		return journalPath
+	}
 	// v0.9.9 does not enumerate this namespace and cannot rewrite new frontend
 	// metadata during rollback. Reapply uses the same records, not a new store.
 	frontendPath := filepath.Join(s.frontendDir(), id+".json")
