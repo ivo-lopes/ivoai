@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "source_commit": "e3b43138d",
+  "source_manifest": "public-dag-resume-source.json",
+  "source_unchanged_before_compile_and_after_final_inference": true,
+  "tracked_source_files": 675,
+  "test_binary_sha256": "8cbad08a6752bd5a158beb12daf0b221396b7058dd0ea2a8d56ad8b3830c1212",
+  "production_binary_sha256": "a8708c0c13d8ac8e2430bf12e3118742fe1b4453bb0694e666f080c28230f74b",
+  "official_public_integration": {
+    "command": "ivoai codex --planner codex -- --model observed-official-model; then ivoai session resume same-owned-id",
+    "runtime": "exact reviewed official Codex0.166.0 Linuxamd64 executable+companion",
+    "result": "PASS",
+    "wall_ms": 116045,
+    "sequence": [
+      "natural bugfix prompt admitted by Core",
+      "same Primary enters existing plan protocol",
+      "one real Codex worker changes onlymath.go in isolated worktree; integration+fixed hosttestsfail\u2192pass",
+      "second natural turn readonly; completedDAG immutable archive recovers exact original terminal audit despite production metadata Trace compaction",
+      "normal /exit, both wrapper/backend exits0",
+      "new public sessionresume process, sameCore+frontend+nativeThread",
+      "third readonly turn, owned historicalDAG readable, no activeDAG orworkers",
+      "normal /exit, session finalized with3closedreceipts/3attempts"
+    ],
+    "authorization": "private disposable fixture only: explicit host config plan_execution=immediate/full; actual Primary remains read-only; no new production default, fake executor, injected receipt, scheduler, admission callback, authcopy or API fallback",
+    "pure_oracle": "math.go AST admits only Add over original two integer arguments; expected code tests fail before/passafter; other repo files unchanged",
+    "normal_exit": "/exit only; no SIGINT manufactured for completion",
+    "auth": "existing HOME/CODEX_HOME preserved; CoreXDGprivate",
+    "usage": "official-client CLI invocation report; no workerusage/billing/economic saving inferred"
+  },
+  "regression_cause": {
+    "production": "auto.go compacts olderattempt.Trace before next turn",
+    "fixture_drift": "adaptiveBridge/adaptiveInferenceBridge retained olderTrace; earlier C/D inference proofs were real but did not certify public compaction path",
+    "fix": "one shared persistManagedTurnAttempt callback for production+fixtures; read exact immutable terminalevent via SessionStore.ReadTurnAttemptEvents owner+digest and compare every nontracefield to active summary; archive exact original event; active summary remains compact",
+    "checkpoint_restart": "CleanupRuntime formerly calledSaveCheckpoint and changedUpdatedAt. Durable checkpoint validated but not rewritten; legacy runtime checkpoint promoted byte-exactly, so history digest survives normalexit/restart"
+  },
+  "security_validation": {
+    "rehydration": "missing/corrupt/foreign/multipleterminal/mismatchedsummary denied, never inferred/replayed; originalterminal trace completion/final/exit checked",
+    "legacy": "unproven deniedlegacy history retains guarded legacyDAGpath without gaining readonly receipt",
+    "snapshot": "archive exact auditedterminalbytearray, compactactiveprojection retained",
+    "cleanup": "existing durable and legacycheckpoint byte-for-byte preserved",
+    "focused_race": "PASS Session1.054s/App4.162s",
+    "complete_affected_packages": "PASS Session1.442s/App20.633s/Core.002s/bridge4.814s",
+    "affected_vet": "PASS",
+    "reviewer_original_PoC": "expected-negative reproduction: originalcandidate test now FAILS with candidate no longer reproduced; not counted as a passing general suite",
+    "development_failures": "retained unusedimport/harnesscompile logs and legacyfixturecontract failure; corrected without weakening tests or granting unknownlegacy traces"
+  },
+  "limits": {
+    "global_economic_gate": "INCOMPLETE; no controlled GatewayOFF/ON comparison",
+    "platforms": "actual inference Linuxamd64 only; no ARM/noAVX claim",
+    "cross_runtime_resume": "active162\u2192166 receipt migration not grandfathered/certified",
+    "CI_merge_release": "parent integration and current-main source CI remain separate; these immutable receipts do not imply releasepublication",
+    "rollout": "experimental opt-in remains required"
+  },
+  "evidence_sha256": {
+    "full-cli-dag-resume-epoch1.json": "f4933e8974b4067931df1fbb8ccaf91dab70eb558aa6afe1e77c9719a7b97f0d",
+    "full-cli-dag-resume-epoch1.log": "0b4495d50bbd1d753e970e6c5c522411ce1e259a1c1ef4be015f0a0a79527d6b",
+    "postdag-cleanup-final-race.log": "f076ea14d78e1cc9dddf4355583d10c1173ae7564c85b03637f3e487fd7adc64",
+    "postdag-final-source-affected.log": "20da13ec2111f59b908c93ae2361cae8f71fb2aed7e252fe4bd738fee44f065e",
+    "postdag-final-source-vet.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "postdag-production-audit.log": "b839532da818891be01e185e93a96531b1cba0a9382758236ce47d768f256e8d",
+    "postdag-production-complete.log": "726fb960894c85b595d89bacfc6356d9caab0da32e3e13e2c852b08d67a85e13",
+    "postdag-production-complete2.log": "a068e58e061c382a4e214ff54e80beed6b9458a20f1da7237ca2a94ce863662f",
+    "postdag-production-fix-focused.log": "7a63e6407b77a4b5151b8a64da4cb22db8bc552b344a5c995da46c1d91003c02",
+    "postdag-public-harness-contracts.log": "21402454b2ad45777f187990a4af9a9bf84d61e934e88406ae9ca2cbf925e283",
+    "postdag-public-harness-contracts2.log": "ca9008ad8a7b0c73f9299b9c1e4ccd5e92a2fbe9d13ec11b0cbca3a13ed64f4a",
+    "public-dag-resume-source.json": "0f2a63f5f8c489cc8b62d870d0e3834701b872c627e62e2482ced9c27379f930",
+    "review-compaction-fixed-negative-repro.log": "d44d5b53433c1e3d03a072d0bab08fe53f76bd4cfe12fb51756b614ad593d2ee",
+    "review-compaction-original-repro.go.txt": "a0ff33e989e17cde64f25dea7688b305b032ce324e176f3cc578ddc164c463cc"
+  }
+}

@@ -1,0 +1,25 @@
+package app
+import ("bytes";"context";"encoding/json";"strings";"testing";"time"
+"github.com/ivo-lopes/ivoai/internal/core"
+"github.com/ivo-lopes/ivoai/internal/opencodebridge"
+"github.com/ivo-lopes/ivoai/internal/session")
+func TestReviewProductionCompactionBlocksCompletedDAGArchive(t *testing.T) {
+f:=newAdaptiveFixture(t); v,e:=f.store.Get(f.id);if e!=nil{t.Fatal(e)}
+now:=time.Now().UTC(); zero:=0; digest:=strings.Repeat("a",64)
+v.PlanID="plan_0123456789abcdef0123456789abcdef"
+v.PrimaryTurn=&core.PrimaryTurnReceipt{ID:"receipt_review",TurnID:"turn_review",AttemptID:"attempt_review",FrontendSessionID:v.FrontendSessionID,Executor:"codex",Mode:core.PrimaryClosed,PlanID:v.PlanID,ConfigDigest:digest,StateDigest:digest,ScopeDigest:digest}
+v.Tasks=[]session.TaskMetadata{{ID:"inspect",Role:"research",Tier:"LIGHT",State:session.StateCompleted,Model:session.UnknownModel()}}
+v.ExecutorSessionID="owned_native_thread"
+attempt:=opencodebridge.TurnAttempt{ID:"attempt_review",TurnID:"turn_review",SessionID:v.SessionID,Frontend:v.Frontend,FrontendSessionID:v.FrontendSessionID,RequestedExecutor:"codex",EffectiveExecutor:"codex",State:"completed",EndedAt:&now,ExitCode:&zero,FinalResponse:true,NativeSessionID:v.ExecutorSessionID,Trace:&core.ExecutionTrace{Completion:true,FinalResponse:true,ExitCode:0}}
+raw,_:=json.Marshal(attempt);v.TurnAttempts=[]json.RawMessage{raw}
+if !adaptiveCompletedPlan(v){t.Fatal("positive fixture denied")}
+if e=f.store.AppendTurnAttempt(context.Background(),v.SessionID,raw);e!=nil{t.Fatal(e)}
+// Mirrors RunAuto Attempt callback when the next running attempt arrives.
+attempt.Trace=nil;v.TurnAttempts[0],_=json.Marshal(attempt)
+events,e:=f.store.ReadTurnAttemptEvents(context.Background(),v.SessionID,attempt.ID)
+if e!=nil||len(events)!=1||!bytes.Equal(events[0],raw){t.Fatal("original trace not durably retained",e)}
+out,e:=prepareAdaptiveCompletedPlan(context.Background(),f.store,v)
+if e!=nil{t.Fatal(e)}
+if out.PlanID==""||out.CompletedPrimaryPlan!=nil{t.Fatal("candidate no longer reproduced")}
+t.Log("REPRODUCED: production Trace compaction leaves the completed DAG active although its exact successful terminal event is present in the durable journal")
+}

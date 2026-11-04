@@ -84,3 +84,11 @@ An older Core does not consume the new history pointer, so finish/cancel active
 turns before downgrade and retain the files for reapply; do not delete history
 to obtain a replay. Snapshot failures deny the capability instead of claiming
 successful continuation. **Global economic gate: INCOMPLETE.**
+
+## Subsequent public-path verification
+
+The later [public DAG and restart delivery](codex-public-dag-resume.md) records a
+production trace-compaction regression and its fix, then a single real public
+TUI DAG → read-only turn → normal exit → new-process resume → read-only turn.
+It supersedes the earlier NOT_RUN limitation for that combined sequence without
+rewriting these historical source-specific receipts or their original limits.

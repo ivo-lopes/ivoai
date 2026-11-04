@@ -136,3 +136,11 @@ Retained runtime/account/root/model/thread identities must still match; an activ
 0.162.1 receipt is not silently grandfathered into a different 0.166.0 executable.
 Cross-version active-receipt migration is not certified by this delivery.
 These local proofs do not presume integrated main CI, merge or release results.
+
+## Subsequent public-path verification
+
+The later [public DAG and restart delivery](codex-public-dag-resume.md) records a
+production trace-compaction regression and its fix, then a single real public
+TUI DAG → read-only turn → normal exit → new-process resume → read-only turn.
+It supersedes the earlier NOT_RUN limitation for that combined sequence without
+rewriting these historical source-specific receipts or their original limits.
