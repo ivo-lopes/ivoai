@@ -279,3 +279,16 @@ func TestAdministrativeFastRedactionPreservesUnicodeAndSecretPatterns(t *testing
 		t.Fatal("plain long-line redaction fast path not used")
 	}
 }
+
+func TestAdministrativeRedactionNormalizesControlsBeforeClassification(t *testing.T) {
+	raw := "access\x1b_token=UNSAFE_TOKEN\n-----BEGIN\x1b PRIVATE KEY-----\nUNSAFE_KEY\n-----END PRIVATE KEY-----\nActivation co\x1bde (shown once): UNSAFE_CODE_1234567890\n"
+	got := sanitizedAdministrativeOutput(raw, nil, nil)
+	for _, secret := range []string{"UNSAFE_TOKEN", "UNSAFE_KEY", "UNSAFE_CODE"} {
+		if strings.Contains(got, secret) {
+			t.Fatal("control normalization exposed classified secret")
+		}
+	}
+	if got := sanitizedAdministrativeOutput("opaque-with-control", nil, []string{"opaque-with-\x1bcontrol"}); strings.Contains(got, "opaque-with-control") {
+		t.Fatal("normalization changed known private value without redacting it")
+	}
+}

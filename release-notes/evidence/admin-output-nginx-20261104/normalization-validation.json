@@ -1,0 +1,14 @@
+{
+  "base": "58450428a32c2483d748ad1eccedc675dfbc95f4",
+  "fix": "Normalize control characters before secret classification and known-value replacement; never persist the pre-sanitization result.",
+  "regression": "Escaped access-token, private-key and activation-code labels plus normalized opaque known secret must remain redacted.",
+  "focused_race": "PASS10.456s",
+  "source_sha256": {
+    "internal/admin/actions.go": "1f727e7b40e9b1592aa22d75ef3c12596654158720e1f69c1bca951b8ef00472",
+    "internal/admin/output_artifacts.go": "bf60aa9988c600f386174c34f7c4404ec199f4024c4d4f414c4fe35ec0174b48",
+    "internal/admin/output_artifacts_test.go": "aba0210f726efdb65115d22129a6079d3b32ce5482dcdfc0ea817cdc5f35061e"
+  },
+  "limitations": [
+    "Nginx/browser proof remains attributed to the earlier source; integrated final validation is a separate gate."
+  ]
+}

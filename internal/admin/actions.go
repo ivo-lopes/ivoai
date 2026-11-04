@@ -516,6 +516,7 @@ func oneTimeCode(out string) string {
 	return ""
 }
 func sanitizeOutput(out string, input map[string]string) string {
+	out = normalizeAdministrativeOutput(out)
 	if potentiallySensitiveOutput(out) {
 		out = platform.Redact(out)
 		out = sensitiveLine.ReplaceAllString(out, "[REDACTED]")
@@ -525,6 +526,10 @@ func sanitizeOutput(out string, input map[string]string) string {
 			out = strings.ReplaceAll(out, value, "[REDACTED]")
 		}
 	}
+	return out
+}
+
+func normalizeAdministrativeOutput(out string) string {
 	return strings.Map(func(c rune) rune {
 		if unicode.IsControl(c) && c != '\n' && c != '\t' {
 			return -1
