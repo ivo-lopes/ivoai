@@ -512,7 +512,7 @@ func runConnect(ctx context.Context, a *app.App, args []string) error {
 	case "server":
 		return connectServer(ctx, a, args[1:])
 	case "mcp":
-		return runMCP(a, args[1:])
+		return runMCPContext(ctx, a, args[1:])
 	default:
 		return fmt.Errorf("unsupported connection %q", args[0])
 	}
@@ -700,7 +700,9 @@ func writeServerViews(w io.Writer, values []app.ServerView, jsonOutput bool) err
 	}
 	return nil
 }
-func runMCP(a *app.App, args []string) error {
+func runMCP(a *app.App, args []string) error { return runMCPContext(context.Background(), a, args) }
+
+func runMCPContext(ctx context.Context, a *app.App, args []string) error {
 	if len(args) == 0 || args[0] == "list" {
 		return a.MCPList()
 	}
@@ -753,7 +755,7 @@ func runMCP(a *app.App, args []string) error {
 		if len(args) != 2 {
 			return errors.New("usage: ivoai connect mcp test <name>")
 		}
-		return a.MCPTest(context.Background(), args[1])
+		return a.MCPTest(ctx, args[1])
 	default:
 		return fmt.Errorf("unknown MCP action %q", args[0])
 	}
@@ -838,8 +840,9 @@ func usage(w io.Writer) {
 Usage:
   ivoai                         interactive menu
   ivoai help | version | uninstall
-  ivoai admin serve [--listen 127.0.0.1:7781]
-  ivoai admin access create [--ttl 10m] | list | revoke <id>
+  ivoai admin init
+  ivoai admin serve [--listen 127.0.0.1:7781] [--public-url HTTPS_URL] [--trusted-proxies CIDR,...]
+  ivoai admin access create [--ttl 10m] [--write] | list | revoke <id>
   ivoai status [--json]
   ivoai setup [--mode client|server] [--legacy-opencode]
   ivoai doctor [--json] [--inventory]
@@ -886,7 +889,8 @@ Usage:
   ivoai server enrollment create [--ttl 10m] | list | revoke <id>
   ivoai server web-access create [--ttl 10m] [--scopes SCOPE,...] | list | revoke <id>
   ivoai server connector list | add --name NAME --type filesystem|git --path PATH | remove NAME
-  ivoai server context status | memory status | docs status | docs configure --listen IP:PORT | docs serve
+  ivoai server context status | context ingest --connector NAME | context search --query QUERY | context get --id ID
+  ivoai server memory status | docs status | docs configure --listen IP:PORT | docs serve
   ivoai server gateway serve | gateway configure --public-url HTTPS_ORIGIN [--listen HOST:PORT] [--trusted-proxy CIDR] [--tls-cert PATH --tls-key PATH]
   ivoai server backup [--output PATH] | restore --input PATH
   ivoai server remote status | doctor | connector list`)

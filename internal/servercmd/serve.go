@@ -74,7 +74,7 @@ func serveContext(ctx context.Context, layout server.Layout, errOut io.Writer) e
 	defer stop()
 	ingest := func() {
 		for _, name := range service.ConnectorNames() {
-			if _, err := service.Ingest(ctx, name); err != nil {
+			if _, err := ingestContextLocked(ctx, layout, service, name); err != nil {
 				fmt.Fprintf(errOut, "context connector %s: %v\n", name, err)
 			}
 		}
