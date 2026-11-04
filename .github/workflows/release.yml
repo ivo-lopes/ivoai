@@ -243,7 +243,25 @@ jobs:
         with:
           pattern: ivoai-*
           merge-multiple: true
-          path: dist/publish
+          path: dist/downloaded-assets
+      - name: Select only the public release payloads
+        run: |
+          # Preserve build sidecars in the downloaded artifacts. Only this
+          # explicit payload set enters publication and its strict verifier.
+          mkdir -p dist/publish
+          release_assets=(
+            ivoai_linux_amd64.tar.gz ivoai_linux_arm64.tar.gz
+            ivoai-opencode_linux_amd64.tar.gz ivoai-opencode_linux_arm64.tar.gz
+            managed-opencode-amd64.json managed-opencode-arm64.json
+            ivoai-graft_linux_amd64.tar.gz ivoai-graft_linux_arm64.tar.gz
+            managed-graft-amd64.json managed-graft-arm64.json
+            ivoai-memory-context.zip
+          )
+          for asset in "${release_assets[@]}"; do
+            test -f "dist/downloaded-assets/$asset"
+            test ! -L "dist/downloaded-assets/$asset"
+            cp -- "dist/downloaded-assets/$asset" "dist/publish/$asset"
+          done
       - name: Generate checksums
         working-directory: dist/publish
         run: sha256sum ivoai_*.tar.gz ivoai-opencode_*.tar.gz managed-opencode-*.json ivoai-graft_*.tar.gz managed-graft-*.json ivoai-memory-context.zip > checksums.txt
