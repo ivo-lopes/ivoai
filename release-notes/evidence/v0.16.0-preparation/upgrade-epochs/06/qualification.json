@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "outcome": "PASS",
+  "baseline": "0.15.0",
+  "candidate": "0.16.0",
+  "architecture": "amd64",
+  "test_mode": false,
+  "real_cli_binaries": true,
+  "provider_inference": false,
+  "personal_credentials_inherited": false,
+  "phase": "completed",
+  "wall_seconds": 383.241,
+  "preparation_denials": [],
+  "passed": [
+    "corrupt_checksum_refused",
+    "wrong_version_refused",
+    "incompatible_schema_refused",
+    "read_only_dry_run",
+    "real_cli_upgrade_migrate_setup_doctor",
+    "graft_provenance_after_upgrade_and_rollback",
+    "current_update_idempotent",
+    "real_cli_rollback",
+    "real_cli_update_after_rollback",
+    "old_binary_and_profile_preserved",
+    "synthetic_credentials_and_ownership_preserved"
+  ],
+  "fixture_requests": 24,
+  "denied_requests": 0,
+  "blocked_provider_diagnostics": {
+    "count": 0,
+    "by_phase": {}
+  },
+  "unexpected_requests": 0,
+  "external_network_during_upgrade": false,
+  "provider_catalog_and_quota_certified": false
+}

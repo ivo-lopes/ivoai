@@ -1,0 +1,13 @@
+{
+  "scope": "LOCAL_UPGRADE_GATE_VALIDATION_NOT_RELEASE_ASSETS",
+  "source_base": "4551a766616932da179159ad6cad57406fa54ab9",
+  "dirty_validation_build": true,
+  "core_sha256": "92ca76d8ed566cea75518922615af23d7374cbeebd88fa793a0937bbabe7d961",
+  "production_fix_files": {
+    "internal/componentupdate/source_identity.go": "378e035ee569a545028bd0869168a45f721fd3584ab5e6dad37156214058fb65",
+    "internal/componentupdate/update.go": "98da210198ae219e52d36f1a3976841f19b311c43406b6cee2366f191bca54ba",
+    "internal/app/code_intelligence.go": "82c0c70837fa2fa3ed0816781cd40a039afb35f059ef0090d5ac7c430bf48f25",
+    "internal/doctor/code_intelligence.go": "78f1603dcfc22ed41d25197cafad321cbd5522dc7bd677ee6de6ab861ce2d6c7"
+  },
+  "component_archives": "verified v0.15.0 build sources unchanged"
+}

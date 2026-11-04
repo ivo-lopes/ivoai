@@ -98,7 +98,8 @@ jobs:
   build:
     needs: verify
     runs-on: ${{ matrix.runner }}
-    timeout-minutes: 45
+    # Includes bounded cold component setup and the real stable-upgrade gate.
+    timeout-minutes: 150
     strategy:
       fail-fast: false
       matrix:
@@ -121,7 +122,7 @@ jobs:
       - name: Install reviewed Graft build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends bubblewrap apparmor binutils gcc-12 g++-12 make python3 patch
+          sudo apt-get install -y --no-install-recommends bubblewrap apparmor binutils gcc-12 g++-12 make python3 patch openssl
       - name: Admit only the CI sandbox launcher to user namespaces
         run: scripts/setup-ci-graft-sandbox.sh
       - name: Build and verify patched managed frontend
@@ -175,6 +176,37 @@ jobs:
           "${core_env[@]}" timeout 60 "${core_command[@]}" help > "$smoke_root/help.txt"
           test -s "$smoke_root/help.txt"
           tar -C dist -czf "dist/release/ivoai_${GOOS}_${GOARCH}.tar.gz" ivoai
+      - name: Upgrade from the previous stable Core and roll back
+        id: stable_upgrade
+        if: ${{ !contains(github.ref_name, '-') }}
+        timeout-minutes: 105
+        env:
+          CANDIDATE_VERSION: ${{ github.ref_name }}
+          RELEASE_ARCH: ${{ matrix.goarch }}
+        run: |
+          baseline_root="$(mktemp -d "$RUNNER_TEMP/ivoai-previous-stable.XXXXXXXX")"
+          trap 'rm -rf -- "$baseline_root"' EXIT
+          case "$RELEASE_ARCH" in
+            amd64) baseline_sha=e8e8b40e593d708d4bacd688ecbbb580179b6e0afae27948f9e9a9687f42231e ;;
+            arm64) baseline_sha=9cc869633fa4f691dee49b85495e3fc486aa9af857a0b40b6183eca35f66829f ;;
+            *) exit 1 ;;
+          esac
+          curl --fail --location --silent --show-error --retry 3 \
+            "https://github.com/ivo-lopes/ivoai/releases/download/v0.15.0/ivoai_linux_${RELEASE_ARCH}.tar.gz" \
+            -o "$baseline_root/core.tar.gz"
+          printf '%s  %s\n' "$baseline_sha" "$baseline_root/core.tar.gz" | sha256sum --check --strict -
+          tar -xzf "$baseline_root/core.tar.gz" -C "$baseline_root" ivoai
+          scripts/test-stable-release-upgrade.sh \
+            --baseline-core "$baseline_root/ivoai" --candidate-dir "$PWD/dist/release" \
+            --version "${CANDIDATE_VERSION#v}" \
+            --output "$RUNNER_TEMP/ivoai-stable-upgrade-$RELEASE_ARCH"
+      - name: Retain stable upgrade verification
+        if: ${{ always() && (steps.stable_upgrade.outcome == 'success' || steps.stable_upgrade.outcome == 'failure') }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: stable-upgrade-${{ matrix.goarch }}
+          path: ${{ runner.temp }}/ivoai-stable-upgrade-${{ matrix.goarch }}/qualification.json
+          if-no-files-found: error
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ivoai-${{ matrix.goos }}-${{ matrix.goarch }}
@@ -203,17 +235,31 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache: true
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           pattern: ivoai-*
           merge-multiple: true
+          path: dist/publish
       - name: Generate checksums
+        working-directory: dist/publish
         run: sha256sum ivoai_*.tar.gz ivoai-opencode_*.tar.gz managed-opencode-*.json ivoai-graft_*.tar.gz managed-graft-*.json ivoai-memory-context.zip > checksums.txt
-      - name: Publish GitHub release
+      - name: Verify local release assets against the tagged source
+        run: |
+          mkdir -p "$RUNNER_TEMP/ivoai-release-verification"
+          python3 scripts/verify-release-artifacts.py \
+            --directory "$PWD/dist/publish" --version "${GITHUB_REF_NAME#v}" \
+            --source "$(git rev-parse HEAD)" --source-tree "$PWD" \
+            --output "$RUNNER_TEMP/ivoai-release-verification/local.json"
+      - name: Stage and verify GitHub draft release
+        working-directory: dist/publish
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          notes_file="release-notes/${GITHUB_REF_NAME}.md"
+          notes_file="$GITHUB_WORKSPACE/release-notes/${GITHUB_REF_NAME}.md"
           test -s "$notes_file"
           if gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1; then
             echo "release ${GITHUB_REF_NAME} already exists; refusing to replace immutable assets" >&2
@@ -233,4 +279,32 @@ jobs:
             printf 'expected: %s\nactual: %s\n' "${expected_assets[*]}" "${actual_assets[*]}" >&2
             exit 1
           fi
+          verify_root="$RUNNER_TEMP/ivoai-release-verification"
+          download_root="$(mktemp -d "$RUNNER_TEMP/ivoai-release-download.XXXXXXXX")"
+          trap 'rm -rf -- "$download_root"' EXIT
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$GITHUB_REF_NAME" > "$verify_root/draft-api.json"
+          gh release download "$GITHUB_REF_NAME" --dir "$download_root"
+          cmp checksums.txt "$download_root/checksums.txt"
+          (
+            cd "$download_root"
+            sha256sum --check --strict checksums.txt
+          )
+          python3 "$GITHUB_WORKSPACE/scripts/verify-release-artifacts.py" \
+            --directory "$download_root" --version "${GITHUB_REF_NAME#v}" \
+            --source "$(git -C "$GITHUB_WORKSPACE" rev-parse HEAD)" \
+            --source-tree "$GITHUB_WORKSPACE" --api-json "$verify_root/draft-api.json" \
+            --output "$verify_root/downloaded.json"
+      - name: Retain pre-publication verification receipts
+        if: ${{ always() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: release-asset-verification
+          path: ${{ runner.temp }}/ivoai-release-verification/*
+          if-no-files-found: error
+      - name: Publish verified release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # All local/downloaded byte and metadata gates succeeded. A failure
+          # before this step leaves the exact draft unpublished for inspection.
           gh release edit "${GITHUB_REF_NAME}" --draft=false --latest

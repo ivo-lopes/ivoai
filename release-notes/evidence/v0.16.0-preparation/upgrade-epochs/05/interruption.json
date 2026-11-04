@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "outcome": "INTERRUPTED",
+  "reason": "user_turn_aborted_before_terminal_result",
+  "raw_receipt_retained": true,
+  "raw_default_FAIL_is_not_a_terminal_result": true,
+  "last_observed_inside_phase": {
+    "phase": "read_only_dry_run"
+  },
+  "matching_processes_on_resume": 0,
+  "counts_as_success": false
+}

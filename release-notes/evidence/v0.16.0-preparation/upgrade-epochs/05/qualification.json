@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "outcome": "FAIL",
+  "baseline": "0.15.0",
+  "candidate": "0.16.0",
+  "architecture": "amd64",
+  "test_mode": false,
+  "real_cli_binaries": true,
+  "provider_inference": false,
+  "personal_credentials_inherited": false,
+  "phase": "network_isolated_upgrade",
+  "wall_seconds": 178.817,
+  "preparation_denials": []
+}
