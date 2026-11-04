@@ -1010,52 +1010,7 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 			return a.openCodeAutoStatus(store, currentID(), originalConfig, knowledge, true, currentQuotas, compressionPolicy, probeErrors)
 		},
 		Attempt: func(attempt opencodebridge.TurnAttempt) error {
-			attempt.SessionID = currentID()
-			body, marshalErr := json.Marshal(attempt)
-			if marshalErr != nil {
-				return marshalErr
-			}
-			if err := store.AppendTurnAttempt(ctx, currentID(), body); err != nil {
-				return err
-			}
-			_, updateErr := store.Update(currentID(), func(current *session.Session) error {
-				body, err := json.Marshal(attempt)
-				if err != nil {
-					return err
-				}
-				replaced := false
-				previousState := ""
-				for i, raw := range current.TurnAttempts {
-					var previous opencodebridge.TurnAttempt
-					if json.Unmarshal(raw, &previous) != nil {
-						continue
-					}
-					if previous.ID == attempt.ID {
-						previousState = previous.State
-						current.TurnAttempts[i], replaced = body, true
-					} else if previous.Trace != nil {
-						// Keep bounded attempt metadata; only the latest attempt
-						// carries the detailed trace (the session file is bounded).
-						previous.Trace = nil
-						current.TurnAttempts[i], _ = json.Marshal(previous)
-					}
-				}
-				if !replaced {
-					current.TurnAttempts = append(current.TurnAttempts, body)
-				}
-				if len(current.TurnAttempts) > 32 {
-					current.TurnAttempts = current.TurnAttempts[len(current.TurnAttempts)-32:]
-				}
-				current.TurnState, current.ExecutorExitCode = attempt.State, attempt.ExitCode
-				if attempt.Trace != nil {
-					current.ExecutorTrace, _ = json.Marshal(attempt.Trace)
-				}
-				if previousState != attempt.State {
-					return appendTurnObservation(current, attempt)
-				}
-				return nil
-			})
-			return updateErr
+			return persistManagedTurnAttempt(ctx, store, currentID(), attempt)
 		},
 		Mapping: func(mapping opencodebridge.Mapping) error {
 			_, updateErr := store.Update(currentID(), func(currentSession *session.Session) error {
