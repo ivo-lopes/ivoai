@@ -68,6 +68,9 @@ func (a *App) SessionResume(ctx context.Context, id string) error {
 		return errors.New("SESSION_DIRECTORY_UNAVAILABLE")
 	}
 	if value.Mode == session.ModeAuto {
+		if value.RequestJournalVersion == 0 && len(value.FrontendRequests) >= 256 {
+			return session.ErrClaimHistoryIncomplete
+		}
 		frontend := value.Frontend
 		if override, _ := ctx.Value(resumeFrontendKey{}).(string); override != "" {
 			frontend = override

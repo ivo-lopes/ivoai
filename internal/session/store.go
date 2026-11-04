@@ -94,8 +94,12 @@ func (s Store) Update(id string, mutate func(*Session) error) (Session, error) {
 		if err != nil {
 			return err
 		}
+		journalVersion := value.RequestJournalVersion
 		if err := mutate(&value); err != nil {
 			return err
+		}
+		if journalVersion == 1 && value.RequestJournalVersion != 1 {
+			return errors.New("request journal downgrade refused")
 		}
 		value.UpdatedAt = time.Now().UTC()
 		if err := validate(value); err != nil {
@@ -118,7 +122,7 @@ func (s Store) List() ([]Session, error) {
 	if err != nil {
 		return nil, err
 	}
-	for _, directory := range []string{s.nativeDir(), s.frontendDir()} {
+	for _, directory := range []string{s.nativeDir(), s.frontendDir(), s.journalDir()} {
 		if err := s.validateSessionNamespace(directory); err == nil {
 			native, readErr := os.ReadDir(directory)
 			if readErr != nil {
@@ -213,6 +217,9 @@ func (s Store) CleanupRuntime(id string) error {
 }
 
 func (s Store) write(value Session) error {
+	if filepath.Dir(s.path(value.SessionID)) == s.journalDir() {
+		value.RequestJournalVersion = 1
+	}
 	// Additive metadata keeps legacy mode/primary_executor fields intact.
 	value.PrimaryProvider = value.PrimaryExecutor
 	value.OrchestrationMode = string(value.Mode)
@@ -240,6 +247,7 @@ func (s Store) write(value Session) error {
 		return errors.New("session metadata exceeds size limit")
 	}
 	path := s.path(value.SessionID)
+	movedFrom := ""
 	namespace := ""
 	if nativeSession(value) {
 		namespace = s.nativeDir()
@@ -247,13 +255,23 @@ func (s Store) write(value Session) error {
 	if value.Frontend == "codex" {
 		namespace = s.frontendDir()
 	}
+	if value.RequestJournalVersion == 1 {
+		namespace = s.journalDir()
+	}
 	if namespace != "" && filepath.Dir(path) != namespace {
 		if err := platform.EnsurePrivateDir(namespace); err != nil {
 			return err
 		}
-		target := filepath.Join(namespace, value.SessionID+".json")
-		if err := os.Rename(path, target); err != nil && !errors.Is(err, fs.ErrNotExist) {
+		if err := platform.SyncDir(s.Root); err != nil {
 			return err
+		}
+		target := filepath.Join(namespace, value.SessionID+".json")
+		if err := os.Rename(path, target); err != nil {
+			if !errors.Is(err, fs.ErrNotExist) {
+				return err
+			}
+		} else {
+			movedFrom = filepath.Dir(path)
 		}
 		path = target
 	}
@@ -262,7 +280,13 @@ func (s Store) write(value Session) error {
 			return err
 		}
 	}
-	return platform.AtomicWritePrivate(append(body, '\n'), path)
+	if err := platform.AtomicWritePrivate(append(body, '\n'), path); err != nil {
+		return err
+	}
+	if movedFrom != "" {
+		return platform.SyncDir(movedFrom)
+	}
+	return nil
 }
 
 func (s Store) read(path string) (Session, error) { return s.readBounded(path, maxStateBytes) }
@@ -302,6 +326,9 @@ func (s Store) readBounded(path string, limit int64) (Session, error) {
 		return Session{}, err
 	}
 	value := disk.Session
+	if filepath.Dir(path) == s.journalDir() {
+		value.RequestJournalVersion = 1
+	}
 	if disk.NativeQuota != nil {
 		if disk.NativeQuota.Provider != quota.ProviderOpenCode {
 			return Session{}, errors.New("invalid native session quota")
@@ -350,6 +377,9 @@ func (s Store) withLock(operation func() error) error {
 }
 
 func validate(value Session) error {
+	if value.RequestJournalVersion < 0 || value.RequestJournalVersion > 1 {
+		return errors.New("unsupported request journal version")
+	}
 	if value.CompletedPrimaryPlan != nil && value.CompletedPrimaryPlan.Validate() != nil {
 		return errors.New("invalid completed primary history reference")
 	}

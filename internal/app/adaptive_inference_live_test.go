@@ -149,20 +149,16 @@ func adaptiveInferenceBridge(t *testing.T, f *localMetadataFixture, environment 
 	}), Select: func(context.Context, string) (string, error) { return "codex", nil }, Status: func() opencodebridge.Status { return opencodebridge.Status{Frontend: "codex"} }, Mapping: adaptivePersistMapping(f), AuthReference: func(ctx context.Context, _ string) (string, error) {
 		return quota.AccountReference(ctx, f.state.Components["codex"].Path, "codex")
 	}, ClaimRequest: func(frontend, message string) (bool, error) {
-		_, e := f.store.Update(f.id, func(v *session.Session) error {
-			if v.FrontendRequests == nil {
-				v.FrontendRequests = map[string]time.Time{}
-			}
-			k := frontend + ":" + message
-			if _, exists := v.FrontendRequests[k]; exists {
-				return errors.New("already claimed")
-			}
-			v.FrontendRequests[k] = time.Now().UTC()
-			return nil
-		})
-		return e == nil, e
+		return f.store.ClaimFrontendRequest(context.Background(), f.id, frontend, message)
 	}, Attempt: func(attempt opencodebridge.TurnAttempt) error {
 		attempt.SessionID = f.id
+		body, err := json.Marshal(attempt)
+		if err != nil {
+			return err
+		}
+		if err := f.store.AppendTurnAttempt(context.Background(), f.id, body); err != nil {
+			return err
+		}
 		_, e := f.store.Update(f.id, func(v *session.Session) error {
 			raw, _ := json.Marshal(attempt)
 			found := false
