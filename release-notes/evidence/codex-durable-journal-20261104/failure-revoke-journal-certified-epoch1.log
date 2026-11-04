@@ -1,0 +1,9 @@
+=== RUN   TestLiveAdaptivePrimaryManagedFailure
+=== RUN   TestLiveAdaptivePrimaryManagedFailure/F_CANCEL
+=== RUN   TestLiveAdaptivePrimaryManagedFailure/F_DENY_READ
+--- PASS: TestLiveAdaptivePrimaryManagedFailure (16.32s)
+    --- PASS: TestLiveAdaptivePrimaryManagedFailure/F_CANCEL (5.09s)
+    --- PASS: TestLiveAdaptivePrimaryManagedFailure/F_DENY_READ (11.23s)
+=== RUN   TestLiveAdaptivePrimaryReceiptRevocation
+--- PASS: TestLiveAdaptivePrimaryReceiptRevocation (16.55s)
+PASS

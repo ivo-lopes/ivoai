@@ -1,0 +1,37 @@
+=== RUN   TestRequestJournalRetainsOldestClaimAcrossCacheLimitAndReopen
+--- PASS: TestRequestJournalRetainsOldestClaimAcrossCacheLimitAndReopen (1.70s)
+=== RUN   TestRequestJournalImportsLegacyClaimsAndRefusesUnknownTruncatedHistory
+=== RUN   TestRequestJournalImportsLegacyClaimsAndRefusesUnknownTruncatedHistory/legacy_1
+=== RUN   TestRequestJournalImportsLegacyClaimsAndRefusesUnknownTruncatedHistory/legacy_256
+--- PASS: TestRequestJournalImportsLegacyClaimsAndRefusesUnknownTruncatedHistory (0.02s)
+    --- PASS: TestRequestJournalImportsLegacyClaimsAndRefusesUnknownTruncatedHistory/legacy_1 (0.01s)
+    --- PASS: TestRequestJournalImportsLegacyClaimsAndRefusesUnknownTruncatedHistory/legacy_256 (0.01s)
+=== RUN   TestRequestJournalDeduplicatesAcrossLogicalOwnersButNotOtherScopes
+--- PASS: TestRequestJournalDeduplicatesAcrossLogicalOwnersButNotOtherScopes (0.01s)
+=== RUN   TestRequestJournalSymlinksCancellationAndStorageFailuresNeverAdmit
+=== RUN   TestRequestJournalSymlinksCancellationAndStorageFailuresNeverAdmit/parent
+=== RUN   TestRequestJournalSymlinksCancellationAndStorageFailuresNeverAdmit/claim_entry
+=== RUN   TestRequestJournalSymlinksCancellationAndStorageFailuresNeverAdmit/marker
+=== RUN   TestRequestJournalSymlinksCancellationAndStorageFailuresNeverAdmit/namespace
+=== RUN   TestRequestJournalSymlinksCancellationAndStorageFailuresNeverAdmit/cancelled
+--- PASS: TestRequestJournalSymlinksCancellationAndStorageFailuresNeverAdmit (0.01s)
+    --- PASS: TestRequestJournalSymlinksCancellationAndStorageFailuresNeverAdmit/parent (0.00s)
+    --- PASS: TestRequestJournalSymlinksCancellationAndStorageFailuresNeverAdmit/claim_entry (0.00s)
+    --- PASS: TestRequestJournalSymlinksCancellationAndStorageFailuresNeverAdmit/marker (0.00s)
+    --- PASS: TestRequestJournalSymlinksCancellationAndStorageFailuresNeverAdmit/namespace (0.00s)
+    --- PASS: TestRequestJournalSymlinksCancellationAndStorageFailuresNeverAdmit/cancelled (0.00s)
+=== RUN   TestRequestJournalProcessHelper
+    request_journal_test.go:187: private child fixture
+--- SKIP: TestRequestJournalProcessHelper (0.00s)
+=== RUN   TestRequestJournalTwoProcessesClaimExactlyOnce
+--- PASS: TestRequestJournalTwoProcessesClaimExactlyOnce (1.03s)
+=== RUN   TestTurnAttemptAuditRetainsExactEventsPastProjectionLimit
+--- PASS: TestTurnAttemptAuditRetainsExactEventsPastProjectionLimit (0.10s)
+=== RUN   TestTurnAttemptAuditRejectsCorruptionAndUnsafeNames
+--- PASS: TestTurnAttemptAuditRejectsCorruptionAndUnsafeNames (0.00s)
+=== RUN   TestRequestJournalNamespaceWatchAndReopenRemainOperational
+--- PASS: TestRequestJournalNamespaceWatchAndReopenRemainOperational (0.01s)
+=== RUN   TestLivePublishedCoreCannotReadOrRewriteJournalSessions
+--- PASS: TestLivePublishedCoreCannotReadOrRewriteJournalSessions (0.49s)
+PASS
+ok  	github.com/ivo-lopes/ivoai/internal/session	4.409s
