@@ -237,6 +237,9 @@ func (a *App) admitAdaptivePrimary(ctx context.Context, cfg config.Config, state
 // the matching successful native attempt and the existing owned mapping can
 // continue a read-only conversation. DAG/checkpoint recovery stays separate.
 func adaptivePrimarySession(v session.Session, request core.ExecutorRequest, cwd, scope string) bool {
+	if !session.AdaptiveHistoryEligible(v) {
+		return false
+	}
 	if v.PrimaryTurn == nil {
 		return v.CompletedPrimaryPlan == nil && request.ExecutorSessionID == "" && localMetadataSession(v, request, cwd, scope)
 	}

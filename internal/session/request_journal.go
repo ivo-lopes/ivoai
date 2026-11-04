@@ -350,8 +350,28 @@ func (s Store) appendTurnAttempt(ctx context.Context, id string, raw []byte) err
 // AppendTurnAttempt persists exact callback bytes before the bounded metadata
 // projection changes. It never invokes an executor or replays an operation.
 func (s Store) AppendTurnAttempt(ctx context.Context, id string, raw []byte) error {
-	if _, err := s.Get(id); err != nil {
+	v, err := s.Get(id)
+	if err != nil {
 		return err
+	}
+	if _, err := attemptIdentity(id, raw); err != nil {
+		return err
+	}
+	var attempt historyAttempt
+	if json.Unmarshal(raw, &attempt) != nil {
+		return errors.New("invalid attempt audit")
+	}
+	// A malformed/foreign delivery is rejected without modifying another
+	// owner's eligibility. Only a recognized host-owned event may taint it.
+	if attempt.SessionID != "" && attempt.SessionID != id || attempt.Frontend != "" && attempt.Frontend != v.Frontend || attempt.FrontendID != "" && v.FrontendSessionID != "" && attempt.FrontendID != v.FrontendSessionID {
+		return errors.New("foreign attempt audit denied")
+	}
+	// Persist the monotonic denial before the event: a crash between these
+	// writes cannot expose a clean eligibility projection after a known failure.
+	if deniedHistoryAttempt(v, attempt) {
+		if err := s.markHistoryDenied(ctx, id); err != nil {
+			return err
+		}
 	}
 	return s.appendTurnAttempt(ctx, id, raw)
 }
