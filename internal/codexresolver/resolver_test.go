@@ -63,10 +63,14 @@ func TestResolutionMatrix(t *testing.T) {
 	for _, tc := range []struct {
 		name, user, managed, want                           string
 		userBad, managedBad, userAuthBad, userCapabilityBad bool
+		preferManaged                                       bool
 	}{
 		{name: "user newer", user: "0.153.4", managed: "0.148.0", want: "user/system"},
 		{name: "managed newer", user: "0.148.0", managed: "0.153.4", want: "managed"},
 		{name: "same version prefers user", user: "0.153.4", managed: "0.153.4", want: "user/system"},
+		{name: "managed mode equal version", user: "0.153.4", managed: "0.153.4", preferManaged: true, want: "managed"},
+		{name: "managed mode never downgrades", user: "0.166.0", managed: "0.162.1", preferManaged: true, want: "user/system"},
+		{name: "managed mode rejects broken equal client", user: "0.166.0", managed: "0.166.0", preferManaged: true, managedBad: true, want: "user/system"},
 		{name: "incompatible user", user: "0.147.0", managed: "0.148.0", want: "managed"},
 		{name: "broken user", user: "0.153.4", managed: "0.148.0", userBad: true, want: "managed"},
 		{name: "broken managed", user: "0.153.4", managed: "0.148.0", managedBad: true, want: "user/system"},
@@ -81,7 +85,7 @@ func TestResolutionMatrix(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			root := t.TempDir()
 			run := &runner{clients: map[string]client{}}
-			resolver := Resolver{Runner: run}
+			resolver := Resolver{Runner: run, PreferManagedOnEqualVersion: tc.preferManaged}
 			if tc.user != "" {
 				run.direct = binary(t, root, "user/codex")
 				run.clients[run.direct] = client{version: tc.user, broken: tc.userBad, unauthenticated: tc.userAuthBad, noCapability: tc.userCapabilityBad}

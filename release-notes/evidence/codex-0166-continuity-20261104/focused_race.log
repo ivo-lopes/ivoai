@@ -1,0 +1,3 @@
+ok  	github.com/ivo-lopes/ivoai/internal/app	3.248s
+ok  	github.com/ivo-lopes/ivoai/internal/codexresolver	1.037s
+ok  	github.com/ivo-lopes/ivoai/internal/components	1.027s [no tests to run]

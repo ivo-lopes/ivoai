@@ -29,12 +29,30 @@ const adaptiveCompanionSHA = "ec71830690a7c0024916ee0c99fbdc635bc6e747ff665ea4f0
 
 type adaptiveRuntime struct{ executable, sha, companion, companionSHA string }
 
+// reviewedAdaptiveDigests is deliberately an exact version/platform allowlist.
+// Retaining the previously certified pair permits explicit installer rollback;
+// a matching version banner never substitutes for these executable digests.
+func reviewedAdaptiveDigests(version, platform string) (executable, companion string, ok bool) {
+	if platform != "linux/amd64" {
+		return "", "", false
+	}
+	switch version {
+	case "0.162.1":
+		return adaptiveCodexSHA, adaptiveCompanionSHA, true
+	case "0.166.0":
+		return "b8a11fedf24b2dfb59a70c9e52b030f9a508dcd49cd2dd0d41956f4c785156b8", "657f4e902726e05867c937b583049d5997e057f8cd0ab40450633c9c9ef8d630", true
+	default:
+		return "", "", false
+	}
+}
+
 func pinnedAdaptiveRuntime(state config.State, v session.Session) (adaptiveRuntime, error) {
 	c, host := state.Components["codex"], state.Components["codex-code-mode-host"]
-	if runtime.GOOS != "linux" || runtime.GOARCH != "amd64" || !c.Managed || !c.Installed || !host.Managed || !host.Installed || !v.CodexManaged || c.Version != "0.162.1" || host.Version != c.Version || v.CodexVersion != c.Version || c.Path != v.CodexPath || v.CodexSHA256 != adaptiveCodexSHA || host.Path != filepath.Join(filepath.Dir(c.Path), "codex-code-mode-host") {
+	sha, companionSHA, reviewed := reviewedAdaptiveDigests(c.Version, runtime.GOOS+"/"+runtime.GOARCH)
+	if !reviewed || !c.Managed || !c.Installed || !host.Managed || !host.Installed || !v.CodexManaged || host.Version != c.Version || v.CodexVersion != c.Version || c.Path != v.CodexPath || v.CodexSHA256 != sha || host.Path != filepath.Join(filepath.Dir(c.Path), "codex-code-mode-host") {
 		return adaptiveRuntime{}, errors.New("ADAPTIVE_PRIMARY_RUNTIME_UNAVAILABLE")
 	}
-	return adaptiveRuntime{c.Path, adaptiveCodexSHA, host.Path, adaptiveCompanionSHA}, nil
+	return adaptiveRuntime{c.Path, sha, host.Path, companionSHA}, nil
 }
 
 func adaptiveBinarySHA(ctx context.Context, path string) (string, error) {
@@ -159,7 +177,7 @@ func (a *App) admitAdaptivePrimary(ctx context.Context, cfg config.Config, state
 	pair, err := checkRuntime(state, v)
 	if err != nil {
 		if a.Err != nil {
-			fmt.Fprintln(a.Err, "Experimental primary-only capability unavailable: requires the reviewed managed Codex0.162.1 Linuxamd64 pair; using the existing DAG path before admission.")
+			fmt.Fprintln(a.Err, "Experimental primary-only capability unavailable: requires an exact reviewed managed Codex Linuxamd64 executable/companion pair; using the existing DAG path before admission.")
 		}
 		return nil, false, nil
 	}

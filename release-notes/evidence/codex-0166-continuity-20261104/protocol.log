@@ -1,0 +1,36 @@
+=== RUN   TestLiveAdaptivePrimaryManagedChanges
+    adaptive_changes_live_test.go:292: NOT_RUN: explicit real official subscription changes required
+--- SKIP: TestLiveAdaptivePrimaryManagedChanges (0.00s)
+=== RUN   TestLiveAdaptivePrimaryFullCLI
+    adaptive_cli_live_test.go:125: NOT_RUN: explicit public production CLI integration required
+--- SKIP: TestLiveAdaptivePrimaryFullCLI (0.00s)
+=== RUN   TestLiveAdaptivePrimaryManagedFailure
+    adaptive_failure_live_test.go:79: NOT_RUN: explicit official subscription failure integration required
+--- SKIP: TestLiveAdaptivePrimaryManagedFailure (0.00s)
+=== RUN   TestLiveAdaptivePrimaryFunctionalCodex
+    adaptive_inference_live_test.go:200: NOT_RUN: explicit official subscription inference required
+--- SKIP: TestLiveAdaptivePrimaryFunctionalCodex (0.00s)
+=== RUN   TestLiveAdaptivePrimaryCoreEscalationWithoutChildFlag
+    adaptive_primary_live_test.go:364: ADAPTIVE_CORE_PROTOCOL={"scope":"real_Core_MCP_child_and_reviewed_pair_identity","admission_flag_in_child":false,"same_turn_DAG":true,"plan_approval_exercised":true,"read_bootstrap_sufficient_without_plan":false,"closed_and_stale_child_denied":true,"workers":0,"model_inference":false}
+--- PASS: TestLiveAdaptivePrimaryCoreEscalationWithoutChildFlag (10.15s)
+=== RUN   TestLiveAdaptivePrimaryCoreReadBootstrapWithoutChildFlag
+    adaptive_primary_live_test.go:364: ADAPTIVE_CORE_PROTOCOL={"scope":"real_Core_MCP_child_and_reviewed_pair_identity","admission_flag_in_child":false,"same_turn_DAG":false,"plan_approval_exercised":false,"read_bootstrap_sufficient_without_plan":true,"closed_and_stale_child_denied":true,"workers":0,"model_inference":false}
+--- PASS: TestLiveAdaptivePrimaryCoreReadBootstrapWithoutChildFlag (2.55s)
+=== RUN   TestLiveAdaptivePrimaryOfficialCLIWithoutDAG
+=== RUN   TestLiveAdaptivePrimaryOfficialCLIWithoutDAG/usage_absent
+    adaptive_primary_live_test.go:469: ADAPTIVE_OFFICIAL_CLI={"version":"0.166.0","provider":"synthetic_loopback","requests":1,"DAG":false,"workers":0,"duplicate":409,"fake_provider_usage_present":false,"real_inference":false,"subscription_authentication":false}
+    adaptive_primary_live_test.go:470: ADAPTIVE_INSTRUCTION_BYTES={"initial_utf8_bytes":4786,"legacy_utf8_bytes":8323,"DAG_protocol_utf8_bytes":8323,"not_token_or_cost_measurement":true}
+=== RUN   TestLiveAdaptivePrimaryOfficialCLIWithoutDAG/usage_complete
+    adaptive_primary_live_test.go:469: ADAPTIVE_OFFICIAL_CLI={"version":"0.166.0","provider":"synthetic_loopback","requests":1,"DAG":false,"workers":0,"duplicate":409,"fake_provider_usage_present":true,"real_inference":false,"subscription_authentication":false}
+    adaptive_primary_live_test.go:470: ADAPTIVE_INSTRUCTION_BYTES={"initial_utf8_bytes":4786,"legacy_utf8_bytes":8323,"DAG_protocol_utf8_bytes":8323,"not_token_or_cost_measurement":true}
+--- PASS: TestLiveAdaptivePrimaryOfficialCLIWithoutDAG (7.76s)
+    --- PASS: TestLiveAdaptivePrimaryOfficialCLIWithoutDAG/usage_absent (3.64s)
+    --- PASS: TestLiveAdaptivePrimaryOfficialCLIWithoutDAG/usage_complete (4.12s)
+=== RUN   TestLiveAdaptivePrimaryReceiptRevocation
+    adaptive_receipt_revocation_live_test.go:25: NOT_RUN: explicit official subscription receipt-revocation proof required
+--- SKIP: TestLiveAdaptivePrimaryReceiptRevocation (0.00s)
+=== RUN   TestLiveAdaptivePrimaryNativeTUI
+    adaptive_tui_live_test.go:34: NOT_RUN: explicit official Codex native TUI integration required
+--- SKIP: TestLiveAdaptivePrimaryNativeTUI (0.00s)
+PASS
+ok  	github.com/ivo-lopes/ivoai/internal/app	20.474s

@@ -1,0 +1,4 @@
+=== RUN   TestLiveAdaptivePrimaryFullCLI
+--- PASS: TestLiveAdaptivePrimaryFullCLI (61.45s)
+PASS
+ok  	github.com/ivo-lopes/ivoai/internal/app	61.462s

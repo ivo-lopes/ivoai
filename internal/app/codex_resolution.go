@@ -14,7 +14,7 @@ func (a *App) resolveCodex(ctx context.Context, state config.State) (config.Stat
 	if a.CodexResolution != nil {
 		return a.CodexResolution(ctx, state)
 	}
-	r, err := (codexresolver.Resolver{Runner: a.Runner, PATH: os.Getenv("PATH"), Managed: state.Components["codex"], Host: state.Components["codex-code-mode-host"]}).Resolve(ctx)
+	r, err := (codexresolver.Resolver{Runner: a.Runner, PATH: os.Getenv("PATH"), Managed: state.Components["codex"], Host: state.Components["codex-code-mode-host"], PreferManagedOnEqualVersion: os.Getenv(adaptivePrimaryFlag) == "1"}).Resolve(ctx)
 	if a.Err != nil {
 		fmt.Fprintln(a.Err, r.Summary())
 		if r.VersionDrift || err != nil {

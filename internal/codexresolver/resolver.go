@@ -57,6 +57,9 @@ type Resolution struct {
 
 type Resolver struct {
 	Runner platform.Runner
+	// Host-selected managed mode may retain the registered client on a version
+	// tie. It never selects an older, unhealthy or unauthenticated client.
+	PreferManagedOnEqualVersion bool
 	// PATH is captured by the caller, never taken from a managed child environment.
 	PATH    string
 	Managed config.ComponentState
@@ -145,7 +148,10 @@ func (r Resolver) Resolve(ctx context.Context) (Resolution, error) {
 			continue
 		}
 		best := result.Effective
-		if best.Path == "" || Compare(c.Version, best.Version) > 0 || Compare(c.Version, best.Version) == 0 && best.Ownership == "managed" && c.Ownership != "managed" {
+		equalPreference := Compare(c.Version, best.Version) == 0 &&
+			(r.PreferManagedOnEqualVersion && c.Ownership == "managed" && best.Ownership != "managed" ||
+				!r.PreferManagedOnEqualVersion && best.Ownership == "managed" && c.Ownership != "managed")
+		if best.Path == "" || Compare(c.Version, best.Version) > 0 || equalPreference {
 			result.Effective = c
 		}
 	}
@@ -155,6 +161,9 @@ func (r Resolver) Resolve(ctx context.Context) (Resolution, error) {
 	}
 	result.VersionDrift = result.Direct.Version != "" && result.Direct.Version != result.Effective.Version
 	result.Reason = "newest_healthy_authenticated_stable_local_client"
+	if r.PreferManagedOnEqualVersion && result.Effective.Ownership == "managed" && result.Direct.Version == result.Effective.Version {
+		result.Reason = "managed_mode_retains_equal_version_registered_client"
+	}
 	if result.VersionDrift {
 		result.Reason = "CODEX_VERSION_DRIFT: shell candidate differs; see candidate health/compatibility and versions"
 	}
