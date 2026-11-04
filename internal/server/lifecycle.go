@@ -120,6 +120,21 @@ type Manager struct {
 }
 
 func (m Manager) Setup(ctx context.Context) error {
+	if err := m.CheckDependencyUpgrade(); err != nil {
+		return err
+	}
+	return WithDependencyMutationLock(ctx, m.Layout, func(locked context.Context) error {
+		if err := m.CheckDependencyUpgrade(); err != nil {
+			return err
+		}
+		return m.setup(locked, false)
+	})
+}
+
+func (m Manager) setup(ctx context.Context, verifiedUpgrade bool) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	if err := m.Layout.Ensure(); err != nil {
 		return err
 	}
@@ -148,6 +163,9 @@ func (m Manager) Setup(ctx context.Context) error {
 		filepath.Join(m.Layout.SystemdDir, "ivoai-context.service"):      {ContextUnit, 0o644},
 		filepath.Join(m.Layout.SystemdDir, "ivoai-docs.service"):         {DocsUnit, 0o644},
 		filepath.Join(m.Layout.SystemdDir, "ivoai-dependencies.service"): {dependenciesUnit, 0o644},
+	}
+	if verifiedUpgrade {
+		delete(assets, filepath.Join(m.Layout.ConfigDir, "server.toml"))
 	}
 	if err := EnsureDocsConfig(m.Layout); err != nil {
 		return err

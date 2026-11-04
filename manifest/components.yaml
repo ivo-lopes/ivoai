@@ -231,26 +231,26 @@ components:
 
   - name: ai-memory
     role: [client, server]
-    validated_version: "2.6.3"
-    minimum_version: "2.6.3"
+    validated_version: "3.3.3"
+    minimum_version: "3.3.3"
     license: MIT
-    source: "https://github.com/akitaonrails/ai-memory/releases/tag/v2.6.3"
-    changelog: "https://github.com/akitaonrails/ai-memory/blob/v2.6.3/CHANGELOG.md"
+    source: "https://github.com/akitaonrails/ai-memory/releases/tag/v3.3.3"
+    changelog: "https://github.com/akitaonrails/ai-memory/blob/v3.3.3/CHANGELOG.md"
     architectures: [linux/amd64, linux/arm64]
     install_strategy: github_release_asset
     checksum_strategy: adjacent_upstream_sha256
     assets:
       linux/amd64:
-        url: "https://github.com/akitaonrails/ai-memory/releases/download/v2.6.3/ai-memory-linux-x86_64.tar.gz"
-        sha256: "933be9bb8fe6930336933f0b8adf0695007e644f945898f9f030fd312326f0f3"
+        url: "https://github.com/akitaonrails/ai-memory/releases/download/v3.3.3/ai-memory-linux-x86_64.tar.gz"
+        sha256: "726616b3e389beeef073001411603154c512812d49a2a6b1195e93ad25579a14"
       linux/arm64:
-        url: "https://github.com/akitaonrails/ai-memory/releases/download/v2.6.3/ai-memory-linux-aarch64.tar.gz"
-        sha256: "e4e01409fe80148a4d561aef98ac5d526c488c4a621faa759f9d0b3ed2606088"
+        url: "https://github.com/akitaonrails/ai-memory/releases/download/v3.3.3/ai-memory-linux-aarch64.tar.gz"
+        sha256: "bc8692154e39dcd432dd8dc006ebc89daa1383927d331fe58c87a339c177ed82"
     server_image:
-      reference: "akitaonrails/ai-memory@sha256:15178d3fc5bd67439a5b9780b2cf58af476943abea2487514a4c5d6ec18291ee"
-      tag_for_humans: "2.6.3"
+      reference: "akitaonrails/ai-memory@sha256:db5103a11dbdd4b668d05ebc90c13832bc3881f719d5113ad8a0a86447a6b74e"
+      tag_for_humans: "3.3.3"
     notes:
-      - "Client and server are pinned to the reviewed 2.6.3 release; back up server data before migration."
+      - "Client and server are pinned to the reviewed 3.3.3 release; existing stores require explicit stopped-service backup, isolated-copy validation and coordinated runtime/data rollback; ordinary setup never migrates them."
       - "Hooks must spool/best-effort and always allow the primary agent to continue when the server is offline."
 
   - name: graft
@@ -368,22 +368,22 @@ components:
 
   - name: qdrant
     role: [server]
-    validated_version: "1.19.2"
-    minimum_version: "1.19.2"
+    validated_version: "1.20.0"
+    minimum_version: "1.20.0"
     license: Apache-2.0
-    source: "https://github.com/qdrant/qdrant/releases/tag/v1.19.2"
+    source: "https://github.com/qdrant/qdrant/releases/tag/v1.20.0"
     architectures: [linux/amd64, linux/arm64]
     install_strategy: docker_compose_internal_network
     checksum_strategy: oci_digest
     image:
-      reference: "qdrant/qdrant@sha256:b7b0444c4c351c970b98e90a6f89c2ee4287c65b44e52b4cb503fa5b2aa927ad"
-      tag_for_humans: "v1.19.2"
+      reference: "qdrant/qdrant@sha256:9bfc89f9914fc14876a88c05270685921a55b8877b254a98bcc1cc2f0a424cd2"
+      tag_for_humans: "v1.20.0"
     exposure: internal_only
 
   - name: docker-engine
     role: [server-runtime]
     project: Docker Engine
-    validated_version: "29.7.2"
+    validated_version: "29.9.3"
     minimum_version: "28.0.0"
     license: Apache-2.0
     source: "https://docs.docker.com/engine/release-notes/29/"
@@ -398,20 +398,20 @@ components:
   - name: docker-compose
     role: [server-runtime]
     project: Docker Compose
-    validated_version: "5.6.0"
-    minimum_version: "5.6.0"
+    validated_version: "5.7.0"
+    minimum_version: "2.33.1"
     license: Apache-2.0
-    source: "https://github.com/docker/compose/releases/tag/v5.6.0"
+    source: "https://github.com/docker/compose/releases/tag/v5.7.0"
     architectures: [linux/amd64, linux/arm64]
     install_strategy: verified_system_cli_plugin_fallback
     checksum_strategy: upstream_sha256
     assets:
       linux/amd64:
-        url: "https://github.com/docker/compose/releases/download/v5.6.0/docker-compose-linux-x86_64"
-        sha256: "40343e21ca777173e69cff5dbafeb37c6f81f3b0d57d9e597f036e95eb63e76a"
+        url: "https://github.com/docker/compose/releases/download/v5.7.0/docker-compose-linux-x86_64"
+        sha256: "7758048ad38e580f22559603312874fec8bb638d021a9e64182385fc17cc12a2"
       linux/arm64:
-        url: "https://github.com/docker/compose/releases/download/v5.6.0/docker-compose-linux-aarch64"
-        sha256: "733ec76717ceb59052a9609b9dadfb523b2df8eab57a54212872d10a58078ea2"
+        url: "https://github.com/docker/compose/releases/download/v5.7.0/docker-compose-linux-aarch64"
+        sha256: "15861535d14e26555736b49376c95e14bfd94285366c8446bfac7156a972e76f"
     notes:
       - "An existing compatible Compose installation is preserved. When Compose is absent or older than 2.33.1, setup installs this verified official binary under /usr/local/lib/docker/cli-plugins."
 

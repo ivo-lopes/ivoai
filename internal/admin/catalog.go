@@ -219,6 +219,15 @@ func ActionCatalog() []Action {
 	a = makeAction("server.setup", "mutation", []Field{}, "server", "setup")
 	a.requiresRoot = true
 	rows = append(rows, a)
+	a = makeAction("server.upgrade", "mutation", []Field{{Name: "backup_path", Label: "New backup path under the managed backup directory (blank generates one)", Type: "text", Required: false}}, "server", "upgrade")
+	a.Description = "Stop managed services, preserve data and the Qdrant index, validate the new runtimes on isolated copies, then install pinned dependency assets. Existing OS authority and Docker are required."
+	a.optionalFlags = map[string]string{"backup_path": "--backup-output"}
+	a.requiresRoot = true
+	rows = append(rows, a)
+	a = makeAction("server.upgrade.rollback", "mutation", []Field{field("receipt", "Private dependency upgrade receipt path")}, "server", "upgrade", "--rollback-receipt", "{receipt}")
+	a.Description = "Explicitly restore the matching data, index snapshot and previous runtime assets while services are stopped. This replaces current state; inspect the selected private receipt before approval."
+	a.requiresRoot = true
+	rows = append(rows, a)
 	a = makeAction("server.start", "mutation", []Field{}, "server", "start")
 	a.requiresRoot = true
 	rows = append(rows, a)

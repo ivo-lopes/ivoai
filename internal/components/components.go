@@ -117,9 +117,9 @@ func DefaultCatalog() []Spec {
 				"linux/amd64": {URL: "https://github.com/anomalyco/opencode/releases/download/v1.19.0/opencode-linux-x64.tar.gz", SHA256: "7bb9e61ad6feacf2e89c10a6a2c1840e3de4220bb50ba1fc7110f31806076aec"},
 				"linux/arm64": {URL: "https://github.com/anomalyco/opencode/releases/download/v1.19.0/opencode-linux-arm64.tar.gz", SHA256: "e9841d43d3e1a8f36ed2691592d3b8b4fb097e606c8b559a277a1b845840e26b"},
 			}},
-		{Name: "ai-memory", Executable: "ai-memory", Version: "2.6.3", Strategy: StrategyBinary, Assets: map[string]Asset{
-			"linux/amd64": {URL: "https://github.com/akitaonrails/ai-memory/releases/download/v2.6.3/ai-memory-linux-x86_64.tar.gz", SHA256: "933be9bb8fe6930336933f0b8adf0695007e644f945898f9f030fd312326f0f3"},
-			"linux/arm64": {URL: "https://github.com/akitaonrails/ai-memory/releases/download/v2.6.3/ai-memory-linux-aarch64.tar.gz", SHA256: "e4e01409fe80148a4d561aef98ac5d526c488c4a621faa759f9d0b3ed2606088"},
+		{Name: "ai-memory", Executable: "ai-memory", Version: "3.3.3", Strategy: StrategyBinary, Assets: map[string]Asset{
+			"linux/amd64": {URL: "https://github.com/akitaonrails/ai-memory/releases/download/v3.3.3/ai-memory-linux-x86_64.tar.gz", SHA256: "726616b3e389beeef073001411603154c512812d49a2a6b1195e93ad25579a14"},
+			"linux/arm64": {URL: "https://github.com/akitaonrails/ai-memory/releases/download/v3.3.3/ai-memory-linux-aarch64.tar.gz", SHA256: "bc8692154e39dcd432dd8dc006ebc89daa1383927d331fe58c87a339c177ed82"},
 		}},
 		{Name: "ruflo", Executable: "ruflo", Version: "3.71.1", Package: "ruflo", PackageURL: "https://registry.npmjs.org/ruflo/-/ruflo-3.71.1.tgz", Integrity: "sha512-ora1Qud7HM7Lse0w02WFDTnuu81HK3C3AisMbncoVXjmMxXo84ofjjy1fPeWXcoXGpDNdJeokDVe16NbJ58FqA==", Strategy: StrategyNPMIsolated},
 	}

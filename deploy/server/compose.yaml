@@ -1,6 +1,6 @@
 services:
   qdrant:
-    image: qdrant/qdrant@sha256:b7b0444c4c351c970b98e90a6f89c2ee4287c65b44e52b4cb503fa5b2aa927ad
+    image: qdrant/qdrant@sha256:9bfc89f9914fc14876a88c05270685921a55b8877b254a98bcc1cc2f0a424cd2
     restart: unless-stopped
     user: "1000:1000"
     env_file: [/etc/ivoai/secrets/qdrant.env]
@@ -49,7 +49,7 @@ services:
         gw_priority: 1
 
   ai-memory:
-    image: akitaonrails/ai-memory@sha256:15178d3fc5bd67439a5b9780b2cf58af476943abea2487514a4c5d6ec18291ee
+    image: akitaonrails/ai-memory@sha256:db5103a11dbdd4b668d05ebc90c13832bc3881f719d5113ad8a0a86447a6b74e
     restart: unless-stopped
     command: ["serve", "--transport", "http", "--bind", "0.0.0.0:49374"]
     user: "1000:1000"

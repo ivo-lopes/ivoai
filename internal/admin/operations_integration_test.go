@@ -603,6 +603,8 @@ func TestAdministrativeOperationCatalogThroughActualCLIAndIsolatedServices(t *te
 // These are concrete fixture boundaries, not a generic allowance for failures.
 // A changed error or a newly failing action requires investigation.
 var unavailableAdministrativePreconditions = map[string]string{
+	"server.upgrade":          "live server upgrade unavailable in test-mode CLI",
+	"server.upgrade.rollback": "live server upgrade unavailable in test-mode CLI",
 	"capability.rollback":     "no previous native revision is available",
 	"doctor.repair-hooks":     "memory hooks are disabled",
 	"remote.connector.list":   "no ivoai server is connected",
