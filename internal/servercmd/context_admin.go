@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"time"
 
 	contextsvc "github.com/ivo-lopes/ivoai/internal/context"
@@ -32,14 +33,42 @@ func ingestContextLocked(ctx context.Context, layout server.Layout, service cont
 	if err != nil || !dir.IsDir() || dir.Mode()&os.ModeSymlink != 0 {
 		return 0, errors.New("context state unavailable")
 	}
-	fd, err := unix.Open(filepath.Join(layout.ContextDir, "ingest.lock"), unix.O_RDONLY|unix.O_CREAT|unix.O_CLOEXEC|unix.O_NOFOLLOW|unix.O_NONBLOCK, 0640)
+	parent, ok := dir.Sys().(*syscall.Stat_t)
+	if !ok {
+		return 0, errors.New("context directory identity unavailable")
+	}
+	flags := unix.O_RDONLY | unix.O_CLOEXEC | unix.O_NOFOLLOW | unix.O_NONBLOCK
+	fd, err := unix.Open(filepath.Join(layout.ContextDir, "ingest.lock"), flags|unix.O_CREAT|unix.O_EXCL, 0640)
+	created := err == nil
+	if errors.Is(err, unix.EEXIST) {
+		fd, err = unix.Open(filepath.Join(layout.ContextDir, "ingest.lock"), flags, 0)
+	}
 	if err != nil {
-		return 0, errors.New("context ingestion lock unavailable")
+		return 0, errors.New("context ingestion lock unavailable; an administrator may need to repair its ownership")
 	}
 	defer unix.Close(fd)
 	var stat unix.Stat_t
-	if unix.Fstat(fd, &stat) != nil || stat.Mode&unix.S_IFMT != unix.S_IFREG {
-		return 0, errors.New("context ingestion lock is not a regular file")
+	if unix.Fstat(fd, &stat) != nil || stat.Mode&unix.S_IFMT != unix.S_IFREG || stat.Nlink != 1 || stat.Size != 0 {
+		return 0, errors.New("invalid context ingestion lock")
+	}
+	// The service directory supplies the sole approved service owner/group. A
+	// root-first invocation must transfer its newly created lock to that identity;
+	// otherwise umask077 leaves a root:service0600 inode unreadable by the daemon.
+	if created {
+		if err := unix.Fchown(fd, int(parent.Uid), int(parent.Gid)); err != nil {
+			return 0, errors.New("context ingestion lock ownership unavailable")
+		}
+		if err := unix.Fstat(fd, &stat); err != nil {
+			return 0, errors.New("context ingestion lock identity unavailable")
+		}
+	}
+	if (stat.Uid != parent.Uid && stat.Uid != 0) || stat.Gid != parent.Gid || stat.Mode&0777 & ^uint32(0640) != 0 {
+		return 0, errors.New("context ingestion lock ownership mismatch")
+	}
+	if stat.Mode&0777 != 0640 {
+		if err := unix.Fchmod(fd, 0640); err != nil {
+			return 0, errors.New("context ingestion lock permissions unavailable; administrator repair required")
+		}
 	}
 	if err := unix.Flock(fd, unix.LOCK_EX|unix.LOCK_NB); err != nil {
 		return 0, errors.New("context ingestion already in progress")

@@ -1157,3 +1157,11 @@ textarea {
     flex-direction:column
   }
 }
+
+.action-output-warning {
+  border-inline-start:4px solid var(--warning);
+  padding:12px;
+  color:var(--text);
+  background:var(--raised);
+  font-weight:600;
+}
