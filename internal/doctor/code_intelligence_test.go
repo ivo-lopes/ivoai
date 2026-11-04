@@ -86,7 +86,7 @@ func TestCodeIntelligenceDoctorChecksIntegrityAndOnlyPrivateNode(t *testing.T) {
 	tw.Close()
 	gz.Close()
 	digest := sha256.Sum256(archive.Bytes())
-	spec := components.Spec{Name: "graft", Version: "0.21.1-ivoai.1", Revision: strings.Repeat("a", 64), PayloadFormat: "tar_gzip", PayloadPath: "graft-runtime", License: "MIT", SignatureStatus: "not_exposed", AttestationStatus: "not_exposed", TrustLevel: "checksum_only", Assets: map[string]components.Asset{runtime.GOOS + "/" + runtime.GOARCH: {URL: "https://example.invalid/graft.tar.gz", SHA256: fmt.Sprintf("%x", digest)}}}
+	spec := components.Spec{Name: "graft", Version: "0.21.1-ivoai.1", Revision: strings.Repeat("a", 64), PayloadFormat: "tar_gzip", PayloadPath: "graft-runtime", License: "MIT", SignatureStatus: "not_exposed", AttestationStatus: "not_exposed", TrustLevel: "checksum_only", Assets: map[string]components.Asset{runtime.GOOS + "/" + runtime.GOARCH: {URL: "https://github.com/ivo-lopes/ivoai/releases/download/v0.15.0/ivoai-graft_linux_" + runtime.GOARCH + ".tar.gz", SHA256: fmt.Sprintf("%x", digest)}}}
 	source, err := components.ResolvedSource(spec)
 	if err != nil {
 		t.Fatal(err)
@@ -117,6 +117,21 @@ func TestCodeIntelligenceDoctorChecksIntegrityAndOnlyPrivateNode(t *testing.T) {
 	}
 	if graft.Revision != spec.Revision || graft.TrustLevel != "checksum_only" || code.ArtifactSHA256 != source.Integrity.Digest {
 		t.Fatal("missing verified provenance")
+	}
+	key := runtime.GOOS + "/" + runtime.GOARCH
+	mirrored := spec
+	asset := spec.Assets[key]
+	asset.URL = strings.Replace(asset.URL, "/v0.15.0/", "/v0.16.0/", 1)
+	mirrored.Assets = map[string]components.Asset{key: asset}
+	graft, code = d.codeIntelligence(context.Background(), state, []components.Spec{mirrored}, prerequisites)
+	if code.Integrity != "verified" || code.ArtifactSHA256 != source.Integrity.Digest || graft.Source != source.Source {
+		t.Fatal("identical republication lost integrity or original provenance")
+	}
+	asset.URL = strings.Replace(asset.URL, "ivo-lopes/ivoai", "other/ivoai", 1)
+	mirrored.Assets[key] = asset
+	_, code = d.codeIntelligence(context.Background(), state, []components.Spec{mirrored}, prerequisites)
+	if code.Integrity != "failed" || code.Component.Available {
+		t.Fatal("another publisher passed managed provenance verification")
 	}
 	runner.fail = true
 	_, code = d.codeIntelligence(context.Background(), state, []components.Spec{spec}, prerequisites)

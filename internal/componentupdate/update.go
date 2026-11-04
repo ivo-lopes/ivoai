@@ -11,7 +11,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"reflect"
 	"strings"
 	"time"
 
@@ -69,7 +68,7 @@ func (m Manager) Update(ctx context.Context, reference supplychain.Reference) (R
 	}
 	manager := m.pipelineManager()
 	if active, root, activeErr := manager.Active(resolved.ID); activeErr == nil && active.Revision == resolved.Revision {
-		if !reflect.DeepEqual(active, resolved) {
+		if !SameResolvedSource(active, resolved) {
 			return Result{}, errors.New("active managed component provenance does not match resolved source")
 		}
 		if err := manager.Health.Validate(ctx, active, root); err != nil {

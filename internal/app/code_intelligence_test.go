@@ -183,7 +183,7 @@ func verifiedCodeRuntimeFixture(t *testing.T) (*App, string, components.Spec, st
 		t.Fatal(err)
 	}
 	digest := sha256.Sum256(archive.Bytes())
-	spec := components.Spec{Name: "graft", Version: codeintel.Version, Revision: strings.Repeat("a", 64), PayloadFormat: "tar_gzip", PayloadPath: "graft-runtime", License: "MIT", SignatureStatus: "not_exposed", AttestationStatus: "not_exposed", TrustLevel: "checksum_only", Assets: map[string]components.Asset{runtime.GOOS + "/" + runtime.GOARCH: {URL: "https://example.invalid/fixture.tar.gz", SHA256: fmt.Sprintf("%x", digest)}}}
+	spec := components.Spec{Name: "graft", Version: codeintel.Version, Revision: strings.Repeat("a", 64), PayloadFormat: "tar_gzip", PayloadPath: "graft-runtime", License: "MIT", SignatureStatus: "not_exposed", AttestationStatus: "not_exposed", TrustLevel: "checksum_only", Assets: map[string]components.Asset{runtime.GOOS + "/" + runtime.GOARCH: {URL: "https://github.com/ivo-lopes/ivoai/releases/download/v0.15.0/ivoai-graft_linux_" + runtime.GOARCH + ".tar.gz", SHA256: fmt.Sprintf("%x", digest)}}}
 	resolved, err := components.ResolvedSource(spec)
 	if err != nil {
 		t.Fatal(err)
@@ -245,6 +245,36 @@ func TestNativeCodeProviderRequiresExpectedVerifiedArtifact(t *testing.T) {
 	}
 	if _, err := a.codeIntelligenceProvider(context.Background(), root, "cs_fixture", spec); err == nil {
 		t.Fatal("corrupted payload accepted")
+	}
+}
+
+func TestNativeCodeProviderAcceptsOnlyIdenticalOfficialGraftRepublication(t *testing.T) {
+	a, root, spec, distribution, _ := verifiedCodeRuntimeFixture(t)
+	key := runtime.GOOS + "/" + runtime.GOARCH
+	asset := spec.Assets[key]
+	originalURL := asset.URL
+	asset.URL = strings.Replace(asset.URL, "/v0.15.0/", "/v0.16.0/", 1)
+	spec.Assets = map[string]components.Asset{key: asset}
+	provider, err := a.codeIntelligenceProvider(context.Background(), root, "cs_fixture", spec)
+	if err != nil || provider.Distribution != distribution {
+		t.Fatalf("identical official republication unavailable: %+v %v", provider, err)
+	}
+	active, _, err := (supplychain.Manager{Root: filepath.Join(a.Store.Paths.DataDir, "supply-chain")}).Active("graft")
+	if err != nil || active.Source != originalURL {
+		t.Fatal("read-only preflight rewrote immutable original provenance", err)
+	}
+	asset.URL = strings.Replace(asset.URL, "ivo-lopes/ivoai", "other/ivoai", 1)
+	spec.Assets[key] = asset
+	if _, err := a.codeIntelligenceProvider(context.Background(), root, "cs_fixture", spec); err == nil {
+		t.Fatal("another publisher acquired managed runtime authority")
+	}
+	asset.URL = strings.Replace(originalURL, "/v0.15.0/", "/v0.16.0/", 1)
+	spec.Assets[key] = asset
+	if err := os.WriteFile(filepath.Join(distribution, "graft-runtime"), []byte("tampered"), 0700); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := a.codeIntelligenceProvider(context.Background(), root, "cs_fixture", spec); err == nil {
+		t.Fatal("republication bypassed stored-object integrity")
 	}
 }
 
