@@ -1,5 +1,29 @@
 # Releases
 
+## v0.16.0 — turnos naturais no Codex gerenciado
+
+A linha v0.16.0 entrega um caminho funcional backend-first: admissão de texto
+natural com validação de integridade, respostas simples sem DAG, turnos
+consecutivos com ownership preservado e escalonamento no mesmo turno pelo
+scheduler/workers existentes, com aprovação. Inferência oficial com autenticação
+existente validou o comando público, busca de código, mudanças isoladas com um e
+dois workers, saída nativa normal, cancelamento e revogação do recibo pelo Core.
+As execuções anteriores com falha continuam registradas separadamente.
+
+A flag adaptativa continua **OFF por padrão**, limitada ao par exato revisado
+Codex 0.162.1 Linux amd64 e à conversa nova elegível no mesmo processo. O Core
+continua distribuído para Linux amd64/ARM64; isso não certifica adaptação em ARM64
+ou outras versões do Codex. A validação econômica global segue **INCOMPLETE**.
+
+O workflow de release exige upgrade/rollback entre versões estáveis, execução
+amd64 sem AVX/ARM64 nativa e verificação de checksums/metadados de todos os assets
+antes de publicar o draft. Consulte as
+[notas da release](https://github.com/ivo-lopes/ivoai/blob/main/release-notes/v0.16.0.md)
+e as [evidências funcionais](https://github.com/ivo-lopes/ivoai/blob/main/release-notes/adaptive-primary-natural-turns.md).
+O [canal de releases](https://github.com/ivo-lopes/ivoai/releases/latest) informa o
+estado real da publicação e fornece os pacotes instaláveis.
+
+
 ## v0.15.0 — publicada e verificada
 
 **Publicada e verificada independentemente.** A [v0.15.0](https://github.com/ivo-lopes/ivoai/releases/tag/v0.15.0)

@@ -1,5 +1,28 @@
 # Releases
 
+## v0.16.0 — natural managed Codex turns
+
+The v0.16.0 line delivers a functional backend-first Codex path: bounded natural
+text admission, simple answers without a DAG, owned consecutive turns, and
+same-turn escalation through the existing approved scheduler/workers. Official
+subscription inference has validated the public command, code retrieval, isolated
+one-/two-worker changes, normal native exit, cancellation and host receipt
+revocation. Earlier failed executions remain recorded separately.
+
+The adaptive flag stays **OFF by default**, with the exact reviewed Codex 0.162.1
+Linux amd64 pair and same-process fresh-conversation restriction. Core distribution
+retains Linux amd64/ARM64 support; that does not certify adaptive ARM64 or other
+Codex versions. Global economic validation remains **INCOMPLETE**.
+
+The release workflow requires stable-to-stable upgrade/rollback validation,
+no-AVX amd64/native ARM64 execution, and checksum/build-metadata verification of
+all assets before a draft becomes public. See the
+[release notes](https://github.com/ivo-lopes/ivoai/blob/main/release-notes/v0.16.0.md)
+and [functional evidence](https://github.com/ivo-lopes/ivoai/blob/main/release-notes/adaptive-primary-natural-turns.md).
+Use the [release channel](https://github.com/ivo-lopes/ivoai/releases/latest) for
+actual publication status and installable packages.
+
+
 ## v0.15.0 — published and verified
 
 **Published and independently verified.** [v0.15.0](https://github.com/ivo-lopes/ivoai/releases/tag/v0.15.0)

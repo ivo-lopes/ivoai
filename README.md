@@ -19,36 +19,40 @@ available temporarily as a compatibility and rollback provider. The same Go bina
 an optional private server and expose its memory and context to desktop agents,
 ChatGPT Web, and Claude Web.
 
-[v0.15.0](https://github.com/ivo-lopes/ivoai/releases/tag/v0.15.0) is published and independently
-verified from immutable source `8f688e26`: all 12 API asset sizes/digests and 11
-payload checksums passed. See the [publication report](release-notes/v0.15.0-published-validation.md)
-for distribution and downloaded-Core checks, and the separate
-[restricted protocol qualification](release-notes/v0.15.0-final-runtime-qualification.md)
-for its fake-provider scope. Experimental flags remain OFF; general TUI/model
-parity and global economic gains are unproven. PR56/63/64 and the separate
-Direct-only factory evolution are post-tag work, excluded from this release.
+The **v0.16.0 release line** delivers natural managed Codex turns, owned
+conversation continuity, normal native shutdown, and same-turn escalation through
+the existing Core scheduler. See the [release notes](release-notes/v0.16.0.md)
+and [real official-client evidence](release-notes/adaptive-primary-natural-turns.md).
+Adaptive mode remains opt-in on the exact reviewed Codex 0.162.1 Linux amd64 pair;
+general client/model parity and global economic savings remain unproven.
+Historical [v0.15.0 publication verification](release-notes/v0.15.0-published-validation.md)
+remains bound to that release's immutable source and assets.
 
 ## How it fits together
 
-Conversation continuity uses a stable IVOAI session ID. Inside `ivoai codex`,
-the native `/resume` picker and `ivoai session resume <id>` share the same
-mappings. See [continuity, recovery and explicit handoff](docs/conversation-continuity.md).
+`ivoai codex` presents the official native TUI while IVOAI Core admits managed
+turns, selects capabilities, owns planning/workers and validates delivery. Simple
+eligible adaptive turns need no DAG. Approved complex changes use the same Core
+scheduler and worker isolation. Claude Code retains its supported direct and
+readonly worker boundaries; this does not imply transparent TUI parity.
 
 ```text
-Desktop / notebook                         Private Linux servers
-
-ivoai opencode ── OpenCode TUI ── IVOAI control plane ── Codex/Claude executor
-    │          ├── quota + model/effort routing  │
-    │          ├── async read-only workers       │
-    │          └── safe Ruflo lifecycle          │
-ivoai menu ── Session Control                   per-session knowledge router
-    │                                            ├── Voicecorp server
-    │ local capability + isolated credentials   │   ├── Context/RAG
-    └────────────────────────────────────────────┤   └── ai-memory
-                                                 └── Mindsite server
-                                                     ├── Context/RAG
-                                                     └── ai-memory
+Codex official TUI ── managed adapter ── IVOAI Core
+                                           │
+                                  orchestration / validation
+                                           │
+                                  scoped evidence and tools
+                                   ├── Code Intelligence
+                                   ├── protected artifacts
+                                   ├── Context / private RAG
+                                   └── ai-memory
 ```
+
+Conversation continuity uses a stable IVOAI session ID. The native `/resume`
+picker and `ivoai session resume <id>` retain their existing guarded mappings.
+Adaptive direct-turn certification currently covers eligible new conversations
+within the same owner process; cross-process resume and prior DAG histories are
+not newly certified. See [continuity and recovery](docs/conversation-continuity.md).
 
 Optional services fail independently: an unavailable server, memory service,
 context index, compression provider, or Ruflo does not prevent the basic agents from opening.

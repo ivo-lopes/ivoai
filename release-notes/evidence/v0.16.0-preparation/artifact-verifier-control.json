@@ -1,0 +1,159 @@
+{
+  "schema_version": 1,
+  "initial_control": {
+    "pass": false,
+    "error": "Core main.version linker binding mismatch"
+  },
+  "initial_report_sha256": "d117831d38a4b57149835523128c76b42056245775e07395b2b935a73f027fad",
+  "adjusted_control": {
+    "pass": true,
+    "tag": "v0.15.0",
+    "source": "8f688e26f0c4570b6a2b30c7e052672f102703f3",
+    "assets": 12,
+    "payload_checksums": 11,
+    "asset_sha256": {
+      "checksums.txt": "394439ef448a127ba355501ece1ed5b3a377573fa4b2a769aaa7572a987dfb66",
+      "ivoai-graft_linux_amd64.tar.gz": "85cd3b4f5a06e99a683739aa6fe7325951d3343834ef5ad18a37e30e9bfac441",
+      "ivoai-graft_linux_arm64.tar.gz": "cb8253465889f48af8d0a63a10ac1115215542eb8674aa4090e529506e00af93",
+      "ivoai-memory-context.zip": "6e5bc28cb02d5557dbe16b2e2ffae7fc954c5e783c14a4dcd0fb6c08c364b378",
+      "ivoai-opencode_linux_amd64.tar.gz": "b7499554921e48ab50b17cf8ecf941ba3e4896eb6613405c03e70055a5963f84",
+      "ivoai-opencode_linux_arm64.tar.gz": "65db6be387d1b24f4e94a93980dacc402af47b5023204cc0ad5d1aae464c2060",
+      "ivoai_linux_amd64.tar.gz": "e8e8b40e593d708d4bacd688ecbbb580179b6e0afae27948f9e9a9687f42231e",
+      "ivoai_linux_arm64.tar.gz": "9cc869633fa4f691dee49b85495e3fc486aa9af857a0b40b6183eca35f66829f",
+      "managed-graft-amd64.json": "6fc5af54dd963e8d0af58b6a8dc051a52fef9e0447ef25630da669f394b6f6d7",
+      "managed-graft-arm64.json": "ea612e7e9e8c5e352f78a91fe3c597dec2530eb023b00346087c24a91390a106",
+      "managed-opencode-amd64.json": "6bf0a05aa550a48b5f5543955707d60eb292e4dc77e237f2f04b6ce1f856c880",
+      "managed-opencode-arm64.json": "bb4ed32e57e92ac1c5e2e946d635a2044369415c7530087eaa993d05ede6c024"
+    },
+    "api": {
+      "provided": true,
+      "draft": false,
+      "verified_digests": 12,
+      "unknown_digests": []
+    },
+    "cores": {
+      "amd64": {
+        "go_version": "go1.27.3",
+        "main_module_version": "v0.15.0",
+        "observed_build_settings": {
+          "-buildmode": "exe",
+          "-compiler": "gc",
+          "-trimpath": "true",
+          "CGO_ENABLED": "0",
+          "GOARCH": "amd64",
+          "GOOS": "linux",
+          "GOAMD64": "v1",
+          "vcs": "git",
+          "vcs.revision": "8f688e26f0c4570b6a2b30c7e052672f102703f3",
+          "vcs.time": "2026-10-29T04:18:08Z",
+          "vcs.modified": "false"
+        },
+        "required_build_settings_verified": {
+          "-buildmode": "exe",
+          "-compiler": "gc",
+          "-trimpath": "true",
+          "CGO_ENABLED": "0",
+          "GOOS": "linux",
+          "GOARCH": "amd64",
+          "vcs": "git",
+          "vcs.revision": "8f688e26f0c4570b6a2b30c7e052672f102703f3",
+          "vcs.modified": "false",
+          "GOAMD64": "v1"
+        },
+        "ldflags_status": "NOT_RECORDED_BY_TOOLCHAIN",
+        "embedded_byte_associations": {
+          "opencode": {
+            "url": "https://github.com/ivo-lopes/ivoai/releases/download/v0.15.0/ivoai-opencode_linux_amd64.tar.gz",
+            "exact_base64_occurrences": 1
+          },
+          "graft": {
+            "url": "https://github.com/ivo-lopes/ivoai/releases/download/v0.15.0/ivoai-graft_linux_amd64.tar.gz",
+            "exact_base64_occurrences": 1
+          }
+        },
+        "component_association": "metadata/bytes only; no runtime pointer-binding, source attestation or reproducibility claim",
+        "native_version_help_gate": "REQUIRED_SEPARATELY_NOT_EXECUTED_BY_THIS_VERIFIER",
+        "archives": {
+          "opencode": {
+            "entries": 2,
+            "payload_bytes": 186264745
+          },
+          "graft": {
+            "entries": 2841,
+            "payload_bytes": 62662783
+          },
+          "core": {
+            "entries": 1,
+            "payload_bytes": 67977376
+          }
+        },
+        "binary_sha256": "96ce375f352574d83ed502cfac9c1fb8d1d3d3ff5d66fd86ba8343408981d79d"
+      },
+      "arm64": {
+        "go_version": "go1.27.3",
+        "main_module_version": "v0.15.0",
+        "observed_build_settings": {
+          "-buildmode": "exe",
+          "-compiler": "gc",
+          "-trimpath": "true",
+          "CGO_ENABLED": "0",
+          "GOARCH": "arm64",
+          "GOOS": "linux",
+          "GOARM64": "v8.0",
+          "vcs": "git",
+          "vcs.revision": "8f688e26f0c4570b6a2b30c7e052672f102703f3",
+          "vcs.time": "2026-10-29T04:18:08Z",
+          "vcs.modified": "false"
+        },
+        "required_build_settings_verified": {
+          "-buildmode": "exe",
+          "-compiler": "gc",
+          "-trimpath": "true",
+          "CGO_ENABLED": "0",
+          "GOOS": "linux",
+          "GOARCH": "arm64",
+          "vcs": "git",
+          "vcs.revision": "8f688e26f0c4570b6a2b30c7e052672f102703f3",
+          "vcs.modified": "false"
+        },
+        "ldflags_status": "NOT_RECORDED_BY_TOOLCHAIN",
+        "embedded_byte_associations": {
+          "opencode": {
+            "url": "https://github.com/ivo-lopes/ivoai/releases/download/v0.15.0/ivoai-opencode_linux_arm64.tar.gz",
+            "exact_base64_occurrences": 1
+          },
+          "graft": {
+            "url": "https://github.com/ivo-lopes/ivoai/releases/download/v0.15.0/ivoai-graft_linux_arm64.tar.gz",
+            "exact_base64_occurrences": 1
+          }
+        },
+        "component_association": "metadata/bytes only; no runtime pointer-binding, source attestation or reproducibility claim",
+        "native_version_help_gate": "REQUIRED_SEPARATELY_NOT_EXECUTED_BY_THIS_VERIFIER",
+        "archives": {
+          "opencode": {
+            "entries": 2,
+            "payload_bytes": 185773241
+          },
+          "graft": {
+            "entries": 2841,
+            "payload_bytes": 62998734
+          },
+          "core": {
+            "entries": 1,
+            "payload_bytes": 66388128
+          }
+        },
+        "binary_sha256": "40bcdd403235c2a1d7f8dc43253d307ff298dfaab75872905843eec5ee568fd4"
+      }
+    },
+    "network_calls": false,
+    "downloaded_code_executed": false,
+    "limits": [
+      "Offline association, not independent source attestation or reproducible builds.",
+      "No Core/native-client/provider/ARM/no-AVX execution.",
+      "Absent API digests remain UNKNOWN; checksums have no offline self-digest anchor."
+    ]
+  },
+  "adjusted_report_sha256": "e13658fed414c3bc651f7e6015193ee86f5161140729278130a78d9523c86082",
+  "explanation": "Go1.27.3 trimpath artifacts do not record -ldflags; absence remains NOT_RECORDED_BY_TOOLCHAIN, never claimed as verified linker-variable bindings. Actual version/help stay separate required native build gates. Original failed oracle retained."
+}
