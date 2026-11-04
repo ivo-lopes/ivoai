@@ -317,3 +317,76 @@ func TestAntigravityProjectionDoesNotEnableUnsupportedRouting(t *testing.T) {
 		}
 	}
 }
+
+func TestEveryAdministrativeFormRejectsMissingInputsAndFlagInjection(t *testing.T) {
+	for _, action := range ActionCatalog() {
+		if action.Kind != "read" && action.Kind != "mutation" {
+			continue
+		}
+		t.Run(action.ID, func(t *testing.T) {
+			valid := map[string]string{}
+			fields := map[string]Field{}
+			for _, f := range action.Fields {
+				fields[f.Name] = f
+				valid[f.Name] = "isolated-fixture-" + f.Name
+				if len(f.Options) > 0 {
+					valid[f.Name] = f.Options[0]
+				}
+			}
+			if err := validateActionInput(action, valid); err != nil {
+				t.Fatal("catalog cannot admit its own typed form", err)
+			}
+			for _, f := range action.Fields {
+				input := map[string]string{}
+				for k, v := range valid {
+					input[k] = v
+				}
+				if f.Required {
+					delete(input, f.Name)
+					if validateActionInput(action, input) == nil {
+						t.Fatal("required field omitted", f.Name)
+					}
+				}
+				if f.Type != "password" {
+					for _, payload := range []string{"--help", "--root=/outside", "line\ncommand", "nul\x00value"} {
+						input[f.Name] = payload
+						if validateActionInput(action, input) == nil {
+							t.Fatal("injection admitted", f.Name)
+						}
+					}
+				}
+				for _, option := range f.Options {
+					input[f.Name] = option
+					if err := validateActionInput(action, input); err != nil {
+						t.Fatal("advertised option rejected", f.Name, err)
+					}
+				}
+			}
+			args, stdin := actionArguments(action, valid)
+			for name, flag := range action.optionalFlags {
+				if _, ok := fields[name]; !ok {
+					t.Fatal("CLI flag has no typed field", name)
+				}
+				found := flag == ""
+				for i, arg := range args {
+					if arg == flag && i+1 < len(args) && args[i+1] == valid[name] {
+						found = true
+					}
+				}
+				if !found {
+					t.Fatal("typed optional field did not reach its CLI flag", name)
+				}
+			}
+			if action.stdin != "" {
+				if fields[action.stdin].Type != "password" || stdin != valid[action.stdin]+"\n" {
+					t.Fatal("secret input not exclusively forwarded through stdin")
+				}
+				for _, arg := range args {
+					if arg == valid[action.stdin] {
+						t.Fatal("secret copied to CLI arguments")
+					}
+				}
+			}
+		})
+	}
+}
