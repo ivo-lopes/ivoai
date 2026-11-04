@@ -1,0 +1,31 @@
+{
+  "base": "b2ee87d08",
+  "fixes": [
+    "Withhold all partial captures before normalization/redaction; do not expose a guessed prefix or one-time code from incomplete output.",
+    "Keep bytes.Buffer private so io.WriteString and io.Copy cannot bypass bounded Write through promoted methods.",
+    "Snapshot bytes and truncation atomically; retain the original operation outcome and prevent replay."
+  ],
+  "checks": {
+    "focused_http_acl_redaction": "PASS0.722s",
+    "full_admin_race_real_nginx": "PASS32.050s",
+    "writer_paths": [
+      "Write",
+      "io.WriteString",
+      "io.Copy reader without WriterTo"
+    ],
+    "replay_after_capture_overflow": "409, exactly one dispatch"
+  },
+  "unfavorable_observations": [
+    "Initial stricter HTTP overflow test failed twice because the embedded buffer allowed io.WriteString to bypass the capture limiter. Early suspicion about request-id length was incorrect; the existing eight-character minimum was preserved.",
+    "Independent admin follow-up was interrupted by the subagent platform content-risk classification before its proposed reproduction completed; no completed external scan is claimed. Root used source review and defensive boundary tests."
+  ],
+  "source_sha256": {
+    "internal/admin/actions.go": "d2cfa134e0883637f3aebf6710cd615b2a1824289d17dbadca5cd3cfa39ab94b",
+    "internal/admin/output_artifacts_test.go": "0425d53afbafa49bf44acf1211c844eed425c94bee6ede3b5a60cf900a483d46"
+  },
+  "limits": [
+    "Complete retained output remains the sanitized projection, not secret-bearing raw stdout.",
+    "Incomplete captures beyond16MiB are unavailable and never archived as complete.",
+    "Prior browser proof is source-bound separately; this final production change passed the full local admin race suite with actual Nginx."
+  ]
+}

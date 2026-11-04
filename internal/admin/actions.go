@@ -362,37 +362,25 @@ func (s *Server) action(w http.ResponseWriter, r *http.Request) {
 	}
 	currentPrivateValues, currentPrivateError := s.outputSecrets(r)
 	privateOutputValues = append(privateOutputValues, currentPrivateValues...)
-	rawOutput := out.String()
-	sanitizationInput := rawOutput
-	if out.truncated {
-		// Incomplete captures are never archived. Inspect enough lookahead to redact
-		// any known credential starting within the visible prefix, without spending
-		// unbounded sanitization work on output that cannot be recovered completely.
-		lookahead := 8192
-		for _, value := range privateOutputValues {
-			if len(value) > lookahead {
-				lookahead = len(value)
-			}
-		}
-		for _, value := range in.Input {
-			if len(value) > lookahead {
-				lookahead = len(value)
-			}
-		}
-		if budget := maxResponseBytes/2 + lookahead; len(sanitizationInput) > budget {
-			sanitizationInput = sanitizationInput[:budget]
-		}
-	}
-	sanitized := sanitizedAdministrativeOutput(sanitizationInput, in.Input, privateOutputValues)
+	rawOutput, captureTruncated := out.snapshot()
 	redactionAvailable := initialPrivateError == nil && currentPrivateError == nil
-	if !redactionAvailable {
+	// A partial capture cannot establish complete token/key boundaries after
+	// normalization. Withhold it entirely rather than publish a guessed prefix.
+	// The operation outcome/receipt remain authoritative and are never replayed.
+	sanitized := "Administrative output withheld: capture exceeded the safety limit. Inspect current state without repeating the operation."
+	if !captureTruncated && redactionAvailable {
+		sanitized = sanitizedAdministrativeOutput(rawOutput, in.Input, privateOutputValues)
+	} else if !redactionAvailable {
 		sanitized = "Administrative output withheld: private redaction context unavailable. Inspect current state without repeating the operation."
 	}
 	preview := administrativeOutputPreview(sanitized)
-	truncated := out.truncated || len(preview) < len(sanitized)
+	truncated := captureTruncated || len(preview) < len(sanitized)
 	result := map[string]any{"action_id": a.ID, "status": status, "request_id": in.RequestID, "output": preview, "truncated": truncated}
+	if captureTruncated || !redactionAvailable {
+		result["output_unavailable"] = true
+	}
 	if truncated {
-		if !out.truncated && redactionAvailable {
+		if !captureTruncated && redactionAvailable {
 			if ref, retainErr := s.retainOutput(r.Context(), r, a.ID, sanitized); retainErr == nil {
 				result["output_ref"] = ref
 			} else {
@@ -402,7 +390,7 @@ func (s *Server) action(w http.ResponseWriter, r *http.Request) {
 			result["output_warning"] = "Capture exceeded the 16 MiB safety limit; complete output was not retained. Inspect current state without repeating the operation."
 		}
 	}
-	if a.sensitiveResult && err == nil && redactionAvailable { // Only explicitly requested one-time codes, separate from logs/output.
+	if a.sensitiveResult && err == nil && redactionAvailable && !captureTruncated { // Only explicitly requested one-time codes, separate from logs/output.
 		if secret := oneTimeCode(rawOutput); secret != "" {
 			result["one_time_code"] = secret
 			result["one_time_code_warning"] = "Shown once; keep private. It is never written to the audit log."
@@ -486,8 +474,8 @@ func actionArguments(a Action, input map[string]string) ([]string, string) {
 }
 
 type boundedOutput struct {
-	mu sync.Mutex
-	bytes.Buffer
+	mu        sync.Mutex
+	buffer    bytes.Buffer
 	limit     int
 	truncated bool
 }
@@ -496,14 +484,18 @@ func (b *boundedOutput) Write(p []byte) (int, error) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	n := len(p)
-	if len(p) > b.limit-b.Len() {
-		p = p[:b.limit-b.Len()]
+	if len(p) > b.limit-b.buffer.Len() {
+		p = p[:b.limit-b.buffer.Len()]
 		b.truncated = true
 	}
-	_, _ = b.Buffer.Write(p)
+	_, _ = b.buffer.Write(p)
 	return n, nil
 }
-func (b *boundedOutput) String() string { b.mu.Lock(); defer b.mu.Unlock(); return b.Buffer.String() }
+func (b *boundedOutput) snapshot() (string, bool) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.buffer.String(), b.truncated
+}
 
 var oneTimePattern = regexp.MustCompile(`(?m)^(?:Activation|Enrollment) code \(shown once\): ([A-Za-z0-9_-]{16,256})$`)
 var sensitiveLine = regexp.MustCompile(`(?im)^.*(?:activation code|enrollment code|access.token|refresh.token|authorization|cookie|client.secret|api.key|bearer).*?$`)
