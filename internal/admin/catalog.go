@@ -155,7 +155,7 @@ func ActionCatalog() []Action {
 	rows = append(rows, a)
 	a = makeAction("profile.show", "read", []Field{}, "config", "profile", "show")
 	rows = append(rows, a)
-	a = makeAction("project.init", "mutation", []Field{}, "project", "init")
+	a = makeAction("project.init", "mutation", []Field{field("project_root", "Exact console working directory")}, "project", "init")
 	rows = append(rows, a)
 	a = makeAction("project.status", "read", []Field{}, "project", "status")
 	rows = append(rows, a)

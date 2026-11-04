@@ -1,0 +1,33 @@
+# Dedicated HTTPS virtual host. Replace certificate paths and DNS name.
+# Preserve the URI prefix and Host. Do not use a trailing URI in proxy_pass.
+server {
+    listen 443 ssl;
+    server_name admin.example.com;
+    ssl_certificate /etc/letsencrypt/live/admin.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/admin.example.com/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+
+    # Authorization codes and state occur in callback query strings. The Core
+    # keeps the separate action/actor/verdict audit; do not log proxy requests.
+    access_log off;
+    error_log /var/log/nginx/ivoai-admin-error.log crit;
+
+    location = /ivoai { return 308 /ivoai/; }
+    location /ivoai/ {
+        proxy_pass http://127.0.0.1:7781;
+        proxy_set_header Host $http_host;
+        proxy_set_header Forwarded "";
+        proxy_set_header X-Forwarded-For "";
+        proxy_set_header X-Forwarded-Host "";
+        proxy_set_header X-Forwarded-Proto "";
+        proxy_http_version 1.1;
+        proxy_connect_timeout 5s;
+        proxy_read_timeout 310s;
+        proxy_send_timeout 15s;
+        proxy_cache off;
+        proxy_buffering off;
+        proxy_next_upstream off;
+        client_max_body_size 64k;
+    }
+    location / { return 404; }
+}
