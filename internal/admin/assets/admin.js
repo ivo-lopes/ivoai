@@ -753,8 +753,20 @@
     $('action-result-state').textContent = handoff ? 'Esta operação não foi executada pelo painel. Continue no terminal com o cliente nativo e suas permissões.' : outcome;
     const output = $('action-result-output'); output.replaceChildren();
     if (data.truncated === true) {
-      const notice = node('p', 'action-output-warning', 'Saída parcial: o limite de exibição foi atingido. O painel não reteve a saída completa deste comando. Não repita uma alteração para recuperar a saída; consulte o estado atual e os registros disponíveis.');
+      const ref = data.output_ref;
+      const artifact = ref?.result?.artifact;
+      const expectedURL = artifact && /^artifact_[a-f0-9]{32}$/.test(artifact.id) ? `${API}/outputs/${artifact.id}` : '';
+      const recoverable = ref?.sanitized === true && artifact?.complete === true && expectedURL && ref.download_url === expectedURL && Number.isFinite(Date.parse(artifact.expires_at)) && Date.parse(artifact.expires_at) > Date.now();
+      const notice = node('p', 'action-output-warning', recoverable
+        ? 'Saída parcial: o limite de exibição foi atingido. A projeção integral sanitizada está disponível para download temporário. Não repita uma alteração para recuperar a saída.'
+        : 'Saída parcial: o limite de exibição foi atingido. O painel não reteve a saída completa deste comando. Não repita uma alteração para recuperar a saída; consulte o estado atual e os registros disponíveis.');
       notice.setAttribute('role', 'status'); output.append(notice);
+      if (recoverable) {
+        const download = node('a', 'action-output-download', 'Baixar saída integral sanitizada');
+        download.href = expectedURL;
+        download.download = 'ivoai-administrative-output.txt';
+        output.append(download, node('p', 'section-note', `Disponível até ${date.format(new Date(artifact.expires_at))}, somente com a autorização original ativa.`));
+      }
     }
     if (data.output !== undefined && data.output !== null) {
       const formatted = node('pre', '', typeof data.output === 'string' ? data.output : JSON.stringify(data.output, null, 2));
