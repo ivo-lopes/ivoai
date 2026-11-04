@@ -1,0 +1,4 @@
+# github.com/ivo-lopes/ivoai/internal/app [github.com/ivo-lopes/ivoai/internal/app.test]
+internal/app/adaptive_primary_test.go:15:2: "time" imported and not used
+FAIL	github.com/ivo-lopes/ivoai/internal/app [build failed]
+FAIL
