@@ -55,10 +55,14 @@ class AdminCIRunnerFailureTests(unittest.TestCase):
                 if sys.argv[1].startswith('--input-type='):
                     os.execv({actual_node!r}, [{actual_node!r}]+sys.argv[1:])
                 if {case == 'browser_exit'!r}: raise SystemExit(19)
+                if {case == 'actions_exit'!r} and sys.argv[1].endswith('test-admin-console-actions.mjs'): raise SystemExit(31)
+                if {case == 'manage_exit'!r} and os.environ.get('IVOAI_ADMIN_BROWSER_PROOF_MODE') == 'manage': raise SystemExit(29)
                 if sys.argv[1].endswith('test-admin-console.mjs'):
                     report = {{'scope':'hermetic_ui_fixtures_only', 'actual_oauth_exchange':False, 'actual_backend_store':False, 'native_client_execution':False, 'results':['fake']*6}}
+                elif sys.argv[1].endswith('test-admin-console-actions.mjs'):
+                    report = {{'scope':'hermetic_administrative_action_ui_contract', 'actual_oauth_exchange':False, 'actual_backend_store':False, 'actual_reverse_proxy':False, 'native_client_execution':False, 'results':['fake']*8}}
                 else:
-                    report = {{'status':'PASS', 'mode':os.environ['IVOAI_ADMIN_BROWSER_PROOF_MODE'], 'scope':'real_local_app_oauth_store_with_seeded_session', 'actual_provider_execution':False, 'production_state':False, 'denied_external_page_requests':0, 'results':['fake']*5}}
+                    report = {{'status':'PASS', 'mode':os.environ['IVOAI_ADMIN_BROWSER_PROOF_MODE'], 'scope':'real_local_app_oauth_store_with_seeded_session', 'actual_provider_execution':False, 'production_state':False, 'denied_external_page_requests':0, 'actual_config_mutation':os.environ['IVOAI_ADMIN_BROWSER_PROOF_MODE']=='manage', 'actual_reverse_proxy':False if {case == 'proxy_false'!r} else 'proxy' in pathlib.Path(os.environ['IVOAI_ADMIN_BROWSER_FIXTURE']).name, 'results':['fake']*5}}
                     pathlib.Path(os.environ['IVOAI_ADMIN_BROWSER_FIXTURE']+'.stop').touch(mode=0o600)
                 print(json.dumps(report))
                 """
@@ -78,7 +82,8 @@ class AdminCIRunnerFailureTests(unittest.TestCase):
                 cwd=ROOT, env=env, capture_output=True, text=True, timeout=15,
             )
             self.assertNotIn("ADMIN_BROWSER_CI=PASS", result.stdout)
-            self.assertNotIn("ADMIN_BROWSER_REAL_LOGOUT=PASS", result.stdout)
+            if case not in {"manage_exit", "proxy_false"}:
+                self.assertNotIn("ADMIN_BROWSER_REAL_LOGOUT=PASS", result.stdout)
             self.assertNotIn("disposable-test-only", result.stdout + result.stderr)
             if observed.exists():
                 self.assertFalse(Path(observed.read_text()).exists(), "private run workspace leaked")
@@ -98,6 +103,21 @@ class AdminCIRunnerFailureTests(unittest.TestCase):
         result = self.run_fake_contract("compile_exit")
         self.assertEqual(result.returncode, 17)
         self.assertIn("stage=compile-fixture", result.stderr)
+
+    def test_action_fixture_failure_is_not_success(self):
+        result = self.run_fake_contract("actions_exit")
+        self.assertEqual(result.returncode, 31)
+        self.assertIn("stage=hermetic-actions", result.stderr)
+
+    def test_management_browser_failure_is_not_success(self):
+        result = self.run_fake_contract("manage_exit")
+        self.assertEqual(result.returncode, 29)
+        self.assertIn("stage=real-manage-browser", result.stderr)
+
+    def test_missing_real_proxy_proof_is_not_success(self):
+        result = self.run_fake_contract("proxy_false")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("stage=real-proxy-browser", result.stderr)
 
     def test_browser_failure_is_not_success(self):
         result = self.run_fake_contract("browser_exit")
