@@ -350,6 +350,9 @@ func (s Store) withLock(operation func() error) error {
 }
 
 func validate(value Session) error {
+	if value.CompletedPrimaryPlan != nil && value.CompletedPrimaryPlan.Validate() != nil {
+		return errors.New("invalid completed primary history reference")
+	}
 	if value.PrimaryTurn != nil {
 		if err := value.PrimaryTurn.Validate(); err != nil {
 			return err

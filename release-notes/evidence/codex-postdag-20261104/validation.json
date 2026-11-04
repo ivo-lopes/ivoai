@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "base_commit": "bf76f819",
+  "source_manifest": "postdag-frozen-source.json",
+  "source_unchanged_before_and_after_final_compiled_test_binary_and_inference": true,
+  "immutable_test_binary_sha256": "30e39fe14ea011169a5692e2aeadf8a8da13092627c0f5e4c09a73f1b6f36ce5",
+  "production_binary_sha256": "f3973e5818ba7f9b7d30b76761f4c9c0513390ef30e2d64ae251bf7508398055",
+  "real_official_inference": {
+    "post_DAG_C_1_worker": "PASS 93.680s",
+    "post_DAG_D_2_workers": "PASS 131.570s",
+    "post_DAG_total_test_wall_s": 225.29,
+    "public_TUI_cross_process_readonly_resume": "PASS 66.974s;3turns/2processes/1session+nativeThread/noDAG/noWorkers"
+  },
+  "validation": {
+    "focused_Session_Core_App_race": "PASS",
+    "Session_Core_full_race": "PASS 2.298s/1.013s",
+    "affected_vet": "PASS",
+    "earlier_epoch1": "PASS, retained; final guards added afterward, not attributed to final frozen source",
+    "first_contract_failure": "legacy closed-receipt compatibility fixture failed; preserved; compatibility path restored without weakening adaptive admission",
+    "post_DAG_public_TUI_restart_combination": "NOT_RUN: separate component proofs, no single combined public TUI+approved DAG+restart/resume run",
+    "ARM64_and_no_AVX": "not executed by this increment",
+    "global_economic_gate": "INCOMPLETE"
+  },
+  "history_contract": {
+    "storage": "existing SessionStore/completed-primary, no new database or memory backend",
+    "exact_checkpoint": "original validated byte array retained verbatim, JSON base64 encoding",
+    "scope": "owner session namespace, digest, private dirs/files, directory FD walk, no symlink following",
+    "retention": "durable immutable linked snapshots, no transient ArtifactStore TTL; one small pointer in active Session",
+    "pagination": "one complete snapshot per read, previous pointer retained;40plan test without truncation",
+    "ordering": "snapshot file+directory synced before active pointers retired; repeat same snapshot idempotent; error denies admission",
+    "authorization": "history never grants write/exec/recovery authority; new receipt has immutable optional history digest; successful prior native trace + completed tasks/workers + resolved approvals + integrated checkpoint required"
+  },
+  "evidence": {
+    "changes-postdag-epoch1.json": "62d2dc0c0831788225be3ac118cccba26368f65b5fd540ec3634ce53587e30e0",
+    "changes-postdag-epoch1.log": "4ffb599069a74842bdfa711f1048a3d5a54ff05b9ad8c3df44171609b7c25f73",
+    "changes-postdag-frozen-epoch2.json": "f2fe03605f4cd5b20d4609f0631d84e7ebbfd0b35c40d8d9264d3e18b01f717b",
+    "changes-postdag-frozen-epoch2.log": "a03e19de24708c72fc3723157f48f4687e2ab5981dc5351f5af95b0a7df6156f",
+    "full-cli-postdag-frozen.json": "841d6863b5c1fe35ac6b670cd8cc4a063001df8f7ff26c44e0df382b858e48c4",
+    "full-cli-postdag-frozen.log": "73f314994cb0d556b48c088a0bb51a522d6143f633fa924dd16e588bdf05b20b",
+    "postdag-affected-vet.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "postdag-contract-initial.log": "017dcd32d04721048e2d3530bfa8146d8d25b493357ba174d2efc73ce9228b12",
+    "postdag-focused-race-frozen.log": "7b38a0141a9fdd8c25fda65ba61581fcf8cc264afb9b2452ff8b3d1f6644986f",
+    "postdag-frozen-source.json": "85a99ffd93addb16c24ef2466bf9b2038d5af3de250b1d771d14277f18865369",
+    "postdag-session-core-full-race.log": "0e8bde64a384221e9e82b313c139dc26d3165d566955a57faf1b6cb5bca13bfa"
+  }
+}
