@@ -133,6 +133,7 @@ type ExecutorSessionMapping struct {
 }
 
 type Session struct {
+	AdaptiveHistoryDenied     bool                                   `json:"adaptive_history_denied,omitempty"`
 	LegacyAttemptAuditPartial bool                                   `json:"legacy_attempt_audit_partial,omitempty"`
 	RequestJournalVersion     int                                    `json:"request_journal_version,omitempty"`
 	CompletedPrimaryPlan      *CompletedPrimaryPlanRef               `json:"completed_primary_plan,omitempty"`

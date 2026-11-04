@@ -32,6 +32,15 @@ still retained in their old projection; `legacy_attempt_audit_partial` honestly
 marks histories that may already have been truncated. Lost historical records
 are not fabricated.
 
+Adaptive eligibility also retains a monotonic, owner-scoped denial marker.
+Failed, cancelled, foreign or executor-substituted recorded attempts cannot
+become eligible merely because 40 later clean turns evict them from the UI
+projection. Recognized failed callbacks persist this marker before their audit
+record; a crash between the two writes cannot clear it. Foreign callback inputs
+are rejected before any owner state changes. Get/List/Bounded derive legacy
+history denial in memory only; authorized mutations persist it. Updating metadata
+cannot clear a durable denial or turn an already-partial legacy audit into proof.
+
 ## Migration and rollback
 
 The first scoped claim imports retained legacy claims and audit under the same
