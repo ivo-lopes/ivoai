@@ -1,0 +1,18 @@
+✔ CJS: null-prototype source cannot poison the returned prototype (2.60656ms)
+✔ CJS: null-prototype target cannot poison the returned prototype (0.603656ms)
+✔ CJS: nested and array inputs retain safe values without inherited payload (0.565736ms)
+✔ CJS: options do not permit direct prototype writes (0.438106ms)
+✔ CJS: normal merges, callbacks, symbols, dates and input ownership remain compatible (2.231103ms)
+✔ UMD: null-prototype source cannot poison the returned prototype (0.742434ms)
+✔ UMD: null-prototype target cannot poison the returned prototype (0.494207ms)
+✔ UMD: nested and array inputs retain safe values without inherited payload (0.380897ms)
+✔ UMD: options do not permit direct prototype writes (0.281338ms)
+✔ UMD: normal merges, callbacks, symbols, dates and input ownership remain compatible (4.289987ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 10
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 212.237119

@@ -18,7 +18,7 @@ fixtures locais nem por testes com Codex.
 
 O upstream revisado é `trailhq/Graft`, versão **0.21.1**, commit
 `fe30ead39d5e6f0c921018d364da2bdbc9d4b3ad`, sob licença MIT. A identidade gerenciada
-pelo IVOAI é **0.21.1-ivoai.1**. O SHA-256 do tar de origem é
+pelo IVOAI é **0.21.1-ivoai.2**. O SHA-256 do tar de origem é
 `d39598390324ad0076a88ab593b63ad2ba352370ea07c073e31f11327979f8e1`;
 o SHA-256 do lock npm é
 `c05064ea18ed1b538e27cc788f1d6ea2cae00b2c00c79ef552fc1bb4c54fd5f5`.
@@ -30,7 +30,7 @@ histórico da v0.12.0.
 
 O build de release instala as dependências fixadas com scripts de ciclo de vida
 desabilitados, compila explicitamente os dez bindings nativos com os headers do
-Node gerenciado **26.11.1** e gera o viewer e as queries das gramáticas. O patch de
+Node gerenciado **26.13.0** e gera o viewer e as queries das gramáticas. O patch de
 compatibilidade nativa altera duas flags C++17 do `tree-sitter@0.21.1` para C++20,
 exigido por esses headers. A compilação usa bubblewrap sem rede; o isolamento de
 runtime usa o sandbox Go descrito abaixo. O CI seleciona GCC 12 em runners nativos

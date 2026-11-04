@@ -1,0 +1,9 @@
+{
+  "name": "joi",
+  "version": "18.3.2",
+  "registry_signature_verified": true,
+  "keyid": "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U",
+  "integrity": "sha512-iUivApKYw5GpZmq2Sy6El99j7noo8QSUFZlyQtr3HCkosC/b5wKF6/Y3teiHIlaM8WI38sAT3P+51rB0lhAhJA==",
+  "source": "npm registry HTTPS metadata and signing key endpoint",
+  "limits": "Registry signature, not a source attestation or absence of vulnerabilities"
+}

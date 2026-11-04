@@ -15,8 +15,8 @@ type nodeZeroReader struct{}
 func (nodeZeroReader) Read(p []byte) (int, error) { clear(p); return len(p), nil }
 
 func TestNodeArchiveAcceptsReviewedExecutableSize(t *testing.T) {
-	// Node 26.11.1 Linux amd64's reviewed binary is 150047368 bytes.
-	const reviewedSize int64 = 150047368
+	// Node 26.13.0 Linux amd64's reviewed binary is 150319296 bytes.
+	const reviewedSize int64 = 150319296
 	archive := filepath.Join(t.TempDir(), "node.tgz")
 	f, err := os.Create(archive)
 	if err != nil {

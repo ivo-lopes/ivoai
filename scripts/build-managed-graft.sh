@@ -10,7 +10,7 @@ python3 "$helper/test_prune_cli.py"
 revision=fe30ead39d5e6f0c921018d364da2bdbc9d4b3ad
 source_sha=d39598390324ad0076a88ab593b63ad2ba352370ea07c073e31f11327979f8e1
 lock_sha=c05064ea18ed1b538e27cc788f1d6ea2cae00b2c00c79ef552fc1bb4c54fd5f5
-node_version=26.11.1
+node_version=26.13.0
 case ${GRAFT_GCC_MAJOR:-} in
   "") cc=/usr/bin/gcc; cxx=/usr/bin/g++ ;;
   12) cc=/usr/bin/gcc-12; cxx=/usr/bin/g++-12 ;;
@@ -19,8 +19,8 @@ esac
 [[ -x $cc && -x $cxx ]] || { echo "Selected compiler is missing" >&2; exit 1; }
 [[ $(uname -s) == Linux ]] || { echo 'Linux native build required' >&2; exit 1; }
 case $(uname -m) in
-  x86_64) arch=amd64; node_arch=x64; node_sha=15fc043a51a5783f2f4b634561091658f5a7f0e3db03f997dca3a8033a33e45b; cpu_flags='-march=x86-64 -mtune=generic -mno-avx -mno-avx2' ;;
-  aarch64) arch=arm64; node_arch=arm64; node_sha=170454fb022f5e9b5f6cc76c25fa32ef5100895be44eb04e92f9780591491bbf; cpu_flags='-march=armv8-a' ;;
+  x86_64) arch=amd64; node_arch=x64; node_sha=5848553868b402d3fabb5b09270649977780a390f832155721025a08b5104455; cpu_flags='-march=x86-64 -mtune=generic -mno-avx -mno-avx2' ;;
+  aarch64) arch=arm64; node_arch=arm64; node_sha=439e9c438acdf6a6ffe47418da709153d66c4bed812e30a473faacb107dd2791; cpu_flags='-march=armv8-a' ;;
   *) echo 'Only native Linux amd64/arm64 builds are supported' >&2; exit 1 ;;
 esac
 output=${1:-"$repo_root/dist/graft"}

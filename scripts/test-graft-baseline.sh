@@ -7,8 +7,8 @@ metadata=${2:?usage: test-graft-baseline.sh ARCHIVE METADATA}
 repo_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 expected_sha=$(jq -er '.sha256' "$metadata")
 printf '%s  %s\n' "$expected_sha" "$archive" | sha256sum --check --status
-node_sha=15fc043a51a5783f2f4b634561091658f5a7f0e3db03f997dca3a8033a33e45b
-[[ $(jq -er '.node_version' "$metadata") == 26.11.1 ]]
+node_sha=5848553868b402d3fabb5b09270649977780a390f832155721025a08b5104455
+[[ $(jq -er '.node_version' "$metadata") == 26.13.0 ]]
 [[ $(jq -er '.node_sha256' "$metadata") == "$node_sha" ]]
 command -v qemu-x86_64 >/dev/null
 work=$(mktemp -d "${TMPDIR:-/tmp}/ivoai-graft-baseline.XXXXXXXX")
@@ -18,7 +18,7 @@ if [[ -n ${GRAFT_NODE_ARCHIVE:-} ]]; then
   cp -- "$GRAFT_NODE_ARCHIVE" "$work/node.tgz"
 else
   env -i PATH=/usr/bin:/bin curl --disable --fail --location --proto '=https' --tlsv1.2 \
-    https://nodejs.org/dist/v26.11.1/node-v26.11.1-linux-x64.tar.gz --output "$work/node.tgz"
+    https://nodejs.org/dist/v26.13.0/node-v26.13.0-linux-x64.tar.gz --output "$work/node.tgz"
 fi
 printf '%s  %s\n' "$node_sha" "$work/node.tgz" | sha256sum --check --status
 tar --extract --gzip --file "$work/node.tgz" --directory "$work/node" --strip-components=1 --no-same-owner
