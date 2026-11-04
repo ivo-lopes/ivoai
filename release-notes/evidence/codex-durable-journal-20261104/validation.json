@@ -1,0 +1,91 @@
+{
+  "schema_version": 1,
+  "runtime": "official Codex 0.166.0 Linux amd64, exact executable+companion pins; existing authorized subscription",
+  "source_attribution": {
+    "9e13a2073": {
+      "public_CLI": "PASS 55.183s",
+      "proof": "full-cli-journal-epoch1.json"
+    },
+    "adc6ffe44": {
+      "public_CLI": "FAIL 142.28s, history summary misclassified after first completed turn",
+      "proof": "full-cli-journal-final-epoch1.json",
+      "source_manifest": "journal-final-source.json",
+      "counted_as_success": false
+    },
+    "da0c86f5d": {
+      "public_CLI": "PASS 53.823s",
+      "changes_C_D": "PASS 209.56s; C100.31/D109.25,1/2workers +postDAG RO",
+      "cancel_and_native_approval_deny": "PASS 16.32s",
+      "receipt_revocation": "PASS 16.55s, no caller cancellation before result",
+      "source_manifest": "journal-certified-source.json",
+      "test_binary_sha256": "d52ba1fdf2ef7abcbdc0debddabe19b211e93178e077294e0c3213f82bba8edf",
+      "production_binary_sha256": "7b69bd8663c1fb5677d4ed76ac80ac905545ba4355456fd9104b29655a487791",
+      "source_unchanged_before_compile_and_after_all_inference": true
+    },
+    "7f01b39ca": {
+      "public_CLI": "PASS 52.679s;3realturns/2processes/1session+nativeThread/noDAG/noWorkers/normalexit",
+      "proof": "full-cli-journal-delivery-epoch1.json",
+      "source_manifest": "journal-delivery-source.json",
+      "test_binary_sha256": "aeb8b09be2120c7d4d95b8cc930de7340d9988c4ef623e511f417e28e8adb33c",
+      "production_binary_sha256": "56eb6be80a2c0c6c2c2517457357dae7a0c4c7ac3fd514b8818ae40f6bac34a0",
+      "source_unchanged_before_compile_and_after_final_inference": true,
+      "changes_since_da0c": "monotonic partial legacy audit guard, durable legacy-denial marker under authorized writes, tests for exposed journal modes; C/D/F receipts retain original source attribution",
+      "full_affected_packages": "PASS Session1.465s/App20.749s/Core.002s/bridge4.814s"
+    }
+  },
+  "offline_validation": {
+    "permanent_NoReplay": "300claims,cache256,oldestduplicateafterrestart denied; no new conversation turn limit",
+    "cross_process": "two real subprocesses race exactly one claim",
+    "owner_scope": "knowledge/organization+repository/worktree+frontend scope separated; other logical owners sharing same native identity deduplicated",
+    "storage_denial": "symlinks,cancelledcontexts,unsafe0755namespace/owner,0644migrationmarker denied; HTTPbridge storage error produces zero dispatch/alternate",
+    "attempt_audit": "exact original events retained after40attempts exceed32projection; immutable content addressing, owner reads, integrity checks",
+    "history_taint": "failed,cancelled,foreign and executor-substituted retained after40clean events/restart; no unsafe restoration from projection; original terminal events require native completion trace",
+    "read_scope": "legacy Get/List/ListBounded derive denial in memory, filesystem snapshot unchanged; foreign callback creates no audit/marker and does not change metadata",
+    "legacy": "256oldclaims explicituncertainty refusal; truncated32auditpartial never reclassified complete; metadata flags monotonic; old unknown events not fabricated",
+    "rollback": "real published v0.16.0 reader verified SHAa933d4d313930066409c77682a8cc26b574b5c259174e1cb68fac6b890c9d2ef cannot enumerate/open/rewrite migrated journal sessions; reapply rejects originalclaim",
+    "full_Session_Core_race": "PASS7.133s/1.015s at adc6; final fullSessionrace7.637s at7f",
+    "full_affected_packages": "Pre-adc6 and pre-da0c working-source logs retained as development checks; final 7f01b39ca complete Session/App/Core/bridge PASS1.465/20.749/.002/4.814s",
+    "focused_race_and_published_reader": "PASS5.927s/1.090s atadc6; projectionfix Sessionrace6.425s",
+    "final_affected_vet": "PASS",
+    "private_helper_skip": "not counted as independent integration success"
+  },
+  "limits": {
+    "combined_public_TUI_DAG_exit_resume": "NOT_RUN; actual approved DAG+ROcontinuation and publicTUI+crossprocessresume separately verified",
+    "ARM64_and_noAVX": "not executed in this increment; reviewed adapter remains Linuxamd64 only",
+    "global_economic_gate": "INCOMPLETE; not a matched GatewayOFF/ON cohort or controlled performance comparison",
+    "usage": "official-client reported CLI invocation tokens; workerusage unavailable, not presumed zero; not billing attestation",
+    "CI_merge_release": "local immutable source tests only; parent integration gates remain separate",
+    "rollout": "experimental opt-in, no global activation or arbitrary version/hash acceptance",
+    "runtime_upgrade": "Retained native thread/account/model/root/runtime identity must still match. Active162\u2192166 receipt migration is not grandfathered or certified."
+  },
+  "evidence_sha256": {
+    "changes-journal-certified-epoch1.json": "e652f34c038308a4e4f95c759959b392e15c86f54e09198e2390bf98d09702c5",
+    "changes-journal-certified-epoch1.log": "170a4208de83446c221b4750f0b27897eec0159aede560e2aa544b9cee894020",
+    "claim-journal-final-race.log": "1b6710edc056cc043ca17e111ede63028fc76f4eb9b88b91e0bdaf00c158d101",
+    "claim-journal-focused-race.log": "d8580013fe4aeea186dc991c50a0c3b0f4cf35e4f03cca17682f4afe978de5ea",
+    "failure-journal-certified-epoch1.json": "84d2c9dafa3b6c872c140c2b77a484a3a6590554ed0c9d5b14634ccf22981c9e",
+    "failure-revoke-journal-certified-epoch1.log": "1eb02e8c0bd7419bfdda0bca383f3edfd1d7895951d6fee51dbe446c905c3018",
+    "full-cli-journal-certified-epoch2.json": "6f05fe488489b0425a017e4a1c42389cc49112d143a74cd625d00f2f72f4b784",
+    "full-cli-journal-certified-epoch2.log": "5a9649bd9de8a23edb51afe06764a02ac795038fb9602a7e27fdc984a799fc12",
+    "full-cli-journal-delivery-epoch1.json": "e2fc8484710fd6553c08cf862889f32d9af783886aadd3e8da4d37f6918b2eaf",
+    "full-cli-journal-delivery-epoch1.log": "1a91eb02e36feb6f1cdd7a376b16645160be16553d7ed6f51f777a2ba48da15e",
+    "full-cli-journal-epoch1.json": "62f8454f544a72efc2adf9b041e51983ebe544dcdc730a1d95f96692f1f6bc4b",
+    "full-cli-journal-epoch1.log": "007279884adf023752656d1a0fb4f56625be3396585398671c3a17c586185089",
+    "full-cli-journal-final-epoch1.json": "accdb860b4af2899851f8f2a45a29d6645ab00c19a4f52b698a7bb67085f76d4",
+    "full-cli-journal-final-epoch1.log": "0d3d24cf022435a88ad275e193d0addae6840dc85e8f7c7962254f63ea95d181",
+    "journal-app-session-full.log": "62a52d3af7a085a2825c66f4c47d591715e7b4d7bc25151dd77acd6bc8a2b2b9",
+    "journal-certified-source.json": "c92d6326a57fe026277279f08426d93ad002f9443254fa542c02b283ac33d45f",
+    "journal-delivery-full-affected.log": "784a700f8fdfa7b6b4f520ebf822c11319e79147c67a76f241d74c8d4f2f01e8",
+    "journal-delivery-source.json": "c70e949c3d51f436e140e7e957883310ceb8bb13eacba7ced63fb5e53ea9f7ec",
+    "journal-delivery-vet.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "journal-final-full-storage-race.log": "cc34d7b82710a3433c925fc91cfd7175434478da34534aa8e13b418b326be78c",
+    "journal-final-packages.log": "766f470af53f43ed3352b8d556a780e021c2ebddabe5a5b998fd4cad614b4875",
+    "journal-final-race.log": "4779fad79dc65815f77ddf3c35ef8e6727f7b4996fd83062916dba4289c474f8",
+    "journal-final-source.json": "4495ed8c5251aeb0bfa439472626dd71b8eb406391dbc375ca954b8473e6173d",
+    "journal-final-vet.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "journal-partial-guard-race.log": "683b512889a68bbbe9e56b9fe0777cb0af57e40a49f60bb3c0138c2ad6176dd6",
+    "journal-projection-fix-full.log": "21a0ce81739fb8e60b83963392df99028b44893a1161979e695ce837012e69be",
+    "journal-projection-fix-race.log": "39a8e42c9f6228d5a3a4b853b70d983f576e887bbc43ab28a9419c6662129e27",
+    "revoke-journal-certified-epoch1.json": "e1fd636e87db2e3cd01ec410186dc5e844829cb64e62469ebc7682d12a785488"
+  }
+}

@@ -78,5 +78,61 @@ SHA-256 `a933d4d313930066409c77682a8cc26b574b5c259174e1cb68fac6b890c9d2ef`,
 listed no journal-bound session and refused its explicit ID. It did not change
 protected metadata; a reconstructed new Store still rejected the oldest ID.
 The focused package run took 4.409s. These storage/reader proofs do not perform
-model inference. Production public CLI and worker integration are being checked
-separately before release; this record does not presume those results or CI.
+model inference. Later focused race and complete Session/Core race runs also
+passed; their immutable logs and source attribution are retained below.
+
+## Official integration and retained failures
+
+The real public production command with the official Codex 0.166.0 executable
+passed three natural prompts across two processes on source `da0c86f5d` in
+53.823s. The same Core session, frontend and native thread were retained, three
+receipts closed, no DAG or worker was created, both native/backend and wrapper
+exits were zero, and repository files remained intact. Existing HOME/CODEX_HOME
+authentication was preserved and only private Core XDG locations were created.
+The earlier journal-only source `9e13a2073` passed the same flow in 55.183s.
+
+On the same frozen `da0c86f5d` source, approved changes C and D passed in 209.56s:
+one real worker changed only `math.go`; two real workers changed only
+`format.go` and `greeting.go`. Fixed executable tests failed before the changes
+and passed afterward. Both scenarios then completed a read-only turn with the
+full durable DAG history still recoverable. No alternate executor was used.
+Official cancellation and native read-approval refusal passed in 16.32s; owner
+receipt revocation during inference passed in 16.55s without using cancellation
+as the revocation trigger. Duplicate requests returned 409 without another
+attempt, fallback or worker. This is Core receipt revocation, not revocation of
+subscription credentials.
+
+A real public-CLI failure on intermediate source `adc6ffe44` is retained, not
+counted as success: its strict history check mistook the host's deliberate
+removal of older detailed traces from UI metadata for incomplete execution.
+The second turn was denied direct admission and timed out in the guarded legacy
+DAG path. `da0c86f5d` distinguishes an original callback (complete native trace
+required) from a completed projection summary (explicit final response, native
+ID, ended timestamp and zero exit code required). Exact original traces remain
+in the journal; an earlier denial marker is never cleared. Tests cover 40 valid
+trace-stripped summaries, 40 later clean events after a failure/cancellation/
+foreign delivery/fallback, incomplete original terminal traces, restart,
+forbidden taint downgrade, foreign-callback nonmutation and read-only inspection.
+
+The final legacy-hardening source `7f01b39ca` additionally makes partial-audit
+metadata monotonic, materializes its private denial marker during authorized
+migration, and rejects exposed journal directory/file modes without silently
+repairing them. Its complete Session race run passed in 7.637s, and the final
+public CLI repeated all three turns with cross-process resume in 52.679s. Real C/D/F
+receipts above belong to `da0c86f5d`; they are not relabeled as executions of a
+later build. The final public-CLI confirmation and exact binary/source manifests
+are recorded in
+[`validation.json`](evidence/codex-durable-journal-20261104/validation.json).
+
+These elapsed times are integration observations, not a controlled performance
+comparison. Token records are official-client invocation reports, not billing
+attestations; worker usage was unavailable and was not silently counted as zero.
+No Gateway OFF/ON economic cohort is established by these runs. The global
+economic gate remains **INCOMPLETE**. A combined single public-TUI approved-DAG
+then process-exit/resume test remains **NOT_RUN**; approved-DAG continuation and
+public-TUI cross-process continuation were separately exercised. Adaptive rollout
+remains opt-in and retains the reviewed Linux amd64/runtime/ownership guards.
+Retained runtime/account/root/model/thread identities must still match; an active
+0.162.1 receipt is not silently grandfathered into a different 0.166.0 executable.
+Cross-version active-receipt migration is not certified by this delivery.
+These local proofs do not presume integrated main CI, merge or release results.
