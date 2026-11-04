@@ -21,7 +21,7 @@ import (
 var ErrNoSupportedSources = errors.New("repository has no supported source files")
 var ErrStructuralUnavailable = errors.New("structural code intelligence runtime unavailable")
 
-const Version = "0.21.1-ivoai.1"
+const Version = "0.21.1-ivoai.2"
 const MaxResultBytes = 32768
 
 //go:embed assets/adapter.mjs

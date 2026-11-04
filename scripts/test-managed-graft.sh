@@ -5,12 +5,12 @@ archive=${1:?usage: test-managed-graft.sh ARCHIVE METADATA}
 metadata=${2:?usage: test-managed-graft.sh ARCHIVE METADATA}
 repo_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
 case $(uname -m) in
-  x86_64) arch=amd64; node_arch=x64; node_sha=15fc043a51a5783f2f4b634561091658f5a7f0e3db03f997dca3a8033a33e45b ;;
-  aarch64) arch=arm64; node_arch=arm64; node_sha=170454fb022f5e9b5f6cc76c25fa32ef5100895be44eb04e92f9780591491bbf ;;
+  x86_64) arch=amd64; node_arch=x64; node_sha=5848553868b402d3fabb5b09270649977780a390f832155721025a08b5104455 ;;
+  aarch64) arch=arm64; node_arch=arm64; node_sha=439e9c438acdf6a6ffe47418da709153d66c4bed812e30a473faacb107dd2791 ;;
   *) echo 'Native Linux amd64/arm64 required' >&2; exit 1 ;;
 esac
 [[ $(jq -er '.platform' "$metadata") == "linux/$arch" ]]
-[[ $(jq -er '.node_version' "$metadata") == 26.11.1 ]]
+[[ $(jq -er '.node_version' "$metadata") == 26.13.0 ]]
 [[ $(jq -er '.node_sha256' "$metadata") == "$node_sha" ]]
 expected_sha=$(jq -er '.sha256' "$metadata")
 [[ $expected_sha =~ ^[a-f0-9]{64}$ ]]
@@ -22,7 +22,7 @@ if [[ -n ${GRAFT_NODE_ARCHIVE:-} ]]; then
   cp -- "$GRAFT_NODE_ARCHIVE" "$work/node.tgz"
 else
   env -i PATH=/usr/bin:/bin curl --disable --fail --location --proto '=https' --tlsv1.2 \
-    "https://nodejs.org/dist/v26.11.1/node-v26.11.1-linux-$node_arch.tar.gz" --output "$work/node.tgz"
+    "https://nodejs.org/dist/v26.13.0/node-v26.13.0-linux-$node_arch.tar.gz" --output "$work/node.tgz"
 fi
 printf '%s  %s\n' "$node_sha" "$work/node.tgz" | sha256sum --check --status
 tar --extract --gzip --file "$work/node.tgz" --directory "$work/node" --strip-components=1 --no-same-owner

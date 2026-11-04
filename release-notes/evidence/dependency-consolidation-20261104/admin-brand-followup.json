@@ -1,0 +1,32 @@
+{
+  "scope": "Updated axe detects a redundant accessible brand label in pre-existing administrative UI.",
+  "initial_ci": {
+    "run": 41907394705,
+    "head": "f9f72ea81f2e9f7a4d6b4d73d7e9e7de29e3dbc5",
+    "quality": "FAIL hermetic-ui",
+    "native_amd64_arm64": "PASS",
+    "downstream_server_gates": "SKIPPED_NOT_SUCCESS"
+  },
+  "local_reproduction": "FAIL label-content-name-mismatch on .brand",
+  "fix": "Remove the redundant aria-label and use the complete visible IVOAI link text.",
+  "after_fix": {
+    "scope": "hermetic_ui_fixtures_only",
+    "actual_oauth_exchange": false,
+    "actual_backend_store": false,
+    "native_client_execution": false,
+    "results": [
+      "filters, unknown usage, text-only injection defense, keyboard dialog and focus restoration PASS",
+      "viewport 375: sessions/components/connections/dialog overflow + axe PASS",
+      "viewport 768: sessions/components/connections/dialog overflow + axe PASS",
+      "viewport 1024: sessions/components/connections/dialog overflow + axe PASS",
+      "viewport 1440: sessions/components/connections/dialog overflow + axe PASS",
+      "unavailability preserves stale snapshot explicitly, revocation clears data, logout only permitted mutation, no browser storage PASS"
+    ]
+  },
+  "source_sha256": {
+    "internal/admin/assets/index.html": "a02b1d8a4dce4f52c6772cd1b6e10ff79e69b22f7a800fe8be0712ff9443d1c5"
+  },
+  "limits": [
+    "Full original152 accessibility checks are attributed to the earlier source. This follow-up changes only the separate administrative HTML. Fresh CI required."
+  ]
+}

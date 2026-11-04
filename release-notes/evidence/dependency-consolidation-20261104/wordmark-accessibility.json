@@ -1,0 +1,33 @@
+{
+  "schema_version": 1,
+  "base": "3007464e449b29279796ead565cdc3d21c3cbfb3",
+  "fix": "Include the rendered brand A in text while preserving the lambda vector glyph so accessible and displayed labels match.",
+  "checks": {
+    "full_accessibility": {
+      "passed": 152,
+      "failed": 0,
+      "skipped": 0,
+      "duration": "5.7m",
+      "log_sha256": "fed501ac52ea5496a1605588b95f97a1615cc92fd1fba6d313e1e9aae4640b9c"
+    },
+    "focused_brand_and_homepage": {
+      "passed": 2,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  "unfavorable_observations": [
+    "New axe4.14 detected the previous brand label mismatch. The initial full run failed and overlapped regeneration only during its final two seconds; it is not a frozen final certification.",
+    "First candidate with an image-role wrapper failed the focused check and was replaced. No test or accessibility threshold was relaxed."
+  ],
+  "source_sha256": {
+    "website/src/components/Wordmark.tsx": "41bcb006bd3cf48a34c61789c08fa283e9b04e91c0c6db4ae00ebeb45ee0da2e",
+    "website/src/css/custom.css": "b7499e06ed863f4ae50aeec841a0ec21c3217d7d579d57b43297e43e8c1d1904",
+    "website/package.json": "bfc87963bba84c0ce31557f778230a25df716852f852bd9bad110265e92d46ce",
+    "website/pnpm-lock.yaml": "48cf3940ec3f0bcde6621f141bf0f1227df65246ff5837599f909195c4aa7856",
+    "website/static/build-input.sha256": "f35316c5196235e1731913b7729e0db28a7b82f1a2c0e7984ce5ff4015683da8"
+  },
+  "limits": [
+    "The tested source is this dependency/brand worktree. Integrated administrative UI and later homepage copy are separate checks."
+  ]
+}

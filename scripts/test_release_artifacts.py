@@ -77,10 +77,10 @@ class ReleaseArtifactsTests(unittest.TestCase):
                     'source_sha256': 'ab433f7a5fc9e54c90da18bd3457298009f426424805f043aa32c03543b4a192',
                     'patch_sha256': 'a'*64, 'bun_version': '1.3.14', 'bun_sha256': v.BUN_SHA[arch]}
         if component == 'graft':
-            metadata.update(version='0.21.1-ivoai.1',
+            metadata.update(version='0.21.1-ivoai.2',
                             upstream_revision='fe30ead39d5e6f0c921018d364da2bdbc9d4b3ad',
                             source_sha256='d39598390324ad0076a88ab593b63ad2ba352370ea07c073e31f11327979f8e1',
-                            node_version='26.11.1', node_sha256=v.NODE_SHA[arch])
+                            node_version='26.13.0', node_sha256=v.NODE_SHA[arch])
             del metadata['bun_version'], metadata['bun_sha256']
         metadata['revision'] = hashlib.sha256((metadata['source_sha256']+'\n'+metadata['patch_sha256']+'\n'+metadata['sha256']+'\n').encode()).hexdigest()
         return metadata

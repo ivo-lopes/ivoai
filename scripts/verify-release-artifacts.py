@@ -57,8 +57,8 @@ GRAFT_FILES = ['scripts/build-managed-graft.sh', 'patches/graft/build.py',
  'patches/graft/check-yaml-library.mjs', 'patches/graft/prune_cli.py',
  'patches/graft/prepare_grammars.py']
 
-NODE_SHA = {'amd64': '15fc043a51a5783f2f4b634561091658f5a7f0e3db03f997dca3a8033a33e45b',
- 'arm64': '170454fb022f5e9b5f6cc76c25fa32ef5100895be44eb04e92f9780591491bbf'}
+NODE_SHA = {'amd64': '5848553868b402d3fabb5b09270649977780a390f832155721025a08b5104455',
+ 'arm64': '439e9c438acdf6a6ffe47418da709153d66c4bed812e30a473faacb107dd2791'}
 
 BUN_SHA = {'amd64': '951ee2aee855f08595aeec6225226a298d3fea83a3dcd6465c09cbccdf7e848f',
  'arm64': 'a27ffb63a8310375836e0d6f668ae17fa8d8d18b88c37c821c65331973a19a3b'}
@@ -132,10 +132,10 @@ def component_metadata(assets, component, arch, hashes, patches):
         require(metadata['bun_version'] == '1.3.14' and metadata['bun_sha256'] == BUN_SHA[arch], 'wrong reviewed Bun identity')
     else:
         require(set(metadata) == common | {'node_version', 'node_sha256'}, 'unexpected Graft metadata schema')
-        require(metadata['version'] == '0.21.1-ivoai.1', 'wrong Graft version')
+        require(metadata['version'] == '0.21.1-ivoai.2', 'wrong Graft version')
         require(metadata['upstream_revision'] == 'fe30ead39d5e6f0c921018d364da2bdbc9d4b3ad', 'wrong Graft source revision')
         require(metadata['source_sha256'] == 'd39598390324ad0076a88ab593b63ad2ba352370ea07c073e31f11327979f8e1', 'wrong current Graft source digest')
-        require(metadata['node_version'] == '26.11.1' and metadata['node_sha256'] == NODE_SHA[arch], 'wrong reviewed Node identity')
+        require(metadata['node_version'] == '26.13.0' and metadata['node_sha256'] == NODE_SHA[arch], 'wrong reviewed Node identity')
     archive = 'ivoai-' + component + '_linux_' + arch + '.tar.gz'
     require(metadata['platform'] == 'linux/' + arch and metadata['archive'] == archive, 'metadata platform/archive mismatch')
     require(metadata['sha256'] == hashes[archive] and metadata['patch_sha256'] == patches[component], 'archive or patch association mismatch')

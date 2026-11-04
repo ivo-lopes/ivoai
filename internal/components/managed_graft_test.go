@@ -27,7 +27,7 @@ import (
 func graftMetadata(t *testing.T, arch string, payload []byte) map[string]string {
 	t.Helper()
 	sum := sha256.Sum256(payload)
-	value := map[string]string{"version": "0.21.1-ivoai.1", "platform": "linux/" + arch, "sha256": hex.EncodeToString(sum[:]), "upstream_revision": "fe30ead39d5e6f0c921018d364da2bdbc9d4b3ad", "source_sha256": "ab27f9123eeb59b3987a342a24b7e357ad3412f41c556fde3a76ca9e250d2db1", "patch_sha256": strings.Repeat("c", 64), "archive": "ivoai-graft_linux_" + arch + ".tar.gz"}
+	value := map[string]string{"version": "0.21.1-ivoai.2", "platform": "linux/" + arch, "sha256": hex.EncodeToString(sum[:]), "upstream_revision": "fe30ead39d5e6f0c921018d364da2bdbc9d4b3ad", "source_sha256": "ab27f9123eeb59b3987a342a24b7e357ad3412f41c556fde3a76ca9e250d2db1", "patch_sha256": strings.Repeat("c", 64), "archive": "ivoai-graft_linux_" + arch + ".tar.gz"}
 	value["url"] = "https://github.com/ivo-lopes/ivoai/releases/download/v0.12.0-rc.1/" + value["archive"]
 	identity := sha256.Sum256([]byte(value["source_sha256"] + "\n" + value["patch_sha256"] + "\n" + value["sha256"] + "\n"))
 	value["revision"] = hex.EncodeToString(identity[:])
@@ -118,7 +118,7 @@ func TestManagedGraftDevelopmentCatalogDoesNotUseUpstream(t *testing.T) {
 
 func TestManagedGraftInstallerPromotesIdempotentlyWithoutExternalAdoption(t *testing.T) {
 	t.Setenv("IVOAI_TEST_MODE", "")
-	archive := graftTestArchive(t, "graft-runtime", []byte("#!/bin/sh\n[ \"$#\" = 1 ] && [ \"$1\" = --version ] || exit 1\nprintf '0.21.1-ivoai.1\\n'\n"))
+	archive := graftTestArchive(t, "graft-runtime", []byte("#!/bin/sh\n[ \"$#\" = 1 ] && [ \"$1\" = --version ] || exit 1\nprintf '0.21.1-ivoai.2\\n'\n"))
 	metadata := graftMetadata(t, runtime.GOARCH, archive)
 	testManagedGraftInstallation(t, archive, metadata)
 }
@@ -171,7 +171,7 @@ func testManagedGraftInstallation(t *testing.T, archive []byte, metadata map[str
 		t.Fatal(err)
 	}
 	got := state.Components["graft"]
-	if !got.Managed || got.Version != "0.21.1-ivoai.1" || !strings.Contains(got.Path, filepath.Join("supply-chain", "objects", "graft")) || requests != 1 || runner.probes == 0 {
+	if !got.Managed || got.Version != "0.21.1-ivoai.2" || !strings.Contains(got.Path, filepath.Join("supply-chain", "objects", "graft")) || requests != 1 || runner.probes == 0 {
 		t.Fatalf("component=%+v requests=%d probes=%d", got, requests, runner.probes)
 	}
 	if filepath.Base(got.Path) != "graft-runtime" {
@@ -207,7 +207,7 @@ func testManagedGraftInstallation(t *testing.T, archive []byte, metadata map[str
 	}
 	// A second reviewed object exercises real promotion and pointer/state rollback.
 	// For the opt-in artifact test, the previous object is the distributed archive.
-	archive = graftTestArchive(t, "graft-runtime", []byte("#!/bin/sh\n# second reviewed fixture\n[ \"$#\" = 1 ] && [ \"$1\" = --version ] || exit 1\nprintf '0.21.1-ivoai.1\\n'\n"))
+	archive = graftTestArchive(t, "graft-runtime", []byte("#!/bin/sh\n# second reviewed fixture\n[ \"$#\" = 1 ] && [ \"$1\" = --version ] || exit 1\nprintf '0.21.1-ivoai.2\\n'\n"))
 	metadata = graftMetadata(t, runtime.GOARCH, archive)
 	next, err := managedGraftSpec(encodedGraft(t, metadata), "linux/"+runtime.GOARCH)
 	if err != nil {
@@ -299,7 +299,7 @@ func TestManagedGraftRequiresPinnedNodeBeforePromotion(t *testing.T) {
 	requests := 0
 	client := &http.Client{Transport: managedReleaseTransport(func(r *http.Request) (*http.Response, error) {
 		requests++
-		if !strings.HasPrefix(r.URL.String(), "https://nodejs.org/dist/v26.11.1/node-v26.11.1-linux-") {
+		if !strings.HasPrefix(r.URL.String(), "https://nodejs.org/dist/v26.13.0/node-v26.13.0-linux-") {
 			t.Fatalf("Graft downloaded before Node: %s", r.URL)
 		}
 		return nil, errors.New("fixture Node unavailable")

@@ -1,0 +1,92 @@
+{
+  "schema_version": 1,
+  "base": "d816a49220d93e3275c512b98244f4c5f535f800",
+  "scope": "JavaScript dependency refresh and reviewed deepmerge mitigation; not all project dependency work complete",
+  "versions": {
+    "node": "26.13.0",
+    "ruflo": "3.71.1",
+    "pnpm": "12.16.1",
+    "react": "19.3.1",
+    "playwright": "1.64.1",
+    "axe": "4.14.0",
+    "graft_upstream": "0.21.1",
+    "graft_managed": "0.21.1-ivoai.2"
+  },
+  "checks": {
+    "real_locked_ruflo_install_idempotence": {
+      "pass": true,
+      "seconds": 38.512,
+      "provider_inference": false
+    },
+    "go_components_codeintel_doctor": {
+      "pass": true,
+      "commands": "go test targeted packages; not broad App suite"
+    },
+    "affected_vet": "PASS",
+    "python_tests": 157,
+    "release_artifact_tests": 47,
+    "zod_tests": 23,
+    "deepmerge_patched": {
+      "pass": 10,
+      "fail": 0,
+      "skip": 0
+    },
+    "deepmerge_original_control": {
+      "pass": 4,
+      "fail": 6,
+      "expected_failure": true
+    },
+    "npm_runtime_vulnerabilities": 0,
+    "pnpm_docs_vulnerabilities": 0,
+    "docs_en_pt_build": "PASS",
+    "joi_registry_signature": "VERIFIED_NOT_SOURCE_ATTESTATION",
+    "app_native_code_focused": "PASS"
+  },
+  "limitations": [
+    "Native Graft build with required GCC12 not available locally; GCC14 native build reached runtime smoke and was rejected by unchanged GLIBCXX3.4.30 bound. Native hosted GCC12 gates remain required before merge/release.",
+    "npm12.2.1 trial rejects transitive registry tarball EALLOWREMOTE; existing verified Node26.13.0 bundles npm11.20.0, which passed actual locked runtime installation. npm12 trial is not adopted or claimed working.",
+    "First dependency Go run failed stale test Node/Graft pins; updated to the reviewed candidate identity and repeated affected packages.",
+    "Initial UMD test host lacked exports; its failed harness is not an upstream vulnerability result; corrected original controls and packaged entrypoints are retained.",
+    "Headroom/Python, ai-memory, Caveman, OCI, actions, native clients and remaining optional integrations are separate pending updates.",
+    "No global economic claim, provider quota claim, subscription credential access or production deployment."
+  ],
+  "observed_source_sha256": {
+    "internal/components/components.go": "965524b2a9694a40286cc1ebfc37a0c9887e89a781c2542ee83207712f00ac09",
+    "internal/components/node.go": "ea53e9faed9300214446ce0a23724b7b0bfa34153bae110e7356f55fb1c8ca5f",
+    "internal/components/assets/package.json": "67d8eb4f55e401b509f34987d530a91ede6e53f9a3975639b35b6bf565110e36",
+    "internal/components/assets/package-lock.json": "151f3b241a0fd76e9918f548716dcf879675b3392da35a812c956de8fd2344c9",
+    "internal/components/managed_graft.go": "1fb415c5c1c8ad24e3b2236339511e2b33c6ec9efb1270a998b3bbe369483055",
+    "internal/codeintel/provider.go": "031f7553f14cc7deb88f30061a5b0e8419c69e3328d1451acbce2a0e495a6369",
+    "website/package.json": "bfc87963bba84c0ce31557f778230a25df716852f852bd9bad110265e92d46ce",
+    "website/pnpm-workspace.yaml": "b2ca53a43eb1160aa72c64bdb5752292043de0e81f49ca47b19379b58a78d67c",
+    "website/pnpm-lock.yaml": "48cf3940ec3f0bcde6621f141bf0f1227df65246ff5837599f909195c4aa7856",
+    "patches/deepmerge/provenance.json": "32345516db92075177457c2712eb94b1f1061d9de9012d104ddd7cc5998ff690",
+    "scripts/test-deepmerge.cjs": "13a5772832db56da129ab5b662342a6d7fe8964afc17c3ce9148670439525852",
+    "scripts/build-managed-graft.sh": "332609ae548932b0f1f1204aad6b0f72a1c115d09f6155cbc1dccc7120d8e6d8",
+    "scripts/verify-release-artifacts.py": "40dc2bbfa43cdcca6e9f6ae649d0c81fa82a4e242ed9566ea83e040fc90f1c9c"
+  },
+  "final_source_sha256": {
+    "internal/components/components.go": "965524b2a9694a40286cc1ebfc37a0c9887e89a781c2542ee83207712f00ac09",
+    "internal/components/node.go": "ea53e9faed9300214446ce0a23724b7b0bfa34153bae110e7356f55fb1c8ca5f",
+    "internal/components/assets/package.json": "67d8eb4f55e401b509f34987d530a91ede6e53f9a3975639b35b6bf565110e36",
+    "internal/components/assets/package-lock.json": "151f3b241a0fd76e9918f548716dcf879675b3392da35a812c956de8fd2344c9",
+    "internal/components/managed_graft.go": "1fb415c5c1c8ad24e3b2236339511e2b33c6ec9efb1270a998b3bbe369483055",
+    "internal/codeintel/provider.go": "031f7553f14cc7deb88f30061a5b0e8419c69e3328d1451acbce2a0e495a6369",
+    "website/package.json": "bfc87963bba84c0ce31557f778230a25df716852f852bd9bad110265e92d46ce",
+    "website/pnpm-workspace.yaml": "b2ca53a43eb1160aa72c64bdb5752292043de0e81f49ca47b19379b58a78d67c",
+    "website/pnpm-lock.yaml": "48cf3940ec3f0bcde6621f141bf0f1227df65246ff5837599f909195c4aa7856",
+    "patches/deepmerge/provenance.json": "8a1a432e29ae68e97f17dcbd73ccb4722b355121df4c3ddfadde0e806eeb69a3",
+    "scripts/test-deepmerge.cjs": "13a5772832db56da129ab5b662342a6d7fe8964afc17c3ce9148670439525852",
+    "scripts/build-managed-graft.sh": "332609ae548932b0f1f1204aad6b0f72a1c115d09f6155cbc1dccc7120d8e6d8",
+    "scripts/verify-release-artifacts.py": "40dc2bbfa43cdcca6e9f6ae649d0c81fa82a4e242ed9566ea83e040fc90f1c9c"
+  },
+  "provenance_refinement": {
+    "patch_context_lines": 0,
+    "original_patch_sha256": "74f6a1ebdcc91e4624a711576cb392898793acb3f5af73ecd685f6e052f0d7e6",
+    "final_patch_sha256": "8937bf67d67314cf881cd6744d0fd5fc7fa7c4efe08ee800220ebd3284c930a0",
+    "rebuilt_runtime_archive_byte_identical": true,
+    "runtime_archive_sha256": "225d21f826d716ce2ab593168b182b0084f0b5513c748937a6276a37380b6548",
+    "reason": "Avoid whitespace-only unified-diff context diagnostics; original upstream checksum and fuzz0 validation unchanged."
+  },
+  "published_log_normalization": "Private originals retained; published logs replace task-private paths and strip trailing whitespace only; test outcomes unchanged."
+}
