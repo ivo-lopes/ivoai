@@ -1,0 +1,17 @@
+{
+  "upstream_name": "deepmerge",
+  "upstream_version": "4.3.1",
+  "upstream_url": "https://registry.npmjs.org/deepmerge/-/deepmerge-4.3.1.tgz",
+  "upstream_integrity": "sha512-3sUqbMEc77XqpdNO7FRyRog+eW3ph+GYCbj+rK+uYyRMuwsVy0rMiVtPn+QJlKFvWP/1PYpapqYn0Me2knFn+A==",
+  "upstream_sha256": "4003a0a348276a95543fa969f561f6b5968629acbbb59d66018dd23e7b8f1d5c",
+  "license": "MIT",
+  "fork_name": "@ivoai/deepmerge-safe",
+  "fork_version": "4.3.1-ivoai.1",
+  "patch_file": "4.3.1-returned-prototype.patch",
+  "patch_sha256": "8937bf67d67314cf881cd6744d0fd5fc7fa7c4efe08ee800220ebd3284c930a0",
+  "advisory": "GHSA-gcqx-w48m-w2h4",
+  "scope": "Reject __proto__ keys copied from either target or source before destination writes, including null-prototype targets. Preserve other own properties and existing merge callbacks.",
+  "archive_file": "ivoai-deepmerge-safe-4.3.1-ivoai.1.tgz",
+  "archive_sha256": "225d21f826d716ce2ab593168b182b0084f0b5513c748937a6276a37380b6548",
+  "archive_integrity": "sha512-FzyhgifqUWx/nBfWSID+urovTM8JnD9x1lM8ggylzx/FYvjN0nCqZXuiiBOUicgKsjJQsFctj0SbYgvFFjhHAQ=="
+}

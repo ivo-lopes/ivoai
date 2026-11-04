@@ -22,9 +22,9 @@ func (i *Installer) ensureNode(ctx context.Context) (string, string, error) {
 	if regular(node) && regular(npmCLI) {
 		return node, npmCLI, nil
 	}
-	arch, checksum := "x64", "15fc043a51a5783f2f4b634561091658f5a7f0e3db03f997dca3a8033a33e45b"
+	arch, checksum := "x64", "5848553868b402d3fabb5b09270649977780a390f832155721025a08b5104455"
 	if runtime.GOARCH == "arm64" {
-		arch, checksum = "arm64", "170454fb022f5e9b5f6cc76c25fa32ef5100895be44eb04e92f9780591491bbf"
+		arch, checksum = "arm64", "439e9c438acdf6a6ffe47418da709153d66c4bed812e30a473faacb107dd2791"
 	}
 	asset := Asset{URL: "https://nodejs.org/dist/v" + managedNodeVersion + "/node-v" + managedNodeVersion + "-linux-" + arch + ".tar.gz", SHA256: checksum}
 	archive, err := i.downloadVerified(ctx, asset)

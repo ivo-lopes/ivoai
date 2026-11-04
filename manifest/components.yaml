@@ -255,9 +255,9 @@ components:
 
   - name: graft
     role: [client-runtime]
-    validated_version: "0.21.1-ivoai.1"
+    validated_version: "0.21.1-ivoai.2"
     upstream_version: "0.21.1"
-    minimum_version: "0.21.1-ivoai.1"
+    minimum_version: "0.21.1-ivoai.2"
     license: MIT
     source: "https://github.com/trailhq/Graft"
     upstream_revision: "fe30ead39d5e6f0c921018d364da2bdbc9d4b3ad"
@@ -265,7 +265,7 @@ components:
     source_sha256: "ab27f9123eeb59b3987a342a24b7e357ad3412f41c556fde3a76ca9e250d2db1"
     architectures: [linux/amd64, linux/arm64]
     install_strategy: managed_supply_chain_archive
-    runtime_requirement: "Private Node.js 26.11.1"
+    runtime_requirement: "Private Node.js 26.13.0"
     checksum_strategy: compiled_release_archive_sha256
     trust_level: checksum_only
     signature_status: not_exposed
@@ -282,17 +282,17 @@ components:
   - name: ruflo
     role: [client]
     package: ruflo
-    validated_version: "3.56.5"
-    minimum_version: "3.56.5"
+    validated_version: "3.71.1"
+    minimum_version: "3.71.1"
     license: MIT
-    source: "https://www.npmjs.com/package/ruflo/v/3.56.5"
+    source: "https://www.npmjs.com/package/ruflo/v/3.71.1"
     upstream_repository: "https://github.com/ruvnet/ruflo"
     architectures: [linux/amd64, linux/arm64]
     install_strategy: isolated_npm_prefix
     runtime_requirement: "Node.js >=20"
     checksum_strategy: npm_registry_integrity
-    integrity: "sha512-t80LC6aqtdRLDgv0wSrsV4VjBeYsnvKNUy8rH9tMxBZTVM83IDh3uKNgg5jA3hBixWz8k+3Eq6eUHO15MslMNQ=="
-    package_url: "https://registry.npmjs.org/ruflo/-/ruflo-3.56.5.tgz"
+    integrity: "sha512-ora1Qud7HM7Lse0w02WFDTnuu81HK3C3AisMbncoVXjmMxXo84ofjjy1fPeWXcoXGpDNdJeokDVe16NbJ58FqA=="
+    package_url: "https://registry.npmjs.org/ruflo/-/ruflo-3.71.1.tgz"
     safe_default_features:
       - coordination
       - hierarchical_swarm_lifecycle
@@ -313,20 +313,20 @@ components:
 
   - name: nodejs
     role: [client-runtime]
-    validated_version: "26.11.1"
-    minimum_version: "26.11.1"
+    validated_version: "26.13.0"
+    minimum_version: "26.13.0"
     license: MIT
-    source: "https://nodejs.org/download/release/v26.11.1/"
+    source: "https://nodejs.org/download/release/v26.13.0/"
     architectures: [linux/amd64, linux/arm64]
     install_strategy: verified_isolated_archive
     checksum_strategy: upstream_sha256
     assets:
       linux/amd64:
-        url: "https://nodejs.org/dist/v26.11.1/node-v26.11.1-linux-x64.tar.gz"
-        sha256: "15fc043a51a5783f2f4b634561091658f5a7f0e3db03f997dca3a8033a33e45b"
+        url: "https://nodejs.org/dist/v26.13.0/node-v26.13.0-linux-x64.tar.gz"
+        sha256: "5848553868b402d3fabb5b09270649977780a390f832155721025a08b5104455"
       linux/arm64:
-        url: "https://nodejs.org/dist/v26.11.1/node-v26.11.1-linux-arm64.tar.gz"
-        sha256: "170454fb022f5e9b5f6cc76c25fa32ef5100895be44eb04e92f9780591491bbf"
+        url: "https://nodejs.org/dist/v26.13.0/node-v26.13.0-linux-arm64.tar.gz"
+        sha256: "439e9c438acdf6a6ffe47418da709153d66c4bed812e30a473faacb107dd2791"
     notes:
       - "Private runtime for the pinned Ruflo and managed Graft installations; it does not modify the user's global Node.js setup."
       - "Official Node 26 Linux binaries require the system libatomic runtime (libatomic1 on Debian/Ubuntu), glibc >=2.28 and libstdc++ >=6.0.25."

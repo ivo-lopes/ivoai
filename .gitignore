@@ -14,3 +14,6 @@ website/.cache-loader/
 website/build/
 website/test-results/
 website/playwright-report/
+
+# Isolated npm dependency validation must never enter source control.
+/internal/components/assets/node_modules/

@@ -75,7 +75,7 @@ type Spec struct {
 const (
 	managedUVVersion     = "0.13.0"
 	managedPythonVersion = "3.14.8"
-	managedNodeVersion   = "26.11.1"
+	managedNodeVersion   = "26.13.0"
 	dependencyCutoff     = "2026-10-12T00:00:00Z"
 )
 
@@ -121,7 +121,7 @@ func DefaultCatalog() []Spec {
 			"linux/amd64": {URL: "https://github.com/akitaonrails/ai-memory/releases/download/v2.6.3/ai-memory-linux-x86_64.tar.gz", SHA256: "933be9bb8fe6930336933f0b8adf0695007e644f945898f9f030fd312326f0f3"},
 			"linux/arm64": {URL: "https://github.com/akitaonrails/ai-memory/releases/download/v2.6.3/ai-memory-linux-aarch64.tar.gz", SHA256: "e4e01409fe80148a4d561aef98ac5d526c488c4a621faa759f9d0b3ed2606088"},
 		}},
-		{Name: "ruflo", Executable: "ruflo", Version: "3.56.5", Package: "ruflo", PackageURL: "https://registry.npmjs.org/ruflo/-/ruflo-3.56.5.tgz", Integrity: "sha512-t80LC6aqtdRLDgv0wSrsV4VjBeYsnvKNUy8rH9tMxBZTVM83IDh3uKNgg5jA3hBixWz8k+3Eq6eUHO15MslMNQ==", Strategy: StrategyNPMIsolated},
+		{Name: "ruflo", Executable: "ruflo", Version: "3.71.1", Package: "ruflo", PackageURL: "https://registry.npmjs.org/ruflo/-/ruflo-3.71.1.tgz", Integrity: "sha512-ora1Qud7HM7Lse0w02WFDTnuu81HK3C3AisMbncoVXjmMxXo84ofjjy1fPeWXcoXGpDNdJeokDVe16NbJ58FqA==", Strategy: StrategyNPMIsolated},
 	}
 	if managedOpenCodeBuild != "" {
 		for index := range catalog {

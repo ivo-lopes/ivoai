@@ -1,0 +1,156 @@
+✖ CJS: null-prototype source cannot poison the returned prototype (3.012357ms)
+✖ CJS: null-prototype target cannot poison the returned prototype (0.544265ms)
+✔ CJS: nested and array inputs retain safe values without inherited payload (0.425156ms)
+✖ CJS: options do not permit direct prototype writes (0.371047ms)
+✔ CJS: normal merges, callbacks, symbols, dates and input ownership remain compatible (1.028432ms)
+✖ UMD: null-prototype source cannot poison the returned prototype (0.498976ms)
+✖ UMD: null-prototype target cannot poison the returned prototype (0.262078ms)
+✔ UMD: nested and array inputs retain safe values without inherited payload (1.200731ms)
+✖ UMD: options do not permit direct prototype writes (0.429336ms)
+✔ UMD: normal merges, callbacks, symbols, dates and input ownership remain compatible (0.748214ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 4
+ℹ fail 6
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 116.506649
+
+✖ failing tests:
+
+test at scripts/test-deepmerge.cjs:29:5
+✖ CJS: null-prototype source cannot poison the returned prototype (3.012357ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + true
+  - undefined
+
+      at TestContext.<anonymous> (${WORKTREE}/scripts/test-deepmerge.cjs:33:14)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: undefined,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test-deepmerge.cjs:29:5
+✖ CJS: null-prototype target cannot poison the returned prototype (0.544265ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + true
+  - undefined
+
+      at TestContext.<anonymous> (${WORKTREE}/scripts/test-deepmerge.cjs:33:14)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: undefined,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test-deepmerge.cjs:47:3
+✖ CJS: options do not permit direct prototype writes (0.371047ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + true
+  - undefined
+
+      at TestContext.<anonymous> (${WORKTREE}/scripts/test-deepmerge.cjs:51:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: undefined,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test-deepmerge.cjs:29:5
+✖ UMD: null-prototype source cannot poison the returned prototype (0.498976ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + true
+  - undefined
+
+      at TestContext.<anonymous> (${WORKTREE}/scripts/test-deepmerge.cjs:33:14)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: undefined,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test-deepmerge.cjs:29:5
+✖ UMD: null-prototype target cannot poison the returned prototype (0.262078ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + true
+  - undefined
+
+      at TestContext.<anonymous> (${WORKTREE}/scripts/test-deepmerge.cjs:33:14)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: undefined,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/test-deepmerge.cjs:47:3
+✖ UMD: options do not permit direct prototype writes (0.429336ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + true
+  - undefined
+
+      at TestContext.<anonymous> (${WORKTREE}/scripts/test-deepmerge.cjs:51:12)
+      at Test.runInAsyncScope (node:async_hooks:226:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: undefined,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

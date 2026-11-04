@@ -1,0 +1,49 @@
+--- a/index.js
++++ b/index.js
+@@ -48,0 +49,2 @@
++	// Never invoke the legacy __proto__ setter on the new plain destination.
++	if (key === "__proto__") return true;
+@@ -57,0 +60 @@
++			if (propertyIsUnsafe(target, key)) return;
+--- a/dist/cjs.js
++++ b/dist/cjs.js
+@@ -73,0 +74,2 @@
++	// Never invoke the legacy __proto__ setter on the new plain destination.
++	if (key === "__proto__") return true;
+@@ -82,0 +85 @@
++			if (propertyIsUnsafe(target, key)) return;
+--- a/dist/umd.js
++++ b/dist/umd.js
+@@ -77,0 +78,2 @@
++	// Never invoke the legacy __proto__ setter on the new plain destination.
++	if (key === "__proto__") return true;
+@@ -86,0 +89 @@
++			if (propertyIsUnsafe(target, key)) return;
+--- a/package.json
++++ b/package.json
+@@ -2 +2 @@
+-  "name": "deepmerge",
++  "name": "@ivoai/deepmerge-safe",
+@@ -12 +12 @@
+-  "version": "4.3.1",
++  "version": "4.3.1-ivoai.1",
+@@ -22,19 +21,0 @@
+-  "scripts": {
+-    "build": "rollup -c",
+-    "test": "npm run build && tape test/*.js && jsmd readme.md && npm run test:typescript",
+-    "test:typescript": "tsc --noEmit test/typescript.ts && ts-node test/typescript.ts",
+-    "size": "npm run build && uglifyjs --compress --mangle -- ./dist/umd.js | gzip -c | wc -c"
+-  },
+-  "devDependencies": {
+-    "@types/node": "^8.10.54",
+-    "is-mergeable-object": "1.1.0",
+-    "is-plain-object": "^5.0.0",
+-    "jsmd": "^1.0.2",
+-    "rollup": "^1.23.1",
+-    "rollup-plugin-commonjs": "^10.1.0",
+-    "rollup-plugin-node-resolve": "^5.2.0",
+-    "tape": "^4.11.0",
+-    "ts-node": "7.0.1",
+-    "typescript": "=2.2.2",
+-    "uglify-js": "^3.6.1"
+-  },

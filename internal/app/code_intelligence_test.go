@@ -169,7 +169,7 @@ func verifiedCodeRuntimeFixture(t *testing.T) (*App, string, components.Spec, st
 	var archive bytes.Buffer
 	gz := gzip.NewWriter(&archive)
 	tw := tar.NewWriter(gz)
-	payload := "#!/bin/sh\necho 0.21.1-ivoai.1\n"
+	payload := "#!/bin/sh\necho 0.21.1-ivoai.2\n"
 	if err := tw.WriteHeader(&tar.Header{Name: "graft-runtime", Mode: 0700, Size: int64(len(payload))}); err != nil {
 		t.Fatal(err)
 	}
