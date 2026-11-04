@@ -92,7 +92,7 @@ for (const prefix of ['', '/ivoai/admin']) {
           pending = null; committed += 1;
           if (connectionLoss) { res.destroy(); return; }
         }
-        const value = { action_id: action.id, status: 'completed', request_id: payload.request_id, output: action.kind === 'mutation' ? 'Configuração atualizada.' : '<img src=x onerror="window.fixtureInjected=true">' };
+        const value = { action_id: action.id, status: 'completed', request_id: payload.request_id, output: action.kind === 'mutation' ? 'Configuração atualizada.' : '<img src=x onerror="window.fixtureInjected=true">\n' + 'Linha de resultado administrativo.\n'.repeat(100) };
         if (action.kind === 'mutation') value.one_time_code = 'DISPOSABLE_RESULT_CODE';
         if (action.kind === 'native_handoff') value.status = 'handoff';
         if (action.kind === 'information') value.status = 'information';
@@ -128,6 +128,11 @@ for (const prefix of ['', '/ivoai/admin']) {
     await page.locator('#action-result').waitFor({ state: 'visible' });
     assert.match(await page.locator('#action-result-output').innerText(), /<img/);
     assert.equal(await page.evaluate(() => window.fixtureInjected), undefined);
+    await axe('scrollable read result');
+    const resultText = page.locator('#action-result-output pre');
+    assert.equal(await resultText.evaluate((element) => element.scrollHeight > element.clientHeight), true);
+    await resultText.focus(); await page.keyboard.press('PageDown');
+    await page.waitForFunction(() => document.querySelector('#action-result-output pre').scrollTop > 0);
     await page.keyboard.press('Escape');
     results.push(`${prefix || '/'}: read-only access, text-only result rendering and mutation denial PASS`);
     manage = true;
@@ -163,6 +168,7 @@ for (const prefix of ['', '/ivoai/admin']) {
     assert.equal(await page.locator('#one-time-code').getAttribute('type'), 'text');
     assert.equal(await page.locator('#operation-history').innerText().then((value) => value.includes('DISPOSABLE_RESULT_CODE')), false);
     assert.match(await page.locator('#action-result-state').innerText(), /Alteração concluída/);
+    await axe('one-time code result');
     await page.waitForFunction(() => document.getElementById('action-fields').childElementCount === 0);
     await page.locator('#action-execute').evaluate((element) => element.click());
     assert.equal(committed, 1);

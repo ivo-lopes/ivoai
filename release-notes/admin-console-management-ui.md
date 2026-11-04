@@ -50,3 +50,23 @@ privileges stay unavailable. No provider inference, personal configuration,
 production corpus, production reverse proxy or global economic certification is
 claimed by this UI increment. Integration depends on the corresponding backend
 catalog, write grants, confirmation/NoReplay and proxy implementation.
+
+
+## Completed composition
+
+The UI increment9ba897bf and backend incrementd25b5369, plus the focusability
+correction, passed the complete runner: `hermetic=2 real=4 skipped=0`. The real
+modes were logout, external grant revocation, management and TLS proxy; every Go
+fixture exited0. Management changed the isolated default auto setting fromtrue
+tofalse and observed it in a fresh sanitized MenuSnapshot. The reverse-proxy
+mode passed OAuth PKCE, prefixed assets/API/callback/logout and Secure/path-bound
+cookies. No production endpoint or provider inference was used.
+
+The first composed run failed after the three successful management requests:
+long JSON output had a scrollable region without keyboard focus. The result now
+accepts keyboard focus, and the hermetic regression requires PageDown to scroll
+the long result in both root and prefixed deployments. Existing axe checks remain
+unchanged. Earlier failed runs are retained and listed in the source-bound
+[integrated receipt](evidence/admin-console-management/integrated-browser-validation.json).
+These proofs use Go1.27.3 and Node26.11.1 with the previously reviewed browser
+modules. They do not certify the parent integration's dependency upgrades.
