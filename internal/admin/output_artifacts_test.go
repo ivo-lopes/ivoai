@@ -28,6 +28,32 @@ func outputHTTP(s *Server, token, target string) *httptest.ResponseRecorder {
 	return w
 }
 
+func TestAdministrativeOutputCaptureBoundsStandardWriterFastPaths(t *testing.T) {
+	payload := strings.Repeat("bounded capture\n", 50)
+	for name, write := range map[string]func(io.Writer) (int64, error){
+		"write": func(w io.Writer) (int64, error) {
+			n, err := w.Write([]byte(payload))
+			return int64(n), err
+		},
+		"write-string": func(w io.Writer) (int64, error) {
+			n, err := io.WriteString(w, payload)
+			return int64(n), err
+		},
+		"copy-reader": func(w io.Writer) (int64, error) {
+			return io.Copy(w, struct{ io.Reader }{strings.NewReader(payload)})
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			out := &boundedOutput{limit: 128}
+			n, err := write(out)
+			body, truncated := out.snapshot()
+			if err != nil || n != int64(len(payload)) || !truncated || body != payload[:128] {
+				t.Fatal("standard writer operation bypassed the capture boundary")
+			}
+		})
+	}
+}
+
 func TestAdministrativeCompleteSanitizedOutputACLExpiryAndNoReplay(t *testing.T) {
 	a := fixtureApp(t)
 	if err := a.Store.Save(config.Default()); err != nil {
@@ -165,18 +191,30 @@ func TestAdministrativeCaptureLimitNeverClaimsCompleteOutput(t *testing.T) {
 	if err := a.Store.Save(config.Default()); err != nil {
 		t.Fatal(err)
 	}
+	calls := 0
 	s, err := New(Options{App: a, Origin: "http://127.0.0.1:12345", Dispatch: func(_ context.Context, _ []string, _ io.Reader, out, _ io.Writer) error {
-		_, err := io.WriteString(out, strings.Repeat("x", maxAdministrativeOutputBytes+1))
+		calls++
+		_, err := io.WriteString(out, strings.Repeat("discarded-output-data", maxAdministrativeOutputBytes/20+1))
 		return err
 	}})
 	if err != nil {
 		t.Fatal(err)
 	}
-	token := mintAdminToken(t, s, ScopeRead)
-	w := actionHTTP(t, s, token, "version", map[string]any{"phase": "execute", "input": map[string]string{}, "request_id": "capture-limit"}, true)
+	token := mintAdminToken(t, s, ScopeRead, ScopeManage)
+	input := map[string]string{"name": "fixture"}
+	preview := actionHTTP(t, s, token, "mcp.test", map[string]any{"phase": "preview", "input": input}, true)
+	body := map[string]any{"phase": "execute", "input": input, "confirmation": confirmationToken(t, preview), "request_id": "capture-limit-request"}
+	w := actionHTTP(t, s, token, "mcp.test", body, true)
 	var result map[string]any
-	if w.Code != 200 || json.Unmarshal(w.Body.Bytes(), &result) != nil || result["truncated"] != true || result["output_ref"] != nil || result["output_warning"] == nil {
-		t.Fatal("incomplete capture presented as complete artifact")
+	decodeErr := json.Unmarshal(w.Body.Bytes(), &result)
+	if w.Code != 200 || decodeErr != nil || result["status"] != "completed" || result["truncated"] != true || result["output_unavailable"] != true || result["output_ref"] != nil || result["output_warning"] == nil {
+		t.Fatalf("incomplete capture/outcome: http=%d decoded=%t status=%v truncated=%v unavailable=%v has_ref=%t has_warning=%t error_code=%v", w.Code, decodeErr == nil, result["status"], result["truncated"], result["output_unavailable"], result["output_ref"] != nil, result["output_warning"] != nil, result["error"])
+	}
+	if strings.Contains(w.Body.String(), "discarded-output-data") {
+		t.Fatal("partial capture was published instead of withheld")
+	}
+	if actionHTTP(t, s, token, "mcp.test", body, true).Code != 409 || calls != 1 {
+		t.Fatal("unavailable capture repeated an already executed mutation")
 	}
 }
 

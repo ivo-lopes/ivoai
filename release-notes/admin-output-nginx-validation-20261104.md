@@ -95,3 +95,11 @@ covering access-token labels, PEM keys, activation codes and opaque configured
 values. The focused race regression passed10.456s; the earlier Nginx/browser
 proof remains bound to its original source. See the separate normalization
 validation under the evidence directory.
+
+Final capture hardening withholds every incomplete capture before sanitization,
+retains the committed operation outcome and rejects replay. The buffer is now
+private: io.WriteString/io.Copy cannot use inherited methods to bypass the
+16MiB cap. Bytes and the truncation bit are snapshotted together. The stricter
+HTTP test exposed the inherited-method bypass; earlier failures remain recorded.
+The final full admin race suite, including real Nginx, passed32.050s.
+See capture-boundary-validation.json for exact scope and limitations.
