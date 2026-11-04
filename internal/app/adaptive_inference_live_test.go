@@ -150,32 +150,9 @@ func adaptiveInferenceBridge(t *testing.T, f *localMetadataFixture, environment 
 		return quota.AccountReference(ctx, f.state.Components["codex"].Path, "codex")
 	}, ClaimRequest: func(frontend, message string) (bool, error) {
 		return f.store.ClaimFrontendRequest(context.Background(), f.id, frontend, message)
+
 	}, Attempt: func(attempt opencodebridge.TurnAttempt) error {
-		attempt.SessionID = f.id
-		body, err := json.Marshal(attempt)
-		if err != nil {
-			return err
-		}
-		if err := f.store.AppendTurnAttempt(context.Background(), f.id, body); err != nil {
-			return err
-		}
-		_, e := f.store.Update(f.id, func(v *session.Session) error {
-			raw, _ := json.Marshal(attempt)
-			found := false
-			for i, b := range v.TurnAttempts {
-				var old opencodebridge.TurnAttempt
-				if json.Unmarshal(b, &old) == nil && old.ID == attempt.ID {
-					v.TurnAttempts[i] = raw
-					found = true
-				}
-			}
-			if !found {
-				v.TurnAttempts = append(v.TurnAttempts, raw)
-			}
-			v.TurnState = attempt.State
-			return appendTurnObservation(v, attempt)
-		})
-		return e
+		return persistManagedTurnAttempt(context.Background(), f.store, f.id, attempt)
 	}}
 	b, err := opencodebridge.Start(opts)
 	if err != nil {
