@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/ivo-lopes/ivoai/internal/core"
 )
@@ -170,5 +171,82 @@ func TestAdaptiveHistoryLegacyFullProjectionIsUnproven(t *testing.T) {
 	v.LegacyAttemptAuditPartial = true
 	if AdaptiveHistoryEligible(v) {
 		t.Fatal("legacy partial audit regained authority")
+	}
+}
+
+func TestAdaptiveHistoryCompletedProjectionMayOmitOlderTrace(t *testing.T) {
+	s, v := requestJournalFixture(t)
+	if ok, err := s.ClaimFrontendRequest(context.Background(), v.SessionID, v.FrontendSessionID, "start"); err != nil || !ok {
+		t.Fatal(err)
+	}
+	var first []byte
+	for i := range 40 {
+		a := cleanHistoryAttempt(v, fmt.Sprint("good_", i))
+		ended := time.Now().UTC()
+		code := 0
+		a.Ended = &ended
+		a.ExitCode = &code
+		full, _ := json.Marshal(a)
+		if i == 0 {
+			first = full
+		}
+		if err := s.AppendTurnAttempt(context.Background(), v.SessionID, full); err != nil {
+			t.Fatal(err)
+		}
+		_, err := s.Update(v.SessionID, func(v *Session) error {
+			for index, raw := range v.TurnAttempts {
+				var prior historyAttempt
+				if err := json.Unmarshal(raw, &prior); err != nil {
+					return err
+				}
+				prior.Trace = nil
+				v.TurnAttempts[index], _ = json.Marshal(prior)
+			}
+			v.TurnAttempts = append(v.TurnAttempts, full)
+			if len(v.TurnAttempts) > 32 {
+				v.TurnAttempts = v.TurnAttempts[len(v.TurnAttempts)-32:]
+			}
+			return nil
+		})
+		if err != nil {
+			t.Fatal(err)
+		}
+		got, err := s.Get(v.SessionID)
+		if err != nil || !AdaptiveHistoryEligible(got) {
+			t.Fatal("valid trimmed projection lost adaptive eligibility", err)
+		}
+	}
+	events, err := s.ReadTurnAttemptEvents(context.Background(), v.SessionID, "good_0")
+	if err != nil || len(events) != 1 || !bytes.Equal(events[0], first) {
+		t.Fatal("projection trim lost exact historic trace", err)
+	}
+}
+
+func TestAdaptiveHistoryNewTerminalEventRequiresOriginalTrace(t *testing.T) {
+	for _, kind := range []string{"missing_trace", "no_completion", "no_final_event"} {
+		t.Run(kind, func(t *testing.T) {
+			s, v := requestJournalFixture(t)
+			a := cleanHistoryAttempt(v, "terminal")
+			ended := time.Now().UTC()
+			code := 0
+			a.Ended = &ended
+			a.ExitCode = &code
+			switch kind {
+			case "missing_trace":
+				a.Trace = nil
+			case "no_completion":
+				a.Trace.Completion = false
+			case "no_final_event":
+				a.Trace.FinalResponse = false
+			}
+			raw, _ := json.Marshal(a)
+			if err := s.AppendTurnAttempt(context.Background(), v.SessionID, raw); err != nil {
+				t.Fatal(err)
+			}
+			got, err := s.Get(v.SessionID)
+			if err != nil || AdaptiveHistoryEligible(got) {
+				t.Fatal("inconclusive original terminal event granted eligibility", err)
+			}
+		})
 	}
 }
