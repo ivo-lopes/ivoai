@@ -88,3 +88,10 @@ configuration. An obsolete slow race run was explicitly stopped after the
 bounded-sanitization optimization; later applicable checks are recorded separately.
 The full semantic matrix and its unavailable provider/systemd/update/restore/scope
 preconditions remain governed by the previous report and release coordinator.
+
+A follow-up hardens redaction against labels split by control characters.
+Normalization now happens before classification and known-secret replacement,
+covering access-token labels, PEM keys, activation codes and opaque configured
+values. The focused race regression passed10.456s; the earlier Nginx/browser
+proof remains bound to its original source. See the separate normalization
+validation under the evidence directory.

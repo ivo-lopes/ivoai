@@ -130,6 +130,7 @@ func (s *Server) outputSecrets(r *http.Request) ([]string, error) {
 }
 
 func sanitizedAdministrativeOutput(raw string, input map[string]string, private []string) string {
+	raw = normalizeAdministrativeOutput(raw)
 	out := sanitizeOutput(activationCodeOutput.ReplaceAllString(privateKeyOutput.ReplaceAllString(raw, "[REDACTED PRIVATE KEY]"), "[REDACTED ACTIVATION CODE]"), input)
 	if code := oneTimeCode(raw); code != "" {
 		private = append(private, code)
@@ -137,6 +138,9 @@ func sanitizedAdministrativeOutput(raw string, input map[string]string, private 
 	for _, value := range private {
 		if value != "" {
 			out = strings.ReplaceAll(out, value, "[REDACTED]")
+			if normalized := normalizeAdministrativeOutput(value); normalized != "" {
+				out = strings.ReplaceAll(out, normalized, "[REDACTED]")
+			}
 		}
 	}
 	return out
