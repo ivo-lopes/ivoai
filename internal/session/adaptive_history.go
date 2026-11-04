@@ -21,11 +21,16 @@ type historyAttempt struct {
 	Failure    string               `json:"failure_class"`
 	Final      bool                 `json:"final_response_present"`
 	NativeID   string               `json:"native_session_id"`
+	ExitCode   *int                 `json:"executor_exit_code,omitempty"`
 	Ended      *time.Time           `json:"ended_at"`
 	Trace      *core.ExecutionTrace `json:"trace"`
 }
 
 func deniedHistoryAttempt(v Session, a historyAttempt) bool {
+	return deniedHistoryRecord(v, a, false)
+}
+
+func deniedHistoryRecord(v Session, a historyAttempt, allowProjectionSummary bool) bool {
 	if a.SessionID != "" && a.SessionID != v.SessionID || a.Frontend != "" && a.Frontend != v.Frontend || a.FrontendID != "" && v.FrontendSessionID != "" && a.FrontendID != v.FrontendSessionID || a.Requested != "" && a.Effective != "" && a.Requested != a.Effective {
 		return true
 	}
@@ -36,7 +41,16 @@ func deniedHistoryAttempt(v Session, a historyAttempt) bool {
 	case "running":
 		return a.Ended != nil
 	case "completed":
-		return !a.Final || a.NativeID == "" || a.Trace == nil || !a.Trace.Completion || !a.Trace.FinalResponse || a.Trace.ExitCode != 0
+		if !a.Final || a.NativeID == "" {
+			return true
+		}
+		if a.Trace != nil {
+			return !a.Trace.Completion || !a.Trace.FinalResponse || a.Trace.ExitCode != 0
+		}
+		// The existing host intentionally removes older Trace payloads from
+		// its bounded UI projection. Its explicit terminal summary remains;
+		// the exact original event is retained in the immutable audit journal.
+		return !allowProjectionSummary || a.Ended == nil || a.ExitCode == nil || *a.ExitCode != 0
 	default:
 		return true
 	}
@@ -45,7 +59,7 @@ func deniedHistoryAttempt(v Session, a historyAttempt) bool {
 func deniedHistoryProjection(v Session) bool {
 	for _, raw := range v.TurnAttempts {
 		var a historyAttempt
-		if json.Unmarshal(raw, &a) != nil || deniedHistoryAttempt(v, a) {
+		if json.Unmarshal(raw, &a) != nil || deniedHistoryRecord(v, a, true) {
 			return true
 		}
 		if a.State == "running" && v.ObservationAttemptID != "" && a.ID != v.ObservationAttemptID {
