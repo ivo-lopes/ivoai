@@ -12,7 +12,6 @@ import (
 	"strings"
 	"sync/atomic"
 	"testing"
-	"time"
 
 	"github.com/ivo-lopes/ivoai/internal/codexresolver"
 	"github.com/ivo-lopes/ivoai/internal/config"
@@ -78,35 +77,11 @@ func adaptiveBridgePath(t *testing.T, f *localMetadataFixture, base core.Executo
 		}),
 		Select: func(context.Context, string) (string, error) { return "codex", nil }, Status: func() opencodebridge.Status { return opencodebridge.Status{Frontend: "codex"} },
 		ClaimRequest: func(frontend, message string) (bool, error) {
-			_, err := f.store.Update(f.id, func(v *session.Session) error {
-				if v.FrontendRequests == nil {
-					v.FrontendRequests = map[string]time.Time{}
-				}
-				v.FrontendRequests[frontend+":"+message] = time.Now().UTC()
-				return nil
-			})
-			return err == nil, err
+			return f.store.ClaimFrontendRequest(context.Background(), f.id, frontend, message)
 		}, Attempt: func(attempt opencodebridge.TurnAttempt) error {
-			attempt.SessionID = f.id
-			_, err := f.store.Update(f.id, func(v *session.Session) error {
-				body, _ := json.Marshal(attempt)
-				found := false
-				for i, raw := range v.TurnAttempts {
-					var prior opencodebridge.TurnAttempt
-					if json.Unmarshal(raw, &prior) == nil && prior.ID == attempt.ID {
-						v.TurnAttempts[i] = body
-						found = true
-						break
-					}
-				}
-				if !found {
-					v.TurnAttempts = append(v.TurnAttempts, body)
-				}
-				v.TurnState = attempt.State
-				return appendTurnObservation(v, attempt)
-			})
-			return err
+			return persistManagedTurnAttempt(context.Background(), f.store, f.id, attempt)
 		}}
+
 	for _, apply := range configure {
 		apply(&options)
 	}

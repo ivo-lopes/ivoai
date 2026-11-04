@@ -205,8 +205,19 @@ func (s Store) CleanupRuntime(id string) error {
 	}
 	// Upgrade existing bounded checkpoints before removing process-local
 	// transports. Corruption is not permission to destroy recovery evidence.
-	if checkpoint, err := s.LoadCheckpoint(id); err == nil {
-		if err := s.SaveCheckpoint(id, checkpoint); err != nil {
+	if _, raw, err := s.LoadCheckpointSnapshot(id); err == nil {
+		checkpointDir := filepath.Join(s.Root, "checkpoints")
+		path := filepath.Join(checkpointDir, id+".json")
+		if _, err := os.Lstat(path); errors.Is(err, fs.ErrNotExist) {
+			if err := platform.EnsurePrivateDir(checkpointDir); err != nil {
+				return err
+			}
+			// Cleanup promotes legacy storage, not execution state. Preserve
+			// its validated exact bytes and timestamp for immutable history.
+			if err := platform.AtomicWritePrivate(raw, path); err != nil {
+				return err
+			}
+		} else if err != nil {
 			return err
 		}
 	} else if !errors.Is(err, fs.ErrNotExist) {

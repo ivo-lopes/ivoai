@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"os"
+	"reflect"
 
 	"github.com/ivo-lopes/ivoai/internal/core"
 	"github.com/ivo-lopes/ivoai/internal/evidence"
@@ -54,11 +55,71 @@ func adaptiveCompletedPlan(v session.Session) bool {
 	return false
 }
 
+// hydrateAdaptiveCompletedAttempt retrieves the exact immutable terminal event,
+// not a reconstructed trace or inferred success. Its complete nontrace fields
+// must equal the host's current bounded summary before it can certify history.
+func hydrateAdaptiveCompletedAttempt(ctx context.Context, store session.Store, v session.Session) (session.Session, error) {
+	if v.PrimaryTurn == nil {
+		return v, nil
+	}
+	for index, raw := range v.TurnAttempts {
+		var summary opencodebridge.TurnAttempt
+		if json.Unmarshal(raw, &summary) != nil {
+			return v, errors.New("ADAPTIVE_PRIMARY_AUDIT_INVALID")
+		}
+		if summary.ID != v.PrimaryTurn.AttemptID || summary.Trace != nil {
+			continue
+		}
+		events, err := store.ReadTurnAttemptEvents(ctx, v.SessionID, summary.ID)
+		if errors.Is(err, os.ErrNotExist) && v.RequestJournalVersion == 0 {
+			return v, nil
+		}
+		if err != nil {
+			return v, errors.New("ADAPTIVE_PRIMARY_AUDIT_UNAVAILABLE")
+		}
+		var terminal []byte
+		for _, event := range events {
+			var original opencodebridge.TurnAttempt
+			if json.Unmarshal(event, &original) != nil || original.ID != summary.ID || original.TurnID != summary.TurnID || original.SessionID != v.SessionID || original.Frontend != summary.Frontend || original.FrontendSessionID != summary.FrontendSessionID || original.RequestedExecutor != summary.RequestedExecutor || original.EffectiveExecutor != summary.EffectiveExecutor {
+				return v, errors.New("ADAPTIVE_PRIMARY_AUDIT_IDENTITY_CHANGED")
+			}
+			if original.State == "running" {
+				continue
+			}
+			if original.State != "completed" || original.Trace == nil || terminal != nil {
+				return v, errors.New("ADAPTIVE_PRIMARY_AUDIT_TERMINAL_INVALID")
+			}
+			withoutTrace := original
+			withoutTrace.Trace = nil
+			if !reflect.DeepEqual(withoutTrace, summary) {
+				return v, errors.New("ADAPTIVE_PRIMARY_AUDIT_SUMMARY_CHANGED")
+			}
+			terminal = event
+		}
+		if terminal == nil {
+			return v, errors.New("ADAPTIVE_PRIMARY_AUDIT_TERMINAL_MISSING")
+		}
+		v.TurnAttempts = append([]json.RawMessage(nil), v.TurnAttempts...)
+		v.TurnAttempts[index] = append(json.RawMessage(nil), terminal...)
+		return v, nil
+	}
+	return v, nil
+}
+
 func prepareAdaptiveCompletedPlan(ctx context.Context, store session.Store, v session.Session) (session.Session, error) {
 	if v.PrimaryTurn == nil || v.PrimaryTurn.PlanID == "" {
 		return v, nil
 	}
-	if !adaptiveCompletedPlan(v) {
+	if !session.AdaptiveHistoryEligible(v) {
+		// Incomplete legacy or already denied native history cannot create a
+		// read capability. Preserve its existing guarded legacy DAG path.
+		return v, nil
+	}
+	completed, err := hydrateAdaptiveCompletedAttempt(ctx, store, v)
+	if err != nil {
+		return v, err
+	}
+	if !adaptiveCompletedPlan(completed) {
 		// Older/legacy transcripts lack the successful native trace required
 		// by this capability. Preserve their existing guarded DAG path.
 		return v, nil
@@ -89,7 +150,7 @@ func prepareAdaptiveCompletedPlan(ctx context.Context, store session.Store, v se
 			return v, errors.New("ADAPTIVE_PRIMARY_HISTORY_UNAVAILABLE")
 		}
 	}
-	ref, err := store.SaveCompletedPrimaryPlan(ctx, session.CompletedPrimaryPlanSnapshot{SchemaVersion: 1, Session: v, Checkpoint: raw})
+	ref, err := store.SaveCompletedPrimaryPlan(ctx, session.CompletedPrimaryPlanSnapshot{SchemaVersion: 1, Session: completed, Checkpoint: raw})
 	if err != nil {
 		return v, errors.New("ADAPTIVE_PRIMARY_HISTORY_WRITE_FAILED")
 	}
