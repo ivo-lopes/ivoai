@@ -1,0 +1,7 @@
+=== RUN   TestLiveAdaptivePrimaryManagedChanges
+=== RUN   TestLiveAdaptivePrimaryManagedChanges/C
+=== RUN   TestLiveAdaptivePrimaryManagedChanges/D
+--- PASS: TestLiveAdaptivePrimaryManagedChanges (225.29s)
+    --- PASS: TestLiveAdaptivePrimaryManagedChanges/C (93.70s)
+    --- PASS: TestLiveAdaptivePrimaryManagedChanges/D (131.59s)
+PASS

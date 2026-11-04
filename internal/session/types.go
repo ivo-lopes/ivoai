@@ -133,6 +133,7 @@ type ExecutorSessionMapping struct {
 }
 
 type Session struct {
+	CompletedPrimaryPlan  *CompletedPrimaryPlanRef               `json:"completed_primary_plan,omitempty"`
 	PrimaryTurn           *core.PrimaryTurnReceipt               `json:"primary_turn,omitempty"`
 	RecoveryRequested     bool                                   `json:"recovery_requested,omitempty"`
 	ParallelWriteDegraded bool                                   `json:"parallel_write_degraded,omitempty"`

@@ -30,28 +30,31 @@ import (
 )
 
 type adaptiveChangeObservation struct {
-	Scenario               string                   `json:"scenario"`
-	Outcome                string                   `json:"outcome"`
-	Failure                string                   `json:"failure,omitempty"`
-	WallMS                 int64                    `json:"wall_ms"`
-	Approvals              int                      `json:"explicit_host_plan_approvals"`
-	ReadApprovals          int                      `json:"explicit_host_code_read_approvals"`
-	RejectedPlans          int                      `json:"out_of_scope_plans_rejected"`
-	DAG                    bool                     `json:"dag"`
-	ReceiptClosed          bool                     `json:"receipt_closed"`
-	Attempts               int                      `json:"primary_attempts"`
-	CompletedWorkers       int                      `json:"completed_real_workers"`
-	WorkerWorktrees        int                      `json:"worker_worktrees"`
-	WorkerExecutorScope    bool                     `json:"all_workers_codex_without_fallback"`
-	ParallelWriteDegraded  bool                     `json:"parallel_write_degraded"`
-	RootScopePreserved     bool                     `json:"root_scope_preserved"`
-	ChangedPaths           []string                 `json:"changed_paths,omitempty"`
-	PureCodeOracle         bool                     `json:"pure_code_oracle"`
-	BaselineTestsFailed    bool                     `json:"baseline_fixed_tests_failed"`
-	FinalTestsPassed       bool                     `json:"final_fixed_tests_passed"`
-	NativeExitZero         bool                     `json:"primary_native_exit_zero"`
-	PrimaryUsage           *core.ReportedTokenUsage `json:"primary_official_client_usage,omitempty"`
-	WorkerUsageObservation string                   `json:"worker_usage_observation"`
+	PostDAGReadOnlyTurn     bool                     `json:"post_DAG_read_only_turn,omitempty"`
+	HistorySnapshotReadable bool                     `json:"durable_history_readable,omitempty"`
+	ArchivedWorkerCount     int                      `json:"archived_worker_count,omitempty"`
+	Scenario                string                   `json:"scenario"`
+	Outcome                 string                   `json:"outcome"`
+	Failure                 string                   `json:"failure,omitempty"`
+	WallMS                  int64                    `json:"wall_ms"`
+	Approvals               int                      `json:"explicit_host_plan_approvals"`
+	ReadApprovals           int                      `json:"explicit_host_code_read_approvals"`
+	RejectedPlans           int                      `json:"out_of_scope_plans_rejected"`
+	DAG                     bool                     `json:"dag"`
+	ReceiptClosed           bool                     `json:"receipt_closed"`
+	Attempts                int                      `json:"primary_attempts"`
+	CompletedWorkers        int                      `json:"completed_real_workers"`
+	WorkerWorktrees         int                      `json:"worker_worktrees"`
+	WorkerExecutorScope     bool                     `json:"all_workers_codex_without_fallback"`
+	ParallelWriteDegraded   bool                     `json:"parallel_write_degraded"`
+	RootScopePreserved      bool                     `json:"root_scope_preserved"`
+	ChangedPaths            []string                 `json:"changed_paths,omitempty"`
+	PureCodeOracle          bool                     `json:"pure_code_oracle"`
+	BaselineTestsFailed     bool                     `json:"baseline_fixed_tests_failed"`
+	FinalTestsPassed        bool                     `json:"final_fixed_tests_passed"`
+	NativeExitZero          bool                     `json:"primary_native_exit_zero"`
+	PrimaryUsage            *core.ReportedTokenUsage `json:"primary_official_client_usage,omitempty"`
+	WorkerUsageObservation  string                   `json:"worker_usage_observation"`
 }
 
 type adaptiveChangeFile struct {
@@ -548,6 +551,44 @@ func TestLiveAdaptivePrimaryManagedChanges(t *testing.T) {
 			if !row.FinalTestsPassed {
 				row.Failure = "EXECUTABLE_ORACLE_FAILED"
 				t.Fatal("fixed executable tests failed")
+			}
+			if os.Getenv("IVOAI_ADAPTIVE_POST_DAG_LIVE") == "1" {
+				oldReceipt, nativeThread := v.PrimaryTurn.ID, v.ExecutorSessionID
+				scope, scopeErr := prefetchNewDirectScope(binary, f.root, strong.UpstreamModel, "read-only", environment)
+				if scopeErr != nil {
+					row.Failure = "POST_DAG_SCOPE_FAILED"
+					t.Fatal(row.Failure)
+				}
+				_, admission := prefetchCommonLiveAdmission(ctx, scope, prefetchSubscriptionHostPolicy{PermitFilteredEnvironment: true})
+				if admission.State != "ADMITTED" {
+					row.Failure = "POST_DAG_OFFICIAL_ADMISSION_DENIED"
+					t.Fatal(row.Failure)
+				}
+				if _, err := bridge.SubmitTurn(ctx, "fresh_frontend", "after_change_"+scenario.id, "Resuma em uma frase o resultado que acabamos de concluir, usando somente a conversa anterior. Não execute ferramentas nem crie outro plano.", strong.ID, strong.DefaultEffort); err != nil {
+					row.Failure = "POST_DAG_TURN_FAILED"
+					t.Fatal(row.Failure)
+				}
+				resumed := <-results
+				latest, err := f.store.Get(f.id)
+				if err != nil || latest.CompletedPrimaryPlan == nil || latest.PrimaryTurn == nil || latest.PrimaryTurn.Mode != core.PrimaryClosed || latest.PrimaryTurn.ID == oldReceipt || latest.PlanID != "" || len(latest.Tasks) != 0 || len(latest.Workers) != 0 || len(latest.Decisions) != 0 || latest.ExecutorSessionID != nativeThread || len(latest.TurnAttempts) != 2 || !resumed.Policy.NoReplay || !resumed.Policy.NoAutomaticFailover || resumed.Trace == nil || resumed.Trace.ExitCode != 0 || !resumed.Trace.Completion || !resumed.Trace.FinalResponse {
+					row.Failure = "POST_DAG_CONTINUITY_OR_AUTHORITY_FAILED"
+					t.Fatal(row.Failure)
+				}
+				archive, err := f.store.ReadCompletedPrimaryPlan(ctx, f.id, *latest.CompletedPrimaryPlan)
+				if err != nil || archive.Session.PrimaryTurn == nil || archive.Session.PrimaryTurn.ID != oldReceipt || archive.Session.PlanID != v.PlanID || len(archive.Session.Workers) != scenario.workers || len(archive.Session.Tasks) != len(v.Tasks) {
+					row.Failure = "POST_DAG_HISTORY_UNAVAILABLE"
+					t.Fatal(row.Failure)
+				}
+				row.PostDAGReadOnlyTurn, row.HistorySnapshotReadable, row.ArchivedWorkerCount = true, true, len(archive.Session.Workers)
+				final, err := adaptiveChangeSnapshot(f.root)
+				if err != nil {
+					row.Failure = "POST_DAG_FINAL_FILES_UNAVAILABLE"
+					t.Fatal(row.Failure)
+				}
+				if _, valid := adaptiveChangePaths(after, final, map[string]bool{}); !valid {
+					row.Failure = "POST_DAG_UNAPPROVED_MUTATION"
+					t.Fatal(row.Failure)
+				}
 			}
 			row.Outcome = "PASS"
 		})

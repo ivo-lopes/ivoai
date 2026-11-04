@@ -28,6 +28,7 @@ type PrimaryTurnReceipt struct {
 	ConfigDigest      string          `json:"config_digest"`
 	StateDigest       string          `json:"state_digest"`
 	ScopeDigest       string          `json:"scope_digest"`
+	HistoryDigest     string          `json:"history_digest,omitempty"`
 }
 
 type PrimaryTurnIdentity struct {
@@ -56,6 +57,14 @@ func (r PrimaryTurnReceipt) Validate() error {
 		}
 		if _, err := hex.DecodeString(digest); err != nil {
 			return errors.New("invalid primary turn binding")
+		}
+	}
+	if r.HistoryDigest != "" {
+		if len(r.HistoryDigest) != 64 {
+			return errors.New("invalid primary history binding")
+		}
+		if _, err := hex.DecodeString(r.HistoryDigest); err != nil {
+			return errors.New("invalid primary history binding")
 		}
 	}
 	return nil
