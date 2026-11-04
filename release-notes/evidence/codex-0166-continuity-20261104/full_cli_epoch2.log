@@ -1,0 +1,6 @@
+=== RUN   TestLiveAdaptivePrimaryFullCLI
+    adaptive_cli_live_test.go:317: PUBLIC_CLI_STATE_DEADLINE
+--- FAIL: TestLiveAdaptivePrimaryFullCLI (116.13s)
+FAIL
+FAIL	github.com/ivo-lopes/ivoai/internal/app	116.137s
+FAIL

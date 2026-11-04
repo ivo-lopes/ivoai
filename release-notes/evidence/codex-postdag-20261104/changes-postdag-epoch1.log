@@ -1,0 +1,8 @@
+=== RUN   TestLiveAdaptivePrimaryManagedChanges
+=== RUN   TestLiveAdaptivePrimaryManagedChanges/C
+=== RUN   TestLiveAdaptivePrimaryManagedChanges/D
+--- PASS: TestLiveAdaptivePrimaryManagedChanges (222.29s)
+    --- PASS: TestLiveAdaptivePrimaryManagedChanges/C (111.63s)
+    --- PASS: TestLiveAdaptivePrimaryManagedChanges/D (110.67s)
+PASS
+ok  	github.com/ivo-lopes/ivoai/internal/app	222.304s

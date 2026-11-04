@@ -1,0 +1,5 @@
+# github.com/ivo-lopes/ivoai/internal/app [github.com/ivo-lopes/ivoai/internal/app.test]
+internal/app/adaptive_cli_live_test.go:111:5: undefined: withDAG
+internal/app/adaptive_cli_live_test.go:407:108: w.Provider undefined (type session.Worker has no field or method Provider)
+FAIL	github.com/ivo-lopes/ivoai/internal/app [build failed]
+FAIL

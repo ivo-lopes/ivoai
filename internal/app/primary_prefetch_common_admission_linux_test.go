@@ -8,7 +8,6 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"syscall"
 	"time"
 )
@@ -18,7 +17,8 @@ func prefetchCommonLiveAdmission(ctx context.Context, scope prefetchDirectScope,
 	return prefetchCommonPrepare(ctx, scope, policy, prefetchCommonOfficialProbe, prefetchCommonInventoryOwned, prefetchCommonOfficialMatches)
 }
 func prefetchCommonOfficialMatches(scope prefetchDirectScope) bool {
-	return prefetchSubscriptionFileMatches(scope.executable, prefetchSubscriptionApprovedMain) && prefetchSubscriptionFileMatches(filepath.Join(filepath.Dir(scope.executable), "codex-code-mode-host"), prefetchSubscriptionApprovedCompanion)
+	_, ok := prefetchReviewedSubscriptionPin(scope)
+	return ok
 }
 func prefetchCommonOfficialProbe(ctx context.Context, plan prefetchSubscriptionPlan) (*prefetchSubscriptionAdmission, prefetchCommonLifecycle, error) {
 	open := prefetchSubscriptionOfficialStdio(plan)

@@ -53,6 +53,34 @@ func runAdaptivePrimaryCoreHelper() int {
 	return 0
 }
 
+// The integration fixture accepts only the same reviewed executable pairs as
+// production. No environment-provided version/hash can broaden admission.
+func adaptiveLiveRuntime(t *testing.T, binary string) (string, adaptiveRuntime) {
+	t.Helper()
+	sha, err := codexresolver.Fingerprint(binary)
+	if err != nil {
+		t.Fatal("official executable fingerprint unavailable")
+	}
+	for _, version := range []string{"0.166.0", "0.162.1"} {
+		executable, companion, ok := reviewedAdaptiveDigests(version, "linux/amd64")
+		if ok && sha == executable {
+			pair := adaptiveRuntime{binary, executable, filepath.Join(filepath.Dir(binary), "codex-code-mode-host"), companion}
+			if _, err := fingerprintAdaptivePair(context.Background(), pair); err != nil {
+				t.Fatal("reviewed executable/companion pair not matched")
+			}
+			return version, pair
+		}
+	}
+	t.Fatal("official executable is outside the reviewed runtime table")
+	return "", adaptiveRuntime{}
+}
+
+func mustAdaptiveSHA(t *testing.T, f *localMetadataFixture) string {
+	t.Helper()
+	_, pair := adaptiveLiveRuntime(t, f.state.Components["codex"].Path)
+	return pair.sha
+}
+
 func realAdaptiveFixture(t *testing.T) (*localMetadataFixture, []string) {
 	t.Helper()
 	if os.Getenv("IVOAI_ADAPTIVE_LIVE") != "1" {
@@ -86,21 +114,22 @@ func realAdaptiveFixture(t *testing.T) (*localMetadataFixture, []string) {
 		}
 	}
 	path, host := filepath.Join(bin, "codex"), filepath.Join(bin, "codex-code-mode-host")
-	f.state.Components["codex"] = config.ComponentState{Path: path, Version: "0.162.1", Installed: true, Managed: true}
-	f.state.Components["codex-code-mode-host"] = config.ComponentState{Path: host, Version: "0.162.1", Installed: true, Managed: true}
+	version, pair := adaptiveLiveRuntime(t, path)
+	f.state.Components["codex"] = config.ComponentState{Path: path, Version: version, Installed: true, Managed: true}
+	f.state.Components["codex-code-mode-host"] = config.ComponentState{Path: host, Version: version, Installed: true, Managed: true}
 	if err := f.a.Store.SaveState(f.state); err != nil {
 		t.Fatal(err)
 	}
 	f.state, _ = f.a.Store.LoadState()
 	f.update(t, func(v *session.Session) {
 		v.CodexPath = path
-		v.CodexSHA256 = adaptiveCodexSHA
-		v.CodexVersion = "0.162.1"
+		v.CodexSHA256 = pair.sha
+		v.CodexVersion = version
 		v.CodexManaged = true
 	})
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
-	if _, err := fingerprintAdaptivePair(ctx, adaptiveRuntime{path, adaptiveCodexSHA, host, adaptiveCompanionSHA}); err != nil {
+	if _, err := fingerprintAdaptivePair(ctx, pair); err != nil {
 		t.Fatal("official pair digest mismatch")
 	}
 	home, codehome := filepath.Join(t.TempDir(), "home"), filepath.Join(t.TempDir(), "codehome")
@@ -413,7 +442,7 @@ stream_max_retries=0
 		if err != nil {
 			return core.ExecutorResult{}, err
 		}
-		runner := opencodebridge.CLIRunner{Codex: opencodebridge.ExecutorSpec{Path: f.state.Components["codex"].Path, SHA256: adaptiveCodexSHA, Version: "0.162.1", Args: args, Env: scope.Environment(), Dir: scope.Directory(), CodexConfigContext: &scope}}
+		runner := opencodebridge.CLIRunner{Codex: opencodebridge.ExecutorSpec{Path: f.state.Components["codex"].Path, SHA256: mustAdaptiveSHA(t, f), Version: f.state.Components["codex"].Version, Args: args, Env: scope.Environment(), Dir: scope.Directory(), CodexConfigContext: &scope}}
 		return runner.Run(ctx, request, emit)
 	})
 	b, results := adaptiveBridge(t, f, base)
@@ -437,6 +466,6 @@ stream_max_retries=0
 	if status, _ := metadataHTTP(t, b, []map[string]string{{"role": "user", "content": "What is two plus two?"}}); status != 409 || requests.Load() != 1 {
 		t.Fatal("official admitted primary replayed")
 	}
-	t.Logf(`ADAPTIVE_OFFICIAL_CLI={"version":"0.162.1","provider":"synthetic_loopback","requests":1,"DAG":false,"workers":0,"duplicate":409,"fake_provider_usage_present":%v,"real_inference":false,"subscription_authentication":false}`, withUsage)
+	t.Logf(`ADAPTIVE_OFFICIAL_CLI={"version":%q,"provider":"synthetic_loopback","requests":1,"DAG":false,"workers":0,"duplicate":409,"fake_provider_usage_present":%v,"real_inference":false,"subscription_authentication":false}`, f.state.Components["codex"].Version, withUsage)
 	t.Logf(`ADAPTIVE_INSTRUCTION_BYTES={"initial_utf8_bytes":%d,"legacy_utf8_bytes":%d,"DAG_protocol_utf8_bytes":%d,"not_token_or_cost_measurement":true}`, len(adaptivePrimaryInstructions(true)), len(automaticInstructions(true)), len(automaticInstructions(true)))
 }

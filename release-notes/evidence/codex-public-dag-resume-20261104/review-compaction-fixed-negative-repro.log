@@ -1,0 +1,6 @@
+=== RUN   TestReviewProductionCompactionBlocksCompletedDAGArchive
+    review_compaction_overlay_test.go:23: candidate no longer reproduced
+--- FAIL: TestReviewProductionCompactionBlocksCompletedDAGArchive (0.00s)
+FAIL
+FAIL	github.com/ivo-lopes/ivoai/internal/app	0.010s
+FAIL

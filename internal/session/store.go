@@ -1,6 +1,7 @@
 package session
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
@@ -94,10 +95,23 @@ func (s Store) Update(id string, mutate func(*Session) error) (Session, error) {
 		if err != nil {
 			return err
 		}
+		journalVersion := value.RequestJournalVersion
+		historyDenied := value.AdaptiveHistoryDenied
+		legacyAuditPartial := value.LegacyAttemptAuditPartial
 		if err := mutate(&value); err != nil {
 			return err
 		}
+		if historyDenied && !value.AdaptiveHistoryDenied {
+			return errors.New("adaptive history taint downgrade refused")
+		}
+		if legacyAuditPartial && !value.LegacyAttemptAuditPartial {
+			return errors.New("legacy partial audit downgrade refused")
+		}
+		if journalVersion == 1 && value.RequestJournalVersion != 1 {
+			return errors.New("request journal downgrade refused")
+		}
 		value.UpdatedAt = time.Now().UTC()
+		value.AdaptiveHistoryDenied = value.AdaptiveHistoryDenied || deniedHistoryProjection(value)
 		if err := validate(value); err != nil {
 			return err
 		}
@@ -111,23 +125,24 @@ func (s Store) Update(id string, mutate func(*Session) error) (Session, error) {
 }
 
 func (s Store) List() ([]Session, error) {
-	if err := platform.EnsurePrivateDir(s.Root); err != nil {
-		return nil, err
-	}
-	entries, err := os.ReadDir(s.Root)
-	if err != nil {
-		return nil, err
-	}
-	for _, directory := range []string{s.nativeDir(), s.frontendDir()} {
-		if err := s.validateSessionNamespace(directory); err == nil {
-			native, readErr := os.ReadDir(directory)
-			if readErr != nil {
-				return nil, readErr
-			}
-			entries = append(entries, native...)
-		} else if !errors.Is(err, fs.ErrNotExist) {
+	var entries []os.DirEntry
+	for _, directory := range []string{s.Root, s.nativeDir(), s.frontendDir(), s.journalDir()} {
+		dir, err := openPrivateSessionReadDirectory(directory)
+		if errors.Is(err, fs.ErrNotExist) {
+			continue
+		}
+		if err != nil {
 			return nil, err
 		}
+		batch, err := dir.ReadDir(-1)
+		closeErr := dir.Close()
+		if err != nil {
+			return nil, err
+		}
+		if closeErr != nil {
+			return nil, closeErr
+		}
+		entries = append(entries, batch...)
 	}
 	values := make([]Session, 0, len(entries))
 	seen := map[string]bool{}
@@ -191,8 +206,19 @@ func (s Store) CleanupRuntime(id string) error {
 	}
 	// Upgrade existing bounded checkpoints before removing process-local
 	// transports. Corruption is not permission to destroy recovery evidence.
-	if checkpoint, err := s.LoadCheckpoint(id); err == nil {
-		if err := s.SaveCheckpoint(id, checkpoint); err != nil {
+	if _, raw, err := s.LoadCheckpointSnapshot(id); err == nil {
+		checkpointDir := filepath.Join(s.Root, "checkpoints")
+		path := filepath.Join(checkpointDir, id+".json")
+		if _, err := os.Lstat(path); errors.Is(err, fs.ErrNotExist) {
+			if err := platform.EnsurePrivateDir(checkpointDir); err != nil {
+				return err
+			}
+			// Cleanup promotes legacy storage, not execution state. Preserve
+			// its validated exact bytes and timestamp for immutable history.
+			if err := platform.AtomicWritePrivate(raw, path); err != nil {
+				return err
+			}
+		} else if err != nil {
 			return err
 		}
 	} else if !errors.Is(err, fs.ErrNotExist) {
@@ -213,6 +239,12 @@ func (s Store) CleanupRuntime(id string) error {
 }
 
 func (s Store) write(value Session) error {
+	if value.LegacyAttemptAuditPartial || deniedHistoryProjection(value) {
+		value.AdaptiveHistoryDenied = true
+	}
+	if filepath.Dir(s.path(value.SessionID)) == s.journalDir() {
+		value.RequestJournalVersion = 1
+	}
 	// Additive metadata keeps legacy mode/primary_executor fields intact.
 	value.PrimaryProvider = value.PrimaryExecutor
 	value.OrchestrationMode = string(value.Mode)
@@ -221,6 +253,11 @@ func (s Store) write(value Session) error {
 	}
 	if err := validate(value); err != nil {
 		return err
+	}
+	if value.AdaptiveHistoryDenied {
+		if err := s.markHistoryDenied(context.Background(), value.SessionID); err != nil {
+			return err
+		}
 	}
 	disk := diskSession{Session: value}
 	if native, exists := value.Quota[quota.ProviderOpenCode]; exists {
@@ -240,6 +277,7 @@ func (s Store) write(value Session) error {
 		return errors.New("session metadata exceeds size limit")
 	}
 	path := s.path(value.SessionID)
+	movedFrom := ""
 	namespace := ""
 	if nativeSession(value) {
 		namespace = s.nativeDir()
@@ -247,13 +285,23 @@ func (s Store) write(value Session) error {
 	if value.Frontend == "codex" {
 		namespace = s.frontendDir()
 	}
+	if value.RequestJournalVersion == 1 {
+		namespace = s.journalDir()
+	}
 	if namespace != "" && filepath.Dir(path) != namespace {
 		if err := platform.EnsurePrivateDir(namespace); err != nil {
 			return err
 		}
-		target := filepath.Join(namespace, value.SessionID+".json")
-		if err := os.Rename(path, target); err != nil && !errors.Is(err, fs.ErrNotExist) {
+		if err := platform.SyncDir(s.Root); err != nil {
 			return err
+		}
+		target := filepath.Join(namespace, value.SessionID+".json")
+		if err := os.Rename(path, target); err != nil {
+			if !errors.Is(err, fs.ErrNotExist) {
+				return err
+			}
+		} else {
+			movedFrom = filepath.Dir(path)
 		}
 		path = target
 	}
@@ -262,7 +310,13 @@ func (s Store) write(value Session) error {
 			return err
 		}
 	}
-	return platform.AtomicWritePrivate(append(body, '\n'), path)
+	if err := platform.AtomicWritePrivate(append(body, '\n'), path); err != nil {
+		return err
+	}
+	if movedFrom != "" {
+		return platform.SyncDir(movedFrom)
+	}
+	return nil
 }
 
 func (s Store) read(path string) (Session, error) { return s.readBounded(path, maxStateBytes) }
@@ -302,6 +356,9 @@ func (s Store) readBounded(path string, limit int64) (Session, error) {
 		return Session{}, err
 	}
 	value := disk.Session
+	if filepath.Dir(path) == s.journalDir() {
+		value.RequestJournalVersion = 1
+	}
 	if disk.NativeQuota != nil {
 		if disk.NativeQuota.Provider != quota.ProviderOpenCode {
 			return Session{}, errors.New("invalid native session quota")
@@ -317,6 +374,15 @@ func (s Store) readBounded(path string, limit int64) (Session, error) {
 	if err := validate(value); err != nil {
 		return Session{}, err
 	}
+	// Read paths derive only in memory; no journal, migration or write here.
+	if deniedHistoryProjection(value) {
+		value.AdaptiveHistoryDenied = true
+	}
+	denied, err := s.historyMarkerDenied(value.SessionID)
+	if err != nil {
+		return Session{}, err
+	}
+	value.AdaptiveHistoryDenied = value.AdaptiveHistoryDenied || denied
 	return value, nil
 }
 
@@ -350,6 +416,12 @@ func (s Store) withLock(operation func() error) error {
 }
 
 func validate(value Session) error {
+	if value.RequestJournalVersion < 0 || value.RequestJournalVersion > 1 {
+		return errors.New("unsupported request journal version")
+	}
+	if value.CompletedPrimaryPlan != nil && value.CompletedPrimaryPlan.Validate() != nil {
+		return errors.New("invalid completed primary history reference")
+	}
 	if value.PrimaryTurn != nil {
 		if err := value.PrimaryTurn.Validate(); err != nil {
 			return err

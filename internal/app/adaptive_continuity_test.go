@@ -166,6 +166,61 @@ func TestAdaptiveContinuationRefusesUnprovedHistory(t *testing.T) {
 	}
 }
 
+func TestAdaptiveReopenedStoreRetainsOwnedNativeThreadAndReplayClaims(t *testing.T) {
+	f := newAdaptiveFixture(t)
+	calls := 0
+	base := turnRunnerFunc(func(ctx context.Context, request core.ExecutorRequest, emit func(string) error) (core.ExecutorResult, error) {
+		calls++
+		if calls == 2 && request.ExecutorSessionID != "owned_native_thread" {
+			t.Fatal("reopen discarded native ownership")
+		}
+		return core.ExecutorResult{ExecutorSessionID: "owned_native_thread", Trace: &core.ExecutionTrace{FinalResponse: true, Completion: true, ExitCode: 0}}, emit("owned answer")
+	})
+	configure := func(o *opencodebridge.Options) {
+		o.AuthReference = func(context.Context, string) (string, error) { return "opaque_fixture_account_epoch", nil }
+		o.Mapping = adaptivePersistMapping(f)
+		o.LookupMapping = func(frontend string) []opencodebridge.Mapping {
+			v, err := f.store.Get(f.id)
+			if err != nil {
+				return nil
+			}
+			m, ok := v.ExecutorSessions["codex:"+frontend]
+			if !ok {
+				return nil
+			}
+			return []opencodebridge.Mapping{{FrontendSessionID: frontend, Executor: "codex", ExecutorSessionID: m.ExecutorSessionID, AuthReference: m.AuthReference}}
+		}
+	}
+	b, results := adaptiveBridge(t, f, base, configure)
+	if _, err := b.SubmitTurn(context.Background(), "fresh_frontend", "before-reopen", "Explique a autenticação.", "auto", ""); err != nil {
+		t.Fatal(err)
+	}
+	<-results
+	b.Close(context.Background())
+	f.a.finishSession(f.store, f.id, session.StateCompleted, 0)
+	// Reconstruct the store as a new owner does; native history and request
+	// claims remain on disk. No completed prompt is resubmitted.
+	f.store = session.Store{Root: f.store.Root}
+	if _, err := f.store.Reopen(f.id, f.root, session.ModeAuto); err != nil {
+		t.Fatal(err)
+	}
+	f.update(t, func(v *session.Session) { v.State, v.CurrentPhase = session.StateRunning, "intake" })
+	second, resumedResults := adaptiveBridge(t, f, base, configure)
+	if _, err := second.SubmitTurn(context.Background(), "fresh_frontend", "after-reopen", "Qual função verificamos antes?", "auto", ""); err != nil {
+		t.Fatal(err)
+	}
+	if r := <-resumedResults; !r.Policy.NoReplay || !r.Policy.NoAutomaticFailover {
+		t.Fatal("reopen dropped execution policy")
+	}
+	if calls != 2 {
+		t.Fatal("resume executed a completed prompt again")
+	}
+	v, _ := f.store.Get(f.id)
+	if len(v.TurnAttempts) != 2 || len(v.FrontendRequests) != 2 || v.PrimaryTurn == nil || v.PrimaryTurn.Mode != core.PrimaryClosed {
+		t.Fatal("reopen lost receipt/history")
+	}
+}
+
 func receiptsForContinuation(t *testing.T, current session.Session) session.Session {
 	t.Helper()
 	var previous opencodebridge.TurnAttempt

@@ -29,12 +29,30 @@ const adaptiveCompanionSHA = "ec71830690a7c0024916ee0c99fbdc635bc6e747ff665ea4f0
 
 type adaptiveRuntime struct{ executable, sha, companion, companionSHA string }
 
+// reviewedAdaptiveDigests is deliberately an exact version/platform allowlist.
+// Retaining the previously certified pair permits explicit installer rollback;
+// a matching version banner never substitutes for these executable digests.
+func reviewedAdaptiveDigests(version, platform string) (executable, companion string, ok bool) {
+	if platform != "linux/amd64" {
+		return "", "", false
+	}
+	switch version {
+	case "0.162.1":
+		return adaptiveCodexSHA, adaptiveCompanionSHA, true
+	case "0.166.0":
+		return "b8a11fedf24b2dfb59a70c9e52b030f9a508dcd49cd2dd0d41956f4c785156b8", "657f4e902726e05867c937b583049d5997e057f8cd0ab40450633c9c9ef8d630", true
+	default:
+		return "", "", false
+	}
+}
+
 func pinnedAdaptiveRuntime(state config.State, v session.Session) (adaptiveRuntime, error) {
 	c, host := state.Components["codex"], state.Components["codex-code-mode-host"]
-	if runtime.GOOS != "linux" || runtime.GOARCH != "amd64" || !c.Managed || !c.Installed || !host.Managed || !host.Installed || !v.CodexManaged || c.Version != "0.162.1" || host.Version != c.Version || v.CodexVersion != c.Version || c.Path != v.CodexPath || v.CodexSHA256 != adaptiveCodexSHA || host.Path != filepath.Join(filepath.Dir(c.Path), "codex-code-mode-host") {
+	sha, companionSHA, reviewed := reviewedAdaptiveDigests(c.Version, runtime.GOOS+"/"+runtime.GOARCH)
+	if !reviewed || !c.Managed || !c.Installed || !host.Managed || !host.Installed || !v.CodexManaged || host.Version != c.Version || v.CodexVersion != c.Version || c.Path != v.CodexPath || v.CodexSHA256 != sha || host.Path != filepath.Join(filepath.Dir(c.Path), "codex-code-mode-host") {
 		return adaptiveRuntime{}, errors.New("ADAPTIVE_PRIMARY_RUNTIME_UNAVAILABLE")
 	}
-	return adaptiveRuntime{c.Path, adaptiveCodexSHA, host.Path, adaptiveCompanionSHA}, nil
+	return adaptiveRuntime{c.Path, sha, host.Path, companionSHA}, nil
 }
 
 func adaptiveBinarySHA(ctx context.Context, path string) (string, error) {
@@ -137,7 +155,7 @@ func (a *App) admitAdaptivePrimary(ctx context.Context, cfg config.Config, state
 		return nil, false, nil
 	}
 	v, err := store.Get(id)
-	if err != nil || !adaptivePrimarySession(v, request, cwd, v.KnowledgeScopeID) || !localMetadataNoCheckpoint(store, id) {
+	if err != nil {
 		return nil, false, nil
 	}
 	scope, err := conversationScopeID(cwd, cfg, selectors)
@@ -159,7 +177,7 @@ func (a *App) admitAdaptivePrimary(ctx context.Context, cfg config.Config, state
 	pair, err := checkRuntime(state, v)
 	if err != nil {
 		if a.Err != nil {
-			fmt.Fprintln(a.Err, "Experimental primary-only capability unavailable: requires the reviewed managed Codex0.162.1 Linuxamd64 pair; using the existing DAG path before admission.")
+			fmt.Fprintln(a.Err, "Experimental primary-only capability unavailable: requires an exact reviewed managed Codex Linuxamd64 executable/companion pair; using the existing DAG path before admission.")
 		}
 		return nil, false, nil
 	}
@@ -175,6 +193,21 @@ func (a *App) admitAdaptivePrimary(ctx context.Context, cfg config.Config, state
 	if v.PrimaryTurn != nil && (v.PrimaryTurn.ConfigDigest != r.ConfigDigest || v.PrimaryTurn.StateDigest != r.StateDigest || v.PrimaryTurn.ScopeDigest != r.ScopeDigest) {
 		return nil, false, errors.New("ADAPTIVE_PRIMARY_CONTINUITY_CHANGED")
 	}
+	if v.PrimaryTurn != nil && v.PrimaryTurn.HistoryDigest != adaptiveHistoryDigest(v.CompletedPrimaryPlan) {
+		return nil, false, errors.New("ADAPTIVE_PRIMARY_HISTORY_CHANGED")
+	}
+	initial := v
+	v, err = prepareAdaptiveCompletedPlan(ctx, store, v)
+	if err != nil {
+		return nil, false, err
+	}
+	if !adaptivePrimarySession(v, request, cwd, scope) || !adaptiveCheckpointSafe(ctx, store, v) {
+		if initial.PrimaryTurn != nil && initial.PrimaryTurn.PlanID != "" && v.PlanID == "" {
+			return nil, false, errors.New("ADAPTIVE_PRIMARY_DAG_CONTINUITY_DENIED")
+		}
+		return nil, false, nil
+	}
+	r.HistoryDigest = adaptiveHistoryDigest(v.CompletedPrimaryPlan)
 	if err := r.Validate(); err != nil {
 		return nil, false, err
 	}
@@ -182,10 +215,12 @@ func (a *App) admitAdaptivePrimary(ctx context.Context, cfg config.Config, state
 	// The Store update is admission. Errors after it must return a non-replayable
 	// prepared turn; no CLI fallback or second preparation may run the operation.
 	_, err = store.Update(id, func(latest *session.Session) error {
-		samePrior := latest.PrimaryTurn == nil && v.PrimaryTurn == nil || latest.PrimaryTurn != nil && v.PrimaryTurn != nil && *latest.PrimaryTurn == *v.PrimaryTurn
-		if !samePrior || !adaptivePrimarySession(*latest, request, cwd, scope) || !localMetadataNoCheckpoint(store, id) {
+		if evidence.Digest(*latest) != evidence.Digest(initial) || !adaptivePrimarySession(v, request, cwd, scope) || !adaptiveCheckpointSafe(ctx, store, v) {
 			return errors.New("ADAPTIVE_PRIMARY_DENIED")
 		}
+		// The immutable snapshot is already durable. Only now retire the active
+		// plan/worker/decision pointers and issue the new read-only capability.
+		*latest = v
 		latest.PrimaryTurn = &r
 		latest.CurrentPhase = string(core.PrimaryReadOnly)
 		return nil
@@ -202,11 +237,14 @@ func (a *App) admitAdaptivePrimary(ctx context.Context, cfg config.Config, state
 // the matching successful native attempt and the existing owned mapping can
 // continue a read-only conversation. DAG/checkpoint recovery stays separate.
 func adaptivePrimarySession(v session.Session, request core.ExecutorRequest, cwd, scope string) bool {
+	if !session.AdaptiveHistoryEligible(v) {
+		return false
+	}
 	if v.PrimaryTurn == nil {
-		return request.ExecutorSessionID == "" && localMetadataSession(v, request, cwd, scope)
+		return v.CompletedPrimaryPlan == nil && request.ExecutorSessionID == "" && localMetadataSession(v, request, cwd, scope)
 	}
 	r := v.PrimaryTurn
-	if r.Validate() != nil || r.Mode != core.PrimaryClosed || r.Executor != "codex" || r.PlanID != "" || r.FrontendSessionID != request.FrontendSessionID || r.TurnID == v.ObservationTurnID || r.AttemptID == v.ObservationAttemptID {
+	if r.Validate() != nil || r.Mode != core.PrimaryClosed || r.Executor != "codex" || r.PlanID != "" && (v.CompletedPrimaryPlan == nil || v.CompletedPrimaryPlan.ReceiptID != r.ID || v.CompletedPrimaryPlan.PlanID != r.PlanID) || r.FrontendSessionID != request.FrontendSessionID || r.TurnID == v.ObservationTurnID || r.AttemptID == v.ObservationAttemptID {
 		return false
 	}
 	if v.State != session.StateRunning || v.Mode != session.ModeAuto || !v.Auto || v.Coordinator != "native" || v.ProviderExecution || v.Frontend != "codex" || v.CurrentPrimary != "codex" || v.PrimaryExecutor != "codex" || v.InitialPlanner != "codex" || v.WorkingDirectory != cwd || v.KnowledgeScopeID != scope {
@@ -274,6 +312,14 @@ func (t *adaptivePrimaryTurn) check(ctx context.Context) (session.Session, error
 	if err != nil || !t.boundTo(v) {
 		return deny()
 	}
+	if v.CompletedPrimaryPlan != nil {
+		if _, err := t.store.ReadCompletedPrimaryPlan(ctx, t.id, *v.CompletedPrimaryPlan); err != nil {
+			return deny()
+		}
+		if v.PrimaryTurn.Mode == core.PrimaryReadOnly && !adaptiveCheckpointSafe(ctx, t.store, v) {
+			return deny()
+		}
+	}
 	cfg, err := t.app.Store.Load()
 	if err != nil || evidence.Digest(cfg) != t.receipt.ConfigDigest {
 		return deny()
@@ -306,7 +352,7 @@ func (t *adaptivePrimaryTurn) check(ctx context.Context) (session.Session, error
 // and runtime I/O checks stay outside that lock; late metadata cannot attach to
 // a replacement or consumed receipt while those checks complete.
 func (t *adaptivePrimaryTurn) boundTo(v session.Session) bool {
-	if !session.PrimaryTurnActive(v) || v.WorkingDirectory != t.cwd || v.CodexPath != t.runtime.executable || v.CodexSHA256 != t.runtime.sha {
+	if !session.PrimaryTurnActive(v) || v.WorkingDirectory != t.cwd || v.CodexPath != t.runtime.executable || v.CodexSHA256 != t.runtime.sha || adaptiveHistoryDigest(v.CompletedPrimaryPlan) != t.receipt.HistoryDigest {
 		return false
 	}
 	r := *v.PrimaryTurn
@@ -380,7 +426,7 @@ func (t *adaptivePrimaryTurn) validate(ctx context.Context) error {
 			if err := validateAutoDAG(*latest); err != nil {
 				return err
 			}
-		} else if latest.PrimaryTurn.Mode != core.PrimaryReadOnly || latest.CurrentPhase != string(core.PrimaryReadOnly) || latest.PlanID != "" || len(latest.Tasks) != 0 || len(latest.Workers) != 0 || len(latest.Decisions) != 0 || !localMetadataNoCheckpoint(t.store, t.id) {
+		} else if latest.PrimaryTurn.Mode != core.PrimaryReadOnly || latest.CurrentPhase != string(core.PrimaryReadOnly) || latest.PlanID != "" || len(latest.Tasks) != 0 || len(latest.Workers) != 0 || len(latest.Decisions) != 0 || !adaptiveCheckpointSafe(ctx, t.store, *latest) {
 			return &core.ExecutorFailure{Class: "ADAPTIVE_PRIMARY_INCOMPLETE", ExitCode: 1}
 		}
 		// Consume the receipt before the final text reaches a possibly slow

@@ -99,8 +99,15 @@ func (s Store) SaveCheckpoint(id string, value Checkpoint) error {
 }
 
 func (s Store) LoadCheckpoint(id string) (Checkpoint, error) {
+	value, _, err := s.LoadCheckpointSnapshot(id)
+	return value, err
+}
+
+// LoadCheckpointSnapshot retains the validated exact source bytes for durable
+// owner-scoped session history. It applies the same non-following bounded read.
+func (s Store) LoadCheckpointSnapshot(id string) (Checkpoint, []byte, error) {
 	if err := ValidateID(id); err != nil {
-		return Checkpoint{}, err
+		return Checkpoint{}, nil, err
 	}
 	path := filepath.Join(s.Root, "checkpoints", id+".json")
 	fd, err := unix.Open(path, unix.O_RDONLY|unix.O_CLOEXEC|unix.O_NOFOLLOW|unix.O_NONBLOCK, 0)
@@ -110,27 +117,27 @@ func (s Store) LoadCheckpoint(id string) (Checkpoint, error) {
 		fd, err = unix.Open(path, unix.O_RDONLY|unix.O_CLOEXEC|unix.O_NOFOLLOW|unix.O_NONBLOCK, 0)
 	}
 	if err != nil {
-		return Checkpoint{}, err
+		return Checkpoint{}, nil, err
 	}
 	file := os.NewFile(uintptr(fd), path)
 	if file == nil {
 		_ = unix.Close(fd)
-		return Checkpoint{}, errors.New("open checkpoint")
+		return Checkpoint{}, nil, errors.New("open checkpoint")
 	}
 	defer file.Close()
 	info, err := file.Stat()
 	if err != nil || !info.Mode().IsRegular() || info.Mode().Perm()&0o077 != 0 || info.Size() > maxCheckpointBytes {
-		return Checkpoint{}, errors.New("unsafe checkpoint file")
+		return Checkpoint{}, nil, errors.New("unsafe checkpoint file")
 	}
 	body, err := io.ReadAll(io.LimitReader(file, maxCheckpointBytes+1))
 	if err != nil || len(body) > maxCheckpointBytes {
-		return Checkpoint{}, errors.New("invalid checkpoint")
+		return Checkpoint{}, nil, errors.New("invalid checkpoint")
 	}
 	var value Checkpoint
 	if json.Unmarshal(body, &value) != nil || validateCheckpoint(value) != nil {
-		return Checkpoint{}, errors.New("invalid checkpoint")
+		return Checkpoint{}, nil, errors.New("invalid checkpoint")
 	}
-	return value, nil
+	return value, body, nil
 }
 
 func validateCheckpoint(value Checkpoint) error {

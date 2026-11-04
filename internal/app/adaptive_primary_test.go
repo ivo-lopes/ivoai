@@ -12,7 +12,6 @@ import (
 	"strings"
 	"sync/atomic"
 	"testing"
-	"time"
 
 	"github.com/ivo-lopes/ivoai/internal/codexresolver"
 	"github.com/ivo-lopes/ivoai/internal/config"
@@ -78,35 +77,11 @@ func adaptiveBridgePath(t *testing.T, f *localMetadataFixture, base core.Executo
 		}),
 		Select: func(context.Context, string) (string, error) { return "codex", nil }, Status: func() opencodebridge.Status { return opencodebridge.Status{Frontend: "codex"} },
 		ClaimRequest: func(frontend, message string) (bool, error) {
-			_, err := f.store.Update(f.id, func(v *session.Session) error {
-				if v.FrontendRequests == nil {
-					v.FrontendRequests = map[string]time.Time{}
-				}
-				v.FrontendRequests[frontend+":"+message] = time.Now().UTC()
-				return nil
-			})
-			return err == nil, err
+			return f.store.ClaimFrontendRequest(context.Background(), f.id, frontend, message)
 		}, Attempt: func(attempt opencodebridge.TurnAttempt) error {
-			attempt.SessionID = f.id
-			_, err := f.store.Update(f.id, func(v *session.Session) error {
-				body, _ := json.Marshal(attempt)
-				found := false
-				for i, raw := range v.TurnAttempts {
-					var prior opencodebridge.TurnAttempt
-					if json.Unmarshal(raw, &prior) == nil && prior.ID == attempt.ID {
-						v.TurnAttempts[i] = body
-						found = true
-						break
-					}
-				}
-				if !found {
-					v.TurnAttempts = append(v.TurnAttempts, body)
-				}
-				v.TurnState = attempt.State
-				return appendTurnObservation(v, attempt)
-			})
-			return err
+			return persistManagedTurnAttempt(context.Background(), f.store, f.id, attempt)
 		}}
+
 	for _, apply := range configure {
 		apply(&options)
 	}
@@ -116,6 +91,38 @@ func adaptiveBridgePath(t *testing.T, f *localMetadataFixture, base core.Executo
 	}
 	t.Cleanup(func() { _ = b.Close(context.Background()) })
 	return b, results
+}
+
+func TestAdaptivePrimaryDurableClaimStorageFailureDoesNotExecute(t *testing.T) {
+	f := newAdaptiveFixture(t)
+	outside := t.TempDir()
+	if err := os.Symlink(outside, filepath.Join(f.store.Root, "request-claims")); err != nil {
+		t.Fatal(err)
+	}
+	var calls, alternate atomic.Int32
+	base := turnRunnerFunc(func(context.Context, core.ExecutorRequest, func(string) error) (core.ExecutorResult, error) {
+		calls.Add(1)
+		return core.ExecutorResult{}, nil
+	})
+	b, _ := adaptiveBridge(t, f, base, func(o *opencodebridge.Options) {
+		o.ClaimRequest = func(frontend, message string) (bool, error) {
+			return f.store.ClaimFrontendRequest(context.Background(), f.id, frontend, message)
+		}
+		o.SelectAlternate = func(context.Context, string, []string) (string, error) {
+			alternate.Add(1)
+			return "claude", nil
+		}
+	})
+	for range 2 {
+		status, _ := metadataHTTP(t, b, []map[string]string{{"role": "user", "content": "Explain the authentication code"}})
+		if status == http.StatusOK || calls.Load() != 0 || alternate.Load() != 0 {
+			t.Fatal("durable claim failure dispatched or fell back")
+		}
+	}
+	entries, err := os.ReadDir(outside)
+	if err != nil || len(entries) != 0 {
+		t.Fatal("failed claim followed an untrusted path", err)
+	}
 }
 
 func TestAdaptivePrimaryPreparationFailureDoesNotExecuteOrReplay(t *testing.T) {

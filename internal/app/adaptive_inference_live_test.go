@@ -46,6 +46,7 @@ type adaptiveInferenceObservation struct {
 
 func adaptiveInferenceFixture(t *testing.T, binary string) *localMetadataFixture {
 	t.Helper()
+	version, pair := adaptiveLiveRuntime(t, binary)
 	f := newAdaptiveFixture(t)
 	f.a.adaptiveRuntimeCheck = nil
 	f.a.Runner = platform.ExecRunner{}
@@ -55,8 +56,8 @@ func adaptiveInferenceFixture(t *testing.T, binary string) *localMetadataFixture
 	paths.QuotaDir = filepath.Join(paths.StateDir, "quota")
 	paths.Secrets = filepath.Join(paths.ConfigDir, "secrets.json")
 	f.a.Store = config.NewStore(paths)
-	f.state.Components["codex"] = config.ComponentState{Path: binary, Version: "0.162.1", Installed: true, Managed: true}
-	f.state.Components["codex-code-mode-host"] = config.ComponentState{Path: filepath.Join(filepath.Dir(binary), "codex-code-mode-host"), Version: "0.162.1", Installed: true, Managed: true}
+	f.state.Components["codex"] = config.ComponentState{Path: binary, Version: version, Installed: true, Managed: true}
+	f.state.Components["codex-code-mode-host"] = config.ComponentState{Path: filepath.Join(filepath.Dir(binary), "codex-code-mode-host"), Version: version, Installed: true, Managed: true}
 	if err := f.a.Store.SaveState(f.state); err != nil {
 		t.Fatal("private state unavailable")
 	}
@@ -74,8 +75,8 @@ func adaptiveInferenceFixture(t *testing.T, binary string) *localMetadataFixture
 	}
 	f.update(t, func(v *session.Session) {
 		v.CodexPath = binary
-		v.CodexSHA256 = adaptiveCodexSHA
-		v.CodexVersion = "0.162.1"
+		v.CodexSHA256 = pair.sha
+		v.CodexVersion = version
 		v.CodexManaged = true
 		v.KnowledgeScopeID = scope
 	})
@@ -103,7 +104,7 @@ func adaptiveInferenceBridge(t *testing.T, f *localMetadataFixture, environment 
 		t.Fatal(err)
 	}
 	instructions := filepath.Join(runtimeDir, "instructions.md")
-	base := opencodebridge.CLIRunner{Codex: opencodebridge.ExecutorSpec{Path: f.state.Components["codex"].Path, SHA256: adaptiveCodexSHA, Version: "0.162.1", Env: environment, Dir: f.root}}
+	base := opencodebridge.CLIRunner{Codex: opencodebridge.ExecutorSpec{Path: f.state.Components["codex"].Path, SHA256: mustAdaptiveSHA(t, f), Version: f.state.Components["codex"].Version, Env: environment, Dir: f.root}}
 	turnState := &autoTurnState{}
 	scoped := f.a.scopeAutoRunner(base, f.cfg, f.state, f.store, f.id, f.root, runtimeDir, instructions, nil, nil, turnState, catalog, autoTurnOptions{ManagedAdaptiveSession: true}).(autoTurnRunner)
 	prepare := scoped.prepare
@@ -148,37 +149,10 @@ func adaptiveInferenceBridge(t *testing.T, f *localMetadataFixture, environment 
 	}), Select: func(context.Context, string) (string, error) { return "codex", nil }, Status: func() opencodebridge.Status { return opencodebridge.Status{Frontend: "codex"} }, Mapping: adaptivePersistMapping(f), AuthReference: func(ctx context.Context, _ string) (string, error) {
 		return quota.AccountReference(ctx, f.state.Components["codex"].Path, "codex")
 	}, ClaimRequest: func(frontend, message string) (bool, error) {
-		_, e := f.store.Update(f.id, func(v *session.Session) error {
-			if v.FrontendRequests == nil {
-				v.FrontendRequests = map[string]time.Time{}
-			}
-			k := frontend + ":" + message
-			if _, exists := v.FrontendRequests[k]; exists {
-				return errors.New("already claimed")
-			}
-			v.FrontendRequests[k] = time.Now().UTC()
-			return nil
-		})
-		return e == nil, e
+		return f.store.ClaimFrontendRequest(context.Background(), f.id, frontend, message)
+
 	}, Attempt: func(attempt opencodebridge.TurnAttempt) error {
-		attempt.SessionID = f.id
-		_, e := f.store.Update(f.id, func(v *session.Session) error {
-			raw, _ := json.Marshal(attempt)
-			found := false
-			for i, b := range v.TurnAttempts {
-				var old opencodebridge.TurnAttempt
-				if json.Unmarshal(b, &old) == nil && old.ID == attempt.ID {
-					v.TurnAttempts[i] = raw
-					found = true
-				}
-			}
-			if !found {
-				v.TurnAttempts = append(v.TurnAttempts, raw)
-			}
-			v.TurnState = attempt.State
-			return appendTurnObservation(v, attempt)
-		})
-		return e
+		return persistManagedTurnAttempt(context.Background(), f.store, f.id, attempt)
 	}}
 	b, err := opencodebridge.Start(opts)
 	if err != nil {
@@ -213,7 +187,7 @@ func TestLiveAdaptivePrimaryFunctionalCodex(t *testing.T) {
 			t.Error("receipt unavailable")
 			return
 		}
-		e = json.NewEncoder(f).Encode(map[string]any{"schema_version": 1, "scope": "real_official_Codex_managed_adaptive_primary", "version": "0.162.1", "global_economic_gate": "INCOMPLETE", "observations": observations})
+		e = json.NewEncoder(f).Encode(map[string]any{"schema_version": 1, "scope": "real_official_Codex_managed_adaptive_primary", "version": func() string { v, _ := adaptiveLiveRuntime(t, binary); return v }(), "global_economic_gate": "INCOMPLETE", "observations": observations})
 		_ = f.Close()
 		if e != nil {
 			t.Error("receipt failed")
@@ -223,7 +197,7 @@ func TestLiveAdaptivePrimaryFunctionalCodex(t *testing.T) {
 	defer cancel()
 	environment := prefetchSubscriptionEnvironment()
 	f := adaptiveInferenceFixture(t, binary)
-	if _, err := fingerprintAdaptivePair(ctx, adaptiveRuntime{binary, adaptiveCodexSHA, filepath.Join(filepath.Dir(binary), "codex-code-mode-host"), adaptiveCompanionSHA}); err != nil {
+	if _, err := fingerprintAdaptivePair(ctx, func() adaptiveRuntime { _, p := adaptiveLiveRuntime(t, binary); return p }()); err != nil {
 		t.Fatal("official pair not matched")
 	}
 	registry := (routing.Discoverer{CodexPath: binary}).Discover(ctx)

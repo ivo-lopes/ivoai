@@ -23,6 +23,16 @@ import (
 )
 
 type adaptiveFullCLIReceipt struct {
+	CompletedDAG         bool                       `json:"completed_DAG_before_readonly_and_resume,omitempty"`
+	ArchivedWorkers      int                        `json:"archived_workers,omitempty"`
+	HistoryReadable      bool                       `json:"durable_DAG_history_readable_after_resume,omitempty"`
+	ChangedPaths         []string                   `json:"approved_DAG_changed_paths,omitempty"`
+	BaselineFailed       bool                       `json:"fixed_baseline_tests_failed,omitempty"`
+	FinalTestsPassed     bool                       `json:"fixed_final_tests_passed,omitempty"`
+	LastSessionPhase     string                     `json:"last_session_phase,omitempty"`
+	LastTurnState        string                     `json:"last_turn_state,omitempty"`
+	LastFailureClass     string                     `json:"last_failure_class,omitempty"`
+	LastReceiptMode      string                     `json:"last_receipt_mode,omitempty"`
 	SchemaVersion        int                        `json:"schema_version"`
 	Scope                string                     `json:"scope"`
 	Outcome              string                     `json:"outcome"`
@@ -35,6 +45,7 @@ type adaptiveFullCLIReceipt struct {
 	AuthLocationsIntact  bool                       `json:"home_and_codex_home_preserved"`
 	GuardedTurns         int                        `json:"subscription_admitted_turns"`
 	ControlEnvironment   string                     `json:"post_guard_control_environment_delta"`
+	ResumedAcrossProcess bool                       `json:"resumed_across_process"`
 	CompletedTurns       int                        `json:"completed_real_turns"`
 	ClosedReceipts       int                        `json:"closed_receipts"`
 	Attempts             int                        `json:"primary_attempts"`
@@ -143,7 +154,12 @@ func TestLiveAdaptivePrimaryFullCLI(t *testing.T) {
 		}
 	}()
 	fail := func(code string) { t.Helper(); row.Failure = code; t.Fatal(code) }
-	ctx, cancel := context.WithTimeout(context.Background(), 6*time.Minute)
+	withDAG := os.Getenv("IVOAI_ADAPTIVE_FULL_CLI_DAG_LIVE") == "1"
+	caseTimeout := 6 * time.Minute
+	if withDAG {
+		caseTimeout = 10 * time.Minute
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), caseTimeout)
 	defer cancel()
 	row.Phase = "production_identity"
 	info, err := buildinfo.ReadFile(production)
@@ -155,12 +171,23 @@ func TestLiveAdaptivePrimaryFullCLI(t *testing.T) {
 	if err != nil {
 		fail("PRODUCTION_BINARY_NOT_STABLE")
 	}
-	if _, err := fingerprintAdaptivePair(ctx, adaptiveRuntime{codex, adaptiveCodexSHA, filepath.Join(filepath.Dir(codex), "codex-code-mode-host"), adaptiveCompanionSHA}); err != nil {
+	if _, err := fingerprintAdaptivePair(ctx, func() adaptiveRuntime { _, p := adaptiveLiveRuntime(t, codex); return p }()); err != nil {
 		fail("OFFICIAL_CODEX_PAIR_NOT_MATCHED")
 	}
 	// The reusable fixture creates only repository data here. Its App, session,
 	// fake-runtime seam and test helper are never passed to the production CLI.
 	f := adaptiveInferenceFixture(t, codex)
+	goBinary := os.Getenv("IVOAI_ADAPTIVE_ORACLE_GO")
+	if withDAG && !filepath.IsAbs(goBinary) {
+		fail("DAG_FIXED_ORACLE_BINARY_REQUIRED")
+	}
+	oraclePrivate := t.TempDir()
+	if withDAG {
+		row.BaselineFailed = !adaptiveChangeGoTest(ctx, goBinary, f.root, oraclePrivate)
+		if !row.BaselineFailed {
+			fail("PUBLIC_DAG_BASELINE_DID_NOT_FAIL")
+		}
+	}
 	before, err := adaptiveChangeSnapshot(f.root)
 	if err != nil {
 		fail("INITIAL_REPOSITORY_SNAPSHOT_FAILED")
@@ -188,6 +215,10 @@ func TestLiveAdaptivePrimaryFullCLI(t *testing.T) {
 	cfg.Orchestration.Auto.ProviderPreference = "codex"
 	cfg.Orchestration.Auto.AutomaticFailover = false
 	cfg.Orchestration.Auto.PlanExecution = "approve"
+	if withDAG {
+		// Explicit authorization is limited to this private disposable fixture.
+		cfg.Orchestration.Auto.PlanExecution = "immediate"
+	}
 	state := config.State{Schema: config.StateSchemaVersion, Components: map[string]config.ComponentState{"codex": f.state.Components["codex"], "codex-code-mode-host": f.state.Components["codex-code-mode-host"]}}
 	if failure := adaptiveFullCLISaveSetup(store, cfg, state); failure != "" {
 		fail(failure)
@@ -264,6 +295,26 @@ func TestLiveAdaptivePrimaryFullCLI(t *testing.T) {
 		}
 		return v, true
 	}
+	defer func() {
+		if row.Outcome != "FAIL" {
+			return
+		}
+		v, valid := current()
+		if !valid {
+			return
+		}
+		row.LastSessionPhase, row.LastTurnState = v.CurrentPhase, v.TurnState
+		row.Attempts, row.DAG, row.Workers = len(v.TurnAttempts), v.PlanID != "", len(v.Workers)
+		if v.PrimaryTurn != nil {
+			row.LastReceiptMode = string(v.PrimaryTurn.Mode)
+		}
+		if len(v.TurnAttempts) > 0 {
+			var attempt opencodebridge.TurnAttempt
+			if json.Unmarshal(v.TurnAttempts[len(v.TurnAttempts)-1], &attempt) == nil && attempt.Trace != nil {
+				row.LastFailureClass = attempt.Trace.Failure
+			}
+		}
+	}()
 	wait := func(bound time.Duration, ready func() bool) {
 		t.Helper()
 		deadline := time.NewTimer(bound)
@@ -305,7 +356,11 @@ func TestLiveAdaptivePrimaryFullCLI(t *testing.T) {
 		}
 	}
 	firstFrontend, firstNative, firstReceipt := "", "", ""
-	for index, prompt := range []string{"Explique como funciona a autenticação deste projeto.", "Qual função faz essa verificação? Informe o nome e o arquivo."} {
+	prompts := []string{"Explique como funciona a autenticação deste projeto.", "Qual função faz essa verificação? Informe o nome e o arquivo."}
+	if withDAG {
+		prompts = []string{"Corrija o bug de soma em math.go usando um worker aprovado do IVOAI e integre o resultado. Add(2, 3) deveria retornar 5. Preserve os outros arquivos e os testes existentes.", "Qual função foi corrigida e qual operação ela executa agora? Responda usando a alteração anterior, sem criar outro plano ou worker."}
+	}
+	for index, prompt := range prompts {
 		if index > 0 {
 			// Keep the admission's closed environment unchanged by host flags.
 			environment = prefetchSubscriptionEnvironment()
@@ -313,7 +368,11 @@ func TestLiveAdaptivePrimaryFullCLI(t *testing.T) {
 		}
 		row.Phase = "public_turn_" + strconv.Itoa(index+1)
 		submit(prompt)
-		wait(110*time.Second, func() bool {
+		turnBound := 110 * time.Second
+		if withDAG && index == 0 {
+			turnBound = 300 * time.Second
+		}
+		wait(turnBound, func() bool {
 			v, valid := current()
 			if !valid || len(v.TurnAttempts) != index+1 || v.PrimaryTurn == nil || v.PrimaryTurn.Mode != core.PrimaryClosed {
 				return false
@@ -337,8 +396,45 @@ func TestLiveAdaptivePrimaryFullCLI(t *testing.T) {
 		}
 		row.SameFrontend = firstFrontend != "" && v.FrontendSessionID == firstFrontend && v.PrimaryTurn.FrontendSessionID == firstFrontend
 		row.SameNativeThread = firstNative != "" && attempt.NativeSessionID == firstNative && v.ExecutorSessionID == firstNative
-		if !row.BackendExitZero || !row.SameFrontend || !row.SameNativeThread || row.DAG || row.Workers != 0 || len(v.Tasks) != 0 || len(v.Decisions) != 0 || (index > 0 && v.PrimaryTurn.ID == firstReceipt) || v.PrimaryTurn.Executor != "codex" || attempt.EffectiveExecutor != "codex" {
+		if !row.BackendExitZero || !row.SameFrontend || !row.SameNativeThread || (index > 0 && v.PrimaryTurn.ID == firstReceipt) || v.PrimaryTurn.Executor != "codex" || attempt.EffectiveExecutor != "codex" {
 			fail("PUBLIC_CORE_LIFECYCLE_OR_ISOLATION_FAILED")
+		}
+		if withDAG && index == 0 {
+			if !row.DAG || len(v.Workers) != 1 || len(v.Tasks) == 0 || v.PrimaryTurn.PlanID != v.PlanID {
+				fail("PUBLIC_DAG_REQUIRED_WORKER_NOT_OBSERVED")
+			}
+			for _, w := range v.Workers {
+				if w.State != session.StateCompleted || w.EndedAt == nil || w.ExitCode == nil || *w.ExitCode != 0 || w.Executor != "codex" {
+					fail("PUBLIC_DAG_WORKER_NOT_SUCCESSFUL")
+				}
+			}
+			if !adaptiveChangePureFile(filepath.Join(f.root, "math.go"), "Add", "int", "int", 2) {
+				fail("PUBLIC_DAG_CODE_OUTSIDE_PURE_ORACLE")
+			}
+			after, err := adaptiveChangeSnapshot(f.root)
+			if err != nil {
+				fail("PUBLIC_DAG_SNAPSHOT_FAILED")
+			}
+			var allowed bool
+			row.ChangedPaths, allowed = adaptiveChangePaths(before, after, map[string]bool{"math.go": true})
+			row.FinalTestsPassed = adaptiveChangeGoTest(ctx, goBinary, f.root, oraclePrivate)
+			if !allowed || !row.FinalTestsPassed {
+				fail("PUBLIC_DAG_FIXED_ORACLE_OR_ISOLATION_FAILED")
+			}
+			row.CompletedDAG = true
+			before = after
+		} else if row.DAG || row.Workers != 0 || len(v.Tasks) != 0 || len(v.Decisions) != 0 {
+			fail("PUBLIC_READONLY_TURN_INHERITED_DAG")
+		}
+		if withDAG && index == 1 {
+			if v.CompletedPrimaryPlan == nil || v.PrimaryTurn.HistoryDigest == "" {
+				fail("PUBLIC_DAG_HISTORY_MISSING")
+			}
+			history, err := sessions.ReadCompletedPrimaryPlan(ctx, v.SessionID, *v.CompletedPrimaryPlan)
+			if err != nil || len(history.Session.Workers) != 1 || history.Session.PrimaryTurn.ID != firstReceipt {
+				fail("PUBLIC_DAG_HISTORY_NOT_OWNED")
+			}
+			row.ArchivedWorkers = len(history.Session.Workers)
 		}
 		row.CompletedTurns++
 		row.ClosedReceipts++
@@ -346,6 +442,9 @@ func TestLiveAdaptivePrimaryFullCLI(t *testing.T) {
 			row.OfficialUsage = append(row.OfficialUsage, trace.Usage)
 		}
 		wait(15*time.Second, func() bool {
+			if withDAG {
+				return pty.contains("math.go")
+			}
 			if index == 0 {
 				return pty.contains("Authenticate") && pty.contains("fixture-allowed")
 			}
@@ -376,6 +475,76 @@ func TestLiveAdaptivePrimaryFullCLI(t *testing.T) {
 	finalSHA, hashErr := adaptiveBinarySHA(ctx, production)
 	if !row.WrapperExitZero || !row.SessionCompleted || !row.FilesIntact || listErr != nil || row.Sessions != 1 || len(v.TurnAttempts) != 2 || len(v.FrontendRequests) != 2 || v.PrimaryTurn == nil || v.PrimaryTurn.Mode != core.PrimaryClosed || len(v.Workers) != 0 || v.PlanID != "" || hashErr != nil || finalSHA != row.ProductionSHA256 {
 		fail("PUBLIC_FINALIZATION_OR_REPLAY_INVARIANT_FAILED")
+	}
+	if os.Getenv("IVOAI_ADAPTIVE_RESUME_LIVE") == "1" {
+		row.Phase = "public_cross_process_resume"
+		environment = prefetchSubscriptionEnvironment()
+		guard()
+		pty, err = adaptiveNativePTY(ctx, production, f.root, []string{"session", "resume", selectedID}, execEnvironment)
+		if err != nil {
+			fail("PUBLIC_RESUME_PTY_START_FAILED")
+		}
+		defer pty.close()
+		wait(45*time.Second, func() bool {
+			v, valid := current()
+			return valid && v.State == session.StateRunning && pty.startup(model, v.FrontendSessionID == firstFrontend).ready()
+		})
+		resumePrompt := "Qual função verificamos antes? Informe somente seu nome e arquivo, usando a conversa anterior."
+		if withDAG {
+			resumePrompt = "Qual função e arquivo corrigimos antes? Informe a operação atual usando a conversa anterior. Não crie plano ou worker."
+		}
+		submit(resumePrompt)
+		wait(110*time.Second, func() bool {
+			v, valid := current()
+			if !valid || len(v.TurnAttempts) != 3 || v.PrimaryTurn == nil || v.PrimaryTurn.Mode != core.PrimaryClosed {
+				return false
+			}
+			var attempt opencodebridge.TurnAttempt
+			return json.Unmarshal(v.TurnAttempts[2], &attempt) == nil && attempt.State == "completed" && attempt.EndedAt != nil
+		})
+		v, valid = current()
+		var attempt opencodebridge.TurnAttempt
+		if !valid || json.Unmarshal(v.TurnAttempts[2], &attempt) != nil || attempt.NativeSessionID != firstNative || v.FrontendSessionID != firstFrontend || attempt.Trace == nil || attempt.Trace.ExitCode != 0 || attempt.Trace.Signal != "" || !attempt.Trace.Completion || !attempt.Trace.FinalResponse || v.PrimaryTurn.ID == firstReceipt || v.PlanID != "" || len(v.Tasks) != 0 || len(v.Workers) != 0 {
+			fail("PUBLIC_RESUME_IDENTITY_OR_AUTHORITY_FAILED")
+		}
+		wait(15*time.Second, func() bool {
+			if withDAG {
+				return pty.contains("Add") && pty.contains("math.go")
+			}
+			return pty.contains("Authenticate") && pty.contains("auth.go")
+		})
+		if withDAG {
+			if v.CompletedPrimaryPlan == nil || v.PrimaryTurn.HistoryDigest == "" {
+				fail("PUBLIC_RESUME_DAG_HISTORY_MISSING")
+			}
+			history, err := sessions.ReadCompletedPrimaryPlan(ctx, v.SessionID, *v.CompletedPrimaryPlan)
+			row.HistoryReadable = err == nil && len(history.Session.Workers) == 1 && history.Session.PrimaryTurn.ID == firstReceipt
+			if !row.HistoryReadable {
+				fail("PUBLIC_RESUME_DAG_HISTORY_UNREADABLE")
+			}
+		}
+		submit("/exit")
+		select {
+		case <-pty.done:
+			if pty.err != nil {
+				fail("PUBLIC_RESUME_NORMAL_EXIT_FAILED")
+			}
+		case <-time.After(20 * time.Second):
+			fail("PUBLIC_RESUME_NORMAL_EXIT_TIMEOUT")
+		}
+		v, valid = current()
+		if !valid || v.State != session.StateCompleted || v.ExitCode == nil || *v.ExitCode != 0 || len(v.TurnAttempts) != 3 || len(v.FrontendRequests) != 3 {
+			fail("PUBLIC_RESUME_FINALIZATION_FAILED")
+		}
+		row.ResumedAcrossProcess = true
+		row.Attempts, row.CompletedTurns, row.ClosedReceipts = 3, 3, 3
+		if attempt.Trace.Usage != nil {
+			row.OfficialUsage = append(row.OfficialUsage, attempt.Trace.Usage)
+		}
+		after, snapshotErr = adaptiveChangeSnapshot(f.root)
+		if snapshotErr != nil || !reflect.DeepEqual(before, after) {
+			fail("PUBLIC_RESUME_REPOSITORY_CHANGED")
+		}
 	}
 	row.Phase, row.Outcome = "completed", "PASS"
 }

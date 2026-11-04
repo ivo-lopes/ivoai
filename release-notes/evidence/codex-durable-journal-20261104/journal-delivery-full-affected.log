@@ -1,0 +1,4 @@
+ok  	github.com/ivo-lopes/ivoai/internal/session	1.465s
+ok  	github.com/ivo-lopes/ivoai/internal/app	20.749s
+ok  	github.com/ivo-lopes/ivoai/internal/core	0.002s
+ok  	github.com/ivo-lopes/ivoai/internal/opencodebridge	4.814s

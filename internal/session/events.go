@@ -66,7 +66,7 @@ func (s Store) Watch(ctx context.Context, id string) (<-chan struct{}, error) {
 		unix.Close(fd)
 		return nil, err
 	}
-	for _, dir := range []string{s.nativeDir(), s.frontendDir()} {
+	for _, dir := range []string{s.nativeDir(), s.frontendDir(), s.journalDir()} {
 		if err = add(dir); err != nil && !errors.Is(err, os.ErrNotExist) {
 			unix.Close(fd)
 			return nil, err
@@ -96,7 +96,7 @@ func (s Store) Watch(ctx context.Context, id string) (<-chan struct{}, error) {
 				return
 			}
 			// Namespace creation/migration may occur while the subscription is alive.
-			for _, dir := range []string{s.nativeDir(), s.frontendDir()} {
+			for _, dir := range []string{s.nativeDir(), s.frontendDir(), s.journalDir()} {
 				if filepath.Dir(dir) == s.Root {
 					_ = add(dir)
 				}
