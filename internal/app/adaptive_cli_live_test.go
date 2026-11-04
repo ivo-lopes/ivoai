@@ -23,6 +23,10 @@ import (
 )
 
 type adaptiveFullCLIReceipt struct {
+	LastSessionPhase     string                     `json:"last_session_phase,omitempty"`
+	LastTurnState        string                     `json:"last_turn_state,omitempty"`
+	LastFailureClass     string                     `json:"last_failure_class,omitempty"`
+	LastReceiptMode      string                     `json:"last_receipt_mode,omitempty"`
 	SchemaVersion        int                        `json:"schema_version"`
 	Scope                string                     `json:"scope"`
 	Outcome              string                     `json:"outcome"`
@@ -35,6 +39,7 @@ type adaptiveFullCLIReceipt struct {
 	AuthLocationsIntact  bool                       `json:"home_and_codex_home_preserved"`
 	GuardedTurns         int                        `json:"subscription_admitted_turns"`
 	ControlEnvironment   string                     `json:"post_guard_control_environment_delta"`
+	ResumedAcrossProcess bool                       `json:"resumed_across_process"`
 	CompletedTurns       int                        `json:"completed_real_turns"`
 	ClosedReceipts       int                        `json:"closed_receipts"`
 	Attempts             int                        `json:"primary_attempts"`
@@ -155,7 +160,7 @@ func TestLiveAdaptivePrimaryFullCLI(t *testing.T) {
 	if err != nil {
 		fail("PRODUCTION_BINARY_NOT_STABLE")
 	}
-	if _, err := fingerprintAdaptivePair(ctx, adaptiveRuntime{codex, adaptiveCodexSHA, filepath.Join(filepath.Dir(codex), "codex-code-mode-host"), adaptiveCompanionSHA}); err != nil {
+	if _, err := fingerprintAdaptivePair(ctx, func() adaptiveRuntime { _, p := adaptiveLiveRuntime(t, codex); return p }()); err != nil {
 		fail("OFFICIAL_CODEX_PAIR_NOT_MATCHED")
 	}
 	// The reusable fixture creates only repository data here. Its App, session,
@@ -264,6 +269,26 @@ func TestLiveAdaptivePrimaryFullCLI(t *testing.T) {
 		}
 		return v, true
 	}
+	defer func() {
+		if row.Outcome != "FAIL" {
+			return
+		}
+		v, valid := current()
+		if !valid {
+			return
+		}
+		row.LastSessionPhase, row.LastTurnState = v.CurrentPhase, v.TurnState
+		row.Attempts, row.DAG, row.Workers = len(v.TurnAttempts), v.PlanID != "", len(v.Workers)
+		if v.PrimaryTurn != nil {
+			row.LastReceiptMode = string(v.PrimaryTurn.Mode)
+		}
+		if len(v.TurnAttempts) > 0 {
+			var attempt opencodebridge.TurnAttempt
+			if json.Unmarshal(v.TurnAttempts[len(v.TurnAttempts)-1], &attempt) == nil && attempt.Trace != nil {
+				row.LastFailureClass = attempt.Trace.Failure
+			}
+		}
+	}()
 	wait := func(bound time.Duration, ready func() bool) {
 		t.Helper()
 		deadline := time.NewTimer(bound)
@@ -376,6 +401,57 @@ func TestLiveAdaptivePrimaryFullCLI(t *testing.T) {
 	finalSHA, hashErr := adaptiveBinarySHA(ctx, production)
 	if !row.WrapperExitZero || !row.SessionCompleted || !row.FilesIntact || listErr != nil || row.Sessions != 1 || len(v.TurnAttempts) != 2 || len(v.FrontendRequests) != 2 || v.PrimaryTurn == nil || v.PrimaryTurn.Mode != core.PrimaryClosed || len(v.Workers) != 0 || v.PlanID != "" || hashErr != nil || finalSHA != row.ProductionSHA256 {
 		fail("PUBLIC_FINALIZATION_OR_REPLAY_INVARIANT_FAILED")
+	}
+	if os.Getenv("IVOAI_ADAPTIVE_RESUME_LIVE") == "1" {
+		row.Phase = "public_cross_process_resume"
+		environment = prefetchSubscriptionEnvironment()
+		guard()
+		pty, err = adaptiveNativePTY(ctx, production, f.root, []string{"session", "resume", selectedID}, execEnvironment)
+		if err != nil {
+			fail("PUBLIC_RESUME_PTY_START_FAILED")
+		}
+		defer pty.close()
+		wait(45*time.Second, func() bool {
+			v, valid := current()
+			return valid && v.State == session.StateRunning && pty.startup(model, v.FrontendSessionID == firstFrontend).ready()
+		})
+		submit("Qual função verificamos antes? Informe somente seu nome e arquivo, usando a conversa anterior.")
+		wait(110*time.Second, func() bool {
+			v, valid := current()
+			if !valid || len(v.TurnAttempts) != 3 || v.PrimaryTurn == nil || v.PrimaryTurn.Mode != core.PrimaryClosed {
+				return false
+			}
+			var attempt opencodebridge.TurnAttempt
+			return json.Unmarshal(v.TurnAttempts[2], &attempt) == nil && attempt.State == "completed" && attempt.EndedAt != nil
+		})
+		v, valid = current()
+		var attempt opencodebridge.TurnAttempt
+		if !valid || json.Unmarshal(v.TurnAttempts[2], &attempt) != nil || attempt.NativeSessionID != firstNative || v.FrontendSessionID != firstFrontend || attempt.Trace == nil || attempt.Trace.ExitCode != 0 || attempt.Trace.Signal != "" || !attempt.Trace.Completion || !attempt.Trace.FinalResponse || v.PrimaryTurn.ID == firstReceipt || v.PlanID != "" || len(v.Tasks) != 0 || len(v.Workers) != 0 {
+			fail("PUBLIC_RESUME_IDENTITY_OR_AUTHORITY_FAILED")
+		}
+		wait(15*time.Second, func() bool { return pty.contains("Authenticate") && pty.contains("auth.go") })
+		submit("/exit")
+		select {
+		case <-pty.done:
+			if pty.err != nil {
+				fail("PUBLIC_RESUME_NORMAL_EXIT_FAILED")
+			}
+		case <-time.After(20 * time.Second):
+			fail("PUBLIC_RESUME_NORMAL_EXIT_TIMEOUT")
+		}
+		v, valid = current()
+		if !valid || v.State != session.StateCompleted || v.ExitCode == nil || *v.ExitCode != 0 || len(v.TurnAttempts) != 3 || len(v.FrontendRequests) != 3 {
+			fail("PUBLIC_RESUME_FINALIZATION_FAILED")
+		}
+		row.ResumedAcrossProcess = true
+		row.Attempts, row.CompletedTurns, row.ClosedReceipts = 3, 3, 3
+		if attempt.Trace.Usage != nil {
+			row.OfficialUsage = append(row.OfficialUsage, attempt.Trace.Usage)
+		}
+		after, snapshotErr = adaptiveChangeSnapshot(f.root)
+		if snapshotErr != nil || !reflect.DeepEqual(before, after) {
+			fail("PUBLIC_RESUME_REPOSITORY_CHANGED")
+		}
 	}
 	row.Phase, row.Outcome = "completed", "PASS"
 }

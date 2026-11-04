@@ -63,7 +63,7 @@ func TestLiveAdaptivePrimaryNativeTUI(t *testing.T) {
 		Phase              string                     `json:"phase"`
 		Startup            adaptiveNativeStartup      `json:"startup"`
 	}
-	row := receipt{SchemaVersion: 1, Scope: "official_Codex_0.162.1_linux_amd64_native_TUI_two_turns", Outcome: "FAIL", GlobalEconomicGate: "INCOMPLETE"}
+	row := receipt{SchemaVersion: 1, Scope: "official_reviewed_Codex_linux_amd64_native_TUI_two_turns", Outcome: "FAIL", GlobalEconomicGate: "INCOMPLETE"}
 	started := time.Now()
 	defer func() {
 		row.WallMS = time.Since(started).Milliseconds()
@@ -88,7 +88,7 @@ func TestLiveAdaptivePrimaryNativeTUI(t *testing.T) {
 	defer cancel()
 	environment := prefetchSubscriptionEnvironment()
 	f := adaptiveInferenceFixture(t, binary)
-	if _, err := fingerprintAdaptivePair(ctx, adaptiveRuntime{binary, adaptiveCodexSHA, filepath.Join(filepath.Dir(binary), "codex-code-mode-host"), adaptiveCompanionSHA}); err != nil {
+	if _, err := fingerprintAdaptivePair(ctx, func() adaptiveRuntime { _, p := adaptiveLiveRuntime(t, binary); return p }()); err != nil {
 		fail("OFFICIAL_PAIR_NOT_MATCHED")
 	}
 	registry := (routing.Discoverer{CodexPath: binary}).Discover(ctx)

@@ -1,0 +1,6 @@
+=== RUN   TestLiveAdaptivePrimaryFullCLI
+    adaptive_cli_live_test.go:130: reviewed production and official executables and new private report required
+--- FAIL: TestLiveAdaptivePrimaryFullCLI (0.00s)
+FAIL
+FAIL	github.com/ivo-lopes/ivoai/internal/app	0.006s
+FAIL

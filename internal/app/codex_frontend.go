@@ -82,3 +82,23 @@ func frontendSelection(catalog opencodebridge.ModelCatalog, provider string, arg
 	}
 	return model, effort, nil
 }
+
+// A reopened owned conversation retains its last effective selection. Native
+// history is not consent to silently replace an unavailable model or effort.
+// The ordinary explicit-selection gate still governs later picker changes.
+func resumedFrontendSelection(catalog opencodebridge.ModelCatalog, value session.Session, model, effort string) (string, string, error) {
+	if value.EffectiveModel == "" {
+		return model, effort, nil
+	}
+	for _, entry := range catalog.Entries() {
+		if entry.Executor != value.PrimaryExecutor || entry.UpstreamModel != value.EffectiveModel {
+			continue
+		}
+		resolved, ok := catalog.Resolve(entry.ID, value.EffectiveEffort)
+		if !ok || resolved.Executor != value.PrimaryExecutor || resolved.Model != value.EffectiveModel || value.EffectiveEffort != "" && resolved.Effort != value.EffectiveEffort {
+			break
+		}
+		return entry.ID, value.EffectiveEffort, nil
+	}
+	return "", "", errors.New("RESUME_MODEL_UNAVAILABLE: retained model and effort require a compatible authenticated runtime")
+}

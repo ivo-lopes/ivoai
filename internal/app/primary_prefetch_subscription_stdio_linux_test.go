@@ -17,6 +17,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -41,13 +42,24 @@ type prefetchSubscriptionExecutablePin struct{ main, companion, mainSHA, compani
 func (prefetchSubscriptionExecutablePin) String() string   { return "subscription-executable-pin" }
 func (prefetchSubscriptionExecutablePin) GoString() string { return "subscription-executable-pin" }
 
-// Merely constructing this closure does not read files or execute the client.
 // The official pair cannot be selected by a model/config field. Fixture tests
 // call the private pin constructor with hashes of their own compiled fake.
 func prefetchSubscriptionOfficialStdio(plan prefetchSubscriptionPlan) prefetchSubscriptionOpen {
-	return prefetchSubscriptionPinnedStdio(plan, prefetchSubscriptionExecutablePin{
-		main: plan.scope.executable, companion: filepath.Join(filepath.Dir(plan.scope.executable), "codex-code-mode-host"), mainSHA: prefetchSubscriptionApprovedMain, companionSHA: prefetchSubscriptionApprovedCompanion,
-	})
+	pin, _ := prefetchReviewedSubscriptionPin(plan.scope)
+	return prefetchSubscriptionPinnedStdio(plan, pin)
+}
+
+// Admission and launch share the production's explicitly reviewed pair table.
+// Unknown versions and mixed executable/companion pairs fail before any child.
+func prefetchReviewedSubscriptionPin(scope prefetchDirectScope) (prefetchSubscriptionExecutablePin, bool) {
+	for _, version := range []string{"0.166.0", "0.162.1"} {
+		main, companion, ok := reviewedAdaptiveDigests(version, runtime.GOOS+"/"+runtime.GOARCH)
+		pin := prefetchSubscriptionExecutablePin{main: scope.executable, companion: filepath.Join(filepath.Dir(scope.executable), "codex-code-mode-host"), mainSHA: main, companionSHA: companion}
+		if ok && prefetchSubscriptionFileMatches(pin.main, pin.mainSHA) && prefetchSubscriptionFileMatches(pin.companion, pin.companionSHA) {
+			return pin, true
+		}
+	}
+	return prefetchSubscriptionExecutablePin{}, false
 }
 
 func prefetchSubscriptionFileMatches(path, digest string) bool {
