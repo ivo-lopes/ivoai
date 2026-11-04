@@ -4,11 +4,11 @@ import (
 	"context"
 	"os"
 	"path/filepath"
-	"reflect"
 	"strings"
 	"time"
 
 	"github.com/ivo-lopes/ivoai/internal/components"
+	"github.com/ivo-lopes/ivoai/internal/componentupdate"
 	"github.com/ivo-lopes/ivoai/internal/config"
 	"github.com/ivo-lopes/ivoai/internal/core"
 	"github.com/ivo-lopes/ivoai/internal/platform"
@@ -61,7 +61,7 @@ func (d Doctor) codeIntelligence(ctx context.Context, state config.State, catalo
 		return graft, diagnostic
 	}
 	active, root, err := (supplychain.Manager{Root: filepath.Join(d.Store.Paths.DataDir, "supply-chain")}).Active("graft")
-	if err != nil || !reflect.DeepEqual(active, expected) || c.Path != filepath.Join(root, spec.PayloadPath) {
+	if err != nil || !componentupdate.SameResolvedSource(active, expected) || c.Path != filepath.Join(root, spec.PayloadPath) {
 		diagnostic.Integrity = "failed"
 		return graft, diagnostic
 	}

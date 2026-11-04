@@ -6,13 +6,13 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
-	"reflect"
 	"slices"
 	"sort"
 	"strings"
 
 	"github.com/ivo-lopes/ivoai/internal/codeintel"
 	"github.com/ivo-lopes/ivoai/internal/components"
+	"github.com/ivo-lopes/ivoai/internal/componentupdate"
 	"github.com/ivo-lopes/ivoai/internal/config"
 	"github.com/ivo-lopes/ivoai/internal/core"
 	"github.com/ivo-lopes/ivoai/internal/policy"
@@ -76,7 +76,7 @@ func (a *App) codeIntelligenceProvider(ctx context.Context, root, scope string, 
 	if err != nil {
 		return nil, err
 	}
-	if activeErr != nil || !reflect.DeepEqual(active, expected) || component.Path != filepath.Join(distribution, "graft-runtime") {
+	if activeErr != nil || !componentupdate.SameResolvedSource(active, expected) || component.Path != filepath.Join(distribution, "graft-runtime") {
 		return nil, errors.New("managed code runtime integrity or identity mismatch")
 	}
 	node := components.ManagedNodePath(a.Store.Paths.DataDir)

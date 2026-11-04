@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "outcome": "FAIL",
+  "baseline": "0.15.0",
+  "candidate": "0.16.0",
+  "architecture": "amd64",
+  "test_mode": false,
+  "real_cli_binaries": true,
+  "provider_inference": false,
+  "personal_credentials_inherited": false,
+  "phase": "network_isolated_upgrade",
+  "wall_seconds": 401.021,
+  "preparation_denials": [],
+  "failure": "COMMAND_EXIT_UNEXPECTED",
+  "inner_result": {
+    "outcome": "FAIL",
+    "failure": "UNEXPECTED_NETWORK_REQUEST",
+    "command": {},
+    "scenario": {
+      "phase": "real_cli_update_after_rollback"
+    },
+    "fixture_denials": [
+      {
+        "reason": "connect_host",
+        "host_sha256": "4a4cc2492aec66733de702c82369b8fd4f0ce43043a4048aed19dd7565396144",
+        "path_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    ]
+  }
+}

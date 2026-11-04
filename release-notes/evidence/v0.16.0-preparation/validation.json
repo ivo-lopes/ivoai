@@ -1,0 +1,97 @@
+{
+  "schema_version": 1,
+  "scope": "release_preparation_not_published_assets",
+  "production_fix_commit": "6abd56b43f06694c581201c63219e1a51b24bebb",
+  "upgrade_epochs": {
+    "01": "FAIL_preparation_unclassified_denial",
+    "02": "FAIL_candidate_setup",
+    "03": "FAIL_Graft_republication_provenance_mismatch_automatic_restore",
+    "04": "FAIL_blocked_official_provider_diagnostic_after_functional_oracles",
+    "05": "INTERRUPTED_user_turn_no_terminal_result",
+    "06": "PASS_11_executable_oracles_383.241s"
+  },
+  "upgrade_scope": {
+    "baseline": "verified_published_v0.15.0",
+    "candidate": "pretag_dirty_validation_binary_production_fix_file_hashes_checked",
+    "personal_credentials": false,
+    "inference": false,
+    "post_tag_rerun_required_both_architectures": true
+  },
+  "root_validation": [
+    {
+      "name": "full_race_before_Graft_fix",
+      "outcome": "PASS",
+      "packages": 59,
+      "log_sha256": "663bd086ce8d47df26cbc1a5b806fd680f891d4bc0e22369044047bf2ffef19b"
+    },
+    {
+      "name": "full_race_after_Graft_fix",
+      "outcome": "FAIL",
+      "passed_packages": 58,
+      "failed_test": "TestAutoMidSessionFailoverPreservesWorkingTreeAndHandoff",
+      "observed_seconds": 14.32,
+      "existing_deadline_seconds": 5,
+      "cause": "INCONCLUSIVE",
+      "test_unchanged": true,
+      "log_sha256": "77d0a617c370360b4ed2145ba7fea74b573e1a88d8699ade3705efa9a93ff6f5"
+    },
+    {
+      "name": "same_failover_test_race_isolated_3_repetitions",
+      "outcome": "PASS",
+      "log_sha256": "bf7b298c2781698633db89791c5cb3d4d9d5a3745a44ee5f3faa7b915318febc"
+    },
+    {
+      "name": "complete_App_race_standalone_unchanged_source",
+      "outcome": "PASS",
+      "seconds": 126.667,
+      "log_sha256": "77c2e19873fb32253cdc648fd6680d33673d8c17949e723211e21887bcaa3420"
+    },
+    {
+      "name": "Graft_runtime_Doctor_componentupdate_focused_race",
+      "outcome": "PASS",
+      "log_sha256": "2712e1696d653df05bf21d2fc4bf839866e8c0cc2fc6f9b10a463a6476e9fbe4"
+    },
+    {
+      "name": "go_vet_final",
+      "outcome": "PASS",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "name": "full_Python_before_pair_guard",
+      "outcome": "PASS",
+      "tests": 154,
+      "log_sha256": "ebd1d97e7ad27e0295dc3846360a43aa49acd0c17379ac1804b6d77796b00ec1"
+    },
+    {
+      "name": "pair_guard_and_upgrade_controls",
+      "outcome": "PASS",
+      "tests": 5
+    },
+    {
+      "name": "docs_EN_PTBR_build_and_embedded_consistency",
+      "outcome": "PASS"
+    },
+    {
+      "name": "release_YAML_and_embedded_bash_syntax",
+      "outcome": "PASS",
+      "run_blocks": 34
+    },
+    {
+      "name": "full_Python_final_reviewed_pair_guard",
+      "outcome": "PASS",
+      "tests": 155,
+      "seconds": 32.254,
+      "log_sha256": "20e6d8b71eb82f9522cff5987f95b6038e910c54684f3d4b22771e03e3fdd138"
+    },
+    {
+      "name": "complete_componentupdate_Doctor_race_final",
+      "outcome": "PASS",
+      "log_sha256": "e1411f5d1afe64fc6ce14809f7b2e18c2d5ca7c29a7cb1fd7ec20fa685ad5a33"
+    }
+  ],
+  "historical_logs_preserved": true,
+  "private_logs_committed": false,
+  "required_before_merge": "all exact-head CI jobs must pass; local loaded timeout not erased",
+  "economic_gate": "INCOMPLETE",
+  "context_sync": "BLOCKED_IVOAI-175"
+}
