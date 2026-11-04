@@ -380,3 +380,35 @@ func TestLivePublishedCoreCannotReadOrRewriteJournalSessions(t *testing.T) {
 		t.Fatal("reapply lost permanent claim", err)
 	}
 }
+
+func TestRequestJournalRejectsNonPrivateAccessModes(t *testing.T) {
+	for _, which := range []string{"namespace", "owner", "marker"} {
+		t.Run(which, func(t *testing.T) {
+			s, v := requestJournalFixture(t)
+			if ok, err := s.ClaimFrontendRequest(context.Background(), v.SessionID, v.FrontendSessionID, "first"); err != nil || !ok {
+				t.Fatal(err)
+			}
+			path := filepath.Join(s.Root, "request-claims")
+			switch which {
+			case "owner":
+				path = filepath.Join(path, requestScope(v, v.FrontendSessionID))
+			case "marker":
+				path = filepath.Join(path, requestScope(v, v.FrontendSessionID), "legacy-imported.json")
+			}
+			mode := os.FileMode(0755)
+			if which == "marker" {
+				mode = 0644
+			}
+			if err := os.Chmod(path, mode); err != nil {
+				t.Fatal(err)
+			}
+			if ok, err := s.ClaimFrontendRequest(context.Background(), v.SessionID, v.FrontendSessionID, "second"); ok || err == nil {
+				t.Fatal("nonprivate journal granted admission", err)
+			}
+			info, err := os.Stat(path)
+			if err != nil || info.Mode().Perm() != mode {
+				t.Fatal("unsafe access mode was silently repaired", err)
+			}
+		})
+	}
+}
