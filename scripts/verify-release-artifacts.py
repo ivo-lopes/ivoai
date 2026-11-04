@@ -470,6 +470,17 @@ def api_metadata(path, hashes, directory, tag):
     require(document.get('prerelease', document.get('isPrerelease')) is ('-' in tag),
             'API prerelease state must match the release tag')
     require(type(document.get('draft', document.get('isDraft'))) is bool, 'API draft state missing')
+    draft = document.get('draft', document.get('isDraft'))
+    locator = tag
+    html_url = document.get('html_url')
+    if html_url is not None:
+        canonical = 'https://github.com/ivo-lopes/ivoai/releases/tag/'
+        if draft and re.fullmatch(re.escape(canonical) + r'untagged-[a-f0-9]{20}', html_url):
+            # GitHub's unpublished locator is transport metadata, not the
+            # release tag or a replacement for source/digest verification.
+            locator = html_url.removeprefix(canonical)
+        else:
+            require(html_url == canonical + tag, 'API release page URL mismatch')
     entries = document.get('assets')
     require(isinstance(entries, list) and len(entries) == 12, 'API asset count mismatch')
     seen, missing = set(), []
@@ -481,8 +492,8 @@ def api_metadata(path, hashes, directory, tag):
                 'API asset size mismatch')
         if 'browser_download_url' in item:
             require(item['browser_download_url'] ==
-                    'https://github.com/ivo-lopes/ivoai/releases/download/' + tag + '/' + name,
-                    'API download URL differs from exact same-tag asset')
+                    'https://github.com/ivo-lopes/ivoai/releases/download/' + locator + '/' + name,
+                    'API download URL differs from exact release asset locator')
         value = item.get('digest')
         if value is None:
             missing.append(name)
@@ -490,6 +501,8 @@ def api_metadata(path, hashes, directory, tag):
             require(value == 'sha256:' + hashes[name], 'API asset digest mismatch')
     return {'provided': True, 'draft': document.get('draft', document.get('isDraft')),
             'prerelease': '-' in tag,
+            'download_locator': locator,
+            'download_locator_status': 'UNPUBLISHED_DRAFT_LOCATOR' if locator != tag else 'RELEASE_TAG',
             'verified_digests': 12-len(missing), 'unknown_digests': sorted(missing)}
 
 
