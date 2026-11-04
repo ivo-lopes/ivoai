@@ -80,11 +80,11 @@ components:
   - name: claude-code
     role: [client]
     package: "@anthropic-ai/claude-code"
-    validated_version: "2.1.296"
-    observed_latest_version: "2.1.296"
-    minimum_version: "2.1.296"
+    validated_version: "2.1.318"
+    observed_latest_version: "2.1.318"
+    minimum_version: "2.1.318"
     license: Proprietary-Anthropic-Terms
-    source: "https://github.com/anthropics/claude-code/releases/tag/v2.1.296"
+    source: "https://github.com/anthropics/claude-code/releases/tag/v2.1.318"
     documentation: "https://code.claude.com/docs/en/getting-started"
     architectures: [linux/amd64, linux/arm64]
     install_strategy: github_release_asset
@@ -92,17 +92,17 @@ components:
     signing_key_fingerprint: "31DD DE24 DDFA B679 F42D 7BD2 BAA9 29FF 1A7E CACE"
     assets:
       linux/amd64:
-        url: "https://github.com/anthropics/claude-code/releases/download/v2.1.296/claude-linux-x64.tar.gz"
-        sha256: "45fe2b33f5cbdd114309618970bcd90b8b163e34252d66cf100d7e068d9b831d"
+        url: "https://github.com/anthropics/claude-code/releases/download/v2.1.318/claude-linux-x64.tar.gz"
+        sha256: "e6d426ca0c123f61fad58a361da0329f2a93cd206bc87040ed8d9576dd9eb583"
       linux/arm64:
-        url: "https://github.com/anthropics/claude-code/releases/download/v2.1.296/claude-linux-arm64.tar.gz"
-        sha256: "c644ad3e5ca3367e75d198194189d13180f33c491304c2d19557f7c1e8d5e0a6"
+        url: "https://github.com/anthropics/claude-code/releases/download/v2.1.318/claude-linux-arm64.tar.gz"
+        sha256: "0f4fb66a2af3bf02d114099727e4a7745f117b1e63d2f77c8aff165590197421"
     auth:
       default: "claude auth login"
       subscription_supported: true
       payg_key_required: false
     notes:
-      - "Pinned to the reviewed official v2.1.296 release."
+      - "Pinned to the reviewed official v2.1.318 release."
       - "ivoai must disable Claude's silent auto-update for a managed install and update only through ivoai update."
 
   - name: codex-code-mode-host
