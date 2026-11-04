@@ -53,6 +53,26 @@ def benchmark_environment():
     return environment
 
 
+def gateway_arm_environment(environment, arm, off_on):
+    """One host-owned treatment difference; never modify shared/auth scope."""
+    selected = environment.copy()
+    if off_on:
+        selected.pop("IVOAI_EXPERIMENTAL_EVIDENCE_GATEWAY", None)
+        if arm == "B":
+            selected["IVOAI_EXPERIMENTAL_EVIDENCE_GATEWAY"] = "1"
+    return selected
+
+
+def observe_gateway_arm(row, arm, off_on):
+    if not off_on:
+        return
+    row["GatewayConfigured"] = "ON" if arm == "B" else "OFF"
+    observed = row.get("GatewayCodeResolves")
+    row["GatewayActivationObserved"] = "UNREPORTED" if observed is None else "OBSERVED" if observed else "NOT_EXERCISED"
+    if arm == "A" and observed:
+        row.update(Correct=False, MeasurementValid=False, Error="gateway_off_observed_activity")
+
+
 def sha256(path):
     try:
         with path.open("rb") as stream:
@@ -576,8 +596,15 @@ def main(argv=None):
     selection.add_argument("--scenarios", nargs="+", choices=[s.id for s in benchmark_catalog.load_catalog()])
     selection.add_argument("--concurrent-projects", action="store_true", help="experimental exact two-client composition; matrix remains UNSUPPORTED")
     parser.add_argument("--filtered-environment-permitted", action="store_true", help="declare the reviewed filtered benchmark environment compatible with host policy; no policy bypass")
+    parser.add_argument("--gateway-off-on", action="store_true", help="same immutable binary, armA GatewayOFF/armB GatewayON; observed activation remains per-row")
     parser.add_argument("--preflight-only", action="store_true", help="discover frozen binary contracts without starting a client")
     args = parser.parse_args(argv)
+    if args.gateway_off_on:
+        baseline_sha, candidate_sha = sha256(args.baseline), sha256(args.candidate)
+        if not baseline_sha or baseline_sha != candidate_sha:
+            parser.error("Gateway OFF/ON requires byte-identical baseline and candidate executables")
+        if args.concurrent_projects:
+            parser.error("Gateway OFF/ON concurrent lifecycle is not yet certified")
     if args.concurrent_projects:
         import benchmark_concurrent_runtime
         return benchmark_concurrent_runtime.run(args, sys.modules[__name__])
@@ -617,6 +644,11 @@ def main(argv=None):
                 "candidate_test_sha256": sha256(args.candidate), "codex_sha256": sha256(args.codex),
                 "node_sha256": sha256(args.node), "sandbox_sha256": sha256(args.sandbox_binary), "oracle_go_sha256": sha256(args.oracle_go) if args.oracle_go else None, "oracle_bwrap_sha256": sha256(args.oracle_bwrap), "oracle_prlimit_sha256": sha256(Path("/usr/bin/prlimit")),
                 "distribution_inventory_sha256": inventory_hash, "harness_sha256": sha256(args.harness)}
+    if args.gateway_off_on:
+        manifest["runtime_flags"] = {"experimental_evidence_gateway_by_arm":{"A":False,"B":True}}
+        manifest["gateway_comparison"] = {"mode":"SAME_BINARY_OFF_ON", "arms":{"A":"OFF", "B":"ON"},
+            "activation_basis":"PER_ROW_COMPLETED_SESSION_EVENTS", "same_binary_sha256":sha256(args.baseline),
+            "ambient_gateway_flag_overridden":True}
     manifest["admission"] = capabilities.get("admission") if capabilities else None
     manifest["optimization_activation"] = "NOT_CERTIFIED_BY_METADATA_WIRING"
     manifest.update(requested_scenarios=list(scenarios), catalog_sha256=benchmark_catalog.digest(benchmark_catalog.CATALOG),
@@ -636,11 +668,13 @@ def main(argv=None):
                 output = args.output / f"{repetition}-{scenario}-{arm}.json"
                 env.update(IVOAI_ECONOMIC_RUNTIME_ARM=arm, IVOAI_GRAFT_PREFETCH_OUTPUT=str(output.resolve()))
                 binary = args.baseline if arm == "A" else args.candidate
+                arm_environment = gateway_arm_environment(env, arm, args.gateway_off_on)
                 code, resources = run_attempt([str(binary.resolve()),
                     "-test.run=^TestLivePrimaryCodePrefetchBenchmark/" + scenario + "/",
-                    "-test.timeout=4m"], env, temporary / f"{repetition}-{scenario}-{arm}-resources.json", sample_processes=args.sample_processes)
+                    "-test.timeout=4m"], arm_environment, temporary / f"{repetition}-{scenario}-{arm}-resources.json", sample_processes=args.sample_processes)
                 row = read_evidence(output, scenario, arm, repetition, code, inventory_hash, capabilities)
                 row.update(resources)
+                observe_gateway_arm(row, arm, args.gateway_off_on)
                 # Raw subprocess output is never propagated; persist only fixed labels and scalar allowlist.
                 write_json(output, [row])
                 rows.append(row)
