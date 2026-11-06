@@ -26,12 +26,14 @@ intactos. Consulte [executores](executors.md).
 Digite um pedido natural no composer oficial, por exemplo:
 
 ```text
-Explique como funciona a autenticação deste projeto.
+Explain how authentication works in this project.
 ```
 
 Cabeçalhos formais de aceite são opcionais. Integridade, autorização, escopo e
-isolamento permanecem obrigatórios. Com a opção adaptativa revisada habilitada,
-uma consulta somente leitura pode terminar no Primary sem DAG ou workers.
+isolamento permanecem obrigatórios. O Primary adaptativo é experimental e fica
+desabilitado por padrão até certificação e rollout controlados. Com
+`IVOAI_EXPERIMENTAL_ADAPTIVE_PRIMARY=1`, sessões elegíveis revisadas podem terminar
+consultas somente leitura no Primary sem DAG ou workers.
 Trabalhos complexos usam o protocolo de planejamento existente, validação de
 plano, aprovações e workers isolados. O modo simples não concede escrita nem
 execução privilegiada.
@@ -52,15 +54,16 @@ sair de uma projeção limitada de metadados.
 
 ## Evidências e workers
 
-Quando habilitado explicitamente, o Evidence Gateway atende consultas CodeIntel
-nativas somente leitura. Consultas repetidas podem reutilizar o resultado tipado
+Quando habilitado explicitamente por `IVOAI_EXPERIMENTAL_EVIDENCE_GATEWAY=1`, o
+Evidence Gateway atende consultas CodeIntel nativas somente leitura. Consultas repetidas podem reutilizar o resultado tipado
 exato no mesmo processo, após novas verificações do recibo. Mudanças no código,
 permissões, proprietário, worktree ou runtime invalidam reutilização/recuperação.
 Operações de índice/diagnóstico nunca são reproduzidas do cache. Cache do Gateway
 e cache de tokens reportado pelo provedor são métricas distintas; não há economia
 global presumida.
 
-Tarefas complexas usam o mesmo scheduler e os workers existentes. Nenhum frontend
+Tarefas complexas usam o mesmo scheduler Core e workers existentes. O perfil de
+coordenação Ruflo sem provider não introduz outro scheduler. Nenhum frontend
 concede novos grants ou contorna aprovações. Memory e Context continuam recursos
 separados, com seus próprios contratos. Conteúdo externo é evidência não confiável,
 sem autoridade para dar instruções de execução. Nomes de pacotes e leitores de
@@ -68,10 +71,16 @@ contratos antigos não reativam o OpenCode.
 
 ## Limites dos clientes e diagnóstico
 
-Os hosts headless Claude/Antigravity usam protocolos oficialmente suportados.
-Headless não significa controle transparente da TUI nem paridade certificada.
-Claude exige a conta autorizada do usuário; teste offline não substitui inferência
-e não autoriza API paga. Planner/handoff ainda recusados permanecem indisponíveis
+`ivoai claude` permanece como TUI oficial direta. Claude headless gerenciado usa
+`IVOAI_EXPERIMENTAL_CLAUDE_HEADLESS=1`, desabilitado por padrão, e o runtime
+Claude Code 2.1.318 revisado em Linux amd64. Sua certificação de inferência está pendente
+de uma conta autorizada do usuário; testes offline não a comprovam.
+
+A flag `IVOAI_EXPERIMENTAL_ANTIGRAVITY=1`, desabilitada por padrão, habilita o host
+ACP `agy` 1.5.2 revisado em Linux amd64. A identidade exata do binário continua
+obrigatória. Protocolos headless não oferecem controle transparente da TUI,
+paridade universal de clientes ou retomada entre processos. Não substitua a
+autenticação oficial existente por provedor falso ou API paga. Planner/handoff ainda recusados permanecem indisponíveis
 até que seu contrato nativo seja implementado e certificado.
 
 `ivoai monitor --watch` e o painel administrativo mostram sessões, workers,

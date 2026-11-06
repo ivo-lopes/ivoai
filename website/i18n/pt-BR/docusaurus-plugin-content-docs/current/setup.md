@@ -31,6 +31,24 @@ grants Core, sandbox e aprovações. Não é necessário editar arquivos pessoai
 configuração ou credenciais. O snapshot não congela configurações/política cloud
 nem certifica paridade geral de clientes. Consulte [releases](releases.md).
 
+## Hosts nativos experimentais
+
+Codex adaptativo fica desabilitado por padrão até certificação e rollout
+controlados. `IVOAI_EXPERIMENTAL_ADAPTIVE_PRIMARY=1` habilita somente os pares de
+runtime revisados em Linux amd64; não certifica toda versão ou plataforma
+instalada. `ivoai auto` usa o mesmo caminho Codex gerenciado. `ivoai codex --direct`
+e a TUI normal `ivoai claude` continuam escolhas explícitas de cliente direto.
+
+Claude headless gerenciado exige `IVOAI_EXPERIMENTAL_CLAUDE_HEADLESS=1` e
+`ivoai claude run --prompt ...`, com o runtime Claude Code 2.1.318 revisado em Linux
+amd64. Antigravity exige `IVOAI_EXPERIMENTAL_ANTIGRAVITY=1`,
+`ivoai antigravity run --prompt ...` e `agy` 1.5.2 revisado no PATH, também em Linux
+amd64. Essas flags ficam desabilitadas por padrão. Os hosts reutilizam a
+autenticação oficial; setup não copia credenciais de assinatura nem configura API
+paga. A inferência Claude continua pendente de uma conta autorizada. Suporte
+headless não promete controle da TUI nativa, paridade universal ou retomada entre
+processos.
+
 ## Configuração de servidor em Debian 12 e LXC
 
 `sudo ivoai setup --mode server` executa um preflight antes de gravar o estado do

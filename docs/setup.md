@@ -31,6 +31,23 @@ execution, preserving Core grants, sandbox and approvals. No personal config or
 credential file needs editing. This snapshot does not freeze changing settings or
 cloud policy, and it does not certify general client parity. See [releases](releases.md).
 
+## Experimental native hosts
+
+Adaptive Codex is off by default until controlled certification and rollout.
+`IVOAI_EXPERIMENTAL_ADAPTIVE_PRIMARY=1` enables the reviewed Linux amd64 runtime
+pairs only; it does not certify every installed version/platform. `ivoai auto`
+uses the same managed Codex path. `ivoai codex --direct` and the normal
+`ivoai claude` TUI remain explicit direct-client choices.
+
+Managed Claude headless requires `IVOAI_EXPERIMENTAL_CLAUDE_HEADLESS=1` and
+`ivoai claude run --prompt ...`, with the reviewed Claude Code 2.1.318 runtime on Linux
+amd64. Antigravity requires `IVOAI_EXPERIMENTAL_ANTIGRAVITY=1`,
+`ivoai antigravity run --prompt ...` and reviewed `agy` 1.5.2 on PATH, also on Linux
+amd64. These flags are off by default. The hosts reuse official authentication;
+setup does not copy subscription credentials or configure a paid API. Claude
+inference remains pending an authorized account. Headless support does not claim
+native TUI control, universal parity or cross-process resume.
+
 ## Debian 12 and LXC server setup
 
 `sudo ivoai setup --mode server` performs a preflight before writing server state:

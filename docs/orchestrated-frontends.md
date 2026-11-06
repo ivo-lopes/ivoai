@@ -32,8 +32,10 @@ Explain how authentication works in this project.
 ```
 
 Formal acceptance headings are optional. Admission still checks input integrity,
-authorization, scope and isolation. Under the reviewed adaptive feature flag, the
-Primary can complete a read-only request without creating a DAG or worker. A
+authorization, scope and isolation. The adaptive Primary is experimental and
+off by default until controlled certification and rollout. With
+`IVOAI_EXPERIMENTAL_ADAPTIVE_PRIMARY=1`, eligible reviewed sessions can complete
+a read-only request without creating a DAG or worker. A
 request needing changes or multiple steps escalates through the existing planning
 protocol; Core validates the plan, approvals, sandbox and worker permissions.
 Choosing a simple strategy never grants writes or privileged execution.
@@ -57,14 +59,15 @@ metadata projection.
 
 ## Evidence and workers
 
-When explicitly enabled, the same Evidence Gateway can wrap admitted native
-read-only CodeIntel queries. Repeated queries may reuse exact typed results in
+When explicitly enabled with `IVOAI_EXPERIMENTAL_EVIDENCE_GATEWAY=1`, the same
+Evidence Gateway can wrap admitted native read-only CodeIntel queries. Repeated queries may reuse exact typed results in
 one process after fresh receipt checks. Source changes, permission revocation,
 wrong owner/worktree or runtime drift deny reuse/recovery. Index/diagnostic actions
 are never replayed from this cache. Gateway cache hits and official provider token
 cache observations are distinct. No global token/time saving is presumed.
 
-Complex tasks use the same existing scheduler and isolated workers. Frontends
+Complex tasks use the same existing Core scheduler and isolated workers. Ruflo's
+provider-free coordination profile does not introduce another scheduler. Frontends
 cannot issue extra grants, bypass plan approval or start another scheduler.
 Memory and Context remain separate retrieval capabilities with existing source
 and permission boundaries. External evidence is untrusted data, not execution
@@ -73,10 +76,16 @@ removed OpenCode runtime.
 
 ## Client boundaries and diagnostics
 
-Managed Claude/Antigravity headless hosts use officially supported protocols.
-Headless support does not claim transparent native TUI control or parity. Claude
-inference requires the user's own authorized account; do not substitute a fake
-provider or a paid API. A refused initial planner/handoff remains a refusal until
+`ivoai claude` remains the official direct TUI. Managed Claude headless uses the
+off-by-default `IVOAI_EXPERIMENTAL_CLAUDE_HEADLESS=1` flag and the reviewed
+Claude Code 2.1.318 runtime on Linux amd64. Its inference certification is pending an
+authorized user account; offline tests do not certify it.
+
+The off-by-default `IVOAI_EXPERIMENTAL_ANTIGRAVITY=1` flag enables the reviewed
+`agy` 1.5.2 ACP host on Linux amd64. Exact binary identity remains mandatory.
+Headless protocols do not provide transparent native TUI control, universal
+client parity or cross-process resume. Do not substitute a fake provider or a
+paid API for the existing official authentication. A refused initial planner/handoff remains a refusal until
 its native presentation contract is separately supported and certified.
 
 Use `ivoai monitor --watch` or the administrative console for sanitized session,

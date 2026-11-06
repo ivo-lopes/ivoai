@@ -4,10 +4,13 @@
 
 `ivoai codex` opens the official native Codex TUI through the IVOAI App Server
 façade. The same Core admits natural prompts, controls permissions and approves
-plans. With the certified adaptive feature enabled, a simple request can finish
-without a DAG; complex work uses the existing scheduler and workers. `ivoai auto`
+plans. The adaptive Primary is experimental and off by default. During controlled
+certification, `IVOAI_EXPERIMENTAL_ADAPTIVE_PRIMARY=1` permits eligible read-only
+requests without a DAG on reviewed runtime pairs/platforms; complex work uses the
+existing scheduler and workers. `ivoai auto`
 is a compatibility alias for this managed Codex path. `ivoai codex --direct`
-starts the official client without managed turn orchestration.
+starts the official client without managed turn orchestration. See
+[frontends](orchestrated-frontends.md).
 
 Authentication remains owned by the official client. IVOAI does not copy
 subscription credentials or silently substitute a paid API. Reviewed runtime
@@ -16,12 +19,22 @@ notes for actual inference and native TUI certification.
 
 ## Claude Code and Antigravity
 
-`ivoai claude` starts the official Claude client. Experimental managed headless
-execution is available through `ivoai claude run --prompt ...` and
-`ivoai antigravity run --prompt ...`. These hosts share Core admission, ownership,
-permissions and the existing orchestration protocol. Headless execution does not
-claim transparent control of either native TUI. Claude inference requires the
-user's own authorized account; an offline protocol test is not live certification.
+`ivoai claude` starts the official direct Claude TUI. Managed headless execution
+uses `ivoai claude run --prompt ...` with `IVOAI_EXPERIMENTAL_CLAUDE_HEADLESS=1`.
+The flag is off by default; the current reviewed host is Claude Code 2.1.318 on Linux
+amd64. Official inference certification remains pending an authorized user
+account; offline protocol checks do not provide it.
+
+`ivoai antigravity run --prompt ...` requires `IVOAI_EXPERIMENTAL_ANTIGRAVITY=1`
+and the reviewed `agy` 1.5.2 binary on PATH, currently limited to Linux amd64.
+This experimental ACP host validates the exact executable identity; a matching
+version banner alone is insufficient. The existing official authentication is
+used without copying subscription credentials or adding a paid-API fallback.
+
+These headless hosts share Core admission, ownership, permissions and the existing
+planning protocol. They do not control the native TUIs or claim universal parity.
+Follow-up turns supported within a live host are distinct from cross-process
+resume; unsupported planner/handoff or resume paths remain explicit refusals.
 
 ## Managed OpenCode removed
 
