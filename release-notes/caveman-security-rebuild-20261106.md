@@ -42,3 +42,10 @@ Two upstream test-only graph modules expose newer releases but are not imported
 by this project; no unused requirement was added solely to change another
 module's tests. The first Core scan used an incomplete Go PATH and failed;
 the corrected invocation is the reported successful scan.
+
+The isolated published2.1 raw-object → repaired4 archive → published2.1 rollback
+also passed in5.32s, including exact prior state restoration, repeated rollback
+without side effects and the restored22-scenario canary. The private build now
+checks exact patched go.mod/go.sum hashes before and after module fetching, and
+a regression test covers read-only cache cleanup without following external links.
+See [the additional rollback evidence](evidence/caveman-security-rebuild-20261106/rollback-and-lock-validation.json).

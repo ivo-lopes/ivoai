@@ -53,4 +53,15 @@ class ArchiveTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as root:
             with self.assertRaises(ValueError):build.cleanup(root)
 
+    def test_cleanup_removes_readonly_cache_without_following_links(self):
+        with tempfile.TemporaryDirectory() as outside:
+            outside=pathlib.Path(outside);target=outside/'do-not-change';target.write_text('retained');target.chmod(0o400)
+            with tempfile.TemporaryDirectory(prefix='ivoai-caveman-build.') as directory:
+                root=pathlib.Path(directory);module=root/'readonly';module.mkdir();entry=module/'module.go';entry.write_text('cache');entry.chmod(0o400);module.chmod(0o500)
+                (root/'external-link').symlink_to(outside,target_is_directory=True)
+                build.cleanup(root)
+                self.assertFalse(root.exists())
+                self.assertEqual(target.read_text(),'retained')
+                self.assertEqual(target.stat().st_mode & 0o777,0o400)
+
 if __name__=='__main__':unittest.main()

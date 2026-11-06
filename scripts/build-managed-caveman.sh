@@ -36,6 +36,10 @@ printf '%s  %s\n' "$patch_sha" "$helper/dependency-lock.patch" | sha256sum --che
 python3 "$helper/build.py" extract "$work/source.tgz" "$work/build"
 python3 "$helper/build.py" extract "$work/zig.tar.xz" "$work/zig"
 patch --directory "$work/build" --strip=1 --fuzz=0 < "$helper/dependency-lock.patch"
+check_patched_locks() {
+ printf '%s  %s\n' 43c54c78d483e71c05883f1ebf03f7a401e81a2a8db7c12aff4491b7132e5495 "$work/build/go.mod" a08fd96b8d794006a5cf1042523f83ba96095473702e9d2669c60e4d6a090eb2 "$work/build/go.sum" | sha256sum --check --status
+}
+check_patched_locks
 if [[ -n ${CAVEMAN_GO_MODULE_CACHE:-} ]]; then
  # Content-addressed public module downloads only; no personal configuration.
  cp -a -- "$CAVEMAN_GO_MODULE_CACHE/cache" "$work/modcache/"
@@ -58,6 +62,7 @@ else
 fi
 # Only the reviewed Go toolchain downloads modules; module code has no install hooks.
 "${sandbox[@]}" "${network[@]}" /go/bin/go mod download
+check_patched_locks
 cgo=(--setenv CGO_ENABLED 1 --setenv CC "/zig/zig cc -target $target -mcpu=baseline" --setenv CGO_CFLAGS "$cflags" --setenv CGO_CXXFLAGS "$cflags" --setenv GOPROXY off)
 "${sandbox[@]}" "${cgo[@]}" /go/bin/go build -p=2 -mod=readonly -trimpath -tags netgo,osusergo -ldflags "-X main.version=bin-v4.0.2-ivoai.1 -buildid= -w -linkmode external -extldflags '-static -s'" -o /out/caveman-proxy ./proxy/cmd/caveman-proxy
 # MCP is pure-Go upstream too; multilingual compression lives in the proxy.
