@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"reflect"
 	"runtime"
 	"sort"
 	"strings"
@@ -474,10 +475,45 @@ func (d Doctor) skillControlPlane() SkillControlPlane {
 }
 
 func (d Doctor) managedComponent(id string, state config.ComponentState) ManagedComponent {
+	return d.managedCatalogComponent(id, state, components.DefaultCatalog())
+}
+
+// Only Caveman uses this inventory diagnostic. Healthy means the current
+// reviewed identity and the complete immutable object pass read-only validation;
+// installed historical files are retained without executing or repairing them.
+func (d Doctor) managedCatalogComponent(id string, state config.ComponentState, catalog []components.Spec) ManagedComponent {
 	result := ManagedComponent{Component: componentFromState(state)}
-	result.Healthy = result.Installed
+	// Preserve the existing explicit offline fixture contract, without allowing
+	// an installed real binary or a fixture-tagged production state to bypass it.
+	if os.Getenv("IVOAI_TEST_MODE") == "1" && result.Fixture {
+		result.Healthy = result.Installed
+		return result
+	}
+	if !result.Installed || !state.Managed || result.Fixture || d.Store == nil {
+		return result
+	}
+	var expected supplychain.ResolvedSource
+	found := false
+	for _, spec := range catalog {
+		if spec.Name != id {
+			continue
+		}
+		if spec.Strategy != components.StrategySupplyChain || state.Version != spec.Version {
+			return result
+		}
+		var err error
+		expected, err = components.ResolvedSource(spec)
+		if err != nil || expected.Validate() != nil {
+			return result
+		}
+		found = true
+		break
+	}
+	if !found {
+		return result
+	}
 	source, root, err := (supplychain.Manager{Root: filepath.Join(d.Store.Paths.DataDir, "supply-chain")}).Active(id)
-	if err != nil {
+	if err != nil || !reflect.DeepEqual(source, expected) {
 		return result
 	}
 	want := filepath.Join(root, filepath.FromSlash(source.PayloadPath))
@@ -485,6 +521,7 @@ func (d Doctor) managedComponent(id string, state config.ComponentState) Managed
 		return result
 	}
 	result.Revision, result.Source, result.License, result.TrustLevel = source.Revision, source.Source, source.License, source.Integrity.TrustLevel
+	result.Healthy = true
 	return result
 }
 
