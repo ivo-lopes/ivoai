@@ -1,0 +1,42 @@
+# Quickstart
+
+## Client
+
+On minimal Debian/Ubuntu images, first install `curl`, `ca-certificates` and
+`libatomic1` with the system package manager. Ruflo's private Node 26 requires
+`libatomic.so.1`; IVOAI diagnoses its absence and does not run APT silently.
+For example: `sudo apt-get install curl ca-certificates libatomic1`.
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/ivo-lopes/ivoai/main/install.sh | sh
+ivoai setup
+ivoai doctor
+ivoai codex
+```
+
+Official executor authentication remains inside each executor. IVOAI does not ask
+for or copy subscription credentials. Managed work opens the official native Codex
+frontend; `ivoai auto` aliases that same Core-controlled path. Adaptive Primary
+execution is opt-in and OFF by default; permissions and plan approvals remain.
+
+## Add private servers
+
+```bash
+ivoai connect server add company-a --url https://ai-a.example.com --purpose company-a --code-stdin
+ivoai connect server add company-b --url https://ai-b.example.com --purpose company-b --code-stdin
+ivoai connect server list
+ivoai auto                         # all enabled sources
+ivoai auto --knowledge-source company-a
+```
+
+## Server
+
+On a supported Debian 12 or Ubuntu host:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/ivo-lopes/ivoai/main/install.sh | sudo sh
+sudo ivoai setup --mode server
+sudo ivoai server doctor
+```
+
+See [Server setup](setup.md), including LXC prerequisites and docs hosting.

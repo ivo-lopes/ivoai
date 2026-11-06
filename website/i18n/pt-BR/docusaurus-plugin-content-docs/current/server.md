@@ -304,6 +304,7 @@ migração automática. O operador precisa iniciar explicitamente:
 
 ```sh
 sudo ivoai server upgrade
+# Optional: choose a NEW path directly under /var/lib/ivoai/backups
 sudo ivoai server upgrade --backup-output /var/lib/ivoai/backups/pre-upgrade.tar.gz
 ```
 

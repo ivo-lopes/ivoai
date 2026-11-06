@@ -1,0 +1,126 @@
+# CLI reference
+
+<!-- GENERATED-CLI-HELP:START -->
+```text
+ivoai - personal AI client and server platform
+
+Usage:
+  ivoai                         interactive menu
+  ivoai help | version | uninstall
+  ivoai admin init
+  ivoai admin serve [--listen 127.0.0.1:7781] [--public-url HTTPS_URL] [--trusted-proxies CIDR,...]
+  ivoai admin access create [--ttl 10m] [--write] | list | revoke <id>
+  ivoai status [--json]
+  ivoai setup [--mode client|server] [--legacy-opencode]
+  ivoai doctor [--json] [--inventory]
+  ivoai update [--dry-run] | update --rollback [--force]
+  ivoai update --codex [--rollback]
+  ivoai claude run --prompt TEXT [--directory PATH] [--model ID] [--follow-up TEXT]
+  ivoai antigravity run --prompt TEXT [--directory PATH] [--model ID] [--follow-up TEXT]
+  ivoai connect [list|chatgpt|claude]
+  ivoai connect server [--url URL] [--purpose PURPOSE] [--redundancy-group GROUP] [--priority N] [--enrollment-code CODE|--code-stdin]
+  ivoai connect server add <alias> [--url URL] [--purpose PURPOSE] [--redundancy-group GROUP] [--priority N] [--enrollment-code CODE|--code-stdin]
+  ivoai connect server list [--json] | show <alias> [--json] | test <alias> [--json]
+  ivoai connect server enable <alias> | disable <alias> | remove <alias>
+  ivoai connect server edit <alias> [--purpose PURPOSE] [--redundancy-group GROUP] [--priority N]
+  ivoai connect server re-enroll <alias> [--url URL] [--code-stdin]
+  ivoai connect mcp [list] | add <name> <https-url> | remove <name>
+  ivoai connect mcp auth set <name> --bearer-token-stdin
+  ivoai connect mcp auth remove <name>
+  ivoai connect mcp header set <name> <header-name> --value-stdin
+  ivoai connect mcp test <name>
+  ivoai connect mcp tools <name>
+  ivoai connect mcp enable <name> | disable <name>
+  ivoai connect mcp policy <name> <read_only|read_auto_ask_mutating>
+  ivoai connect mcp direct-policy <name> <read_only|disabled>
+  ivoai disconnect <chatgpt|claude|server [alias|--all]>
+  ivoai codex [--direct] [--knowledge-source <alias|purpose>] [-- agent arguments...]
+  ivoai claude [--knowledge-source <alias|purpose>] [-- agent arguments...]
+  ivoai opencode (removed; use ivoai codex; retained user data is preserved)
+  ivoai auto [--planner codex] [--knowledge-source <alias|purpose>] [-- agent arguments...]
+  ivoai session start --executor <codex|claude> --mode <direct|orchestrated> [--knowledge-source <alias|purpose>] [-- agent arguments...]
+  ivoai session list [--json] | show [--json] <id> | stop <id>
+  ivoai session resume <id> [--frontend codex] [--knowledge-source alias]
+  ivoai session recover <id> [--knowledge-source alias]
+  ivoai session adopt-scope <id> [--knowledge-source alias] [--confirm] [--json]
+  ivoai session restore-scope <id> --backup PATH [--confirm] [--json]
+  ivoai session handoff <id> --to codex|claude --confirm
+  ivoai monitor [--watch] [--session <id>] [--json]
+  ivoai memory [status|configure]
+  ivoai skills list | show <source-id> | doctor
+  ivoai skills update [source-id]
+  ivoai skills enable <source-id> | disable <source-id> | pin <source-id> | unpin <source-id> | rollback <source-id>
+  ivoai config [show|set <key> <value>]
+  ivoai config profile <list|show|preview ID|apply ID|restore>
+  ivoai project [init|status]
+  ivoai server setup | status | doctor | start | stop | restart
+  ivoai server logs [service]
+  ivoai server enrollment create [--ttl 10m] | list | revoke <id>
+  ivoai server web-access create [--ttl 10m] [--scopes SCOPE,...] | list | revoke <id>
+  ivoai server connector list | add --name NAME --type filesystem|git --path PATH | remove NAME
+  ivoai server context status | context ingest --connector NAME | context search --query QUERY | context get --id ID
+  ivoai server memory status | docs status | docs configure --listen IP:PORT | docs serve
+  ivoai server gateway serve | gateway configure --public-url HTTPS_ORIGIN [--listen HOST:PORT] [--trusted-proxy CIDR] [--tls-cert PATH --tls-key PATH]
+  ivoai server backup [--output PATH] | restore --input PATH
+  ivoai server remote status | doctor | connector list
+```
+<!-- GENERATED-CLI-HELP:END -->
+
+The block above is generated from the executable's canonical help output and is
+checked in CI by `scripts/generate-cli-reference.sh --check`.
+
+## Session-source flag
+
+Repeat `--knowledge-source` or use comma-separated aliases/purposes. With no flag,
+all enabled connected server profiles are selected. With any flag, it becomes a
+restrictive filter. Unknown, disabled, or disconnected explicit sources fail.
+
+## Public defaults and effects
+
+| Surface | Default / effect |
+| --- | --- |
+| `setup --mode` | `client`; an existing server installation is detected and retained when the flag is omitted |
+| `auto --planner` | interactive/default planner selection; only `codex` and `claude` are valid overrides |
+| `session start --executor` | `codex` |
+| `session start --mode` | `direct` |
+| `connect server add --purpose` | the validated alias |
+| `connect server add --priority` | `100`; lower values win within one redundancy group |
+| `doctor --inventory` | adds a sanitized compatibility inventory; combine with `--json` for automation |
+| `update --dry-run` | stages and probes without committing |
+| `update --rollback` | restores the last transactional checkpoint; `--force` is valid only with rollback |
+| `monitor --watch` | refreshes until cancelled; `--session` restricts the displayed session |
+| `server enrollment/web-access create --ttl` | `10m` |
+| `server backup --output` | managed timestamped backup path |
+| `server docs status` | probes the configured production listener, default `0.0.0.0:7780` |
+
+`--enrollment-code` is accepted for compatibility but exposes a secret in process
+arguments; prefer `--code-stdin` or the hidden interactive prompt. JSON flags write
+machine-readable JSON without banners or ANSI. Validation and runtime errors are
+written to stderr; sensitive values are redacted.
+
+## Server documentation
+
+`ivoai server docs status` reports the configured listener; `ivoai server docs serve`
+is reserved for the managed systemd unit. The default is `0.0.0.0:7780`.
+
+## Public environment variables
+
+- `NO_COLOR=1`: disable ANSI output.
+- `IVOAI_ASCII=1`: use ASCII terminal rendering.
+- `XDG_CONFIG_HOME`, `XDG_DATA_HOME`, `XDG_STATE_HOME`, `XDG_CACHE_HOME`: relocate user-owned state.
+- `IVOAI_VERSION`: select a release in the bootstrap installer.
+- `IVOAI_INSTALL_DIR`: select an installer target.
+
+Internal session capability variables and test-only variables are intentionally not
+public interfaces. Commands return zero on success, non-zero on validation/runtime
+failure, and 130 on cancellation where the executor lifecycle supports it.
+
+## Local read-only administration
+
+`ivoai admin serve` explicitly starts an optional numeric loopback listener (default `127.0.0.1:7781`). It does not start on ordinary client sessions or the gateway. Use the same local owner and existing private ConfigRoot/StateRoot; do not run it as a privileged gateway service or expose it through a reverse proxy. In another terminal, run `ivoai admin access create --ttl 10m` and enter the one-time code in the local OAuth page. The code is intentionally printed only by this issuance command; list/revoke show metadata. `ivoai admin access revoke <id>` invalidates access from that grant.
+
+The console uses the existing OAuth PKCE store with an instance-specific `admin:read` scope and resource. Web MCP defaults and tokens, connector credentials and session capabilities remain separate. Access tokens stay in a one-hour HttpOnly/SameSiteStrict cookie; the console uses no browser token storage or refresh token. HTTP is accepted only over numeric loopback; Host/Origin are exact, forwarded headers are ignored, and there is no remote operator/RBAC delegation. State is private under StateRoot's `admin/<instance>/oauth.json`, separate from native client settings. Only the OAuth form uses `Referrer-Policy: same-origin` so browser form submissions retain a verifiable Origin; callback, API and console responses use `no-referrer`. An opaque `Origin: null` is refused, including with a valid form nonce.
+
+This first slice reads session metadata/events, selected component versions and aggregate connection configuration. It uses the same App/Core stores and allowlisted DTOs, without provider probes, network requests, chat or execution controls from a GET. Usage, when present, is a persisted official-client report scoped to `cli_invocation`; cached input is included in input, and unknown is null. It is neither a session total nor an economic result. Counts cover a bounded subset (32 sessions, at most33 entries scanned per existing namespace, 256KiB per record); partial/truncated flags must be retained and the subset is not guaranteed to contain the latest global session. Filesystem I/O and host callbacks are cooperative rather than forcibly interruptible.
+
+Administrative parity remains partial: no setup/update/rollback/uninstall, stop/start, approvals, credential editing, backup/restore, connector purge, evidence/cache/index management, native login, or conversation UI. The inventory contains118 stable TUI IDs; exposing a read-only console does not complete them. The local owner and filesystem remain trusted; read-side auth/root rechecks do not provide atomic protection against a privileged local process replacing state. Stop the explicit listener to disable the console; native client configuration and running executions are unchanged.
