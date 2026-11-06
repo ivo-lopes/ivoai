@@ -16,7 +16,7 @@ func (a *App) sessionCompression(cfg config.Config, state config.State, executor
 	case "direct":
 		return nil, false, "direct"
 	case "caveman":
-		spec, ok := componentSpec("caveman")
+		spec, ok := a.componentSpec("caveman")
 		if !ok {
 			return nil, false, "direct"
 		}
@@ -41,7 +41,7 @@ func (a *App) workingContextCompressor(cfg config.Config, state config.State, ru
 	if cfg.Compression.Provider != "caveman" {
 		return nil
 	}
-	spec, ok := componentSpec("caveman-mcp")
+	spec, ok := a.componentSpec("caveman-mcp")
 	if !ok {
 		return nil
 	}
@@ -78,11 +78,34 @@ func compressionObservation(executor string, observation core.SessionObservation
 	return observability.Event{Category: observability.CategoryCompression, Operation: observability.OperationCompressionSelect, State: state, Executor: executor, Provider: provider, RequestedProvider: requested, ProviderSource: policy.ProviderSource, Component: core.ComponentCompression, RoutingReason: reason, FallbackReason: fallbackReason, DurationMilliseconds: observation.CompressionPreflightMilliseconds, CompressionBypassed: policy.Bypassed, AuthoritativeKnowledge: policy.AuthoritativeActive, SelectedSourceCount: policy.SelectedSourceCount}
 }
 
-func componentSpec(name string) (components.Spec, bool) {
-	for _, spec := range components.DefaultCatalog() {
+func (a *App) componentSpec(name string) (components.Spec, bool) {
+	catalog := components.DefaultCatalog()
+	if a.componentCatalog != nil {
+		catalog = a.componentCatalog()
+	}
+	for _, spec := range catalog {
 		if spec.Name == name {
 			return spec, true
 		}
 	}
 	return components.Spec{}, false
+}
+
+// Fixtures can supply a reviewed catalog without mutating package-wide build
+// metadata. Production keeps the existing client setup/compatibility policy.
+func (a *App) setupComponentCatalog(includeLegacy bool) []components.Spec {
+	if a.componentCatalog == nil {
+		return components.ClientSetupCatalog(includeLegacy)
+	}
+	catalog := a.componentCatalog()
+	if includeLegacy {
+		return catalog
+	}
+	result := make([]components.Spec, 0, len(catalog))
+	for _, spec := range catalog {
+		if spec.Name != "opencode" {
+			result = append(result, spec)
+		}
+	}
+	return result
 }

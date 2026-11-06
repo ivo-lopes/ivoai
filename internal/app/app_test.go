@@ -94,6 +94,7 @@ func TestSetupIsIdempotentAndReadyWithoutConnections(t *testing.T) {
 		t.Fatal(err)
 	}
 	a.Runner = missingRunner{}
+	a.componentCatalog = reviewedCompressionFixtureCatalog
 	if err := a.Setup(context.Background()); err != nil {
 		t.Fatal(err)
 	}
@@ -841,5 +842,62 @@ func TestConnectServerUsesDiscoveredMCPAndHooksEndpoints(t *testing.T) {
 	}
 	if strings.Contains(allCommands+allEnvironment, "server-scoped-token") || strings.Contains(allEnvironment, server.URL) {
 		t.Fatalf("stale remote credential or endpoint retained:\n%s\n%s", allCommands, allEnvironment)
+	}
+}
+
+func TestSetupRemainsReadyWithoutOptionalCompressionMetadata(t *testing.T) {
+	root := t.TempDir()
+	for key, value := range map[string]string{"HOME": root, "XDG_CONFIG_HOME": filepath.Join(root, "config"), "XDG_DATA_HOME": filepath.Join(root, "data"), "XDG_STATE_HOME": filepath.Join(root, "state"), "XDG_CACHE_HOME": filepath.Join(root, "cache"), "IVOAI_TEST_MODE": "1"} {
+		t.Setenv(key, value)
+	}
+	var output bytes.Buffer
+	a, err := New("v0.1.0-test", strings.NewReader(""), &output, &output)
+	if err != nil {
+		t.Fatal(err)
+	}
+	a.Runner = missingRunner{}
+	a.componentCatalog = func() []components.Spec {
+		var catalog []components.Spec
+		for _, spec := range components.ClientSetupCatalog(false) {
+			if spec.Name != "caveman" && spec.Name != "caveman-mcp" {
+				catalog = append(catalog, spec)
+			}
+		}
+		return catalog
+	}
+	if err := a.Setup(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	state, err := a.Store.LoadState()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range []string{"caveman", "caveman-mcp"} {
+		if value := state.Components[name]; value.Installed || value.Managed || value.Path != "" {
+			t.Fatalf("unreviewed compression component installed: %+v", value)
+		}
+	}
+	if !state.Components["codex"].Installed || !state.Components["codex-code-mode-host"].Installed || !state.Components["claude-code"].Installed {
+		t.Fatal("required native clients/tool host were not installed")
+	}
+	ownership, err := a.Store.LoadOwnership()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range []string{"caveman", "caveman-mcp"} {
+		if _, ok := ownership.Components[name]; ok {
+			t.Fatal("metadata-free setup claimed ownership of compression component")
+		}
+	}
+	report := a.Doctor(context.Background())
+	if report.Overall != "READY" || report.Caveman.Installed || report.CompressionDefault != "caveman" || report.CompressionProvider != "caveman" || report.CompressionEffective != "direct" || report.CompressionReason != "caveman_unavailable" {
+		t.Fatalf("optional compressor affected readiness or concealed fallback: %+v", report)
+	}
+	output.Reset()
+	if err := a.Status(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(output.String(), "default caveman / effective direct / fallback=caveman_unavailable") || !strings.Contains(output.String(), "Overall: READY") {
+		t.Fatal("status did not distinguish optional compression fallback from Core readiness")
 	}
 }

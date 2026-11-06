@@ -1,0 +1,13 @@
+{
+  "source_head": "4d89f02bc",
+  "command": "GOMAXPROCS=2 go1.27.3 test ./... -count=1 -timeout=10m",
+  "result": "FAIL",
+  "failed_tests": [
+    "internal/app:TestSetupIsIdempotentAndReadyWithoutConnections",
+    "internal/app:TestCompressionSelectionIsMutuallyExclusiveWithCavemanDefault"
+  ],
+  "reason": "Development Core lacks compiled reviewed Caveman rebuild metadata, so Direct fallback replaces the old unconditional upstream catalog selection; prior App fixtures assumed an always-present Caveman spec. No test weakened; parent owns App fixture/contract resolution. All other package groups passed.",
+  "log_sha256": "7bf384f472dbb90150e10b358bc7ab27b919c0cc2dd7b9a64b4d01096013cdb4",
+  "log_bytes": 5335,
+  "provider_inference": false
+}

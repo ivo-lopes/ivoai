@@ -49,3 +49,13 @@ without side effects and the restored22-scenario canary. The private build now
 checks exact patched go.mod/go.sum hashes before and after module fetching, and
 a regression test covers read-only cache cleanup without following external links.
 See [the additional rollback evidence](evidence/caveman-security-rebuild-20261106/rollback-and-lock-validation.json).
+
+App integration now has a private per-instance catalog seam for isolated fixtures;
+nil always selects the production catalog and its compiled release identity.
+The original Caveman-default/Headroom/Direct assertions remain. New tests check
+missing metadata with retained historical state, no MCP selection, no unsafe
+installation/ownership, and READY status with explicit optional-compressor
+fallback. The earlier full Go run failed two outdated App fixtures; its complete
+log is retained. After the fixture correction, the full App suite, complete Go
+suite and App vet passed. These are offline contract checks, separate from the
+actual Caveman artifact tests. See [App contract evidence](evidence/caveman-security-rebuild-20261106/app-catalog-contract/validation.json).

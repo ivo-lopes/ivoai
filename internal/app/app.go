@@ -57,6 +57,9 @@ type App struct {
 	// Isolate App setup tests from component downloads while exercising memory
 	// hooks and diagnostics normally. Production always uses Installer.Setup.
 	setupComponents func(context.Context) error
+	// Private dependency seam for isolated App fixtures. Nil always uses the
+	// production catalog with its compiled, reviewed release identities.
+	componentCatalog func() []components.Spec
 	// OpenCodeBridgeRunner and StartOpenCodeManaged are injected only by
 	// hermetic tests. Production uses the official managed adapters.
 	OpenCodeBridgeRunner     core.ExecutorRunner
@@ -220,7 +223,7 @@ func (a *App) SetupWithLegacyOpenCode(ctx context.Context, includeLegacy bool) e
 			return err
 		}
 	}
-	installer := components.Installer{Runner: a.Runner, Store: a.Store, Out: a.Out, Catalog: components.ClientSetupCatalog(includeLegacy)}
+	installer := components.Installer{Runner: a.Runner, Store: a.Store, Out: a.Out, Catalog: a.setupComponentCatalog(includeLegacy)}
 	if err := a.migrateLegacyMemory(); err != nil {
 		return fmt.Errorf("legacy Memory migration: %w", err)
 	}
