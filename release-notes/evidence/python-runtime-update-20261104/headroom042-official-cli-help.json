@@ -1,0 +1,33 @@
+{
+  "checks": [
+    {
+      "argv": [
+        "--version"
+      ],
+      "exit": 0,
+      "seconds": 0.586,
+      "output_sha256": "275f4361ef5336f739f1bad6b90a0dca063a1bc6ce88e19f39c0bea936ecc5f6"
+    },
+    {
+      "argv": [
+        "wrap",
+        "codex",
+        "--help"
+      ],
+      "exit": 0,
+      "seconds": 0.889,
+      "output_sha256": "3f7e3ce8cb4a0425bd72d200c6cba7a8af8babb27dcd757dbb110c472e5549c2"
+    },
+    {
+      "argv": [
+        "wrap",
+        "claude",
+        "--help"
+      ],
+      "exit": 0,
+      "seconds": 0.646,
+      "output_sha256": "619e443670aba5f1fc6e83756b78c9e85c7210aac57cb5a50ca967cb28baa8a1"
+    }
+  ],
+  "created_private_files": []
+}

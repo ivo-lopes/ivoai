@@ -5,17 +5,14 @@
 `ivoai setup` provisiona componentes gerenciados de forma transacional e preserva
 instalações externas de executores e a autenticação delas.
 
-A v0.15.0 publicada omite OpenCode do setup padrão de cliente e do setup
-candidato do updater. Para provisionar explicitamente o componente de
-compatibilidade preservado, use `ivoai setup --mode client --legacy-opencode`;
-setup de servidor recusa essa flag. O setup comum preserva propriedade, binários
-e histórico OpenCode existentes; não desinstala, repara nem adota o componente.
-Consulte [releases](releases.md) e o
-[relatório de publicação](https://github.com/ivo-lopes/ivoai/blob/main/release-notes/v0.15.0-published-validation.md)
-para fonte/assets verificados e limites da migração. A qualificação restrita CLI
-oficial/Core usa provedor falso local, sem autenticação de assinatura; não certifica
-comportamento geral de TUI, autenticação ou modelo. Mudanças do main posterior à tag
-são separadas dos payloads v0.15.0 baixados.
+O cliente atual e o updater não instalam, reparam, descobrem nem executam
+OpenCode. A flag `--legacy-opencode` permanece somente para apresentar um erro
+explícito de migração. Binários, configurações, credenciais, perfis e históricos
+existentes são preservados para rollback explícito ou uso independente do cliente
+upstream pelo usuário. Use `ivoai codex` para novas sessões gerenciadas;
+`ivoai auto` é seu alias de compatibilidade. As releases até v0.16 mantêm seus
+assets e comportamento originais; esta documentação do código atual não os
+substitui.
 
 ## Escopo de configuração nativo gerenciado
 
@@ -33,6 +30,24 @@ diretório/ambiente/config capturados entre inventário MCP e execução, preser
 grants Core, sandbox e aprovações. Não é necessário editar arquivos pessoais de
 configuração ou credenciais. O snapshot não congela configurações/política cloud
 nem certifica paridade geral de clientes. Consulte [releases](releases.md).
+
+## Hosts nativos experimentais
+
+Codex adaptativo fica desabilitado por padrão até certificação e rollout
+controlados. `IVOAI_EXPERIMENTAL_ADAPTIVE_PRIMARY=1` habilita somente os pares de
+runtime revisados em Linux amd64; não certifica toda versão ou plataforma
+instalada. `ivoai auto` usa o mesmo caminho Codex gerenciado. `ivoai codex --direct`
+e a TUI normal `ivoai claude` continuam escolhas explícitas de cliente direto.
+
+Claude headless gerenciado exige `IVOAI_EXPERIMENTAL_CLAUDE_HEADLESS=1` e
+`ivoai claude run --prompt ...`, com o runtime Claude Code 2.1.318 revisado em Linux
+amd64. Antigravity exige `IVOAI_EXPERIMENTAL_ANTIGRAVITY=1`,
+`ivoai antigravity run --prompt ...` e `agy` 1.5.2 revisado no PATH, também em Linux
+amd64. Essas flags ficam desabilitadas por padrão. Os hosts reutilizam a
+autenticação oficial; setup não copia credenciais de assinatura nem configura API
+paga. A inferência Claude continua pendente de uma conta autorizada. Suporte
+headless não promete controle da TUI nativa, paridade universal ou retomada entre
+processos.
 
 ## Configuração de servidor em Debian 12 e LXC
 

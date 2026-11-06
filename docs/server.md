@@ -115,6 +115,17 @@ container identity. Dependency ports bind only to loopback, require separate gen
 internal credentials, and are not public. After TEI downloads the pinned model and
 passes health checks, its download network is disconnected.
 
+Managed TEI uses `LOG_LEVEL=info,text_embeddings_router=warn`. The pinned 1.9.4
+router logs its arguments, including the API key, at INFO; its supported logger
+reads `LOG_LEVEL`, not `RUST_LOG`. The explicit Compose environment overrides a
+conflicting value from the secret env file. WARN/ERROR for that target and INFO
+for other targets remain enabled; health, metrics and API authentication are
+unchanged. ARM64 inherits the same setting from the base Compose file. Avoid
+removing this filter when enabling diagnostics. This prevents new argument-log
+exposure; it does not erase logs from a previous deployment. If such logs escaped
+the authorized host boundary, rotate the affected internal credential through the
+normal operator procedure. No credential is rotated automatically.
+
 Rerunning setup changes ownership only on managed mount roots; it does not traverse
 application-created content. This preserves legitimate Hugging Face cache symlinks.
 Qdrant readiness uses its unauthenticated `/readyz` endpoint, while its data API
@@ -288,3 +299,58 @@ starts them again afterward. Restore merges validated files into the managed roo
 and does not delete stale files that are absent from the archive. Before restart it
 reapplies dedicated service ownership only to the validated restored trees, without
 traversing normal application caches.
+
+## Guarded dependency upgrades and rollback
+
+Existing ai-memory/Qdrant stores are never migrated by ordinary `server setup`
+when runtime/model pins change. Update the Core first, then explicitly run:
+
+```sh
+sudo ivoai server upgrade
+# Optional: choose a NEW path directly under /var/lib/ivoai/backups
+sudo ivoai server upgrade --backup-output /var/lib/ivoai/backups/pre-upgrade.tar.gz
+```
+
+The same operations are available in the administrative panel with existing root
+OS authority, management scope, preview/confirmation and a durable non-replayable
+request ID. The browser cannot elevate privileges or supply arbitrary commands.
+
+The upgrade prefetches the reviewed immutable images before downtime. A kernel
+lock serializes the stopped-service transaction. Core Backup preserves the
+existing authoritative data; a separate private Qdrant snapshot preserves the
+rebuildable index for rollback. Both the prior pinned runtimes and candidates
+must start and pass authenticated reads/unauthenticated refusal on isolated
+copies, with the original service UID/GID, network none and transient credentials.
+Authoritative wiki content must remain unchanged. Only then are new runtime assets
+installed and services restarted. Existing operational settings are preserved.
+
+This release certifies the 2.6.3 → 3.4.2 ai-memory and 1.19.2 → 1.20.0 Qdrant
+paths. Other prior image pins require separate certification and fail closed.
+An existing Docker runtime must report working memory/CPU/PID cgroup isolation;
+an unsupported runtime is refused before stores are changed. The Core does not
+silently reconfigure or replace an operator's Docker daemon.
+
+Keep the private backup, its `.qdrant` snapshot and `.upgrade.json` receipt
+together. If a stage fails, services remain stopped and the original data is
+preserved. After an activation failure, do not point an older ai-memory image at
+a forward-migrated database. Explicit rollback restores data, index and previous
+pinned runtime/unit assets as one stopped-service operation:
+
+```sh
+sudo ivoai server upgrade --rollback-receipt /var/lib/ivoai/backups/pre-upgrade.tar.gz.upgrade.json
+```
+
+Rollback replaces current authoritative state. It verifies the backup/index
+hashes and receipt ownership first, preserves the current forward index for
+inspection, restores the matching old assets and only then restarts services.
+Core Restore's executable-configuration whitelist remains unchanged. Backups and
+receipts are private operational recovery material, not agent evidence or a new
+memory database. No failed request is automatically repeated.
+
+The real migration/rollback gate ran in a disposable rootless Docker daemon,
+not production systemd. That daemon reported cgroup `none`; its CPU/RAM limits
+were not claimed as enforced. Official images were executed natively on Linux AMD64; the ai-memory release
+binaries were additionally checked under emulated Nehalem without AVX/AVX2 and
+ARM64 Cortex-A53. ARM emulation
+is not native ARM hardware certification. See the release validation note for
+exact sources, results and limitations.

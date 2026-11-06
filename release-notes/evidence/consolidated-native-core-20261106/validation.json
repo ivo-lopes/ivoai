@@ -1,0 +1,46 @@
+{
+  "scope": "source-bound integrated Core official Codex0.167 CLI/TUI and receipt revocation; not final published bundle, not economy certification",
+  "source_head": "fb3b5a1be208c618394f9b0b358e4857497f8763",
+  "public_gateway": {
+    "outcome": "PASS",
+    "real_turns": 3,
+    "dag": false,
+    "workers": 0,
+    "hits": 1,
+    "misses": 2,
+    "source_invalidation": true,
+    "normal_exit": true,
+    "test_wall_ms": 109804
+  },
+  "revocation": {
+    "outcome": "PASS",
+    "real_turns": 2,
+    "exact_recovery_before_revocation": true,
+    "recovery_and_final_response_denied_after_revocation": true,
+    "replay_and_automatic_failover": false,
+    "test_wall_ms": 37477
+  },
+  "unfavorable_preserved": [
+    "Full Go epoch1 overlapped root merge operation: conflict markers caused compile failure. Root aborted merge, reconciled equivalent main ancestry without tree changes, repeated on clean source. This was validation orchestration error, not a valid source result.",
+    "Full Go epoch2: component ErrOpenCodeRemoved and installer guard omitted by root conflict resolution; restored explicitly in fb3b5a1be. Components focused and complete Go epoch3 pass.",
+    "Public Gateway epoch1: private report parent initially mode0775, rejected before admission; root corrected only newly-created private directory to0700. No inference.",
+    "Public Gateway epoch2: NOT_RUN/CLEANUP_FAILED at official admission with zero turns/attempts. Shared-host builds running; root waited for full Go completion and repeated with clean source. No proven cause attributed to load.",
+    "First integrated docs build rejected current EN/PT link parity; correction tracked separately, no gate weakened."
+  ],
+  "economy": "INCOMPLETE; no savings inferred from cache hit or log reduction",
+  "checksums": {
+    "source-freeze-epoch3.json": "b0a37f6efd90d3dba64c461a1e250c81d311ce7975ee508efecd3c442ee3aa62",
+    "composed-final-docs-build.log": "4ce92a24c6140a4b024b7c2126291501d939f0237dd17783a583529c67c9ceb1",
+    "public-gateway-epoch3.json": "0df99e3bccef613fb5b8be7e4b000d032fa9d4bad9a95df55ecdb51fd9e60cc6",
+    "public-gateway-epoch3.log": "da2a2aeb57bca1e777ea45a9b69da7de07fb6a107200e5f16934f4d7913c2fca",
+    "composed-latest-full-go.log": "17a9eb325b9d93d87878c363dd72c880d6bf23dbe411262cac1ffbf46f8eb985",
+    "public-gateway-epoch1.log": "ce179baff6ed00aa4ba5c8e248571128cbcdcfb1941b6431e24c7cbb6bec69e0",
+    "cached-revocation-epoch3.json": "a86432f067e7d4d3a5d79fc240a405e5105aa82ab2d3413d39956e36d075c0cd",
+    "cached-revocation-epoch3.log": "712df4cf28b24e25960400ad8a69c6a7fd5252bf145567e7b7c487c2977e3375",
+    "public-gateway-epoch2.log": "80c8c82b4c0c7eb344c7127c99e55e6fec3c618b6d47752079797c1103b31c68",
+    "public-gateway-epoch2.json": "efe76dc2d3146c90585cfbb109050bed4e950e065027f1eb449f9e94dd2fe0ff",
+    "composed-latest-full-go-epoch3.log": "a1e6fe43f2716e3a4cb476ca5f52d6f72656b1120af4d80446d0140c4caea0cb",
+    "composed-component-denial-fix.log": "8200ab44e0c9387740dab4d43a6e1b5aca3819522dbd08db69cb2bca502e5f05",
+    "composed-latest-full-go-epoch2.log": "8934dd0c9ee851b0cde4e8c464d71a6c8698eb7afec5cf89fab37ed3f0bcda81"
+  }
+}

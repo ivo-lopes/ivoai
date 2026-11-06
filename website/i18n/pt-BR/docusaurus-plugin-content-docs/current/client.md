@@ -2,6 +2,11 @@
 
 ## Menu interativo
 
+**Launch Orchestration** oferece **Codex Orchestrated** e sessões explícitas
+**Codex Direct** / **Claude Direct**. As entradas OpenCode estão desabilitadas e
+apresentam a migração, sem iniciar sessões. O mesmo Core controla admissão,
+permissões e agendamento gerenciados. Consulte [frontends](orchestrated-frontends.md).
+
 **Connections → IVOAI Servers** gerencia profiles independentes. Adicione um
 servidor e selecione seu alias para testar, habilitar/desabilitar, editar, fazer
 re-enrollment ou remover. Veja o fluxo completo em [Conexões](connections.md).
@@ -78,7 +83,7 @@ O estado desconectado saudável é:
 ivoai          ready
 Codex          installed / not connected
 Claude Code    installed / not connected
-OpenCode       ready / managed frontend
+OpenCode       removed / retained metadata only
 Headroom       ready
 Compression    default caveman / effective caveman
 Caveman        installed / managed
@@ -89,23 +94,38 @@ Server         not-connected
 Overall: READY — external connections pending
 ```
 
+Se metadata ou integridade revisada do compressor estiver indisponível, a
+compressão mostra `default caveman / effective direct / fallback=caveman_unavailable`.
+Esse fallback opcional é separado da ausência de clientes obrigatórios ou de um
+setup Core degradado.
+
 ## Launch do agent
 
-`ivoai codex` abre o terminal orquestrado controlado pelo IVOAI; `--direct` preserva
-a TUI oficial. `ivoai claude` continua direto. `ivoai opencode` abre a TUI OpenCode
-pinada e anexada ao mesmo control plane. O menu **Launch Orchestration** oferece
-os dois frontends e sessões diretas explícitas. Veja [frontends](orchestrated-frontends.md). O IVOAI
-roteia turnos para a CLI oficial Codex ou Claude Code e reutiliza o login que já pertence àquele
-client sem lê-lo ou copiá-lo. Um overlay OpenCode gerenciado e privado desabilita config de projeto,
-sharing e auto-update; a configuração global e o store de provider do usuário permanecem intactos.
+`ivoai codex` abre o terminal oficial Codex pela façade gerenciada do IVOAI;
+`ivoai auto` é seu alias de compatibilidade. `ivoai codex --direct` usa
+explicitamente o cliente direto, sem orquestração de turnos gerenciada. O Primary
+adaptativo é experimental e fica desabilitado por padrão:
+`IVOAI_EXPERIMENTAL_ADAPTIVE_PRIMARY=1` habilita somente o caminho de runtime e
+plataforma revisados durante certificação controlada. A opção não autoriza
+versões ou plataformas arbitrárias.
 
-Sessões Codex e Claude podem selecionar um purpose de knowledge registrado sem alterar a config
+`ivoai claude` usa a TUI oficial direta. Claude headless gerenciado exige
+`IVOAI_EXPERIMENTAL_CLAUDE_HEADLESS=1` e `ivoai claude run --prompt ...`.
+O host ACP experimental do Antigravity exige `IVOAI_EXPERIMENTAL_ANTIGRAVITY=1`,
+`ivoai antigravity run --prompt ...` e o binário `agy` 1.5.2 revisado em Linux
+amd64. Esses hosts headless não controlam as TUIs nativas. A certificação de
+inferência Claude continua pendente de uma conta autorizada do usuário.
+
+O launch OpenCode gerenciado e o setup legado explícito retornam erros de
+migração. Dados pessoais e perfis anteriores permanecem intactos para rollback.
+
+Codex e Claude podem selecionar um purpose de knowledge registrado sem alterar a config
 global do agent:
 
 ```sh
 ivoai codex --knowledge-source mindsite
 ivoai claude --knowledge-source voicecorp
-ivoai opencode --knowledge-source mindsite
+ivoai auto --knowledge-source mindsite
 ```
 
 Sem `--knowledge-source`, todas as fontes conectadas e habilitadas participam da federation de
@@ -131,10 +151,11 @@ de Codex/Claude fica `unavailable_by_policy`: o wrapper pinado pode alterar a
 configuração MCP do cliente, sem alternativa segura com recuperação exata verificada.
 O IVOAI usa Direct uma vez, antes de sondar ou executar o wrapper, e preserva a escolha.
 
-Para uma sessão OpenCode standalone explícita, OpenCode mantém seu provider nativo somente de
-assinatura. Quando o runtime Caveman pinado não consegue fazer proxy desse provider, o preflight
-seleciona Direct antes do launch; o IVOAI não solicita API key, troca provider nem inicia OpenCode
-duas vezes. AUTO usa a bridge IVOAI e os contratos de executor Codex/Claude descritos acima.
+`ivoai opencode`, inclusive com `--direct`, é recusado antes de despachar o
+executor. `ivoai setup --legacy-opencode` também recusa a instalação. Para usar
+uma instalação upstream independente, execute-a fora do IVOAI; o launcher
+gerenciado não a adota, troca seu provider nem inicia um processo OpenCode como
+fallback.
 
 Todo primary gerenciado pelo ivoai recebe o mesmo contrato de conhecimento compartilhado. Qualquer
 tarefa que exija pesquisa, levantamento de fatos, informação atual ou verificação externa usa a
@@ -146,9 +167,10 @@ para lembrar informação é gravada por `memory_write_page` e verificada com `m
 Context é um índice RAG alimentado por connector, não um store de escrita conversacional; portanto,
 um agent não pode afirmar que gravou um fato do chat no Context.
 
-A mesma policy process-scoped é injetada em workers Codex e Claude. OpenCode é o frontend AUTO, não
-um worker consultivo nem um segundo scheduler. O executor OpenCode standalone continua disponível
-explicitamente, sem modificar config pertencente ao usuário nem tratar texto recuperado como
+A mesma policy process-scoped chega aos workers Codex e Claude pelos contratos
+existentes do Core. Codex é o frontend nativo gerenciado; nenhum frontend mantém
+outro scheduler ou banco de memória. Tipos serializados e histórico OpenCode
+preservados não restauram execução, e texto recuperado não recebe autoridade de
 instrução.
 
 Codex trata tools MCP sem annotations somente leitura de forma conservadora. Para servers IVOAI
@@ -166,13 +188,15 @@ externamente permanecem responsáveis por seu próprio companion da versão corr
 
 ## Session control plane
 
-O menu interativo contém **Session Control**, com escolhas diretas e orquestradas para os dois
-clients oficiais, listagem de sessões, monitoramento e stop seguro. As mesmas operações estão
-disponíveis para automação:
+O menu interativo contém **Session Control** para inspeção de sessões nativas,
+resume/recovery compatíveis, handoff confirmado e stop seguro. Inícios diretos
+Codex e Claude permanecem explícitos; a orquestração nativa gerenciada usa Codex.
+O host Claude headless experimental é outro comando, não um modo da TUI Claude.
+A automação usa as mesmas operações de sessão:
 
 ```sh
 ivoai session start --executor codex --mode direct
-ivoai session start --executor claude --mode orchestrated
+ivoai session start --executor claude --mode direct
 ivoai session list --json
 ivoai session show --json <session-id>
 ivoai session resume <session-id>
@@ -182,11 +206,15 @@ ivoai session stop <session-id>
 ivoai monitor --watch
 ```
 
-Sessões Direct adicionam metadata e monitoramento. `ivoai codex` e `ivoai opencode`
-usam o DAG nativo, approval e concorrência automática comuns. O modo legado Ruflo
-permanece separado. [Conversation Continuity](conversation-continuity.md) oferece
-`session resume`, `session recover` e `session handoff --to <provider> --confirm`,
-também disponíveis no Session Control da TUI, sem converter direct em orchestrated.
+Sessões Direct adicionam metadata e monitoramento sem DAG. Codex gerenciado usa
+o protocolo de planejamento, a aprovação de planos e o scheduler de workers
+existentes no Core. Com a flag adaptativa experimental habilitada, turnos
+somente leitura elegíveis podem terminar sem DAG. O perfil de coordenação Ruflo
+sem provider não é outro scheduler. Resume, recovery e handoff permanecem
+limitados às identidades elegíveis e aos modos de cliente compatíveis; um
+planner/handoff Claude gerenciado sem suporte é recusado, sem abrir um host
+headless ou outra TUI. Consulte
+[Conversation Continuity](conversation-continuity.md).
 
 O JSON da sessão é estado XDG privado e não contém prompt, response ou credencial. A saída do modelo
 é rotulada `runtime_verified`, `argument`, `configured` ou `unknown`; o último valor é usado
@@ -204,31 +232,34 @@ credenciais.
 
 ## Modo de conversa automático
 
-`ivoai opencode` abre o frontend OpenCode gerenciado e mostra estado limitado de executor, quota e
-knowledge pertencente ao IVOAI. A preferência de planner configurada seleciona o executor oficial
-inicial; `--planner codex` e `--planner claude` fazem override para a sessão. Codex/Claude nunca
-assumem a tela. OpenCode fornece a UI enquanto IVOAI mantém ownership da sessão, seleção de provider
-e autoridade single-writer.
+`ivoai codex` e `ivoai auto` abrem o mesmo frontend nativo oficial Codex.
+O Core mantém ownership da sessão, seleção de provider e autoridade de escrita
+única. O Primary adaptativo continua desabilitado por padrão até certificação e
+rollout controlados: `IVOAI_EXPERIMENTAL_ADAPTIVE_PRIMARY=1` habilita somente
+sessões revisadas. Prompts naturais não exigem critérios formais de aceite.
+Sob essa flag, consultas simples e somente leitura elegíveis podem terminar no
+Primary; tarefas complexas escalam para validação de plano, aprovações e scheduler
+de workers existentes. `--planner opencode` é recusado; histórico legado não é
+convertido em nova execução.
 
-O modo automático inicia o mesmo control plane Ruflo sem provider das sessões orquestradas explícitas,
-injeta o MCP orchestration local à sessão e adiciona bootstrap único de Memory/Context, brief
-compartilhado privado, score objetivo de tarefas, delegação econômica, roteamento de model/effort
-ciente de quota/capability, workers DAG realmente assíncronos e checkpoints limitados de
-continuidade. Trabalho trivial fica no primary; trabalho independente valioso executa
-simultaneamente. Execute `ivoai monitor --watch` em um segundo terminal para ver primary atual,
-provenance do modelo, quantidade de failovers, estado de worker, fonte/freshness/reset da quota e
-health de services. Antes da primeira resposta do Claude, suas linhas de quota dizem
-`awaiting first response`; campos não compatíveis dizem `N/A / not exposed`, e observações antigas
-são marcadas `stale`. Mensalidade do Claude não é fabricada.
+O Core controla agendamento de DAG, grants isolados de workers, verificações de
+quota/capability e continuidade limitada. O perfil seguro de coordenação Ruflo
+continua sem provider; ele não substitui o scheduler nem controla memória durável.
+Nenhum worker ou benefício econômico é presumido para pedidos simples. O gate
+econômico global continua incompleto. Execute `ivoai monitor --watch` em outro
+terminal para ver primary, provenance do modelo, workers, fonte/freshness/reset
+da quota e health de services. Campos indisponíveis mantêm `N/A / not exposed`;
+antes de uma resposta Claude, sua quota pode mostrar `awaiting first response`,
+e observações antigas continuam `stale`.
 
-A seleção de knowledge permanece fixa durante failover Codex↔Claude e workers herdam os mesmos
-endpoints locais à sessão. Failover nunca expande o conjunto de fontes nem copia credencial upstream
-para um handoff.
+A seleção de knowledge e os limites da capability local passam aos workers e
+handoffs compatíveis. Transições de cliente sem suporte são recusadas; isso não
+promete failover transparente entre as TUIs Codex↔Claude. Um handoff nunca amplia
+o conjunto de fontes nem copia credenciais upstream.
 
-Executar `ivoai connect chatgpt` ou `ivoai connect claude` invalida o cache de quota reconstruível
-do provider selecionado antes do fluxo de autenticação oficial e executa novo probe depois. Isso
-impede que um hard limit de conta anterior contamine novo contexto de autenticação sem ler
-credenciais do provider.
+Executar `ivoai connect chatgpt` ou `ivoai connect claude` invalida o cache
+reconstruível de quota do provider antes da autenticação oficial e faz novo probe
+depois. Essa limpeza de cache não copia nem inspeciona credenciais do provider.
 
 Consulte [Orquestração automática](auto-orchestration.md),
 [Scheduler automático](auto-scheduler.md) e [Roteamento por quota](quota-routing.md).

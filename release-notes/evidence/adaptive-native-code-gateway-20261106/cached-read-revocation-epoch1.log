@@ -1,0 +1,3 @@
+=== RUN   TestLiveAdaptiveCodeGatewayCachedReceiptRevocation
+--- PASS: TestLiveAdaptiveCodeGatewayCachedReceiptRevocation (30.92s)
+PASS

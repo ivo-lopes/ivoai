@@ -1,0 +1,34 @@
+{
+  "source_sha256": {
+    "internal/components/components.go": "197de10071cd6994079c0bbd180e888127e21b19cc357a22ec2167cbbe58e5b6",
+    "internal/components/headroom_profile_test.go": "fb3d6921d03c3e54cbf68a2383f48282970bf155972637dd78b959eaf034c3ee",
+    "scripts/stable_release_upgrade.py": "86216cb76e10bc4a1bde21df13855d735fdc311bca8c4f3a6b7d5ce757f1ff11",
+    "scripts/test_stable_release_upgrade.py": "b2736a16c08b12742a7efe6ff651425b28ce5db17d333d9cad9fd916ac9da14a"
+  },
+  "private_log_sha256": {
+    "execution-epoch1.log": "4c1b3a3541241f0b60e482c9c133587da3ba60aa71920f9b2b5fb6278bd08640",
+    "baseline_uv0130.log": "de0488ae75c2b3150d990e94de70280d8f7dfbba32661e34bc70f016248d84e9",
+    "reapply_uv0137_offline.log": "1ced5a12f88830e6155c5808c8eb2f642e6741673469b034da47f63b44ed4652",
+    "prime_uv0137.log": "c26edec5abaff2824994000b49f7d1a915185da711a56e091436d18217db2645",
+    "rollback_uv0130_offline.log": "9d594e445b1f56cbe700d46e3f3fee57fbefb494222bd806f15cfb2b6f011b42",
+    "upgrade_uv0137_offline.log": "2e08ae6c2e3cba9aaf4ab4d3c89f58c7bdeb510fd86a44d68e5d42951808a440",
+    "cache-miss/execution-epoch1.log": "4263db8a3e6d02275018d792e83d2be14981af159a27eb23beabbe557e452e00",
+    "cache-miss/offline_cached_network_denied.log": "bae86bdeae8888081b7d44acbe099dcd15e7def4068f3bcd1601f5f71c39f60f",
+    "cache-miss/prime_uv0137.log": "bba8d6798f37c8e170223a1315ab8abfa0c2c8e8bbf43132c634ed5d5f07c25b",
+    "cache-miss/offline_missing_package_cache.log": "b993fd6fc128b336176f56b9ecb6c9c2f1f0873a783f3e0cae73ce83af9d2de9",
+    "cache-miss/normal_cached_network_denied.log": "af820ef357474b1ba1a40f4f5c8de4f9ce640c332aaf2293f818f343c6acbc8c",
+    "network-comparison/execution-epoch1.log": "073dbc0ef5e0d8b1e0f057f34acec682dd6f2685d97e2d167a7da4527282bab5",
+    "network-comparison/baseline_uv0130.log": "dd9c7160f1589c5a24217decb67a7f9a27a8f9005bf9b784314b871c56311119",
+    "network-comparison/reapply_uv0137_offline.log": "88ffac502d51b43ec30f28be06c6a36ca57b2cfb69edb8d6287849486e3004f8",
+    "network-comparison/normal_reapply_blocked_network.log": "af820ef357474b1ba1a40f4f5c8de4f9ce640c332aaf2293f818f343c6acbc8c",
+    "network-comparison/prime_uv0137.log": "e23c4cf328c73947f164eb9461edbf221c1ba10b627be06b662d7d415dd5fada",
+    "network-comparison/forced_refresh_blocked_network.log": "9944eb29fc4c632dd36036008488f45873b3ceb23d63b7a0a0e1e05a391b8cfb",
+    "network-comparison/offline_after_blocked_refresh.log": "53277959a768ee01fa7ee6a4fa72b697a6a68bb2b6a23c5aa625f7daab5dde9c",
+    "network-comparison/rollback_uv0130_offline.log": "eafc1eed5aa1b129d51a2bfa32abbd119dd737a5541cf2d8da425132375dacb3",
+    "network-comparison/upgrade_uv0137_offline.log": "d367def0e35879f95b0ce351d6c34fb2e6a276c8fd7d4efc8a6ed56c9ffdff8d"
+  },
+  "official_uv_archive_sha256": "c5221ff41b7892bfc223543883600125f6a47fe845093e0f5bdff4f359196d83",
+  "forced_refresh_network_case": "INVALID_ARGUMENT_PLACEMENT_NOT_NETWORK_EVIDENCE",
+  "provider_inference": false,
+  "final_integrated_upgrade_gate": "PENDING"
+}

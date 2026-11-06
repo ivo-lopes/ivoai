@@ -1,25 +1,29 @@
 # Limitações conhecidas
 
-- O OpenCode permanece como frontend/executor legado explícito e descontinuado.
-  Sessões nativas Codex e workers Codex/Claude o excluem mesmo quando instalado.
-  Assets legados de release e participantes de rollback do updater permanecem;
-  a remoção global continua pendente.
-  Configurações pessoais customizadas de provider/plugin/MCP não são importadas em
-  sessões controladas. Subagentes nativos e diálogos separados de perguntas são desabilitados.
-- A bridge gerenciada exibe o streaming de texto do executor e o estado da sessão. A
-  animação nativa de ferramentas, específica do provider na CLI oculta do executor,
-  não é reproduzida como uma segunda TUI aninhada.
-- OpenViking e NativeOrchestrator v2 são trabalhos futuros e não são os defaults.
-- O Ruflo permanece como orquestrador de ciclo de vida limitado nos modos orquestrados atuais.
-- O Headroom permanece disponível para compatibilidade e rollback.
-- [Conversation Continuity](conversation-continuity.md) oferece retomada nativa,
-  recovery limitado e handoff explícito. Históricos já apagados não são recriados.
-  Handoff AUTO nativo para Claude e `ivoai codex --planner claude` falham fechado
-  até existir contrato verificado de frontend nativo gerenciado. Claude direto
-  continua disponível; não há alegação de paridade da TUI nativa Claude. O console
-  OpenCode legado não é requisito dos clientes nativos. Os contratos headless e
-  de workers do Core permanecem; picker e admissão de turnos da TUI Codex aceitam
-  somente modelos Codex. O catálogo compartilhado não certifica seleção Claude
-  nessa TUI.
-- O MCP Web remoto exige uma origem HTTPS publicamente acessível ou o túnel seguro
-  compatível da plataforma.
+- Primary adaptativo, reutilização CodeIntel no Gateway e hosts headless continuam
+  opções experimentais explícitas, OFF por padrão. Startup/version ou teste offline
+  não certifica inferência, paridade TUI ou execução ARM.
+- OpenCode gerenciado foi removido. Comandos antigos orientam a migração; dados,
+  perfis e assets históricos são preservados para rollback. Nomes compatíveis de
+  pacotes/contratos não restauram execução.
+- O picker Codex aceita seleções Codex revisadas. Contratos Claude de worker ou
+  headless não comprovam controle Claude por essa TUI. Inferência Claude permanece
+  sem validação sem conta autorizada do usuário. Antigravity headless limita-se às
+  provas de runtime/plataforma registradas separadamente.
+- Claims e histórico duráveis preservam continuidade elegível, mas não recriam
+  histórico nativo apagado por clientes antigos. Falhas, cancelamentos, registros
+  estrangeiros e mutações incertas exigem conciliação segura, sem replay implícito.
+  Veja [continuidade](conversation-continuity.md).
+- Cache do Gateway é isolado e local ao processo. Integração de leitura de código
+  não significa mediação universal de Memory/Context/outputs ou compartilhamento
+  Primary→workers. Cache reportado, redução de output e economia da sessão diferem.
+  O gate econômico global permanece INCOMPLETE.
+- Headroom e suas escolhas explícitas permanecem para compatibilidade; wrapping
+  gerenciado inseguro continua recusado por policy. Caveman e Direct não são
+  encadeados com ele.
+- OpenViking continua opcional/experimental. Gravar Memory não comprova sincronismo
+  documental do Context; mantenha BLOCKED/PARTIAL até validar ingestão e recuperação.
+- O painel web é administrativo, usa o mesmo Core e não cria chat/scheduler. Web
+  MCP remoto exige HTTPS público suportado ou túnel seguro da plataforma.
+
+Veja [executores](executors.md) para comandos suportados e limites explícitos.

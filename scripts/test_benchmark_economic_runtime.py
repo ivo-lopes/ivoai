@@ -289,7 +289,7 @@ class DriverTests(unittest.TestCase):
                 self.assertNotIn("PRIVATE_ENV_SENTINEL", environment.values())
                 self.assertNotIn("IVOAI_GRAFT_PREFETCH_DIAGNOSTICS", environment)
 
-    def execute(self, mode):
+    def execute(self, mode, extra_args=()):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         root = Path(temporary.name)
@@ -324,6 +324,7 @@ class DriverTests(unittest.TestCase):
         for name in ("baseline", "candidate", "codex", "node", "sandbox-binary"):
             argv.extend(["--" + name, str(fake)])
         argv.extend(["--filtered-environment-permitted", "--distribution", str(distribution), "--output", str(output), "--repetitions", "1"])
+        argv.extend(extra_args)
         captured = io.StringIO()
         with contextlib.redirect_stdout(captured):
             status = BENCHMARK.main(argv)
@@ -332,6 +333,63 @@ class DriverTests(unittest.TestCase):
             self.assertNotIn("SECRET", path.read_text())
             self.assertEqual(path.stat().st_mode & 0o777, 0o600)
         return status, output
+
+    def test_gateway_off_on_keeps_scope_and_overrides_ambient_flag_per_arm(self):
+        observed = []
+        original = BENCHMARK.run_attempt
+        def capture(command, environment, *args, **kwargs):
+            if "IVOAI_ECONOMIC_RUNTIME_ARM" in environment:
+                observed.append(environment.copy())
+            return original(command, environment, *args, **kwargs)
+        with mock.patch.dict(os.environ, {"IVOAI_EXPERIMENTAL_EVIDENCE_GATEWAY":"1"}), \
+                mock.patch.object(BENCHMARK,"run_attempt",side_effect=capture):
+            status,output=self.execute("valid",["--gateway-off-on"])
+        self.assertEqual(status,0) # Driver mechanics only: fake processes, no provider inference.
+        self.assertEqual([v["IVOAI_ECONOMIC_RUNTIME_ARM"] for v in observed],["A","B","B","A","A","B"])
+        for value in observed:
+            self.assertEqual(value.get("IVOAI_EXPERIMENTAL_EVIDENCE_GATEWAY")=="1",value["IVOAI_ECONOMIC_RUNTIME_ARM"]=="B")
+        rows=json.loads((output/"runtime-comparison.json").read_text())
+        self.assertTrue(all(r["GatewayConfigured"]==("ON" if r["Arm"]=="B" else "OFF") for r in rows))
+        self.assertTrue(all(r["GatewayActivationObserved"]=="UNREPORTED" for r in rows))
+        manifest=json.loads((output/"manifest.json").read_text())
+        self.assertEqual(manifest["gateway_comparison"]["arms"],{"A":"OFF","B":"ON"})
+        self.assertEqual(manifest["baseline_test_sha256"],manifest["candidate_test_sha256"])
+
+    def test_gateway_off_on_refuses_different_binary_or_uncertified_composition_before_probe(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);first=root/"first";second=root/"second"
+            first.write_bytes(b"first");second.write_bytes(b"second")
+            for composition in (False,True):
+                output=root/("concurrent" if composition else "different")
+                argv=[]
+                for name in ("baseline","candidate","codex","node","sandbox-binary"):
+                    argv.extend(["--"+name,str(second if name=="candidate" and not composition else first)])
+                argv.extend(["--distribution",str(root),"--output",str(output),"--gateway-off-on"])
+                if composition:argv.append("--concurrent-projects")
+                with mock.patch.object(BENCHMARK,"run_attempt") as run,contextlib.redirect_stderr(io.StringIO()):
+                    with self.assertRaises(SystemExit) as result:BENCHMARK.main(argv)
+                    self.assertEqual(result.exception.code,2)
+                    run.assert_not_called()
+                self.assertFalse(output.exists())
+
+    def test_gateway_off_on_isolation_does_not_mutate_input_or_infer_activation(self):
+        base={"HOME":"same-auth-home","CODEX_HOME":"same-auth-scope","IVOAI_EXPERIMENTAL_EVIDENCE_GATEWAY":"1"}
+        for arm in ("A","B","A"):
+            scoped=BENCHMARK.gateway_arm_environment(base,arm,True)
+            self.assertEqual(scoped["HOME"],base["HOME"])
+            self.assertEqual(scoped["CODEX_HOME"],base["CODEX_HOME"])
+            self.assertEqual(scoped.get("IVOAI_EXPERIMENTAL_EVIDENCE_GATEWAY")=="1",arm=="B")
+        self.assertEqual(base["IVOAI_EXPERIMENTAL_EVIDENCE_GATEWAY"],"1")
+        for arm in ("A","B"):
+            row={"Correct":True,"MeasurementValid":True,"GatewayCodeResolves":0}
+            BENCHMARK.observe_gateway_arm(row,arm,True)
+            self.assertEqual(row["GatewayActivationObserved"],"NOT_EXERCISED")
+            self.assertTrue(row["Correct"])
+        leak={"Correct":True,"MeasurementValid":True,"GatewayCodeResolves":1,"InputTokens":123}
+        BENCHMARK.observe_gateway_arm(leak,"A",True)
+        self.assertFalse(leak["Correct"])
+        self.assertFalse(leak["MeasurementValid"])
+        self.assertEqual(leak["InputTokens"],123)
 
     def test_no_test_is_failure(self):
         status, output = self.execute("no_test")

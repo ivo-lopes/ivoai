@@ -1,0 +1,8 @@
+=== RUN   TestPrimaryPrefetchMatrixHostPrefetch
+    primary_prefetch_live_test.go:458: NOT_RUN: explicit managed host-prefetch artifact inputs required
+--- SKIP: TestPrimaryPrefetchMatrixHostPrefetch (0.00s)
+=== RUN   TestPrimaryPrefetchGatewayObservationOffline
+    primary_prefetch_live_test.go:1025: NOT_RUN: explicit source-pinned runtime expectation0/1 required
+--- SKIP: TestPrimaryPrefetchGatewayObservationOffline (0.00s)
+PASS
+ok  	github.com/ivo-lopes/ivoai/internal/app	0.007s

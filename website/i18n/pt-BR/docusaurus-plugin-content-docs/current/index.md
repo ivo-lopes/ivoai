@@ -1,7 +1,7 @@
 # Documentação do IVOAI
 
 O IVOAI é um cliente host-first e servidor privado opcional para Codex, Claude Code,
-OpenCode, memória operacional durável, contexto privado, compressão segura e
+Antigravity, memória operacional durável, contexto privado, compressão segura e
 roteamento de conhecimento entre múltiplos servidores.
 
 Comece pelo [início rápido](quickstart.md) e depois consulte a

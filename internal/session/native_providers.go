@@ -6,19 +6,19 @@ import (
 )
 
 var (
-	ErrOpenCodeManagedDeprecated = errors.New("OPENCODE_MANAGED_DEPRECATED: OpenCode is unavailable in native Codex/Claude managed sessions; use a supported native executor or an explicit legacy ivoai opencode command")
-	ErrOpenCodeMigrationRequired = errors.New("OPENCODE_MIGRATION_REQUIRED: retained OpenCode execution requires an explicit legacy frontend or a new native session with reviewed evidence; saved tasks and checkpoints were not changed")
+	ErrOpenCodeManagedDeprecated = errors.New("OPENCODE_MANAGED_DEPRECATED: managed OpenCode installation, repair and execution were removed; use ivoai codex or another supported native executor; existing binaries, configuration, credentials and history are preserved")
+	ErrOpenCodeMigrationRequired = errors.New("OPENCODE_MIGRATION_REQUIRED: retained OpenCode sessions are read-only history in this version; start a new native session with reviewed evidence or explicitly roll back the Core; saved tasks and checkpoints were not changed")
 )
 
-// NativeProvidersOnly distinguishes the explicit legacy presentation path from
-// native managed sessions. This is host session metadata, never model input.
-func NativeProvidersOnly(value Session) bool { return value.Frontend != "opencode" }
+// NativeProvidersOnly remains source-compatible; every current execution uses
+// native providers. Legacy metadata remains readable for history and rollback.
+func NativeProvidersOnly(_ Session) bool { return true }
 
 // CheckNativeProviders is a read-only compatibility gate. It must run before
 // provider discovery or execution when reopening a native managed session.
 func (s Store) CheckNativeProviders(value Session) error {
-	if !NativeProvidersOnly(value) {
-		return nil
+	if value.Frontend == "opencode" {
+		return ErrOpenCodeMigrationRequired
 	}
 	if err := CheckNativeProviderSnapshot(value, nil); err != nil {
 		return err
@@ -36,8 +36,8 @@ func (s Store) CheckNativeProviders(value Session) error {
 // CheckNativeProviderSnapshot also serves the recovery path that already loaded
 // the canonical bounded checkpoint. No stored plan is rerouted or rewritten.
 func CheckNativeProviderSnapshot(value Session, checkpoint *Checkpoint) error {
-	if !NativeProvidersOnly(value) {
-		return nil
+	if value.Frontend == "opencode" {
+		return ErrOpenCodeMigrationRequired
 	}
 	if value.PrimaryExecutor == "opencode" || value.CurrentPrimary == "opencode" {
 		return ErrOpenCodeMigrationRequired

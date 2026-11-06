@@ -1,0 +1,25 @@
+{
+  "base": "232ccf0c1",
+  "fixes": [
+    "Worker group signals retire under the existing ownedprocess WNOWAIT guard before leader reaping.",
+    "Raw buffers are private: io.WriteString/io.Copy cannot bypass bounds through inherited fast paths.",
+    "Raw capture uses its15MiB ceiling instead of the model-summary1MiB tier clamp; aggregate overbudget sets Truncated."
+  ],
+  "checks": {
+    "full_worker_ownedprocess_race": "PASS",
+    "affected_vet": "PASS",
+    "ordinary_local_pipe_overflow": "actual local child; no provider/inference"
+  },
+  "source_sha256": {
+    "internal/workers/adapter.go": "eeaa73eb672f717821f62fbc6a850111c2c317ff5f14aeb814eb79b0bc08187b",
+    "internal/workers/capture_boundary_test.go": "07fbf295b6d7265e5c0a8606a47814cfd2c5e769ac2d67ae34e5a513a8727665"
+  },
+  "unfavorable_observations": [
+    "Initial regression tests failed: the existing summary-budget helper silently clamped the raw budget. The raw-capture ceiling is now validated separately; summary policy remains unchanged."
+  ],
+  "limits": [
+    "No new network, filesystem, toolchain-cache or approval grants.",
+    "No new provider inference is claimed for this local capture/process regression suite.",
+    "Static compiler-cache paths chosen by models are a separate known limitation."
+  ]
+}

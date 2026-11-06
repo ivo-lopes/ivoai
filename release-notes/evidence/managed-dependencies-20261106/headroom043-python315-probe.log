@@ -1,0 +1,5 @@
+error: No solution found when resolving dependencies
+  cause: Because pyyaml>=6.0 has no usable wheels and headroom-ai==0.43.1 depends on pyyaml>=6.0, we can conclude that headroom-ai==0.43.1 cannot be used.
+         And because only headroom-ai[proxy]==0.43.1 is available and you require headroom-ai[proxy], we can conclude that your requirements are unsatisfiable.
+
+hint: Wheels are required for `pyyaml` because building from source is disabled for all packages (i.e., with `--no-build`)

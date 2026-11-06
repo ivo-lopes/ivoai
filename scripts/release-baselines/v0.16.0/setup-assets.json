@@ -1,0 +1,66 @@
+{
+  "source": "685c5740ec046dcbcf7eeec77c6fd88885975d8d",
+  "catalog_source_sha256": "147f8813a5712b75deda6406fb8e7878c1a410030acbfcfcaffb7ab6ff87bbd8",
+  "assets": {
+    "amd64": [
+      {
+        "URL": "https://github.com/openai/codex/releases/download/rust-v0.162.1/codex-x86_64-unknown-linux-musl.tar.gz",
+        "SHA256": "86f268d81b898f3e144c5ecff2ad2fda2c5802e042d6195b72538fe0fa125057"
+      },
+      {
+        "URL": "https://github.com/openai/codex/releases/download/rust-v0.162.1/codex-code-mode-host-x86_64-unknown-linux-musl.tar.gz",
+        "SHA256": "458239ea45c1fc508d89695f180ab352f2834709a8a46929a4466f4f04399ada"
+      },
+      {
+        "URL": "https://github.com/anthropics/claude-code/releases/download/v2.1.296/claude-linux-x64.tar.gz",
+        "SHA256": "45fe2b33f5cbdd114309618970bcd90b8b163e34252d66cf100d7e068d9b831d"
+      },
+      {
+        "URL": "https://github.com/headroomlabs-ai/headroom/releases/download/v0.40.0/headroom_ai-0.40.0-cp310-abi3-manylinux_2_28_x86_64.whl",
+        "SHA256": "49b6d8a01c8eceb5b9e9a675720ed5e4cb24e467282642653aac7f2fd8faf47f"
+      },
+      {
+        "URL": "https://github.com/JuliusBrussee/caveman/releases/download/bin-v2.1.0/caveman-proxy_linux_amd64",
+        "SHA256": "44436d69705ad9968563c181cd11d396d6ae5eeccd8dbf228f6225d92dfadcb1"
+      },
+      {
+        "URL": "https://github.com/JuliusBrussee/caveman/releases/download/bin-v2.1.0/caveman-mcp_linux_amd64",
+        "SHA256": "24339e645da66fb3580e3d9410743499845748238f01d0dc8097330fcb0f9bde"
+      },
+      {
+        "URL": "https://github.com/akitaonrails/ai-memory/releases/download/v2.6.3/ai-memory-linux-x86_64.tar.gz",
+        "SHA256": "933be9bb8fe6930336933f0b8adf0695007e644f945898f9f030fd312326f0f3"
+      }
+    ],
+    "arm64": [
+      {
+        "URL": "https://github.com/openai/codex/releases/download/rust-v0.162.1/codex-aarch64-unknown-linux-musl.tar.gz",
+        "SHA256": "bf3ca2719f1143b1440fbd85c149379e696c782c50ad7991f8bfcec60b2600c1"
+      },
+      {
+        "URL": "https://github.com/openai/codex/releases/download/rust-v0.162.1/codex-code-mode-host-aarch64-unknown-linux-musl.tar.gz",
+        "SHA256": "1395ce9367f8acd280674dff083edf25bf221d908b8351d5bd4f3fdde9181e9a"
+      },
+      {
+        "URL": "https://github.com/anthropics/claude-code/releases/download/v2.1.296/claude-linux-arm64.tar.gz",
+        "SHA256": "c644ad3e5ca3367e75d198194189d13180f33c491304c2d19557f7c1e8d5e0a6"
+      },
+      {
+        "URL": "https://github.com/headroomlabs-ai/headroom/releases/download/v0.40.0/headroom_ai-0.40.0-cp310-abi3-manylinux_2_28_aarch64.whl",
+        "SHA256": "140811066bfb7afe888f471be4a587375779af9de8dd76bb9a8126b52b8e930f"
+      },
+      {
+        "URL": "https://github.com/JuliusBrussee/caveman/releases/download/bin-v2.1.0/caveman-proxy_linux_arm64",
+        "SHA256": "5a881979934d51822ccf9ea13c519769fea18c52c061e14e6bd0d9f950ce760f"
+      },
+      {
+        "URL": "https://github.com/JuliusBrussee/caveman/releases/download/bin-v2.1.0/caveman-mcp_linux_arm64",
+        "SHA256": "fb49b996eee5a297a674a067979931d9a28d59cbe735be2b9104e7519ef7042a"
+      },
+      {
+        "URL": "https://github.com/akitaonrails/ai-memory/releases/download/v2.6.3/ai-memory-linux-aarch64.tar.gz",
+        "SHA256": "e4e01409fe80148a4d561aef98ac5d526c488c4a621faa759f9d0b3ed2606088"
+      }
+    ]
+  }
+}

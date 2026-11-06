@@ -1,0 +1,11 @@
+{
+  "version": "1.5.2",
+  "manifest_url": "https://antigravity-cli-auto-updater-974169037036.us-central1.run.app/manifests/linux_amd64.json",
+  "download_url": "https://storage.googleapis.com/antigravity-public/antigravity-cli/1.5.2-4951595792859136/linux-x64/cli_linux_x64.tar.gz",
+  "archive_sha512": "aa876c0813572efaf85ed47983cc937414705d40490cbdb54f6e255656a4f8744ae38e457823e924fa8270b348124e0521d3cda3fec6824bb2d14b98a7a05baa",
+  "archive_sha256": "da696a8dc6122a63d5ffbdd21b02c8a62d5361fba0ed7d3bc2d2619889e62711",
+  "binary_sha256": "da1751e7658469fa80bf36eda2c60ee61216d8e42b735a184382ba31d1f6b88e",
+  "matches_installed": true,
+  "installer_executed": false,
+  "publisher_signature_available": false
+}

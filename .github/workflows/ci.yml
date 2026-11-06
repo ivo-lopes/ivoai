@@ -29,7 +29,7 @@ jobs:
         run: |
           npm install --global corepack@0.36.0
           corepack enable
-          corepack prepare pnpm@12.16.1 --activate
+          corepack prepare pnpm@12.18.0 --activate
           scripts/build-docs.sh --check
           scripts/audit-docs-dependencies.sh
       - name: Docusaurus accessibility and responsive audit
@@ -59,7 +59,7 @@ jobs:
           python3 patches/graft/test_prune_cli.py
       - name: Generated CLI reference is current
         run: scripts/generate-cli-reference.sh --check
-      - name: Managed TUI semantic goldens (read-only comparison)
+      - name: Shared protocol and retained presentation compatibility fixtures
         run: node --test internal/opencodebridge/presentation.test.mjs internal/opencodebridge/keyboard.test.mjs internal/opencodebridge/events.test.mjs
       - name: Unit tests
         shell: bash
@@ -83,13 +83,13 @@ jobs:
         run: |
           python3 -m unittest discover -s scripts -p 'test_*.py'
           python3 scripts/test-smoke-native-auto.py
-      - name: Admit the existing sandbox launcher for offline managed plugin tests
+      - name: Admit the existing sandbox launcher for isolated native protocol tests
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends bubblewrap apparmor python3
+          sudo apt-get install -y --no-install-recommends bubblewrap apparmor python3 qemu-user
           scripts/setup-ci-graft-sandbox.sh
-      - name: Managed OpenCode HTTP and attach integration
-        run: scripts/test-managed-opencode.sh
+      - name: Removed legacy paths and native Core admission
+        run: go test ./internal/app ./internal/cli ./internal/components ./internal/session ./internal/doctor -run 'Test(RemovedOpenCode|AutoAlias|DoctorRetainsLegacy|LegacyOpenCodeMetadata|NativeProviderMigration)' -count=1
       - name: Native Codex TUI and fail-closed App Server admission
         run: scripts/test-native-codex.sh
       - name: Race tests
@@ -120,7 +120,7 @@ jobs:
       - name: Install isolated protocol proof dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends bubblewrap apparmor python3 curl
+          sudo apt-get install -y --no-install-recommends bubblewrap apparmor python3 curl qemu-user
       - name: Admit only the CI sandbox launcher to user namespaces
         run: scripts/setup-ci-graft-sandbox.sh
       - name: Official pinned client with synthetic provider and no external network
@@ -131,8 +131,8 @@ jobs:
           path: dist/claude-worker-proof/summary.json
           if-no-files-found: error
 
-  managed-frontend:
-    name: Patched managed frontend (${{ matrix.arch }})
+  managed-native-pair:
+    name: Official native Codex pair (${{ matrix.arch }})
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 45
     strategy:
@@ -152,21 +152,46 @@ jobs:
       - name: Install non-AVX CPU smoke dependency
         if: matrix.arch == 'amd64'
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends qemu-user
-      - name: Admit the existing sandbox launcher for offline managed plugin tests
+      - name: Exact official pair, baseline CPU startup, native TUI and App Server admission
+        run: scripts/test-native-codex.sh
+
+  managed-caveman:
+    name: Reviewed Caveman runtime (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Isolated rebuild and baseline CPU prerequisites
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends bubblewrap apparmor python3
+          sudo apt-get install -y --no-install-recommends bubblewrap apparmor binutils python3 patch qemu-user
           scripts/setup-ci-graft-sandbox.sh
-      - name: Build pinned source patch without dependency hooks
-        run: scripts/build-managed-opencode.sh "$PWD/dist/managed-frontend"
-      - name: Native TUI success and failure feedback
+      - name: Build exact reviewed source and qualify actual archive
         run: |
-          scripts/test-opencode-baseline.sh \
-            "$PWD/dist/managed-frontend/ivoai-opencode_linux_${{ matrix.arch }}.tar.gz" \
-            "$PWD/dist/managed-frontend/managed-opencode-${{ matrix.arch }}.json"
-          scripts/test-patched-opencode.sh \
-            "$PWD/dist/managed-frontend/ivoai-opencode_linux_${{ matrix.arch }}.tar.gz" \
-            "$PWD/dist/managed-frontend/managed-opencode-${{ matrix.arch }}.json"
+          scripts/build-managed-caveman.sh "$PWD/dist/caveman"
+          mkdir -p "$RUNNER_TEMP/ivoai-caveman-proof"
+          scripts/test-managed-caveman.sh \
+            "$PWD/dist/caveman/ivoai-caveman_linux_${{ matrix.arch }}.tar.gz" \
+            "$PWD/dist/caveman/ivoai-caveman_linux_${{ matrix.arch }}.metadata.json" \
+            "$RUNNER_TEMP/ivoai-caveman-proof/qualification.json"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: ${{ always() }}
+        with:
+          name: caveman-runtime-${{ matrix.arch }}
+          path: ${{ runner.temp }}/ivoai-caveman-proof/qualification.json
+          if-no-files-found: error
 
   managed-graft:
     name: Reviewed Graft runtime (${{ matrix.arch }})

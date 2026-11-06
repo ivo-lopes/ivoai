@@ -61,7 +61,7 @@ func adaptiveLiveRuntime(t *testing.T, binary string) (string, adaptiveRuntime) 
 	if err != nil {
 		t.Fatal("official executable fingerprint unavailable")
 	}
-	for _, version := range []string{"0.166.0", "0.162.1"} {
+	for _, version := range []string{"0.167.0", "0.166.0", "0.162.1"} {
 		executable, companion, ok := reviewedAdaptiveDigests(version, "linux/amd64")
 		if ok && sha == executable {
 			pair := adaptiveRuntime{binary, executable, filepath.Join(filepath.Dir(binary), "codex-code-mode-host"), companion}

@@ -68,73 +68,52 @@ type Spec struct {
 	NoVersionProbe                     bool
 	Revision, DefaultBranch, License   string
 	PayloadFormat, PayloadPath         string
+	Executables                        []string
 	SignatureStatus, AttestationStatus string
 	TrustLevel                         string
 }
 
 const (
-	managedUVVersion     = "0.13.0"
-	managedPythonVersion = "3.14.8"
+	managedUVVersion     = "0.13.7"
+	managedPythonVersion = "3.14.10"
 	managedNodeVersion   = "26.13.0"
-	dependencyCutoff     = "2026-10-12T00:00:00Z"
+	dependencyCutoff     = "2026-11-06T14:41:25Z"
 )
 
 // DefaultCatalog mirrors manifest/components.yaml. Release CI compares the
 // validated versions before publishing, while keeping the binary self-contained.
 func DefaultCatalog() []Spec {
 	catalog := []Spec{
-		{Name: "codex", Executable: "codex", Version: "0.166.0", Strategy: StrategyBinary, Assets: map[string]Asset{
-			"linux/amd64": {URL: "https://github.com/openai/codex/releases/download/rust-v0.166.0/codex-x86_64-unknown-linux-musl.tar.gz", SHA256: "a0bf572d2f93f056c6712a6da348e96078dc84f3885fd7be67807ef389cb3978"},
-			"linux/arm64": {URL: "https://github.com/openai/codex/releases/download/rust-v0.166.0/codex-aarch64-unknown-linux-musl.tar.gz", SHA256: "94eb707605ec2646b2e05b7edf7c4e7b3ccf02b16237c34ae9beb8cfb7f810a9"},
+		{Name: "codex", Executable: "codex", Version: "0.167.0", Strategy: StrategyBinary, Assets: map[string]Asset{
+			"linux/amd64": {URL: "https://github.com/openai/codex/releases/download/rust-v0.167.0/codex-x86_64-unknown-linux-musl.tar.gz", SHA256: "9d64836106d5b374e90ee4454c7ebcde7ca7106558bd7e41a34b9f26ebda251a"},
+			"linux/arm64": {URL: "https://github.com/openai/codex/releases/download/rust-v0.167.0/codex-aarch64-unknown-linux-musl.tar.gz", SHA256: "843489acb4d4b1079745c36b03c5963b887b83155af208fd53584e33ee8eb281"},
 		}},
-		{Name: "codex-code-mode-host", Executable: "codex-code-mode-host", Version: "0.166.0", Strategy: StrategyBinary, RequiresManaged: "codex", NoVersionProbe: true, Assets: map[string]Asset{
-			"linux/amd64": {URL: "https://github.com/openai/codex/releases/download/rust-v0.166.0/codex-code-mode-host-x86_64-unknown-linux-musl.tar.gz", SHA256: "7588334fd47bc4003d970b70dfd4d1e4578491b1e9baa72976a4c2d7e97590da"},
-			"linux/arm64": {URL: "https://github.com/openai/codex/releases/download/rust-v0.166.0/codex-code-mode-host-aarch64-unknown-linux-musl.tar.gz", SHA256: "ac98d1f878e353a16cba711fd47bfef2f6c814109bdd819ee2b6b6d6a19701e7"},
+		{Name: "codex-code-mode-host", Executable: "codex-code-mode-host", Version: "0.167.0", Strategy: StrategyBinary, RequiresManaged: "codex", NoVersionProbe: true, Assets: map[string]Asset{
+			"linux/amd64": {URL: "https://github.com/openai/codex/releases/download/rust-v0.167.0/codex-code-mode-host-x86_64-unknown-linux-musl.tar.gz", SHA256: "b5074d5dd64643b2c073927e494a588eff31c1f5a27f12c1e2c45f9a6cf07dd4"},
+			"linux/arm64": {URL: "https://github.com/openai/codex/releases/download/rust-v0.167.0/codex-code-mode-host-aarch64-unknown-linux-musl.tar.gz", SHA256: "6e99948fa20ca816a01f222a56afa261b321e00cbed611d76bb92c765fd11ec6"},
 		}},
-		{Name: "claude-code", Executable: "claude", Version: "2.1.296", Strategy: StrategyBinary, Assets: map[string]Asset{
-			"linux/amd64": {URL: "https://github.com/anthropics/claude-code/releases/download/v2.1.296/claude-linux-x64.tar.gz", SHA256: "45fe2b33f5cbdd114309618970bcd90b8b163e34252d66cf100d7e068d9b831d"},
-			"linux/arm64": {URL: "https://github.com/anthropics/claude-code/releases/download/v2.1.296/claude-linux-arm64.tar.gz", SHA256: "c644ad3e5ca3367e75d198194189d13180f33c491304c2d19557f7c1e8d5e0a6"},
+		{Name: "claude-code", Executable: "claude", Version: "2.1.318", Strategy: StrategyBinary, Assets: map[string]Asset{
+			"linux/amd64": {URL: "https://github.com/anthropics/claude-code/releases/download/v2.1.318/claude-linux-x64.tar.gz", SHA256: "e6d426ca0c123f61fad58a361da0329f2a93cd206bc87040ed8d9576dd9eb583"},
+			"linux/arm64": {URL: "https://github.com/anthropics/claude-code/releases/download/v2.1.318/claude-linux-arm64.tar.gz", SHA256: "0f4fb66a2af3bf02d114099727e4a7745f117b1e63d2f77c8aff165590197421"},
 		}},
-		{Name: "headroom", Executable: "headroom", Version: "0.40.0", Package: "headroom-ai[proxy]", Strategy: StrategyUVIsolated, Assets: map[string]Asset{
-			"linux/amd64": {URL: "https://github.com/headroomlabs-ai/headroom/releases/download/v0.40.0/headroom_ai-0.40.0-cp310-abi3-manylinux_2_28_x86_64.whl", SHA256: "49b6d8a01c8eceb5b9e9a675720ed5e4cb24e467282642653aac7f2fd8faf47f"},
-			"linux/arm64": {URL: "https://github.com/headroomlabs-ai/headroom/releases/download/v0.40.0/headroom_ai-0.40.0-cp310-abi3-manylinux_2_28_aarch64.whl", SHA256: "140811066bfb7afe888f471be4a587375779af9de8dd76bb9a8126b52b8e930f"},
+		{Name: "headroom", Executable: "headroom", Version: "0.43.1", Package: "headroom-ai[proxy]", Strategy: StrategyUVIsolated, Assets: map[string]Asset{
+			"linux/amd64": {URL: "https://github.com/headroomlabs-ai/headroom/releases/download/v0.43.1/headroom_ai-0.43.1-cp310-abi3-manylinux_2_28_x86_64.whl", SHA256: "2e9cd1a9aab42f60b00a9f7c8a85cf82815b51b1989179e5fdd40ddd09915d6e"},
+			"linux/arm64": {URL: "https://github.com/headroomlabs-ai/headroom/releases/download/v0.43.1/headroom_ai-0.43.1-cp310-abi3-manylinux_2_28_aarch64.whl", SHA256: "12bf1314ff0b3d6f0860b41578422b77949203a93c14bec9f692c7e5b36a862f"},
 		}},
-		{Name: "caveman", Executable: "caveman-proxy", Version: "2.1.0", Strategy: StrategySupplyChain,
-			Revision: "e20f07e8152a0c0360f58c09e79d30ac94329991", DefaultBranch: "main", License: "Apache-2.0", PayloadFormat: "raw", PayloadPath: "bin/caveman-proxy", NoVersionProbe: true,
-			SignatureStatus: "keysig_published_unverified", AttestationStatus: "not_exposed", TrustLevel: "upstream_checksum", Assets: map[string]Asset{
-				"linux/amd64": {URL: "https://github.com/JuliusBrussee/caveman/releases/download/bin-v2.1.0/caveman-proxy_linux_amd64", SHA256: "44436d69705ad9968563c181cd11d396d6ae5eeccd8dbf228f6225d92dfadcb1"},
-				"linux/arm64": {URL: "https://github.com/JuliusBrussee/caveman/releases/download/bin-v2.1.0/caveman-proxy_linux_arm64", SHA256: "5a881979934d51822ccf9ea13c519769fea18c52c061e14e6bd0d9f950ce760f"},
-			}},
-		{Name: "caveman-mcp", Executable: "caveman-mcp", Version: "2.1.0", Strategy: StrategySupplyChain, RequiresManaged: "caveman",
-			Revision: "e20f07e8152a0c0360f58c09e79d30ac94329991", DefaultBranch: "main", License: "Apache-2.0", PayloadFormat: "raw", PayloadPath: "bin/caveman-mcp", NoVersionProbe: true,
-			SignatureStatus: "keysig_published_unverified", AttestationStatus: "not_exposed", TrustLevel: "upstream_checksum", Assets: map[string]Asset{
-				"linux/amd64": {URL: "https://github.com/JuliusBrussee/caveman/releases/download/bin-v2.1.0/caveman-mcp_linux_amd64", SHA256: "24339e645da66fb3580e3d9410743499845748238f01d0dc8097330fcb0f9bde"},
-				"linux/arm64": {URL: "https://github.com/JuliusBrussee/caveman/releases/download/bin-v2.1.0/caveman-mcp_linux_arm64", SHA256: "fb49b996eee5a297a674a067979931d9a28d59cbe735be2b9104e7519ef7042a"},
-			}},
-		{Name: "opencode", Executable: "opencode", Version: "1.19.0", Strategy: StrategySupplyChain,
-			Revision: "733b2c627e5aec39cb33cc22373bdce33053ef2c", DefaultBranch: "dev", License: "MIT", PayloadFormat: "tar_gzip", PayloadPath: "opencode",
-			SignatureStatus: "not_exposed", AttestationStatus: "not_exposed", TrustLevel: "upstream_checksum", Assets: map[string]Asset{
-				"linux/amd64": {URL: "https://github.com/anomalyco/opencode/releases/download/v1.19.0/opencode-linux-x64.tar.gz", SHA256: "7bb9e61ad6feacf2e89c10a6a2c1840e3de4220bb50ba1fc7110f31806076aec"},
-				"linux/arm64": {URL: "https://github.com/anomalyco/opencode/releases/download/v1.19.0/opencode-linux-arm64.tar.gz", SHA256: "e9841d43d3e1a8f36ed2691592d3b8b4fb097e606c8b559a277a1b845840e26b"},
-			}},
-		{Name: "ai-memory", Executable: "ai-memory", Version: "2.6.3", Strategy: StrategyBinary, Assets: map[string]Asset{
-			"linux/amd64": {URL: "https://github.com/akitaonrails/ai-memory/releases/download/v2.6.3/ai-memory-linux-x86_64.tar.gz", SHA256: "933be9bb8fe6930336933f0b8adf0695007e644f945898f9f030fd312326f0f3"},
-			"linux/arm64": {URL: "https://github.com/akitaonrails/ai-memory/releases/download/v2.6.3/ai-memory-linux-aarch64.tar.gz", SHA256: "e4e01409fe80148a4d561aef98ac5d526c488c4a621faa759f9d0b3ed2606088"},
+		{Name: "ai-memory", Executable: "ai-memory", Version: "3.4.2", Strategy: StrategyBinary, Assets: map[string]Asset{
+			"linux/amd64": {URL: "https://github.com/akitaonrails/ai-memory/releases/download/v3.4.2/ai-memory-linux-x86_64.tar.gz", SHA256: "15a4f4a346a27e6fd63a36d1b3de23c5cbe142b80b3bce561e21b1f225a1e645"},
+			"linux/arm64": {URL: "https://github.com/akitaonrails/ai-memory/releases/download/v3.4.2/ai-memory-linux-aarch64.tar.gz", SHA256: "164f7c38bb9bafca218dd958c3c60febcd5d2f5200ad138c6f128576cedebfb6"},
 		}},
-		{Name: "ruflo", Executable: "ruflo", Version: "3.71.1", Package: "ruflo", PackageURL: "https://registry.npmjs.org/ruflo/-/ruflo-3.71.1.tgz", Integrity: "sha512-ora1Qud7HM7Lse0w02WFDTnuu81HK3C3AisMbncoVXjmMxXo84ofjjy1fPeWXcoXGpDNdJeokDVe16NbJ58FqA==", Strategy: StrategyNPMIsolated},
+		{Name: "ruflo", Executable: "ruflo", Version: "3.72.2", Package: "ruflo", PackageURL: "https://registry.npmjs.org/ruflo/-/ruflo-3.72.2.tgz", Integrity: "sha512-DHk7+8a2t5n7B+9PsTKTIGNz0LF8wToGwBOwhSuu0UFL9AabA3a+BHa4eZlY8225dMfZnfHzO+4m6El/R+EkXQ==", Strategy: StrategyNPMIsolated},
 	}
-	if managedOpenCodeBuild != "" {
-		for index := range catalog {
-			if catalog[index].Name != "opencode" {
-				continue
-			}
-			projected, err := managedOpenCodeSpec(catalog[index], managedOpenCodeBuild, runtime.GOOS+"/"+runtime.GOARCH)
-			if err != nil {
-				panic("invalid release-managed OpenCode build metadata")
-			}
-			catalog[index] = projected
+	if ManagedCavemanAvailable() {
+		specs, err := managedCavemanSpecs(managedCavemanBuild, runtime.GOOS+"/"+runtime.GOARCH)
+		if err != nil {
+			panic("invalid release-managed Caveman build metadata")
 		}
+		catalog = append(catalog, specs...)
 	}
+
 	if ManagedGraftAvailable() {
 		spec, err := managedGraftSpec(managedGraftBuild, runtime.GOOS+"/"+runtime.GOARCH)
 		if err != nil {
@@ -145,22 +124,11 @@ func DefaultCatalog() []Spec {
 	return catalog
 }
 
-// ClientSetupCatalog leaves the reviewed legacy catalog available for explicit
-// compatibility setup. Default client setup/update no longer installs, repairs,
-// probes or adopts OpenCode, and does not remove its existing state or files.
-func ClientSetupCatalog(includeLegacyOpenCode bool) []Spec {
-	catalog := DefaultCatalog()
-	if includeLegacyOpenCode {
-		return catalog
-	}
-	result := make([]Spec, 0, len(catalog))
-	for _, spec := range catalog {
-		if spec.Name != "opencode" {
-			result = append(result, spec)
-		}
-	}
-	return result
-}
+// ClientSetupCatalog retains its argument for source compatibility only. No
+// catalog can re-enable removed managed OpenCode installation or repair.
+func ClientSetupCatalog(_ bool) []Spec { return DefaultCatalog() }
+
+var ErrOpenCodeRemoved = errors.New("OPENCODE_MANAGED_DEPRECATED: managed OpenCode installation, repair and execution were removed; use ivoai codex; existing binaries, configuration, credentials and history are preserved")
 
 type Installer struct {
 	Runner  platform.Runner
@@ -171,6 +139,11 @@ type Installer struct {
 }
 
 func (i *Installer) Setup(ctx context.Context) error {
+	for _, spec := range i.Catalog {
+		if spec.Name == "opencode" || spec.Executable == "opencode" {
+			return ErrOpenCodeRemoved
+		}
+	}
 	if i.Runner == nil {
 		i.Runner = platform.ExecRunner{}
 	}
@@ -181,6 +154,9 @@ func (i *Installer) Setup(ctx context.Context) error {
 		i.Catalog = DefaultCatalog()
 		if !ManagedGraftAvailable() && i.Out != nil {
 			fmt.Fprintln(i.Out, "Graft unavailable: this build has no reviewed managed runtime metadata.")
+		}
+		if !ManagedCavemanAvailable() && i.Out != nil {
+			fmt.Fprintln(i.Out, "Caveman unavailable: this build has no reviewed managed rebuild metadata; Direct fallback remains available.")
 		}
 	}
 	state, err := i.Store.LoadState()
@@ -294,10 +270,14 @@ func ResolvedSource(spec Spec) (supplychain.ResolvedSource, error) {
 	if !ok {
 		return supplychain.ResolvedSource{}, errors.New("no asset for current platform")
 	}
+	executables := []string{spec.PayloadPath}
+	if len(spec.Executables) > 0 {
+		executables = append([]string(nil), spec.Executables...)
+	}
 	return supplychain.ResolvedSource{
 		ID: spec.Name, Kind: supplychain.KindComponent, Source: asset.URL, Revision: spec.Revision,
 		LogicalVersion: spec.Version, DefaultBranch: spec.DefaultBranch, PayloadFormat: spec.PayloadFormat,
-		PayloadPath: spec.PayloadPath, License: spec.License, Executables: []string{spec.PayloadPath},
+		PayloadPath: spec.PayloadPath, License: spec.License, Executables: executables,
 		Integrity: supplychain.Integrity{Algorithm: "sha256", Digest: asset.SHA256, SignatureStatus: spec.SignatureStatus, AttestationStatus: spec.AttestationStatus, TrustLevel: spec.TrustLevel},
 	}, nil
 }
@@ -480,20 +460,26 @@ func (i *Installer) installUVTool(ctx context.Context, spec Spec) (string, error
 		return "", err
 	}
 	asset := spec.Assets[runtime.GOOS+"/"+runtime.GOARCH]
-	toolDir := filepath.Join(i.Store.Paths.DataDir, "components", "headroom")
+	lock := headroomAMD64Lock
+	if runtime.GOARCH == "arm64" {
+		lock = headroomARM64Lock
+	}
+	// Keep previously installed wheels/interpreters available for rollback.
+	// The exact reviewed graph, asset and runtime identify the new profile.
+	toolDir := i.headroomProfilePath(spec, lock)
 	binDir := filepath.Join(toolDir, "bin")
+	if err := rufloSafePath(toolDir); err != nil {
+		return "", err
+	}
 	if err := platform.EnsurePrivateDir(toolDir); err != nil {
 		return "", err
 	}
+
 	sandboxHome := filepath.Join(i.Store.Paths.DataDir, "installer-home")
 	if err := platform.EnsurePrivateDir(sandboxHome); err != nil {
 		return "", err
 	}
 	argument := spec.Package + " @ " + asset.URL + "#sha256=" + asset.SHA256
-	lock := headroomAMD64Lock
-	if runtime.GOARCH == "arm64" {
-		lock = headroomARM64Lock
-	}
 	if !bytes.Contains(lock, []byte(asset.URL)) || !bytes.Contains(lock, []byte(asset.SHA256)) {
 		return "", errors.New("embedded Headroom dependency lock does not match reviewed wheel")
 	}
@@ -502,11 +488,30 @@ func (i *Installer) installUVTool(ctx context.Context, spec Spec) (string, error
 		return "", err
 	}
 	uvEnv := []string{"HOME=" + sandboxHome, "PATH=" + filepath.Dir(uv) + ":/usr/local/bin:/usr/bin:/bin", "UV_TOOL_DIR=" + toolDir, "UV_TOOL_BIN_DIR=" + binDir, "UV_PYTHON_INSTALL_DIR=" + filepath.Join(i.Store.Paths.DataDir, "components", "python"), "UV_PYTHON_PREFERENCE=only-managed", "UV_NO_PROGRESS=1"}
+	// Offline reapplication must use the reviewed cached graph rather than
+	// revalidate the wheel over the network. Carry only this explicit opt-in;
+	// never inherit UV indexes, credentials, Python paths or arbitrary settings.
+	if os.Getenv("UV_OFFLINE") == "1" {
+		uvEnv = append(uvEnv, "UV_OFFLINE=1")
+	}
 	_, err = i.Runner.Run(ctx, uv, []string{"tool", "install", "--force", "--python", managedPythonVersion, "--constraints", lockPath, "--no-build", "--exclude-newer", dependencyCutoff, argument}, platform.RunOptions{Env: uvEnv, CleanEnv: true, Stdout: i.Out, Stderr: i.Out, Timeout: 15 * time.Minute})
 	if err != nil {
 		return "", err
 	}
 	return i.installWrapper(spec.Executable, filepath.Join(binDir, spec.Executable), "")
+}
+
+// headroomProfilePath binds an optional tool environment to its reviewed
+// runtime and dependency graph. It never overwrites the previous tool profile.
+func (i *Installer) headroomProfilePath(spec Spec, lock []byte) string {
+	hash := sha256.New()
+	asset := spec.Assets[runtime.GOOS+"/"+runtime.GOARCH]
+	for _, value := range []string{spec.Version, spec.Package, asset.URL, asset.SHA256, managedUVVersion, managedPythonVersion, dependencyCutoff} {
+		_, _ = hash.Write([]byte(value))
+		_, _ = hash.Write([]byte{0})
+	}
+	_, _ = hash.Write(lock)
+	return filepath.Join(i.Store.Paths.DataDir, "components", "headroom-runtime-"+hex.EncodeToString(hash.Sum(nil)))
 }
 
 // rufloProfilePath identifies the reviewed dependency graph, independently of
@@ -1021,11 +1026,7 @@ func (i *Installer) ensureUV(ctx context.Context) (string, error) {
 	if err := platform.EnsurePrivateDir(root); err != nil {
 		return "", err
 	}
-	arch, sha := "x86_64", "1468ebd5a5541121837c5a2817b9972ba6090fa6caa3d142620850a47fb75154"
-	if runtime.GOARCH == "arm64" {
-		arch, sha = "aarch64", "3ccfb6af6e242433eb552f7d9676abd5412c6595c497e990d9c8cb7b5bd4d2c3"
-	}
-	asset := Asset{URL: "https://github.com/astral-sh/uv/releases/download/" + managedUVVersion + "/uv-" + arch + "-unknown-linux-gnu.tar.gz", SHA256: sha}
+	asset := managedUVAsset()
 	archive, err := i.downloadVerified(ctx, asset)
 	if err != nil {
 		return "", err
@@ -1047,4 +1048,12 @@ func (i *Installer) ensureUV(ctx context.Context) (string, error) {
 		return "", err
 	}
 	return binary, nil
+}
+
+func managedUVAsset() Asset {
+	arch, sha := "x86_64", "c5221ff41b7892bfc223543883600125f6a47fe845093e0f5bdff4f359196d83"
+	if runtime.GOARCH == "arm64" {
+		arch, sha = "aarch64", "71279f8d3c67241e807b9d8db872d1bf541579fb9f08b7d1eb1682196d1e57dc"
+	}
+	return Asset{URL: "https://github.com/astral-sh/uv/releases/download/" + managedUVVersion + "/uv-" + arch + "-unknown-linux-gnu.tar.gz", SHA256: sha}
 }

@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ivo-lopes/ivoai/internal/codexfrontend"
 	"github.com/ivo-lopes/ivoai/internal/quota"
 	"github.com/ivo-lopes/ivoai/internal/session"
 )
@@ -13,6 +14,9 @@ import (
 func TestCodexFrontendKeepsRequestedPrimaryUntilStartupApproval(t *testing.T) {
 	a := autoTestApp(t, t.TempDir(), "#!/bin/sh\nexit 0\n", "#!/bin/sh\nexit 0\n")
 	a.In = strings.NewReader("")
+	a.StartCodexNative = func(_ context.Context, options codexfrontend.Options) (nativeCodexFrontend, error) {
+		return fixtureAutoNativeFrontend{environment: options.Environment}, nil
+	}
 	a.QuotaManager = &quota.Manager{Store: quota.Store{Root: a.Store.Paths.QuotaDir}, Probes: map[quota.Provider]quota.Probe{
 		quota.ProviderCodex:  probeFunc(func(context.Context) (quota.ProviderQuota, error) { return exhausted(quota.ProviderCodex), nil }),
 		quota.ProviderClaude: probeFunc(func(context.Context) (quota.ProviderQuota, error) { return available(quota.ProviderClaude), nil }),

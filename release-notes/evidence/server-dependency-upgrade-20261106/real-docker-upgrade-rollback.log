@@ -1,0 +1,4 @@
+=== RUN   TestRealPrivateDockerDependencyUpgradeAndCoordinatedRollback
+    dependency_upgrade_docker_test.go:233: actual official image upgrade+Core backup/stage+data/index/pin rollback PASS; mapped service UID/GID1000; systemd/production not certified; /var/tmp/ivoai-consolidation-tools-20261104/docker-private/data none
+--- PASS: TestRealPrivateDockerDependencyUpgradeAndCoordinatedRollback (71.80s)
+PASS

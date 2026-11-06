@@ -361,12 +361,15 @@ func (a *App) openCodeAutoStatus(store session.Store, id string, cfg config.Conf
 }
 
 func (a *App) AutoWithKnowledge(ctx context.Context, planner string, agentArgs, selectors []string) error {
-	return a.OrchestratedWithKnowledge(ctx, "opencode", planner, agentArgs, selectors)
+	return a.OrchestratedWithKnowledge(ctx, "codex", planner, agentArgs, selectors)
 }
 
 // OrchestratedWithKnowledge is the shared session boundary. Frontends only
 // collect input and decisions; admission, routing and execution remain here.
 func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, planner string, agentArgs, selectors []string) error {
+	if frontendName == "opencode" || strings.EqualFold(strings.TrimSpace(planner), "opencode") {
+		return session.ErrOpenCodeManagedDeprecated
+	}
 	if frontendName != "codex" && frontendName != "opencode" {
 		return errors.New("orchestrated frontend must be codex or opencode")
 	}
@@ -420,7 +423,18 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 	if err != nil {
 		return err
 	}
-	state, codexResolution, _ := a.resolveCodex(ctx, state)
+	state, codexResolution, resolutionErr := a.resolveCodex(ctx, state)
+	if frontendName == "codex" {
+		if resolutionErr != nil {
+			return resolutionErr
+		}
+		if !state.Components["codex"].Installed || state.Components["codex"].Path == "" {
+			return errors.New("CODEX_FRONTEND_UNAVAILABLE: managed orchestration requires the official native Codex frontend; no executor was started")
+		}
+		if err := validateManagedAgentRuntime("codex", state); err != nil {
+			return err
+		}
+	}
 	var frontendPreflightErr error
 	if frontendName == "opencode" {
 		frontendPreflightErr = validateManagedAgentRuntime("opencode", state)
@@ -1013,6 +1027,7 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 			return persistManagedTurnAttempt(ctx, store, currentID(), attempt)
 		},
 		Mapping: func(mapping opencodebridge.Mapping) error {
+			compression := turnState.compressionSnapshot()
 			_, updateErr := store.Update(currentID(), func(currentSession *session.Session) error {
 				currentSession.SetFrontend(frontendName, mapping.FrontendSessionID)
 				currentSession.ExecutorSessionID = mapping.ExecutorSessionID
@@ -1045,7 +1060,7 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 				if mapping.CompressionProvider != "" {
 					currentSession.CompressionProvider = mapping.CompressionProvider
 				}
-				return session.AppendObservation(currentSession, compressionObservation(mapping.Executor, core.SessionObservation{CompressionUsed: mapping.CompressionUsed, CompressionProvider: mapping.CompressionProvider}, compressionPolicy))
+				return session.AppendObservation(currentSession, managedTurnCompressionObservation(mapping.Executor, core.SessionObservation{CompressionUsed: mapping.CompressionUsed, CompressionProvider: mapping.CompressionProvider}, compressionPolicy, compression.forMapping(*currentSession, mapping)))
 			})
 			return updateErr
 		},

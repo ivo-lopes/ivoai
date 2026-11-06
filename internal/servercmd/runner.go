@@ -65,6 +65,12 @@ func semanticRecordStatus(value string, color bool) string {
 }
 
 func (r *runner) run(ctx context.Context, args []string) error {
+	if len(args) == 1 && args[0] == "internal-memory-upgrade-probe" {
+		return internalMemoryUpgradeProbe(ctx)
+	}
+	if len(args) == 1 && args[0] == "internal-qdrant-upgrade-probe" {
+		return internalQdrantUpgradeProbe(ctx)
+	}
 	if len(args) == 0 || args[0] == "help" || args[0] == "--help" {
 		r.usage()
 		return nil
@@ -77,6 +83,8 @@ func (r *runner) run(ctx context.Context, args []string) error {
 	switch args[0] {
 	case "setup":
 		return r.setup(ctx, layout, manager)
+	case "upgrade":
+		return r.upgrade(ctx, layout, manager, args[1:])
 	case "status":
 		return r.status(ctx, manager, false)
 	case "doctor":
@@ -1174,7 +1182,7 @@ func applyRestoredServiceOwnership(layout server.Layout, containerUID, sharedGID
 	return nil
 }
 
-func (r *runner) withQuiescedServices(ctx context.Context, manager server.Manager, operation func() error) error {
+func (r *runner) withQuiescedServices(ctx context.Context, manager server.Manager, operation func() error, restartOnFailure ...bool) error {
 	if os.Getenv("IVOAI_TEST_MODE") == "1" {
 		return operation()
 	}
@@ -1182,6 +1190,9 @@ func (r *runner) withQuiescedServices(ctx context.Context, manager server.Manage
 		return fmt.Errorf("quiesce services: %w", err)
 	}
 	operationErr := operation()
+	if operationErr != nil && len(restartOnFailure) > 0 && !restartOnFailure[0] {
+		return fmt.Errorf("operation failed; services remain stopped: %w", operationErr)
+	}
 	restartErr := manager.Start(ctx)
 	if operationErr != nil && restartErr != nil {
 		return errors.Join(operationErr, fmt.Errorf("restart services after operation: %w", restartErr))
@@ -1264,6 +1275,7 @@ func (f *stringListFlag) Set(value string) error {
 func (r *runner) usage() {
 	fmt.Fprintln(r.out, `ivoai server commands:
   setup | status | doctor | start | stop | restart | logs [service]
+  upgrade [--backup-output PATH] | upgrade --rollback-receipt PATH
   enrollment create [--ttl 10m] | list | revoke <id>
   web-access create [--ttl 10m] [--scopes SCOPE,...] | list | revoke <id>
   connector list | add --name NAME --type filesystem|git --path PATH | remove NAME

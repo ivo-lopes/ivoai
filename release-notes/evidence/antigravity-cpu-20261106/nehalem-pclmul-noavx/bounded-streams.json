@@ -1,0 +1,44 @@
+{
+  "cpuid": {
+    "stdout": {
+      "bytes": 30,
+      "sha256": "d1bfa0cc4bb2b0471151700673ed038e00b0c8cab6677ab165f5e1c30eb71377",
+      "base64": "eyJhdngiOjAsImF2eDIiOjAsInBjbG11bCI6MX0K",
+      "text": "{\"avx\":0,\"avx2\":0,\"pclmul\":1}\n"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "base64": "",
+      "text": ""
+    }
+  },
+  "version": {
+    "stdout": {
+      "bytes": 6,
+      "sha256": "ded1b601e81d31ca1f65c4f3ccf2ebd7992b6390e37bc2a86f3837282f1e00cf",
+      "base64": "MS41LjIK",
+      "text": "1.5.2\n"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "base64": "",
+      "text": ""
+    }
+  },
+  "help": {
+    "stdout": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "base64": "",
+      "text": ""
+    },
+    "stderr": {
+      "bytes": 3319,
+      "sha256": "e92946f85cec63eca61f93014ca49f53b1e84277eac7954e7fac7d8d712940fd",
+      "base64": "VXNhZ2Ugb2YgYWd5OgogIC0tYWRkLWRpciAgICAgICAgICAgICAgICAgICAgICAgQWRkIGEgZGlyZWN0b3J5IHRvIHRoZSB3b3Jrc3BhY2UgKHJlcGVhdGFibGUpIChkZWZhdWx0IFtdKQogIC0tYWdlbnQgICAgICAgICAgICAgICAgICAgICAgICAgQWdlbnQgZm9yIHRoZSBjdXJyZW50IENMSSBzZXNzaW9uCiAgLWMgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBTaG9ydCBhbGlhcyBmb3IgLS1jb250aW51ZQogIC0tY29udGludWUgICAgICAgICAgICAgICAgICAgICAgQ29udGludWUgdGhlIG1vc3QgcmVjZW50IGNvbnZlcnNhdGlvbgogIC0tY29udmVyc2F0aW9uICAgICAgICAgICAgICAgICAgUmVzdW1lIGEgcHJldmlvdXMgY29udmVyc2F0aW9uIGJ5IElECiAgLS1kYW5nZXJvdXNseS1za2lwLXBlcm1pc3Npb25zICBBdXRvLWFwcHJvdmUgYWxsIHRvb2wgcGVybWlzc2lvbiByZXF1ZXN0cyB3aXRob3V0IHByb21wdGluZwogIC0tZGlzYWJsZS1zbGFzaC1jb21tYW5kcyAgICAgICAgRGlzYWJsZSBzbGFzaCBjb21tYW5kIGFuZCBza2lsbCBleHBhbnNpb24gaW4gcHJpbnQgbW9kZQogIC0tZWZmb3J0ICAgICAgICAgICAgICAgICAgICAgICAgUmVhc29uaW5nIGVmZm9ydCBmb3IgdGhlIGN1cnJlbnQgQ0xJIHNlc3Npb24gKGxvd3xtZWRpdW18aGlnaHx4aGlnaHxtYXgpCiAgLWkgICAgICAgICAgICAgICAgICAgICAgICAgICAgICBTaG9ydCBhbGlhcyBmb3IgLS1wcm9tcHQtaW50ZXJhY3RpdmUKICAtLWlucHV0LWZvcm1hdCAgICAgICAgICAgICAgICAgIElucHV0IGZvcm1hdCBmb3IgcHJpbnQgbW9kZSAodGV4dCwgc3RyZWFtLWpzb24pLiBzdHJlYW0tanNvbiByZWFkcyBvbmUgTkRKU09OIG1lc3NhZ2UgcGVyIGxpbmUgZnJvbSBzdGRpbiBhbmQgcnVucyBhIHR1cm4gZm9yIGVhY2g7IGl0IHJlcXVpcmVzIC0tb3V0cHV0LWZvcm1hdCBzdHJlYW0tanNvbiAoZGVmYXVsdCB0ZXh0KQogIC0tanNvbi1zY2hlbWEgICAgICAgICAgICAgICAgICAgT3B0aW9uYWwgSlNPTiBzY2hlbWEgc3RyaW5nIG9yIHBhdGggdG8gYSBzY2hlbWEgZmlsZSB0byBlbmZvcmNlIHN0cnVjdHVyZWQgb3V0cHV0IChmb3Igc3RyZWFtLWpzb24sIG9ubHkgYXBwbGljYWJsZSB0byB0aGUgZmluYWwgcmVzdWx0KQogIC0tbG9nLWZpbGUgICAgICAgICAgICAgICAgICAgICAgT3ZlcnJpZGUgQ0xJIGxvZyBmaWxlIHBhdGgKICAtLW1vZGUgICAgICAgICAgICAgICAgICAgICAgICAgIFNldCB0aGUgYWdlbnQgZXhlY3V0aW9uIG1vZGUgZm9yIHRoaXMgc2Vzc2lvbiAoYWNjZXB0LWVkaXRzLCBhdXRvLCBwbGFuKQogIC0tbW9kZWwgICAgICAgICAgICAgICAgICAgICAgICAgTW9kZWwgZm9yIHRoZSBjdXJyZW50IENMSSBzZXNzaW9uCiAgLS1uZXctcHJvamVjdCAgICAgICAgICAgICAgICAgICBDcmVhdGUgYSBuZXcgcHJvamVjdCBmb3IgdGhpcyBzZXNzaW9uCiAgLS1vdXRwdXQtZm9ybWF0ICAgICAgICAgICAgICAgICBPdXRwdXQgZm9ybWF0IGZvciBwcmludCBtb2RlICh0ZXh0LCBqc29uLCBzdHJlYW0tanNvbikgKGRlZmF1bHQgdGV4dCkKICAtcCAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIFNob3J0IGFsaWFzIGZvciAtLXByaW50CiAgLS1wcmludCAgICAgICAgICAgICAgICAgICAgICAgICBSdW4gYSBzaW5nbGUgcHJvbXB0IG5vbi1pbnRlcmFjdGl2ZWx5IGFuZCBwcmludCB0aGUgcmVzcG9uc2UKICAtLXByaW50LXRpbWVvdXQgICAgICAgICAgICAgICAgIE9wdGlvbmFsIHRpbWUgbGltaXQgZm9yIHByaW50IG1vZGU7IDAgd2FpdHMgdW50aWwgdGhlIHR1cm4gY29tcGxldGVzIChkZWZhdWx0IDBzKQogIC0tcHJvamVjdCAgICAgICAgICAgICAgICAgICAgICAgUHJvamVjdCBJRCBvciBwcm9qZWN0IG5hbWUgZm9yIHRoZSBjdXJyZW50IENMSSBzZXNzaW9uCiAgLS1wcm9tcHQgICAgICAgICAgICAgICAgICAgICAgICBBbGlhcyBmb3IgLS1wcmludAogIC0tcHJvbXB0LWludGVyYWN0aXZlICAgICAgICAgICAgUnVuIGFuIGluaXRpYWwgcHJvbXB0IGludGVyYWN0aXZlbHkgYW5kIGNvbnRpbnVlIHRoZSBzZXNzaW9uCiAgLS1yZW1vdGUtYWdlbnQgICAgICAgICAgICAgICAgICBSdW4gdGhpcyBzZXNzaW9uJ3MgY29udmVyc2F0aW9ucyB1c2luZyByZW1vdGUgYWdlbnRzOyAtLXByb2plY3QgdGhlbiBuYW1lcyBhIHJlbW90ZSBwcm9qZWN0IGJ5IElEIG9yIG5hbWUsIG90aGVyd2lzZSB0aGV5IG9wZW4gaW4gdGhpcyBtYWNoaW5lJ3MgZGVmYXVsdCByZW1vdGUgcHJvamVjdAogIC0tcmVtb3RlLWNvbnRyb2wgICAgICAgICAgICAgICAgQ3JlYXRlIGEgcmVtb3RlIGNvbm5lY3Rpb24gZm9yIHRoZSBDTEkgc2Vzc2lvbiBvbiBzdGFydCB1cAogIC0tc2FuZGJveCAgICAgICAgICAgICAgICAgICAgICAgUnVuIGluIGEgc2FuZGJveCB3aXRoIHRlcm1pbmFsIHJlc3RyaWN0aW9ucyBlbmFibGVkCiAgLS1zZXR0aW5ncyAgICAgICAgICAgICAgICAgICAgICBTZXR0aW5ncyBmb3IgdGhpcyBzZXNzaW9uIG9ubHksIG5ldmVyIHNhdmVkOiBhIEpTT04gb2JqZWN0IG9mIHNldHRpbmdzLmpzb24ga2V5cywgaW5saW5lIG9yIGFzIGEgZmlsZSBwYXRoCgpBdmFpbGFibGUgc3ViY29tbWFuZHM6CiAgYWNwICAgICAgICAgICAgIFN0YXJ0IHRoZSBBZ2VudCBDbGllbnQgUHJvdG9jb2wgKEFDUCkgc3RkaW8gc2VydmVyCiAgYWdlbnQgICAgICAgICAgIExpc3QgYXZhaWxhYmxlIGFnZW50cwogIGFnZW50cyAgICAgICAgICBMaXN0IGF2YWlsYWJsZSBhZ2VudHMKICBjaGFuZ2Vsb2cgICAgICAgU2hvdyBjaGFuZ2Vsb2cgYW5kIHJlbGVhc2Ugbm90ZXMKICBoZWxwICAgICAgICAgICAgU2hvdyBoZWxwIGZvciBzdWJjb21tYW5kcwogIGluc3RhbGwgICAgICAgICBDb25maWd1cmUgZW52aXJvbm1lbnQgcGF0aHMgYW5kIHNoZWxsIHNldHRpbmdzCiAgbWNwICAgICAgICAgICAgIE1hbmFnZSBNQ1Agc2VydmVycyAoYWRkLCByZW1vdmUsIGxpc3QsIGVuYWJsZSwgZGlzYWJsZSkKICBtaWMtc2VydmUgICAgICAgU2VydmUgdGhpcyBtYWNoaW5lJ3MgbWljcm9waG9uZSB0byBhIENMSSBvbiBhbm90aGVyIGhvc3QKICBtb2RlbHMgICAgICAgICAgTGlzdCBhdmFpbGFibGUgbW9kZWxzCiAgcGx1Z2luICAgICAgICAgIE1hbmFnZSBwbHVnaW5zIChpbnN0YWxsLCB1bmluc3RhbGwsIGxpc3QsIGVuYWJsZSwgZGlzYWJsZSkKICBwbHVnaW5zICAgICAgICAgQWxpYXMgZm9yIHBsdWdpbgogIHJlbW90ZS1jb250cm9sICBNYW5hZ2UgdGhlIHJlbW90ZS1jb250cm9sIGJhY2tncm91bmQgZGFlbW9uIChzdGFydCwgc3RhdHVzLCBzdG9wKQogIHVwZGF0ZSAgICAgICAgICBVcGRhdGUgQ0xJCg==",
+      "text": "Usage of agy:\n  --add-dir                       Add a directory to the workspace (repeatable) (default [])\n  --agent                         Agent for the current CLI session\n  -c                              Short alias for --continue\n  --continue                      Continue the most recent conversation\n  --conversation                  Resume a previous conversation by ID\n  --dangerously-skip-permissions  Auto-approve all tool permission requests without prompting\n  --disable-slash-commands        Disable slash command and skill expansion in print mode\n  --effort                        Reasoning effort for the current CLI session (low|medium|high|xhigh|max)\n  -i                              Short alias for --prompt-interactive\n  --input-format                  Input format for print mode (text, stream-json). stream-json reads one NDJSON message per line from stdin and runs a turn for each; it requires --output-format stream-json (default text)\n  --json-schema                   Optional JSON schema string or path to a schema file to enforce structured output (for stream-json, only applicable to the final result)\n  --log-file                      Override CLI log file path\n  --mode                          Set the agent execution mode for this session (accept-edits, auto, plan)\n  --model                         Model for the current CLI session\n  --new-project                   Create a new project for this session\n  --output-format                 Output format for print mode (text, json, stream-json) (default text)\n  -p                              Short alias for --print\n  --print                         Run a single prompt non-interactively and print the response\n  --print-timeout                 Optional time limit for print mode; 0 waits until the turn completes (default 0s)\n  --project                       Project ID or project name for the current CLI session\n  --prompt                        Alias for --print\n  --prompt-interactive            Run an initial prompt interactively and continue the session\n  --remote-agent                  Run this session's conversations using remote agents; --project then names a remote project by ID or name, otherwise they open in this machine's default remote project\n  --remote-control                Create a remote connection for the CLI session on start up\n  --sandbox                       Run in a sandbox with terminal restrictions enabled\n  --settings                      Settings for this session only, never saved: a JSON object of settings.json keys, inline or as a file path\n\nAvailable subcommands:\n  acp             Start the Agent Client Protocol (ACP) stdio server\n  agent           List available agents\n  agents          List available agents\n  changelog       Show changelog and release notes\n  help            Show help for subcommands\n  install         Configure environment paths and shell settings\n  mcp             Manage MCP servers (add, remove, list, enable, disable)\n  mic-serve       Serve this machine's microphone to a CLI on another host\n  models          List available models\n  plugin          Manage plugins (install, uninstall, list, enable, disable)\n  plugins         Alias for plugin\n  remote-control  Manage the remote-control background daemon (start, status, stop)\n  update          Update CLI\n"
+    }
+  }
+}

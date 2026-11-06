@@ -10,11 +10,11 @@ import (
 // nothing by itself; callers still perform their normal policy checks.
 func PrimaryTurnActive(v Session) bool {
 	r := v.PrimaryTurn
-	return AdaptiveHistoryEligible(v) && r != nil && r.Validate() == nil && r.Executor == "codex" && r.Mode != core.PrimaryClosed &&
+	return r != nil && r.Validate() == nil && AdaptiveHistoryEligible(v) && (r.Executor == "codex" || r.Executor == "antigravity" || r.Executor == "claude") && r.Mode != core.PrimaryClosed &&
 		v.Active() && v.State == StateRunning && v.Mode == ModeAuto && v.Coordinator == "native" &&
 		!v.ProviderExecution && !v.RecoveryRequested && v.TurnState == "running" &&
 		v.ObservationTurnID == r.TurnID && v.ObservationAttemptID == r.AttemptID &&
-		v.Frontend == "codex" && v.FrontendSessionID == r.FrontendSessionID &&
+		v.Frontend == r.Executor && v.FrontendSessionID == r.FrontendSessionID &&
 		v.CurrentPrimary == r.Executor && v.PrimaryExecutor == r.Executor
 }
 

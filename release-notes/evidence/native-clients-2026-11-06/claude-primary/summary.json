@@ -1,0 +1,48 @@
+{
+  "official_cli": "2.1.318 (Claude Code)",
+  "binary_sha256": "708c77b204db30086ff6f1ed34577bda03e1be74ced80557cbf7b54249ebf0bd",
+  "factory_args_sha256": "b86b933008124ade36271a69ae46c1c9d3bc3bf1f44a430607e4c706085a984d",
+  "real_inference": false,
+  "external_network": false,
+  "personal_configuration_mounted": false,
+  "synthetic_usage_not_economic_evidence": true,
+  "cases": [
+    {
+      "name": "core_mcp",
+      "pass": true,
+      "exit_code": 0,
+      "seconds": 0.5672490069991909,
+      "core_evidence_observed": true,
+      "ambient_hook_executed": false,
+      "native_subagents_spawned": 0,
+      "tool_catalog": [
+        "mcp__ivoai-orchestrator__core_echo"
+      ]
+    },
+    {
+      "name": "owned_resume",
+      "pass": true,
+      "exit_code": 0,
+      "seconds": 0.5651769319956657,
+      "core_evidence_observed": true,
+      "ambient_hook_executed": false,
+      "native_subagents_spawned": 0,
+      "tool_catalog": [
+        "mcp__ivoai-orchestrator__core_echo"
+      ]
+    },
+    {
+      "name": "deny_native_agent",
+      "pass": true,
+      "exit_code": 0,
+      "seconds": 0.5627244700153824,
+      "core_evidence_observed": false,
+      "ambient_hook_executed": false,
+      "native_subagents_spawned": 0,
+      "tool_catalog": [
+        "mcp__ivoai-orchestrator__core_echo"
+      ]
+    }
+  ],
+  "pass": true
+}

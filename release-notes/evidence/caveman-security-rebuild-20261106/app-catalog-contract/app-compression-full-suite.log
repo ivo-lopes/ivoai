@@ -1,0 +1,4 @@
+# github.com/ivo-lopes/ivoai/internal/app
+internal/app/compression_test.go:25:100: missing ',' before newline in argument list
+FAIL	github.com/ivo-lopes/ivoai/internal/app [setup failed]
+FAIL

@@ -1,0 +1,46 @@
+[
+  {
+    "name": "codex-aarch64-unknown-linux-musl.tar.gz",
+    "size": 114300898,
+    "url": "https://github.com/openai/codex/releases/download/rust-v0.167.0/codex-aarch64-unknown-linux-musl.tar.gz",
+    "sha256": "843489acb4d4b1079745c36b03c5963b887b83155af208fd53584e33ee8eb281",
+    "actual_archive_sha256": "843489acb4d4b1079745c36b03c5963b887b83155af208fd53584e33ee8eb281",
+    "arch": "arm64",
+    "binary": "codex",
+    "binary_bytes": 278794648,
+    "binary_sha256": "2fe94d848540ff2a6868c7ebcc494126a974aa409711676d14fa0379e49e6143"
+  },
+  {
+    "name": "codex-code-mode-host-aarch64-unknown-linux-musl.tar.gz",
+    "size": 27500578,
+    "url": "https://github.com/openai/codex/releases/download/rust-v0.167.0/codex-code-mode-host-aarch64-unknown-linux-musl.tar.gz",
+    "sha256": "6e99948fa20ca816a01f222a56afa261b321e00cbed611d76bb92c765fd11ec6",
+    "actual_archive_sha256": "6e99948fa20ca816a01f222a56afa261b321e00cbed611d76bb92c765fd11ec6",
+    "arch": "arm64",
+    "binary": "codex-code-mode-host",
+    "binary_bytes": 71821664,
+    "binary_sha256": "e7b772ff332c16ca2df587e99fe87f217e3ab3432a63846fb1ca1bccbaa24409"
+  },
+  {
+    "name": "codex-code-mode-host-x86_64-unknown-linux-musl.tar.gz",
+    "size": 29079293,
+    "url": "https://github.com/openai/codex/releases/download/rust-v0.167.0/codex-code-mode-host-x86_64-unknown-linux-musl.tar.gz",
+    "sha256": "b5074d5dd64643b2c073927e494a588eff31c1f5a27f12c1e2c45f9a6cf07dd4",
+    "actual_archive_sha256": "b5074d5dd64643b2c073927e494a588eff31c1f5a27f12c1e2c45f9a6cf07dd4",
+    "arch": "amd64",
+    "binary": "codex-code-mode-host",
+    "binary_bytes": 79209744,
+    "binary_sha256": "83f3e174c2da2f1ca8655cce686e302509640d34c0f4407c1155056f64536e0f"
+  },
+  {
+    "name": "codex-x86_64-unknown-linux-musl.tar.gz",
+    "size": 122587028,
+    "url": "https://github.com/openai/codex/releases/download/rust-v0.167.0/codex-x86_64-unknown-linux-musl.tar.gz",
+    "sha256": "9d64836106d5b374e90ee4454c7ebcde7ca7106558bd7e41a34b9f26ebda251a",
+    "actual_archive_sha256": "9d64836106d5b374e90ee4454c7ebcde7ca7106558bd7e41a34b9f26ebda251a",
+    "arch": "amd64",
+    "binary": "codex",
+    "binary_bytes": 320575976,
+    "binary_sha256": "cdcb45aaa01d0f14e298985e09465aebccd47f64ecd298aea44814af7b62bbda"
+  }
+]

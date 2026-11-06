@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Bounded offline release gate. Never executes downloaded Core/components or uses a network.
 
-Archive/checksum/component contracts derive from the preserved v0.15.0 verifier.
-This gate additionally checks component TARs and the actual recorded ldflag bindings.
+The current native bundle excludes OpenCode. Historical v0.16.0 assets use the
+byte-preserved verifier under release-baselines/v0.16.0, never this asset contract.
 """
 import argparse
 import base64
@@ -26,9 +26,9 @@ import zipfile
 
 EXPECTED = {'checksums.txt', 'ivoai-memory-context.zip'} | {
     name.format(arch=arch) for arch in ('amd64', 'arm64') for name in (
-        'ivoai_linux_{arch}.tar.gz', 'ivoai-opencode_linux_{arch}.tar.gz',
-        'managed-opencode-{arch}.json', 'ivoai-graft_linux_{arch}.tar.gz',
-        'managed-graft-{arch}.json')}
+        'ivoai_linux_{arch}.tar.gz', 'ivoai-graft_linux_{arch}.tar.gz',
+        'managed-graft-{arch}.json', 'ivoai-caveman_linux_{arch}.tar.gz',
+        'ivoai-caveman_linux_{arch}.metadata.json')}
 
 MiB = 1 << 20
 
@@ -41,7 +41,6 @@ MAX_ZIP_BYTES = 512 << 10
 ASSET_LIMITS = {name: (65536 if name == 'checksums.txt' or name.endswith('.json') else
                       MAX_ZIP_BYTES if name.endswith('.zip') else
                       128 * MiB if name.startswith('ivoai_linux_') else
-                      256 * MiB if name.startswith('ivoai-opencode_') else
                       512 * MiB) for name in EXPECTED}
 
 HEX64 = re.compile(r'^[a-f0-9]{64}$')
@@ -60,8 +59,6 @@ GRAFT_FILES = ['scripts/build-managed-graft.sh', 'patches/graft/build.py',
 NODE_SHA = {'amd64': '5848553868b402d3fabb5b09270649977780a390f832155721025a08b5104455',
  'arm64': '439e9c438acdf6a6ffe47418da709153d66c4bed812e30a473faacb107dd2791'}
 
-BUN_SHA = {'amd64': '951ee2aee855f08595aeec6225226a298d3fea83a3dcd6465c09cbccdf7e848f',
- 'arm64': 'a27ffb63a8310375836e0d6f668ae17fa8d8d18b88c37c821c65331973a19a3b'}
 
 def require(condition, message):
     if not condition:
@@ -102,7 +99,7 @@ def regular(path, limit=2 << 30):
     return info
 
 def manifest_hashes(assets):
-    require({p.name for p in assets.iterdir()} == EXPECTED, 'asset directory must contain exactly the 12 expected files')
+    require({p.name for p in assets.iterdir()} == EXPECTED, 'asset directory must contain exactly the expected native bundle files')
     sizes = [regular(assets / name, ASSET_LIMITS[name]).st_size for name in EXPECTED]
     require(sum(sizes) <= 2 << 30, 'total compressed asset budget exceeded')
     hashes = {name: digest(assets / name) for name in sorted(EXPECTED)}
@@ -114,28 +111,28 @@ def manifest_hashes(assets):
         value, name = match.groups()
         require(name in EXPECTED - {'checksums.txt'} and name not in listed, 'unexpected or duplicate checksum name')
         listed[name] = value
-    require(set(listed) == EXPECTED - {'checksums.txt'}, 'checksums must name exactly 11 payloads')
+    require(set(listed) == EXPECTED - {'checksums.txt'}, 'checksums must name exactly the native bundle payloads')
     for name, value in listed.items():
         require(hashes[name] == value, 'offline checksum mismatch: ' + name)
     return hashes
 
 def component_metadata(assets, component, arch, hashes, patches):
-    name = 'managed-' + component + '-' + arch + '.json'
+    require(component in ('graft', 'caveman'), 'unknown current component contract')
+    name = ('ivoai-caveman_linux_' + arch + '.metadata.json') if component == 'caveman' else ('managed-' + component + '-' + arch + '.json')
     regular(assets / name, 65536)
     metadata = unique_json((assets / name).read_text('utf-8'))
     common = {'version', 'platform', 'revision', 'sha256', 'archive', 'upstream_revision', 'source_sha256', 'patch_sha256'}
-    if component == 'opencode':
-        require(set(metadata) == common | {'bun_version', 'bun_sha256'}, 'unexpected OpenCode metadata schema')
-        require(metadata['version'] == '1.19.0-ivoai.3', 'wrong OpenCode version')
-        require(metadata['upstream_revision'] == '733b2c627e5aec39cb33cc22373bdce33053ef2c', 'wrong OpenCode source revision')
-        require(metadata['source_sha256'] == 'ab433f7a5fc9e54c90da18bd3457298009f426424805f043aa32c03543b4a192', 'wrong OpenCode source digest')
-        require(metadata['bun_version'] == '1.3.14' and metadata['bun_sha256'] == BUN_SHA[arch], 'wrong reviewed Bun identity')
-    else:
+    if component == 'graft':
         require(set(metadata) == common | {'node_version', 'node_sha256'}, 'unexpected Graft metadata schema')
         require(metadata['version'] == '0.21.1-ivoai.2', 'wrong Graft version')
         require(metadata['upstream_revision'] == 'fe30ead39d5e6f0c921018d364da2bdbc9d4b3ad', 'wrong Graft source revision')
         require(metadata['source_sha256'] == 'd39598390324ad0076a88ab593b63ad2ba352370ea07c073e31f11327979f8e1', 'wrong current Graft source digest')
         require(metadata['node_version'] == '26.13.0' and metadata['node_sha256'] == NODE_SHA[arch], 'wrong reviewed Node identity')
+    else:
+        require(set(metadata) == common | {'url'}, 'unexpected Caveman metadata schema')
+        require(metadata['version'] == '4.0.2-ivoai.1' and metadata['url'] == '', 'wrong Caveman version or unbound archive URL')
+        require(metadata['upstream_revision'] == 'b4531dfc05a3ef0ba93b57e8bfa5f48564a4b4d6', 'wrong Caveman source revision')
+        require(metadata['source_sha256'] == '29ef4c5bccee70dbc486bae266f966b8bd53132c6e12e27e9b06b36cf35c51f4', 'wrong Caveman source digest')
     archive = 'ivoai-' + component + '_linux_' + arch + '.tar.gz'
     require(metadata['platform'] == 'linux/' + arch and metadata['archive'] == archive, 'metadata platform/archive mismatch')
     require(metadata['sha256'] == hashes[archive] and metadata['patch_sha256'] == patches[component], 'archive or patch association mismatch')
@@ -243,17 +240,13 @@ class Source:
                 'source_commit': self.commit, 'requires': requires, 'sums': sums}
 
     def patches(self):
-        opencode = hashlib.sha256(b''.join(self.read(name) for name in (
-            'patches/opencode/1.19.0-clipboard-errors.patch',
-            'patches/opencode/1.19.0-plugin-sdk-version.patch',
-            'patches/opencode/1.19.0-managed-local-plugins.patch'))).hexdigest()
         licenses = self.git('ls-tree', '-r', '--name-only', self.commit,
                             '--', 'patches/graft/grammar-licenses').decode().splitlines()
         values = {name: hashlib.sha256(self.read(name)).hexdigest()
                   for name in GRAFT_FILES + licenses}
         graft = hashlib.sha256(''.join(name + ' ' + value + '\n'
                                       for name, value in sorted(values.items())).encode()).hexdigest()
-        return {'opencode': opencode, 'graft': graft}
+        return {'graft': graft, 'caveman': hashlib.sha256(self.read('patches/caveman/dependency-lock.patch')).hexdigest()}
 
 
 def exact_read(stream, size):
@@ -287,9 +280,9 @@ def pax_path(data):
 
 def scan_tar(path, kind, arch, destination=None):
     """Bound before parsing extensions; never extract paths from an archive."""
-    require(kind in ('core', 'opencode', 'graft'), 'unknown archive contract')
-    total_limit = MAX_CORE_BYTES if kind == 'core' else 512 * MiB
-    entry_limit = 1 if kind == 'core' else 2 if kind == 'opencode' else 4096
+    require(kind in ('core', 'graft', 'caveman'), 'unknown archive contract')
+    total_limit = MAX_CORE_BYTES if kind in ('core', 'caveman') else 512 * MiB
+    entry_limit = 1 if kind == 'core' else 4096
     seen, files, total, decoded, pending, headers = set(), set(), 0, 0, None, 0
     with path.open('rb') as raw, gzip.GzipFile(fileobj=raw) as stream:
         while True:
@@ -306,7 +299,7 @@ def scan_tar(path, kind, arch, destination=None):
             require(headers <= 8192, 'archive header count exceeded')
             member = tarfile.TarInfo.frombuf(header, 'utf-8', 'strict')
             if member.type == tarfile.XHDTYPE:
-                require(kind == 'graft' and pending is None and 0 < member.size <= 4096,
+                require(kind in ('graft', 'caveman') and pending is None and 0 < member.size <= 4096,
                         'tar extension refused or PAX header budget exceeded')
                 pending = pax_path(exact_read(stream, member.size))
                 require(not any(exact_read(stream, (-member.size) % 512)), 'nonzero PAX padding')
@@ -326,7 +319,7 @@ def scan_tar(path, kind, arch, destination=None):
             seen.add(name)
             require(0 <= member.size <= MAX_CORE_BYTES, 'archive member size exceeds budget')
             if member.isdir():
-                require(kind == 'graft' and member.size == 0, 'unexpected archive directory')
+                require(kind in ('graft', 'caveman') and member.size == 0, 'unexpected archive directory')
                 continue
             require(not member.name.endswith('/'), 'regular member cannot have directory path')
             files.add(name)
@@ -335,9 +328,6 @@ def scan_tar(path, kind, arch, destination=None):
             if kind == 'core':
                 require(name == 'ivoai' and member.size > 0 and member.mode & 0o111,
                         'unsafe Core archive member')
-            if kind == 'opencode':
-                require(name in ('opencode', 'LICENSE') and member.size > 0,
-                        'unexpected managed OpenCode member')
             target = None
             try:
                 if destination is not None and kind == 'core':
@@ -355,8 +345,13 @@ def scan_tar(path, kind, arch, destination=None):
                 if target is not None:
                     target.close()
             decoded += member.size + (-member.size) % 512
-    required = {'ivoai'} if kind == 'core' else {'opencode', 'LICENSE'} if kind == 'opencode' else {
+    required = {'ivoai'} if kind == 'core' else {
         'graft-runtime', 'provenance.json', 'files.json', 'LICENSE'}
+    if kind == 'caveman':
+        required = {'caveman-proxy','caveman-mcp','LICENSE','LICENSE-MIT','NOTICE','LICENSING.md','files.json','provenance.json',
+                    'third-party/modules.json','third-party/LICENSE.go','third-party/LICENSE.zig','third-party/COPYRIGHT.musl',
+                    'third-party/NOTICE.engine-pixel','third-party/SPLEEN_LICENSE.txt','third-party/UNIFONT_LICENSE.txt'}
+        require(all(name in required or name.startswith('third-party/') for name in files), 'unexpected Caveman member')
     require(required <= files, 'required archive members missing')
     if destination is not None and kind == 'core':
         with destination.open('rb') as stream:
@@ -365,6 +360,64 @@ def scan_tar(path, kind, arch, destination=None):
         require(struct.unpack_from('<HH', header, 16) == (2, {'amd64': 62, 'arm64': 183}[arch]),
                 'Core ELF type/architecture mismatch')
     return {'entries': len(seen), 'payload_bytes': total}
+
+
+def scan_caveman(path, arch):
+    checked = scan_tar(path, 'caveman', arch)
+    inventory, documents = {}, {}
+    with tarfile.open(path, 'r|gz') as archive:
+        for member in archive:
+            if not member.isfile():
+                continue  # First pass already validated paths, types and bounds.
+            h = hashlib.sha256()
+            document = bytearray()
+            special = member.name in ('files.json','provenance.json','third-party/modules.json')
+            if special:
+                require(member.size <= MiB, 'Caveman manifest exceeds budget')
+            with archive.extractfile(member) as stream:
+                header = stream.read(min(64,member.size))
+                h.update(header)
+                if special: document.extend(header)
+                if member.name in ('caveman-proxy','caveman-mcp'):
+                    require(member.mode & 0o111 and len(header)==64 and header[:6]==b'\x7fELF\x02\x01', 'Caveman executable must be ELF64')
+                    require(struct.unpack_from('<HH',header,16)==(2,{'amd64':62,'arm64':183}[arch]), 'Caveman executable platform mismatch')
+                while block := stream.read(MiB):
+                    h.update(block)
+                    if special: document.extend(block)
+            inventory[member.name]={'sha256':h.hexdigest(),'size':member.size}
+            if special: documents[member.name]=unique_json(document.decode('utf-8'))
+    recorded = documents['files.json']
+    require(isinstance(recorded,dict) and len(recorded)<=4096, 'Caveman file inventory unavailable')
+    for name,value in recorded.items():
+        require(isinstance(value,dict) and set(value)=={'sha256','size'} and isinstance(value['sha256'],str) and HEX64.fullmatch(value['sha256']) and type(value['size']) is int and 0<=value['size']<=MAX_CORE_BYTES, 'invalid Caveman file inventory entry')
+    require(recorded == {k:v for k,v in inventory.items() if k!='files.json'}, 'Caveman file inventory does not match exact archive')
+    provenance = documents['provenance.json']
+    require(isinstance(provenance,dict) and type(provenance.get('schema_version')) is int and all(type(provenance.get(key)) is bool for key in ('proxy_cgo','mcp_cgo','static_musl')), 'invalid Caveman provenance schema')
+    require(provenance == {
+        'schema_version':1,'version':'4.0.2-ivoai.1','upstream_revision':'b4531dfc05a3ef0ba93b57e8bfa5f48564a4b4d6',
+        'source_sha256':'29ef4c5bccee70dbc486bae266f966b8bd53132c6e12e27e9b06b36cf35c51f4',
+        'patch_sha256':'5f95e80d41d5744f16e09d534b1d56585fe746f9d5aed1e14c2586bbe953810d',
+        'platform':'linux/'+arch,'go':'1.27.3','zig':'0.16.0',
+        'zig_sha256':{'amd64':'70e49664a74374b48b51e6f3fdfbf437f6395d42509050588bd49abe52ba3d00',
+                      'arm64':'ea4b09bfb22ec6f6c6ceac57ab63efb6b46e17ab08d21f69f3a48b38e1534f17'}[arch],
+        'proxy_cgo':True,'mcp_cgo':False,'static_musl':True,
+        'cpu':'x86-64-v1/no-avx/no-avx2' if arch=='amd64' else 'armv8-a-baseline',
+        'signature_status':'not_exposed','attestation_status':'not_exposed',
+        'publisher':'IVOAI local rebuild; not an upstream Caveman binary or signature'}, 'Caveman provenance mismatch')
+    modules = documents['third-party/modules.json']
+    require(isinstance(modules,dict) and 0<len(modules)<=1024, 'Caveman linked module inventory unavailable')
+    for name,module in modules.items():
+        require(isinstance(name,str) and isinstance(module,dict) and set(module)=={'version','sum','notices'}, 'invalid Caveman module identity')
+        require(isinstance(module['version'],str) and len(module['version'])<=255 and module['version'].startswith('v'), 'invalid Caveman module version')
+        require(isinstance(module['sum'],str) and re.fullmatch(r'h1:[A-Za-z0-9+/]{43}=',module['sum']), 'invalid Caveman module checksum')
+        require(isinstance(module['notices'],list) and 0<len(module['notices'])<=64, 'missing Caveman module notices')
+        for notice in module['notices']:
+            require(isinstance(notice,dict) and set(notice)=={'path','sha256'}, 'invalid Caveman module notice')
+            require(isinstance(notice.get('path'),str) and notice['path'].startswith(name+'/'+module['version']+'/'), 'Caveman notice does not belong to its module')
+            relative = 'third-party/'+safe_name(notice['path'])
+            require(relative in inventory and inventory[relative]['sha256']==notice['sha256'], 'Caveman module notice integrity mismatch')
+    return {**checked,'file_inventory_verified':True,'provenance_verified':True,'linked_module_notices_verified':len(modules),
+            'native_execution':'NOT_EXECUTED_BY_OFFLINE_VERIFIER'}
 
 
 def ldflags(settings):
@@ -403,6 +456,7 @@ def embedded_payloads(binary, tag, metadata):
 
 
 def verify_info(info, contract, arch, tag, metadata, binary=None):
+    require(set(metadata) == {'graft', 'caveman'}, 'unexpected current component metadata set')
     require(info['GoVersion'] == contract['go_version'], 'Core Go toolchain mismatch')
     require(info['Path'] == contract['module'] + '/cmd/ivoai', 'Core command path mismatch')
     require(info['Main']['Path'] == contract['module'] and info['Main']['Version'] == tag,
@@ -432,7 +486,7 @@ def verify_info(info, contract, arch, tag, metadata, binary=None):
         require(bindings.get('main.version') == tag[1:], 'Core main.version linker binding mismatch')
         expected_keys = {'main.version'}
         for component, document in metadata.items():
-            key = contract['module'] + '/internal/components.managed' + ('OpenCode' if component == 'opencode' else 'Graft') + 'Build'
+            key = contract['module'] + '/internal/components.managed' + ('GraftBuild' if component == 'graft' else 'CavemanBuild')
             expected_keys.add(key)
             encoded = bindings.get(key)
             require(isinstance(encoded, str) and len(encoded) <= 16384, 'missing bounded component linker binding')
@@ -482,7 +536,7 @@ def api_metadata(path, hashes, directory, tag):
         else:
             require(html_url == canonical + tag, 'API release page URL mismatch')
     entries = document.get('assets')
-    require(isinstance(entries, list) and len(entries) == 12, 'API asset count mismatch')
+    require(isinstance(entries, list) and len(entries) == len(EXPECTED), 'API asset count mismatch')
     seen, missing = set(), []
     for item in entries:
         name = item.get('name')
@@ -503,7 +557,7 @@ def api_metadata(path, hashes, directory, tag):
             'prerelease': '-' in tag,
             'download_locator': locator,
             'download_locator_status': 'UNPUBLISHED_DRAFT_LOCATOR' if locator != tag else 'RELEASE_TAG',
-            'verified_digests': 12-len(missing), 'unknown_digests': sorted(missing)}
+            'verified_digests': len(EXPECTED)-len(missing), 'unknown_digests': sorted(missing)}
 
 
 BUILDINFO_READER = '''package main
@@ -530,8 +584,8 @@ def verify(args):
     skill_contents(directory/'ivoai-memory-context.zip', source.read('skills/ivoai-memory-context/SKILL.md'))
     go = shutil.which(args.go)
     require(go is not None, 'reviewed Go toolchain required')
-    report = {'pass': False, 'tag': tag, 'source': args.source, 'assets': 12,
-              'payload_checksums': 11, 'asset_sha256': hashes, 'api': api, 'cores': {},
+    report = {'pass': False, 'tag': tag, 'source': args.source, 'assets': len(EXPECTED),
+              'payload_checksums': len(EXPECTED)-1, 'asset_sha256': hashes, 'api': api, 'cores': {},
               'network_calls': False, 'downloaded_code_executed': False}
     with tempfile.TemporaryDirectory(prefix='ivoai-release-verifier-') as private:
         private = Path(private)
@@ -548,9 +602,9 @@ def verify(args):
                        check=True, timeout=120, preexec_fn=compiler_budget)
         for arch in ('amd64', 'arm64'):
             metadata = {name: component_metadata(directory, name, arch, hashes, patches)
-                        for name in ('opencode', 'graft')}
-            inventory = {name: scan_tar(directory/metadata[name]['archive'], name, arch)
-                         for name in ('opencode', 'graft')}
+                        for name in ('graft', 'caveman')}
+            inventory = {'graft': scan_tar(directory/metadata['graft']['archive'], 'graft', arch),
+                         'caveman': scan_caveman(directory/metadata['caveman']['archive'], arch)}
             binary = private/('core-'+arch)
             inventory['core'] = scan_tar(directory/('ivoai_linux_'+arch+'.tar.gz'), 'core', arch, binary)
             output = private/('info-'+arch+'.json')

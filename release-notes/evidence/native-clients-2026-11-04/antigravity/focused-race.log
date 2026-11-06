@@ -1,0 +1,7 @@
+ok  	github.com/ivo-lopes/ivoai/internal/nativeacp	1.474s
+ok  	github.com/ivo-lopes/ivoai/internal/app	1.238s
+ok  	github.com/ivo-lopes/ivoai/internal/cli	1.056s [no tests to run]
+ok  	github.com/ivo-lopes/ivoai/internal/session	1.053s [no tests to run]
+ok  	github.com/ivo-lopes/ivoai/internal/quota	1.036s [no tests to run]
+ok  	github.com/ivo-lopes/ivoai/internal/observability	1.021s [no tests to run]
+ok  	github.com/ivo-lopes/ivoai/internal/opencodebridge	2.097s

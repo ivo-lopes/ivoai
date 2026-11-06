@@ -19,14 +19,36 @@ SPEC.loader.exec_module(GATE)
 
 
 class StableReleaseUpgradeControls(unittest.TestCase):
+    def test_offline_phase_is_explicit_and_does_not_change_preparation(self):
+        with tempfile.TemporaryDirectory() as directory, patch.dict(os.environ, {"UV_OFFLINE": "1", "UV_INDEX_URL": "private-marker"}):
+            root = Path(directory)
+            preparation = GATE.environment(root)
+            offline = GATE.environment(root, offline=True)
+            self.assertNotIn("UV_OFFLINE", preparation)
+            self.assertEqual(offline.pop("UV_OFFLINE"), "1")
+            self.assertEqual(preparation, offline)
+            self.assertNotIn("UV_INDEX_URL", offline)
+
     def test_future_release_cannot_reuse_an_unreviewed_baseline_pair(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             output = root / "output"
             with patch.object(GATE.platform, "system", return_value="Linux"), patch.object(GATE.platform, "machine", return_value="x86_64"), patch.object(GATE, "verified_download", side_effect=AssertionError("network must not start")):
                 with self.assertRaisesRegex(GATE.GateFailure, "UNREVIEWED_BASELINE_CANDIDATE_PAIR"):
-                    GATE.main(["--baseline-core", str(root / "baseline"), "--candidate-dir", str(root / "candidate"), "--version", "0.17.0", "--output", str(output)])
+                    GATE.main(["--baseline-core", str(root / "baseline"), "--candidate-dir", str(root / "candidate"), "--version", "0.18.0", "--output", str(output)])
             self.assertFalse(output.exists())
+
+    def test_baseline_catalog_is_frozen_and_candidate_pair_is_explicit(self):
+        repo=Path(__file__).resolve().parents[1]
+        self.assertEqual(GATE.BASELINE,"0.16.0")
+        self.assertEqual(GATE.QUALIFIED_CANDIDATE,"0.17.0")
+        for arch in ('amd64','arm64'):
+            values=GATE.baseline_setup_assets(repo,arch)
+            self.assertTrue(values)
+            self.assertTrue(any('rust-v0.162.1' in x['URL'] for x in values))
+            self.assertFalse(any('opencode' in x['URL'] for x in values))
+        with tempfile.TemporaryDirectory() as directory:
+            with self.assertRaises(GATE.GateFailure): GATE.baseline_setup_assets(Path(directory),'amd64')
 
     def test_unexpected_command_output_stays_in_bounded_private_diagnostic(self):
         with tempfile.TemporaryDirectory() as directory:

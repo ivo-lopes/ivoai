@@ -6,6 +6,18 @@ Audit date: 2026-10-27. Code baseline: published `v0.12.1`, commit
 This document distinguishes that baseline from the approved migration target.
 It does not certify implementations subsequently added on a development branch.
 
+## Current source status
+
+The historical audit below remains bound to v0.12.1 and its named increments.
+Current native code now includes permissive intake, opt-in adaptive Primary and
+owned continuation, scoped native code-read Gateway reuse, managed headless
+adapters and administrative/reverse-proxy support. OpenCode runtime installation,
+repair, probing, execution and new bundle assets are removed; old user data and
+published assets remain intact. Experimental flags remain OFF by default, Claude
+inference/native TUI parity is not established, and the economic gate is still
+INCOMPLETE. Versioned release notes and executable evidence define actual
+certification; the audit's older tables are not the current runtime catalog.
+
 ## Implemented increment after the audited baseline
 
 The v0.13.0 increment includes the bounded experimental code Evidence Gateway,

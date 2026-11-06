@@ -1,0 +1,26 @@
+{
+  "actual_official_images": true,
+  "ai_memory_versions": [
+    "2.6.3",
+    "3.4.2",
+    "2.6.3"
+  ],
+  "authenticated_read_and_401": true,
+  "cgroup_limits_applied": false,
+  "core_backup_restore": true,
+  "exact_memory_fixture_read": true,
+  "exact_vector_point_read": true,
+  "original_index_preserved": true,
+  "pass": true,
+  "private_docker_info": "/var/tmp/ivoai-consolidation-tools-20261104/docker-private/data none",
+  "production_accessed": false,
+  "qdrant_versions": [
+    "1.19.2",
+    "1.20.0",
+    "1.19.2"
+  ],
+  "service_gid": 1000,
+  "service_uid": 1000,
+  "stage_validator_actual_startup": true,
+  "systemd_certified": false
+}

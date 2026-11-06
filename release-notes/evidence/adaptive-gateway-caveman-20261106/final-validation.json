@@ -1,0 +1,24 @@
+{
+  "source_commit": "2101f0d1d",
+  "go_version": "1.27.3",
+  "checks": [
+    {
+      "command": "GOMAXPROCS=2 go test ./... -count=1 -timeout=10m",
+      "exit_code": 0,
+      "passing_packages": 61,
+      "packages_without_test_files": 4,
+      "opt_in_live_tests": "not counted as real integration by this non-verbose suite; real runs have separate explicit receipts"
+    },
+    {
+      "command": "GOMAXPROCS=2 go test -race ./internal/app ./internal/opencodebridge -run 'TestAdaptiveExact|TestCLIRunnerExactEvidence|TestCLIRunnerLegacyCompression|TestCLIRunnerRejectsCompressionFidelity' -count=1 -timeout=3m",
+      "exit_code": 0,
+      "passing_packages": 2
+    },
+    {
+      "command": "GOMAXPROCS=2 go vet ./internal/app ./internal/opencodebridge ./internal/caveman",
+      "exit_code": 0
+    }
+  ],
+  "inference": "separate final-exact-real.json",
+  "global_economic_gate": "INCOMPLETE"
+}

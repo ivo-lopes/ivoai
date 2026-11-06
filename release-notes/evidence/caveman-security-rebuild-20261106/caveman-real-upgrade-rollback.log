@@ -1,0 +1,5 @@
+=== RUN   TestLiveManagedCavemanPublishedUpgradeRollback
+    caveman_rollback_live_test.go:125: actual published2.1 raw binaries -> reviewed4.0.2-ivoai.1 archive -> exact published2.1 objects; idempotent rollback and restored22-scenario fidelity PASS; no inference
+--- PASS: TestLiveManagedCavemanPublishedUpgradeRollback (5.32s)
+PASS
+ok  	github.com/ivo-lopes/ivoai/internal/components	5.334s

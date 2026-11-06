@@ -322,8 +322,8 @@ func TestManagedSupplyChainRawComponentIsPrivateAndDoesNotTouchAgentConfig(t *te
 	}
 }
 
-func TestManagedOpenCodeArchiveUsesPinnedSupplyChainAndOwnedAuthIsUntouched(t *testing.T) {
-	archive := testArchive(t, "opencode", []byte("#!/bin/sh\nprintf '1.18.25\\n'\n"))
+func TestManagedArchiveUsesPinnedSupplyChainAndOwnedAuthIsUntouched(t *testing.T) {
+	archive := testArchive(t, "reviewed-fixture", []byte("#!/bin/sh\nprintf '1.18.25\\n'\n"))
 	sum := sha256.Sum256(archive)
 	var requests atomic.Int32
 	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -336,7 +336,7 @@ func TestManagedOpenCodeArchiveUsesPinnedSupplyChainAndOwnedAuthIsUntouched(t *t
 	t.Setenv("HOME", home)
 	paths := config.Paths{ConfigDir: filepath.Join(root, "config"), DataDir: filepath.Join(root, "data"), StateDir: filepath.Join(root, "state"), CacheDir: filepath.Join(root, "cache"), BinDir: filepath.Join(root, "data", "bin"), Config: filepath.Join(root, "config", "config.toml"), State: filepath.Join(root, "state", "state.toml"), Ownership: filepath.Join(root, "state", "ownership.toml"), HooksDir: filepath.Join(root, "data", "hooks")}
 	store := config.NewStore(paths)
-	spec := Spec{Name: "opencode", Executable: "opencode", Version: "1.18.25", Strategy: StrategySupplyChain, Revision: strings.Repeat("b", 40), DefaultBranch: "dev", License: "MIT", PayloadFormat: "tar_gzip", PayloadPath: "opencode", SignatureStatus: "not_exposed", AttestationStatus: "not_exposed", TrustLevel: "upstream_checksum", Assets: map[string]Asset{runtime.GOOS + "/" + runtime.GOARCH: {URL: server.URL, SHA256: hex.EncodeToString(sum[:])}}}
+	spec := Spec{Name: "reviewed-fixture", Executable: "reviewed-fixture", Version: "1.18.25", Strategy: StrategySupplyChain, Revision: strings.Repeat("b", 40), DefaultBranch: "dev", License: "MIT", PayloadFormat: "tar_gzip", PayloadPath: "reviewed-fixture", SignatureStatus: "not_exposed", AttestationStatus: "not_exposed", TrustLevel: "upstream_checksum", Assets: map[string]Asset{runtime.GOOS + "/" + runtime.GOARCH: {URL: server.URL, SHA256: hex.EncodeToString(sum[:])}}}
 	installer := Installer{Runner: absentRunner{}, Store: store, Catalog: []Spec{spec}, Client: server.Client()}
 	if err := installer.Setup(context.Background()); err != nil {
 		t.Fatal(err)
@@ -348,8 +348,8 @@ func TestManagedOpenCodeArchiveUsesPinnedSupplyChainAndOwnedAuthIsUntouched(t *t
 		t.Fatalf("OpenCode no-change downloads=%d", requests.Load())
 	}
 	state, err := store.LoadState()
-	if err != nil || !state.Components["opencode"].Managed || state.Components["opencode"].Version != "1.18.25" {
-		t.Fatalf("state=%+v err=%v", state.Components["opencode"], err)
+	if err != nil || !state.Components["reviewed-fixture"].Managed || state.Components["reviewed-fixture"].Version != "1.18.25" {
+		t.Fatalf("state=%+v err=%v", state.Components["reviewed-fixture"], err)
 	}
 	if _, err := os.Stat(filepath.Join(home, ".local", "share", "opencode", "auth.json")); !errors.Is(err, os.ErrNotExist) {
 		t.Fatalf("IVOAI touched OpenCode auth ownership: %v", err)

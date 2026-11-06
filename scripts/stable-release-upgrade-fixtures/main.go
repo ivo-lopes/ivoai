@@ -16,6 +16,17 @@ func main() {
 	if len(os.Args) != 2 {
 		panic("use catalog or initialize")
 	}
+	if os.Args[1] == "bootstrap" {
+		python, cutoff := components.ManagedBootstrapRequirements()
+		if err := json.NewEncoder(os.Stdout).Encode(struct {
+			Assets []components.Asset `json:"assets"`
+			Python string             `json:"python_version"`
+			Cutoff string             `json:"exclude_newer"`
+		}{components.ManagedBootstrapAssets(), python, cutoff}); err != nil {
+			panic(err)
+		}
+		return
+	}
 	if os.Args[1] == "catalog" {
 		catalog := []components.Asset{}
 		for _, spec := range components.ClientSetupCatalog(false) {

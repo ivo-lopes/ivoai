@@ -1,0 +1,13 @@
+=== RUN   TestPinnedCavemanProxyManualCanary
+=== RUN   TestPinnedCavemanProxyManualCanary/codex
+=== RUN   TestPinnedCavemanProxyManualCanary/claude
+--- PASS: TestPinnedCavemanProxyManualCanary (0.73s)
+    --- PASS: TestPinnedCavemanProxyManualCanary/codex (0.21s)
+    --- PASS: TestPinnedCavemanProxyManualCanary/claude (0.24s)
+PASS
+ok  	github.com/ivo-lopes/ivoai/internal/caveman	0.753s
+=== RUN   TestPinnedCavemanMCPManualCanary
+    live_test.go:49: PINNED_CAVEMAN_MCP_METRICS={"provider":"caveman","token_basis":"heuristic_4_bytes","scenarios":22,"expected_scenarios":22,"bytes_before":983089,"bytes_in_context":28131,"estimated_tokens_before":245773,"estimated_tokens_in_context":7033,"context_ratio":0.02861490668698358,"latency":2729425093,"bypass_count":5,"degraded_count":0,"artifact_mismatch_count":0,"exact_required_mismatch_count":0,"semantic_mismatch_count":0,"observability_leak_count":0,"runtime_sha256":"24339e645da66fb3580e3d9410743499845748238f01d0dc8097330fcb0f9bde","compression_calls":17,"compression_applied":1,"compression_passthrough":16,"compression_failures":0,"provider_mismatch_count":0}
+--- PASS: TestPinnedCavemanMCPManualCanary (2.81s)
+PASS
+ok  	github.com/ivo-lopes/ivoai/internal/cavemaneval	2.823s

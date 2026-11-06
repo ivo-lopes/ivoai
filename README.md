@@ -83,75 +83,44 @@ ivoai connect server add mindsite --url https://mindsite.example.invalid --code-
 ivoai connect server list
 ivoai codex
 ivoai claude
-ivoai opencode                 # managed OpenCode frontend; IVOAI-routed executors
+ivoai auto                     # compatibility alias for managed Codex
 ```
 
-Release builds install IVOAI's patched OpenCode artifact from pinned upstream
-source through the private, rollback-safe supply chain. In managed mode it is the interactive frontend; IVOAI
-routes work to the official Codex or Claude Code CLI using each client's existing
-subscription login. No provider token is copied into OpenCode. Direct `opencode`
-outside IVOAI remains unchanged, and a standalone OpenCode-owned provider session is
-still available through `ivoai session start --executor opencode --mode direct`.
-
-`ivoai codex` starts the native Codex TUI through IVOAI-controlled App Server admission.
-`ivoai opencode` uses the same core through managed OpenCode. `ivoai auto` remains
-a deprecated alias; `ivoai codex --direct` and `ivoai opencode --direct` preserve
-the standalone clients. Claude is unchanged. See [frontends](docs/orchestrated-frontends.md).
+Current managed development uses the official Codex frontend and one IVOAI Core.
+`ivoai auto` aliases `ivoai codex`; `ivoai codex --direct` remains explicit.
+Managed OpenCode installation, repair, discovery, execution and release assets
+have been removed. Old `ivoai opencode`/`--legacy-opencode` entrypoints return
+migration guidance. Existing user binaries, configuration, credentials, profiles
+and history remain intact for explicit rollback; the original published v0.16
+assets are preserved. See [executors](docs/executors.md) for native headless
+clients and compatibility boundaries.
 
 ```sh
 ivoai session start --executor codex --mode direct
 ivoai session start --executor codex --mode orchestrated
+ivoai codex --knowledge-source mindsite
+ivoai claude --knowledge-source voicecorp
 ivoai monitor --watch
 ```
 
-For the quota-aware conversational mode, run:
+Named knowledge servers remain connected simultaneously. Purpose routing selects
+relevant sources; explicit `--knowledge-source` flags restrict the session to
+those aliases or purposes. Memory writes are never broadcast. Upstream tokens
+remain inside IVOAI's session-local loopback router, keeping simultaneous
+organization/repository scopes separate without rewriting global client config.
+See [multi-server knowledge sources](docs/multi-server.md).
 
-```sh
-ivoai opencode                         # OpenCode UI; choose the executor, Codex default
-ivoai opencode --planner codex         # OpenCode UI + Codex executor
-ivoai opencode --planner claude        # OpenCode UI + Claude Code executor
-ivoai codex --knowledge-source mindsite
-ivoai claude --knowledge-source voicecorp
-```
+IVOAI owns the logical session and dispatch policy. The adaptive Primary can
+answer simple admitted requests directly and escalate complex work through the
+existing plan approval, scheduler and isolated workers. Runtime-verified model,
+effort and observed quota gates remain authoritative; missing provider telemetry
+is unknown, never an invented zero or quota. Native client approvals, executor
+sandboxes and Core permissions remain independent of strategy selection.
 
-Named servers remain connected simultaneously. With no `--knowledge-source`,
-purpose-auto selects only relevant sources. Supplying one or
-more `--knowledge-source` flags restricts that session to exactly those aliases or
-purposes. Writes are never broadcast: an ambiguous new Memory write fails until a
-single destination is selected.
-Upstream tokens remain inside ivoai's per-session loopback router, so concurrent
-Voicecorp and Mindsite sessions do not rewrite global agent configuration or share
-credentials. See [Multi-server knowledge sources](docs/multi-server.md).
-
-OpenCode remains the frontend, IVOAI owns the logical session and dispatch policy,
-and the selected official client is the primary executor and only authoritative
-writer. On the first substantive request, automatic mode attempts
-one bounded Memory lookup and one Context lookup, builds a shared brief, validates a
-task DAG, calculates objective scores, and dispatches only workers whose expected
-benefit exceeds startup/context overhead. Independent tasks run concurrently; trivial
-work stays in the primary.
-
-IvoAI maps task scores to LIGHT, BALANCED, STRONG, and MAX requirements and selects
-the lowest sufficient runtime-verified model/effort profile. It never invents model
-IDs or reasoning support. Codex uses its structured app-server catalog; Claude uses
-its official client default model and only verified effort controls. Subscription
-quota and model-specific limits remain the final dispatch gate.
-
-Before opening it, ivoai reads subscription telemetry through Codex app-server and
-Claude's session-local structured statusline, then routes around a hard exhausted
-provider. The same gate runs before every worker. During a session, a hard limit can
-trigger a bounded checkpoint/handoff to the other official TUI. Before Claude's
-first response, missing rate-limit telemetry is `awaiting first response`; a field
-observed missing later is `N/A / not exposed`, and an old value is labelled `stale`.
-None of these states is treated as zero or invented.
-
-Orchestrated mode proves a real safe Ruflo swarm before opening the official primary
-client. Ruflo records only ephemeral lifecycle metadata; official Codex/Claude
-clients perform inference with their existing subscription logins. No PAYG provider
-key is passed to Ruflo or required by ivoai.
-
-Logins use the official Codex, Claude, and OpenCode flows. ivoai never asks for or stores their
-passwords, cookies, or provider OAuth tokens.
+The same provider-free Ruflo lifecycle control plane records ephemeral metadata;
+official clients perform inference using their existing authorized logins.
+IVOAI does not request or copy provider passwords, cookies or OAuth tokens, and
+does not silently switch a subscription session to a paid API.
 
 ## Terminal experience
 
@@ -229,7 +198,7 @@ ivoai update --rollback      # restore the prior compatible transaction
 ivoai project init           # optional project-specific identity
 ivoai session list           # non-sensitive session metadata
 ivoai monitor --watch        # primary, swarm, workers, services
-ivoai opencode --planner codex   # automatic quota-aware conversation
+ivoai auto                     # native Codex alias with shared Core admission
 ivoai server status          # local server services
 ivoai server backup          # authoritative data backup
 ```

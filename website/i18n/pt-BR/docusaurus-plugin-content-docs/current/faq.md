@@ -1,20 +1,22 @@
 # Perguntas frequentes
 
-## O `ivoai auto` usa todos os servidores conectados?
+## `ivoai auto` usa todos os servidores conectados?
 
-Sim. Sem `--knowledge-source`, todos os profiles conectados e habilitados são
-selecionados para leituras limitadas. A flag restringe a sessão exatamente aos
-aliases/purposes informados.
+Perfis habilitados são candidatos à recuperação limitada por propósito. Seletores
+`--knowledge-source` restringem a sessão e nunca expandem seus grants.
 
-## As escritas são replicadas para todas as fontes?
+## Escritas são replicadas para todas as fontes?
 
-Não. A federação automática se aplica às leituras. Novas escritas ambíguas falham de
-modo seguro.
+Não. A federação aplica-se a leituras; uma nova escrita ambígua falha fechada.
 
-## O IVOAI precisa de chaves de API dos providers?
+## O IVOAI precisa de chaves de API do provedor?
 
-Não nos fluxos compatíveis do Codex, Claude Code e OpenCode controlados por assinatura.
+Fluxos suportados usam a autenticação nativa autorizada do próprio usuário.
+OpenCode gerenciado foi removido. Experimentos headless continuam opt-in, sem
+implicar controle da TUI Claude ou certificação sem a conta do usuário. Nenhum
+fallback para API paga é introduzido automaticamente.
 
-## O Headroom foi removido?
+## Headroom foi removido?
 
-Não. Ele permanece disponível como provider de compatibilidade e rollback.
+Não. O componente e a escolha explícita permanecem para compatibilidade e rollback.
+Wrapping gerenciado inseguro continua indisponível por policy, usando Direct.

@@ -444,20 +444,20 @@ func validate(value Session) error {
 	if value.Mode != ModeDirect && value.Mode != ModeOrchestrated && value.Mode != ModeAuto {
 		return errors.New("invalid session mode")
 	}
-	if value.PrimaryExecutor != "codex" && value.PrimaryExecutor != "claude" && value.PrimaryExecutor != "opencode" {
+	if value.PrimaryExecutor != "codex" && value.PrimaryExecutor != "claude" && value.PrimaryExecutor != "opencode" && value.PrimaryExecutor != "antigravity" {
 		return errors.New("invalid primary executor")
 	}
-	if value.Frontend != "" && value.Frontend != "opencode" && value.Frontend != "codex" {
+	if value.Frontend != "" && value.Frontend != "opencode" && value.Frontend != "codex" && value.Frontend != "claude" && value.Frontend != "antigravity" {
 		return errors.New("invalid session frontend")
 	}
 	if !validLineage(value.Lineage) {
 		return errors.New("invalid handoff lineage")
 	}
-	if len(value.FrontendSessions) > 2 {
+	if len(value.FrontendSessions) > 4 {
 		return errors.New("invalid frontend mapping count")
 	}
 	for frontend, id := range value.FrontendSessions {
-		if (frontend != "codex" && frontend != "opencode") || !safeText(id, 128) || id == "" {
+		if (frontend != "codex" && frontend != "opencode" && frontend != "claude" && frontend != "antigravity") || !safeText(id, 128) || id == "" {
 			return errors.New("invalid frontend mapping")
 		}
 	}

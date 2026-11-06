@@ -32,6 +32,9 @@ func (a *App) SessionStart(ctx context.Context, executor string, mode session.Mo
 }
 
 func (a *App) SessionStartWithKnowledge(ctx context.Context, executor string, mode session.Mode, args, selectors []string) error {
+	if executor == "opencode" {
+		return session.ErrOpenCodeManagedDeprecated
+	}
 	if executor != "codex" && executor != "claude" && executor != "opencode" {
 		return errors.New("session executor must be codex, claude, or opencode")
 	}
@@ -442,13 +445,21 @@ func (a *App) OrchestratorServe(ctx context.Context, id string) error {
 		}
 	}
 	if value.PrimaryTurn != nil {
-		bound, err := a.bindAdaptivePrimaryServer(ctx, state, store, value)
-		if err != nil {
-			return err
-		}
 		identity := value.PrimaryTurn.Identity()
 		server.PrimaryTurnIdentity = &identity
-		server.AuthorizePrimaryTurn = func(checkCtx context.Context) error { _, err := bound.check(checkCtx); return err }
+		if value.PrimaryTurn.Executor == "antigravity" || value.PrimaryTurn.Executor == "claude" {
+			bound, err := a.bindNativeACPServer(ctx, store, value)
+			if err != nil {
+				return err
+			}
+			server.AuthorizePrimaryTurn = func(checkCtx context.Context) error { _, err := bound.check(checkCtx); return err }
+		} else {
+			bound, err := a.bindAdaptivePrimaryServer(ctx, state, store, value)
+			if err != nil {
+				return err
+			}
+			server.AuthorizePrimaryTurn = func(checkCtx context.Context) error { _, err := bound.check(checkCtx); return err }
+		}
 		server.DAGProtocol = automaticInstructions(cfg.Orchestration.Auto.CheckpointEnabled)
 	}
 	runErr := server.Run(ctx)

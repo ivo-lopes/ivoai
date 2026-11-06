@@ -11,12 +11,13 @@ For example: `sudo apt-get install curl ca-certificates libatomic1`.
 curl -fsSL https://raw.githubusercontent.com/ivo-lopes/ivoai/main/install.sh | sh
 ivoai setup
 ivoai doctor
-ivoai auto
+ivoai codex
 ```
 
 Official executor authentication remains inside each executor. IVOAI does not ask
-for or copy subscription credentials. AUTO opens the IVOAI-managed OpenCode frontend
-and uses those already-authenticated official clients as executors.
+for or copy subscription credentials. Managed work opens the official native Codex
+frontend; `ivoai auto` aliases that same Core-controlled path. Adaptive Primary
+execution is opt-in and OFF by default; permissions and plan approvals remain.
 
 ## Add private servers
 

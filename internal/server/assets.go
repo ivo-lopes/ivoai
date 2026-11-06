@@ -2,7 +2,7 @@ package server
 
 const ComposeYAML = `services:
   qdrant:
-    image: qdrant/qdrant@sha256:b7b0444c4c351c970b98e90a6f89c2ee4287c65b44e52b4cb503fa5b2aa927ad
+    image: qdrant/qdrant@sha256:9bfc89f9914fc14876a88c05270685921a55b8877b254a98bcc1cc2f0a424cd2
     restart: unless-stopped
     user: "1000:1000"
     env_file: [/etc/ivoai/secrets/qdrant.env]
@@ -28,6 +28,11 @@ const ComposeYAML = `services:
     restart: unless-stopped
     user: "1000:1000"
     env_file: [/etc/ivoai/secrets/embeddings.env]
+    environment:
+      # TEI reads LOG_LEVEL (not RUST_LOG). Its router INFO Args event includes
+      # api_key; suppress that target's INFO while retaining WARN/ERROR and
+      # other targets' INFO. Health, metrics and authentication are unchanged.
+      LOG_LEVEL: "info,text_embeddings_router=warn"
     command: ["--model-id", "intfloat/multilingual-e5-small", "--revision", "614241f622f53c4eeff9890bdc4f31cfecc418b3", "--port", "80"]
     ports:
       - "127.0.0.1:8080:80"
@@ -51,7 +56,7 @@ const ComposeYAML = `services:
         gw_priority: 1
 
   ai-memory:
-    image: akitaonrails/ai-memory@sha256:15178d3fc5bd67439a5b9780b2cf58af476943abea2487514a4c5d6ec18291ee
+    image: akitaonrails/ai-memory@sha256:cf09de9f40d8d4f5214698826530e61e9061ad5e02001defc8a77d42ab4e50b7
     restart: unless-stopped
     command: ["serve", "--transport", "http", "--bind", "0.0.0.0:49374"]
     user: "1000:1000"

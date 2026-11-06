@@ -11,6 +11,7 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/config"
 	"github.com/ivo-lopes/ivoai/internal/knowledgepolicy"
 	"github.com/ivo-lopes/ivoai/internal/platform"
+	"github.com/ivo-lopes/ivoai/internal/session"
 )
 
 const sharedKnowledgeInstructions = knowledgepolicy.ResearchFirstInstructions + `
@@ -249,6 +250,9 @@ func headroomBypassedForSharedKnowledge(cfg config.Config) bool {
 // host companion, removing every tool including MCP. Managed installs therefore
 // require the exact-version, checksum-verified companion beside the Codex binary.
 func validateManagedAgentRuntime(executor string, state config.State) error {
+	if executor == "opencode" {
+		return session.ErrOpenCodeManagedDeprecated
+	}
 	component := state.Components[executor]
 	if executor != "codex" || !component.Managed {
 		return nil

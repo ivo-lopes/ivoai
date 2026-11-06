@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "upstream": "https://github.com/openai/codex/releases/tag/rust-v0.167.0",
+  "source_base": "3c4a8c840",
+  "official_pair": "0.167.0 linux/amd64",
+  "official_inference": true,
+  "public_cli_dag_resume": {
+    "outcome": "PASS",
+    "wall_ms": 103754,
+    "turns": 3,
+    "closed_receipts": 3,
+    "one_core_session": true,
+    "same_native_thread": true,
+    "approved_changed_paths": [
+      "math.go"
+    ],
+    "archived_worker_count": 1,
+    "fixed_baseline_test_failed": true,
+    "fixed_final_test_passed": true,
+    "exit_normal": true,
+    "production_binary_sha256": "87a7be31b938e52d02e427c275c65df23d605fe5e5cbfc0a0edb4c87eab5b2c6"
+  },
+  "negative_observations": [
+    "Initial exact-version unit guard rejected the newly reviewed version as expected until the explicit tested allowlist case was updated. Unknown/mixed/unmanaged/version-only binaries remain rejected.",
+    "Epoch1 NOT_RUN/PIN_DENIED, zero model attempts: the closed fixture enumeration had not yet included167. Only its explicit version enumeration was updated using the already-audited production digests; no generic pin bypass or new admission infrastructure."
+  ],
+  "scope_limits": [
+    "Feature flag remains OFF by default; only exact reviewed executable/companion bytes are eligible.",
+    "Both AMD/ARM archives match official API release digests. ARM archive verification is not adaptive ARM inference certification.",
+    "Earlier162.1/166.0 reviewed pairs remain for explicit rollback.",
+    "This proof precedes the final shared lifecycle/Gateway composition; their integrated gates are separate.",
+    "No personal authentication, Codex configuration or paid API fallback changed.",
+    "Official token usage is invocation scoped; global economic gate remains INCOMPLETE."
+  ]
+}

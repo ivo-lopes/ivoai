@@ -1,0 +1,7 @@
+ok  	github.com/ivo-lopes/ivoai/internal/components	0.649s
+ok  	github.com/ivo-lopes/ivoai/internal/caveman	0.716s
+ok  	github.com/ivo-lopes/ivoai/internal/cavemaneval	21.172s
+ok  	github.com/ivo-lopes/ivoai/internal/compression	0.002s
+ok  	github.com/ivo-lopes/ivoai/internal/supplychain	0.038s
+ok  	github.com/ivo-lopes/ivoai/internal/componentupdate	0.033s
+ok  	github.com/ivo-lopes/ivoai/internal/doctor	0.021s

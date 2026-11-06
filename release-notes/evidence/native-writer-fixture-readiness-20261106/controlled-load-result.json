@@ -1,0 +1,23 @@
+{
+  "scope": "offline fixture race repetitions under controlled CPU and filesystem contention",
+  "provider_inference": false,
+  "repetitions": 6,
+  "source_sha256": "fa00949c7064abbaf7cc0f09cf237877f02d8b248f43e936f3a112b7d1162b53",
+  "test_binary_sha256": "913f9fff579884e3e4ab157e0f00c4dfd9bbd2c9cef4703ddbb0dd669d4cd1cb",
+  "setup_deadline_seconds": 10,
+  "post_close_deadline_ms": 500,
+  "load_workers": {
+    "cpu": 1,
+    "io": 1
+  },
+  "host_isolated": false,
+  "start_utc": "2026-11-06T16:38:50Z",
+  "exit_code": 0,
+  "wall_seconds": 19.249,
+  "workers_alive_at_finish": [
+    true,
+    true
+  ],
+  "outcome": "PASS",
+  "end_utc": "2026-11-06T16:39:10Z"
+}

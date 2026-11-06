@@ -1,0 +1,37 @@
+=== RUN   TestNativeCloseStopsBackgroundDirectoryWriters
+=== RUN   TestNativeCloseStopsBackgroundDirectoryWriters/live_writer_control
+=== RUN   TestNativeCloseStopsBackgroundDirectoryWriters/closed_writer
+--- PASS: TestNativeCloseStopsBackgroundDirectoryWriters (3.02s)
+    --- PASS: TestNativeCloseStopsBackgroundDirectoryWriters/live_writer_control (0.01s)
+    --- PASS: TestNativeCloseStopsBackgroundDirectoryWriters/closed_writer (3.00s)
+=== RUN   TestNativeCloseStopsBackgroundDirectoryWriters
+=== RUN   TestNativeCloseStopsBackgroundDirectoryWriters/live_writer_control
+=== RUN   TestNativeCloseStopsBackgroundDirectoryWriters/closed_writer
+--- PASS: TestNativeCloseStopsBackgroundDirectoryWriters (3.02s)
+    --- PASS: TestNativeCloseStopsBackgroundDirectoryWriters/live_writer_control (0.02s)
+    --- PASS: TestNativeCloseStopsBackgroundDirectoryWriters/closed_writer (3.00s)
+=== RUN   TestNativeCloseStopsBackgroundDirectoryWriters
+=== RUN   TestNativeCloseStopsBackgroundDirectoryWriters/live_writer_control
+=== RUN   TestNativeCloseStopsBackgroundDirectoryWriters/closed_writer
+--- PASS: TestNativeCloseStopsBackgroundDirectoryWriters (3.02s)
+    --- PASS: TestNativeCloseStopsBackgroundDirectoryWriters/live_writer_control (0.02s)
+    --- PASS: TestNativeCloseStopsBackgroundDirectoryWriters/closed_writer (3.00s)
+=== RUN   TestNativeCloseStopsBackgroundDirectoryWriters
+=== RUN   TestNativeCloseStopsBackgroundDirectoryWriters/live_writer_control
+=== RUN   TestNativeCloseStopsBackgroundDirectoryWriters/closed_writer
+--- PASS: TestNativeCloseStopsBackgroundDirectoryWriters (3.02s)
+    --- PASS: TestNativeCloseStopsBackgroundDirectoryWriters/live_writer_control (0.02s)
+    --- PASS: TestNativeCloseStopsBackgroundDirectoryWriters/closed_writer (3.00s)
+=== RUN   TestNativeCloseStopsBackgroundDirectoryWriters
+=== RUN   TestNativeCloseStopsBackgroundDirectoryWriters/live_writer_control
+=== RUN   TestNativeCloseStopsBackgroundDirectoryWriters/closed_writer
+--- PASS: TestNativeCloseStopsBackgroundDirectoryWriters (3.02s)
+    --- PASS: TestNativeCloseStopsBackgroundDirectoryWriters/live_writer_control (0.02s)
+    --- PASS: TestNativeCloseStopsBackgroundDirectoryWriters/closed_writer (3.00s)
+=== RUN   TestNativeCloseStopsBackgroundDirectoryWriters
+=== RUN   TestNativeCloseStopsBackgroundDirectoryWriters/live_writer_control
+=== RUN   TestNativeCloseStopsBackgroundDirectoryWriters/closed_writer
+--- PASS: TestNativeCloseStopsBackgroundDirectoryWriters (3.02s)
+    --- PASS: TestNativeCloseStopsBackgroundDirectoryWriters/live_writer_control (0.02s)
+    --- PASS: TestNativeCloseStopsBackgroundDirectoryWriters/closed_writer (3.00s)
+PASS

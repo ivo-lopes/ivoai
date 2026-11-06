@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "base": "1449881a6",
+  "version": "4.0.2-ivoai.1",
+  "source_commit": "b4531dfc05a3ef0ba93b57e8bfa5f48564a4b4d6",
+  "source_sha256": "29ef4c5bccee70dbc486bae266f966b8bd53132c6e12e27e9b06b36cf35c51f4",
+  "patch_sha256": "5f95e80d41d5744f16e09d534b1d56585fe746f9d5aed1e14c2586bbe953810d",
+  "amd64_archive_sha256": "25aa3e352c301fdaf303001487663d71a874e50f9211232a9cdc293b503b3b65",
+  "binary_sha256": {
+    "proxy_amd64": "848649eb185ce350ac91f1805f83160d719374a2fabef7c04abccafe0480d859",
+    "mcp_amd64": "39f1d2c8dd1221ad427806182d0a5651243795e2879d02c85459e317141d8f16"
+  },
+  "checks": {
+    "helper_negative_tests": 6,
+    "actual_native_installer_idempotent": {
+      "pass": true,
+      "seconds": 6.42
+    },
+    "canary_scenarios": 22,
+    "canary_quality_mismatches": 0,
+    "canary_compression_calls": 17,
+    "canary_applied": 1,
+    "canary_passthrough": 16,
+    "canary_failures": 0,
+    "baseline_context_bytes": 28131,
+    "candidate_context_bytes": 28131,
+    "token_basis": "heuristic_4_bytes",
+    "baseline_estimated_tokens": 7033,
+    "candidate_estimated_tokens": 7033,
+    "native_release_shape_js_ts_python": "PASS",
+    "amd64_repeat_archive_identical": true,
+    "qemu_no_avx_avx2_versions_proxy_health_mcp_compression": "PASS",
+    "qemu_arm64_versions_proxy_health_mcp_compression": "PASS",
+    "patched_proxy_mcp_vulnerability_findings": 0,
+    "core_go_vulnerability_findings": 0,
+    "focused_components_compression_supplychain_update_doctor": "PASS"
+  },
+  "limitations": [
+    "Native ARM hosted build, full composed CI, compiled release metadata and publication remain integration gates.",
+    "No provider inference or session economic claim; no upstream binary signature/source attestation claimed for the local fork.",
+    "Initial production build wrote the correct archive but cleanup failed on readonly Go module cache; corrected build completed exit0 with identical archive.",
+    "Initial Zig flag/UBSan link failures, private canary unsafe-mode refusal and extra-executable installer refusal retained; corrected repetitions passed without loosening admission.",
+    "Core first vulnerability invocation failed because Go was missing from PATH; corrected invocation returned0findings.",
+    "Core imported requirements are current; newer compute/metadata and x/tools versions only appear in unused/upstream-test module graph.",
+    "Historical benchmark and rejected upstream binary reports remain unchanged."
+  ],
+  "source_sha256_bindings": {
+    "scripts/build-managed-caveman.sh": "88ddf24dfb1546aa3596bc6bee876ee273d67043ad1e83efd3ff2b457c754b2d",
+    "patches/caveman/build.py": "cfbf53ac96a74d2591ca74cac37c94e3ac26c0aa30cf221665aa50d990f7e20f",
+    "patches/caveman/dependency-lock.patch": "5f95e80d41d5744f16e09d534b1d56585fe746f9d5aed1e14c2586bbe953810d",
+    "internal/components/managed_caveman.go": "f32a9f38840eddffb0bd87a9e61d04a3df5a6f58e243ff49929a4cf8642d5c8f",
+    "internal/components/managed_caveman_test.go": "89c1226b321db43331e2c52d212104697643eb2e536e299c8547e15aa49b76d7",
+    "internal/components/caveman_live_test.go": "7707fdb4222c12626cda21999a7c354ade6b8e59d0bc1774f37f79b77e8505dc",
+    "internal/components/components.go": "7d88c6ed91f83ea2483b647dbec1b320b7b0fb5b84cc3571d6cd3c25b767edb1",
+    "manifest/components.yaml": "555c46dc832b85bb049d9eb1ee42f876c53288e43b938298743fdfaa4cd1a295",
+    "internal/caveman/live_test.go": "c90fccfc1071ee2d40e42b0b65c307eee210dafa1d8ed0f88e77a2c7b53cc630",
+    "internal/cavemaneval/live_test.go": "c0bdf5d2b635386670a846001e7fab3151f911f6a629e3ff679f03a405559f25",
+    "go.mod": "d1c486bcfb3a5e1127b4f47de7e62001c768ee744c42b6f96627f6895d026705",
+    "go.sum": "44f145c4f9477395f29442a17757c7de7b24df282e19c7e6ffddb58662e2553c"
+  }
+}

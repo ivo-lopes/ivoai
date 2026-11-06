@@ -17,7 +17,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-	"unicode/utf8"
 
 	"github.com/ivo-lopes/ivoai/internal/core"
 	"github.com/ivo-lopes/ivoai/internal/platform"
@@ -194,7 +193,7 @@ func (g *Gateway) retrieve(ctx context.Context, r Request, generation, key strin
 		return Packet{}, err
 	}
 	doc = clone(doc)
-	if len(doc.Raw) > MaxPayloadBytes || !utf8.Valid(doc.Raw) || strings.ContainsRune(string(doc.Raw), '\x00') || !doc.Sensitivity.Persistable() || platform.Redact(string(doc.Raw)) != string(doc.Raw) || sensitiveAssignment.Match(doc.Raw) || privateKey.Match(doc.Raw) || !safeMediaType(doc.MediaType) {
+	if ValidatePersistableContent(doc.Raw) != nil || !doc.Sensitivity.Persistable() || !safeMediaType(doc.MediaType) {
 		return Packet{}, ErrSensitive
 	}
 	if doc.Basis != Extracted && doc.Basis != Inferred {

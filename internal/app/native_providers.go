@@ -12,7 +12,7 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/session"
 )
 
-var errClaudeNativeManagedFrontend = errors.New("CLAUDE_NATIVE_MANAGED_FRONTEND_UNAVAILABLE: this native managed handoff/planner has no verified Claude frontend; no OpenCode renderer or headless session was started; explicitly choose a supported native session or a deprecated legacy ivoai opencode command")
+var errClaudeNativeManagedFrontend = errors.New("CLAUDE_NATIVE_MANAGED_FRONTEND_UNAVAILABLE: this native managed handoff/planner has no verified Claude frontend; no OpenCode renderer or headless session was started; explicitly choose a supported native session or ivoai claude run --prompt for the experimental managed headless contract")
 
 func (a *App) scopedQuotaManager(cfg config.Config, state config.State, legacy bool) *quota.Manager {
 	manager := a.automaticQuotaManager(cfg, state)

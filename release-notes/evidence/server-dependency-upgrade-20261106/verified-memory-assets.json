@@ -1,0 +1,16 @@
+[
+  {
+    "version": "3.4.2",
+    "architecture": "x86_64",
+    "archive_sha256": "15a4f4a346a27e6fd63a36d1b3de23c5cbe142b80b3bce561e21b1f225a1e645",
+    "binary_sha256": "5a8e2c51cb09dadfc157601772b32c79ee63a6cbf9f05caf59c67da385bae6c1",
+    "archive_bytes": 24112301
+  },
+  {
+    "version": "3.4.2",
+    "architecture": "aarch64",
+    "archive_sha256": "164f7c38bb9bafca218dd958c3c60febcd5d2f5200ad138c6f128576cedebfb6",
+    "binary_sha256": "ceeed6ee8ca52eb370f81000ea28796abfb781ea7845e08cbba2adbd40581d77",
+    "archive_bytes": 22592138
+  }
+]

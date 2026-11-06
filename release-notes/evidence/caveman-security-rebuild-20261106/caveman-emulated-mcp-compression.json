@@ -1,0 +1,30 @@
+[
+  {
+    "arch": "amd64",
+    "cpu": "noAVX/AVX2",
+    "returncode": 0,
+    "compression": {
+      "ratio": 0.9717876378558605,
+      "tokens_before": 3899,
+      "tokens_after": 110,
+      "basis": "inferred"
+    },
+    "stderr": "",
+    "personal_home_mounted": false,
+    "input": "300 repeated harmless local log entries"
+  },
+  {
+    "arch": "arm64",
+    "cpu": "ARM64-emulation",
+    "returncode": 0,
+    "compression": {
+      "ratio": 0.9717876378558605,
+      "tokens_before": 3899,
+      "tokens_after": 110,
+      "basis": "inferred"
+    },
+    "stderr": "",
+    "personal_home_mounted": false,
+    "input": "300 repeated harmless local log entries"
+  }
+]

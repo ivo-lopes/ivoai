@@ -1,0 +1,5 @@
+=== RUN   TestContextPrivateRealStack
+    context_private_docker_test.go:89: real administrative ingest failed: exit status 1 {"schema_version":1,"connector":"approved","status":"failed","documents":0,"verified_documents":[],"started_at":"2026-11-06T16:52:56.397639946Z","completed_at":"2026-11-06T16:52:57.117573854Z","exact_recovery_verified":false,"context_sync":"BLOCKED"}
+        ivoai: context ingestion failed or already in progress; inspect service diagnostics, do not replay automatically
+--- FAIL: TestContextPrivateRealStack (1.37s)
+FAIL

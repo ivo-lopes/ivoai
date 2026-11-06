@@ -1,0 +1,95 @@
+?   	github.com/ivo-lopes/ivoai/cmd/ivoai	[no test files]
+?   	github.com/ivo-lopes/ivoai/cmd/ivoai-output-view-sandbox	[no test files]
+ok  	github.com/ivo-lopes/ivoai/internal/admin	2.772s
+ok  	github.com/ivo-lopes/ivoai/internal/agents	0.274s
+--- FAIL: TestSetupIsIdempotentAndReadyWithoutConnections (0.76s)
+    app_test.go:130: missing "default caveman / effective caveman" in:
+        ivoai          ready
+        Codex          installed / not connected
+        Codex tools    ready
+        Claude Code    installed / not connected
+        OpenCode       not installed / optional
+        Permissions    interactive / managed OpenCode
+        Headroom       installed / enabled / interactive not validated
+        Compression    default caveman / effective direct / fallback=caveman_unavailable
+        Context        not configured
+        ai-memory      installed / offline hooks
+        Memory hooks   not_configured
+        Research       unavailable / connect server
+        Ruflo          ready / provider execution disabled
+        Server         not configured
+        Skill registry ready / active=66 staged=0 quarantined=0
+        Auto           ready / default Codex
+        Quota routing  N/A / telemetry not captured
+        Failover       configured / alternate authentication unavailable
+        Codex 5h       N/A / not exposed
+        Codex weekly   N/A / not exposed
+        Claude 5h      awaiting first response
+        Claude weekly  awaiting first response
+        
+        Overall: READY — external connections pending
+--- FAIL: TestCompressionSelectionIsMutuallyExclusiveWithCavemanDefault (0.00s)
+    compression_test.go:21: default selection provider=<nil> enabled=false name="direct"
+FAIL
+FAIL	github.com/ivo-lopes/ivoai/internal/app	22.119s
+ok  	github.com/ivo-lopes/ivoai/internal/benchmarkfixtures	0.509s
+ok  	github.com/ivo-lopes/ivoai/internal/caveman	0.713s
+ok  	github.com/ivo-lopes/ivoai/internal/cavemaneval	21.318s
+ok  	github.com/ivo-lopes/ivoai/internal/cli	6.377s
+ok  	github.com/ivo-lopes/ivoai/internal/codebase	0.016s
+ok  	github.com/ivo-lopes/ivoai/internal/codeintel	17.514s
+ok  	github.com/ivo-lopes/ivoai/internal/codesandbox	0.006s
+ok  	github.com/ivo-lopes/ivoai/internal/codexfrontend	11.068s
+ok  	github.com/ivo-lopes/ivoai/internal/codexresolver	0.011s
+ok  	github.com/ivo-lopes/ivoai/internal/components	0.678s
+ok  	github.com/ivo-lopes/ivoai/internal/componentupdate	0.034s
+ok  	github.com/ivo-lopes/ivoai/internal/compression	0.003s
+ok  	github.com/ivo-lopes/ivoai/internal/config	0.032s
+ok  	github.com/ivo-lopes/ivoai/internal/connections	0.083s
+ok  	github.com/ivo-lopes/ivoai/internal/context	0.054s
+ok  	github.com/ivo-lopes/ivoai/internal/core	0.003s
+ok  	github.com/ivo-lopes/ivoai/internal/docsserver	0.007s
+ok  	github.com/ivo-lopes/ivoai/internal/doctor	0.019s
+ok  	github.com/ivo-lopes/ivoai/internal/enrollment	0.017s
+ok  	github.com/ivo-lopes/ivoai/internal/evidence	5.676s
+ok  	github.com/ivo-lopes/ivoai/internal/externalmcp	0.044s
+ok  	github.com/ivo-lopes/ivoai/internal/gateway	0.018s
+ok  	github.com/ivo-lopes/ivoai/internal/headroom	0.002s
+ok  	github.com/ivo-lopes/ivoai/internal/knowledgepolicy	0.002s
+ok  	github.com/ivo-lopes/ivoai/internal/knowledgerouter	0.277s
+ok  	github.com/ivo-lopes/ivoai/internal/memory	0.034s
+ok  	github.com/ivo-lopes/ivoai/internal/migration	0.012s
+ok  	github.com/ivo-lopes/ivoai/internal/nativeacp	0.444s
+ok  	github.com/ivo-lopes/ivoai/internal/nativecodex	0.793s
+ok  	github.com/ivo-lopes/ivoai/internal/observability	0.003s
+ok  	github.com/ivo-lopes/ivoai/internal/opencodebridge	4.942s
+ok  	github.com/ivo-lopes/ivoai/internal/orchestration	0.569s
+ok  	github.com/ivo-lopes/ivoai/internal/orchestrator	21.442s
+ok  	github.com/ivo-lopes/ivoai/internal/ownedprocess	0.003s
+ok  	github.com/ivo-lopes/ivoai/internal/platform	0.032s
+ok  	github.com/ivo-lopes/ivoai/internal/policy	0.002s
+ok  	github.com/ivo-lopes/ivoai/internal/project	0.008s
+ok  	github.com/ivo-lopes/ivoai/internal/promptgate	0.007s
+ok  	github.com/ivo-lopes/ivoai/internal/quota	0.022s
+ok  	github.com/ivo-lopes/ivoai/internal/routing	0.007s
+ok  	github.com/ivo-lopes/ivoai/internal/rtkview	0.002s
+ok  	github.com/ivo-lopes/ivoai/internal/secrets	0.004s
+ok  	github.com/ivo-lopes/ivoai/internal/server	0.019s
+ok  	github.com/ivo-lopes/ivoai/internal/servercmd	0.376s
+ok  	github.com/ivo-lopes/ivoai/internal/serverpool	0.003s
+ok  	github.com/ivo-lopes/ivoai/internal/session	1.612s
+ok  	github.com/ivo-lopes/ivoai/internal/skillcatalog	1.830s
+ok  	github.com/ivo-lopes/ivoai/internal/skillgate	0.178s
+ok  	github.com/ivo-lopes/ivoai/internal/skills	0.149s
+ok  	github.com/ivo-lopes/ivoai/internal/skillupdate	0.032s
+ok  	github.com/ivo-lopes/ivoai/internal/supplychain	0.043s
+ok  	github.com/ivo-lopes/ivoai/internal/terminalui	0.008s
+ok  	github.com/ivo-lopes/ivoai/internal/toolrouting	0.002s
+ok  	github.com/ivo-lopes/ivoai/internal/update	0.015s
+ok  	github.com/ivo-lopes/ivoai/internal/webauth	0.046s
+ok  	github.com/ivo-lopes/ivoai/internal/webmcp	0.020s
+ok  	github.com/ivo-lopes/ivoai/internal/workers	0.029s
+ok  	github.com/ivo-lopes/ivoai/internal/workingcontext	4.413s
+?   	github.com/ivo-lopes/ivoai/scripts/stable-release-upgrade-fixtures	[no test files]
+?   	github.com/ivo-lopes/ivoai/scripts/upgrade-matrix-v050	[no test files]
+FAIL

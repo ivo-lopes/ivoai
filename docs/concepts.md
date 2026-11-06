@@ -1,6 +1,6 @@
 # Concepts
 
-- **Executor:** the official Codex, Claude Code, or OpenCode client that owns its login.
+- **Executor:** a supported official native client, such as Codex, Claude Code or Antigravity that owns its login.
 - **AUTO:** quota-aware planning and advisory-worker orchestration. The selected official client remains the authoritative writer.
 - **Memory:** durable operational knowledge provided by ai-memory.
 - **Context:** private indexed documents exposed through Context MCP.

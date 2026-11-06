@@ -1,0 +1,66 @@
+# Setup
+
+## Client setup
+
+`ivoai setup` provisions managed components transactionally and preserves external
+executor installations and their authentication.
+
+Current client setup and updater candidates do not install, repair, probe, adopt
+or execute OpenCode. `--legacy-opencode` is retained as an explicit migration
+error; it cannot re-enable the removed component. Existing OpenCode ownership,
+binaries, configuration, credentials, profiles and history remain intact for an
+explicit Core rollback or use of the user's separate upstream client. Start
+managed work with `ivoai codex`; `ivoai auto` is its compatibility alias. Releases
+through v0.16 retain their original published asset sets and behavior; current
+source documentation must not be interpreted as a replacement for those assets.
+
+## Managed native configuration scope
+
+For managed Codex, start IVOAI from the required workspace using shell `cd`:
+
+```sh
+cd /path/to/project
+ivoai codex
+```
+
+Do not forward native `-C`/`--cd` or `--ignore-user-config`: they are rejected with
+`CODEX_MANAGED_CONFIG_SCOPE_UNSUPPORTED`. Existing sessions keep their recorded
+workspace; start a new session when selecting another initial directory. The host
+shares one captured directory/environment/config scope between MCP inventory and
+execution, preserving Core grants, sandbox and approvals. No personal config or
+credential file needs editing. This snapshot does not freeze changing settings or
+cloud policy, and it does not certify general client parity. See [releases](releases.md).
+
+## Experimental native hosts
+
+Adaptive Codex is off by default until controlled certification and rollout.
+`IVOAI_EXPERIMENTAL_ADAPTIVE_PRIMARY=1` enables the reviewed Linux amd64 runtime
+pairs only; it does not certify every installed version/platform. `ivoai auto`
+uses the same managed Codex path. `ivoai codex --direct` and the normal
+`ivoai claude` TUI remain explicit direct-client choices.
+
+Managed Claude headless requires `IVOAI_EXPERIMENTAL_CLAUDE_HEADLESS=1` and
+`ivoai claude run --prompt ...`, with the reviewed Claude Code 2.1.318 runtime on Linux
+amd64. Antigravity requires `IVOAI_EXPERIMENTAL_ANTIGRAVITY=1`,
+`ivoai antigravity run --prompt ...` and reviewed `agy` 1.5.2 on PATH, also on Linux
+amd64. These flags are off by default. The hosts reuse official authentication;
+setup does not copy subscription credentials or configure a paid API. Claude
+inference remains pending an authorized account. Headless support does not claim
+native TUI control, universal parity or cross-process resume.
+
+## Debian 12 and LXC server setup
+
+`sudo ivoai setup --mode server` performs a preflight before writing server state:
+OS, architecture, container/LXC status, privileges, systemd, Docker CLI and daemon,
+Engine version, and Compose v2.
+
+On supported Debian 12, IVOAI can install a missing Docker Engine from Docker's
+official APT repository and upgrade an old Engine already owned by that repository.
+Unknown/non-official installations remain operator-owned. It never uses a remote
+shell installer. If Docker cannot start inside LXC, enable nesting and the required
+container features on the Proxmox host, then rerun setup. Host configuration cannot
+be changed safely from inside the guest.
+
+An interrupted setup is repaired idempotently by rerunning the same command. Before
+completion, server diagnostics report `SERVER_SETUP=INCOMPLETE` and the actual
+prerequisite instead of treating missing backend `.env` files as the root cause.

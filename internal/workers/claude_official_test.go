@@ -19,7 +19,7 @@ func TestClaudeWorkerOfficialDelegationBoundary(t *testing.T) {
 		t.Skip("set IVOAI_CLAUDE_WORKER_OFFICIAL_BINARY for the pinned offline protocol proof")
 	}
 	if runtime.GOOS != "linux" || runtime.GOARCH != "amd64" {
-		t.Fatal("this proof pins the official Linux amd64 2.1.296 binary only")
+		t.Fatal("this proof pins the official Linux amd64 2.1.318 binary only")
 	}
 	root := t.TempDir()
 	access, err := NewAccess(root, false, nil)

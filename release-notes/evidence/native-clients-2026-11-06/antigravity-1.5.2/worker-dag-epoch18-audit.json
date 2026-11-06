@@ -1,0 +1,83 @@
+{
+  "epoch": "agy152-worker-path-epoch18",
+  "primary_runtime": "Antigravity1.5.2/Linuxamd64",
+  "worker_runtime": "Codex0.166.0/reviewedofficialpair",
+  "artifact_sha256": "1f9b632aa17c99f1777f44e526d59b4c8824c7120e7a90db34a63c3aab4fda5c",
+  "artifact_size": 7800,
+  "artifact_integrity_verified": true,
+  "official_worker_command_events": [
+    {
+      "command": "/bin/bash -c \"pwd && rg --files -g 'AGENTS.md' -g 'calc.go' -g 'calc_test.go' -g 'go.mod' && git status --short && cat calc.go calc_test.go go.mod\"",
+      "exit_code": 127,
+      "status": "failed",
+      "test_add_passed": false,
+      "test_multiply_passed": false,
+      "test_divide_passed": false,
+      "go_not_found": false,
+      "rg_not_found": true,
+      "output_sha256": "752cd2f3b6c401d3b16d3fb6afa91cb420c323d20e6b4d7470a699e5a96ea1e5"
+    },
+    {
+      "command": "/bin/bash -c 'GOCACHE=$(mktemp -d /tmp/calc-go-cache.XXXXXX) go test -v ./...'",
+      "exit_code": 0,
+      "status": "completed",
+      "test_add_passed": true,
+      "test_multiply_passed": true,
+      "test_divide_passed": true,
+      "go_not_found": false,
+      "rg_not_found": false,
+      "output_sha256": "7be24b89f9b484f05a6c3e977b8bad679b7e7c8a37d4561109b84c47a825bffc"
+    }
+  ],
+  "shell_flags": {
+    "allow_login_shell": false,
+    "features.shell_snapshot": false
+  },
+  "new_mounts_or_grants": false,
+  "cache": "worker-created private mktemp directory under /tmp",
+  "economic_evidence": false,
+  "global_completion": "PASS_CORE_INTEGRATED_AND_NORMAL_EXIT",
+  "scenario_seconds_including_external_host_verification": 562.35,
+  "native_cli_exit_code": 0,
+  "host_go_test_exit_code": 0,
+  "tasks": [
+    {
+      "id": "impl-calc",
+      "state": "completed",
+      "executor": "codex",
+      "execution_mode": "worker",
+      "duration_ms": 55589,
+      "delegation_reason": "benefit exceeds bounded worker overhead"
+    },
+    {
+      "id": "verify-calc",
+      "state": "completed",
+      "executor": "antigravity",
+      "execution_mode": "primary",
+      "duration_ms": null,
+      "delegation_reason": "worker overhead is not lower than expected benefit"
+    }
+  ],
+  "native_attempts": [
+    {
+      "state": "completed",
+      "started_at": "2026-11-06T14:24:56.827849879Z",
+      "ended_at": "2026-11-06T14:34:10.012642813Z",
+      "runtime_version": "1.5.2",
+      "exit_code": 0,
+      "signal": null,
+      "completion_event": true,
+      "final_response_present": true,
+      "usage": null,
+      "usage_status": "not_reported",
+      "tools": []
+    }
+  ],
+  "integrated_head": "7e39eb293761174582e1ceea9bcc6dfc50325947",
+  "fixture_base": "fa4466d0710bc604a93a7a36c6a1eacb255ac666",
+  "changed_files": [
+    "calc.go",
+    "calc_test.go"
+  ],
+  "causal_comparison": "Functional evidence; not isolated AB: Antigravity also changed from1.5.0 to1.5.2. Old go127 epochs retained."
+}

@@ -37,7 +37,7 @@ func (s *menuSession) conversations() (bool, error) {
 					{id: "resume", label: "Resume native conversation", description: "Reopen and wait for new input; do not replay the last turn", disabled: disabledUnless(value.Resumable(), "no resumable mapping or session currently active"), run: func() (bool, error) { return s.resumeConversation(value.SessionID, "", false) }},
 					{id: "frontend", label: "Resume in another frontend", description: "Keep the provider and IVOAI identity; switch presentation only", disabled: disabledUnless(value.Mode == "auto" && value.Resumable(), "requires an inactive orchestrated conversation"), run: func() (bool, error) {
 						choices := []menuAction{}
-						for _, frontend := range []string{"codex", "opencode"} {
+						for _, frontend := range []string{"codex"} {
 							frontend := frontend
 							if frontend == value.Frontend {
 								continue

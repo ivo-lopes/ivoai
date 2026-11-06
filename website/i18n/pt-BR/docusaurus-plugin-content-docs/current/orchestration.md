@@ -1,6 +1,6 @@
 # Controle e orquestração de sessões
 
-O IVOAI oferece um core nativo compartilhado pelos frontends Codex e OpenCode.
+O IVOAI oferece um core nativo compartilhado pelos frontends Codex nativo e seu alias auto.
 Veja [Frontends orquestrados](orchestrated-frontends.md). Os clientes oficiais
 permanecem disponíveis em modo direto explícito, sem nova credencial de provider.
 
@@ -40,7 +40,7 @@ ivoai session start --executor codex --mode orchestrated
 ivoai session start --executor claude --mode orchestrated
 ```
 
-Codex e OpenCode orquestrados usam admissão nativa, aprovação do plano e despacho
+Codex nativo e seu alias auto orquestrados usam admissão nativa, aprovação do plano e despacho
 automático pelo mesmo scheduler. O modo histórico Claude orquestrado abaixo
 permanece inalterado; `ivoai claude` continua direto.
 
@@ -82,66 +82,22 @@ final sobre provider, modelo verificado em runtime, esforço e se a delegação 
 ## Modo automático
 
 ```sh
-ivoai opencode
-ivoai opencode --planner codex
-ivoai opencode --planner claude
+ivoai codex
+ivoai auto
+ivoai claude
 ```
 
-O modo automático usa a TUI do OpenCode na versão fixada como frontend interativo,
-enquanto o IVOAI permanece como planner, proprietário lógico da sessão, writer
-autoritativo e consolidador de resultados. O IVOAI invoca a CLI oficial selecionada
-do Codex ou Claude Code por trás de uma bridge privada em loopback, usando o login de
-assinatura existente em cada cliente sem copiar credenciais para o OpenCode. Ele
-verifica clientes elegíveis sem exigir Ruflo no AUTO nativo. Pode propor uma
-alternativa quando o provider atual possui um limite rígido confirmado,
-atualiza a cota antes e depois do trabalho de um worker e monitora o primary ativo. Um
-limite rígido no meio da sessão interrompe apenas o grupo de processos correspondente,
-preserva a working tree e inicia a alternativa com um checkpoint limitado mais um
-resumo de Git status/diff-stat, após aprovação da mudança. São aceitos no máximo dois failovers automáticos
-consecutivos; um checkpoint bem-sucedido zera esse contador.
+Codex gerenciado e seu alias auto usam a mesma admissão, scheduler, aprovação de
+plano e validação do Core. Setup/execução OpenCode foram removidos. Claude acima
+abre sua TUI oficial direta; hosts headless experimentais têm flags próprias,
+OFF por padrão, sem controle transparente dessa TUI.
 
-O frontend OpenCode permanece conectado durante o failover limitado entre executores.
-O Codex recebe instruções da sessão por uma substituição oficial de configuração com
-escopo de processo. O Claude as recebe por `--append-system-prompt-file` e um arquivo
-`--settings` privado e exclusivo da sessão, que captura telemetria estruturada da
-statusline. Nenhuma configuração permanente de terceiros é sobrescrita. Os detalhes
-estão em [auto-orchestration.md](auto-orchestration.md).
-
-AUTO aceita texto UTF-8 não vazio e limitado, incluindo pedidos informais e
-perguntas, sem exigir critérios de aceite no prompt. Readiness não concede
-autoridade sobre ferramentas ou planos; entradas vazias ou malformadas são
-rejeitadas antes da execução. O caminho separado somente com primary, sem DAG,
-permanece pendente. Purpose-auto seleciona sources institucionais relevantes antes
-das consultas limitadas a Memory/Context. O IVOAI valida o
-DAG e aguarda aprovação por padrão. Calcula tiers de capability, mantém trabalho
-read-only antieconômico no primary e inicia workers conforme dependências, host e
-limite do usuário. Cada worker recebe um brief local e MCPs deny-by-default.
-Writers aprovados usam worktrees isoladas; o IVOAI verifica a integração antes da
-síntese do primary. O texto
-integral da tarefa e o corpo dos resultados nunca entram no JSON da sessão; apenas
-ResultRefs limitadas do WorkingContext entram. Detalhes de pontuação e roteamento estão
-em [auto-scheduler.md](auto-scheduler.md).
-
-Essas instruções da sessão impõem a mesma prioridade de pesquisa do modo direto:
-primeiro `ivoai-memory`, depois `ivoai-context`, e fontes Web/externas somente depois
-que os dois estágios internos tiverem sido tentados. Os adapters dos workers também
-recebem a política pelas flags oficiais de instrução com escopo de processo do Codex
-e do Claude.
-
-As tarefas delegadas e os corpos dos resultados nunca entram no Ruflo nem no JSON da
-sessão. O Ruflo recebe somente IDs opacos de sessão/worker por comandos de ciclo de
-vida independentes de provider. O adapter do worker usa
-`codex exec --json --output-last-message` ou `claude --print --output-format json`,
-selecionado a partir de caminhos confiáveis dos componentes. Variáveis de ambiente
-com chaves de provider são removidas dos workers; a autenticação de assinatura
-permanece dentro de cada cliente oficial. As instruções de pesquisa não adicionam
-credenciais de provider nem roteiam inferência pelo Ruflo.
-
-A saída do worker não é confiável. O IvoAI primeiro persiste seus bytes exatos no
-ArtifactStore transitório privado e depois projeta um WorkerResult limitado e
-independente de provider. Um StateDelta é apenas uma observação proposta; ele não pode
-conceder capability, alterar política, desabilitar um sandbox nem aplicar mutações à
-working tree. Consulte [WorkingContext](working-context.md).
+Prompts naturais não precisam de cabeçalhos formais de aceite. Primary adaptativo
+sem DAG depende de opção experimental explícita, OFF por padrão. Ele preserva
+somente leitura e escala trabalho complexo pelo mesmo protocolo de planejamento.
+Cada turno é admitido de novo, mantendo fontes, quotas, escopos e aprovações.
+Operações incertas não são repetidas após recusa ou cancelamento. Detalhes em
+[auto-orchestration.md](auto-orchestration.md).
 
 ## Funções dos componentes
 

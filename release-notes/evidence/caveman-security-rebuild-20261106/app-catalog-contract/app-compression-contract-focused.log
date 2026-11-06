@@ -1,0 +1,14 @@
+=== RUN   TestSetupIsIdempotentAndReadyWithoutConnections
+--- PASS: TestSetupIsIdempotentAndReadyWithoutConnections (0.76s)
+=== RUN   TestCompressionSelectionIsMutuallyExclusiveWithCavemanDefault
+--- PASS: TestCompressionSelectionIsMutuallyExclusiveWithCavemanDefault (0.00s)
+=== RUN   TestCompressionWithoutReviewedReleaseMetadataUsesDirect
+--- PASS: TestCompressionWithoutReviewedReleaseMetadataUsesDirect (0.00s)
+=== RUN   TestCompressionCatalogFixturePreservesImmutableSourceContract
+--- PASS: TestCompressionCatalogFixturePreservesImmutableSourceContract (0.00s)
+=== RUN   TestCompressionBypassObservationIsBoundedAndProviderNeutral
+--- PASS: TestCompressionBypassObservationIsBoundedAndProviderNeutral (0.00s)
+=== RUN   TestCompressionPolicyUsesOnlySessionSelectedSources
+--- PASS: TestCompressionPolicyUsesOnlySessionSelectedSources (0.01s)
+PASS
+ok  	github.com/ivo-lopes/ivoai/internal/app	0.775s

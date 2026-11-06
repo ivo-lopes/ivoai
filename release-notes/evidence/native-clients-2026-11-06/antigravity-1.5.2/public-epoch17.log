@@ -1,0 +1,13 @@
+=== RUN   TestAntigravityPublicManagedCLI
+=== RUN   TestAntigravityPublicManagedCLI/simple_continuation
+    native_acp_cli_live_test.go:151: real official CLI: scenario=simple_continuation duration=22.959284463s state=completed turns=2 no_dag=true
+=== RUN   TestAntigravityPublicManagedCLI/code_evidence
+    native_acp_cli_live_test.go:151: real official CLI: scenario=code_evidence duration=20.830513144s state=completed turns=1 no_dag=true
+=== RUN   TestAntigravityPublicManagedCLI/read_denial
+    native_acp_cli_live_test.go:151: real official CLI: scenario=read_denial duration=22.092802196s state=completed turns=1 no_dag=true
+--- PASS: TestAntigravityPublicManagedCLI (66.07s)
+    --- PASS: TestAntigravityPublicManagedCLI/simple_continuation (22.97s)
+    --- PASS: TestAntigravityPublicManagedCLI/code_evidence (20.84s)
+    --- PASS: TestAntigravityPublicManagedCLI/read_denial (22.10s)
+PASS
+ok  	github.com/ivo-lopes/ivoai/internal/app	66.075s

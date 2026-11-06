@@ -15,6 +15,8 @@ Usage:
   ivoai doctor [--json] [--inventory]
   ivoai update [--dry-run] | update --rollback [--force]
   ivoai update --codex [--rollback]
+  ivoai claude run --prompt TEXT [--directory PATH] [--model ID] [--follow-up TEXT]
+  ivoai antigravity run --prompt TEXT [--directory PATH] [--model ID] [--follow-up TEXT]
   ivoai connect [list|chatgpt|claude]
   ivoai connect server [--url URL] [--purpose PURPOSE] [--redundancy-group GROUP] [--priority N] [--enrollment-code CODE|--code-stdin]
   ivoai connect server add <alias> [--url URL] [--purpose PURPOSE] [--redundancy-group GROUP] [--priority N] [--enrollment-code CODE|--code-stdin]
@@ -34,11 +36,11 @@ Usage:
   ivoai disconnect <chatgpt|claude|server [alias|--all]>
   ivoai codex [--direct] [--knowledge-source <alias|purpose>] [-- agent arguments...]
   ivoai claude [--knowledge-source <alias|purpose>] [-- agent arguments...]
-  ivoai opencode [--direct] [--planner codex|claude|opencode] [--knowledge-source <alias|purpose>] [-- agent arguments...]
-  ivoai auto [--planner codex|claude|opencode] [--knowledge-source <alias|purpose>] [-- agent arguments...]
-  ivoai session start --executor <codex|claude|opencode> --mode <direct|orchestrated> [--knowledge-source <alias|purpose>] [-- agent arguments...]
+  ivoai opencode (removed; use ivoai codex; retained user data is preserved)
+  ivoai auto [--planner codex] [--knowledge-source <alias|purpose>] [-- agent arguments...]
+  ivoai session start --executor <codex|claude> --mode <direct|orchestrated> [--knowledge-source <alias|purpose>] [-- agent arguments...]
   ivoai session list [--json] | show [--json] <id> | stop <id>
-  ivoai session resume <id> [--frontend codex|opencode] [--knowledge-source alias]
+  ivoai session resume <id> [--frontend codex] [--knowledge-source alias]
   ivoai session recover <id> [--knowledge-source alias]
   ivoai session adopt-scope <id> [--knowledge-source alias] [--confirm] [--json]
   ivoai session restore-scope <id> --backup PATH [--confirm] [--json]

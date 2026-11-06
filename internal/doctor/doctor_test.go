@@ -161,8 +161,8 @@ func TestComponentMatrixExplainsCapabilitiesHealthAndFallback(t *testing.T) {
 		t.Fatal("read-only remote Context advertised ingestion")
 	}
 	opencode, err := matrix.Resolve(core.ComponentOpenCode, core.CapabilitySessionStart)
-	if err != nil || opencode.Component.Capabilities.Supports(core.CapabilityAdvisoryExecute) {
-		t.Fatalf("OpenCode direct-only selection=%+v err=%v", opencode, err)
+	if err == nil {
+		t.Fatalf("removed OpenCode session capability advertised=%+v", opencode)
 	}
 }
 

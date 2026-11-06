@@ -1,7 +1,7 @@
 # IVOAI documentation
 
-IVOAI is a host-first client and optional private server for Codex, Claude Code,
-OpenCode, durable operational memory, private context, safe compression and
+IVOAI is a backend-first Core and optional private server for native Codex, Claude Code,
+Antigravity, durable operational memory, private context, safe compression and
 multi-server knowledge routing.
 
 Start with the [quickstart](quickstart.md), then use the [CLI reference](cli-reference.md)

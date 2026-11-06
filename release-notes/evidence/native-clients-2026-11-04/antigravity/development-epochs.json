@@ -1,0 +1,737 @@
+{
+  "real_inference": true,
+  "discarded_unfavorable_results": false,
+  "global_economic_gate": "INCOMPLETE",
+  "scenario_time_is_not_inference_only": true,
+  "epochs": [
+    {
+      "epoch_fixture": "ivoai-agy-code-_wpu9eoo",
+      "case": "code",
+      "exit_code": 1,
+      "scenario_wall_seconds_including_external_verification": 219.962,
+      "functional_pass": false,
+      "quality_certification": false,
+      "external_go_test_exit": 0,
+      "worker_go_execution_limited": false,
+      "session_state": "failed",
+      "turn_state": "running",
+      "plan_created": false,
+      "task_count": 0,
+      "workers": [],
+      "code_intelligence_observations": [],
+      "trace": {
+        "executor": "antigravity",
+        "executor_version": "1.5.0",
+        "exit_code": 0,
+        "completion_event": false,
+        "final_response_present": false,
+        "failure_class": "executor_failure",
+        "usage_status": "not_reported"
+      },
+      "native_operation_dispositions": [],
+      "failure": "TURN_TRANSPORT_FAILED: controlled turn interrupted or unavailable"
+    },
+    {
+      "epoch_fixture": "ivoai-agy-code-b9jqzj9u",
+      "case": "code",
+      "exit_code": 0,
+      "scenario_wall_seconds_including_external_verification": 29.496,
+      "functional_pass": true,
+      "quality_certification": true,
+      "external_go_test_exit": 0,
+      "worker_go_execution_limited": false,
+      "session_state": "completed",
+      "turn_state": "completed",
+      "plan_created": false,
+      "task_count": 0,
+      "workers": [],
+      "code_intelligence_observations": [
+        {
+          "operation": "code.inspect",
+          "provider": "direct",
+          "state": "completed",
+          "duration_ms": 1
+        }
+      ],
+      "trace": {
+        "executor": "antigravity",
+        "executor_version": "1.5.0",
+        "exit_code": 0,
+        "completion_event": true,
+        "final_response_present": true,
+        "usage": {
+          "input_tokens": 10822,
+          "output_tokens": 930,
+          "cached_input_tokens": 6169,
+          "basis": "official_cli_reported",
+          "source": "antigravity_acp_session_prompt",
+          "scope": "invocation"
+        },
+        "usage_status": "reported"
+      },
+      "native_operation_dispositions": []
+    },
+    {
+      "epoch_fixture": "ivoai-agy-code-cal8la59",
+      "case": "code",
+      "exit_code": 1,
+      "scenario_wall_seconds_including_external_verification": 47.094,
+      "functional_pass": false,
+      "quality_certification": false,
+      "external_go_test_exit": 0,
+      "worker_go_execution_limited": false,
+      "session_state": "failed",
+      "turn_state": "failed",
+      "plan_created": false,
+      "task_count": 0,
+      "workers": [],
+      "code_intelligence_observations": [
+        {
+          "operation": "code.inspect",
+          "provider": "direct",
+          "state": "completed",
+          "duration_ms": 1
+        }
+      ],
+      "trace": {
+        "executor": "antigravity",
+        "executor_version": "1.5.0",
+        "exit_code": 0,
+        "completion_event": true,
+        "final_response_present": false,
+        "failure_class": "ANTIGRAVITY_PERMISSION_DENIED",
+        "usage": {
+          "input_tokens": 15179,
+          "output_tokens": 334,
+          "cached_input_tokens": 10614,
+          "basis": "official_cli_reported",
+          "source": "antigravity_acp_session_prompt",
+          "scope": "invocation"
+        },
+        "usage_status": "reported"
+      },
+      "native_operation_dispositions": [
+        {
+          "name": "read_file",
+          "status": "denied"
+        }
+      ],
+      "failure": "ANTIGRAVITY_PERMISSION_DENIED: IVOAI executor failed (ANTIGRAVITY_PERMISSION_DENIED); partial output was not accepted"
+    },
+    {
+      "epoch_fixture": "ivoai-agy-code-dlfzrlh4",
+      "case": "code",
+      "exit_code": 1,
+      "scenario_wall_seconds_including_external_verification": 92.618,
+      "functional_pass": false,
+      "quality_certification": false,
+      "external_go_test_exit": 0,
+      "worker_go_execution_limited": false,
+      "session_state": "failed",
+      "turn_state": "failed",
+      "plan_created": false,
+      "task_count": 0,
+      "workers": [],
+      "code_intelligence_observations": [],
+      "trace": {
+        "executor": "antigravity",
+        "executor_version": "1.5.0",
+        "exit_code": 0,
+        "completion_event": true,
+        "final_response_present": false,
+        "failure_class": "ANTIGRAVITY_PERMISSION_DENIED",
+        "usage_status": "not_reported"
+      },
+      "native_operation_dispositions": [
+        {
+          "name": "view_file",
+          "status": "denied"
+        }
+      ],
+      "failure": "ANTIGRAVITY_PERMISSION_DENIED: IVOAI executor failed (ANTIGRAVITY_PERMISSION_DENIED); partial output was not accepted"
+    },
+    {
+      "epoch_fixture": "ivoai-agy-code-gyfu8zhu",
+      "case": "code",
+      "exit_code": 1,
+      "scenario_wall_seconds_including_external_verification": 40.503,
+      "functional_pass": false,
+      "quality_certification": false,
+      "external_go_test_exit": 0,
+      "worker_go_execution_limited": false,
+      "session_state": "failed",
+      "turn_state": "failed",
+      "plan_created": false,
+      "task_count": 0,
+      "workers": [],
+      "code_intelligence_observations": [
+        {
+          "operation": "code.inspect",
+          "provider": "direct",
+          "state": "completed",
+          "duration_ms": 1
+        }
+      ],
+      "trace": {
+        "executor": "antigravity",
+        "executor_version": "1.5.0",
+        "exit_code": 0,
+        "completion_event": true,
+        "final_response_present": false,
+        "failure_class": "ANTIGRAVITY_PERMISSION_DENIED",
+        "usage": {
+          "input_tokens": 15140,
+          "output_tokens": 259,
+          "cached_input_tokens": 10623,
+          "basis": "official_cli_reported",
+          "source": "antigravity_acp_session_prompt",
+          "scope": "invocation"
+        },
+        "usage_status": "reported"
+      },
+      "native_operation_dispositions": [
+        {
+          "name": "read_file",
+          "status": "denied"
+        }
+      ],
+      "failure": "ANTIGRAVITY_PERMISSION_DENIED: IVOAI executor failed (ANTIGRAVITY_PERMISSION_DENIED); partial output was not accepted"
+    },
+    {
+      "epoch_fixture": "ivoai-agy-code-i8i484nd",
+      "case": "code",
+      "exit_code": 1,
+      "scenario_wall_seconds_including_external_verification": 29.457,
+      "functional_pass": false,
+      "quality_certification": false,
+      "external_go_test_exit": 0,
+      "worker_go_execution_limited": false,
+      "session_state": "failed",
+      "turn_state": "failed",
+      "plan_created": false,
+      "task_count": 0,
+      "workers": [],
+      "code_intelligence_observations": [],
+      "trace": {
+        "executor": "antigravity",
+        "executor_version": "1.5.0",
+        "exit_code": 0,
+        "completion_event": false,
+        "final_response_present": false,
+        "failure_class": "ANTIGRAVITY_SESSION_MISMATCH",
+        "usage_status": "not_reported"
+      },
+      "native_operation_dispositions": [],
+      "failure": "ANTIGRAVITY_SESSION_MISMATCH: IVOAI executor failed (ANTIGRAVITY_SESSION_MISMATCH); partial output was not accepted"
+    },
+    {
+      "epoch_fixture": "ivoai-agy-code-k4_9smbw",
+      "case": "code",
+      "exit_code": 1,
+      "scenario_wall_seconds_including_external_verification": 331.943,
+      "functional_pass": false,
+      "quality_certification": false,
+      "external_go_test_exit": 0,
+      "worker_go_execution_limited": false,
+      "session_state": "failed",
+      "turn_state": "running",
+      "plan_created": false,
+      "task_count": 0,
+      "workers": [],
+      "code_intelligence_observations": [],
+      "trace": {
+        "executor": "antigravity",
+        "executor_version": "1.5.0",
+        "exit_code": 0,
+        "completion_event": false,
+        "final_response_present": false,
+        "failure_class": "executor_failure",
+        "usage_status": "not_reported"
+      },
+      "native_operation_dispositions": [],
+      "failure": "TURN_TRANSPORT_FAILED: controlled turn interrupted or unavailable"
+    },
+    {
+      "epoch_fixture": "ivoai-agy-code-lgos05f_",
+      "case": "code",
+      "exit_code": 1,
+      "scenario_wall_seconds_including_external_verification": 22.422,
+      "functional_pass": false,
+      "quality_certification": false,
+      "external_go_test_exit": 0,
+      "worker_go_execution_limited": false,
+      "session_state": "failed",
+      "turn_state": "failed",
+      "plan_created": false,
+      "task_count": 0,
+      "workers": [],
+      "code_intelligence_observations": [
+        {
+          "operation": "code.inspect",
+          "provider": "direct",
+          "state": "completed",
+          "duration_ms": 1
+        }
+      ],
+      "trace": {
+        "executor": "antigravity",
+        "executor_version": "1.5.0",
+        "exit_code": 0,
+        "completion_event": false,
+        "final_response_present": false,
+        "failure_class": "ANTIGRAVITY_PERMISSION_DENIED",
+        "usage_status": "not_reported"
+      },
+      "native_operation_dispositions": [
+        {
+          "name": "read_file",
+          "status": "denied",
+          "failure_class": "NATIVE_SCHEMA_SCOPE_DENIED"
+        }
+      ],
+      "failure": "ANTIGRAVITY_PERMISSION_DENIED: IVOAI executor failed (ANTIGRAVITY_PERMISSION_DENIED); partial output was not accepted"
+    },
+    {
+      "epoch_fixture": "ivoai-agy-code-rge6pwim",
+      "case": "code",
+      "exit_code": 1,
+      "scenario_wall_seconds_including_external_verification": 30.095,
+      "functional_pass": false,
+      "quality_certification": false,
+      "external_go_test_exit": 0,
+      "worker_go_execution_limited": false,
+      "session_state": "failed",
+      "turn_state": "failed",
+      "plan_created": false,
+      "task_count": 0,
+      "workers": [],
+      "code_intelligence_observations": [
+        {
+          "operation": "code.inspect",
+          "provider": "direct",
+          "state": "completed",
+          "duration_ms": 3
+        }
+      ],
+      "trace": {
+        "executor": "antigravity",
+        "executor_version": "1.5.0",
+        "exit_code": 0,
+        "completion_event": true,
+        "final_response_present": false,
+        "failure_class": "ANTIGRAVITY_PERMISSION_DENIED",
+        "usage": {
+          "input_tokens": 15196,
+          "output_tokens": 368,
+          "cached_input_tokens": 10606,
+          "basis": "official_cli_reported",
+          "source": "antigravity_acp_session_prompt",
+          "scope": "invocation"
+        },
+        "usage_status": "reported"
+      },
+      "native_operation_dispositions": [],
+      "failure": "ANTIGRAVITY_PERMISSION_DENIED: IVOAI executor failed (ANTIGRAVITY_PERMISSION_DENIED); partial output was not accepted"
+    },
+    {
+      "epoch_fixture": "ivoai-agy-code-salmpvry",
+      "case": "code",
+      "exit_code": 0,
+      "scenario_wall_seconds_including_external_verification": 126.641,
+      "functional_pass": false,
+      "quality_certification": false,
+      "external_go_test_exit": 0,
+      "worker_go_execution_limited": true,
+      "session_state": "completed",
+      "turn_state": "completed",
+      "plan_created": false,
+      "task_count": 0,
+      "workers": [],
+      "code_intelligence_observations": [],
+      "trace": {
+        "executor": "antigravity",
+        "executor_version": "1.5.0",
+        "exit_code": 0,
+        "completion_event": true,
+        "final_response_present": true,
+        "usage_status": "not_reported"
+      },
+      "native_operation_dispositions": []
+    },
+    {
+      "epoch_fixture": "ivoai-agy-code-xy7fwfjk",
+      "case": "code",
+      "exit_code": 1,
+      "scenario_wall_seconds_including_external_verification": 57.266,
+      "functional_pass": false,
+      "quality_certification": false,
+      "external_go_test_exit": 0,
+      "worker_go_execution_limited": false,
+      "session_state": "failed",
+      "turn_state": "failed",
+      "plan_created": false,
+      "task_count": 0,
+      "workers": [],
+      "code_intelligence_observations": [
+        {
+          "operation": "code.inspect",
+          "provider": "direct",
+          "state": "completed",
+          "duration_ms": 1
+        },
+        {
+          "operation": "code.inspect",
+          "provider": "direct",
+          "state": "completed",
+          "duration_ms": 2
+        }
+      ],
+      "trace": {
+        "executor": "antigravity",
+        "executor_version": "1.5.0",
+        "exit_code": -1,
+        "signal": "killed",
+        "completion_event": true,
+        "final_response_present": false,
+        "failure_class": "ANTIGRAVITY_NORMAL_SHUTDOWN_FAILED",
+        "usage_status": "not_reported"
+      },
+      "native_operation_dispositions": [],
+      "failure": "ANTIGRAVITY_NORMAL_SHUTDOWN_FAILED: IVOAI executor failed (ANTIGRAVITY_NORMAL_SHUTDOWN_FAILED); partial output was not accepted"
+    },
+    {
+      "epoch_fixture": "ivoai-agy-code-yc4c1f1f",
+      "case": "code",
+      "exit_code": 0,
+      "scenario_wall_seconds_including_external_verification": 37.491,
+      "functional_pass": true,
+      "quality_certification": true,
+      "external_go_test_exit": 0,
+      "worker_go_execution_limited": false,
+      "session_state": "completed",
+      "turn_state": "completed",
+      "plan_created": false,
+      "task_count": 0,
+      "workers": [],
+      "code_intelligence_observations": [
+        {
+          "operation": "code.inspect",
+          "provider": "direct",
+          "state": "completed",
+          "duration_ms": 1
+        }
+      ],
+      "trace": {
+        "executor": "antigravity",
+        "executor_version": "1.5.0",
+        "exit_code": 0,
+        "completion_event": true,
+        "final_response_present": true,
+        "usage_status": "not_reported"
+      },
+      "native_operation_dispositions": [
+        {
+          "name": "read_file",
+          "status": "allowed"
+        }
+      ]
+    },
+    {
+      "epoch_fixture": "ivoai-agy-dag-1ehvyism",
+      "case": "dag",
+      "exit_code": 1,
+      "scenario_wall_seconds_including_external_verification": 197.124,
+      "functional_pass": false,
+      "quality_certification": false,
+      "external_go_test_exit": 0,
+      "worker_go_execution_limited": false,
+      "session_state": "failed",
+      "turn_state": "failed",
+      "plan_created": false,
+      "task_count": 0,
+      "workers": [],
+      "code_intelligence_observations": [],
+      "trace": {
+        "executor": "antigravity",
+        "executor_version": "1.5.0",
+        "exit_code": 0,
+        "completion_event": true,
+        "final_response_present": true,
+        "usage_status": "not_reported"
+      },
+      "native_operation_dispositions": [],
+      "failure": "executor_failure: IVOAI executor failed (executor_failure); partial output was not accepted"
+    },
+    {
+      "epoch_fixture": "ivoai-agy-dag-2v6nbd27",
+      "case": "dag",
+      "exit_code": 1,
+      "scenario_wall_seconds_including_external_verification": 328.472,
+      "functional_pass": false,
+      "quality_certification": false,
+      "external_go_test_exit": 0,
+      "worker_go_execution_limited": false,
+      "session_state": "failed",
+      "turn_state": "running",
+      "plan_created": false,
+      "task_count": 0,
+      "workers": [],
+      "code_intelligence_observations": [],
+      "trace": {
+        "executor": "antigravity",
+        "executor_version": "1.5.0",
+        "exit_code": 0,
+        "completion_event": false,
+        "final_response_present": false,
+        "failure_class": "executor_failure",
+        "usage_status": "not_reported"
+      },
+      "native_operation_dispositions": [],
+      "failure": "TURN_TRANSPORT_FAILED: controlled turn interrupted or unavailable"
+    },
+    {
+      "epoch_fixture": "ivoai-agy-dag-7dik_0sm",
+      "case": "dag",
+      "exit_code": 1,
+      "scenario_wall_seconds_including_external_verification": 32.555,
+      "functional_pass": false,
+      "quality_certification": false,
+      "external_go_test_exit": 0,
+      "worker_go_execution_limited": false,
+      "session_state": "failed",
+      "turn_state": "failed",
+      "plan_created": false,
+      "task_count": 0,
+      "workers": [],
+      "code_intelligence_observations": [
+        {
+          "operation": "code.inspect",
+          "provider": null,
+          "state": "unavailable",
+          "duration_ms": null
+        }
+      ],
+      "trace": {
+        "executor": "antigravity",
+        "executor_version": "1.5.0",
+        "exit_code": 0,
+        "completion_event": true,
+        "final_response_present": false,
+        "failure_class": "ANTIGRAVITY_PERMISSION_DENIED",
+        "usage": {
+          "input_tokens": 15172,
+          "output_tokens": 544,
+          "cached_input_tokens": 10696,
+          "basis": "official_cli_reported",
+          "source": "antigravity_acp_session_prompt",
+          "scope": "invocation"
+        },
+        "usage_status": "reported"
+      },
+      "native_operation_dispositions": [
+        {
+          "name": "read_file",
+          "status": "denied"
+        }
+      ],
+      "failure": "ANTIGRAVITY_PERMISSION_DENIED: IVOAI executor failed (ANTIGRAVITY_PERMISSION_DENIED); partial output was not accepted"
+    },
+    {
+      "epoch_fixture": "ivoai-agy-dag-ivs5vq7r",
+      "case": "dag",
+      "exit_code": 1,
+      "scenario_wall_seconds_including_external_verification": 211.602,
+      "functional_pass": false,
+      "quality_certification": false,
+      "external_go_test_exit": 0,
+      "worker_go_execution_limited": false,
+      "session_state": "failed",
+      "turn_state": "running",
+      "plan_created": false,
+      "task_count": 0,
+      "workers": [],
+      "code_intelligence_observations": [],
+      "trace": {
+        "executor": "antigravity",
+        "executor_version": "1.5.0",
+        "exit_code": 0,
+        "completion_event": false,
+        "final_response_present": false,
+        "failure_class": "executor_failure",
+        "usage_status": "not_reported"
+      },
+      "native_operation_dispositions": [],
+      "failure": "TURN_TRANSPORT_FAILED: controlled turn interrupted or unavailable"
+    },
+    {
+      "epoch_fixture": "ivoai-agy-dag-smnm6675",
+      "case": "dag",
+      "exit_code": 0,
+      "scenario_wall_seconds_including_external_verification": 443.078,
+      "functional_pass": true,
+      "quality_certification": false,
+      "external_go_test_exit": 0,
+      "worker_go_execution_limited": true,
+      "session_state": "completed",
+      "turn_state": "completed",
+      "plan_created": true,
+      "task_count": 2,
+      "workers": [
+        {
+          "executor": "codex",
+          "state": "completed",
+          "exit_code": 0,
+          "model": "gpt-6.1-sol",
+          "result_refs": 1
+        }
+      ],
+      "code_intelligence_observations": [
+        {
+          "operation": "code.inspect",
+          "provider": null,
+          "state": "unavailable",
+          "duration_ms": null
+        }
+      ],
+      "trace": {
+        "executor": "antigravity",
+        "executor_version": "1.5.0",
+        "exit_code": 0,
+        "completion_event": true,
+        "final_response_present": true,
+        "usage_status": "not_reported"
+      },
+      "native_operation_dispositions": []
+    },
+    {
+      "epoch_fixture": "ivoai-agy-dag-ssx9isox",
+      "case": "dag",
+      "exit_code": 1,
+      "scenario_wall_seconds_including_external_verification": 32.563,
+      "functional_pass": false,
+      "quality_certification": false,
+      "external_go_test_exit": 0,
+      "worker_go_execution_limited": false,
+      "session_state": "failed",
+      "turn_state": "failed",
+      "plan_created": false,
+      "task_count": 0,
+      "workers": [],
+      "code_intelligence_observations": [
+        {
+          "operation": "code.inspect",
+          "provider": null,
+          "state": "unavailable",
+          "duration_ms": null
+        }
+      ],
+      "trace": {
+        "executor": "antigravity",
+        "executor_version": "1.5.0",
+        "exit_code": 0,
+        "completion_event": true,
+        "final_response_present": false,
+        "failure_class": "ANTIGRAVITY_PERMISSION_DENIED",
+        "usage": {
+          "input_tokens": 14949,
+          "output_tokens": 821,
+          "cached_input_tokens": 11538,
+          "basis": "official_cli_reported",
+          "source": "antigravity_acp_session_prompt",
+          "scope": "invocation"
+        },
+        "usage_status": "reported"
+      },
+      "native_operation_dispositions": [],
+      "failure": "ANTIGRAVITY_PERMISSION_DENIED: IVOAI executor failed (ANTIGRAVITY_PERMISSION_DENIED); partial output was not accepted"
+    },
+    {
+      "epoch_fixture": "ivoai-agy-dag-vi48wq4s",
+      "case": "dag",
+      "exit_code": 0,
+      "scenario_wall_seconds_including_external_verification": 416.92,
+      "functional_pass": true,
+      "quality_certification": false,
+      "external_go_test_exit": 0,
+      "worker_go_execution_limited": true,
+      "session_state": "completed",
+      "turn_state": "completed",
+      "plan_created": true,
+      "task_count": 2,
+      "workers": [
+        {
+          "executor": "codex",
+          "state": "completed",
+          "exit_code": 0,
+          "model": "gpt-6.1-sol",
+          "result_refs": 1
+        }
+      ],
+      "code_intelligence_observations": [
+        {
+          "operation": "code.inspect",
+          "provider": null,
+          "state": "unavailable",
+          "duration_ms": null
+        },
+        {
+          "operation": "code.inspect",
+          "provider": "direct",
+          "state": "completed",
+          "duration_ms": 1
+        },
+        {
+          "operation": "code.inspect",
+          "provider": "direct",
+          "state": "completed",
+          "duration_ms": 1
+        },
+        {
+          "operation": "code.inspect",
+          "provider": "direct",
+          "state": "completed",
+          "duration_ms": 1
+        },
+        {
+          "operation": "code.inspect",
+          "provider": "direct",
+          "state": "completed",
+          "duration_ms": 1
+        },
+        {
+          "operation": "code.inspect",
+          "provider": "direct",
+          "state": "completed",
+          "duration_ms": 1
+        },
+        {
+          "operation": "code.inspect",
+          "provider": "direct",
+          "state": "completed",
+          "duration_ms": 1
+        },
+        {
+          "operation": "code.inspect",
+          "provider": "direct",
+          "state": "completed",
+          "duration_ms": 1
+        },
+        {
+          "operation": "code.inspect",
+          "provider": "direct",
+          "state": "completed",
+          "duration_ms": 1
+        }
+      ],
+      "trace": {
+        "executor": "antigravity",
+        "executor_version": "1.5.0",
+        "exit_code": 0,
+        "completion_event": true,
+        "final_response_present": true,
+        "usage_status": "not_reported"
+      },
+      "native_operation_dispositions": []
+    }
+  ]
+}

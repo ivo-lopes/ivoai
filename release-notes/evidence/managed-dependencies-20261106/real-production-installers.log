@@ -1,0 +1,16 @@
+=== RUN   TestEmbeddedRufloLockPinsEveryDependency
+--- PASS: TestEmbeddedRufloLockPinsEveryDependency (0.00s)
+=== RUN   TestEmbeddedHeadroomLocksContainReviewedWheelsAndHashes
+--- PASS: TestEmbeddedHeadroomLocksContainReviewedWheelsAndHashes (0.00s)
+=== RUN   TestHeadroomProfilesPreservePreviousGraph
+--- PASS: TestHeadroomProfilesPreservePreviousGraph (0.00s)
+=== RUN   TestLiveHeadroomProfileInstallation
+    headroom_profile_test.go:119: real locked Headroom0.43.1 installed and admitted idempotently on CPython3.14.10; no inference or managed wrapping
+--- PASS: TestLiveHeadroomProfileInstallation (30.04s)
+=== RUN   TestCompiledCatalogMatchesReviewedManifestValues
+--- PASS: TestCompiledCatalogMatchesReviewedManifestValues (0.00s)
+=== RUN   TestLiveRufloProfileInstallation
+    ruflo_live_test.go:93: real locked Ruflo 3.72.2 installed, promoted and admitted idempotently; no inference
+--- PASS: TestLiveRufloProfileInstallation (36.99s)
+PASS
+ok  	github.com/ivo-lopes/ivoai/internal/components	67.036s

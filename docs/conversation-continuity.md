@@ -11,7 +11,7 @@ IVOAI session.
 ivoai session list --json
 ivoai session show --json <id>
 ivoai session resume <id>
-ivoai session resume <id> --frontend opencode
+ivoai session resume <id> --frontend codex
 ivoai session resume <id> --knowledge-source voicecorp
 ivoai session recover <id>
 ivoai session recover <id> --knowledge-source voicecorp
@@ -175,7 +175,7 @@ before it can be resumed by a version enforcing the newer boundary.
 
 ## Limits and troubleshooting
 
-Direct Codex/OpenCode mapping discovery is bounded and records a newly created
+Direct Codex mapping discovery is bounded and records a newly created
 native session only when it is unambiguous. If several conversations were created
 concurrently or no native ID was observed, IVOAI reports an unavailable mapping
 instead of choosing the latest arbitrarily. Claude live use requires its existing
@@ -192,5 +192,5 @@ with HTTP 409. Do not disable `/resume` or switch to direct mode as a fix. Updat
 IVOAI and restart its managed frontend. If a session is reported active, close or
 stop its owned frontend before resuming it; do not delete lock or session files.
 
-OpenCode Full Console, OpenViking and advanced parallel orchestration are not part
+OpenCode execution is removed; OpenViking and unproven orchestration features are not part
 of this release.

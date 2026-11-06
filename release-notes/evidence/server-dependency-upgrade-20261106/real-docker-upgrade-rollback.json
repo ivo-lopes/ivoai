@@ -1,0 +1,41 @@
+{
+  "actual_official_images": true,
+  "ai_memory_versions": [
+    "2.6.3",
+    "3.4.2",
+    "2.6.3"
+  ],
+  "authenticated_read_and_401": true,
+  "cgroup_limits_applied": false,
+  "core_backup_restore": true,
+  "exact_memory_fixture_read": true,
+  "exact_vector_point_read": true,
+  "original_index_preserved": true,
+  "pass": true,
+  "private_docker_info": "/var/tmp/ivoai-consolidation-tools-20261104/docker-private/data none",
+  "production_accessed": false,
+  "qdrant_versions": [
+    "1.19.2",
+    "1.20.0",
+    "1.19.2"
+  ],
+  "resource_observation_scope": "guest procfs for the unique runtime process: observed RSS KiB and process CPU ticks after readiness/read; not peak, normalized comparison or session cost",
+  "resource_observations": {
+    "baseline_after_ready": {
+      "memory": "{\"pid\":\"1\",\"process\":\"ai-memory\",\"rss_kib\":\"36400\",\"source\":\"runtime_process_procfs\",\"start_ticks\":\"17084137\",\"system_cpu_ticks\":\"2\",\"user_cpu_ticks\":\"5\"}",
+      "qdrant": "{\"pid\":\"7\",\"process\":\"qdrant\",\"rss_kib\":\"94220\",\"source\":\"runtime_process_procfs\",\"start_ticks\":\"17085568\",\"system_cpu_ticks\":\"5\",\"user_cpu_ticks\":\"8\"}"
+    },
+    "candidate_after_exact_reads": {
+      "memory": "{\"pid\":\"1\",\"process\":\"ai-memory\",\"rss_kib\":\"49844\",\"source\":\"runtime_process_procfs\",\"start_ticks\":\"17087951\",\"system_cpu_ticks\":\"5\",\"user_cpu_ticks\":\"19\"}",
+      "qdrant": "{\"pid\":\"7\",\"process\":\"qdrant\",\"rss_kib\":\"141260\",\"source\":\"runtime_process_procfs\",\"start_ticks\":\"17088056\",\"system_cpu_ticks\":\"8\",\"user_cpu_ticks\":\"8\"}"
+    },
+    "rollback_after_exact_reads": {
+      "memory": "{\"pid\":\"1\",\"process\":\"ai-memory\",\"rss_kib\":\"40168\",\"source\":\"runtime_process_procfs\",\"start_ticks\":\"17088252\",\"system_cpu_ticks\":\"2\",\"user_cpu_ticks\":\"4\"}",
+      "qdrant": "{\"pid\":\"7\",\"process\":\"qdrant\",\"rss_kib\":\"141236\",\"source\":\"runtime_process_procfs\",\"start_ticks\":\"17089623\",\"system_cpu_ticks\":\"7\",\"user_cpu_ticks\":\"6\"}"
+    }
+  },
+  "service_gid": 1000,
+  "service_uid": 1000,
+  "stage_validator_actual_startup": true,
+  "systemd_certified": false
+}

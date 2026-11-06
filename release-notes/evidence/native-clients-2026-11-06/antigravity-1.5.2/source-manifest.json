@@ -1,0 +1,16 @@
+{
+  "build_source_head": "8fdc02137",
+  "binary_sha256": "90c95e0a625932300fa404ad79fc3d633de815813c5a79395ebea3a84e8b9cd1",
+  "source_sha256": {
+    "internal/app/native_acp.go": "0d63f1b359f76be5676f0807496dda5ae24d593e3046ff289873606f4df1ac72",
+    "internal/app/native_claude_runtime.go": "ca0fe229c143a2c69d0e7c16eb2d2eea648310b8e63edc7aee465d31076e6698",
+    "internal/nativeacp/runner_linux.go": "c3b382caafae44ca9ea7d5899ae5a40aeb4592880bdb065e81898744e6bf6a83",
+    "internal/nativeacp/runner_linux_test.go": "5a1cbb0140aff02a71ea03c9b0a1bc5b37e6b99e54fe96d6fdd28b2805462e11",
+    "internal/nativeacp/official_linux_test.go": "4252f3a2e0672ea283a082db9a1275f0562fad69e8c5300bd8ed8797a175898b",
+    "internal/app/native_acp_cli_live_test.go": "3b3ed556da96606472f0a65d81d9e4e687f9de0a552123196a77da17f17df895",
+    "internal/workers/adapter.go": "91deb79083bd8f63a686e143648aa21f68124650dc6b506271aeff76cd553a3c"
+  },
+  "runtime": "Antigravity1.5.2/Linuxamd64",
+  "worker": "Codex0.166.0/reviewedpair",
+  "comment": "public17 predates stricter test assertions; public20 reruns only protected read with strict assertions; production runtime source is unchanged"
+}

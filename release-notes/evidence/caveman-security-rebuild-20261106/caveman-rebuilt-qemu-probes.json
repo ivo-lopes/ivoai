@@ -1,0 +1,34 @@
+[
+  {
+    "arch": "amd64",
+    "cpu": "no AVX/AVX2",
+    "program": "caveman-proxy",
+    "returncode": 0,
+    "stdout": "{\n  \"capabilities\": [\n    \"run_state\",\n    \"sessions_scanned\",\n    \"observe_token_accounting\",\n    \"native_runtime_v1\",\n    \"native_hook_bridge_v1\",\n    \"typed_ccr\",\n    \"decision_ledger_v1\"\n  ],\n  \"schema\": \"caveman.proxy.run.v1\",\n  \"version\": \"bin-v4.0.2-ivoai.1\"\n}\n",
+    "stderr": ""
+  },
+  {
+    "arch": "amd64",
+    "cpu": "no AVX/AVX2",
+    "program": "caveman-mcp",
+    "returncode": 0,
+    "stdout": "{\"capabilities\":[\"mcp_recovery\",\"build_stamped_version\",\"recovery_verification\"],\"schema\":\"caveman.mcp.version.v1\",\"version\":\"bin-v4.0.2-ivoai.1\"}\n",
+    "stderr": ""
+  },
+  {
+    "arch": "arm64",
+    "cpu": "emulated ARM64",
+    "program": "caveman-proxy",
+    "returncode": 0,
+    "stdout": "{\n  \"capabilities\": [\n    \"run_state\",\n    \"sessions_scanned\",\n    \"observe_token_accounting\",\n    \"native_runtime_v1\",\n    \"native_hook_bridge_v1\",\n    \"typed_ccr\",\n    \"decision_ledger_v1\"\n  ],\n  \"schema\": \"caveman.proxy.run.v1\",\n  \"version\": \"bin-v4.0.2-ivoai.1\"\n}\n",
+    "stderr": ""
+  },
+  {
+    "arch": "arm64",
+    "cpu": "emulated ARM64",
+    "program": "caveman-mcp",
+    "returncode": 0,
+    "stdout": "{\"capabilities\":[\"mcp_recovery\",\"build_stamped_version\",\"recovery_verification\"],\"schema\":\"caveman.mcp.version.v1\",\"version\":\"bin-v4.0.2-ivoai.1\"}\n",
+    "stderr": ""
+  }
+]

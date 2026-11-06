@@ -1,0 +1,11 @@
+Full original private log SHA256 f4b33a90b45ecee22328a8e965259088e8a721cb57b052dd1be0acc77642857f
+patching file go.mod
+patching file go.sum
+ok  	github.com/JuliusBrussee/caveman/engine	0.039s
+ok  	github.com/JuliusBrussee/caveman/proxy/internal/gateway	0.049s
+Built /var/tmp/ivoai-managed-dependencies-tools-20261106/caveman-production-build/ivoai-caveman_linux_amd64.tar.gz
+rm: cannot remove '/tmp/ivoai-caveman-build.hQPUHUm7/modcache/modernc.org/memory@v1.12.1/trace_enabled.go': Permission denied
+rm: cannot remove '/tmp/ivoai-caveman-build.hQPUHUm7/modcache/modernc.org/memory@v1.12.1/trace_disabled.go': Permission denied
+rm: cannot remove '/tmp/ivoai-caveman-build.hQPUHUm7/modcache/modernc.org/memory@v1.12.1/nocounters.go': Permission denied
+rm: cannot remove '/tmp/ivoai-caveman-build.hQPUHUm7/modcache/modernc.org/memory@v1.12.1/mmap_windows.go': Permission denied
+Remaining repeated readonly-module-cache cleanup errors omitted from this excerpt. Full private original retained.

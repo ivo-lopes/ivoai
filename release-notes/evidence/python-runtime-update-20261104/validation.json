@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "base": "7febead4a4b69c59e1be77dd5b13e57e7aa14b2c",
+  "versions": {
+    "headroom": "0.42.0",
+    "uv": "0.13.7",
+    "python": "3.14.10"
+  },
+  "checks": {
+    "production_installer_linux_amd64": {
+      "pass": true,
+      "seconds": 29.16,
+      "idempotent": true,
+      "official_component": true,
+      "provider_inference": false,
+      "test_mode": false
+    },
+    "binary_only_lock_resolution": {
+      "amd64": 93,
+      "arm64": 93
+    },
+    "focused_go_packages": "PASS components/headroom/compression",
+    "vet": "PASS",
+    "official_cli": {
+      "checks": [
+        {
+          "argv": [
+            "--version"
+          ],
+          "exit": 0,
+          "seconds": 0.586,
+          "output_sha256": "275f4361ef5336f739f1bad6b90a0dca063a1bc6ce88e19f39c0bea936ecc5f6"
+        },
+        {
+          "argv": [
+            "wrap",
+            "codex",
+            "--help"
+          ],
+          "exit": 0,
+          "seconds": 0.889,
+          "output_sha256": "3f7e3ce8cb4a0425bd72d200c6cba7a8af8babb27dcd757dbb110c472e5549c2"
+        },
+        {
+          "argv": [
+            "wrap",
+            "claude",
+            "--help"
+          ],
+          "exit": 0,
+          "seconds": 0.646,
+          "output_sha256": "619e443670aba5f1fc6e83756b78c9e85c7210aac57cb5a50ca967cb28baa8a1"
+        }
+      ],
+      "created_private_files": []
+    }
+  },
+  "limitations": [
+    "CPython3.15.2 is the latest stable, but upstream PyYAML and orjson lack compatible binary wheels. The tested latest compatible optional runtime is3.14.10.",
+    "An isolated pure-PyYAML probe allowed resolution to continue but orjson still failed. Neither locally constructed wheel nor unsupported3.15 environment is shipped.",
+    "A compress CLI command probe failed because no such command exists; it is not counted as a compression or session benchmark.",
+    "ARM64 lock is resolved binary-only and hashed; actual installer execution here is amd64.",
+    "Managed wrapping remains unavailable_by_policy. Version/help health does not prove configuration isolation, exact recovery or economic improvement.",
+    "Caveman remains default and Direct remains fallback; no additional memory/orchestration service or chained proxy is enabled."
+  ],
+  "source_sha256": {
+    "internal/components/components.go": "94b9761f5333e22cd4e4176c7b747cabc718d7f1c6f57fc3fe55a34f24569646",
+    "internal/components/headroom_profile_test.go": "7df7cd18d671dc108086fecc3e20cd081d8ab2ff82cfa812d774c7420d8da259",
+    "internal/components/assets/headroom-amd64.in": "d47e359d5e2b3618ce2776a59d433607b8e342d806e756ce7f1f2c848f54ca43",
+    "internal/components/assets/headroom-arm64.in": "f4df75669b27e93f9cef89628601868f83b4072010cd15879e540b0c0c9a425d",
+    "internal/components/assets/headroom-amd64.lock": "bf51cf2c81f4fe7d4441005026f38d1c79f704ea44d7e059fcea267d5af11827",
+    "internal/components/assets/headroom-arm64.lock": "4c0317d413183a649afc549e8ea720fb28b24aeae80759a82b5346d060da749e",
+    "manifest/components.yaml": "d9a8b509f79d55f6f8edc37db9c01ad8697a4f15fe7b45205a526e9793896a6f"
+  }
+}

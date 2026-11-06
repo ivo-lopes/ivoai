@@ -41,6 +41,8 @@ func reviewedAdaptiveDigests(version, platform string) (executable, companion st
 		return adaptiveCodexSHA, adaptiveCompanionSHA, true
 	case "0.166.0":
 		return "b8a11fedf24b2dfb59a70c9e52b030f9a508dcd49cd2dd0d41956f4c785156b8", "657f4e902726e05867c937b583049d5997e057f8cd0ab40450633c9c9ef8d630", true
+	case "0.167.0":
+		return "cdcb45aaa01d0f14e298985e09465aebccd47f64ecd298aea44814af7b62bbda", "83f3e174c2da2f1ca8655cce686e302509640d34c0f4407c1155056f64536e0f", true
 	default:
 		return "", "", false
 	}

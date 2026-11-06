@@ -24,6 +24,9 @@ func (a *App) SessionResumeWithKnowledge(ctx context.Context, id, frontend strin
 }
 
 func (a *App) SessionResumeFrontend(ctx context.Context, id, frontend string) error {
+	if frontend == "opencode" {
+		return session.ErrOpenCodeManagedDeprecated
+	}
 	if frontend != "codex" && frontend != "opencode" {
 		return errors.New("INVALID_RESUME_FRONTEND")
 	}

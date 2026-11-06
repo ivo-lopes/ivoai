@@ -26,12 +26,15 @@ import time
 
 binary, root = Path(sys.argv[1]).resolve(), Path(sys.argv[2]).resolve()
 complex_case = os.environ.get("IVOAI_NATIVE_SMOKE_COMPLEX") == "1"
-frontend = os.environ.get("IVOAI_NATIVE_SMOKE_FRONTEND", "opencode")
-assert frontend in {"codex", "opencode", "auto"}
-codex_frontend = frontend == "codex"
+frontend = os.environ.get("IVOAI_NATIVE_SMOKE_FRONTEND", "codex")
+if frontend not in {"codex", "auto"}:
+    raise SystemExit("OPENCODE_MANAGED_DEPRECATED: use the native codex/auto smoke; no legacy client was started")
+codex_frontend = frontend in {"codex", "auto"}
 ux_smoke = os.environ.get("IVOAI_NATIVE_SMOKE_UX") == "1"
 continuity_smoke = os.environ.get("IVOAI_NATIVE_SMOKE_CONTINUITY") == "1"
 switch_smoke = os.environ.get("IVOAI_NATIVE_SMOKE_SWITCH") == "1"
+if ux_smoke or switch_smoke:
+    raise SystemExit("legacy OpenCode UX/frontend-switch smoke retired; use the public native TUI/resume integration tests")
 # Real approved readonly DAG interruption; independent of picker/switch smoke.
 recovery_smoke = os.environ.get("IVOAI_NATIVE_SMOKE_RECOVERY") == "1"
 assert not recovery_smoke or (not complex_case and not ux_smoke)

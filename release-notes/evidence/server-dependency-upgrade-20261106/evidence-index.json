@@ -1,0 +1,110 @@
+{
+  "schema_version": 1,
+  "scope": "isolated_official_server_dependency_validation",
+  "production_accessed": false,
+  "official_llm_inference": false,
+  "records": [
+    {
+      "path": "initial-real-docker.json",
+      "source_relative_path": "docker-upgrade-v342-first.json",
+      "sha256": "d80380c5fef47aba1ee6ba1e9afc7f381d0f83e0b6d0ae1fe621d0e6d0a9f486",
+      "bytes": 649
+    },
+    {
+      "path": "initial-unavailable-resource-observations.json",
+      "source_relative_path": "docker-upgrade-v342-resources.json",
+      "sha256": "d126753e036b3eb77078bf80d667a6afe61cfe18442ca1f55385149f221e8510",
+      "bytes": 1187
+    },
+    {
+      "path": "partial-resource-observations.json",
+      "source_relative_path": "docker-upgrade-v342-procfs.json",
+      "sha256": "55fa8d8bb4918a6682c32ca73e0035078c8c7076cc89b0950dd64e508ae41ee8",
+      "bytes": 1657
+    },
+    {
+      "path": "real-docker-upgrade-rollback.json",
+      "source_relative_path": "docker-upgrade-v342-baseline-final.json",
+      "sha256": "dff27b9e737dfb7be075e7f9852ed833d999222c473a354b05b3715b816f36b3",
+      "bytes": 2198
+    },
+    {
+      "path": "real-docker-upgrade-rollback.log",
+      "source_relative_path": "docker-upgrade-v342-baseline-final.log",
+      "sha256": "cc4e067b58cbd42ccb54334db797e6c07f235664a3457c489a80f7db769f7ee6",
+      "bytes": 408
+    },
+    {
+      "path": "ai-memory-noavx.json",
+      "source_relative_path": "noavx-memory-v342-epoch1/validation.json",
+      "sha256": "30875ba62227dd82444676d4fb094307dee23691bd0848c0a2be2136f23f19c2",
+      "bytes": 627
+    },
+    {
+      "path": "ai-memory-arm-emulated.json",
+      "source_relative_path": "arm-memory-v342-epoch1/validation.json",
+      "sha256": "a15f7dd0c35a70a0325c9c7eb293b5e7afc75986a73c80cc482dbd5b2b88a831",
+      "bytes": 635
+    },
+    {
+      "path": "verified-memory-assets.json",
+      "source_relative_path": "memory-v3.4.2-verified.json",
+      "sha256": "9baeecc35f600020deca366bad3943e93b522e0547e5172adc510387b2033e70",
+      "bytes": 548
+    },
+    {
+      "path": "memory-oci.json",
+      "source_relative_path": "registry-memory-3.4.2.json",
+      "sha256": "877fad78e4b5c6572804d970dbdddf493deab41052b636fbf912373500c5765e",
+      "bytes": 326
+    },
+    {
+      "path": "unchanged-oci-model-pins.json",
+      "source_relative_path": "unchanged-server-pins-20261106.json",
+      "sha256": "4d690a8430b837a3b6593b193ef53a556931dca095b0d377aea5d571171aa3bd",
+      "bytes": 1421
+    },
+    {
+      "path": "qemu-provenance.json",
+      "source_relative_path": "qemu-provenance.json",
+      "sha256": "43358e141f43641bb168530849f81df8cd56b0673ff2b51ab5518837b1acaaac",
+      "bytes": 338
+    },
+    {
+      "path": "arm-test-libraries-provenance.json",
+      "source_relative_path": "arm-runtime/provenance.json",
+      "sha256": "528f9765be54f0a026eb1f5fdec0d8e03024fce71782300e0b60de6240b09e3b",
+      "bytes": 798
+    },
+    {
+      "path": "focused-package-race.log",
+      "source_relative_path": "final-v342-race.log",
+      "sha256": "bc1c88d8d564ff8ebcd24bb6298da3f79fd90e84c2fe5455bb66f9d5c967e58e",
+      "bytes": 172
+    },
+    {
+      "path": "focused-package-vet.log",
+      "source_relative_path": "final-v342-vet.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "reviewed-hooks.log",
+      "source_relative_path": "hooks342-reviewed.log",
+      "sha256": "76b6c65b14fedcb355e667d138f9402c2205c7453580dc6a77324d674023127c",
+      "bytes": 166
+    },
+    {
+      "path": "compose-native-version.log",
+      "source_relative_path": "compose57-native-version.log",
+      "sha256": "794a495980132b2741146c50652467ad5e5bf4b0e8f1695b2af12572c35d6008",
+      "bytes": 6
+    },
+    {
+      "path": "compose-arm-emulated-version.log",
+      "source_relative_path": "compose57-arm-emulated-version.log",
+      "sha256": "794a495980132b2741146c50652467ad5e5bf4b0e8f1695b2af12572c35d6008",
+      "bytes": 6
+    }
+  ]
+}

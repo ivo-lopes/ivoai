@@ -1,0 +1,16 @@
+
+added 4 packages in 1s
+✔ deep strings fail explicitly through every public consumer (8.253812ms)
+✔ supplied deep, cyclic and oversized ASTs are bounded (13.2363ms)
+✔ expansion rejects cyclic supplied parent links (0.259648ms)
+✔ ordinary patterns and shallow siblings retain upstream behavior (13.501928ms)
+✔ nesting boundary is fixed and cannot be disabled by options (1.89846ms)
+✔ supplied AST values cannot introduce unbounded array traversal (1.163537ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 124.584411

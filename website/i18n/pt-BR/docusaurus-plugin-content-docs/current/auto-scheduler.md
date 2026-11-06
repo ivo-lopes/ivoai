@@ -1,8 +1,6 @@
 # Scheduler automático e roteamento de modelos
 
-`ivoai opencode` usa o DAG nativo do IVOAI e o MCP local `ivoai-orchestrator`.
-OpenCode é o frontend; o IVOAI controla admissão, policy, concorrência e integração.
-O modo AUTO nativo não depende do lifecycle Ruflo do modo orchestrated legado.
+O scheduler do Core é único; `ivoai auto` usa Codex nativo. OpenCode gerenciado foi removido. O Primary somente leitura sem DAG depende de IVOAI_EXPERIMENTAL_ADAPTIVE_PRIMARY, OFF por padrão, e não recebe escrita.
 
 ## Admissão e plano
 
@@ -98,10 +96,7 @@ mudança material de provider/model/effort pede aprovação própria. Rejeitar m
 rota enquanto elegível; não autoriza substituição silenciosa. O primary permanece
 forte por padrão.
 
-OpenCode mostra apenas metadata operacional: prontidão, plano/aprovação, tarefas,
-workers, executor/model/effort, purposes, MCPs, concorrência e estado de quota.
-Não mostra transcripts privados ou chain of thought. Falha ou DAG incompleto não
-pode virar resposta final bem-sucedida.
+O scheduler do Core é único; `ivoai auto` usa Codex nativo. OpenCode gerenciado foi removido. O Primary somente leitura sem DAG depende de IVOAI_EXPERIMENTAL_ADAPTIVE_PRIMARY, OFF por padrão, e não recebe escrita.
 
 Veja [Orquestração automática](auto-orchestration.md) para configurações na TUI e
 CLI, compatibilidade e limitações de seleção por purpose.

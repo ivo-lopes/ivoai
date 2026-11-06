@@ -1,0 +1,4 @@
+=== RUN   TestLiveAdaptiveCavemanPairSetupWithoutInference
+    adaptive_caveman_live_test.go:178: CAVEMAN_FULL_CLI_SETUP=PASS version=4.0.2-ivoai.1 archive=25aa3e352c301fdaf303001487663d71a874e50f9211232a9cdc293b503b3b65 real_install=true proxy_ready=true production_metadata_matched=true inference=false
+--- PASS: TestLiveAdaptiveCavemanPairSetupWithoutInference (2.23s)
+PASS

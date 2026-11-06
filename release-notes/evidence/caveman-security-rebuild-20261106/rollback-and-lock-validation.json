@@ -1,0 +1,28 @@
+{
+  "base": "30ef259d9",
+  "scope": "real published raw-to-rebuilt archive-to-published rollback and strict module-lock checks",
+  "checks": {
+    "published_upgrade_rollback": {
+      "pass": true,
+      "seconds": 5.32,
+      "restored_state_exact": true,
+      "repeated_rollback_no_effect": true,
+      "restored_canary_scenarios": 22,
+      "provider_inference": false
+    },
+    "python_helper_negative_tests": 7,
+    "vet_components": "PASS",
+    "shell_syntax": "PASS",
+    "patched_go_mod_sha256": "43c54c78d483e71c05883f1ebf03f7a401e81a2a8db7c12aff4491b7132e5495",
+    "patched_go_sum_sha256": "a08fd96b8d794006a5cf1042523f83ba96095473702e9d2669c60e4d6a090eb2"
+  },
+  "limitations": [
+    "Rollback runs only in an isolated temporary store with explicitly reviewed published baseline binaries; no production downgrade or user state alteration.",
+    "Full composed/native ARM CI and public release remain parent integration gates."
+  ],
+  "source_sha256": {
+    "scripts/build-managed-caveman.sh": "68efe49e95fe50b6d8b8bb4ee4fa6629ad740922a5618c9f238f5b63d8abd63a",
+    "patches/caveman/test_build.py": "84a8c169518a1b14d2ea48ef9dc5475969bfc3be4a20b19209ce85a2ff9e0d7e",
+    "internal/components/caveman_rollback_live_test.go": "b1d582af99a5924fa49f880d95a040396a6589ccdd5af9fa6fced5f5530fe4b9"
+  }
+}

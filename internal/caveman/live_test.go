@@ -16,7 +16,11 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/supplychain"
 )
 
-const cavemanProxyAMD64SHA256 = "44436d69705ad9968563c181cd11d396d6ae5eeccd8dbf228f6225d92dfadcb1"
+// Exact baseline and reviewed repaired-build pins; never accept an ambient proxy.
+var cavemanProxyAMD64Pins = map[string]string{
+	"44436d69705ad9968563c181cd11d396d6ae5eeccd8dbf228f6225d92dfadcb1": "2.1.0",
+	"848649eb185ce350ac91f1805f83160d719374a2fabef7c04abccafe0480d859": "4.0.2-ivoai.1",
+}
 
 // TestPinnedCavemanProxyManualCanary is opt-in and never uses provider auth.
 // It validates the reviewed binary, structured probe, loopback readiness and
@@ -26,23 +30,29 @@ func TestPinnedCavemanProxyManualCanary(t *testing.T) {
 	if binary == "" {
 		t.Skip("IVOAI_CAVEMAN_PROXY_BINARY is not set")
 	}
+	version := ""
 	validate := func() error {
 		body, err := os.ReadFile(binary)
 		if err != nil {
 			return err
 		}
 		digest := sha256.Sum256(body)
-		if hex.EncodeToString(digest[:]) != cavemanProxyAMD64SHA256 {
+		var ok bool
+		version, ok = cavemanProxyAMD64Pins[hex.EncodeToString(digest[:])]
+		if !ok {
 			return errors.New("pinned Caveman proxy digest mismatch")
 		}
 		return nil
 	}
+	if err := validate(); err != nil {
+		t.Fatal(err)
+	}
 	provider := caveman.Provider{
 		Binary: binary, Managed: true, Runner: platform.ExecRunner{}, StartupTimeout: 5 * time.Second,
-		Expected: supplychain.ResolvedSource{ID: "caveman", LogicalVersion: "2.1.0"}, IntegrityCheck: validate,
+		Expected: supplychain.ResolvedSource{ID: "caveman", LogicalVersion: version}, IntegrityCheck: validate,
 	}
 	status := provider.Probe(context.Background())
-	if !status.Available || status.Health != core.HealthHealthy || status.Provenance.Version != "bin-v2.1.0" {
+	if !status.Available || status.Health != core.HealthHealthy || status.Provenance.Version != "bin-v"+version {
 		t.Fatalf("structured proxy probe=%+v", status)
 	}
 	for _, executor := range []core.ComponentID{core.ComponentCodex, core.ComponentClaude} {

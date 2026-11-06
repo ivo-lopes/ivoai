@@ -1,0 +1,2 @@
+# runtime/cgo
+error: Unknown Clang option: '-mcpu'

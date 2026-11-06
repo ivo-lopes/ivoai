@@ -1,0 +1,4 @@
+=== RUN   TestReviewedMemoryHookRendererIsolated
+--- PASS: TestReviewedMemoryHookRendererIsolated (0.46s)
+PASS
+ok  	github.com/ivo-lopes/ivoai/internal/memory	0.469s

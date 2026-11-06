@@ -1,0 +1,24 @@
+[
+  {
+    "at_utc": "2026-11-04T20:58:01.709945+00:00",
+    "loadavg": [
+      3.271484375,
+      2.482421875,
+      2.75634765625
+    ],
+    "completed_attempts": 19,
+    "correct_attempts": 19,
+    "host_processes_observed": 420
+  },
+  {
+    "at_utc": "2026-11-04T21:04:13.992208+00:00",
+    "loadavg": [
+      1.19580078125,
+      1.90234375,
+      2.4462890625
+    ],
+    "completed_attempts": 41,
+    "correct_attempts": 39,
+    "host_processes_observed": 396
+  }
+]

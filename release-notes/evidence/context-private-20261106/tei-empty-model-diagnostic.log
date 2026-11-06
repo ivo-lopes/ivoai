@@ -1,0 +1,4 @@
+Error: `config.json` not found
+
+Caused by:
+    No such file or directory (os error 2)

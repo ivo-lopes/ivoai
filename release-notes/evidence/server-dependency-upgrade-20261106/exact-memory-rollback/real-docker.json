@@ -1,0 +1,44 @@
+{
+  "actual_official_images": true,
+  "ai_memory_versions": [
+    "2.6.3",
+    "3.4.2",
+    "2.6.3"
+  ],
+  "authenticated_read_and_401": true,
+  "cgroup_limits_applied": false,
+  "core_backup_restore": true,
+  "exact_backup_memory_tree_before_restart": true,
+  "exact_memory_fixture_read": true,
+  "exact_vector_point_read": true,
+  "forward_only_wal_shm_extras_quarantined": true,
+  "original_index_preserved": true,
+  "pass": true,
+  "private_docker_info": "/var/tmp/ivoai-consolidation-tools-20261104/docker-private/data none",
+  "probe_scope": "known authenticated read/status/query/catalog and vector contracts only; not a universal tool inventory or full provider parity",
+  "production_accessed": false,
+  "qdrant_versions": [
+    "1.19.2",
+    "1.20.0",
+    "1.19.2"
+  ],
+  "resource_observation_scope": "guest procfs for the unique runtime process: observed RSS KiB and process CPU ticks after readiness/read; not peak, normalized comparison or session cost",
+  "resource_observations": {
+    "baseline_after_ready": {
+      "memory": "{\"pid\":\"1\",\"process\":\"ai-memory\",\"rss_kib\":\"34288\",\"source\":\"runtime_process_procfs\",\"start_ticks\":\"17446133\",\"system_cpu_ticks\":\"1\",\"user_cpu_ticks\":\"6\"}",
+      "qdrant": "{\"pid\":\"7\",\"process\":\"qdrant\",\"rss_kib\":\"91972\",\"source\":\"runtime_process_procfs\",\"start_ticks\":\"17448203\",\"system_cpu_ticks\":\"5\",\"user_cpu_ticks\":\"9\"}"
+    },
+    "candidate_after_exact_reads": {
+      "memory": "{\"pid\":\"1\",\"process\":\"ai-memory\",\"rss_kib\":\"49604\",\"source\":\"runtime_process_procfs\",\"start_ticks\":\"17455036\",\"system_cpu_ticks\":\"4\",\"user_cpu_ticks\":\"22\"}",
+      "qdrant": "{\"pid\":\"7\",\"process\":\"qdrant\",\"rss_kib\":\"141328\",\"source\":\"runtime_process_procfs\",\"start_ticks\":\"17456427\",\"system_cpu_ticks\":\"10\",\"user_cpu_ticks\":\"8\"}"
+    },
+    "rollback_after_exact_reads": {
+      "memory": "{\"pid\":\"1\",\"process\":\"ai-memory\",\"rss_kib\":\"39460\",\"source\":\"runtime_process_procfs\",\"start_ticks\":\"17456700\",\"system_cpu_ticks\":\"2\",\"user_cpu_ticks\":\"5\"}",
+      "qdrant": "{\"pid\":\"7\",\"process\":\"qdrant\",\"rss_kib\":\"140872\",\"source\":\"runtime_process_procfs\",\"start_ticks\":\"17456922\",\"system_cpu_ticks\":\"7\",\"user_cpu_ticks\":\"8\"}"
+    }
+  },
+  "service_gid": 1000,
+  "service_uid": 1000,
+  "stage_validator_actual_startup": true,
+  "systemd_certified": false
+}

@@ -201,11 +201,15 @@ test('locale and version routes remain composable', async ({page}) => {
   await page.goto('/pt-BR/docs/quickstart', {waitUntil: 'networkidle'});
   await expect(page.locator('html')).toHaveAttribute('lang', 'pt-BR');
 	await expect(page.getByRole('heading', {level: 1, name: 'Início rápido'})).toBeVisible();
-	await expect(page.getByRole('button', {name: '0.9.2'}).first()).toBeVisible();
+	await expect(page.getByRole('button', {name: '0.17.0'}).first()).toBeVisible();
   const language = page.getByRole('button', {name: 'Português (Brasil)'}).first();
   await language.click();
   await page.getByRole('link', {name: 'English'}).first().click();
 	await expect(page).toHaveURL(/\/docs\/quickstart$/);
+  await page.getByRole('button', {name: '0.17.0'}).first().click();
+  await page.getByRole('link', {name: '0.9.2', exact: true}).first().click();
+  await expect(page).toHaveURL(/\/docs\/0\.9\.2\/quickstart$/);
+  await expect(page.getByRole('heading', {level: 1, name: 'Quickstart'})).toBeVisible();
 });
 
 test('Portuguese accessibility labels are localized', async ({page}) => {

@@ -1,6 +1,23 @@
 # Troubleshooting
 
+## Current native client diagnostics
+
+`OPENCODE_MANAGED_DEPRECATED` and `OPENCODE_MIGRATION_REQUIRED` are migration
+boundaries, not requests to reinstall OpenCode. Use managed Codex/auto for new
+sessions and preserve old user data. Adaptive and headless options remain OFF by
+default; use only a reviewed explicit opt-in. Native account login remains in the
+official client. Inspect `ivoai doctor`, `ivoai monitor --watch` and owned session
+metadata before retrying. A failed Core validation is not overridden by native
+exit zero, and uncertain operations must not be replayed. Do not delete journals,
+locks, credentials or history to force a resume. See [executors](executors.md).
+
 ## Managed OpenCode keyboard and clipboard
+
+> Historical OpenCode diagnostics for v0.16 and earlier. Current IVOAI does not launch, repair or install that frontend; the retained instructions below apply only to an explicit historical rollback.
+
+<details>
+<summary>Historical frontend instructions</summary>
+
 
 `ivoai opencode` uses **Enter to send** and **Shift+Enter for a new line**.
 Kitty keyboard support remains upstream-owned. For xterm-compatible terminals,
@@ -33,6 +50,9 @@ Release archives include separately checksummed managed OpenCode binaries and
 provenance metadata. The patched build is identified as `1.19.0-ivoai.3`, not as
 the untouched upstream artifact. Existing immutable objects remain available for
 rollback.
+
+
+</details>
 
 ## Multi-server connection management
 
@@ -81,6 +101,12 @@ configuration review, not automatic deletion.
 
 ## AUTO reports `ivoai_bridge_error`
 
+> Historical OpenCode diagnostics for v0.16 and earlier. Current IVOAI does not launch, repair or install that frontend; the retained instructions below apply only to an explicit historical rollback.
+
+<details>
+<summary>Historical frontend instructions</summary>
+
+
 **Symptom:** the managed OpenCode conversation remains open but a turn reports an
 IVOAI executor failure. The short error now includes a stable classification such as
 `executor_exit_nonzero`, `executor_auth_failure`, `executor_stream_incomplete`,
@@ -96,7 +122,16 @@ to the corrective release, then retry the original turn. If the classification i
 an authentication failure, authenticate through the named official client rather
 than OpenCode `/connect`.
 
+
+</details>
+
 ## The model or reasoning option is missing
+
+> Historical OpenCode diagnostics for v0.16 and earlier. Current IVOAI does not launch, repair or install that frontend; the retained instructions below apply only to an explicit historical rollback.
+
+<details>
+<summary>Historical frontend instructions</summary>
+
 
 The managed catalog is discovered when AUTO starts. Open the native OpenCode model
 picker and select an explicit IVOAI Codex/Claude entry; only verified reasoning
@@ -105,6 +140,9 @@ reasoning variant because the scheduler owns that decision. If only the automati
 entry exists, run `ivoai doctor` and verify that the official clients are installed
 and support capability discovery. Never enable a parallel provider login to make a
 model appear.
+
+
+</details>
 
 ## Memory or Context reports `Unexpected response type`
 
@@ -191,13 +229,28 @@ Claude monthly is not assumed.
 
 ## Managed OpenCode frontend does not start
 
+> Historical OpenCode diagnostics for v0.16 and earlier. Current IVOAI does not launch, repair or install that frontend; the retained instructions below apply only to an explicit historical rollback.
+
+<details>
+<summary>Historical frontend instructions</summary>
+
+
 **Symptom:** `ivoai opencode` exits before the IVOAI-branded TUI
 appears. **Common causes:** the pinned managed component is missing, its version no
 longer matches the manifest, or the private loopback backend could not become ready.
 Run `ivoai status` and `ivoai doctor`; repair only through `ivoai setup` or the
 transactional updater. Do not point AUTO at an unrelated global OpenCode binary.
 
+
+</details>
+
 ## OpenCode reports a version or plugin mismatch
+
+> Historical OpenCode diagnostics for v0.16 and earlier. Current IVOAI does not launch, repair or install that frontend; the retained instructions below apply only to an explicit historical rollback.
+
+<details>
+<summary>Historical frontend instructions</summary>
+
 
 **Symptom:** backend health succeeds but the managed plugin does not load. Doctor
 reports the expected and observed OpenCode versions without printing paths to
@@ -205,7 +258,16 @@ credentials. Run `ivoai update --dry-run`, then `ivoai update` if the reviewed
 candidate is compatible. The plugin and OpenCode pin are one rollback unit; do not
 install a floating plugin package or enable OpenCode auto-update in managed mode.
 
+
+</details>
+
 ## Codex or Claude appears unauthenticated in the IVOAI panel
+
+> Historical OpenCode diagnostics for v0.16 and earlier. Current IVOAI does not launch, repair or install that frontend; the retained instructions below apply only to an explicit historical rollback.
+
+<details>
+<summary>Historical frontend instructions</summary>
+
 
 **Symptom:** `/ivoai` says `authentication required`, although a previous session was
 valid. IVOAI never copies credentials into OpenCode. Verify the relevant official
@@ -213,6 +275,9 @@ client (`codex login status` or the normal Claude Code login surface), then use
 `ivoai connect chatgpt` or `ivoai connect claude` to run the official flow and
 invalidate the stale quota cache. Do not enter a provider key in OpenCode `/connect`;
 managed AUTO has only the IVOAI provider enabled.
+
+
+</details>
 
 ## Session mapping cannot be resumed
 
@@ -237,6 +302,12 @@ Native histories already deleted by older ephemeral homes cannot be reconstructe
 
 ## Knowledge panel is stale, empty, or degraded
 
+> Historical OpenCode diagnostics for v0.16 and earlier. Current IVOAI does not launch, repair or install that frontend; the retained instructions below apply only to an explicit historical rollback.
+
+<details>
+<summary>Historical frontend instructions</summary>
+
+
 **Symptom:** the footer says `0 configured`, a selected source is down, or the panel
 has not reflected a recent operation. Confirm profiles with `ivoai connect server
 list` and use `ivoai connect server test <alias>`. The panel refreshes bounded status
@@ -244,7 +315,16 @@ every five seconds and incorporates observed selected-source operations. Automat
 mode keeps healthy selected sources and marks the session degraded; an explicitly
 selected unavailable source fails without substitution.
 
+
+</details>
+
 ## Theme, color, or narrow-terminal rendering is unavailable
+
+> Historical OpenCode diagnostics for v0.16 and earlier. Current IVOAI does not launch, repair or install that frontend; the retained instructions below apply only to an explicit historical rollback.
+
+<details>
+<summary>Historical frontend instructions</summary>
+
 
 The managed overlay selects the IVOAI theme through an official OpenCode plugin.
 `NO_COLOR`, `TERM=dumb`, non-TTY and JSON workflows remain plain and do not receive
@@ -252,7 +332,16 @@ branding. Resize to at least a usable terminal size; long source labels are boun
 and the panel limits visible rows. If the terminal cannot render Unicode marks, use
 `IVOAI_ASCII=1` on IVOAI's native status/menu surfaces.
 
+
+</details>
+
 ## Managed OpenCode configuration is corrupted
+
+> Historical OpenCode diagnostics for v0.16 and earlier. Current IVOAI does not launch, repair or install that frontend; the retained instructions below apply only to an explicit historical rollback.
+
+<details>
+<summary>Historical frontend instructions</summary>
+
 
 Managed files live under private IVOAI runtime/state roots and are regenerated for a
 session. Stop the session and rerun `ivoai setup` or a validated update. Do not copy
@@ -266,6 +355,9 @@ from a previous account remains visible after a login performed directly in the
 provider CLI, run `ivoai connect chatgpt` or `ivoai connect claude` once: the command
 is the supported authentication boundary that invalidates and reprobes only that
 provider without copying or hashing credentials.
+
+
+</details>
 
 ## Headroom proxy appears but the Codex/Claude Code TUI does not open
 

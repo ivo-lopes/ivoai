@@ -16,9 +16,9 @@ import sys
 import threading
 import time
 
-BINARY_SHA256 = '24972e3bc859fab2b46ed4c1e51f7d6130f06d3bd550811a114640de3370d0de'
-ARCHIVE_SHA256 = '45fe2b33f5cbdd114309618970bcd90b8b163e34252d66cf100d7e068d9b831d'
-VERSION = '2.1.296 (Claude Code)'
+BINARY_SHA256 = '708c77b204db30086ff6f1ed34577bda03e1be74ced80557cbf7b54249ebf0bd'
+ARCHIVE_SHA256 = 'e6d426ca0c123f61fad58a361da0329f2a93cd206bc87040ed8d9576dd9eb583'
+VERSION = '2.1.318 (Claude Code)'
 CHILD_PROMPT = 'Return IVOAI_SYNTHETIC_CHILD; do not call tools.'
 
 
@@ -38,7 +38,7 @@ def launch(args):
     if output.is_symlink() or output.stat().st_uid != os.getuid() or output.stat().st_mode & 0o077:
         raise RuntimeError('proof output must be an owned private directory')
     if digest(binary) != BINARY_SHA256:
-        raise RuntimeError('official Claude 2.1.296 Linux amd64 binary digest mismatch')
+        raise RuntimeError('official Claude 2.1.318 Linux amd64 binary digest mismatch')
     cmd = ['bwrap', '--unshare-all', '--die-with-parent', '--new-session', '--clearenv',
            '--ro-bind', '/usr', '/usr', '--symlink', 'usr/bin', '/bin',
            '--symlink', 'usr/lib', '/lib', '--symlink', 'usr/lib64', '/lib64',

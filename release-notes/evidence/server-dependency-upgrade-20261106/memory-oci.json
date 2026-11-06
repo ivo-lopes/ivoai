@@ -1,0 +1,16 @@
+{
+  "tag": "3.4.2",
+  "repository": "akitaonrails/ai-memory",
+  "digest": "sha256:cf09de9f40d8d4f5214698826530e61e9061ad5e02001defc8a77d42ab4e50b7",
+  "platforms": [
+    {
+      "architecture": "arm64",
+      "os": "linux"
+    },
+    {
+      "architecture": "amd64",
+      "os": "linux"
+    }
+  ],
+  "sha256_verified": true
+}

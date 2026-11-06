@@ -64,6 +64,10 @@ func commandHeaderEnabled(args []string) bool {
 func runCommand(ctx context.Context, a *app.App, args []string) error {
 	platform.DebugLog(a.Err, "cli.command", map[string]string{"command": args[0]})
 	switch args[0] {
+	case "_native-mcp-proxy":
+		return runNativeMCPProxy(ctx, a, args[1:])
+	case "antigravity":
+		return runAntigravity(ctx, a, args[1:])
 	case "admin":
 		return runAdmin(ctx, a, args[1:])
 	case "skills":
@@ -75,9 +79,12 @@ func runCommand(ctx context.Context, a *app.App, args []string) error {
 		fs := flag.NewFlagSet("setup", flag.ContinueOnError)
 		fs.SetOutput(a.Err)
 		mode := fs.String("mode", "client", "client or server")
-		legacyOpenCode := fs.Bool("legacy-opencode", false, "explicitly install/repair the deprecated legacy OpenCode component")
+		legacyOpenCode := fs.Bool("legacy-opencode", false, "removed compatibility flag; prints native migration guidance")
 		if err := fs.Parse(args[1:]); err != nil {
 			return err
+		}
+		if *legacyOpenCode {
+			return session.ErrOpenCodeManagedDeprecated
 		}
 		modeExplicit := false
 		for _, argument := range args[1:] {
@@ -92,23 +99,14 @@ func runCommand(ctx context.Context, a *app.App, args []string) error {
 				return err
 			}
 			if serverInstall {
-				if *legacyOpenCode {
-					return errors.New("--legacy-opencode is supported only by explicit client setup")
-				}
 				return runServer(ctx, append([]string{"setup"}, fs.Args()...), a)
 			}
 		}
 		if *mode == "server" {
-			if *legacyOpenCode {
-				return errors.New("--legacy-opencode is supported only by client setup")
-			}
 			return runServer(ctx, append([]string{"setup"}, fs.Args()...), a)
 		}
 		if *mode != "client" {
 			return fmt.Errorf("invalid setup mode %q", *mode)
-		}
-		if *legacyOpenCode {
-			fmt.Fprintln(a.Err, "OpenCode managed integration is deprecated; explicitly installing legacy compatibility only.")
 		}
 		return a.SetupWithLegacyOpenCode(ctx, *legacyOpenCode)
 	case "status":
@@ -178,6 +176,9 @@ func runCommand(ctx context.Context, a *app.App, args []string) error {
 	case "disconnect":
 		return runDisconnect(ctx, a, args[1:])
 	case "claude":
+		if len(args) > 1 && args[1] == "run" {
+			return runManagedNative(ctx, a, args[1:], "claude")
+		}
 		rest, sources, err := extractKnowledgeSources(args[1:])
 		if err != nil {
 			return err
@@ -190,11 +191,11 @@ func runCommand(ctx context.Context, a *app.App, args []string) error {
 		}
 		frontend := args[0]
 		if frontend == "opencode" {
-			fmt.Fprintln(a.Err, "`ivoai opencode` is deprecated; native managed sessions use `ivoai codex`. Explicit legacy setup remains available with `ivoai setup --mode client --legacy-opencode`.")
+			return session.ErrOpenCodeManagedDeprecated
 		}
 		if frontend == "auto" {
-			frontend = "opencode"
-			fmt.Fprintln(a.Err, "`ivoai auto` is deprecated and retains the explicit legacy OpenCode path; use `ivoai codex` for native managed sessions.")
+			frontend = "codex"
+			fmt.Fprintln(a.Err, "`ivoai auto` is a compatibility alias for `ivoai codex`; the same Core controls every managed turn.")
 		}
 		// --direct must precede --; everything after -- belongs to the
 		// official client and is not reinterpreted as an IVOAI mode switch.
@@ -203,7 +204,7 @@ func runCommand(ctx context.Context, a *app.App, args []string) error {
 		}
 		fs := flag.NewFlagSet(frontend, flag.ContinueOnError)
 		fs.SetOutput(a.Err)
-		planner := fs.String("planner", "", "codex, claude or opencode (native authentication required)")
+		planner := fs.String("planner", "", "codex (native authentication required)")
 		if err := fs.Parse(rest); err != nil {
 			return err
 		}
@@ -316,7 +317,7 @@ func runSession(ctx context.Context, a *app.App, args []string) error {
 		return a.SessionRecoverWithKnowledge(ctx, args[1], selectors)
 	case "resume":
 		if len(args) < 2 {
-			return errors.New("usage: ivoai session resume <session-id> [--frontend codex|opencode]")
+			return errors.New("usage: ivoai session resume <session-id> [--frontend codex]")
 		}
 		fs := flag.NewFlagSet("session resume", flag.ContinueOnError)
 		fs.SetOutput(a.Err)
@@ -420,7 +421,7 @@ func runDoctor(ctx context.Context, a *app.App, args []string) error {
 	}
 	fmt.Fprintf(a.Out, "\nCodex: installed=%s version=%s authenticated=%s\n", semanticBool(report.Codex.Installed, color), report.Codex.Version, semanticOptionalBool(report.Codex.Authenticated, color))
 	fmt.Fprintf(a.Out, "Claude Code: installed=%s version=%s authenticated=%s\n", semanticBool(report.Claude.Installed, color), report.Claude.Version, semanticOptionalBool(report.Claude.Authenticated, color))
-	fmt.Fprintf(a.Out, "OpenCode: installed=%s managed=%s healthy=%s version=%s revision=%s license=%s auth-owned-by=opencode auto-worker=false\n", semanticOptionalBool(report.OpenCode.Installed, color), semanticOptionalBool(report.OpenCode.Managed, color), semanticOptionalBool(report.OpenCode.Healthy, color), report.OpenCode.Version, report.OpenCode.Revision, report.OpenCode.License)
+	fmt.Fprintf(a.Out, "OpenCode: installed=%s managed=%s healthy=%s version=%s revision=%s license=%s execution=removed metadata=retained auth-owned-by=opencode auto-worker=false\n", semanticOptionalBool(report.OpenCode.Installed, color), semanticOptionalBool(report.OpenCode.Managed, color), semanticOptionalBool(report.OpenCode.Healthy, color), report.OpenCode.Version, report.OpenCode.Revision, report.OpenCode.License)
 	printDoctorCodeIntelligence(a.Out, report)
 	fmt.Fprintf(a.Out, "Headroom: installed=%s enabled=%s healthy=%s version=%s interactive-launch=%s\nCodex via Headroom: %s\nClaude Code via Headroom: %s\n", semanticBool(report.Headroom.Installed, color), semanticOptionalBool(report.Headroom.Enabled, color), semanticBool(report.Headroom.Healthy, color), report.Headroom.Version, report.Headroom.InteractiveLaunch, semanticOK(report.Headroom.CodexCompatible, color), semanticOK(report.Headroom.ClaudeCompatible, color))
 	fmt.Fprintf(a.Out, "Caveman: installed=%s managed=%s healthy=%s version=%s revision=%s license=%s trust=%s selected-provider=%s\n", semanticOptionalBool(report.Caveman.Installed, color), semanticOptionalBool(report.Caveman.Managed, color), semanticOptionalBool(report.Caveman.Healthy, color), report.Caveman.Version, report.Caveman.Revision, report.Caveman.License, report.Caveman.TrustLevel, report.CompressionProvider)
@@ -848,6 +849,8 @@ Usage:
   ivoai doctor [--json] [--inventory]
   ivoai update [--dry-run] | update --rollback [--force]
   ivoai update --codex [--rollback]
+  ivoai claude run --prompt TEXT [--directory PATH] [--model ID] [--follow-up TEXT]
+  ivoai antigravity run --prompt TEXT [--directory PATH] [--model ID] [--follow-up TEXT]
   ivoai connect [list|chatgpt|claude]
   ivoai connect server [--url URL] [--purpose PURPOSE] [--redundancy-group GROUP] [--priority N] [--enrollment-code CODE|--code-stdin]
   ivoai connect server add <alias> [--url URL] [--purpose PURPOSE] [--redundancy-group GROUP] [--priority N] [--enrollment-code CODE|--code-stdin]
@@ -867,11 +870,11 @@ Usage:
   ivoai disconnect <chatgpt|claude|server [alias|--all]>
   ivoai codex [--direct] [--knowledge-source <alias|purpose>] [-- agent arguments...]
   ivoai claude [--knowledge-source <alias|purpose>] [-- agent arguments...]
-  ivoai opencode [--direct] [--planner codex|claude|opencode] [--knowledge-source <alias|purpose>] [-- agent arguments...]
-  ivoai auto [--planner codex|claude|opencode] [--knowledge-source <alias|purpose>] [-- agent arguments...]
-  ivoai session start --executor <codex|claude|opencode> --mode <direct|orchestrated> [--knowledge-source <alias|purpose>] [-- agent arguments...]
+  ivoai opencode (removed; use ivoai codex; retained user data is preserved)
+  ivoai auto [--planner codex] [--knowledge-source <alias|purpose>] [-- agent arguments...]
+  ivoai session start --executor <codex|claude> --mode <direct|orchestrated> [--knowledge-source <alias|purpose>] [-- agent arguments...]
   ivoai session list [--json] | show [--json] <id> | stop <id>
-  ivoai session resume <id> [--frontend codex|opencode] [--knowledge-source alias]
+  ivoai session resume <id> [--frontend codex] [--knowledge-source alias]
   ivoai session recover <id> [--knowledge-source alias]
   ivoai session adopt-scope <id> [--knowledge-source alias] [--confirm] [--json]
   ivoai session restore-scope <id> --backup PATH [--confirm] [--json]

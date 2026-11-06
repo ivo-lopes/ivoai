@@ -28,3 +28,6 @@ allowBuilds:
 minimumReleaseAgeExclude:
   - '@fontsource/bpmf-huninn@5.3.1'
   - joi@18.3.2
+  - '@playwright/test@1.65.0'
+  - playwright-core@1.65.0
+  - playwright@1.65.0

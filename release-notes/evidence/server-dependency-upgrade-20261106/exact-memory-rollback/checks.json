@@ -1,0 +1,36 @@
+{
+  "base_commit": "9c077ec97109a9de0d63c80dc584fab04b7479d5",
+  "commands": [
+    {
+      "command": "GOMAXPROCS=2 go test -race ./internal/server ./internal/servercmd -count=1",
+      "exit_code": 0
+    },
+    {
+      "command": "GOMAXPROCS=2 go vet ./internal/server ./internal/servercmd",
+      "exit_code": 0
+    },
+    {
+      "command": "GOMAXPROCS=2 CGO_ENABLED=0 go build -trimpath -o <private>/ivoai-candidate ./cmd/ivoai",
+      "exit_code": 0
+    },
+    {
+      "command": "GOMAXPROCS=2 CGO_ENABLED=0 go test -c ./internal/servercmd -o <private>/servercmd.test",
+      "exit_code": 0
+    },
+    {
+      "command": "explicit private Docker socket/config + mapped-root namespace; servercmd.test -test.run ^TestRealPrivateDockerDependencyUpgradeAndCoordinatedRollback$ -test.v -test.timeout=7m",
+      "exit_code": 0,
+      "elapsed_seconds": 122.1
+    }
+  ],
+  "sha256": {
+    "focused-race.log": "607bd633f2dfd89f5224d77f627120947b5aa009b37c7dd57915fbb4d9bc26eb",
+    "real-docker.json": "6073cca0949ad9d043077b3ee772e2604acdc3a0726a42e3811d1098b172b5d1",
+    "real-docker.log": "eb7e07738af73db2828f1ac1224b7aa50d365bfbc91ba8dd37292d935c404854"
+  },
+  "source_sha256": {
+    "internal/server/dependency_upgrade.go": "697195f0583e04af9527ca8fd57a0b5b209981ded9fe93fb7eb6122825875be3",
+    "internal/server/dependency_upgrade_test.go": "b3f47772bae9dcecf0bc34dc05c76ee1527e131072390424a5b37c0c90c4a41e",
+    "internal/servercmd/dependency_upgrade_docker_test.go": "7a1a49fad88182a5987eaea6faa25e122c6691d02325f7b36b7d9e70cf2dbbef"
+  }
+}

@@ -1,0 +1,68 @@
+?   	github.com/ivo-lopes/ivoai/cmd/ivoai	[no test files]
+?   	github.com/ivo-lopes/ivoai/cmd/ivoai-output-view-sandbox	[no test files]
+ok  	github.com/ivo-lopes/ivoai/internal/admin	2.818s
+ok  	github.com/ivo-lopes/ivoai/internal/agents	0.281s
+ok  	github.com/ivo-lopes/ivoai/internal/app	22.189s
+ok  	github.com/ivo-lopes/ivoai/internal/benchmarkfixtures	0.514s
+ok  	github.com/ivo-lopes/ivoai/internal/caveman	0.711s
+ok  	github.com/ivo-lopes/ivoai/internal/cavemaneval	22.118s
+ok  	github.com/ivo-lopes/ivoai/internal/cli	5.905s
+ok  	github.com/ivo-lopes/ivoai/internal/codebase	0.017s
+# github.com/ivo-lopes/ivoai/internal/components [github.com/ivo-lopes/ivoai/internal/components.test]
+internal/components/managed_opencode_test.go:59:58: undefined: ErrOpenCodeRemoved
+ok  	github.com/ivo-lopes/ivoai/internal/codeintel	17.808s
+ok  	github.com/ivo-lopes/ivoai/internal/codesandbox	0.008s
+ok  	github.com/ivo-lopes/ivoai/internal/codexfrontend	11.073s
+ok  	github.com/ivo-lopes/ivoai/internal/codexresolver	0.011s
+FAIL	github.com/ivo-lopes/ivoai/internal/components [build failed]
+ok  	github.com/ivo-lopes/ivoai/internal/componentupdate	0.031s
+ok  	github.com/ivo-lopes/ivoai/internal/compression	0.002s
+ok  	github.com/ivo-lopes/ivoai/internal/config	0.026s
+ok  	github.com/ivo-lopes/ivoai/internal/connections	0.061s
+ok  	github.com/ivo-lopes/ivoai/internal/context	0.027s
+ok  	github.com/ivo-lopes/ivoai/internal/core	0.003s
+ok  	github.com/ivo-lopes/ivoai/internal/docsserver	0.007s
+ok  	github.com/ivo-lopes/ivoai/internal/doctor	0.023s
+ok  	github.com/ivo-lopes/ivoai/internal/enrollment	0.016s
+ok  	github.com/ivo-lopes/ivoai/internal/evidence	5.536s
+ok  	github.com/ivo-lopes/ivoai/internal/externalmcp	0.043s
+ok  	github.com/ivo-lopes/ivoai/internal/gateway	0.018s
+ok  	github.com/ivo-lopes/ivoai/internal/headroom	0.002s
+ok  	github.com/ivo-lopes/ivoai/internal/knowledgepolicy	0.002s
+ok  	github.com/ivo-lopes/ivoai/internal/knowledgerouter	0.252s
+ok  	github.com/ivo-lopes/ivoai/internal/memory	0.035s
+ok  	github.com/ivo-lopes/ivoai/internal/migration	0.011s
+ok  	github.com/ivo-lopes/ivoai/internal/nativeacp	0.438s
+ok  	github.com/ivo-lopes/ivoai/internal/nativecodex	0.768s
+ok  	github.com/ivo-lopes/ivoai/internal/observability	0.004s
+ok  	github.com/ivo-lopes/ivoai/internal/opencodebridge	4.904s
+ok  	github.com/ivo-lopes/ivoai/internal/orchestration	0.474s
+ok  	github.com/ivo-lopes/ivoai/internal/orchestrator	20.984s
+ok  	github.com/ivo-lopes/ivoai/internal/ownedprocess	0.003s
+ok  	github.com/ivo-lopes/ivoai/internal/platform	0.016s
+ok  	github.com/ivo-lopes/ivoai/internal/policy	0.002s
+ok  	github.com/ivo-lopes/ivoai/internal/project	0.008s
+ok  	github.com/ivo-lopes/ivoai/internal/promptgate	0.006s
+ok  	github.com/ivo-lopes/ivoai/internal/quota	0.020s
+ok  	github.com/ivo-lopes/ivoai/internal/routing	0.006s
+ok  	github.com/ivo-lopes/ivoai/internal/rtkview	0.002s
+ok  	github.com/ivo-lopes/ivoai/internal/secrets	0.004s
+ok  	github.com/ivo-lopes/ivoai/internal/server	0.046s
+ok  	github.com/ivo-lopes/ivoai/internal/servercmd	0.376s
+ok  	github.com/ivo-lopes/ivoai/internal/serverpool	0.003s
+ok  	github.com/ivo-lopes/ivoai/internal/session	1.542s
+ok  	github.com/ivo-lopes/ivoai/internal/skillcatalog	1.616s
+ok  	github.com/ivo-lopes/ivoai/internal/skillgate	0.165s
+ok  	github.com/ivo-lopes/ivoai/internal/skills	0.133s
+ok  	github.com/ivo-lopes/ivoai/internal/skillupdate	0.029s
+ok  	github.com/ivo-lopes/ivoai/internal/supplychain	0.035s
+ok  	github.com/ivo-lopes/ivoai/internal/terminalui	0.007s
+ok  	github.com/ivo-lopes/ivoai/internal/toolrouting	0.002s
+ok  	github.com/ivo-lopes/ivoai/internal/update	0.018s
+ok  	github.com/ivo-lopes/ivoai/internal/webauth	0.042s
+ok  	github.com/ivo-lopes/ivoai/internal/webmcp	0.023s
+ok  	github.com/ivo-lopes/ivoai/internal/workers	0.092s
+ok  	github.com/ivo-lopes/ivoai/internal/workingcontext	4.359s
+?   	github.com/ivo-lopes/ivoai/scripts/stable-release-upgrade-fixtures	[no test files]
+?   	github.com/ivo-lopes/ivoai/scripts/upgrade-matrix-v050	[no test files]
+FAIL

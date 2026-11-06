@@ -1,0 +1,9 @@
+=== RUN   TestHeadroomProfilesPreservePreviousGraph
+--- PASS: TestHeadroomProfilesPreservePreviousGraph (0.00s)
+=== RUN   TestLiveHeadroomProfileInstallation
+    headroom_profile_test.go:119: real locked Headroom0.42.0 installed and admitted idempotently on CPython3.14.10; no inference or managed wrapping
+--- PASS: TestLiveHeadroomProfileInstallation (29.16s)
+=== RUN   TestCompiledCatalogMatchesReviewedManifestValues
+--- PASS: TestCompiledCatalogMatchesReviewedManifestValues (0.00s)
+PASS
+ok  	github.com/ivo-lopes/ivoai/internal/components	29.167s

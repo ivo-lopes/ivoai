@@ -14,7 +14,7 @@ func TestAdaptiveReviewedRuntimeVersionsRemainExact(t *testing.T) {
 	if runtime.GOOS != "linux" || runtime.GOARCH != "amd64" {
 		t.Skip("production adaptive runtime platform is intentionally restricted")
 	}
-	for _, version := range []string{"0.162.1", "0.166.0"} {
+	for _, version := range []string{"0.162.1", "0.166.0", "0.167.0"} {
 		t.Run(version, func(t *testing.T) {
 			sha, companion, ok := reviewedAdaptiveDigests(version, "linux/amd64")
 			if !ok || len(sha) != 64 || len(companion) != 64 {
@@ -39,14 +39,14 @@ func TestAdaptiveReviewedRuntimeVersionsRemainExact(t *testing.T) {
 					}
 					switch mismatch {
 					case "version":
-						candidate.CodexVersion = "0.167.0"
+						candidate.CodexVersion = "0.168.0"
 					case "digest":
 						candidate.CodexSHA256 = companion
 					case "unmanaged":
 						candidate.CodexManaged = false
 					case "companion-version":
 						c := copy.Components["codex-code-mode-host"]
-						c.Version = "0.167.0"
+						c.Version = "0.168.0"
 						copy.Components["codex-code-mode-host"] = c
 					case "companion-path":
 						c := copy.Components["codex-code-mode-host"]
@@ -60,7 +60,7 @@ func TestAdaptiveReviewedRuntimeVersionsRemainExact(t *testing.T) {
 			}
 		})
 	}
-	for _, version := range []string{"0.166", "0.166.1", "0.167.0", "latest", ""} {
+	for _, version := range []string{"0.166", "0.166.1", "0.168.0", "latest", ""} {
 		if _, _, ok := reviewedAdaptiveDigests(version, "linux/amd64"); ok {
 			t.Fatal("unreviewed version admitted")
 		}

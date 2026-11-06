@@ -13,14 +13,14 @@ consult the linked project for the complete text.
 | Anthropic Claude Code | 2.1.296 | Proprietary; Anthropic Consumer or Commercial Terms, depending on account | Official Claude terminal client | <https://github.com/anthropics/claude-code> |
 | OpenCode | 1.19.0 (`733b2c627e5aec39cb33cc22373bdce33053ef2c`) | MIT | Legacy managed frontend; private `1.19.0-ivoai.3` adds reviewed local-plugin/offline-install controls; upstream source and MIT notices remain intact | <https://github.com/anomalyco/opencode/releases/tag/v1.19.0> |
 | Headroom | 0.40.0 | Apache-2.0 | Optional local context-optimization proxy/wrapper | <https://github.com/headroomlabs-ai/headroom> |
-| ai-memory | 2.6.3 | MIT | Persistent cross-session/cross-agent operational memory and hooks | <https://github.com/akitaonrails/ai-memory> |
+| ai-memory | 3.4.2 | MIT | Persistent cross-session/cross-agent operational memory and hooks | <https://github.com/akitaonrails/ai-memory> |
 | Ruflo | 3.71.1 | MIT | Workflow, skills and temporary orchestration state | <https://github.com/ruvnet/ruflo> |
 | Node.js | 26.13.0 | MIT | Isolated runtime for the managed Ruflo installation | <https://nodejs.org/> |
 | uv | 0.13.0 | Apache-2.0 OR MIT | Isolated Python/tool runtime used to install Headroom | <https://github.com/astral-sh/uv> |
 | CPython | 3.14.8 | Python Software Foundation License 2.0 | Managed interpreter for Headroom | <https://www.python.org/downloads/release/python-3148/> |
-| Docker Compose | 5.6.0 | Apache-2.0 | Container dependency orchestration for the server | <https://github.com/docker/compose> |
+| Docker Compose | 5.7.0 | Apache-2.0 | Container dependency orchestration for the server | <https://github.com/docker/compose> |
 | Docker Engine / CLI | 28.0.0 minimum; exact official Debian APT candidate at installation | Apache-2.0 | Server container runtime; Debian provisioning verifies Docker's reviewed repository key | <https://docs.docker.com/engine/install/debian/> |
-| Qdrant | 1.19.2 | Apache-2.0 | Internal server vector database | <https://github.com/qdrant/qdrant> |
+| Qdrant | 1.20.0 | Apache-2.0 | Internal server vector database | <https://github.com/qdrant/qdrant> |
 | Hugging Face Text Embeddings Inference | 1.9.4 | Apache-2.0 | Local CPU embedding HTTP runtime | <https://github.com/huggingface/text-embeddings-inference> |
 | intfloat multilingual-e5-small | revision `614241f622f53c4eeff9890bdc4f31cfecc418b3` | MIT | Local multilingual embedding model | <https://huggingface.co/intfloat/multilingual-e5-small> |
 | pelletier/go-toml v2 | 2.4.3 | MIT | TOML configuration parser/encoder linked into ivoai | <https://github.com/pelletier/go-toml> |

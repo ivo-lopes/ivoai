@@ -27,9 +27,15 @@ import (
 // autoTurnState exposes only the current process-local transport to UI
 // callbacks. A later turn cannot inherit the previous turn's capability.
 type autoTurnState struct {
-	mu        sync.RWMutex
-	knowledge sessionKnowledge
-	native    *agents.NativeOpenCode
+	mu          sync.RWMutex
+	knowledge   sessionKnowledge
+	native      *agents.NativeOpenCode
+	compression autoTurnCompressionPolicy
+}
+
+type autoTurnCompressionPolicy struct {
+	turn, attempt string
+	fidelity      core.CompressionFidelity
 }
 
 func (s *autoTurnState) snapshot() (sessionKnowledge, *agents.NativeOpenCode) {
@@ -42,6 +48,43 @@ func (s *autoTurnState) set(k sessionKnowledge, n *agents.NativeOpenCode) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.knowledge, s.native = k, n
+}
+
+// Fidelity is turn-local metadata, never authority inferred from a bounded event
+// history. A mapping from another attempt cannot inherit the bypass decision.
+func (s *autoTurnState) setCompression(turn, attempt string, fidelity core.CompressionFidelity) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.compression = autoTurnCompressionPolicy{turn, attempt, fidelity}
+}
+func (s *autoTurnState) compressionSnapshot() autoTurnCompressionPolicy {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.compression
+}
+
+// Called with a value captured before acquiring the session-store lock. Mapping
+// metadata from another frontend, turn, attempt or executor process cannot borrow
+// the current turn's fidelity selection. This never authorizes an operation.
+func (p autoTurnCompressionPolicy) forMapping(v session.Session, mapping opencodebridge.Mapping) core.CompressionFidelity {
+	if p.fidelity == "" || p.turn == "" || p.attempt == "" || p.turn != v.ObservationTurnID || p.attempt != v.ObservationAttemptID || v.PrimaryTurn == nil {
+		return ""
+	}
+	receipt := v.PrimaryTurn
+	if receipt.TurnID != p.turn || receipt.AttemptID != p.attempt || receipt.Executor != mapping.Executor || receipt.FrontendSessionID != mapping.FrontendSessionID || mapping.Trace == nil || mapping.Trace.PID <= 0 {
+		return ""
+	}
+	for _, raw := range v.TurnAttempts {
+		var attempt opencodebridge.TurnAttempt
+		if json.Unmarshal(raw, &attempt) != nil || attempt.ID != p.attempt || attempt.TurnID != p.turn {
+			continue
+		}
+		if attempt.FrontendSessionID != mapping.FrontendSessionID || attempt.EffectiveExecutor != mapping.Executor || attempt.NativeSessionID != mapping.ExecutorSessionID || attempt.Trace == nil || attempt.Trace.PID != mapping.Trace.PID || attempt.Trace.Executor != mapping.Trace.Executor || attempt.Trace.Executable != mapping.Trace.Executable {
+			return ""
+		}
+		return p.fidelity
+	}
+	return ""
 }
 
 // preparedAutoTurn binds one execution to its own release and completion
@@ -202,7 +245,11 @@ func (a *App) scopeAutoRunner(base core.ExecutorRunner, original config.Config, 
 				return fail(err)
 			}
 		}
-		k, err := a.prepareAutoPromptKnowledge(ctx, original, selectors, request.Prompt, request.Executor, runtimeDir, cwd, func(event observability.Event) {
+		knowledgeContext := ctx
+		if adaptive != nil && os.Getenv("IVOAI_EXPERIMENTAL_EVIDENCE_GATEWAY") == "1" {
+			knowledgeContext = context.WithValue(ctx, adaptiveCodeContextKey{}, adaptive)
+		}
+		k, err := a.prepareAutoPromptKnowledge(knowledgeContext, original, selectors, request.Prompt, request.Executor, runtimeDir, cwd, func(event observability.Event) {
 			_, _ = store.Update(id, func(value *session.Session) error {
 				if adaptive != nil && !adaptive.boundTo(*value) {
 					return errors.New("ADAPTIVE_PRIMARY_DENIED")
@@ -341,6 +388,8 @@ func (a *App) scopeAutoRunner(base core.ExecutorRunner, original config.Config, 
 				return false
 			})
 		}
+		var turnCompressionFidelity core.CompressionFidelity
+		exactAdaptiveEvidence := adaptive != nil && (os.Getenv("IVOAI_EXPERIMENTAL_EVIDENCE_GATEWAY") == "1" || authoritativeSharedKnowledgeActive(k.config))
 		runner := base
 		_, managedCLI := base.(opencodebridge.CLIRunner)
 		if routed, ok := runner.(agents.RoutedRunner); ok {
@@ -371,6 +420,12 @@ func (a *App) scopeAutoRunner(base core.ExecutorRunner, original config.Config, 
 					}
 				}
 				spec.Args = args
+				if executor == request.Executor {
+					if exactAdaptiveEvidence {
+						spec.CompressionFidelity = core.CompressionExactRequired
+					}
+					turnCompressionFidelity = spec.CompressionFidelity
+				}
 				spec.ObserveProgress = func(trace core.ExecutionTrace) {
 					encoded, err := json.Marshal(trace)
 					if err == nil {
@@ -419,6 +474,11 @@ func (a *App) scopeAutoRunner(base core.ExecutorRunner, original config.Config, 
 			runner = agents.RoutedRunner{Official: runner, Native: native}
 		}
 		current.set(k, native)
+		compressionTurn, compressionAttempt := value.ObservationTurnID, value.ObservationAttemptID
+		if adaptive != nil {
+			compressionTurn, compressionAttempt = adaptive.receipt.TurnID, adaptive.receipt.AttemptID
+		}
+		current.setCompression(compressionTurn, compressionAttempt, turnCompressionFidelity)
 		prepared := preparedAutoTurn{Runner: runner, Release: release, Policy: policy}
 		if adaptive != nil {
 			prepared.Validate = func() error { return adaptive.validate(ctx) }

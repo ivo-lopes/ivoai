@@ -1,0 +1,16 @@
+{
+  "cpuid": {
+    "stdout": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "base64": "",
+      "text": ""
+    },
+    "stderr": {
+      "bytes": 53,
+      "sha256": "aad2bb4de2f84ff987a65c3f99175a736a57cf2de2b4ff8fb87f30c2870de642",
+      "base64": "cWVtdTogUHJvcGVydHkgJ0hhc3dlbGwteDg2XzY0LWNwdS5wY2xtdWwnIG5vdCBmb3VuZAo=",
+      "text": "qemu: Property 'Haswell-x86_64-cpu.pclmul' not found\n"
+    }
+  }
+}

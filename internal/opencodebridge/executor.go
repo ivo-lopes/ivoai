@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -16,6 +17,7 @@ import (
 
 	"github.com/ivo-lopes/ivoai/internal/codexresolver"
 	"github.com/ivo-lopes/ivoai/internal/core"
+	"github.com/ivo-lopes/ivoai/internal/ownedprocess"
 	"github.com/ivo-lopes/ivoai/internal/routing"
 )
 
@@ -27,14 +29,18 @@ type ExecutorSpec struct {
 	Version              string
 	ObserveConfiguration bool
 	SHA256               string
-	Path                 string
-	Args                 []string
-	Env                  []string
-	Dir                  string
-	Disabled             bool
-	Compression          core.CompressionProvider
-	CompressionEnabled   bool
-	RuntimeDir           string
+	// ExecutableFile is a borrowed, already opened reviewed Linux executable.
+	// The runner verifies and executes this same descriptor; the caller owns Close.
+	ExecutableFile      *os.File
+	Path                string
+	Args                []string
+	Env                 []string
+	Dir                 string
+	Disabled            bool
+	Compression         core.CompressionProvider
+	CompressionFidelity core.CompressionFidelity
+	CompressionEnabled  bool
+	RuntimeDir          string
 }
 
 type CLIRunner struct {
@@ -65,7 +71,11 @@ func (r CLIRunner) Run(ctx context.Context, request ExecutorRequest, emit func(s
 		return ExecutorResult{}, failure("executor_unavailable")
 	}
 	if spec.SHA256 != "" {
-		hash, err := codexresolver.Fingerprint(spec.Path)
+		verifiedPath := spec.Path
+		if spec.ExecutableFile != nil {
+			verifiedPath = fmt.Sprintf("/proc/self/fd/%d", spec.ExecutableFile.Fd())
+		}
+		hash, err := codexresolver.Fingerprint(verifiedPath)
 		if err != nil || hash != spec.SHA256 {
 			return ExecutorResult{}, failure("CODEX_SESSION_EXECUTABLE_CHANGED")
 		}
@@ -115,14 +125,22 @@ func (r CLIRunner) Run(ctx context.Context, request ExecutorRequest, emit func(s
 	compressionProvider := "direct"
 	compressionUsed := false
 	var lease core.CompressionLease
+	fidelity := spec.CompressionFidelity
+	if fidelity == "" {
+		fidelity = core.CompressionCompressible
+	}
 	if spec.CompressionEnabled && spec.Compression != nil {
 		component := core.ComponentCodex
 		if request.Executor == "claude" {
 			component = core.ComponentClaude
 		}
-		prepared, prepareErr := spec.Compression.Prepare(ctx, core.CompressionRequest{Executor: component, DirectPath: spec.Path, Args: args, Environment: environment, RuntimeDir: spec.RuntimeDir, Fidelity: core.CompressionCompressible})
+		prepared, prepareErr := spec.Compression.Prepare(ctx, core.CompressionRequest{Executor: component, DirectPath: spec.Path, Args: args, Environment: environment, RuntimeDir: spec.RuntimeDir, Fidelity: fidelity})
 		if prepareErr == nil && prepared != nil {
 			decision := prepared.Decision()
+			if decision.Used && fidelity != core.CompressionCompressible {
+				_ = prepared.Close(context.Background())
+				return ExecutorResult{}, failure("compression_fidelity_violation")
+			}
 			if decision.Used {
 				command, args, environment = decision.Command, decision.Args, decision.Environment
 				lease = prepared
@@ -136,7 +154,16 @@ func (r CLIRunner) Run(ctx context.Context, request ExecutorRequest, emit func(s
 	if lease != nil {
 		defer lease.Close(context.Background())
 	}
+	if spec.ExecutableFile != nil {
+		if compressionUsed {
+			return ExecutorResult{}, failure("executor_descriptor_compression_unsupported")
+		}
+		command = "/proc/self/fd/3"
+	}
 	cmd := exec.Command(command, args...)
+	if spec.ExecutableFile != nil {
+		cmd.ExtraFiles = []*os.File{spec.ExecutableFile}
+	}
 	cmd.Dir = spec.Dir
 	cmd.Env = environment
 	cmd.SysProcAttr = executorProcessAttributes()
@@ -150,19 +177,25 @@ func (r CLIRunner) Run(ctx context.Context, request ExecutorRequest, emit func(s
 	if err := cmd.Start(); err != nil {
 		return ExecutorResult{}, failure("executor_start_failure")
 	}
+	group, ownerErr := ownedprocess.New(cmd)
+	if ownerErr != nil {
+		_ = cmd.Process.Kill()
+		_ = cmd.Wait()
+		return ExecutorResult{}, failure("executor_ownership_unavailable")
+	}
 	trace.PID = cmd.Process.Pid
 	processDone := make(chan struct{})
 	var closeDone sync.Once
 	go func() {
 		select {
 		case <-ctx.Done():
-			_ = syscall.Kill(-cmd.Process.Pid, syscall.SIGTERM)
+			_ = group.Signal(syscall.SIGTERM)
 			timer := time.NewTimer(time.Second)
 			defer timer.Stop()
 			select {
 			case <-processDone:
 			case <-timer.C:
-				_ = syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
+				_ = group.Signal(syscall.SIGKILL)
 			}
 		case <-processDone:
 		}
@@ -310,9 +343,9 @@ func (r CLIRunner) Run(ctx context.Context, request ExecutorRequest, emit func(s
 	// child is still writing. Terminate the process group before Wait so a full
 	// stdout pipe cannot deadlock the bridge.
 	if parseErr != nil {
-		_ = syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
+		_ = group.Signal(syscall.SIGKILL)
 	}
-	waitErr := cmd.Wait()
+	waitErr := group.Wait()
 	trace.StderrBytes = stderr.Len()
 	trace.FinalResponse = finalResponsePresent
 	if cmd.ProcessState != nil {

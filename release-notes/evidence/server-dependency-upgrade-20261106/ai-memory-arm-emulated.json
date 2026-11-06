@@ -1,0 +1,19 @@
+{
+  "pass": true,
+  "architecture": "linux/arm64",
+  "execution": "QEMU10.0.13 AArch64 user-mode, not native ARM hardware",
+  "cpu": "cortex-a53",
+  "cpuid_observed": null,
+  "binary_sha256": "ceeed6ee8ca52eb370f81000ea28796abfb781ea7845e08cbba2adbd40581d77",
+  "official_ai_memory_version": "3.4.2",
+  "production_data_accessed": false,
+  "embedding_provider": "none",
+  "startup_seconds": 2.839,
+  "mcp_unauthenticated_status": 401,
+  "authenticated_status_read_query": true,
+  "wiki_exact_unchanged": true,
+  "observed_qemu_process_rss_kib": 113004,
+  "normal_stop": true,
+  "post_stop_wiki_exact": true,
+  "total_seconds": 3.322
+}

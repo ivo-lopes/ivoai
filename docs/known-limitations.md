@@ -1,23 +1,30 @@
 # Known limitations
 
-- OpenCode remains an explicit deprecated legacy frontend/executor. Native managed
-  Codex sessions and Codex/Claude workers exclude it even when installed. Legacy
-  release assets and updater rollback participants remain; global removal is pending.
-  Personal custom provider/plugin/MCP configuration is not imported into controlled
-  sessions. Native subagents and separate question dialogs are intentionally disabled.
-- The managed bridge displays executor text streaming and session state. Native
-  provider-specific tool animation from the hidden executor CLI is not reproduced
-  as a second nested TUI.
-- OpenViking and NativeOrchestrator v2 are future work and are not defaults.
-- Ruflo remains available for explicit legacy orchestration; Codex/OpenCode use the native DAG core.
-- Headroom remains available for compatibility and rollback.
-- Conversation Continuity is available; native histories deleted by older ephemeral
-  frontends cannot be reconstructed. Ambiguous writes require manual reconciliation.
-  See [continuity limits](conversation-continuity.md). Native AUTO handoff to Claude
-  and initial `ivoai codex --planner claude` fail closed until a managed native
-  frontend contract is verified. Direct Claude remains available; no native Claude
-  TUI parity is claimed. Shared Core headless/worker contracts remain; the native
-  Codex picker and turn admission accept Codex models only. A shared catalog does
-  not certify Claude selection through that TUI. The legacy OpenCode console is
-  not a native-client requirement.
-- Remote Web MCP requires a publicly reachable HTTPS origin or the platform's supported secure tunnel.
+- Adaptive Primary, native CodeIntel Gateway reuse and managed headless clients
+  remain explicit experimental options, OFF by default. A version/help or offline
+  protocol test does not certify inference, native TUI parity or ARM execution.
+- Managed OpenCode is removed. Old commands explain migration; retained user
+  data, profiles and historical release assets remain untouched for rollback.
+  Package/wire compatibility names do not restore execution.
+- The native Codex picker accepts reviewed Codex selections. Shared Claude worker
+  or headless contracts do not establish Claude control through that TUI. Claude
+  inference remains unverified without the user's authorized account. Antigravity
+  headless support is bounded by its separately recorded runtime/platform proofs.
+- Durable claims/history preserve eligible continuation, but cannot reconstruct
+  native history deleted by older clients. Failed/cancelled/foreign history and
+  uncertain writes require safe reconciliation, never implicit replay. See
+  [continuity](conversation-continuity.md).
+- Gateway cache is scoped and process-local. Current code-read integration is not
+  universal Memory/Context/tool-output mediation or primary-to-worker sharing.
+  Reported provider cache, exact output reduction and whole-session economy differ.
+  The global economic gate remains INCOMPLETE.
+- Headroom and explicit settings remain for compatibility; unsafe managed wrapping
+  stays unavailable by policy. Caveman and Direct are not chained with it.
+- OpenViking remains optional/experimental. A memory write does not establish
+  documentary Context synchronization; retain documented BLOCKED/PARTIAL status
+  until ingestion and retrieval are actually validated.
+- The web console is administrative and consumes the same Core. It is not a
+  conversational UI or another scheduler. Remote Web MCP requires supported
+  publicly reachable HTTPS or the platform's secure tunnel.
+
+See [executors](executors.md) for the supported commands and explicit boundaries.

@@ -1,69 +1,79 @@
 # Orquestração automática
 
-`ivoai codex` e `ivoai opencode` compartilham o mesmo core. O primeiro usa admissão
-via App Server IVOAI e TUI nativa Codex; o segundo usa OpenCode.
-Veja [Frontends orquestrados](orchestrated-frontends.md). `ivoai auto` é alias
-deprecated. Para a TUI oficial sem orquestração, escolha `--direct` explicitamente.
+Codex gerenciado e seu alias `ivoai auto` usam a mesma admissão e o mesmo scheduler
+do Core. OpenCode gerenciado foi removido. A autenticação pertence aos clientes
+oficiais, sem cópia de credenciais ou fallback automático para API paga.
 
-`ivoai opencode` usa o OpenCode pinado como frontend gerenciado. O IVOAI é a
-autoridade de prompt, sources, DAG, quota, modelos, workers e integração. Codex,
-Claude opcional e Native OpenCode elegível mantêm autenticação oficial própria.
-O IVOAI não copia credentials de providers para o OpenCode.
+## Início e ownership da conversa
 
 ```sh
 ivoai codex
-ivoai opencode
-ivoai opencode --planner codex
-ivoai opencode --planner claude
+ivoai auto
 ```
 
-## Prompt e plano
+O intake aceita linguagem natural UTF-8 limitada, sem cabeçalhos formais de aceite.
+Integridade, escopo, proprietário e permissões continuam obrigatórios. O Primary
+adaptativo (`IVOAI_EXPERIMENTAL_ADAPTIVE_PRIMARY`) é experimental e OFF por padrão.
+Quando habilitado explicitamente em runtime revisado, uma consulta somente leitura
+pode terminar sem DAG. Trabalho complexo usa o protocolo, validação, aprovações e
+workers isolados existentes; o modo simples não concede escrita.
 
-AUTO aceita pedidos informais e perguntas sem exigir um modelo de objetivo,
-entregável ou critérios de aceite. A entrada aceita texto UTF-8 não vazio de até
-128 KiB, incluindo tabulações e quebras de linha LF/CRLF. Texto vazio, malformado,
-acima do limite ou com caracteres de controle inseguros é rejeitado antes da
-execução com um diagnóstico fixo, que nunca inclui trechos do prompt.
+## Modelo e raciocínio
 
-Exemplo: `Qual versão deste projeto?`
+O picker Codex usa modelos/efforts Codex verificados. Um catálogo compartilhado não
+comprova controle Claude por essa TUI. Escolhas explícitas indisponíveis falham.
+Hosts headless Claude/Antigravity têm flags próprias, OFF por padrão, sem controle
+transparente da TUI nativa. Campos reportados de quota/cache/modelo são separados
+de valores desconhecidos ou inferidos.
 
-Readiness não concede ferramentas, aprova planos nem comprova aceite. O primary
-pode esclarecer ambiguidades sem tratar a ausência de headings como uma fronteira
-de autorização. O caminho simples somente com primary, sem DAG, permanece pendente;
-esta mudança de entrada preserva os gates existentes de plano, quota, permissões
-e validação final.
+## Admissão e fontes
 
-Após readiness, purpose-auto seleciona sources antes de Memory/Context. O primary
-gera o menor DAG útil. A UI apresenta plano e pede aprovação por padrão; cancelar
-não inicia workers. `plan_execution=immediate` permite início sem essa etapa de
-confirmação, mas não remove o gate, o Skill Gate nem a aprovação de mudança material
-de routing.
+O Core valida frontend/runtime antes de criar trabalho e admite cada turno de novo.
+Nenhum renderer/plugin OpenCode ou alteração de configuração pessoal é necessário.
+Um turno admitido não é repetido por fallback para cliente direto sem gate.
+Purpose routing limita fontes relevantes; pesquisa tenta Memory e Context na
+ordem existente antes de fontes externas. Conteúdo recuperado é dado não confiável,
+sem autoridade para executar instruções. Brief e referências exatas não duplicam
+Memory durável nem Context documental. Reutilização CodeIntel no Gateway também
+é opt-in e OFF por padrão, com recuperação exata, owner e geração da fonte; não
+é cache universal nem comprovação de economia global.
 
-O primary usa modelo STRONG ou MAX comprovado pelo catálogo runtime. Workers usam
-o menor tier suficiente para cada papel e risco. Modelo e reasoning explícitos
-incompatíveis falham fechados, sem substituição silenciosa.
+## Planejamento, workers e escalonamento
 
-## Configuração TUI-first
+O Core valida escopo, aceite da tarefa, dependências, recursos e aprovação. O
+scheduler existente usa workers quando úteis. Workers de leitura preservam essa
+política; escritores aprovados usam worktrees isoladas e integração verificada.
+Resultados são validados antes da síntese. Nenhum frontend cria outro scheduler ou
+concede ferramentas ao escolher uma estratégia. Escalonamento exige capabilities
+e quotas verificadas; mudanças materiais de executor têm consentimento próprio.
+Telemetria ausente é desconhecida, não quota zero/ilimitada. Compressão não destrói
+evidência autoritativa e provedores não são encadeados.
 
-O monitor de uma sessão pode ser consultado em outro terminal:
+## Continuidade, falhas e cancelamento
+
+Retomadas elegíveis mantêm identidade, histórico exato de planos e claims duráveis.
+Histórico falho, cancelado, estrangeiro ou incompleto não recupera autoridade por
+compactação de uma projeção. NoReplay/NoAutomaticFailover permanecem obrigatórios.
+Uma quota não autoriza repetir mutação incerta nem transformar handoff TUI recusado
+em execução headless. Recuperar um DAG interrompido é uma operação explícita,
+revisada; resume normal não repete o prompt anterior.
+
+## Observabilidade
 
 ```sh
 ivoai monitor --watch
 ivoai monitor --session <session-id> --json
 ```
 
-Abra `ivoai` e o menu de orquestração. As mesmas escolhas persistentes estão
-disponíveis por `ivoai config set` / `ivoai config get`:
+O mesmo backend administrativo mostra quotas, modelos, workers, evidências, grants
+e diagnósticos sanitizados, sem transcripts, credenciais ou raciocínio oculto.
+Exit zero nativo não apaga falha na validação do Core. Hits do Gateway, cache do
+provedor, uso reportado, processos amostrados e tempo total têm escopos separados.
+O gate econômico permanece INCOMPLETE até comprovação em condições equivalentes.
+Revogação, recibo fechado, troca de owner/worktree e resultados incertos recusam
+recuperação ou execução; não causam replay. Direct e handoff são explícitos.
 
-| Chave (prefixo `orchestration.auto.`) | Padrão | Escolhas |
-| --- | --- | --- |
-| `plan_execution` | `approve` | `approve`, `immediate` |
-| `knowledge_routing` | `purpose-auto` | `purpose-auto`, `all-enabled`, `explicit-only` |
-| `concurrency` | `auto` | `auto`, `sequential` |
-| `worker_cap` | `0` (auto) | `0..12` |
-| `parallel_writes` | `true` | `true`, `false` |
-| `provider_preference` | `auto` | `auto`, `codex`, `claude` |
-| `low_quota_threshold` | `10` | percentual validado pela configuração |
+## Políticas
 
 ```sh
 ivoai config set orchestration.auto.plan_execution approve
@@ -75,77 +85,19 @@ ivoai config set orchestration.auto.provider_preference auto
 ivoai config set orchestration.auto.low_quota_threshold 10
 ```
 
-Configuração alterada vale para a próxima sessão gerenciada. Aceite obrigatório,
-primary forte e MCP deny-by-default são invariantes, não opções para desligar
-silenciosamente. O modelo/variant picker do OpenCode continua disponível e mostra
-requested/effective.
+Essas opções não habilitam flags experimentais. Planos imediatos exigem escolha
+explícita e preservam validação, permissões e sandbox. A chave compatível
+`opencode.permission_mode` controla o Core; não restaura o renderer removido.
+Escritas aprovadas continuam isoladas e validadas. Evidências e falhas são
+preservadas. Dados pessoais OpenCode, perfis antigos e assets históricos permanecem
+intactos para rollback explícito segundo seu contrato original.
 
-## Sources e isolamento
+[Referência](orchestrated-frontends.md)
 
-Em purpose-auto, a seleção inicial é conservadora e local, por alias/purpose
-mencionado. Não é um classificador semântico institucional completo. Ambiguidade
-não consulta todos os servidores. Uma instrução negativa de source exclui o
-purpose. Use override explícito para desambiguar:
+[Referência](auto-scheduler.md)
 
-Use `ivoai opencode --knowledge-source company-a`; repita `--knowledge-source` para
-selecionar um subset explícito com mais de uma source.
+[Referência](working-context.md)
 
-`all-enabled` preserva a federação compatível; `explicit-only` não seleciona
-sources implicitamente. Sem necessidade institucional, nenhuma source é consultada.
-Seleção por sessão é o teto da seleção por worker. Não há fan-out de writes.
-Profiles, identidade estável e secrets continuam no domínio Connections existente.
+[Referência](conversation-continuity.md)
 
-Workers recebem contexto local e ResultRefs relevantes, não cópia integral do
-prompt/brief. MCPs são negados por padrão; acesso selecionado é projetado
-process-local com ferramentas permitidas. MCP pessoal arbitrário não é herdado.
-
-## Escrita paralela e falhas
-
-Writers aprovados recebem worktree e branch próprias. Paths permitidos,
-dependências e mudanças coletadas são verificados. O primary coordena em read-only;
-a integração é feita pelo IVOAI após validação. Nenhum conflito é resolvido
-automaticamente. Evidência de worktree com falha fica na área privada de recuperação.
-
-Se a criação inicial de worktrees não for possível, inclusive fora de Git,
-a execução degrada explicitamente para patches sequenciais: o worker continua
-read-only e o IVOAI verifica/aplica o diff sob lease exclusivo. Paths sensíveis,
-symlinks, modos especiais, diffs binários e mudanças fora do escopo são rejeitados.
-Nenhum `git init` silencioso é executado.
-
-A concorrência usa DAG, CPU, RAM, load, I/O observável e limite do usuário. Falha
-não vira sucesso por causa de encerramento normal da TUI. DAG incompleto não
-produz resposta final certificada.
-
-## Quota e frontend
-
-Com quota de 10% ou menos, a UI propõe conservação e pede confirmação. Rejeitar
-mantém a rota existente enquanto elegível. Uma mudança material posterior exige
-aprovação própria. O primary permanece forte por padrão.
-
-OpenCode mostra readiness, plano/aprovação, contagens de tarefas/workers,
-concorrência, executor/model/reasoning, purposes, MCPs e quota. Não mostra
-transcripts privados ou chain of thought dos workers.
-
-`opencode.permission_mode=interactive|full` permanece independente: interactive
-é o default público; full é opt-in persistente. Full elimina aprovações de
-ferramentas configuráveis, não aprova planos nem desativa sandbox/Skill Gate/policy.
-
-Falha do frontend gerenciado é mostrada como degradação explícita. Uma TUI direta
-não é anunciada como se ainda oferecesse o mesmo frontend/plano gerenciado.
-Claude não autenticado é capability indisponível, não erro global; não é necessário
-fazer login para usar um executor elegível.
-
-## Compatibilidade e limites
-
-Upgrade mantém ServerProfiles, secret refs, MCP registry, autenticação oficial e
-permission mode. Não exige novo enrollment/login. Novos defaults de orquestração
-não alteram configurações pessoais dos executores.
-
-Prompts expandidos de workers permanecem transitórios. O checkpoint privado
-preserva um DAG aprovado e limitado para recuperação segura, sem transcript.
-[Conversation Continuity](conversation-continuity.md) usa mappings nativos e
-identidade comprovada. Skills/Ponytail continuam disponíveis. A UI é operacional
-mínima; Full Console e OpenViking permanecem fora desta release.
-
-Veja [Scheduler automático](auto-scheduler.md), [Connections](connections.md) e
-[WorkingContext](working-context.md).
+[Referência](connections.md)

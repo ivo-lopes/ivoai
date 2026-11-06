@@ -130,6 +130,8 @@
     'server.gateway.configure': ['Configurar endereço público', 'Defina o endereço HTTPS público utilizado pelo gateway existente.'],
     'server.logs': ['Consultar logs do servidor', 'Veja os diagnósticos sanitizados disponíveis.'],
     'server.memory.status': ['Consultar memória do servidor', 'Veja o estado da memória no servidor administrado.'],
+    'server.upgrade': ['Atualizar dependências do servidor', 'Pare os serviços, preserve dados e índice, valide cópias isoladas e aplique os runtimes fixados.'],
+    'server.upgrade.rollback': ['Restaurar dependências e dados anteriores', 'Restaure explicitamente o backup, índice e runtimes vinculados ao recibo privado; o estado atual será substituído.'],
     'server.restart': ['Reiniciar servidor', 'Reinicie os serviços existentes com as permissões do processo administrativo.'],
     'server.restore': ['Restaurar backup do servidor', 'Restaure um arquivo de backup autorizado após revisar a operação.'],
     'server.setup': ['Configurar servidor', 'Prepare os serviços usando as permissões existentes do administrador.'],

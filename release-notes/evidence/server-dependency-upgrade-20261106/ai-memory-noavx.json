@@ -1,0 +1,21 @@
+{
+  "pass": true,
+  "architecture": "linux/amd64",
+  "execution": "QEMU10.0.13 user-mode, not native hardware",
+  "cpu": "Nehalem,-avx,-avx2",
+  "cpuid_observed": {
+    "avx": 0,
+    "avx2": 0
+  },
+  "binary_sha256": "5a8e2c51cb09dadfc157601772b32c79ee63a6cbf9f05caf59c67da385bae6c1",
+  "official_ai_memory_version": "3.4.2",
+  "production_data_accessed": false,
+  "embedding_provider": "none",
+  "startup_seconds": 2.176,
+  "mcp_unauthenticated_status": 401,
+  "authenticated_status_read_query": true,
+  "wiki_exact_unchanged": true,
+  "observed_qemu_process_rss_kib": 109412,
+  "normal_stop": true,
+  "total_seconds": 2.52
+}

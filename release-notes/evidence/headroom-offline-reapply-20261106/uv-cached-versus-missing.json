@@ -1,0 +1,43 @@
+{
+  "scope": "real_UV_two_version_Headroom_reapply_without_Core_or_inference",
+  "outcome": "EXPERIMENT_COMPLETE_NOT_ALL_CASES_SUCCESSFUL",
+  "phases": [
+    {
+      "phase": "prime_uv0137",
+      "exit_code": 0,
+      "offline": false,
+      "network_blocked": false,
+      "forced_refresh": false,
+      "seconds": 20.072
+    },
+    {
+      "phase": "normal_cached_network_denied",
+      "exit_code": 2,
+      "offline": false,
+      "network_blocked": true,
+      "forced_refresh": false,
+      "seconds": 0.032
+    },
+    {
+      "phase": "offline_cached_network_denied",
+      "exit_code": 0,
+      "offline": true,
+      "network_blocked": true,
+      "forced_refresh": false,
+      "seconds": 0.215
+    },
+    {
+      "phase": "offline_missing_package_cache",
+      "exit_code": 1,
+      "offline": true,
+      "network_blocked": true,
+      "forced_refresh": false,
+      "seconds": 0.264
+    }
+  ],
+  "provider_inference": false,
+  "personal_config_used": false,
+  "current_phase": "offline_missing_package_cache",
+  "wall_seconds": 85.092,
+  "missing_cache_launcher_published": false
+}

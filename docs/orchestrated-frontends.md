@@ -1,144 +1,95 @@
 # Orchestrated frontends
 
-The v0.13.0 increment shares executor-turn contracts in Core and keeps each
-prepared turn’s completion/resource callbacks. Bridge serialization and DAG
-acceptance remain; this does not enable parallel primaries in one session.
-Runtime CI passed 15/15 at both merged PR heads; see the [release record](releases.md)
-for those runs and the separate metadata/documentation and Release publication gates.
-The later local `VERSION` and RTK pilots are excluded.
+Managed frontends share one Core admission boundary, session store, permission
+policy, orchestration protocol and scheduler. A native client renders the input,
+output and approvals; it does not own a separate economic router or memory store.
 
 ## Commands
 
 | Command | Admission and execution |
 | --- | --- |
-| `ivoai codex` | Native Codex TUI; IVOAI admission; Codex primary preference |
-| `ivoai opencode` | Deprecated explicit legacy OpenCode TUI; primary selected by IVOAI policy |
-| `ivoai auto` | Deprecated explicit legacy alias; use `ivoai codex` for native managed sessions |
-| `ivoai codex --direct` | Official Codex client, no prompt gate/DAG |
-| `ivoai opencode --direct` | Standalone OpenCode, no prompt gate/DAG |
-| `ivoai claude` | Existing optional direct Claude interface |
+| `ivoai codex` | Official native Codex TUI with Core admission |
+| `ivoai auto` | Compatibility alias for managed native Codex |
+| `ivoai codex --direct` | Official direct client without managed turn orchestration |
+| `ivoai claude` | Official direct Claude client |
+| `ivoai claude run --prompt ...` | Experimental managed headless Claude host |
+| `ivoai antigravity run --prompt ...` | Experimental managed ACP host |
+| `ivoai opencode` or `--legacy-opencode` | Explicit removal/migration error; no execution or installation |
 
 Put `--direct` before `--`; arguments after `--` belong to the official client.
-The provider-neutral `session start --executor codex|opencode --mode direct`
-surface remains available. `--mode orchestrated` enters the shared native core.
-
-Native Codex sessions and Codex/Claude managed workers exclude OpenCode from
-discovery, cached catalogs, quota routing, retries and dispatch even when it is
-installed. The legacy commands remain explicit. Retained OpenCode tasks or
-checkpoints block a native resume/recovery with a migration message; they are
-not rewritten or replayed. Native AUTO handoff to Claude and initial
-`ivoai codex --planner claude` are currently refused before starting another
-frontend. Existing approved Codex/Claude routing decisions remain separate from
-plan approval; this increment does not certify a native Claude TUI.
-
-The shared Core retains official Claude headless execution and Claude worker
-contracts under existing grants and routing decisions. The native Codex picker
-exposes Codex models, and its turn admission rejects Claude selections even when
-the shared catalog contains them. Internal alternate-route callbacks do not
-establish a Claude-primary path through that native presentation. The refused
-initial planner/handoff modes and the retained Core contracts have distinct
-boundaries; no Codex-presentation/Claude-primary parity is certified here.
+New session starts accept supported native executors. Retained OpenCode session
+and checkpoint metadata remains readable for inspection and rollback, while
+resume/recovery fails with migration guidance rather than rerouting or replaying
+saved tasks. No user's OpenCode binary, configuration, credentials or history is
+removed. See [executors](executors.md).
 
 ## Native Codex terminal
 
-Enter the first prompt directly in the official Codex composer. Use its native
-multiline controls and press Enter to send. For example:
+Enter a natural request in the official composer, for example:
 
 ```text
-Read VERSION in the current directory and report its value.
-Acceptance: return only the version; do not modify files.
+Explain how authentication works in this project.
 ```
 
-The native model/reasoning picker selects a runtime-verified Codex primary;
-workers retain independent routing. Plan and quota decisions use native question
-dialogs, not `/approve` commands. Interrupt, navigation, scrolling, selection and
-the composer remain upstream UI. There is no IVOAI pre-composer.
+Formal acceptance headings are optional. Admission still checks input integrity,
+authorization, scope and isolation. The adaptive Primary is experimental and
+off by default until controlled certification and rollout. With
+`IVOAI_EXPERIMENTAL_ADAPTIVE_PRIMARY=1`, eligible reviewed sessions can complete
+a read-only request without creating a DAG or worker. A
+request needing changes or multiple steps escalates through the existing planning
+protocol; Core validates the plan, approvals, sandbox and worker permissions.
+Choosing a simple strategy never grants writes or privileged execution.
 
-The [official App Server protocol](https://learn.chatgpt.com/docs/app-server)
-connects that TUI to an authenticated, process-local IVOAI façade. The façade
-admits `turn/start` before forwarding it to the official App Server. A private
-Responses adapter returns the shared orchestration core's final answer; it never
-returns native tool calls. Shell/exec, review, steering, configuration writes and
-unknown execution methods cannot bypass admission. Use `--direct` for those
-upstream operations outside orchestration.
+The native model/reasoning picker uses runtime-verified selections. Plan and
+material quota-routing decisions remain separate approvals. Composer, navigation,
+scrolling and terminal presentation stay native; IVOAI has no pre-composer or
+conversational web frontend. The App Server façade admits turns before official
+execution and rejects unsupported methods/config overrides. `--direct` is an
+explicit separate operation, never a fallback after a claimed managed request.
 
-Codex 0.162.1 and 0.154.0 are tested. App Server transport is upstream-experimental;
-the supported local protocol is pinned and tested, not an invented TUI API.
-The frontend uses a private project-scoped Codex home without copying account
-credentials or personal configuration. Native `/resume` and the official picker
-share IVOAI's stable session mappings with `ivoai session resume`. Provider-owned
-history survives restart; IVOAI keeps a bounded continuity journal, not a second
-transcript store. Global configuration mutation and arbitrary thread import/fork
-remain outside this façade. See [Conversation continuity](conversation-continuity.md).
+Reviewed runtime pairs, platforms and rollouts remain explicit. Refer to the
+release's actual inference/TUI evidence; a version/help startup or synthetic
+provider test does not certify inference. The private per-project Codex home
+stores official native history without copying authentication. The native
+`/resume` picker and `ivoai session resume` use the existing owned mappings.
+Durable request claims, terminal audit and completed-plan history prevent replay
+and preserve identity across eligible continuation. Failed, cancelled, foreign
+or incomplete histories cannot acquire new authority by eviction from a bounded
+metadata projection.
 
-Prompt rejection starts no worker and no substantive executor turn. Acceptance
-criteria headings are optional: bounded informal natural language uses the shared
-intake assessment. Full OpenCode permissions do not bypass plan approval. Immediate
-start remains an explicit shared policy. The existing DAG, grants and completion
-validation remain in force; this delivery does not introduce execution without a DAG.
+## Evidence and workers
 
-## One control plane
+When explicitly enabled with `IVOAI_EXPERIMENTAL_EVIDENCE_GATEWAY=1`, the same
+Evidence Gateway can wrap admitted native read-only CodeIntel queries. Repeated queries may reuse exact typed results in
+one process after fresh receipt checks. Source changes, permission revocation,
+wrong owner/worktree or runtime drift deny reuse/recovery. Index/diagnostic actions
+are never replayed from this cache. Gateway cache hits and official provider token
+cache observations are distinct. No global token/time saving is presumed.
 
-Both frontends use the same admission endpoint and native scheduler: purpose-auto,
-bounded Memory/Context, DAG, plan decision, economic routing, host-aware concurrency,
-per-worker Skills/Ponytail and MCP allowlists, isolated worktrees, integration,
-acceptance verification and primary synthesis. After approval the scheduler queues
-delegated nodes automatically; the primary need not issue a spawn command.
+Complex tasks use the same existing Core scheduler and isolated workers. Ruflo's
+provider-free coordination profile does not introduce another scheduler. Frontends
+cannot issue extra grants, bypass plan approval or start another scheduler.
+Memory and Context remain separate retrieval capabilities with existing source
+and permission boundaries. External evidence is untrusted data, not execution
+instructions. Shared package names and retained wire readers do not restore the
+removed OpenCode runtime.
 
-Codex is the preferred strong primary in `ivoai codex`. Workers can still use
-Claude when eligible. Primary replacement requires a separate routing decision.
-At 10% quota the shared conservation policy proposes worker savings; it does not
-silently replace the primary. Explicit unavailable executor/model overrides fail
-closed. Claude authentication is optional, not a setup requirement.
+## Client boundaries and diagnostics
 
-Status distinguishes `frontend`, `orchestration_mode`, `primary_provider` and
-per-worker executor/model/reasoning. Legacy `mode` and `primary_executor` fields
-remain. Progress contains metadata, not worker transcripts or credential stores.
+`ivoai claude` remains the official direct TUI. Managed Claude headless uses the
+off-by-default `IVOAI_EXPERIMENTAL_CLAUDE_HEADLESS=1` flag and the reviewed
+Claude Code 2.1.318 runtime on Linux amd64. Its inference certification is pending an
+authorized user account; offline tests do not certify it.
 
-## Compatibility and recovery
+The off-by-default `IVOAI_EXPERIMENTAL_ANTIGRAVITY=1` flag enables the reviewed
+`agy` 1.5.2 ACP host on Linux amd64. Exact binary identity remains mandatory.
+Headless protocols do not provide transparent native TUI control, universal
+client parity or cross-process resume. Do not substitute a fake provider or a
+paid API for the existing official authentication. A refused initial planner/handoff remains a refusal until
+its native presentation contract is separately supported and certified.
 
-No re-enrollment, MCP re-authentication or provider login is required on upgrade.
-Existing profiles, secret references, permission mode, native pack, Ponytail and
-orchestration settings are preserved. `auto.*` configuration is not renamed.
-Forward-only Codex frontend records use a private namespace in the same session
-store so older binaries ignore them during rollback; reapply restores access.
-
-The alias warning is emitted once on stderr, never in stdout. If the managed
-OpenCode frontend cannot start, IVOAI fails clearly instead of launching an ungated
-direct TUI. Choose `ivoai codex` for controlled orchestration, or `--direct`
-explicitly when orchestration is not wanted. Existing executor sandbox, Skill Gate,
-MCP deny-by-default and purpose isolation still apply in orchestrated mode.
-
-## Operational events and automation profiles
-
-The managed OpenCode panel subscribes to the authenticated local `/events` SSE
-endpoint. Version 1 observations carry a session-local monotonic sequence and,
-when applicable, plan, task, turn and attempt identifiers. Only sanitized metadata
-is retained (128 observations per session). Reconnect resumes from a cursor;
-a history gap or session switch explicitly resets the view. Slow consumers are
-bounded and disconnected, with heartbeat/reconnect feedback instead of invented
-progress. Filesystem notifications observe writes from other IVOAI processes.
-Status reads cached quota observations; they never authenticate a provider on
-behalf of the panel. Missing, stale and failed observations remain distinguishable.
-
-Configuration → **Automation Profiles** exposes `economic`, `balanced`, `intensive`,
-`review`, `development`, `research` and `diagnostic`. Each shows current and proposed
-settings before confirmation. CLI equivalents:
-
-```sh
-ivoai config profile list
-ivoai config profile show
-ivoai config profile preview economic
-ivoai config profile apply economic
-ivoai config profile restore
-```
-
-Presets affect future sessions and change only concurrency, worker cap, parallel
-writes/optimization and routing weights. Provider/model preferences, permissions,
-approvals, authentication and server selection remain unchanged. They set upper
-bounds: host/quota checks and the approved DAG still determine useful concurrency.
-The primary's existing strong-model rule is preserved. An atomic, private receipt
-stores the previous allowlisted values. Reapplying is idempotent; restoration
-refuses to overwrite later customization. `show` distinguishes preset values from
-inherited or customized settings. This rollback concerns configuration only, not
-provider history or server databases.
+Use `ivoai monitor --watch` or the administrative console for sanitized session,
+worker, quota, evidence and approval state. The console consumes the same backend
+and does not render a second conversation. Cancelling/revoking an admitted turn
+never requests implicit replay or automatic paid-provider fallback. A failed
+frontend or final validation remains a failure even if a child exits zero.

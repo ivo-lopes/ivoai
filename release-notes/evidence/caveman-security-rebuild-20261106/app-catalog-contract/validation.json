@@ -1,0 +1,39 @@
+{
+  "base": "4d89f02bc",
+  "scope": "private App catalog seam and explicit compiled-metadata/fallback fixtures; production still uses real immutable catalog",
+  "checks": {
+    "focused_positive_and_negative": "PASS",
+    "app_full_suite": {
+      "pass": true,
+      "seconds": 21.19
+    },
+    "full_go_suite": {
+      "pass": true,
+      "package_groups_with_tests": 61,
+      "provider_inference": false
+    },
+    "app_vet": "PASS",
+    "previous_failures_preserved": [
+      "TestSetupIsIdempotentAndReadyWithoutConnections: old fixture omitted compiled compression identity",
+      "TestCompressionSelectionIsMutuallyExclusiveWithCavemanDefault: old fixture assumed unconditional upstream component availability",
+      "Intermediate import edit failed parsing before gofmt; corrected before final suite."
+    ]
+  },
+  "coverage": [
+    "Original Caveman/Headroom/Direct selection assertions retained with schema-valid isolated catalog fixture.",
+    "Nil seam matches compiled production catalog; no environment/configuration override added.",
+    "Missing metadata selects Direct and no MCP even with historical installed2.1 state.",
+    "Setup without compressor metadata installs native clients/tool host, claims no Caveman state/ownership, and remainsREADY with explicit Direct fallback diagnostics."
+  ],
+  "limitations": [
+    "App fixtures are offline, not official CLI inference or provider certification. Actual Caveman install/probes/fidelity/rollback are separately recorded.",
+    "Parent integration must compose with the frozen OpenCode removal changes and run composed CI.",
+    "Existing Doctor may consider a retained old component healthy from installed state before setup upgrades it; this is reported separately to parent and not modified by this scoped change."
+  ],
+  "source_sha256": {
+    "internal/app/app.go": "849bd59606795f2459f2ae6396d3c8fd00fbc07608b7e7b54e61e855978a17b6",
+    "internal/app/compression.go": "686c74b04ba02bfef21d43796cb8b7828474986a17a9ae7ae4afdf929044ce5f",
+    "internal/app/app_test.go": "59c94e9d2b7617c49aa9341bfda6a1b2b685688e873e57bef3f956c3ca75e9db",
+    "internal/app/compression_test.go": "f670569580dffba1aa3b3e6309553762e52255a671c5212b3e7ad58c94a84480"
+  }
+}

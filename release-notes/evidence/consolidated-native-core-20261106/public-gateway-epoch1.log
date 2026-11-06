@@ -1,0 +1,4 @@
+=== RUN   TestLiveAdaptivePrimaryFullCLI
+    adaptive_cli_live_test.go:146: reviewed production and official executables and new private report required
+--- FAIL: TestLiveAdaptivePrimaryFullCLI (0.00s)
+FAIL

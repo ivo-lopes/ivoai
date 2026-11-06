@@ -1,0 +1,28 @@
+[
+  {
+    "arch": "amd64",
+    "cpu": "noAVX/AVX2",
+    "health": {
+      "adapters": 5,
+      "billing": "byok",
+      "middleware": "ok",
+      "ok": true,
+      "schema": "caveman.proxy.health.v1",
+      "service": "caveman-proxy"
+    },
+    "external_provider_calls": 0
+  },
+  {
+    "arch": "arm64",
+    "cpu": "ARM64 emulation",
+    "health": {
+      "adapters": 5,
+      "billing": "byok",
+      "middleware": "ok",
+      "ok": true,
+      "schema": "caveman.proxy.health.v1",
+      "service": "caveman-proxy"
+    },
+    "external_provider_calls": 0
+  }
+]

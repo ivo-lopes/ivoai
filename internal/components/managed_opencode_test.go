@@ -1,27 +1,22 @@
 package components
 
 import (
-	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
-	"io"
 	"net/http"
-	"path/filepath"
 	"runtime"
 	"strings"
 	"testing"
-
-	"github.com/ivo-lopes/ivoai/internal/config"
 )
 
 type managedReleaseTransport func(*http.Request) (*http.Response, error)
 
 func (f managedReleaseTransport) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }
 
-func TestManagedOpenCodeReleaseMetadataPromotesThroughInstaller(t *testing.T) {
+func TestLegacyOpenCodeMetadataCannotReactivateInstaller(t *testing.T) {
 	if runtime.GOOS != "linux" || (runtime.GOARCH != "amd64" && runtime.GOARCH != "arm64") {
 		t.Skip("managed release targets Linux amd64/arm64")
 	}
@@ -43,35 +38,26 @@ func TestManagedOpenCodeReleaseMetadataPromotesThroughInstaller(t *testing.T) {
 	previous := managedOpenCodeBuild
 	managedOpenCodeBuild = base64.StdEncoding.EncodeToString(body)
 	t.Cleanup(func() { managedOpenCodeBuild = previous })
-	var spec Spec
 	for _, candidate := range DefaultCatalog() {
 		if candidate.Name == "opencode" {
-			spec = candidate
+			t.Fatal("legacy build metadata re-enabled removed component")
 		}
 	}
-	if spec.Version != metadata.Version || spec.TrustLevel != "checksum_only" || spec.SignatureStatus != "not_exposed" || spec.AttestationStatus != "not_exposed" {
-		t.Fatal("release build must use the existing digest-only promotion contract without claiming upstream signatures")
+	// Even an explicit injected reviewed legacy spec cannot install or make a
+	// network request. Parsing old metadata remains a read-only wire contract.
+	spec, err := managedOpenCodeSpec(Spec{Name: "opencode", Executable: "opencode", Revision: metadata.UpstreamRevision}, managedOpenCodeBuild, metadata.Platform)
+	if err != nil {
+		t.Fatal(err)
 	}
-	root := t.TempDir()
-	paths := config.Paths{ConfigDir: filepath.Join(root, "config"), DataDir: filepath.Join(root, "data"), StateDir: filepath.Join(root, "state"), CacheDir: filepath.Join(root, "cache"), BinDir: filepath.Join(root, "bin"), Config: filepath.Join(root, "config", "config.toml"), State: filepath.Join(root, "state", "state.toml"), Ownership: filepath.Join(root, "state", "ownership.toml")}
-	store := config.NewStore(paths)
 	requests := 0
-	client := &http.Client{Transport: managedReleaseTransport(func(r *http.Request) (*http.Response, error) {
-		if r.URL.String() != metadata.URL {
-			t.Fatalf("unexpected artifact URL: %s", r.URL)
-		}
+	client := &http.Client{Transport: managedReleaseTransport(func(*http.Request) (*http.Response, error) {
 		requests++
-		return &http.Response{StatusCode: http.StatusOK, Header: make(http.Header), Body: io.NopCloser(bytes.NewReader(archive)), Request: r}, nil
+		t.Fatal("removed component downloaded")
+		return nil, nil
 	})}
-	installer := Installer{Runner: absentRunner{}, Store: store, Catalog: []Spec{spec}, Client: client}
-	for range 2 {
-		if err := installer.Setup(context.Background()); err != nil {
-			t.Fatal(err)
-		}
-	}
-	state, err := store.LoadState()
-	if err != nil || !state.Components["opencode"].Managed || state.Components["opencode"].Version != metadata.Version || requests != 1 {
-		t.Fatalf("release setup did not promote idempotently: state=%+v requests=%d err=%v", state.Components["opencode"], requests, err)
+	installer := Installer{Store: nil, Catalog: []Spec{spec}, Client: client}
+	if err := installer.Setup(context.Background()); err != ErrOpenCodeRemoved || requests != 0 {
+		t.Fatal("removed installer did not deny before I/O", err)
 	}
 }
 

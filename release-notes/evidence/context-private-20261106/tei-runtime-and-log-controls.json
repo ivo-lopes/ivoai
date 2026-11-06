@@ -1,0 +1,42 @@
+{
+  "image_refs": {
+    "qdrant": "qdrant/qdrant@sha256:9bfc89f9914fc14876a88c05270685921a55b8877b254a98bcc1cc2f0a424cd2",
+    "tei": "ghcr.io/huggingface/text-embeddings-inference@sha256:2538ea1c9640d3763b15af668039d24172d063b42337b0c27796fc2be180c78d"
+  },
+  "model_revision": "614241f622f53c4eeff9890bdc4f31cfecc418b3",
+  "service_network": "unique --network none namespace shared only by owned containers",
+  "service_uid": 0,
+  "service_uid_scope": "rootless mapped-root fixture, not production UID1000 certification",
+  "cgroup_limits_applied": false,
+  "shared_context_accessed": false,
+  "real_tei_inference": true,
+  "tei_empty_model_diagnostic": {
+    "exit_code": 1,
+    "raw_bytes": 86,
+    "raw_sha256": "23107f58861fa840de0f26cbf7dc88c799814fb35c798141876fa0382cad4db7",
+    "private_key_present": false,
+    "error_visible": true
+  },
+  "tei_raw_log_contains_private_key": false,
+  "tei_raw_log_bytes": 1755,
+  "tei_raw_log_sha256": "63ae9193bfa7d52ae63576076e1e52b3972b2012950e8ea8190c8f03f95edade",
+  "tei_runtime_info": {
+    "docker_label": "sha-e80ef22",
+    "model_dtype": "float32",
+    "model_id": "/model",
+    "model_sha": null,
+    "sha": "e80ef225ed0e6cb1717ce632a6a84b6cf211bb67",
+    "version": "1.9.4"
+  },
+  "tei_oci_labels": {
+    "org.opencontainers.image.created": "2026-09-15T09:30:10.680Z",
+    "org.opencontainers.image.description": "A blazing fast inference solution for text embeddings models",
+    "org.opencontainers.image.licenses": "Apache-2.0",
+    "org.opencontainers.image.revision": "e80ef225ed0e6cb1717ce632a6a84b6cf211bb67",
+    "org.opencontainers.image.source": "https://github.com/huggingface/text-embeddings-inference",
+    "org.opencontainers.image.title": "text-embeddings-inference",
+    "org.opencontainers.image.url": "https://github.com/huggingface/text-embeddings-inference",
+    "org.opencontainers.image.version": "cpu-1.9.4"
+  },
+  "prior_context_epoch_pass": false
+}

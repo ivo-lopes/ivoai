@@ -1,0 +1,16 @@
+{
+  "cpuid": {
+    "stdout": {
+      "bytes": 30,
+      "sha256": "d1be14406798d06575b2318b2cdc9a106c0244d277b7b54a6d4430daf51b901c",
+      "base64": "eyJhdngiOjAsImF2eDIiOjAsInBjbG11bCI6MH0K",
+      "text": "{\"avx\":0,\"avx2\":0,\"pclmul\":0}\n"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "base64": "",
+      "text": ""
+    }
+  }
+}

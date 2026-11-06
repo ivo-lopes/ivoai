@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Official Claude 2.1.296, synthetic loopback provider, private network/HOME.
+# Official Claude 2.1.318, synthetic loopback provider, private network/HOME.
 # No installation, provider login, personal configuration, or real inference.
 set -euo pipefail
 umask 077
@@ -13,7 +13,7 @@ while (( $# )); do
   esac
 done
 [[ $(uname -s) == Linux && $(uname -m) == x86_64 ]] || {
-  echo 'This protocol proof pins official Claude 2.1.296 for Linux amd64 only' >&2
+  echo 'This protocol proof pins official Claude 2.1.318 for Linux amd64 only' >&2
   exit 1
 }
 repo_root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
@@ -24,10 +24,10 @@ if [[ -z $archive ]]; then
   archive="$test_root/claude-linux-x64.tar.gz"
   curl --fail --location --silent --show-error --proto '=https' --tlsv1.2 \
     --connect-timeout 20 --max-time 180 \
-    'https://github.com/anthropics/claude-code/releases/download/v2.1.296/claude-linux-x64.tar.gz' \
+    'https://github.com/anthropics/claude-code/releases/download/v2.1.318/claude-linux-x64.tar.gz' \
     -o "$archive"
 fi
-printf '%s  %s\n' '45fe2b33f5cbdd114309618970bcd90b8b163e34252d66cf100d7e068d9b831d' "$archive" | sha256sum -c -
+printf '%s  %s\n' 'e6d426ca0c123f61fad58a361da0329f2a93cd206bc87040ed8d9576dd9eb583' "$archive" | sha256sum -c -
 [[ $(tar -tzf "$archive") == claude ]] || { echo 'unexpected official archive layout' >&2; exit 1; }
 tar -xzf "$archive" -C "$test_root"
 if [[ -z $proof_output ]]; then

@@ -31,7 +31,7 @@ jobs:
         run: |
           npm install --global corepack@0.36.0
           corepack enable
-          corepack prepare pnpm@12.16.1 --activate
+          corepack prepare pnpm@12.18.0 --activate
           scripts/build-docs.sh --check
           scripts/audit-docs-dependencies.sh
       - name: Docusaurus accessibility and responsive audit
@@ -71,15 +71,13 @@ jobs:
         # Required before build/publish, using the tag's current Core and exact
         # historical source. Missing history/cache/proof cannot become a skip.
         run: scripts/test-protected-evidence-rollback.sh
-      - name: Prepare isolated OpenCode and Claude protocol gates
+      - name: Prepare isolated native client protocol gates
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends bubblewrap apparmor python3 curl
+          sudo apt-get install -y --no-install-recommends bubblewrap apparmor python3 curl qemu-user
           scripts/setup-ci-graft-sandbox.sh
-      - name: Managed OpenCode HTTP and attach integration
-        run: |
-          node --test internal/opencodebridge/keyboard.test.mjs
-          scripts/test-managed-opencode.sh
+      - name: Removed legacy paths and native Core admission
+        run: go test ./internal/app ./internal/cli ./internal/components ./internal/session ./internal/doctor -run 'Test(RemovedOpenCode|AutoAlias|DoctorRetainsLegacy|LegacyOpenCodeMetadata|NativeProviderMigration)' -count=1
       - name: Native Codex TUI and fail-closed App Server admission
         run: scripts/test-native-codex.sh
       - name: Official Claude readonly worker delegation boundary
@@ -127,15 +125,23 @@ jobs:
           sudo apt-get install -y --no-install-recommends bubblewrap apparmor binutils gcc-12 g++-12 make python3 patch openssl
       - name: Admit only the CI sandbox launcher to user namespaces
         run: scripts/setup-ci-graft-sandbox.sh
-      - name: Build and verify patched managed frontend
+      - name: Exact official native Codex pair and native protocol gates
+        run: scripts/test-native-codex.sh
+      - name: Build and qualify reviewed Caveman runtime
         run: |
-          scripts/build-managed-opencode.sh "$PWD/dist/release"
-          scripts/test-opencode-baseline.sh \
-            "$PWD/dist/release/ivoai-opencode_linux_${{ matrix.goarch }}.tar.gz" \
-            "$PWD/dist/release/managed-opencode-${{ matrix.goarch }}.json"
-          scripts/test-patched-opencode.sh \
-            "$PWD/dist/release/ivoai-opencode_linux_${{ matrix.goarch }}.tar.gz" \
-            "$PWD/dist/release/managed-opencode-${{ matrix.goarch }}.json"
+          scripts/build-managed-caveman.sh "$PWD/dist/release"
+          mkdir -p "$RUNNER_TEMP/ivoai-caveman-proof"
+          scripts/test-managed-caveman.sh \
+            "$PWD/dist/release/ivoai-caveman_linux_${{ matrix.goarch }}.tar.gz" \
+            "$PWD/dist/release/ivoai-caveman_linux_${{ matrix.goarch }}.metadata.json" \
+            "$RUNNER_TEMP/ivoai-caveman-proof/qualification.json"
+      - name: Retain Caveman binary and installer qualification
+        if: ${{ always() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: caveman-release-${{ matrix.goarch }}
+          path: ${{ runner.temp }}/ivoai-caveman-proof/qualification.json
+          if-no-files-found: error
       - name: Build compatible managed Graft and verify baseline CPU
         env:
           GRAFT_GCC_MAJOR: "12"
@@ -155,13 +161,13 @@ jobs:
           VERSION: ${{ github.ref_name }}
         run: |
           mkdir -p dist
-          metadata="dist/release/managed-opencode-${GOARCH}.json"
-          url="https://github.com/ivo-lopes/ivoai/releases/download/${VERSION}/ivoai-opencode_${GOOS}_${GOARCH}.tar.gz"
-          managed_build="$(jq -c --arg url "$url" '. + {url:$url}' "$metadata" | base64 -w0)"
+          caveman_metadata="dist/release/ivoai-caveman_linux_${GOARCH}.metadata.json"
+          caveman_url="https://github.com/ivo-lopes/ivoai/releases/download/${VERSION}/ivoai-caveman_${GOOS}_${GOARCH}.tar.gz"
+          caveman_build="$(jq -c --arg url "$caveman_url" '. + {url:$url}' "$caveman_metadata" | base64 -w0)"
           graft_metadata="dist/release/managed-graft-${GOARCH}.json"
           graft_url="https://github.com/ivo-lopes/ivoai/releases/download/${VERSION}/ivoai-graft_${GOOS}_${GOARCH}.tar.gz"
           graft_build="$(jq -c --arg url "$graft_url" '. + {url:$url}' "$graft_metadata" | base64 -w0)"
-          go build -trimpath -ldflags "-s -w -X main.version=${VERSION#v} -X github.com/ivo-lopes/ivoai/internal/components.managedOpenCodeBuild=${managed_build} -X github.com/ivo-lopes/ivoai/internal/components.managedGraftBuild=${graft_build}" -o dist/ivoai ./cmd/ivoai
+          go build -trimpath -ldflags "-s -w -X main.version=${VERSION#v} -X github.com/ivo-lopes/ivoai/internal/components.managedCavemanBuild=${caveman_build} -X github.com/ivo-lopes/ivoai/internal/components.managedGraftBuild=${graft_build}" -o dist/ivoai ./cmd/ivoai
           go version -m dist/ivoai | grep -F 'vcs.modified=false'
           # Execute this exact Core before archiving. The amd64 emulator has no
           # AVX/AVX2; the ARM job runs on its native architecture.
@@ -189,12 +195,12 @@ jobs:
           baseline_root="$(mktemp -d "$RUNNER_TEMP/ivoai-previous-stable.XXXXXXXX")"
           trap 'rm -rf -- "$baseline_root"' EXIT
           case "$RELEASE_ARCH" in
-            amd64) baseline_sha=e8e8b40e593d708d4bacd688ecbbb580179b6e0afae27948f9e9a9687f42231e ;;
-            arm64) baseline_sha=9cc869633fa4f691dee49b85495e3fc486aa9af857a0b40b6183eca35f66829f ;;
+            amd64) baseline_sha=9c667cfa5c9cb0e2df4458885023ab7a9795bec595bab3bb8a85af53a8c812fe ;;
+            arm64) baseline_sha=56cc1ab898bc72eb0214acdc429c7523af6db7c3303a4371d96214cbcaa09d2f ;;
             *) exit 1 ;;
           esac
           curl --fail --location --silent --show-error --retry 3 \
-            "https://github.com/ivo-lopes/ivoai/releases/download/v0.15.0/ivoai_linux_${RELEASE_ARCH}.tar.gz" \
+            "https://github.com/ivo-lopes/ivoai/releases/download/v0.16.0/ivoai_linux_${RELEASE_ARCH}.tar.gz" \
             -o "$baseline_root/core.tar.gz"
           printf '%s  %s\n' "$baseline_sha" "$baseline_root/core.tar.gz" | sha256sum --check --strict -
           tar -xzf "$baseline_root/core.tar.gz" -C "$baseline_root" ivoai
@@ -253,8 +259,8 @@ jobs:
           mkdir -p dist/publish
           release_assets=(
             ivoai_linux_amd64.tar.gz ivoai_linux_arm64.tar.gz
-            ivoai-opencode_linux_amd64.tar.gz ivoai-opencode_linux_arm64.tar.gz
-            managed-opencode-amd64.json managed-opencode-arm64.json
+            ivoai-caveman_linux_amd64.tar.gz ivoai-caveman_linux_arm64.tar.gz
+            ivoai-caveman_linux_amd64.metadata.json ivoai-caveman_linux_arm64.metadata.json
             ivoai-graft_linux_amd64.tar.gz ivoai-graft_linux_arm64.tar.gz
             managed-graft-amd64.json managed-graft-arm64.json
             ivoai-memory-context.zip
@@ -266,7 +272,7 @@ jobs:
           done
       - name: Generate checksums
         working-directory: dist/publish
-        run: sha256sum ivoai_*.tar.gz ivoai-opencode_*.tar.gz managed-opencode-*.json ivoai-graft_*.tar.gz managed-graft-*.json ivoai-memory-context.zip > checksums.txt
+        run: sha256sum ivoai_*.tar.gz ivoai-caveman_*.tar.gz ivoai-caveman_*.metadata.json ivoai-graft_*.tar.gz managed-graft-*.json ivoai-memory-context.zip > checksums.txt
       - name: Verify local release assets against the tagged source
         run: |
           mkdir -p "$RUNNER_TEMP/ivoai-release-verification"
@@ -291,9 +297,9 @@ jobs:
           fi
           # Upload into a draft first. A failed upload must never leave a
           # partially populated public release under an immutable tag.
-          gh release create "${GITHUB_REF_NAME}" ivoai_*.tar.gz ivoai-opencode_*.tar.gz managed-opencode-*.json ivoai-graft_*.tar.gz managed-graft-*.json ivoai-memory-context.zip checksums.txt --verify-tag --draft --notes-file "$notes_file" "${release_flags[@]}"
+          gh release create "${GITHUB_REF_NAME}" ivoai_*.tar.gz ivoai-caveman_*.tar.gz ivoai-caveman_*.metadata.json ivoai-graft_*.tar.gz managed-graft-*.json ivoai-memory-context.zip checksums.txt --verify-tag --draft --notes-file "$notes_file" "${release_flags[@]}"
           mapfile -t actual_assets < <(gh release view "${GITHUB_REF_NAME}" --json assets --jq '.assets[].name' | sort)
-          mapfile -t expected_assets < <(printf '%s\n' checksums.txt ivoai-memory-context.zip ivoai_linux_amd64.tar.gz ivoai_linux_arm64.tar.gz ivoai-opencode_linux_amd64.tar.gz ivoai-opencode_linux_arm64.tar.gz managed-opencode-amd64.json managed-opencode-arm64.json ivoai-graft_linux_amd64.tar.gz ivoai-graft_linux_arm64.tar.gz managed-graft-amd64.json managed-graft-arm64.json | sort)
+          mapfile -t expected_assets < <(printf '%s\n' checksums.txt ivoai-memory-context.zip ivoai_linux_amd64.tar.gz ivoai_linux_arm64.tar.gz ivoai-caveman_linux_amd64.tar.gz ivoai-caveman_linux_arm64.tar.gz ivoai-caveman_linux_amd64.metadata.json ivoai-caveman_linux_arm64.metadata.json ivoai-graft_linux_amd64.tar.gz ivoai-graft_linux_arm64.tar.gz managed-graft-amd64.json managed-graft-arm64.json | sort)
           if [[ "${actual_assets[*]}" != "${expected_assets[*]}" ]]; then
             echo "draft release asset set is incomplete; leaving draft unpublished" >&2
             printf 'expected: %s\nactual: %s\n' "${expected_assets[*]}" "${actual_assets[*]}" >&2

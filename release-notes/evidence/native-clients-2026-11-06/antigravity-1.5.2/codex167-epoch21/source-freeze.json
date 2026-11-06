@@ -1,0 +1,17 @@
+{
+  "source_commit": "92feb82609a21333c6b166cbcb19b41eade38ebb",
+  "source_clean": true,
+  "binary_sha256": "f885343823a4db7c85e4eee289907b014724d9d6f9a633e8d3e28ef58cca95b8",
+  "source_sha256": {
+    "internal/app/native_acp.go": "0d63f1b359f76be5676f0807496dda5ae24d593e3046ff289873606f4df1ac72",
+    "internal/app/native_claude_runtime.go": "ca0fe229c143a2c69d0e7c16eb2d2eea648310b8e63edc7aee465d31076e6698",
+    "internal/app/adaptive_primary.go": "4e19ad080dd41f82cc566483565f910e1b2d29f8c34dc5feafb93d1edfaf910c",
+    "internal/nativeacp/runner_linux.go": "c3b382caafae44ca9ea7d5899ae5a40aeb4592880bdb065e81898744e6bf6a83",
+    "internal/workers/adapter.go": "91deb79083bd8f63a686e143648aa21f68124650dc6b506271aeff76cd553a3c"
+  },
+  "script_sha256": "c3d48cdac3f0f8d84bdd48251bc528aa177eda48edc034f3a1694be7343bb291",
+  "primary": "Antigravity1.5.2/Linuxamd64",
+  "worker": "Codex0.167.0/Linuxamd64",
+  "worker_executable_sha256": "cdcb45aaa01d0f14e298985e09465aebccd47f64ecd298aea44814af7b62bbda",
+  "worker_companion_sha256": "83f3e174c2da2f1ca8655cce686e302509640d34c0f4407c1155056f64536e0f"
+}

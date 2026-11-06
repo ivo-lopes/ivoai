@@ -12,7 +12,7 @@ ivoai update --dry-run
 ivoai update
 ```
 
-A autenticação permanece nos clientes oficiais do Codex, Claude Code e OpenCode.
+A autenticação permanece nos clientes nativos oficiais suportados. OpenCode gerenciado foi removido.
 O IVOAI nunca precisa dos tokens de seus providers.
 
 ## Inicializar um servidor Debian 12, inclusive em LXC
@@ -42,7 +42,7 @@ create --ttl 10m`. No cliente, forneça cada código pela entrada padrão:
 ```bash
 ivoai connect server add company-a --url https://ai-a.example.com --purpose company-a --code-stdin
 ivoai connect server add company-b --url https://ai-b.example.com --purpose company-b --code-stdin
-ivoai opencode
+ivoai auto
 ```
 
 Restrinja uma sessão com `--knowledge-source company-a`. Repita a flag para selecionar
@@ -58,16 +58,14 @@ escrita for ambíguo.
 ```bash
 ivoai codex
 ivoai claude
-ivoai opencode
-ivoai opencode
-ivoai opencode --planner codex
+ivoai auto
+ivoai codex
 ```
 
-`ivoai opencode` abrem o frontend gerenciado do OpenCode. O IVOAI
-roteia os turnos para a CLI oficial do Codex ou do Claude Code; assim, seus logins de
-assinatura existentes são reutilizados sem copiar um token de provider. Para uma
-sessão independente e inalterada com um provider do OpenCode, use
-`ivoai session start --executor opencode --mode direct`.
+`ivoai auto` e `ivoai codex` abrem o mesmo frontend Codex oficial com admissão do
+Core. A autenticação permanece no cliente oficial. Direct é explícito; hosts
+headless têm flags próprias OFF por padrão e não implicam controle transparente da
+TUI. Comandos OpenCode removidos apenas explicam a migração e preservam os dados.
 
 ## Verificar Memory e Context
 
