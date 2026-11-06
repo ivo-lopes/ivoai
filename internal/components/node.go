@@ -22,11 +22,7 @@ func (i *Installer) ensureNode(ctx context.Context) (string, string, error) {
 	if regular(node) && regular(npmCLI) {
 		return node, npmCLI, nil
 	}
-	arch, checksum := "x64", "5848553868b402d3fabb5b09270649977780a390f832155721025a08b5104455"
-	if runtime.GOARCH == "arm64" {
-		arch, checksum = "arm64", "439e9c438acdf6a6ffe47418da709153d66c4bed812e30a473faacb107dd2791"
-	}
-	asset := Asset{URL: "https://nodejs.org/dist/v" + managedNodeVersion + "/node-v" + managedNodeVersion + "-linux-" + arch + ".tar.gz", SHA256: checksum}
+	asset := managedNodeAsset()
 	archive, err := i.downloadVerified(ctx, asset)
 	if err != nil {
 		return "", "", err
@@ -148,4 +144,12 @@ func regular(path string) bool {
 // Callers must still check runtime availability before execution.
 func ManagedNodePath(dataDir string) string {
 	return filepath.Join(dataDir, "components", "node-"+managedNodeVersion, "bin", "node")
+}
+
+func managedNodeAsset() Asset {
+	arch, checksum := "x64", "5848553868b402d3fabb5b09270649977780a390f832155721025a08b5104455"
+	if runtime.GOARCH == "arm64" {
+		arch, checksum = "arm64", "439e9c438acdf6a6ffe47418da709153d66c4bed812e30a473faacb107dd2791"
+	}
+	return Asset{URL: "https://nodejs.org/dist/v" + managedNodeVersion + "/node-v" + managedNodeVersion + "-linux-" + arch + ".tar.gz", SHA256: checksum}
 }

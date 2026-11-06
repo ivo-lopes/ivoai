@@ -31,12 +31,12 @@ import tomllib
 import urllib.parse
 import urllib.request
 
-BASELINE = "0.15.0"
+BASELINE = "0.16.0"
 # Advance this reviewed pair and its published hashes for each stable release.
-QUALIFIED_CANDIDATE = "0.16.0"
+QUALIFIED_CANDIDATE = "0.17.0"
 BASELINE_BINARIES = {
-    "amd64": "96ce375f352574d83ed502cfac9c1fb8d1d3d3ff5d66fd86ba8343408981d79d",
-    "arm64": "40bcdd403235c2a1d7f8dc43253d307ff298dfaab75872905843eec5ee568fd4",
+    "amd64": "a933d4d313930066409c77682a8cc26b574b5c259174e1cb68fac6b890c9d2ef",
+    "arm64": "f7cf98e224f202ebc6e218fc26a8cc83d7a4cb25cb66182b67683008b197f999",
 }
 BASELINE_METADATA = {
     "amd64": "6fc5af54dd963e8d0af58b6a8dc051a52fef9e0447ef25630da669f394b6f6d7",
@@ -98,6 +98,55 @@ def verified_download(url, expected, directory):
             output.write(block)
     require(digest(target) == expected, "DOWNLOADED_INTEGRITY_FAILED")
     return target
+
+
+BASELINE_SOURCE = "685c5740ec046dcbcf7eeec77c6fd88885975d8d"
+BASELINE_SETUP_SHA256 = "c4b4204b9f5295bbe89ec86ddf742ebec1eba3ae5f2d59bccbf68e592fbfc60f"
+LEGACY_USER_MARKERS = [".config/opencode/opencode.json", ".local/share/opencode/auth.json",
+                       ".local/share/opencode/history/fixture.json", ".local/bin/opencode",
+                       ".config/opencode/profiles/previous.json"]
+
+def baseline_setup_assets(repo, arch):
+    path = repo/"scripts/release-baselines/v0.16.0/setup-assets.json"
+    require(path.is_file() and not path.is_symlink() and digest(path)==BASELINE_SETUP_SHA256,"BASELINE_CATALOG_INTEGRITY_FAILED")
+    document = json.loads(path.read_text())
+    require(document["source"]==BASELINE_SOURCE and document["catalog_source_sha256"]=="147f8813a5712b75deda6406fb8e7878c1a410030acbfcfcaffb7ab6ff87bbd8", "BASELINE_CATALOG_SOURCE_MISMATCH")
+    return document["assets"][arch]
+
+def prime_headroom_cache(work, repo, arch, values, catalog, bootstrap, routes):
+    # Only cache/interpreter preparation, with a disposable tool root: the actual
+    # candidate Headroom profile and active state remain uninstalled until update.
+    require(re.fullmatch(r"3\.[0-9]+\.[0-9]+",bootstrap["python_version"]),"UNREVIEWED_PYTHON_POLICY")
+    require(re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:]+Z",bootstrap["exclude_newer"]),"UNREVIEWED_CUTOFF_POLICY")
+    uvs=[x for x in bootstrap["assets"] if x["URL"].startswith("https://github.com/astral-sh/uv/releases/download/")]
+    wheels=[x for x in catalog if x["URL"].endswith(".whl") and "headroom" in x["URL"]]
+    require(len(uvs)==len(wheels)==1,"CACHE_PREPARATION_INPUT_AMBIGUOUS")
+    uv=work/"cache-prime-uv"
+    with tarfile.open(routes[uvs[0]["URL"]],"r|gz") as archive:
+        found=False
+        for member in archive:
+            if Path(member.name).name!="uv": continue
+            require(not found and member.isfile() and 0<member.size<=128<<20,"UV_CACHE_EXECUTABLE_DENIED")
+            with archive.extractfile(member) as source,uv.open("xb") as target:
+                shutil.copyfileobj(source,target,1<<20)
+            found=True
+        require(found,"UV_CACHE_EXECUTABLE_UNAVAILABLE")
+    uv.chmod(0o700)
+    stage=work/"candidate-headroom-cache-prime"
+    stage.mkdir(mode=0o700)
+    lock=repo/f"internal/components/assets/headroom-{arch}.lock"
+    wheel=wheels[0]
+    text=lock.read_text()
+    require(wheel["URL"] in text and wheel["SHA256"] in text,"CACHE_PREPARATION_LOCK_MISMATCH")
+    private_home=work/"data/ivoai/installer-home"
+    private_home.mkdir(mode=0o700,parents=True,exist_ok=True)
+    environment={"HOME":str(private_home),"PATH":str(uv.parent)+":/usr/bin:/bin",
+        "UV_TOOL_DIR":str(stage),"UV_TOOL_BIN_DIR":str(stage/"bin"),
+        "UV_PYTHON_INSTALL_DIR":str(work/"data/ivoai/components/python"),
+        "UV_PYTHON_PREFERENCE":"only-managed","UV_NO_PROGRESS":"1"}
+    argument="headroom-ai[proxy] @ "+wheel["URL"]+"#sha256="+wheel["SHA256"]
+    run([uv,"tool","install","--force","--python",bootstrap["python_version"],"--constraints",lock,
+        "--no-build","--exclude-newer",bootstrap["exclude_newer"],argument],environment,timeout=1200,cwd=stage)
 
 
 def extract_core(archive, destination):
@@ -296,6 +345,9 @@ def snapshot(work):
 
 
 def assert_markers(work):
+    for relative in LEGACY_USER_MARKERS:
+        target = work/"home"/relative
+        require(target.read_bytes()==b"synthetic-user-owned-opencode-marker\n" and target.stat().st_mode&0o777==0o600,"RETAINED_OPENCODE_USER_DATA_CHANGED")
     config = tomllib.loads((work / "config/ivoai/config.toml").read_text())
     require(config["compatibility_fixture"]["future_field"] == "preserve-me", "CONFIG_MARKER_CHANGED")
     secret_path = work / "config/ivoai/secrets.json"
@@ -305,7 +357,7 @@ def assert_markers(work):
     ownership = tomllib.loads((work / "state/ivoai/ownership.toml").read_text())
     item = ownership["components"]["ivoai"]
     require(item["managed"] and item["path"] == str(work / "install/ivoai"), "CORE_OWNERSHIP_CHANGED")
-    for folder in ["provider-codex", "provider-claude"]:
+    for folder in ["provider-codex", "provider-claude", "provider-opencode"]:
         require((work / folder / "upgrade-marker").read_text() == "synthetic-provider-owned-marker\n", "PROVIDER_MARKER_CHANGED")
 
 
@@ -384,7 +436,7 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--baseline-core", type=Path)
     parser.add_argument("--candidate-dir", type=Path)
-    parser.add_argument("--version", default="0.16.0")
+    parser.add_argument("--version", default="0.17.0")
     parser.add_argument("--output", type=Path)
     parser.add_argument("--inside", type=Path, help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
@@ -409,9 +461,10 @@ def main(argv=None):
     require(args.version == QUALIFIED_CANDIDATE, "UNREVIEWED_BASELINE_CANDIDATE_PAIR")
     candidate_dir = args.candidate_dir.resolve()
     expected_files = [f"ivoai_linux_{arch}.tar.gz"]
-    for component in ["graft", "opencode"]:
-        expected_files += [f"ivoai-{component}_linux_{arch}.tar.gz", f"managed-{component}-{arch}.json"]
+    for component in ["graft", "caveman"]:
+        expected_files += [f"ivoai-{component}_linux_{arch}.tar.gz", (f"ivoai-caveman_linux_{arch}.metadata.json" if component == "caveman" else f"managed-{component}-{arch}.json")]
     require(all((candidate_dir / name).is_file() and not (candidate_dir / name).is_symlink() for name in expected_files), "CANDIDATE_ARTIFACT_SET_INCOMPLETE")
+    require(not any("opencode" in p.name for p in candidate_dir.iterdir()), "LEGACY_CANDIDATE_ASSETS_FORBIDDEN")
     require(not args.output.exists(), "OUTPUT_MUST_BE_NEW")
     args.output.mkdir(mode=0o700, parents=True)
     receipt = {"schema_version": 1, "outcome": "FAIL", "baseline": BASELINE, "candidate": args.version, "architecture": arch, "test_mode": False, "real_cli_binaries": True, "provider_inference": False, "personal_credentials_inherited": False}
@@ -442,15 +495,25 @@ def main(argv=None):
         config = work / "config/ivoai/config.toml"
         with config.open("a") as stream:
             stream.write('\n[compatibility_fixture]\nfuture_field = "preserve-me"\n')
-        for folder in ["provider-codex", "provider-claude"]:
+        for folder in ["provider-codex", "provider-claude", "provider-opencode"]:
+            (work / folder).mkdir(mode=0o700,exist_ok=True)
             (work / folder / "upgrade-marker").write_text("synthetic-provider-owned-marker\n")
+        for relative in LEGACY_USER_MARKERS:
+            target = work / "home" / relative
+            target.parent.mkdir(mode=0o700,parents=True,exist_ok=True)
+            target.write_bytes(b"synthetic-user-owned-opencode-marker\n")
+            target.chmod(0o600)
         downloads = work / "downloads"
         downloads.mkdir(mode=0o700)
         routes = {}
         catalog = json.loads(run([helper, "catalog"], values))
+        bootstrap = json.loads(run([helper, "bootstrap"], values))
         checkpoint("reviewed_asset_preparation")
-        for asset in catalog:
-            routes[asset["URL"]] = verified_download(asset["URL"], asset["SHA256"], downloads)
+        for asset in catalog + baseline_setup_assets(repo, arch) + bootstrap["assets"]:
+            if asset["URL"] in routes:
+                require(digest(routes[asset["URL"]]) == asset["SHA256"], "CONFLICTING_BOOTSTRAP_PIN")
+            else:
+                routes[asset["URL"]] = verified_download(asset["URL"], asset["SHA256"], downloads)
         for url, sha in BOOTSTRAP[arch]:
             routes[url] = verified_download(url, sha, downloads)
         old_meta_url = f"https://github.com/ivo-lopes/ivoai/releases/download/v{BASELINE}/managed-graft-{arch}.json"
@@ -463,8 +526,9 @@ def main(argv=None):
         run([candidate_binary, "version"], values, contains=args.version)
         routes[f"https://github.com/ivo-lopes/ivoai/releases/download/v{args.version}/" + archive.name] = archive
         candidate_graft_sha256 = ""
-        for component in ["graft", "opencode"]:
-            metadata = json.loads((candidate_dir / f"managed-{component}-{arch}.json").read_text())
+        for component in ["graft", "caveman"]:
+            metadata_name = f"ivoai-caveman_linux_{arch}.metadata.json" if component == "caveman" else f"managed-{component}-{arch}.json"
+            metadata = json.loads((candidate_dir / metadata_name).read_text())
             require(metadata["archive"] == f"ivoai-{component}_linux_{arch}.tar.gz", "CANDIDATE_COMPONENT_NAME_DENIED")
             require(re.fullmatch(r"[a-f0-9]{64}", metadata["sha256"]), "CANDIDATE_COMPONENT_HASH_DENIED")
             payload = candidate_dir / metadata["archive"]
@@ -488,6 +552,8 @@ def main(argv=None):
             npm_env = dict(values, NPM_CONFIG_CACHE=str(work / "cache/ivoai/npm"), RUFLO_PROVIDER="ivoai-disabled", CLAUDE_FLOW_MEMORY_BACKEND="memory")
             checkpoint("real_candidate_profile_cache_preparation")
             run([node, npm, "ci", "--ignore-scripts", "--no-audit", "--no-fund"], npm_env, timeout=600, cwd=stage)
+            checkpoint("real_candidate_headroom_cache_preparation")
+            prime_headroom_cache(work, repo, arch, values, catalog, bootstrap, routes)
             receipt["preparation_denials"] = fixture.denials
             require(fixture.denied == 0, "PREPARATION_REQUEST_NOT_ALLOWLISTED")
         profile = hashlib.sha256((stage / "package.json").read_bytes() + (stage / "package-lock.json").read_bytes()).hexdigest()

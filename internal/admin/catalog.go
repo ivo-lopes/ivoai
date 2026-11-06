@@ -96,6 +96,7 @@ func ActionCatalog() []Action {
 	a.Description = "Open the official native conversational client in your terminal. This administrative page does not start or impersonate a conversational TUI."
 	rows = append(rows, a)
 	a = makeAction("launch.opencode", "information", []Field{})
+	a.Title = "OpenCode removed"
 	a.Description = "Managed OpenCode execution was removed. Use ivoai codex; existing OpenCode binaries, configuration, credentials and history are preserved for explicit rollback."
 	rows = append(rows, a)
 	a = makeAction("mcp.add", "mutation", []Field{Field{Name: "name", Label: "Name", Type: "text", Required: true}, Field{Name: "url", Label: "HTTPS endpoint", Type: "text", Required: true}}, "connect", "mcp", "add", "{name}", "{url}")
@@ -272,6 +273,7 @@ func ActionCatalog() []Action {
 	a.Description = "Open the official native conversational client in your terminal. This administrative page does not start or impersonate a conversational TUI."
 	rows = append(rows, a)
 	a = makeAction("session.direct.opencode", "information", []Field{})
+	a.Title = "OpenCode removed"
 	a.Description = "Managed OpenCode execution was removed. Use ivoai codex; existing OpenCode binaries, configuration, credentials and history are preserved for explicit rollback."
 	rows = append(rows, a)
 	a = makeAction("session.list", "read", []Field{}, "session", "list", "--json")

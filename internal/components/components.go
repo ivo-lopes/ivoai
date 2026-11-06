@@ -1020,11 +1020,7 @@ func (i *Installer) ensureUV(ctx context.Context) (string, error) {
 	if err := platform.EnsurePrivateDir(root); err != nil {
 		return "", err
 	}
-	arch, sha := "x86_64", "c5221ff41b7892bfc223543883600125f6a47fe845093e0f5bdff4f359196d83"
-	if runtime.GOARCH == "arm64" {
-		arch, sha = "aarch64", "71279f8d3c67241e807b9d8db872d1bf541579fb9f08b7d1eb1682196d1e57dc"
-	}
-	asset := Asset{URL: "https://github.com/astral-sh/uv/releases/download/" + managedUVVersion + "/uv-" + arch + "-unknown-linux-gnu.tar.gz", SHA256: sha}
+	asset := managedUVAsset()
 	archive, err := i.downloadVerified(ctx, asset)
 	if err != nil {
 		return "", err
@@ -1046,4 +1042,12 @@ func (i *Installer) ensureUV(ctx context.Context) (string, error) {
 		return "", err
 	}
 	return binary, nil
+}
+
+func managedUVAsset() Asset {
+	arch, sha := "x86_64", "c5221ff41b7892bfc223543883600125f6a47fe845093e0f5bdff4f359196d83"
+	if runtime.GOARCH == "arm64" {
+		arch, sha = "aarch64", "71279f8d3c67241e807b9d8db872d1bf541579fb9f08b7d1eb1682196d1e57dc"
+	}
+	return Asset{URL: "https://github.com/astral-sh/uv/releases/download/" + managedUVVersion + "/uv-" + arch + "-unknown-linux-gnu.tar.gz", SHA256: sha}
 }

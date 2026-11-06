@@ -78,7 +78,7 @@ O estado desconectado saudável é:
 ivoai          ready
 Codex          installed / not connected
 Claude Code    installed / not connected
-OpenCode       ready / managed frontend
+OpenCode       removed / retained metadata only
 Headroom       ready
 Compression    default caveman / effective caveman
 Caveman        installed / managed
@@ -91,21 +91,19 @@ Overall: READY — external connections pending
 
 ## Launch do agent
 
-`ivoai codex` abre o terminal orquestrado controlado pelo IVOAI; `--direct` preserva
-a TUI oficial. `ivoai claude` continua direto. `ivoai opencode` abre a TUI OpenCode
-pinada e anexada ao mesmo control plane. O menu **Launch Orchestration** oferece
-os dois frontends e sessões diretas explícitas. Veja [frontends](orchestrated-frontends.md). O IVOAI
-roteia turnos para a CLI oficial Codex ou Claude Code e reutiliza o login que já pertence àquele
-client sem lê-lo ou copiá-lo. Um overlay OpenCode gerenciado e privado desabilita config de projeto,
-sharing e auto-update; a configuração global e o store de provider do usuário permanecem intactos.
+`ivoai codex` abre a TUI oficial com admissão IVOAI; `--direct` mantém o
+cliente direto. `ivoai auto` é um alias para o mesmo caminho nativo. Claude e
+Antigravity possuem hosts headless gerenciados experimentais, além das interfaces
+oficiais. OpenCode gerenciado foi removido; binários, configurações, credenciais e
+históricos existentes permanecem intactos para rollback explícito.
 
-Sessões Codex e Claude podem selecionar um purpose de knowledge registrado sem alterar a config
+Codex e Claude podem selecionar um purpose de knowledge registrado sem alterar a config
 global do agent:
 
 ```sh
 ivoai codex --knowledge-source mindsite
 ivoai claude --knowledge-source voicecorp
-ivoai opencode --knowledge-source mindsite
+ivoai auto --knowledge-source mindsite
 ```
 
 Sem `--knowledge-source`, todas as fontes conectadas e habilitadas participam da federation de
@@ -182,7 +180,7 @@ ivoai session stop <session-id>
 ivoai monitor --watch
 ```
 
-Sessões Direct adicionam metadata e monitoramento. `ivoai codex` e `ivoai opencode`
+Sessões Direct adicionam metadata e monitoramento. `ivoai codex` e seu alias `ivoai auto`
 usam o DAG nativo, approval e concorrência automática comuns. O modo legado Ruflo
 permanece separado. [Conversation Continuity](conversation-continuity.md) oferece
 `session resume`, `session recover` e `session handoff --to <provider> --confirm`,
@@ -204,11 +202,11 @@ credenciais.
 
 ## Modo de conversa automático
 
-`ivoai opencode` abre o frontend OpenCode gerenciado e mostra estado limitado de executor, quota e
-knowledge pertencente ao IVOAI. A preferência de planner configurada seleciona o executor oficial
-inicial; `--planner codex` e `--planner claude` fazem override para a sessão. Codex/Claude nunca
-assumem a tela. OpenCode fornece a UI enquanto IVOAI mantém ownership da sessão, seleção de provider
-e autoridade single-writer.
+`ivoai codex` e `ivoai auto` abrem o mesmo frontend nativo Codex. O Core
+mantém ownership, seleção de provider e autoridade de execução. O Primary
+adaptativo pode responder consultas simples sem DAG; tarefas complexas usam o
+planejamento, aprovações e scheduler existentes. Seleção de OpenCode é recusada,
+sem conversão automática do histórico legado.
 
 O modo automático inicia o mesmo control plane Ruflo sem provider das sessões orquestradas explícitas,
 injeta o MCP orchestration local à sessão e adiciona bootstrap único de Memory/Context, brief

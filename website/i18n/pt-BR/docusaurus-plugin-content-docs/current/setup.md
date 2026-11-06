@@ -5,17 +5,14 @@
 `ivoai setup` provisiona componentes gerenciados de forma transacional e preserva
 instalações externas de executores e a autenticação delas.
 
-A v0.15.0 publicada omite OpenCode do setup padrão de cliente e do setup
-candidato do updater. Para provisionar explicitamente o componente de
-compatibilidade preservado, use `ivoai setup --mode client --legacy-opencode`;
-setup de servidor recusa essa flag. O setup comum preserva propriedade, binários
-e histórico OpenCode existentes; não desinstala, repara nem adota o componente.
-Consulte [releases](releases.md) e o
-[relatório de publicação](https://github.com/ivo-lopes/ivoai/blob/main/release-notes/v0.15.0-published-validation.md)
-para fonte/assets verificados e limites da migração. A qualificação restrita CLI
-oficial/Core usa provedor falso local, sem autenticação de assinatura; não certifica
-comportamento geral de TUI, autenticação ou modelo. Mudanças do main posterior à tag
-são separadas dos payloads v0.15.0 baixados.
+O cliente atual e o updater não instalam, reparam, descobrem nem executam
+OpenCode. A flag `--legacy-opencode` permanece somente para apresentar um erro
+explícito de migração. Binários, configurações, credenciais, perfis e históricos
+existentes são preservados para rollback explícito ou uso independente do cliente
+upstream pelo usuário. Use `ivoai codex` para novas sessões gerenciadas;
+`ivoai auto` é seu alias de compatibilidade. As releases até v0.16 mantêm seus
+assets e comportamento originais; esta documentação do código atual não os
+substitui.
 
 ## Escopo de configuração nativo gerenciado
 

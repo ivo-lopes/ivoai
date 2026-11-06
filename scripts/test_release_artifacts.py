@@ -69,19 +69,17 @@ class ReleaseArtifactsTests(unittest.TestCase):
             archive.writestr(member, content)
         return path
 
-    def document(self, component='opencode', arch='amd64'):
+    def document(self, component='graft', arch='amd64'):
         archive = 'ivoai-'+component+'_linux_'+arch+'.tar.gz'
-        metadata = {'version': '1.19.0-ivoai.3', 'platform': 'linux/'+arch,
+        metadata = {'version': '0.21.1-ivoai.2', 'platform': 'linux/'+arch,
                     'sha256': 'b'*64, 'archive': archive,
-                    'upstream_revision': '733b2c627e5aec39cb33cc22373bdce33053ef2c',
-                    'source_sha256': 'ab433f7a5fc9e54c90da18bd3457298009f426424805f043aa32c03543b4a192',
-                    'patch_sha256': 'a'*64, 'bun_version': '1.3.14', 'bun_sha256': v.BUN_SHA[arch]}
-        if component == 'graft':
-            metadata.update(version='0.21.1-ivoai.2',
-                            upstream_revision='fe30ead39d5e6f0c921018d364da2bdbc9d4b3ad',
-                            source_sha256='d39598390324ad0076a88ab593b63ad2ba352370ea07c073e31f11327979f8e1',
-                            node_version='26.13.0', node_sha256=v.NODE_SHA[arch])
-            del metadata['bun_version'], metadata['bun_sha256']
+                    'upstream_revision': 'fe30ead39d5e6f0c921018d364da2bdbc9d4b3ad',
+                    'source_sha256': 'd39598390324ad0076a88ab593b63ad2ba352370ea07c073e31f11327979f8e1',
+                    'patch_sha256': 'a'*64, 'node_version': '26.13.0', 'node_sha256': v.NODE_SHA[arch]}
+        if component == 'caveman':
+            metadata = {'version':'4.0.2-ivoai.1','platform':'linux/'+arch,'sha256':'b'*64,'archive':archive,'url':'',
+                        'upstream_revision':'b4531dfc05a3ef0ba93b57e8bfa5f48564a4b4d6',
+                        'source_sha256':'29ef4c5bccee70dbc486bae266f966b8bd53132c6e12e27e9b06b36cf35c51f4','patch_sha256':'a'*64}
         metadata['revision'] = hashlib.sha256((metadata['source_sha256']+'\n'+metadata['patch_sha256']+'\n'+metadata['sha256']+'\n').encode()).hexdigest()
         return metadata
 
@@ -89,19 +87,19 @@ class ReleaseArtifactsTests(unittest.TestCase):
         contract = {'module': 'github.com/ivo-lopes/ivoai', 'go_version': 'go1.27.3',
                     'source_commit': 'c'*40, 'requires': {'example.invalid/lib': 'v1.0.0'},
                     'sums': {('example.invalid/lib', 'v1.0.0'): 'h1:reviewed'}}
-        metadata = {name: self.document(name, arch) for name in ('opencode', 'graft')}
-        flags = '-s -w -X main.version=0.16.0'
+        metadata = {name: self.document(name, arch) for name in ('graft', 'caveman')}
+        flags = '-s -w -X main.version=0.17.0'
         for name, doc in metadata.items():
-            body = {**doc, 'url': 'https://github.com/ivo-lopes/ivoai/releases/download/v0.16.0/'+doc['archive']}
+            body = {**doc, 'url': 'https://github.com/ivo-lopes/ivoai/releases/download/v0.17.0/'+doc['archive']}
             encoded = base64.b64encode((json.dumps(body, separators=(',', ':'))+'\n').encode()).decode()
-            flags += ' -X '+contract['module']+'/internal/components.managed'+('OpenCode' if name == 'opencode' else 'Graft')+'Build='+encoded
+            flags += ' -X '+contract['module']+'/internal/components.managed'+('Graft' if name == 'graft' else 'Caveman')+'Build='+encoded
         settings = {'-ldflags': flags, '-buildmode': 'exe', '-compiler': 'gc', '-trimpath': 'true',
                     'CGO_ENABLED': '0', 'GOOS': 'linux', 'GOARCH': arch, 'vcs': 'git',
                     'vcs.revision': contract['source_commit'], 'vcs.modified': 'false'}
         if arch == 'amd64':
             settings['GOAMD64'] = 'v1'
         info = {'GoVersion': contract['go_version'], 'Path': contract['module']+'/cmd/ivoai',
-                'Main': {'Path': contract['module'], 'Version': 'v0.16.0'},
+                'Main': {'Path': contract['module'], 'Version': 'v0.17.0'},
                 'Settings': [{'Key': k, 'Value': value} for k, value in settings.items()],
                 'Deps': [{'Path': 'example.invalid/lib', 'Version': 'v1.0.0', 'Sum': 'h1:reviewed'}]}
         return info, contract, metadata
@@ -193,7 +191,8 @@ class ReleaseArtifactsTests(unittest.TestCase):
 
     def test_component_archives_positive(self):
         archive = self.tar([('opencode', tarfile.REGTYPE, b'fixture'), ('LICENSE', tarfile.REGTYPE, b'MIT')])
-        self.assertEqual(v.scan_tar(archive, 'opencode', 'amd64')['entries'], 2)
+        with self.assertRaisesRegex(ValueError, 'unknown archive contract'):
+            v.scan_tar(archive, 'opencode', 'amd64')
         required = ['graft-runtime', 'provenance.json', 'files.json', 'LICENSE']
         archive = self.tar([(name, tarfile.REGTYPE, b'fixture') for name in required] +
                            [('a'*120, tarfile.REGTYPE, b'long reviewed path')], tarfile.PAX_FORMAT)
@@ -251,7 +250,7 @@ class ReleaseArtifactsTests(unittest.TestCase):
             with self.assertRaises(ValueError): v.skill_contents(archive, b'reviewed skill')
 
     def test_source_identity_must_be_full_commit(self):
-        for commit in ('HEAD', 'v0.16.0', '67cee56', 'a'*40+':go.mod', 'A'*40):
+        for commit in ('HEAD', 'v0.17.0', '67cee56', 'a'*40+':go.mod', 'A'*40):
             with self.subTest(commit=commit):
                 with self.assertRaisesRegex(ValueError, 'full lowercase'):
                     v.Source(self.root, commit)
@@ -285,27 +284,79 @@ class ReleaseArtifactsTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'duplicate'): v.unique_json('{"key":1,"key":2}')
 
     def test_component_metadata_positive_both_architectures(self):
-        for component in ('graft', 'opencode'):
+        for component in ('graft', 'caveman'):
             for arch in ('amd64', 'arm64'):
                 with self.subTest(component=component, arch=arch):
                     doc = self.document(component, arch)
-                    (self.root/('managed-'+component+'-'+arch+'.json')).write_text(json.dumps(doc))
+                    (self.root/(('ivoai-caveman_linux_'+arch+'.metadata.json') if component=='caveman' else ('managed-'+component+'-'+arch+'.json'))).write_text(json.dumps(doc))
                     self.assertEqual(v.component_metadata(self.root, component, arch, {doc['archive']: 'b'*64}, {component: 'a'*64}), doc)
 
     def test_component_metadata_association_tampering(self):
         original = self.document()
         for field in ('version', 'platform', 'archive', 'revision', 'sha256', 'source_sha256',
-                      'patch_sha256', 'upstream_revision', 'bun_version', 'bun_sha256'):
+                      'patch_sha256', 'upstream_revision', 'node_version', 'node_sha256'):
             with self.subTest(field=field):
                 doc = {**original, field: 'tampered'}
-                (self.root/'managed-opencode-amd64.json').write_text(json.dumps(doc))
+                (self.root/'managed-graft-amd64.json').write_text(json.dumps(doc))
                 with self.assertRaises(ValueError):
-                    v.component_metadata(self.root, 'opencode', 'amd64', {original['archive']: 'b'*64}, {'opencode': 'a'*64})
+                    v.component_metadata(self.root, 'graft', 'amd64', {original['archive']: 'b'*64}, {'graft': 'a'*64})
+
+    def test_caveman_metadata_cannot_claim_other_sources_or_signatures(self):
+        original = self.document('caveman')
+        for field in ('version','platform','archive','revision','sha256','source_sha256','patch_sha256','upstream_revision','url','signature_status'):
+            with self.subTest(field=field):
+                doc = {**original,field:'tampered'}
+                (self.root/'ivoai-caveman_linux_amd64.metadata.json').write_text(json.dumps(doc))
+                with self.assertRaises(ValueError):
+                    v.component_metadata(self.root,'caveman','amd64',{original['archive']:'b'*64},{'caveman':'a'*64})
+
+    def caveman_archive(self, change=None, preserve_inventory=False):
+        provenance = json.loads((Path(__file__).parent/'fixtures/caveman-provenance-amd64.json').read_text())
+        modules = {'example.invalid/fixture':{'version':'v1.0.0','sum':'h1:'+'A'*43+'=',
+                   'notices':[{'path':'example.invalid/fixture/v1.0.0/LICENSE','sha256':hashlib.sha256(b'fixture license').hexdigest()}]}}
+        content = {'caveman-proxy':self.elf(), 'caveman-mcp':self.elf(),
+                   **{name:b'fixture license' for name in ('LICENSE','LICENSE-MIT','NOTICE','LICENSING.md',
+                      'third-party/LICENSE.go','third-party/LICENSE.zig','third-party/COPYRIGHT.musl',
+                      'third-party/NOTICE.engine-pixel','third-party/SPLEEN_LICENSE.txt','third-party/UNIFONT_LICENSE.txt',
+                      'third-party/example.invalid/fixture/v1.0.0/LICENSE')},
+                   'provenance.json':json.dumps(provenance).encode(),'third-party/modules.json':json.dumps(modules).encode()}
+        inventory = lambda: {k:{'sha256':hashlib.sha256(value).hexdigest(),'size':len(value)} for k,value in content.items()}
+        recorded = inventory()
+        if change: change(content)
+        if not preserve_inventory: recorded = inventory()
+        content['files.json'] = json.dumps(recorded).encode()
+        return self.tar([(name,tarfile.REGTYPE,value) for name,value in content.items()])
+
+    def test_caveman_exact_archive_inventory_and_notices(self):
+        result=v.scan_caveman(self.caveman_archive(),'amd64')
+        self.assertTrue(result['file_inventory_verified'])
+        self.assertEqual(result['linked_module_notices_verified'],1)
+
+    def test_caveman_mutated_bytes_missing_notices_and_false_provenance_are_denied(self):
+        def change_provenance(content):
+            document=json.loads(content['provenance.json'])
+            document['signature_status']='verified'
+            content['provenance.json']=json.dumps(document).encode()
+        def change_notice(content):
+            document=json.loads(content['third-party/modules.json'])
+            document['example.invalid/fixture']['notices'][0]['sha256']='f'*64
+            content['third-party/modules.json']=json.dumps(document).encode()
+        for change,stale in [(lambda c:c.update({'caveman-proxy':self.elf()+b'changed'}),True),
+                             (lambda c:c.pop('third-party/LICENSE.zig'),False),
+                             (change_provenance,False),(change_notice,False)]:
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                v.scan_caveman(self.caveman_archive(change,stale),'amd64')
+
+    def test_current_bundle_refuses_old_opencode_assets(self):
+        path=self.assets()
+        (path/'ivoai-opencode_linux_amd64.tar.gz').write_bytes(b'legacy')
+        with self.assertRaisesRegex(ValueError,'exactly'):
+            v.manifest_hashes(path)
 
     def test_buildinfo_golden_both_architectures(self):
         for arch in ('amd64', 'arm64'):
             info, contract, metadata = self.golden_info(arch)
-            v.verify_info(info, contract, arch, 'v0.16.0', metadata)
+            v.verify_info(info, contract, arch, 'v0.17.0', metadata)
 
     def unrecorded_info(self, wrong_url=False, missing=False):
         info, contract, metadata = self.golden_info()
@@ -313,7 +364,7 @@ class ReleaseArtifactsTests(unittest.TestCase):
         blob = self.elf()
         for document in metadata.values():
             body = {**document, 'url': 'https://github.com/ivo-lopes/ivoai/releases/download/' +
-                    ('v0.15.0' if wrong_url else 'v0.16.0') + '/' + document['archive']}
+                    ('v0.15.0' if wrong_url else 'v0.17.0') + '/' + document['archive']}
             if not missing:
                 blob += base64.b64encode((json.dumps(body, separators=(',', ':'))+'\n').encode())
         binary = self.root/'core-fixture'
@@ -322,7 +373,7 @@ class ReleaseArtifactsTests(unittest.TestCase):
 
     def test_unrecorded_ldflags_are_explicit_not_verified_bindings(self):
         info, contract, metadata, binary = self.unrecorded_info()
-        result = v.verify_info(info, contract, 'amd64', 'v0.16.0', metadata, binary)
+        result = v.verify_info(info, contract, 'amd64', 'v0.17.0', metadata, binary)
         self.assertEqual(result['ldflags_status'], 'NOT_RECORDED_BY_TOOLCHAIN')
         self.assertNotIn('-ldflags', result['required_build_settings_verified'])
         self.assertNotIn('-ldflags', result['observed_build_settings'])
@@ -333,17 +384,17 @@ class ReleaseArtifactsTests(unittest.TestCase):
         for wrong_url, missing in ((True, False), (False, True)):
             info, contract, metadata, binary = self.unrecorded_info(wrong_url, missing)
             with self.assertRaisesRegex(ValueError, 'same-tag embedded'):
-                v.verify_info(info, contract, 'amd64', 'v0.16.0', metadata, binary)
+                v.verify_info(info, contract, 'amd64', 'v0.17.0', metadata, binary)
 
     def test_unrecorded_ldflags_do_not_relax_version_or_source(self):
         info, contract, metadata, binary = self.unrecorded_info()
         info['Main']['Version'] = 'v0.15.0'
         with self.assertRaisesRegex(ValueError, 'module/version'):
-            v.verify_info(info, contract, 'amd64', 'v0.16.0', metadata, binary)
+            v.verify_info(info, contract, 'amd64', 'v0.17.0', metadata, binary)
         info, contract, metadata, binary = self.unrecorded_info()
         next(item for item in info['Settings'] if item['Key'] == 'vcs.modified')['Value'] = 'true'
         with self.assertRaisesRegex(ValueError, 'build setting'):
-            v.verify_info(info, contract, 'amd64', 'v0.16.0', metadata, binary)
+            v.verify_info(info, contract, 'amd64', 'v0.17.0', metadata, binary)
 
     def test_buildinfo_source_dirty_cgo_and_cpu_rejected(self):
         for key, value in [('vcs.revision', 'd'*40), ('vcs.modified', 'true'), ('CGO_ENABLED', '1'),
@@ -351,34 +402,34 @@ class ReleaseArtifactsTests(unittest.TestCase):
             with self.subTest(key=key):
                 info, contract, metadata = self.golden_info()
                 next(item for item in info['Settings'] if item['Key'] == key)['Value'] = value
-                with self.assertRaisesRegex(ValueError, 'build setting'): v.verify_info(info, contract, 'amd64', 'v0.16.0', metadata)
+                with self.assertRaisesRegex(ValueError, 'build setting'): v.verify_info(info, contract, 'amd64', 'v0.17.0', metadata)
 
     def test_buildinfo_version_and_entrypoint_rejected(self):
         for location in ('GoVersion', 'Path', 'Version'):
             info, contract, metadata = self.golden_info()
             if location == 'Version': info['Main']['Version'] = 'v0.15.0'
             else: info[location] = 'unexpected'
-            with self.assertRaises(ValueError): v.verify_info(info, contract, 'amd64', 'v0.16.0', metadata)
+            with self.assertRaises(ValueError): v.verify_info(info, contract, 'amd64', 'v0.17.0', metadata)
 
     def test_buildinfo_dependency_replaced_or_modified(self):
         for field, value in [('Replace', {'Path': '/unreviewed'}), ('Sum', 'h1:changed'), ('Version', 'v2.0.0')]:
             info, contract, metadata = self.golden_info()
             info['Deps'][0][field] = value
-            with self.assertRaises(ValueError): v.verify_info(info, contract, 'amd64', 'v0.16.0', metadata)
+            with self.assertRaises(ValueError): v.verify_info(info, contract, 'amd64', 'v0.17.0', metadata)
 
     def test_buildinfo_wrong_ldflag_version(self):
         info, contract, metadata = self.golden_info()
         setting = next(item for item in info['Settings'] if item['Key'] == '-ldflags')
-        setting['Value'] = setting['Value'].replace('main.version=0.16.0', 'main.version=0.15.0')
-        with self.assertRaisesRegex(ValueError, 'version linker'): v.verify_info(info, contract, 'amd64', 'v0.16.0', metadata)
+        setting['Value'] = setting['Value'].replace('main.version=0.17.0', 'main.version=0.15.0')
+        with self.assertRaisesRegex(ValueError, 'version linker'): v.verify_info(info, contract, 'amd64', 'v0.17.0', metadata)
 
     def test_buildinfo_duplicate_linker_and_build_setting(self):
         info, contract, metadata = self.golden_info()
-        next(item for item in info['Settings'] if item['Key'] == '-ldflags')['Value'] += ' -X main.version=0.16.0'
-        with self.assertRaisesRegex(ValueError, 'duplicate'): v.verify_info(info, contract, 'amd64', 'v0.16.0', metadata)
+        next(item for item in info['Settings'] if item['Key'] == '-ldflags')['Value'] += ' -X main.version=0.17.0'
+        with self.assertRaisesRegex(ValueError, 'duplicate'): v.verify_info(info, contract, 'amd64', 'v0.17.0', metadata)
         info, contract, metadata = self.golden_info()
         info['Settings'].append(copy.deepcopy(info['Settings'][0]))
-        with self.assertRaisesRegex(ValueError, 'duplicate'): v.verify_info(info, contract, 'amd64', 'v0.16.0', metadata)
+        with self.assertRaisesRegex(ValueError, 'duplicate'): v.verify_info(info, contract, 'amd64', 'v0.17.0', metadata)
 
     def test_buildinfo_same_tag_url_required(self):
         info, contract, metadata = self.golden_info()
@@ -386,18 +437,18 @@ class ReleaseArtifactsTests(unittest.TestCase):
         bindings = v.ldflags({'-ldflags': flags['Value']})
         key = contract['module']+'/internal/components.managedGraftBuild'
         body = json.loads(base64.b64decode(bindings[key]))
-        body['url'] = body['url'].replace('v0.16.0', 'v0.15.0')
+        body['url'] = body['url'].replace('v0.17.0', 'v0.15.0')
         flags['Value'] = flags['Value'].replace(bindings[key], base64.b64encode(json.dumps(body).encode()).decode())
-        with self.assertRaisesRegex(ValueError, 'same-tag'): v.verify_info(info, contract, 'amd64', 'v0.16.0', metadata)
+        with self.assertRaisesRegex(ValueError, 'same-tag'): v.verify_info(info, contract, 'amd64', 'v0.17.0', metadata)
 
     def test_optional_api_unknown_digests_remain_unknown(self):
         path = self.assets()
         hashes = v.manifest_hashes(path)
-        doc = {'tagName': 'v0.16.0', 'isDraft': True, 'isPrerelease': False,
+        doc = {'tagName': 'v0.17.0', 'isDraft': True, 'isPrerelease': False,
                'assets': [{'name': name, 'size': (path/name).stat().st_size} for name in sorted(v.EXPECTED)]}
         api = self.root/'api.json'
         api.write_text(json.dumps(doc))
-        checked = v.api_metadata(api, hashes, path, 'v0.16.0')
+        checked = v.api_metadata(api, hashes, path, 'v0.17.0')
         self.assertEqual(checked['verified_digests'], 0)
         self.assertEqual(len(checked['unknown_digests']), 12)
 
@@ -405,7 +456,7 @@ class ReleaseArtifactsTests(unittest.TestCase):
         path = self.assets()
         hashes = v.manifest_hashes(path)
         locator = 'untagged-897b8a4735700b0274e3'
-        document = {'tag_name': 'v0.16.0', 'draft': True, 'prerelease': False,
+        document = {'tag_name': 'v0.17.0', 'draft': True, 'prerelease': False,
                     'html_url': 'https://github.com/ivo-lopes/ivoai/releases/tag/'+locator,
                     'assets': [{'name': name, 'size': (path/name).stat().st_size,
                                 'digest': 'sha256:'+hashes[name],
@@ -413,7 +464,7 @@ class ReleaseArtifactsTests(unittest.TestCase):
                                for name in sorted(v.EXPECTED)]}
         api = self.root/'draft-api.json'
         api.write_text(json.dumps(document))
-        checked = v.api_metadata(api, hashes, path, 'v0.16.0')
+        checked = v.api_metadata(api, hashes, path, 'v0.17.0')
         self.assertEqual(checked['verified_digests'], 12)
         self.assertEqual(checked['download_locator'], locator)
         self.assertEqual(checked['download_locator_status'], 'UNPUBLISHED_DRAFT_LOCATOR')
@@ -435,35 +486,35 @@ class ReleaseArtifactsTests(unittest.TestCase):
                 elif case == 'mixed_locator': bad['assets'][0]['browser_download_url'] = bad['assets'][0]['browser_download_url'].replace(locator, 'untagged-'+'f'*20)
                 elif case == 'wrong_name': bad['assets'][0]['browser_download_url'] += '.other'
                 elif case == 'wrong_tag': bad['tag_name'] = 'v0.15.0'
-                else: bad['html_url'] = bad['html_url'].replace(locator, 'v0.16.0')
+                else: bad['html_url'] = bad['html_url'].replace(locator, 'v0.17.0')
                 api.write_text(json.dumps(bad))
                 with self.assertRaises(ValueError):
-                    v.api_metadata(api, hashes, path, 'v0.16.0')
+                    v.api_metadata(api, hashes, path, 'v0.17.0')
 
     def test_published_release_requires_canonical_tag_asset_urls(self):
         path = self.assets()
         hashes = v.manifest_hashes(path)
-        document = {'tag_name': 'v0.16.0', 'draft': False, 'prerelease': False,
-                    'html_url': 'https://github.com/ivo-lopes/ivoai/releases/tag/v0.16.0',
+        document = {'tag_name': 'v0.17.0', 'draft': False, 'prerelease': False,
+                    'html_url': 'https://github.com/ivo-lopes/ivoai/releases/tag/v0.17.0',
                     'assets': [{'name': name, 'size': (path/name).stat().st_size,
                                 'digest': 'sha256:'+hashes[name],
-                                'browser_download_url': 'https://github.com/ivo-lopes/ivoai/releases/download/v0.16.0/'+name}
+                                'browser_download_url': 'https://github.com/ivo-lopes/ivoai/releases/download/v0.17.0/'+name}
                                for name in sorted(v.EXPECTED)]}
         api = self.root/'published-api.json'
         api.write_text(json.dumps(document))
-        checked = v.api_metadata(api, hashes, path, 'v0.16.0')
+        checked = v.api_metadata(api, hashes, path, 'v0.17.0')
         self.assertEqual(checked['download_locator_status'], 'RELEASE_TAG')
-        document['assets'][0]['browser_download_url'] = document['assets'][0]['browser_download_url'].replace('/v0.16.0/', '/untagged-'+'f'*20+'/')
+        document['assets'][0]['browser_download_url'] = document['assets'][0]['browser_download_url'].replace('/v0.17.0/', '/untagged-'+'f'*20+'/')
         api.write_text(json.dumps(document))
         with self.assertRaises(ValueError):
-            v.api_metadata(api, hashes, path, 'v0.16.0')
+            v.api_metadata(api, hashes, path, 'v0.17.0')
 
     def test_release_version_preserves_workflow_prerelease_grammar(self):
-        for version in ('0.16.0', 'v0.16.0', '0.17.0-rc.1', 'v0.17.0-beta-2', '1.0.0-123'):
+        for version in ('0.17.0', 'v0.17.0', '0.17.0-rc.1', 'v0.17.0-beta-2', '1.0.0-123'):
             with self.subTest(version=version):
                 self.assertEqual(v.release_tag(version), 'v'+version.removeprefix('v'))
-        for version in ('0.16', '0.16.0-', '0.16.0-rc..1', '0.16.0+build', '0.16.0/rc',
-                        '../0.16.0', '0.16.0-rc_1', '0.16.0\n', 'vv0.16.0'):
+        for version in ('0.16', '0.17.0-', '0.17.0-rc..1', '0.17.0+build', '0.17.0/rc',
+                        '../0.17.0', '0.17.0-rc_1', '0.17.0\n', 'vv0.17.0'):
             with self.subTest(version=version):
                 with self.assertRaisesRegex(ValueError, 'tag grammar'):
                     v.release_tag(version)
@@ -472,9 +523,9 @@ class ReleaseArtifactsTests(unittest.TestCase):
         path = self.assets()
         hashes = v.manifest_hashes(path)
         for tag, prerelease, accepted in (
-                ('v0.16.0', False, True), ('v0.16.0', True, False),
+                ('v0.17.0', False, True), ('v0.17.0', True, False),
                 ('v0.17.0-rc.1', True, True), ('v0.17.0-rc.1', False, False),
-                ('v0.17.0-rc.1', None, False), ('v0.16.0', 0, False)):
+                ('v0.17.0-rc.1', None, False), ('v0.17.0', 0, False)):
             with self.subTest(tag=tag, prerelease=prerelease):
                 doc = {'tag_name': tag, 'draft': True, 'prerelease': prerelease,
                        'assets': [{'name': name, 'size': (path/name).stat().st_size,
@@ -492,7 +543,7 @@ class ReleaseArtifactsTests(unittest.TestCase):
     def test_optional_api_digest_size_tag_and_duplicates_rejected(self):
         path = self.assets()
         hashes = v.manifest_hashes(path)
-        golden = {'tag_name': 'v0.16.0', 'draft': True, 'prerelease': False,
+        golden = {'tag_name': 'v0.17.0', 'draft': True, 'prerelease': False,
                   'assets': [{'name': name, 'size': (path/name).stat().st_size, 'digest': 'sha256:'+hashes[name]} for name in sorted(v.EXPECTED)]}
         for case in ('digest', 'size', 'tag', 'duplicate', 'url'):
             doc = copy.deepcopy(golden)
@@ -503,7 +554,7 @@ class ReleaseArtifactsTests(unittest.TestCase):
             else: doc['assets'][1] = doc['assets'][0]
             api = self.root/'api.json'
             api.write_text(json.dumps(doc))
-            with self.assertRaises(ValueError): v.api_metadata(api, hashes, path, 'v0.16.0')
+            with self.assertRaises(ValueError): v.api_metadata(api, hashes, path, 'v0.17.0')
 
 
 if __name__ == '__main__':

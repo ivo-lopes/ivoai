@@ -198,7 +198,7 @@ ivoai update --rollback      # restore the prior compatible transaction
 ivoai project init           # optional project-specific identity
 ivoai session list           # non-sensitive session metadata
 ivoai monitor --watch        # primary, swarm, workers, services
-ivoai opencode --planner codex   # automatic quota-aware conversation
+ivoai auto                     # native Codex alias with shared Core admission
 ivoai server status          # local server services
 ivoai server backup          # authoritative data backup
 ```
