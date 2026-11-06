@@ -17,12 +17,18 @@ import (
 
 	"github.com/ivo-lopes/ivoai/internal/config"
 	"github.com/ivo-lopes/ivoai/internal/core"
+	"github.com/ivo-lopes/ivoai/internal/observability"
 	"github.com/ivo-lopes/ivoai/internal/opencodebridge"
 	"github.com/ivo-lopes/ivoai/internal/routing"
 	"github.com/ivo-lopes/ivoai/internal/session"
 )
 
 type adaptiveFullCLIReceipt struct {
+	CodeGatewayResolves  int                        `json:"native_code_gateway_resolves,omitempty"`
+	CodeGatewayHits      int                        `json:"native_code_gateway_hits,omitempty"`
+	CodeGatewayMisses    int                        `json:"native_code_gateway_misses,omitempty"`
+	CodeInspections      int                        `json:"native_code_provider_inspections,omitempty"`
+	CodeSourceChanged    bool                       `json:"host_code_change_invalidated_cache,omitempty"`
 	CompletedDAG         bool                       `json:"completed_DAG_before_readonly_and_resume,omitempty"`
 	ArchivedWorkers      int                        `json:"archived_workers,omitempty"`
 	HistoryReadable      bool                       `json:"durable_DAG_history_readable_after_resume,omitempty"`
@@ -155,6 +161,13 @@ func TestLiveAdaptivePrimaryFullCLI(t *testing.T) {
 	}()
 	fail := func(code string) { t.Helper(); row.Failure = code; t.Fatal(code) }
 	withDAG := os.Getenv("IVOAI_ADAPTIVE_FULL_CLI_DAG_LIVE") == "1"
+	withGateway := os.Getenv("IVOAI_ADAPTIVE_FULL_CLI_GATEWAY_LIVE") == "1"
+	if withGateway && (withDAG || os.Getenv("IVOAI_ADAPTIVE_RESUME_LIVE") == "1") {
+		fail("GATEWAY_REUSE_PROOF_REQUIRES_SAME_PROCESS_READONLY_CASE")
+	}
+	if withGateway {
+		row.ControlEnvironment = "IVOAI_EXPERIMENTAL_ADAPTIVE_PRIMARY=1 and IVOAI_EXPERIMENTAL_EVIDENCE_GATEWAY=1 only; Core creates its own scoped capabilities"
+	}
 	caseTimeout := 6 * time.Minute
 	if withDAG {
 		caseTimeout = 10 * time.Minute
@@ -273,6 +286,9 @@ func TestLiveAdaptivePrimaryFullCLI(t *testing.T) {
 	// environment above. The sole extra host control is IVOAI's opt-in flag;
 	// no auth token, route, proxy, API key or test helper is added.
 	execEnvironment := setAppEnvironment(environment, adaptivePrimaryFlag, "1")
+	if withGateway {
+		execEnvironment = setAppEnvironment(execEnvironment, "IVOAI_EXPERIMENTAL_EVIDENCE_GATEWAY", "1")
+	}
 	args := []string{"codex", "--planner", "codex", "--", "--model", model.UpstreamModel, "-c", "model_reasoning_effort=" + strconv.Quote(model.DefaultEffort)}
 	row.Phase = "public_cli_startup"
 	pty, err := adaptiveNativePTY(ctx, production, f.root, args, execEnvironment)
@@ -360,7 +376,21 @@ func TestLiveAdaptivePrimaryFullCLI(t *testing.T) {
 	if withDAG {
 		prompts = []string{"Corrija o bug de soma em math.go usando um worker aprovado do IVOAI e integre o resultado. Add(2, 3) deveria retornar 5. Preserve os outros arquivos e os testes existentes.", "Qual função foi corrigida e qual operação ela executa agora? Responda usando a alteração anterior, sem criar outro plano ou worker."}
 	}
+	if withGateway {
+		query := "Chame exatamente uma vez a ferramenta ivoai-code code_inspect com os argumentos {\"operation\":\"ask\",\"query\":\"Authenticate\",\"limit\":1,\"budget_bytes\":1024}. Não use shell nem altere arquivos. Informe a função, arquivo e o literal aceito pela comparação, usando o resultado atual da ferramenta."
+		prompts = []string{query, query, "Releia a implementação atual em vez de confiar no texto anterior. " + query}
+	}
 	for index, prompt := range prompts {
+		if withGateway && index == 2 {
+			if err := os.WriteFile(filepath.Join(f.root, "auth.go"), []byte("package adaptivefixture\n\n// Authenticate checks the current local fixture token.\nfunc Authenticate(token string) bool { return token == \"fixture-revised\" }\n"), 0600); err != nil {
+				fail("HOST_CODE_CHANGE_FAILED")
+			}
+			var err error
+			before, err = adaptiveChangeSnapshot(f.root)
+			if err != nil {
+				fail("HOST_CHANGED_CODE_SNAPSHOT_FAILED")
+			}
+		}
 		if index > 0 {
 			// Keep the admission's closed environment unchanged by host flags.
 			environment = prefetchSubscriptionEnvironment()
@@ -436,12 +466,62 @@ func TestLiveAdaptivePrimaryFullCLI(t *testing.T) {
 			}
 			row.ArchivedWorkers = len(history.Session.Workers)
 		}
+		if withGateway {
+			toolSeen := false
+			for _, tool := range trace.Tools {
+				if tool.Server == nativeCodeMCP && tool.Name == "code_inspect" && tool.Status == "completed" && tool.Failure == "" {
+					toolSeen = true
+				}
+			}
+			if !toolSeen {
+				fail("PUBLIC_NATIVE_CODE_TOOL_NOT_OBSERVED")
+			}
+			row.CodeGatewayResolves, row.CodeGatewayHits, row.CodeGatewayMisses, row.CodeInspections = 0, 0, 0, 0
+			for _, event := range v.Observability {
+				if event.State != observability.StateCompleted {
+					continue
+				}
+				if event.Operation == observability.OperationCodeInspect {
+					row.CodeInspections++
+				}
+				if event.Operation == observability.OperationCapabilityResolve && event.Capability == "evidence.code" {
+					row.CodeGatewayResolves++
+					if event.CacheHit == nil {
+						fail("PUBLIC_GATEWAY_CACHE_STATE_UNKNOWN")
+					}
+					if *event.CacheHit {
+						row.CodeGatewayHits++
+					} else {
+						row.CodeGatewayMisses++
+					}
+				}
+			}
+			wantMisses, wantHits := 1, 0
+			if index >= 1 {
+				wantHits = 1
+			}
+			if index == 2 {
+				wantMisses = 2
+			}
+			if row.CodeGatewayResolves != index+1 || row.CodeGatewayHits != wantHits || row.CodeGatewayMisses != wantMisses || row.CodeInspections != wantMisses {
+				fail("PUBLIC_GATEWAY_REUSE_OR_INVALIDATION_NOT_OBSERVED")
+			}
+			if index == 2 {
+				row.CodeSourceChanged = true
+			}
+		}
 		row.CompletedTurns++
 		row.ClosedReceipts++
 		if trace.Usage != nil {
 			row.OfficialUsage = append(row.OfficialUsage, trace.Usage)
 		}
 		wait(15*time.Second, func() bool {
+			if withGateway {
+				if index == 2 {
+					return pty.contains("fixture-revised")
+				}
+				return pty.contains("Authenticate") && pty.contains("fixture-allowed")
+			}
 			if withDAG {
 				return pty.contains("math.go")
 			}
@@ -473,7 +553,7 @@ func TestLiveAdaptivePrimaryFullCLI(t *testing.T) {
 	after, snapshotErr := adaptiveChangeSnapshot(f.root)
 	row.FilesIntact = snapshotErr == nil && reflect.DeepEqual(before, after)
 	finalSHA, hashErr := adaptiveBinarySHA(ctx, production)
-	if !row.WrapperExitZero || !row.SessionCompleted || !row.FilesIntact || listErr != nil || row.Sessions != 1 || len(v.TurnAttempts) != 2 || len(v.FrontendRequests) != 2 || v.PrimaryTurn == nil || v.PrimaryTurn.Mode != core.PrimaryClosed || len(v.Workers) != 0 || v.PlanID != "" || hashErr != nil || finalSHA != row.ProductionSHA256 {
+	if !row.WrapperExitZero || !row.SessionCompleted || !row.FilesIntact || listErr != nil || row.Sessions != 1 || len(v.TurnAttempts) != len(prompts) || len(v.FrontendRequests) != len(prompts) || v.PrimaryTurn == nil || v.PrimaryTurn.Mode != core.PrimaryClosed || len(v.Workers) != 0 || v.PlanID != "" || hashErr != nil || finalSHA != row.ProductionSHA256 {
 		fail("PUBLIC_FINALIZATION_OR_REPLAY_INVARIANT_FAILED")
 	}
 	if os.Getenv("IVOAI_ADAPTIVE_RESUME_LIVE") == "1" {

@@ -55,10 +55,17 @@ func adaptiveCodeProviderBound(t *adaptivePrimaryTurn, p *codeintel.Provider) er
 	return nil
 }
 
+func adaptiveReadonlyCodeState(v session.Session) bool {
+	return v.PrimaryTurn != nil && v.PrimaryTurn.Mode == core.PrimaryReadOnly && v.CurrentPhase == string(core.PrimaryReadOnly) && v.PlanID == "" && len(v.Tasks) == 0 && len(v.Workers) == 0 && len(v.Decisions) == 0 && !v.RecoveryRequested
+}
+
 func (a *App) adaptiveCodeQuery(ctx context.Context, t *adaptivePrimaryTurn, p *codeintel.Provider, kind string, q core.CodeQuery, next codeintel.QueryRunner) (core.CodeResult, error) {
 	denied := func() (core.CodeResult, error) { return core.CodeResult{}, evidence.ErrDenied }
 	current, err := t.check(ctx)
-	if err != nil || adaptiveCodeProviderBound(t, p) != nil {
+	if err != nil || os.Getenv("IVOAI_EXPERIMENTAL_EVIDENCE_GATEWAY") != "1" || adaptiveCodeProviderBound(t, p) != nil {
+		return denied()
+	}
+	if current.PrimaryTurn.Mode == core.PrimaryReadOnly && !adaptiveReadonlyCodeState(current) {
 		return denied()
 	}
 	q, err = codeintel.Normalize(q)
@@ -72,7 +79,7 @@ func (a *App) adaptiveCodeQuery(ctx context.Context, t *adaptivePrimaryTurn, p *
 		if err != nil {
 			return core.CodeResult{}, err
 		}
-		if _, err := t.check(ctx); err != nil || adaptiveCodeProviderBound(t, p) != nil {
+		if _, err := t.check(ctx); err != nil || os.Getenv("IVOAI_EXPERIMENTAL_EVIDENCE_GATEWAY") != "1" || adaptiveCodeProviderBound(t, p) != nil {
 			return denied()
 		}
 		return result, nil
@@ -93,7 +100,7 @@ func (a *App) retrieveAdaptiveCode(ctx context.Context, t *adaptivePrimaryTurn, 
 	owner := workingcontext.Ownership{SessionID: t.id, TaskID: "primary_" + t.receipt.ID}
 	authorize := func(ctx context.Context) error {
 		v, err := t.check(ctx)
-		if err != nil || v.PrimaryTurn.Mode != core.PrimaryReadOnly || adaptiveCodeProviderBound(t, p) != nil {
+		if err != nil || !adaptiveReadonlyCodeState(v) || os.Getenv("IVOAI_EXPERIMENTAL_EVIDENCE_GATEWAY") != "1" || adaptiveCodeProviderBound(t, p) != nil {
 			return evidence.ErrDenied
 		}
 		canonical, err := filepath.EvalSymlinks(p.Root)
@@ -104,11 +111,17 @@ func (a *App) retrieveAdaptiveCode(ctx context.Context, t *adaptivePrimaryTurn, 
 		if err != nil || currentIdentity != identity {
 			return evidence.ErrDenied
 		}
+		// Reuse cannot bypass the factory's managed object integrity or optional
+		// absence checks. A changed/compromised runtime is not a cache hit.
+		verified, err := a.CodeIntelligenceProvider(ctx, t.root, t.scopeID)
+		if err != nil || verified.ExecutionMode() != p.ExecutionMode() || verified.Node != p.Node || verified.Distribution != p.Distribution || verified.Executable != p.Executable {
+			return evidence.ErrDenied
+		}
 		return nil
 	}
-	req := evidence.Request{ProtectedRecovery: true, Owner: owner, Source: "code.mcp", ReadOnly: true, BudgetBytes: 32768,
+	req := evidence.Request{ProtectedRecovery: true, Owner: owner, Source: "code", ReadOnly: true, BudgetBytes: 32768,
 		Scope:       evidence.Scope{Organization: evidence.Digest(p.Scope), Repository: evidence.Digest(root), Worktree: identity, Permissions: evidence.Digest("adaptive-readonly-code-v1", p.Permissions, t.receipt.ScopeDigest, t.receipt.ConfigDigest, t.receipt.StateDigest)},
-		QueryDigest: evidence.Digest(kind, q, codeintel.Version, p.Node, p.Distribution, p.ExecutionMode()), Authorize: authorize,
+		QueryDigest: evidence.Digest("native-mcp-code-result-v1", kind, q, codeintel.Version, p.Node, p.Distribution, p.ExecutionMode()), Authorize: authorize,
 		CurrentGeneration: func(ctx context.Context) (string, error) {
 			files, err := codeintel.Inventory(ctx, p.Root)
 			if err != nil {
@@ -172,7 +185,7 @@ func (a *App) retrieveAdaptiveCode(ctx context.Context, t *adaptivePrimaryTurn, 
 		if !t.boundTo(*v) || v.PrimaryTurn.Mode != core.PrimaryReadOnly {
 			return evidence.ErrDenied
 		}
-		return session.AppendObservation(v, observability.Event{Category: observability.CategoryCapability, Operation: observability.OperationCapabilityResolve, State: observability.StateCompleted, SessionID: t.id, TaskID: owner.TaskID, TurnID: t.receipt.TurnID, AttemptID: t.receipt.AttemptID, Phase: string(core.PrimaryReadOnly), Capability: "evidence.code", ArtifactID: packet.Ref.Result.Artifact.ID, ReferenceCount: 1, ArtifactBytes: int64(len(raw)), CacheHit: &packet.CacheHit, DurationMilliseconds: time.Since(start).Milliseconds(), FidelityClass: string(core.CompressionExactRequired)})
+		return session.AppendObservation(v, observability.Event{Category: observability.CategoryCapability, Operation: observability.OperationCapabilityResolve, State: observability.StateCompleted, SessionID: t.id, TaskID: owner.TaskID, TurnID: t.receipt.TurnID, AttemptID: t.receipt.AttemptID, Capability: "evidence.code", ArtifactID: packet.Ref.Result.Artifact.ID, ReferenceCount: 1, ArtifactBytes: int64(len(raw)), CacheHit: &packet.CacheHit, DurationMilliseconds: time.Since(start).Milliseconds(), FidelityClass: string(core.CompressionExactRequired)})
 	})
 	if err != nil {
 		return core.CodeResult{}, err
