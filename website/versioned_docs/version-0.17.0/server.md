@@ -115,6 +115,17 @@ container identity. Dependency ports bind only to loopback, require separate gen
 internal credentials, and are not public. After TEI downloads the pinned model and
 passes health checks, its download network is disconnected.
 
+Managed TEI uses `LOG_LEVEL=info,text_embeddings_router=warn`. The pinned 1.9.4
+router logs its arguments, including the API key, at INFO; its supported logger
+reads `LOG_LEVEL`, not `RUST_LOG`. The explicit Compose environment overrides a
+conflicting value from the secret env file. WARN/ERROR for that target and INFO
+for other targets remain enabled; health, metrics and API authentication are
+unchanged. ARM64 inherits the same setting from the base Compose file. Avoid
+removing this filter when enabling diagnostics. This prevents new argument-log
+exposure; it does not erase logs from a previous deployment. If such logs escaped
+the authorized host boundary, rotate the affected internal credential through the
+normal operator procedure. No credential is rotated automatically.
+
 Rerunning setup changes ownership only on managed mount roots; it does not traverse
 application-created content. This preserves legitimate Hugging Face cache symlinks.
 Qdrant readiness uses its unauthenticated `/readyz` endpoint, while its data API

@@ -119,6 +119,17 @@ somente em loopback, exigem credenciais internas geradas separadamente e não s�
 públicas. Depois que TEI baixa o modelo pinado e passa nos health checks, sua rede de
 download é desconectada.
 
+O TEI gerenciado usa `LOG_LEVEL=info,text_embeddings_router=warn`. O router
+fixado em 1.9.4 registra seus argumentos, incluindo a chave de API, em INFO; seu
+logger oficial lê `LOG_LEVEL`, não `RUST_LOG`. O ambiente explícito do Compose
+substitui um valor conflitante no arquivo de segredos. WARN/ERROR desse target e
+INFO dos demais continuam habilitados; saúde, métricas e autenticação permanecem
+iguais. ARM64 herda a configuração do Compose base. Preserve o filtro ao habilitar
+diagnósticos. Ele evita novas exposições por esse log, sem apagar logs de uma
+implantação anterior. Se esses logs saíram do host autorizado, rotacione a
+credencial interna afetada pelo procedimento normal do operador. Nenhuma
+credencial é rotacionada automaticamente.
+
 Executar o setup novamente altera ownership somente nas raízes de mounts gerenciados;
 não percorre conteúdo criado pelas aplicações. Isso preserva symlinks legítimos do
 cache do Hugging Face. A readiness do Qdrant usa o endpoint não autenticado `/readyz`,

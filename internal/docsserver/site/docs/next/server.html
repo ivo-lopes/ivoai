@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="generator" content="Docusaurus v3.10.2">
 <title data-rh="true">Server | IVOAI</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="http://localhost:7780/docs/next/server"><meta data-rh="true" property="og:locale" content="en_US"><meta data-rh="true" property="og:locale:alternate" content="pt_BR"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docusaurus_version" content="current"><meta data-rh="true" name="docusaurus_tag" content="docs-default-current"><meta data-rh="true" name="docsearch:version" content="current"><meta data-rh="true" name="docsearch:docusaurus_tag" content="docs-default-current"><meta data-rh="true" property="og:title" content="Server | IVOAI"><meta data-rh="true" name="description" content="In-place updates"><meta data-rh="true" property="og:description" content="In-place updates"><link data-rh="true" rel="icon" href="/img/favicon.svg"><link data-rh="true" rel="canonical" href="http://localhost:7780/docs/next/server"><link data-rh="true" rel="alternate" href="http://localhost:7780/docs/next/server" hreflang="en-US"><link data-rh="true" rel="alternate" href="http://localhost:7780/pt-BR/docs/next/server" hreflang="pt-BR"><link data-rh="true" rel="alternate" href="http://localhost:7780/docs/next/server" hreflang="x-default"><script data-rh="true" type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{"@type":"ListItem","position":1,"name":"Server","item":"http://localhost:7780/docs/next/server"}]}</script><link rel="stylesheet" href="/assets/css/styles.e4fb2785.css">
-<script src="/assets/js/runtime~main.a77e9b6e.js" defer="defer"></script>
+<script src="/assets/js/runtime~main.caf14b14.js" defer="defer"></script>
 <script src="/assets/js/main.738b623f.js" defer="defer"></script>
 </head>
 <body>
@@ -86,6 +86,16 @@ unprivileged image, the embedding runtime, and ai-memory use the non-login <code
 container identity. Dependency ports bind only to loopback, require separate generated
 internal credentials, and are not public. After TEI downloads the pinned model and
 passes health checks, its download network is disconnected.</p>
+<p>Managed TEI uses <code>LOG_LEVEL=info,text_embeddings_router=warn</code>. The pinned 1.9.4
+router logs its arguments, including the API key, at INFO; its supported logger
+reads <code>LOG_LEVEL</code>, not <code>RUST_LOG</code>. The explicit Compose environment overrides a
+conflicting value from the secret env file. WARN/ERROR for that target and INFO
+for other targets remain enabled; health, metrics and API authentication are
+unchanged. ARM64 inherits the same setting from the base Compose file. Avoid
+removing this filter when enabling diagnostics. This prevents new argument-log
+exposure; it does not erase logs from a previous deployment. If such logs escaped
+the authorized host boundary, rotate the affected internal credential through the
+normal operator procedure. No credential is rotated automatically.</p>
 <p>Rerunning setup changes ownership only on managed mount roots; it does not traverse
 application-created content. This preserves legitimate Hugging Face cache symlinks.
 Qdrant readiness uses its unauthenticated <code>/readyz</code> endpoint, while its data API
