@@ -1,0 +1,5 @@
+patching file go.mod
+patching file go.sum
+ok  	github.com/JuliusBrussee/caveman/engine	0.040s
+ok  	github.com/JuliusBrussee/caveman/proxy/internal/gateway	0.069s
+Built /var/tmp/ivoai-managed-dependencies-tools-20261106/caveman-production-build-repeated/ivoai-caveman_linux_amd64.tar.gz

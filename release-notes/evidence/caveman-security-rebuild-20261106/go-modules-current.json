@@ -1,0 +1,183 @@
+{
+	"Path": "github.com/ivo-lopes/ivoai",
+	"Main": true,
+	"Dir": "/var/tmp/ivoai-managed-dependencies-20261106",
+	"GoMod": "/var/tmp/ivoai-managed-dependencies-20261106/go.mod",
+	"GoVersion": "1.27.3"
+}
+{
+	"Path": "cloud.google.com/go/compute/metadata",
+	"Version": "v0.3.0",
+	"Time": "2024-04-15T20:50:16Z",
+	"Update": {
+		"Path": "cloud.google.com/go/compute/metadata",
+		"Version": "v0.10.0",
+		"Time": "2026-09-24T19:36:54Z"
+	},
+	"Indirect": true
+}
+{
+	"Path": "github.com/coder/websocket",
+	"Version": "v1.8.15",
+	"Time": "2026-06-15T03:25:28Z",
+	"Dir": "/home/ivo/go/pkg/mod/github.com/coder/websocket@v1.8.15",
+	"GoMod": "/home/ivo/go/pkg/mod/cache/download/github.com/coder/websocket/@v/v1.8.15.mod",
+	"GoVersion": "1.23",
+	"Sum": "h1:6B2JPeOGlpff2Uz6vOEH1Vzpi0iUz20A+lPVhPHtNUA=",
+	"GoModSum": "h1:NX3SzP+inril6yawo5CQXx8+fk145lPDC6pumgx0mVg="
+}
+{
+	"Path": "github.com/golang-jwt/jwt/v5",
+	"Version": "v5.3.1",
+	"Time": "2026-01-28T19:58:13Z",
+	"Indirect": true,
+	"Dir": "/home/ivo/go/pkg/mod/github.com/golang-jwt/jwt/v5@v5.3.1",
+	"GoMod": "/home/ivo/go/pkg/mod/cache/download/github.com/golang-jwt/jwt/v5/@v/v5.3.1.mod",
+	"GoVersion": "1.21",
+	"Sum": "h1:kYf81DTWFe7t+1VvL7eS+jKFVWaUnK9cB1qbwn63YCY=",
+	"GoModSum": "h1:fxCRLWMO43lRc8nhHWY6LGqRcf+1gQWArsqaEUEa5bE="
+}
+{
+	"Path": "github.com/google/go-cmp",
+	"Version": "v0.7.0",
+	"Time": "2025-01-14T18:15:44Z",
+	"Indirect": true,
+	"Dir": "/home/ivo/go/pkg/mod/github.com/google/go-cmp@v0.7.0",
+	"GoMod": "/home/ivo/go/pkg/mod/cache/download/github.com/google/go-cmp/@v/v0.7.0.mod",
+	"GoVersion": "1.21",
+	"Sum": "h1:wk8382ETsv4JYUZwIsn6YpYiWiBsYLSJiTsyBybVuN8=",
+	"GoModSum": "h1:pXiqmnSA92OHEEa9HXL2W4E7lf9JzCmGVUdgjX3N/iU="
+}
+{
+	"Path": "github.com/google/jsonschema-go",
+	"Version": "v0.4.3",
+	"Time": "2026-04-17T16:08:09Z",
+	"Indirect": true,
+	"Dir": "/home/ivo/go/pkg/mod/github.com/google/jsonschema-go@v0.4.3",
+	"GoMod": "/home/ivo/go/pkg/mod/cache/download/github.com/google/jsonschema-go/@v/v0.4.3.mod",
+	"GoVersion": "1.23.0",
+	"Sum": "h1:/DBOLZTfDow7pe2GmaJNhltueGTtDKICi8V8p+DQPd0=",
+	"GoModSum": "h1:r5quNTdLOYEz95Ru18zA0ydNbBuYoo9tgaYcxEYhJVE="
+}
+{
+	"Path": "github.com/modelcontextprotocol/go-sdk",
+	"Version": "v1.8.0",
+	"Time": "2026-09-04T08:08:52Z",
+	"Dir": "/home/ivo/go/pkg/mod/github.com/modelcontextprotocol/go-sdk@v1.8.0",
+	"GoMod": "/home/ivo/go/pkg/mod/cache/download/github.com/modelcontextprotocol/go-sdk/@v/v1.8.0.mod",
+	"GoVersion": "1.25.0",
+	"Sum": "h1:KIvahhYqwtbeniWVPs3TcXEA7b8jEtwfBpOTAI+Urx4=",
+	"GoModSum": "h1:dL7u98E/zjJTGzEq+j30jQ8K2k1mb6LeAH4inEcSGts="
+}
+{
+	"Path": "github.com/pelletier/go-toml/v2",
+	"Version": "v2.4.3",
+	"Time": "2026-07-05T02:25:11Z",
+	"Dir": "/home/ivo/go/pkg/mod/github.com/pelletier/go-toml/v2@v2.4.3",
+	"GoMod": "/home/ivo/go/pkg/mod/cache/download/github.com/pelletier/go-toml/v2/@v/v2.4.3.mod",
+	"GoVersion": "1.21.0",
+	"Sum": "h1:GTRvJQutkOSftxIFD5xw9aepkYNuPWmVJpffdDPYVpY=",
+	"GoModSum": "h1:2gIqNv+qfxSVS7cM2xJQKtLSTLUE9V8t9Stt+h56mCY="
+}
+{
+	"Path": "github.com/segmentio/asm",
+	"Version": "v1.2.1",
+	"Time": "2023-11-07T21:27:51Z",
+	"Indirect": true,
+	"Dir": "/home/ivo/go/pkg/mod/github.com/segmentio/asm@v1.2.1",
+	"GoMod": "/home/ivo/go/pkg/mod/cache/download/github.com/segmentio/asm/@v/v1.2.1.mod",
+	"GoVersion": "1.18",
+	"Sum": "h1:DTNbBqs57ioxAD4PrArqftgypG4/qNpXoJx8TVXxPR0=",
+	"GoModSum": "h1:BqMnlJP91P8d+4ibuonYZw9mfnzI9HfxselHZr5aAcs="
+}
+{
+	"Path": "github.com/segmentio/encoding",
+	"Version": "v0.5.4",
+	"Time": "2026-03-10T23:16:08Z",
+	"Indirect": true,
+	"Dir": "/home/ivo/go/pkg/mod/github.com/segmentio/encoding@v0.5.4",
+	"GoMod": "/home/ivo/go/pkg/mod/cache/download/github.com/segmentio/encoding/@v/v0.5.4.mod",
+	"GoVersion": "1.23",
+	"Sum": "h1:OW1VRern8Nw6ITAtwSZ7Idrl3MXCFwXHPgqESYfvNt0=",
+	"GoModSum": "h1:HS1ZKa3kSN32ZHVZ7ZLPLXWvOVIiZtyJnO1gPH1sKt0="
+}
+{
+	"Path": "github.com/yosida95/uritemplate/v3",
+	"Version": "v3.0.2",
+	"Time": "2022-04-19T10:57:16Z",
+	"Indirect": true,
+	"Dir": "/home/ivo/go/pkg/mod/github.com/yosida95/uritemplate/v3@v3.0.2",
+	"GoMod": "/home/ivo/go/pkg/mod/cache/download/github.com/yosida95/uritemplate/v3/@v/v3.0.2.mod",
+	"GoVersion": "1.14",
+	"Sum": "h1:Ed3Oyj9yrmi9087+NczuL5BwkIc4wvTb5zIM+UJPGz4=",
+	"GoModSum": "h1:ILOh0sOhIJR3+L/8afwt/kE++YT040gmv5BQTMR2HP4="
+}
+{
+	"Path": "golang.org/x/oauth2",
+	"Version": "v0.37.0",
+	"Time": "2026-08-25T21:41:43Z",
+	"Indirect": true,
+	"Dir": "/home/ivo/go/pkg/mod/golang.org/x/oauth2@v0.37.0",
+	"GoMod": "/home/ivo/go/pkg/mod/cache/download/golang.org/x/oauth2/@v/v0.37.0.mod",
+	"GoVersion": "1.26.0",
+	"Sum": "h1:JUlcxA8oAtauLfiH8FX2/FkAWHAdi0QtGCGc+hofE98=",
+	"GoModSum": "h1:IxwZNxUULJmpBFf9K/9NTMSIfZZuvuTy1gGxhigP/58="
+}
+{
+	"Path": "golang.org/x/sync",
+	"Version": "v0.24.0",
+	"Time": "2026-09-23T16:28:17Z",
+	"Indirect": true,
+	"Dir": "/home/ivo/go/pkg/mod/golang.org/x/sync@v0.24.0",
+	"GoMod": "/home/ivo/go/pkg/mod/cache/download/golang.org/x/sync/@v/v0.24.0.mod",
+	"GoVersion": "1.26.0",
+	"Sum": "h1:iqiDrGoDgyuvAKrhLQthUEzU/R378N78gXbBjxed7oA=",
+	"GoModSum": "h1:sUUOizhqBxiL6pEWpqNLUiaJn1ShEbZ6BBqskPbjZm0="
+}
+{
+	"Path": "golang.org/x/sys",
+	"Version": "v0.49.0",
+	"Time": "2026-10-06T18:35:47Z",
+	"Dir": "/home/ivo/go/pkg/mod/golang.org/x/sys@v0.49.0",
+	"GoMod": "/home/ivo/go/pkg/mod/cache/download/golang.org/x/sys/@v/v0.49.0.mod",
+	"GoVersion": "1.26.0",
+	"Sum": "h1:XbzkgYJHdqh/8m2Uu0W/dQv8nktxx4BFHp1M0gROTXA=",
+	"GoModSum": "h1:hNLxWAXmnKAxqDtdwIYC4bM9oQPEecfsnNMuSxOs3og="
+}
+{
+	"Path": "golang.org/x/term",
+	"Version": "v0.47.0",
+	"Time": "2026-10-09T15:22:17Z",
+	"Dir": "/home/ivo/go/pkg/mod/golang.org/x/term@v0.47.0",
+	"GoMod": "/home/ivo/go/pkg/mod/cache/download/golang.org/x/term/@v/v0.47.0.mod",
+	"GoVersion": "1.26.0",
+	"Sum": "h1:cpyOwQkr2Nzxe2p6KnrTG7Ei2wtzjsuSjhpXXepZ/BM=",
+	"GoModSum": "h1:efAfAuG6RKABvg1ArGebRkvX6LXul14SM67o2e4mUCY="
+}
+{
+	"Path": "golang.org/x/time",
+	"Version": "v0.16.0",
+	"Time": "2026-08-19T17:16:18Z",
+	"Indirect": true,
+	"Dir": "/home/ivo/go/pkg/mod/golang.org/x/time@v0.16.0",
+	"GoMod": "/home/ivo/go/pkg/mod/cache/download/golang.org/x/time/@v/v0.16.0.mod",
+	"GoVersion": "1.26.0",
+	"Sum": "h1:vMb6ptszcQMkcwiRTAuNNU50gom6++Q/6gY2hDM6VDE=",
+	"GoModSum": "h1:rVKOqvZeKvrDKTQiAHJ7wmwP0RzleSphoEA9RcdLA0s="
+}
+{
+	"Path": "golang.org/x/tools",
+	"Version": "v0.42.0",
+	"Time": "2026-02-09T18:28:22Z",
+	"Update": {
+		"Path": "golang.org/x/tools",
+		"Version": "v0.52.0",
+		"Time": "2026-10-10T19:29:17Z"
+	},
+	"Indirect": true,
+	"Dir": "/home/ivo/go/pkg/mod/golang.org/x/tools@v0.42.0",
+	"GoMod": "/home/ivo/go/pkg/mod/cache/download/golang.org/x/tools/@v/v0.42.0.mod",
+	"GoVersion": "1.24.0",
+	"Sum": "h1:uNgphsn75Tdz5Ji2q36v/nsFSfR/9BRFvqhGBaJGd5k=",
+	"GoModSum": "h1:Ma6lCIwGZvHK6XtgbswSoWroEkhugApmsXyrUmBhfr0="
+}

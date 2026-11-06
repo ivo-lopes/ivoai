@@ -68,6 +68,7 @@ type Spec struct {
 	NoVersionProbe                     bool
 	Revision, DefaultBranch, License   string
 	PayloadFormat, PayloadPath         string
+	Executables                        []string
 	SignatureStatus, AttestationStatus string
 	TrustLevel                         string
 }
@@ -99,18 +100,6 @@ func DefaultCatalog() []Spec {
 			"linux/amd64": {URL: "https://github.com/headroomlabs-ai/headroom/releases/download/v0.43.1/headroom_ai-0.43.1-cp310-abi3-manylinux_2_28_x86_64.whl", SHA256: "2e9cd1a9aab42f60b00a9f7c8a85cf82815b51b1989179e5fdd40ddd09915d6e"},
 			"linux/arm64": {URL: "https://github.com/headroomlabs-ai/headroom/releases/download/v0.43.1/headroom_ai-0.43.1-cp310-abi3-manylinux_2_28_aarch64.whl", SHA256: "12bf1314ff0b3d6f0860b41578422b77949203a93c14bec9f692c7e5b36a862f"},
 		}},
-		{Name: "caveman", Executable: "caveman-proxy", Version: "2.1.0", Strategy: StrategySupplyChain,
-			Revision: "e20f07e8152a0c0360f58c09e79d30ac94329991", DefaultBranch: "main", License: "Apache-2.0", PayloadFormat: "raw", PayloadPath: "bin/caveman-proxy", NoVersionProbe: true,
-			SignatureStatus: "keysig_published_unverified", AttestationStatus: "not_exposed", TrustLevel: "upstream_checksum", Assets: map[string]Asset{
-				"linux/amd64": {URL: "https://github.com/JuliusBrussee/caveman/releases/download/bin-v2.1.0/caveman-proxy_linux_amd64", SHA256: "44436d69705ad9968563c181cd11d396d6ae5eeccd8dbf228f6225d92dfadcb1"},
-				"linux/arm64": {URL: "https://github.com/JuliusBrussee/caveman/releases/download/bin-v2.1.0/caveman-proxy_linux_arm64", SHA256: "5a881979934d51822ccf9ea13c519769fea18c52c061e14e6bd0d9f950ce760f"},
-			}},
-		{Name: "caveman-mcp", Executable: "caveman-mcp", Version: "2.1.0", Strategy: StrategySupplyChain, RequiresManaged: "caveman",
-			Revision: "e20f07e8152a0c0360f58c09e79d30ac94329991", DefaultBranch: "main", License: "Apache-2.0", PayloadFormat: "raw", PayloadPath: "bin/caveman-mcp", NoVersionProbe: true,
-			SignatureStatus: "keysig_published_unverified", AttestationStatus: "not_exposed", TrustLevel: "upstream_checksum", Assets: map[string]Asset{
-				"linux/amd64": {URL: "https://github.com/JuliusBrussee/caveman/releases/download/bin-v2.1.0/caveman-mcp_linux_amd64", SHA256: "24339e645da66fb3580e3d9410743499845748238f01d0dc8097330fcb0f9bde"},
-				"linux/arm64": {URL: "https://github.com/JuliusBrussee/caveman/releases/download/bin-v2.1.0/caveman-mcp_linux_arm64", SHA256: "fb49b996eee5a297a674a067979931d9a28d59cbe735be2b9104e7519ef7042a"},
-			}},
 		{Name: "opencode", Executable: "opencode", Version: "1.19.0", Strategy: StrategySupplyChain,
 			Revision: "733b2c627e5aec39cb33cc22373bdce33053ef2c", DefaultBranch: "dev", License: "MIT", PayloadFormat: "tar_gzip", PayloadPath: "opencode",
 			SignatureStatus: "not_exposed", AttestationStatus: "not_exposed", TrustLevel: "upstream_checksum", Assets: map[string]Asset{
@@ -135,6 +124,14 @@ func DefaultCatalog() []Spec {
 			catalog[index] = projected
 		}
 	}
+	if ManagedCavemanAvailable() {
+		specs, err := managedCavemanSpecs(managedCavemanBuild, runtime.GOOS+"/"+runtime.GOARCH)
+		if err != nil {
+			panic("invalid release-managed Caveman build metadata")
+		}
+		catalog = append(catalog, specs...)
+	}
+
 	if ManagedGraftAvailable() {
 		spec, err := managedGraftSpec(managedGraftBuild, runtime.GOOS+"/"+runtime.GOARCH)
 		if err != nil {
@@ -181,6 +178,9 @@ func (i *Installer) Setup(ctx context.Context) error {
 		i.Catalog = DefaultCatalog()
 		if !ManagedGraftAvailable() && i.Out != nil {
 			fmt.Fprintln(i.Out, "Graft unavailable: this build has no reviewed managed runtime metadata.")
+		}
+		if !ManagedCavemanAvailable() && i.Out != nil {
+			fmt.Fprintln(i.Out, "Caveman unavailable: this build has no reviewed managed rebuild metadata; Direct fallback remains available.")
 		}
 	}
 	state, err := i.Store.LoadState()
@@ -294,10 +294,14 @@ func ResolvedSource(spec Spec) (supplychain.ResolvedSource, error) {
 	if !ok {
 		return supplychain.ResolvedSource{}, errors.New("no asset for current platform")
 	}
+	executables := []string{spec.PayloadPath}
+	if len(spec.Executables) > 0 {
+		executables = append([]string(nil), spec.Executables...)
+	}
 	return supplychain.ResolvedSource{
 		ID: spec.Name, Kind: supplychain.KindComponent, Source: asset.URL, Revision: spec.Revision,
 		LogicalVersion: spec.Version, DefaultBranch: spec.DefaultBranch, PayloadFormat: spec.PayloadFormat,
-		PayloadPath: spec.PayloadPath, License: spec.License, Executables: []string{spec.PayloadPath},
+		PayloadPath: spec.PayloadPath, License: spec.License, Executables: executables,
 		Integrity: supplychain.Integrity{Algorithm: "sha256", Digest: asset.SHA256, SignatureStatus: spec.SignatureStatus, AttestationStatus: spec.AttestationStatus, TrustLevel: spec.TrustLevel},
 	}, nil
 }

@@ -1,0 +1,12 @@
+=== RUN   TestPinnedCavemanProxyManualCanary
+    live_test.go:56: structured proxy probe={ID:compression Implementation:caveman Active:true Installed:false Managed:true Available:false Health:unavailable Lifecycle:stopped Provenance:{Source:managed_supply_chain Version:4.0.2-ivoai.1 Path:/var/tmp/ivoai-managed-dependencies-tools-20261106/caveman-rebuilt/caveman-proxy_linux_amd64} Capabilities:map[compression.bypass:supported compression.wrap:unsupported] Compatibility:{State:incompatible Reason:managed runtime integrity validation failed} Fallback:{Allowed:true Reason:direct official executor remains available before launch}}
+--- FAIL: TestPinnedCavemanProxyManualCanary (0.07s)
+FAIL
+FAIL	github.com/ivo-lopes/ivoai/internal/caveman	0.072s
+=== RUN   TestPinnedCavemanMCPManualCanary
+    live_test.go:49: PINNED_CAVEMAN_MCP_METRICS={"provider":"caveman","token_basis":"heuristic_4_bytes","scenarios":22,"expected_scenarios":22,"bytes_before":983089,"bytes_in_context":35892,"estimated_tokens_before":245773,"estimated_tokens_in_context":8973,"context_ratio":0.036509410643390375,"latency":1725262366,"bypass_count":5,"degraded_count":17,"artifact_mismatch_count":0,"exact_required_mismatch_count":0,"semantic_mismatch_count":0,"observability_leak_count":0,"runtime_sha256":"39f1d2c8dd1221ad427806182d0a5651243795e2879d02c85459e317141d8f16","compression_calls":17,"compression_applied":0,"compression_passthrough":0,"compression_failures":17,"provider_mismatch_count":0}
+    live_test.go:51: pinned Caveman MCP canary failed: metrics={Provider:caveman TokenBasis:heuristic_4_bytes Scenarios:22 ExpectedScenarios:22 BytesBefore:983089 BytesInContext:35892 EstimatedTokensBefore:245773 EstimatedTokensInContext:8973 ContextRatio:0.036509410643390375 Latency:1.725262366s BypassCount:5 DegradedCount:17 ArtifactMismatchCount:0 ExactRequiredMismatchCount:0 SemanticMismatchCount:0 ObservabilityLeakCount:0 RuntimeSHA256:39f1d2c8dd1221ad427806182d0a5651243795e2879d02c85459e317141d8f16 CompressionCalls:17 CompressionApplied:0 CompressionPassthrough:0 CompressionFailures:17 ProviderMismatchCount:0} err=<nil>
+--- FAIL: TestPinnedCavemanMCPManualCanary (1.76s)
+FAIL
+FAIL	github.com/ivo-lopes/ivoai/internal/cavemaneval	1.770s
+FAIL

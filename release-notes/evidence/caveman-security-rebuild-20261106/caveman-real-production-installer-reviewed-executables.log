@@ -1,0 +1,35 @@
+=== RUN   TestLiveManagedCavemanInstallation
+    caveman_live_test.go:124: actual rebuilt archive installed and admitted twice; native structured probes and22-scenario fidelity canary passed; no inference
+--- PASS: TestLiveManagedCavemanInstallation (6.42s)
+=== RUN   TestManagedCavemanReviewedBuildIdentity
+=== RUN   TestManagedCavemanReviewedBuildIdentity/publisher
+=== RUN   TestManagedCavemanReviewedBuildIdentity/userinfo
+=== RUN   TestManagedCavemanReviewedBuildIdentity/platform
+=== RUN   TestManagedCavemanReviewedBuildIdentity/patch
+=== RUN   TestManagedCavemanReviewedBuildIdentity/identity
+=== RUN   TestManagedCavemanReviewedBuildIdentity/mutable
+=== RUN   TestManagedCavemanReviewedBuildIdentity/query
+=== RUN   TestManagedCavemanReviewedBuildIdentity/fragment
+=== RUN   TestManagedCavemanReviewedBuildIdentity/version
+=== RUN   TestManagedCavemanReviewedBuildIdentity/upstream
+=== RUN   TestManagedCavemanReviewedBuildIdentity/source
+=== RUN   TestManagedCavemanReviewedBuildIdentity/archive
+=== RUN   TestManagedCavemanReviewedBuildIdentity/digest
+--- PASS: TestManagedCavemanReviewedBuildIdentity (0.00s)
+    --- PASS: TestManagedCavemanReviewedBuildIdentity/publisher (0.00s)
+    --- PASS: TestManagedCavemanReviewedBuildIdentity/userinfo (0.00s)
+    --- PASS: TestManagedCavemanReviewedBuildIdentity/platform (0.00s)
+    --- PASS: TestManagedCavemanReviewedBuildIdentity/patch (0.00s)
+    --- PASS: TestManagedCavemanReviewedBuildIdentity/identity (0.00s)
+    --- PASS: TestManagedCavemanReviewedBuildIdentity/mutable (0.00s)
+    --- PASS: TestManagedCavemanReviewedBuildIdentity/query (0.00s)
+    --- PASS: TestManagedCavemanReviewedBuildIdentity/fragment (0.00s)
+    --- PASS: TestManagedCavemanReviewedBuildIdentity/version (0.00s)
+    --- PASS: TestManagedCavemanReviewedBuildIdentity/upstream (0.00s)
+    --- PASS: TestManagedCavemanReviewedBuildIdentity/source (0.00s)
+    --- PASS: TestManagedCavemanReviewedBuildIdentity/archive (0.00s)
+    --- PASS: TestManagedCavemanReviewedBuildIdentity/digest (0.00s)
+=== RUN   TestManagedCavemanRequiresReleaseMetadata
+--- PASS: TestManagedCavemanRequiresReleaseMetadata (0.00s)
+PASS
+ok  	github.com/ivo-lopes/ivoai/internal/components	6.436s

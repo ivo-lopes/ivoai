@@ -153,53 +153,48 @@ components:
 
   - name: caveman
     role: [client]
-    validated_version: "2.1.0"
-    product_release: "v3.2.0"
-    product_revision: "e20f07e8152a0c0360f58c09e79d30ac94329991"
-    runtime_revision: "e20f07e8152a0c0360f58c09e79d30ac94329991"
-    minimum_version: "2.1.0"
+    validated_version: "4.0.2-ivoai.1"
+    minimum_version: "4.0.2-ivoai.1"
+    upstream_binary_version: "bin-v4.0.2"
+    upstream_revision: "b4531dfc05a3ef0ba93b57e8bfa5f48564a4b4d6"
+    source_sha256: "29ef4c5bccee70dbc486bae266f966b8bd53132c6e12e27e9b06b36cf35c51f4"
+    patch_sha256: "5f95e80d41d5744f16e09d534b1d56585fe746f9d5aed1e14c2586bbe953810d"
     license: Apache-2.0
-    source: "https://github.com/JuliusBrussee/caveman/releases/tag/bin-v2.1.0"
-    documentation: "https://github.com/JuliusBrussee/caveman/blob/v3.2.0/README.md"
+    source: "https://github.com/JuliusBrussee/caveman/tree/b4531dfc05a3ef0ba93b57e8bfa5f48564a4b4d6"
     architectures: [linux/amd64, linux/arm64]
-    install_strategy: managed_supply_chain_raw_binary
-    checksum_strategy: upstream_checksums_asset_sha256
-    assets:
-      linux/amd64:
-        url: "https://github.com/JuliusBrussee/caveman/releases/download/bin-v2.1.0/caveman-proxy_linux_amd64"
-        sha256: "44436d69705ad9968563c181cd11d396d6ae5eeccd8dbf228f6225d92dfadcb1"
-      linux/arm64:
-        url: "https://github.com/JuliusBrussee/caveman/releases/download/bin-v2.1.0/caveman-proxy_linux_arm64"
-        sha256: "5a881979934d51822ccf9ea13c519769fea18c52c061e14e6bd0d9f950ce760f"
+    install_strategy: immutable_supply_chain
+    payload_format: tar_gzip
+    payload_path: caveman-proxy
+    release_archive: "ivoai-caveman_linux_{arch}.tar.gz"
+    build_script: "scripts/build-managed-caveman.sh"
+    metadata: "ivoai-caveman_linux_{arch}.metadata.json"
+    signature_status: not_exposed
+    attestation_status: not_exposed
+    trust_level: checksum_only
     notes:
-      - "Only the proxy/runtime pair is managed; other upstream executables are not installed."
-      - "The upstream checksums.txt.keysig is recorded as published but is not claimed as independently verified."
-      - "Caveman 3.x and runtime bin-v2.1.0 use Apache-2.0; preserve upstream NOTICE and historical MIT attribution."
-      - "No Caveman memory, MCP, browse, learn, pixel, hooks, statusline or global setup is enabled."
-
+      - "IVOAI rebuild of Apache-2.0 source with x/net0.62.0 and compress1.20.2 security updates. Not an upstream binary or upstream signature."
+      - "Compiled release metadata binds the exact source, patch and artifact. Development builds without metadata do not install an upstream fallback."
+      - "Proxy retains CGO tree-sitter grammars with static musl and baseline amd64/no-AVX or ARMv8-a. Caveman remains default; Headroom optional; Direct fallback."
+      - "Do not run upstream installers, modify personal hooks or chain compression proxies."
   - name: caveman-mcp
     role: [client]
-    validated_version: "2.1.0"
-    runtime_revision: "e20f07e8152a0c0360f58c09e79d30ac94329991"
-    minimum_version: "2.1.0"
+    validated_version: "4.0.2-ivoai.1"
+    minimum_version: "4.0.2-ivoai.1"
     license: Apache-2.0
-    source: "https://github.com/JuliusBrussee/caveman/releases/tag/bin-v2.1.0"
-    documentation: "https://github.com/JuliusBrussee/caveman/blob/v3.2.0/README.md"
+    source: "https://github.com/JuliusBrussee/caveman/tree/b4531dfc05a3ef0ba93b57e8bfa5f48564a4b4d6"
     architectures: [linux/amd64, linux/arm64]
-    install_strategy: managed_supply_chain_raw_binary
-    checksum_strategy: upstream_checksums_asset_sha256
+    install_strategy: immutable_supply_chain
     requires_managed: caveman
-    assets:
-      linux/amd64:
-        url: "https://github.com/JuliusBrussee/caveman/releases/download/bin-v2.1.0/caveman-mcp_linux_amd64"
-        sha256: "24339e645da66fb3580e3d9410743499845748238f01d0dc8097330fcb0f9bde"
-      linux/arm64:
-        url: "https://github.com/JuliusBrussee/caveman/releases/download/bin-v2.1.0/caveman-mcp_linux_arm64"
-        sha256: "fb49b996eee5a297a674a067979931d9a28d59cbe735be2b9104e7519ef7042a"
+    payload_format: tar_gzip
+    payload_path: caveman-mcp
+    release_archive: "ivoai-caveman_linux_{arch}.tar.gz"
+    metadata: "ivoai-caveman_linux_{arch}.metadata.json"
+    signature_status: not_exposed
+    attestation_status: not_exposed
+    trust_level: checksum_only
     notes:
-      - "Local-only stdio helper used internally by WorkingContext; it is never registered automatically with the primary."
-      - "No npx, global install, durable memory, browse, learn, pixel or external service is used."
-
+      - "Same reviewed archive and identity as the proxy. Pure-Go MCP matches upstream build policy."
+      - "Internal bounded ephemeral stdio caveman_compress only; never registered as a primary tool or durable memory."
   - name: opencode
     role: [client]
     validated_version: "1.19.0"

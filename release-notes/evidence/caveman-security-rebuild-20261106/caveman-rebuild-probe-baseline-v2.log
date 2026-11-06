@@ -1,0 +1,92 @@
+# github.com/JuliusBrussee/caveman/proxy/cmd/caveman-proxy
+/go/pkg/tool/linux_amd64/link: running /zig/zig failed: exit status 1
+/zig/zig cc -target x86_64-linux-musl -mcpu=baseline -m64 -Wl,-S -o $WORK/b001/exe/a.out -static /tmp/go-link-897361434/go.o /tmp/go-link-897361434/000000.o /tmp/go-link-897361434/000001.o /tmp/go-link-897361434/000002.o /tmp/go-link-897361434/000003.o /tmp/go-link-897361434/000004.o /tmp/go-link-897361434/000005.o /tmp/go-link-897361434/000006.o /tmp/go-link-897361434/000007.o /tmp/go-link-897361434/000008.o /tmp/go-link-897361434/000009.o /tmp/go-link-897361434/000010.o /tmp/go-link-897361434/000011.o /tmp/go-link-897361434/000012.o /tmp/go-link-897361434/000013.o /tmp/go-link-897361434/000014.o /tmp/go-link-897361434/000015.o /tmp/go-link-897361434/000016.o /tmp/go-link-897361434/000017.o /tmp/go-link-897361434/000018.o /tmp/go-link-897361434/000019.o /tmp/go-link-897361434/000020.o /tmp/go-link-897361434/000021.o /tmp/go-link-897361434/000022.o /tmp/go-link-897361434/000023.o /tmp/go-link-897361434/000024.o /tmp/go-link-897361434/000025.o /tmp/go-link-897361434/000026.o /tmp/go-link-897361434/000027.o /tmp/go-link-897361434/000028.o /tmp/go-link-897361434/000029.o /tmp/go-link-897361434/000030.o /tmp/go-link-897361434/000031.o /tmp/go-link-897361434/000032.o /tmp/go-link-897361434/000033.o /tmp/go-link-897361434/000034.o /tmp/go-link-897361434/000035.o /tmp/go-link-897361434/000036.o /tmp/go-link-897361434/000037.o /tmp/go-link-897361434/000038.o /tmp/go-link-897361434/000039.o /tmp/go-link-897361434/000040.o /tmp/go-link-897361434/000041.o /tmp/go-link-897361434/000042.o /tmp/go-link-897361434/000043.o /tmp/go-link-897361434/000044.o /tmp/go-link-897361434/000045.o /tmp/go-link-897361434/000046.o /tmp/go-link-897361434/000047.o /tmp/go-link-897361434/000048.o /tmp/go-link-897361434/000049.o /tmp/go-link-897361434/000050.o /tmp/go-link-897361434/000051.o /tmp/go-link-897361434/000052.o /tmp/go-link-897361434/000053.o /tmp/go-link-897361434/000054.o /tmp/go-link-897361434/000055.o /tmp/go-link-897361434/000056.o /tmp/go-link-897361434/000057.o /tmp/go-link-897361434/000058.o /tmp/go-link-897361434/000059.o /tmp/go-link-897361434/000060.o /tmp/go-link-897361434/000061.o /tmp/go-link-897361434/000062.o /tmp/go-link-897361434/000063.o -O2 -g -O2 -g -O2 -g -O2 -g -O2 -g -O2 -g -O2 -g -O2 -g -O2 -g -O2 -g -O2 -g -lpthread -static -s
+ld.lld: error: undefined symbol: __ubsan_handle_type_mismatch_v1
+>>> referenced by get_changed_ranges.c:36
+>>>               /tmp/go-link-897361434/000005.o:(ts_range_array_intersects)
+>>> referenced by get_changed_ranges.c:36
+>>>               /tmp/go-link-897361434/000005.o:(ts_range_array_intersects)
+>>> referenced by get_changed_ranges.c:37
+>>>               /tmp/go-link-897361434/000005.o:(ts_range_array_intersects)
+>>> referenced 19223 more times
+
+ld.lld: error: undefined symbol: __ubsan_handle_pointer_overflow
+>>> referenced by get_changed_ranges.c:37
+>>>               /tmp/go-link-897361434/000005.o:(ts_range_array_intersects)
+>>> referenced by node.c:41
+>>>               /tmp/go-link-897361434/000008.o:(ts_node_start_point)
+>>> referenced by node.c:41
+>>>               /tmp/go-link-897361434/000008.o:(ts_node_start_point)
+>>> referenced 1351 more times
+
+ld.lld: error: undefined symbol: __ubsan_handle_builtin_unreachable
+>>> referenced by alloc.c:9
+>>>               /tmp/go-link-897361434/000003.o:(ts_malloc_default)
+>>> referenced by alloc.c:18
+>>>               /tmp/go-link-897361434/000003.o:(ts_calloc_default)
+>>> referenced by alloc.c:27
+>>>               /tmp/go-link-897361434/000003.o:(ts_realloc_default)
+>>> referenced 101 more times
+
+ld.lld: error: undefined symbol: __ubsan_handle_out_of_bounds
+>>> referenced by node.c:37
+>>>               /tmp/go-link-897361434/000008.o:(ts_node_start_byte)
+>>> referenced by node.c:41
+>>>               /tmp/go-link-897361434/000008.o:(ts_node_start_point)
+>>> referenced by node.c:41
+>>>               /tmp/go-link-897361434/000008.o:(ts_node_start_point)
+>>> referenced 524 more times
+
+ld.lld: error: undefined symbol: __ubsan_handle_load_invalid_value
+>>> referenced by lexer.c:213
+>>>               /tmp/go-link-897361434/000007.o:(ts_lexer__advance)
+>>> referenced by get_changed_ranges.c:62
+>>>               /tmp/go-link-897361434/000005.o:(ts_range_array_get_changed_ranges)
+>>> referenced by cgo-gcc-prolog:88
+>>>               /tmp/go-link-897361434/000001.o:(_cgo_70063026d59b_Cfunc_stderr_logger_new)
+>>> referenced 5870 more times
+
+ld.lld: error: undefined symbol: __ubsan_handle_add_overflow
+>>> referenced by pthread_unix.c:134
+>>>               /tmp/go-link-897361434/000063.o:(_cgo_try_pthread_create)
+>>> referenced by pthread_unix.c:125
+>>>               /tmp/go-link-897361434/000063.o:(_cgo_try_pthread_create)
+>>> referenced by language.c:164
+>>>               /tmp/go-link-897361434/000006.o:(ts_language_field_id_for_name)
+>>> referenced 37 more times
+
+ld.lld: error: undefined symbol: __ubsan_handle_mul_overflow
+>>> referenced by pthread_unix.c:134
+>>>               /tmp/go-link-897361434/000063.o:(_cgo_try_pthread_create)
+>>> referenced by pthread_unix.c:134
+>>>               /tmp/go-link-897361434/000063.o:(_cgo_try_pthread_create)
+>>> referenced by subtree.c:1016
+>>>               /tmp/go-link-897361434/000012.o:(ts_subtree__print_dot_graph)
+
+ld.lld: error: undefined symbol: __ubsan_handle_shift_out_of_bounds
+>>> referenced by gcc_sigaction.c:56
+>>>               /tmp/go-link-897361434/000058.o:(x_cgo_sigaction)
+>>> referenced by gcc_sigaction.c:79
+>>>               /tmp/go-link-897361434/000058.o:(x_cgo_sigaction)
+>>> referenced by unicode.h:32 (././unicode.h:32)
+>>>               /tmp/go-link-897361434/000007.o:(ts_decode_utf8)
+>>> referenced 15 more times
+
+ld.lld: error: undefined symbol: __ubsan_handle_sub_overflow
+>>> referenced by unicode.h:32 (././unicode.h:32)
+>>>               /tmp/go-link-897361434/000007.o:(ts_decode_utf8)
+>>> referenced by unicode.h:32 (././unicode.h:32)
+>>>               /tmp/go-link-897361434/000007.o:(ts_decode_utf8)
+>>> referenced by unicode.h:32 (././unicode.h:32)
+>>>               /tmp/go-link-897361434/000007.o:(ts_decode_utf8)
+>>> referenced 42 more times
+
+ld.lld: error: undefined symbol: __ubsan_handle_divrem_overflow
+>>> referenced by clock.h:84 (././clock.h:84)
+>>>               /tmp/go-link-897361434/000009.o:(clock_after)
+>>> referenced by clock.h:85 (././clock.h:85)
+>>>               /tmp/go-link-897361434/000009.o:(clock_after)
+>>> referenced by scanner.c:136
+>>>               /tmp/go-link-897361434/000022.o:(tree_sitter_cpp_external_scanner_deserialize)
+>>> referenced 32 more times
+
