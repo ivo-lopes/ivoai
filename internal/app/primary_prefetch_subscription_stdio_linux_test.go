@@ -52,7 +52,7 @@ func prefetchSubscriptionOfficialStdio(plan prefetchSubscriptionPlan) prefetchSu
 // Admission and launch share the production's explicitly reviewed pair table.
 // Unknown versions and mixed executable/companion pairs fail before any child.
 func prefetchReviewedSubscriptionPin(scope prefetchDirectScope) (prefetchSubscriptionExecutablePin, bool) {
-	for _, version := range []string{"0.166.0", "0.162.1"} {
+	for _, version := range []string{"0.167.0", "0.166.0", "0.162.1"} {
 		main, companion, ok := reviewedAdaptiveDigests(version, runtime.GOOS+"/"+runtime.GOARCH)
 		pin := prefetchSubscriptionExecutablePin{main: scope.executable, companion: filepath.Join(filepath.Dir(scope.executable), "codex-code-mode-host"), mainSHA: main, companionSHA: companion}
 		if ok && prefetchSubscriptionFileMatches(pin.main, pin.mainSHA) && prefetchSubscriptionFileMatches(pin.companion, pin.companionSHA) {

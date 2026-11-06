@@ -83,13 +83,13 @@ const (
 // validated versions before publishing, while keeping the binary self-contained.
 func DefaultCatalog() []Spec {
 	catalog := []Spec{
-		{Name: "codex", Executable: "codex", Version: "0.166.0", Strategy: StrategyBinary, Assets: map[string]Asset{
-			"linux/amd64": {URL: "https://github.com/openai/codex/releases/download/rust-v0.166.0/codex-x86_64-unknown-linux-musl.tar.gz", SHA256: "a0bf572d2f93f056c6712a6da348e96078dc84f3885fd7be67807ef389cb3978"},
-			"linux/arm64": {URL: "https://github.com/openai/codex/releases/download/rust-v0.166.0/codex-aarch64-unknown-linux-musl.tar.gz", SHA256: "94eb707605ec2646b2e05b7edf7c4e7b3ccf02b16237c34ae9beb8cfb7f810a9"},
+		{Name: "codex", Executable: "codex", Version: "0.167.0", Strategy: StrategyBinary, Assets: map[string]Asset{
+			"linux/amd64": {URL: "https://github.com/openai/codex/releases/download/rust-v0.167.0/codex-x86_64-unknown-linux-musl.tar.gz", SHA256: "9d64836106d5b374e90ee4454c7ebcde7ca7106558bd7e41a34b9f26ebda251a"},
+			"linux/arm64": {URL: "https://github.com/openai/codex/releases/download/rust-v0.167.0/codex-aarch64-unknown-linux-musl.tar.gz", SHA256: "843489acb4d4b1079745c36b03c5963b887b83155af208fd53584e33ee8eb281"},
 		}},
-		{Name: "codex-code-mode-host", Executable: "codex-code-mode-host", Version: "0.166.0", Strategy: StrategyBinary, RequiresManaged: "codex", NoVersionProbe: true, Assets: map[string]Asset{
-			"linux/amd64": {URL: "https://github.com/openai/codex/releases/download/rust-v0.166.0/codex-code-mode-host-x86_64-unknown-linux-musl.tar.gz", SHA256: "7588334fd47bc4003d970b70dfd4d1e4578491b1e9baa72976a4c2d7e97590da"},
-			"linux/arm64": {URL: "https://github.com/openai/codex/releases/download/rust-v0.166.0/codex-code-mode-host-aarch64-unknown-linux-musl.tar.gz", SHA256: "ac98d1f878e353a16cba711fd47bfef2f6c814109bdd819ee2b6b6d6a19701e7"},
+		{Name: "codex-code-mode-host", Executable: "codex-code-mode-host", Version: "0.167.0", Strategy: StrategyBinary, RequiresManaged: "codex", NoVersionProbe: true, Assets: map[string]Asset{
+			"linux/amd64": {URL: "https://github.com/openai/codex/releases/download/rust-v0.167.0/codex-code-mode-host-x86_64-unknown-linux-musl.tar.gz", SHA256: "b5074d5dd64643b2c073927e494a588eff31c1f5a27f12c1e2c45f9a6cf07dd4"},
+			"linux/arm64": {URL: "https://github.com/openai/codex/releases/download/rust-v0.167.0/codex-code-mode-host-aarch64-unknown-linux-musl.tar.gz", SHA256: "6e99948fa20ca816a01f222a56afa261b321e00cbed611d76bb92c765fd11ec6"},
 		}},
 		{Name: "claude-code", Executable: "claude", Version: "2.1.318", Strategy: StrategyBinary, Assets: map[string]Asset{
 			"linux/amd64": {URL: "https://github.com/anthropics/claude-code/releases/download/v2.1.318/claude-linux-x64.tar.gz", SHA256: "e6d426ca0c123f61fad58a361da0329f2a93cd206bc87040ed8d9576dd9eb583"},

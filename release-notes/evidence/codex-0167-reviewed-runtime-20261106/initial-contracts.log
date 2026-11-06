@@ -1,0 +1,6 @@
+ok  	github.com/ivo-lopes/ivoai/internal/components	0.005s
+--- FAIL: TestAdaptiveReviewedRuntimeVersionsRemainExact (0.00s)
+    adaptive_runtime_current_test.go:65: unreviewed version admitted
+FAIL
+FAIL	github.com/ivo-lopes/ivoai/internal/app	0.010s
+FAIL
