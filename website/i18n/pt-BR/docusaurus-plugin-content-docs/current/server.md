@@ -296,3 +296,48 @@ seguida. Restore faz merge dos arquivos validados nas raízes gerenciadas e não
 arquivos stale ausentes do archive. Antes do restart, reaplica ownership dedicado
 somente às árvores restauradas e validadas, sem percorrer caches normais das
 aplicações.
+
+## Atualização protegida das dependências
+
+Quando existem dados e os pins dos runtimes/modelo mudam, `server setup` recusa a
+migração automática. O operador precisa iniciar explicitamente:
+
+```sh
+sudo ivoai server upgrade
+sudo ivoai server upgrade --backup-output /var/lib/ivoai/backups/pre-upgrade.tar.gz
+```
+
+O painel administrativo oferece as mesmas operações, com privilégio de sistema
+já existente, escopo de gestão, preview/confirmacão e prevenção de replay. HTTP
+não eleva para root e não recebe comandos arbitrários.
+
+O Core baixa somente imagens revisadas e fixadas por digest antes da parada.
+Depois obtém lock de kernel, para os serviços, executa o Backup existente e
+preserva separadamente o índice Qdrant. Runtimes anteriores e candidatos precisam
+abrir cópias isoladas e passar leitura autenticada/recusa sem autenticação, sem
+rede externa e com UID/GID de serviço preservados. A wiki autoritativa não pode
+mudar. Só então os novos assets são instalados e os serviços reiniciados.
+Configurações operacionais existentes são preservadas.
+
+As rotas certificadas são ai-memory 2.6.3 → 3.4.2 e Qdrant 1.19.2 → 1.20.0.
+Outros pins anteriores exigem certificação específica e são recusados. O Docker
+precisa anunciar isolamento cgroup funcional para memória/CPU/PIDs; o Core não
+reconfigura silenciosamente o daemon pertencente ao operador.
+
+Guarde juntos o backup, o snapshot `.qdrant` e o recibo privado `.upgrade.json`.
+Uma etapa recusada deixa os serviços parados e preserva os dados originais. Após
+falha de ativação, não troque somente a imagem para uma versão anterior:
+
+```sh
+sudo ivoai server upgrade --rollback-receipt /var/lib/ivoai/backups/pre-upgrade.tar.gz.upgrade.json
+```
+
+Essa restauração explícita substitui o estado atual, verifica hashes/permissões,
+preserva o índice corrente para inspeção e restaura dados, índice e pins/units
+anteriores antes de reiniciar. A whitelist de configuração executável do Core
+Restore não foi ampliada. Falhas não causam repetição automática.
+
+A prova real usou Docker rootless descartável, não systemd de produção. Como o
+daemon privado informou cgroup `none`, não se alegou aplicação de limites de
+CPU/RAM. Houve execução nativa AMD64 de imagens oficiais e testes emulados sem
+AVX/AVX2 e ARM64 Cortex-A53. Emulação ARM não certifica hardware ARM nativo.

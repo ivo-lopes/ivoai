@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -47,7 +48,7 @@ func (r *runner) upgrade(ctx context.Context, layout server.Layout, manager serv
 	manager.ContainerUser = identity
 	if *rollback != "" {
 		return server.WithDependencyMutationLock(ctx, layout, func(locked context.Context) error {
-			return r.withQuiescedServices(locked, manager, func() error {
+			operationError := r.withQuiescedServices(locked, manager, func() error {
 				if err := manager.RollbackDependencies(locked, *rollback); err != nil {
 					return err
 				}
@@ -56,6 +57,17 @@ func (r *runner) upgrade(ctx context.Context, layout server.Layout, manager serv
 				}
 				return ensureServiceOwnership(layout)
 			}, false)
+			if operationError == nil {
+				operationError = waitForServicesStable(locked, 20*time.Second, 500*time.Millisecond, 2*time.Second, manager.Status)
+			}
+			if operationError != nil {
+				recoveryCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+				defer cancel()
+				if stopErr := manager.Stop(recoveryCtx); stopErr != nil {
+					return errors.Join(operationError, errors.New("rollback service stop failed; operator inspection required"))
+				}
+			}
+			return operationError
 		})
 	}
 	if *backup == "" {
@@ -66,6 +78,9 @@ func (r *runner) upgrade(ctx context.Context, layout server.Layout, manager serv
 		return err
 	}
 	image := server.MemoryImageReference()
+	if err := requireDockerResourceIsolation(ctx); err != nil {
+		return err
+	}
 	// Prefetch the immutable image before stopping services. No data is mounted.
 	for _, reference := range []string{image, server.QdrantImageReference()} {
 		if err := runUpgradeDocker(ctx, "pull", reference); err != nil {
@@ -77,12 +92,7 @@ func (r *runner) upgrade(ctx context.Context, layout server.Layout, manager serv
 	err = server.WithDependencyMutationLock(ctx, layout, func(locked context.Context) error {
 		operationError := r.withQuiescedServices(locked, manager, func() error {
 			var operationErr error
-			receipt, operationErr = manager.UpgradeDependencies(locked, *backup, func(validationCtx context.Context, copyLayout server.Layout) error {
-				if err := newDockerDependencyValidator(binary, identity, image)(validationCtx, copyLayout); err != nil {
-					return err
-				}
-				return newDockerQdrantValidator(binary, identity, server.QdrantImageReference())(validationCtx, copyLayout)
-			})
+			receipt, operationErr = manager.UpgradeDependencies(locked, *backup, newDockerUpgradeValidator(binary, identity))
 			if receipt != "" {
 				fmt.Fprintln(r.out, "Dependency rollback receipt: "+receipt)
 			}
@@ -91,6 +101,9 @@ func (r *runner) upgrade(ctx context.Context, layout server.Layout, manager serv
 			}
 			return ensureServiceOwnership(layout)
 		}, false)
+		if operationError == nil {
+			operationError = waitForServicesStable(locked, 20*time.Second, 500*time.Millisecond, 2*time.Second, manager.Status)
+		}
 		if operationError != nil && receipt != "" {
 			recoveryCtx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 			defer cancel()
@@ -122,7 +135,7 @@ func runUpgradeDocker(ctx context.Context, args ...string) error {
 }
 
 func newDockerDependencyValidator(probeBinary, identity, image string) server.DependencyValidator {
-	return func(ctx context.Context, copyLayout server.Layout) error {
+	return func(ctx context.Context, copyLayout server.Layout) (validationErr error) {
 		if _, _, found := strings.Cut(identity, ":"); !found {
 			return errors.New("invalid non-root container identity")
 		}
@@ -134,6 +147,10 @@ func newDockerDependencyValidator(probeBinary, identity, image string) server.De
 		gid, gerr := strconv.Atoi(parts[1])
 		if uerr != nil || gerr != nil || uid <= 0 || gid < 0 {
 			return errors.New("validator requires a non-root service identity")
+		}
+		beforeWiki, err := memoryWikiDigest(ctx, copyLayout.MemoryDir)
+		if err != nil {
+			return err
 		}
 		if err := secureChownTree(copyLayout.MemoryDir, uid, gid); err != nil {
 			return err
@@ -155,6 +172,9 @@ func newDockerDependencyValidator(probeBinary, identity, image string) server.De
 			return err
 		}
 		_, copyErr := io.Copy(staged, probe)
+		if copyErr == nil {
+			copyErr = staged.Chmod(0755)
+		}
 		closeErr := staged.Close()
 		if copyErr != nil {
 			return copyErr
@@ -173,16 +193,20 @@ func newDockerDependencyValidator(probeBinary, identity, image string) server.De
 			return err
 		}
 		defer os.Remove(credentials)
-		cleanup := func() {
+		cleanup := func() error {
 			stopCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
-			_ = runUpgradeDocker(stopCtx, "rm", "--force", name)
+			return runUpgradeDocker(stopCtx, "rm", "--force", name)
 		}
-		defer cleanup()
+		defer func() {
+			if err := cleanup(); err != nil && validationErr == nil {
+				validationErr = errors.New("candidate cleanup failed; runtime assets must not be installed")
+			}
+		}()
 		if strings.ContainsAny(copyLayout.MemoryDir, ",\n\r") || strings.ContainsAny(stagedBinary, ",\n\r") {
 			return errors.New("unsupported validation mount path")
 		}
-		err = runUpgradeDocker(ctx, "run", "--detach", "--name", name, "--network", "none", "--read-only", "--cap-drop", "ALL", "--security-opt", "no-new-privileges:true", "--pids-limit", "64", "--memory", "512m", "--cpus", "1", "--user", identity, "--mount", "type=bind,src="+copyLayout.MemoryDir+",dst=/data", "--mount", "type=bind,src="+stagedBinary+",dst=/ivoai-upgrade-probe,readonly", "--tmpfs", "/tmp:rw,noexec,nosuid,size=16m", "--env-file", credentials, "--entrypoint", "/usr/local/bin/ai-memory", image, "--data-dir", "/data", "serve", "--transport", "http", "--bind", "127.0.0.1:49374", "--no-watcher")
+		err = runUpgradeDocker(ctx, "run", "--detach", "--name", name, "--network", "none", "--read-only", "--cap-drop", "ALL", "--security-opt", "no-new-privileges:true", "--pids-limit", "64", "--ulimit", "nproc=512:512", "--ulimit", "nofile=65536:65536", "--memory", "512m", "--cpus", "1", "--user", identity, "--mount", "type=bind,src="+copyLayout.MemoryDir+",dst=/data", "--mount", "type=bind,src="+stagedBinary+",dst=/ivoai-upgrade-probe,readonly", "--tmpfs", "/tmp:rw,noexec,nosuid,size=16m", "--env-file", credentials, "--entrypoint", "/usr/local/bin/ai-memory", image, "--data-dir", "/data", "serve", "--transport", "http", "--bind", "127.0.0.1:49374", "--no-watcher")
 		if err != nil {
 			return err
 		}
@@ -190,7 +214,17 @@ func newDockerDependencyValidator(probeBinary, identity, image string) server.De
 		defer cancel()
 		for {
 			if err := runUpgradeDocker(waitCtx, "exec", name, "/ivoai-upgrade-probe", "server", "internal-memory-upgrade-probe"); err == nil {
+				if err := runUpgradeDocker(waitCtx, "stop", "--time", "5", name); err != nil {
+					return errors.New("candidate could not stop normally after validation")
+				}
+				afterWiki, err := memoryWikiDigest(ctx, copyLayout.MemoryDir)
+				if err != nil || afterWiki != beforeWiki {
+					return errors.New("candidate changed authoritative wiki content during copy validation")
+				}
 				return nil
+			}
+			if running, err := upgradeContainerRunning(waitCtx, name); err != nil || !running {
+				return errors.New("validation runtime exited or became unavailable before the authenticated store probe")
 			}
 			select {
 			case <-waitCtx.Done():
@@ -282,7 +316,7 @@ func internalMemoryUpgradeProbe(ctx context.Context) error {
 }
 
 func newDockerQdrantValidator(probeBinary, identity, image string) server.DependencyValidator {
-	return func(ctx context.Context, copyLayout server.Layout) error {
+	return func(ctx context.Context, copyLayout server.Layout) (validationErr error) {
 		parts := strings.Split(identity, ":")
 		if len(parts) != 2 {
 			return errors.New("invalid qdrant validation identity")
@@ -315,9 +349,11 @@ func newDockerQdrantValidator(probeBinary, identity, image string) server.Depend
 		defer func() {
 			cleanup, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 			defer cancel()
-			_ = runUpgradeDocker(cleanup, "rm", "--force", name)
+			if err := runUpgradeDocker(cleanup, "rm", "--force", name); err != nil && validationErr == nil {
+				validationErr = errors.New("candidate cleanup failed; runtime assets must not be installed")
+			}
 		}()
-		args := []string{"run", "--detach", "--name", name, "--network", "none", "--read-only", "--cap-drop", "ALL", "--security-opt", "no-new-privileges:true", "--pids-limit", "128", "--memory", "1g", "--cpus", "1", "--user", identity, "--env-file", credentials, "--tmpfs", "/tmp:rw,noexec,nosuid,size=64m"}
+		args := []string{"run", "--detach", "--name", name, "--network", "none", "--read-only", "--cap-drop", "ALL", "--security-opt", "no-new-privileges:true", "--pids-limit", "128", "--ulimit", "nproc=512:512", "--ulimit", "nofile=65536:65536", "--memory", "1g", "--cpus", "1", "--user", identity, "--env-file", credentials, "--tmpfs", "/tmp:rw,noexec,nosuid,size=64m"}
 		for _, mount := range []struct{ source, target string }{{copyLayout.QdrantDir, "/qdrant/storage"}, {copyLayout.QdrantInitDir, "/qdrant/init"}, {copyLayout.QdrantSnapshotsDir, "/qdrant/snapshots"}, {stagedBinary, "/ivoai-upgrade-probe"}} {
 			if strings.ContainsAny(mount.source, ",\n\r") {
 				return errors.New("unsupported qdrant validation mount path")
@@ -336,7 +372,13 @@ func newDockerQdrantValidator(probeBinary, identity, image string) server.Depend
 		defer cancel()
 		for {
 			if err := runUpgradeDocker(waitCtx, "exec", name, "/ivoai-upgrade-probe", "server", "internal-qdrant-upgrade-probe"); err == nil {
+				if err := runUpgradeDocker(waitCtx, "stop", "--time", "5", name); err != nil {
+					return errors.New("Qdrant candidate could not stop after validation")
+				}
 				return nil
+			}
+			if running, err := upgradeContainerRunning(waitCtx, name); err != nil || !running {
+				return errors.New("validation runtime exited or became unavailable before the authenticated store probe")
 			}
 			select {
 			case <-waitCtx.Done():
@@ -407,4 +449,140 @@ func internalQdrantUpgradeProbe(ctx context.Context) error {
 		}
 	}
 	return nil
+}
+
+func memoryWikiDigest(ctx context.Context, root string) (string, error) {
+	digest := sha256.New()
+	wiki := filepath.Join(root, "wiki")
+	err := filepath.WalkDir(wiki, func(path string, d os.DirEntry, walkErr error) error {
+		if errors.Is(walkErr, os.ErrNotExist) && path == wiki {
+			return nil
+		}
+		if walkErr != nil {
+			return walkErr
+		}
+		if err := ctx.Err(); err != nil {
+			return err
+		}
+		if d.Type()&os.ModeSymlink != 0 {
+			return errors.New("wiki copy contains an unsupported link")
+		}
+		if d.IsDir() || !strings.HasSuffix(d.Name(), ".md") {
+			return nil
+		}
+		relative, err := filepath.Rel(wiki, path)
+		if err != nil {
+			return err
+		}
+		fmt.Fprint(digest, relative, "\x00")
+		file, err := os.Open(path)
+		if err != nil {
+			return err
+		}
+		_, copyErr := io.Copy(digest, file)
+		closeErr := file.Close()
+		if copyErr != nil {
+			return copyErr
+		}
+		if closeErr != nil {
+			return closeErr
+		}
+		fmt.Fprint(digest, "\x00")
+		return nil
+	})
+	if err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(digest.Sum(nil)), nil
+}
+
+func requireDockerResourceIsolation(ctx context.Context) error {
+	command := exec.CommandContext(ctx, "docker", "info", "--format", `{"driver":{{json .CgroupDriver}},"memory":{{.MemoryLimit}},"cpu":{{.CPUCfsQuota}},"pids":{{.PidsLimit}}}`)
+	var output bytes.Buffer
+	command.Stdout = &output
+	command.Stderr = io.Discard
+	if err := command.Run(); err != nil {
+		return errors.New("dependency upgrade could not verify Docker resource isolation")
+	}
+	if !dockerResourceIsolationSupported(output.Bytes()) {
+		return errors.New("dependency upgrade requires working Docker cgroup memory/CPU/PID isolation; operator configuration is required before changing stores")
+	}
+	return nil
+}
+
+func dockerResourceIsolationSupported(body []byte) bool {
+	var info struct {
+		Driver string `json:"driver"`
+		Memory bool   `json:"memory"`
+		CPU    bool   `json:"cpu"`
+		PIDs   bool   `json:"pids"`
+	}
+	if len(body) > 4096 || json.Unmarshal(body, &info) != nil {
+		return false
+	}
+	return (info.Driver == "systemd" || info.Driver == "cgroupfs") && info.Memory && info.CPU && info.PIDs
+}
+
+const previousMemoryImage = "akitaonrails/ai-memory@sha256:15178d3fc5bd67439a5b9780b2cf58af476943abea2487514a4c5d6ec18291ee"
+const previousQdrantImage = "qdrant/qdrant@sha256:b7b0444c4c351c970b98e90a6f89c2ee4287c65b44e52b4cb503fa5b2aa927ad"
+
+// Validate the old runtime on the backup copy too. This rejects a partially
+// migrated store already incompatible with its installed pre-upgrade image,
+// instead of issuing a rollback receipt that could not actually start.
+func newDockerUpgradeValidator(binary, identity string) server.DependencyValidator {
+	return func(ctx context.Context, stage server.Layout) error {
+		old, err := platform.ReadRegularFile(filepath.Join(stage.ConfigDir, ".dependency-baseline-compose"), 1<<20)
+		if err != nil {
+			return errors.New("backup runtime identity unavailable")
+		}
+		images := map[string]string{}
+		service := ""
+		for _, line := range strings.Split(string(old), "\n") {
+			if strings.HasPrefix(line, "  ") && !strings.HasPrefix(line, "    ") && strings.HasSuffix(line, ":") {
+				service = strings.TrimSuffix(strings.TrimSpace(line), ":")
+			}
+			if strings.HasPrefix(strings.TrimSpace(line), "image:") {
+				images[service] = strings.TrimSpace(strings.TrimPrefix(strings.TrimSpace(line), "image:"))
+			}
+		}
+		if (images["ai-memory"] != previousMemoryImage && images["ai-memory"] != server.MemoryImageReference()) || (images["qdrant"] != previousQdrantImage && images["qdrant"] != server.QdrantImageReference()) {
+			return errors.New("previous runtime pins require separate certification before automatic upgrade")
+		}
+		for _, ref := range []string{images["ai-memory"], images["qdrant"]} {
+			if err := runUpgradeDocker(ctx, "image", "inspect", ref); err != nil {
+				return errors.New("verified prior runtime image is not locally available for rollback validation")
+			}
+		}
+		if err := newDockerDependencyValidator(binary, identity, images["ai-memory"])(ctx, stage); err != nil {
+			return fmt.Errorf("prior memory runtime cannot recover the backup copy: %w", err)
+		}
+		if err := newDockerQdrantValidator(binary, identity, images["qdrant"])(ctx, stage); err != nil {
+			return fmt.Errorf("prior vector runtime cannot recover the snapshot: %w", err)
+		}
+		if err := os.Remove(filepath.Join(stage.InstallDir, "ivoai-upgrade-probe")); err != nil {
+			return err
+		}
+		if err := newDockerDependencyValidator(binary, identity, server.MemoryImageReference())(ctx, stage); err != nil {
+			return err
+		}
+		return newDockerQdrantValidator(binary, identity, server.QdrantImageReference())(ctx, stage)
+	}
+}
+
+func upgradeContainerRunning(ctx context.Context, name string) (bool, error) {
+	command := exec.CommandContext(ctx, "docker", "inspect", "--format", "{{.State.Running}}", name)
+	var out bytes.Buffer
+	command.Stdout = &out
+	command.Stderr = io.Discard
+	if err := command.Run(); err != nil {
+		return false, err
+	}
+	switch strings.TrimSpace(out.String()) {
+	case "true":
+		return true, nil
+	case "false":
+		return false, nil
+	default:
+		return false, errors.New("runtime state unavailable")
+	}
 }

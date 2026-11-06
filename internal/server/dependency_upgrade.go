@@ -219,6 +219,9 @@ func (m Manager) upgradeDependencies(ctx context.Context, backup string, validat
 	if err := Restore(copyLayout, backup); err != nil {
 		return "", fmt.Errorf("restore upgrade validation copy: %w", err)
 	}
+	if err := platform.AtomicWritePrivate(receipt.Assets["compose.yaml"].Content, filepath.Join(copyLayout.ConfigDir, ".dependency-baseline-compose")); err != nil {
+		return "", err
+	}
 	if err := os.Remove(copyLayout.QdrantDir); err != nil {
 		return "", err
 	}
@@ -235,7 +238,7 @@ func (m Manager) upgradeDependencies(ctx context.Context, backup string, validat
 	if err := writeDependencyReceipt(path, receipt); err != nil {
 		return "", err
 	}
-	if err := m.setup(ctx, true); err != nil {
+	if err := m.setup(ctx); err != nil {
 		return path, err
 	}
 	receipt.State = "assets_installed"

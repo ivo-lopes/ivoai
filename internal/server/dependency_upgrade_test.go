@@ -75,6 +75,10 @@ func TestDependencyUpgradeValidatesCopyAndRollbackRestoresDataIndexAndPins(t *te
 	if receipt == "" {
 		t.Fatal("missing coordinated rollback receipt")
 	}
+	if err := m.Setup(context.Background()); err != nil {
+		t.Fatal("ordinary setup after verified upgrade failed", err)
+	}
+	assertFile(t, filepath.Join(m.Layout.ConfigDir, "server.toml"), "custom = true\n")
 	if err := os.WriteFile(filepath.Join(m.Layout.MemoryDir, "memory.db"), []byte("activated-forward-schema"), 0600); err != nil {
 		t.Fatal(err)
 	}
@@ -167,5 +171,24 @@ func TestDependencyReceiptRejectsUnsupportedAssetsAndPublicPermissions(t *testin
 	}
 	if err := m.RollbackDependencies(context.Background(), receipt); err == nil {
 		t.Fatal("arbitrary operational path accepted")
+	}
+}
+
+func TestDependencyLockContextCannotOutliveItsKernelLease(t *testing.T) {
+	m, _, _ := stoppedUpgradeFixture(t)
+	var escaped context.Context
+	if err := WithDependencyMutationLock(context.Background(), m.Layout, func(held context.Context) error { escaped = held; return nil }); err != nil {
+		t.Fatal(err)
+	}
+	if err := WithDependencyMutationLock(context.Background(), m.Layout, func(context.Context) error {
+		if err := WithDependencyMutationLock(escaped, m.Layout, func(context.Context) error {
+			t.Fatal("expired lock capability bypassed another active transaction")
+			return nil
+		}); err == nil {
+			t.Fatal("expired context still carried authority")
+		}
+		return nil
+	}); err != nil {
+		t.Fatal(err)
 	}
 }

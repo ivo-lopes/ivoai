@@ -49,7 +49,7 @@ services:
         gw_priority: 1
 
   ai-memory:
-    image: akitaonrails/ai-memory@sha256:db5103a11dbdd4b668d05ebc90c13832bc3881f719d5113ad8a0a86447a6b74e
+    image: akitaonrails/ai-memory@sha256:cf09de9f40d8d4f5214698826530e61e9061ad5e02001defc8a77d42ab4e50b7
     restart: unless-stopped
     command: ["serve", "--transport", "http", "--bind", "0.0.0.0:49374"]
     user: "1000:1000"

@@ -231,26 +231,26 @@ components:
 
   - name: ai-memory
     role: [client, server]
-    validated_version: "3.3.3"
-    minimum_version: "3.3.3"
+    validated_version: "3.4.2"
+    minimum_version: "3.4.2"
     license: MIT
-    source: "https://github.com/akitaonrails/ai-memory/releases/tag/v3.3.3"
-    changelog: "https://github.com/akitaonrails/ai-memory/blob/v3.3.3/CHANGELOG.md"
+    source: "https://github.com/akitaonrails/ai-memory/releases/tag/v3.4.2"
+    changelog: "https://github.com/akitaonrails/ai-memory/blob/v3.4.2/CHANGELOG.md"
     architectures: [linux/amd64, linux/arm64]
     install_strategy: github_release_asset
     checksum_strategy: adjacent_upstream_sha256
     assets:
       linux/amd64:
-        url: "https://github.com/akitaonrails/ai-memory/releases/download/v3.3.3/ai-memory-linux-x86_64.tar.gz"
-        sha256: "726616b3e389beeef073001411603154c512812d49a2a6b1195e93ad25579a14"
+        url: "https://github.com/akitaonrails/ai-memory/releases/download/v3.4.2/ai-memory-linux-x86_64.tar.gz"
+        sha256: "15a4f4a346a27e6fd63a36d1b3de23c5cbe142b80b3bce561e21b1f225a1e645"
       linux/arm64:
-        url: "https://github.com/akitaonrails/ai-memory/releases/download/v3.3.3/ai-memory-linux-aarch64.tar.gz"
-        sha256: "bc8692154e39dcd432dd8dc006ebc89daa1383927d331fe58c87a339c177ed82"
+        url: "https://github.com/akitaonrails/ai-memory/releases/download/v3.4.2/ai-memory-linux-aarch64.tar.gz"
+        sha256: "164f7c38bb9bafca218dd958c3c60febcd5d2f5200ad138c6f128576cedebfb6"
     server_image:
-      reference: "akitaonrails/ai-memory@sha256:db5103a11dbdd4b668d05ebc90c13832bc3881f719d5113ad8a0a86447a6b74e"
-      tag_for_humans: "3.3.3"
+      reference: "akitaonrails/ai-memory@sha256:cf09de9f40d8d4f5214698826530e61e9061ad5e02001defc8a77d42ab4e50b7"
+      tag_for_humans: "3.4.2"
     notes:
-      - "Client and server are pinned to the reviewed 3.3.3 release; existing stores require explicit stopped-service backup, isolated-copy validation and coordinated runtime/data rollback; ordinary setup never migrates them."
+      - "Client and server are pinned to the reviewed 3.4.2 release; existing stores require explicit stopped-service backup, isolated-copy validation and coordinated runtime/data rollback; ordinary setup never migrates them."
       - "Hooks must spool/best-effort and always allow the primary agent to continue when the server is offline."
 
   - name: graft

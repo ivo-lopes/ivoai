@@ -127,11 +127,11 @@ func (m Manager) Setup(ctx context.Context) error {
 		if err := m.CheckDependencyUpgrade(); err != nil {
 			return err
 		}
-		return m.setup(locked, false)
+		return m.setup(locked)
 	})
 }
 
-func (m Manager) setup(ctx context.Context, verifiedUpgrade bool) error {
+func (m Manager) setup(ctx context.Context) error {
 	if err := ctx.Err(); err != nil {
 		return err
 	}
@@ -164,8 +164,13 @@ func (m Manager) setup(ctx context.Context, verifiedUpgrade bool) error {
 		filepath.Join(m.Layout.SystemdDir, "ivoai-docs.service"):         {DocsUnit, 0o644},
 		filepath.Join(m.Layout.SystemdDir, "ivoai-dependencies.service"): {dependenciesUnit, 0o644},
 	}
-	if verifiedUpgrade {
-		delete(assets, filepath.Join(m.Layout.ConfigDir, "server.toml"))
+	configurationPath := filepath.Join(m.Layout.ConfigDir, "server.toml")
+	if _, err := readUpgradeFile(configurationPath, 1<<20); err == nil {
+		// Operational settings belong to the operator. Upgrade and later ordinary
+		// setup reconcile runtime assets without resetting a valid existing config.
+		delete(assets, configurationPath)
+	} else if !errors.Is(err, os.ErrNotExist) {
+		return err
 	}
 	if err := EnsureDocsConfig(m.Layout); err != nil {
 		return err

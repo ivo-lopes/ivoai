@@ -1,0 +1,41 @@
+{
+  "actual_official_images": true,
+  "ai_memory_versions": [
+    "2.6.3",
+    "3.4.2",
+    "2.6.3"
+  ],
+  "authenticated_read_and_401": true,
+  "cgroup_limits_applied": false,
+  "core_backup_restore": true,
+  "exact_memory_fixture_read": true,
+  "exact_vector_point_read": true,
+  "original_index_preserved": true,
+  "pass": true,
+  "private_docker_info": "/var/tmp/ivoai-consolidation-tools-20261104/docker-private/data none",
+  "production_accessed": false,
+  "qdrant_versions": [
+    "1.19.2",
+    "1.20.0",
+    "1.19.2"
+  ],
+  "resource_observation_scope": "guest procfs for service PID1: observed RSS KiB and process CPU ticks after readiness/read; not peak, normalized comparison or session cost",
+  "resource_observations": {
+    "baseline_after_ready": {
+      "memory": "{\"process\":\"ai-memory\",\"rss_kib\":\"35352\",\"source\":\"service_pid1_procfs\",\"start_ticks\":\"16997198\",\"system_cpu_ticks\":\"2\",\"user_cpu_ticks\":\"5\"}",
+      "qdrant": "unavailable; not zero"
+    },
+    "candidate_after_exact_reads": {
+      "memory": "{\"process\":\"ai-memory\",\"rss_kib\":\"49280\",\"source\":\"service_pid1_procfs\",\"start_ticks\":\"16998980\",\"system_cpu_ticks\":\"4\",\"user_cpu_ticks\":\"16\"}",
+      "qdrant": "unavailable; not zero"
+    },
+    "rollback_after_exact_reads": {
+      "memory": "{\"process\":\"ai-memory\",\"rss_kib\":\"38000\",\"source\":\"service_pid1_procfs\",\"start_ticks\":\"16999408\",\"system_cpu_ticks\":\"2\",\"user_cpu_ticks\":\"4\"}",
+      "qdrant": "unavailable; not zero"
+    }
+  },
+  "service_gid": 1000,
+  "service_uid": 1000,
+  "stage_validator_actual_startup": true,
+  "systemd_certified": false
+}

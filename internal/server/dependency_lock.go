@@ -5,11 +5,16 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"sync/atomic"
 
 	"golang.org/x/sys/unix"
 )
 
 type dependencyLockKey struct{}
+type dependencyLockLease struct {
+	path  string
+	alive atomic.Bool
+}
 
 // One kernel lock covers setup, upgrade, rollback and their stopped-service
 // transaction. The reentrant context capability is local to this package.
@@ -21,7 +26,7 @@ func WithDependencyMutationLock(ctx context.Context, l Layout, operation func(co
 		return err
 	}
 	path := filepath.Clean(l.ConfigDir)
-	if held, _ := ctx.Value(dependencyLockKey{}).(string); held == path {
+	if held, _ := ctx.Value(dependencyLockKey{}).(*dependencyLockLease); held != nil && held.path == path && held.alive.Load() {
 		return operation(ctx)
 	}
 	if err := os.MkdirAll(path, 0700); err != nil {
@@ -49,5 +54,8 @@ func WithDependencyMutationLock(ctx context.Context, l Layout, operation func(co
 		return errors.New("dependency operation already in progress; do not retry automatically")
 	}
 	defer unix.Flock(fd, unix.LOCK_UN)
-	return operation(context.WithValue(ctx, dependencyLockKey{}, path))
+	lease := &dependencyLockLease{path: path}
+	lease.alive.Store(true)
+	defer lease.alive.Store(false)
+	return operation(context.WithValue(ctx, dependencyLockKey{}, lease))
 }
