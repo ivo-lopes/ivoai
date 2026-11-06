@@ -422,12 +422,17 @@ func TestLiveAdminBrowserFixture(t *testing.T) {
 	}
 	a := fixtureApp(t)
 	addSession(t, a)
-	s, ts, _ := fixtureServer(t, a)
-	activation, err := s.auth.CreateActivation(5*time.Minute, nil)
+	s, publicURL := liveAdministrativeFixture(t, a)
+	scopes := []string{ScopeRead}
+	writeEnabled := os.Getenv("IVOAI_ADMIN_FIXTURE_WRITE") == "1"
+	if writeEnabled {
+		scopes = append(scopes, ScopeManage)
+	}
+	activation, err := s.auth.CreateActivation(5*time.Minute, scopes)
 	if err != nil {
 		t.Fatal(err)
 	}
-	body, _ := json.Marshal(map[string]string{"url": ts.URL, "activation_code": activation.Code})
+	body, _ := json.Marshal(map[string]any{"url": publicURL, "activation_code": activation.Code, "write_enabled": writeEnabled, "reverse_proxy": s.basePath != "", "base_path": s.basePath})
 	file, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
 	if err != nil {
 		t.Fatal("fixture rendezvous unavailable")

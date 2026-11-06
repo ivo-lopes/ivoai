@@ -9,10 +9,10 @@
     "message": "Documentação de produto e operações do IVOAI"
   },
   "home.eyebrow": {
-    "message": "Plano de controle de IA orientado ao host"
+    "message": "Desenvolvimento com agentes, um único backend"
   },
   "home.subtitle": {
-    "message": "Use uma interface OpenCode com executores Codex e Claude Code, memória durável, contexto privado e servidores de conhecimento isolados."
+    "message": "Execute sessões gerenciadas do Codex com um núcleo de orquestração, memória durável, evidências com escopo e workers isolados."
   },
   "home.quickstart": {
     "message": "Comece pelo guia rápido"
@@ -24,19 +24,19 @@
     "message": "Uma sessão gerenciada"
   },
   "home.session.body": {
-    "message": "O OpenCode fornece a interface interativa enquanto o IVOAI controla seleção de executor, cota, política e ciclo de vida."
+    "message": "O IVOAI aceita pedidos naturais, responde consultas simples diretamente e coordena planos e workers quando necessário."
   },
   "home.auth.title": {
     "message": "Autenticação oficial"
   },
   "home.auth.body": {
-    "message": "Codex e Claude Code mantêm o próprio estado de login. O IVOAI não copia credenciais de provider para o OpenCode."
+    "message": "Os clientes oficiais mantêm o próprio login. As integrações gerenciadas usam interfaces suportadas e a autenticação existente."
   },
   "home.knowledge.title": {
-    "message": "Escopo de conhecimento visível"
+    "message": "Administração pelo navegador"
   },
   "home.knowledge.body": {
-    "message": "Veja quais servidores isolados participam; use todas as fontes habilitadas em federação ou restrinja a sessão atual."
+    "message": "Gerencie capacidades pelo mesmo backend, com acesso por escopo, confirmações explícitas, auditoria e suporte a proxy reverso."
   },
   "theme.ErrorPageContent.title": {
     "message": "Esta página deu erro.",

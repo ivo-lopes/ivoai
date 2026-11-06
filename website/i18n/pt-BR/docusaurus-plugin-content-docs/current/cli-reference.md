@@ -7,8 +7,9 @@ ivoai - personal AI client and server platform
 Usage:
   ivoai                         interactive menu
   ivoai help | version | uninstall
-  ivoai admin serve [--listen 127.0.0.1:7781]
-  ivoai admin access create [--ttl 10m] | list | revoke <id>
+  ivoai admin init
+  ivoai admin serve [--listen 127.0.0.1:7781] [--public-url HTTPS_URL] [--trusted-proxies CIDR,...]
+  ivoai admin access create [--ttl 10m] [--write] | list | revoke <id>
   ivoai status [--json]
   ivoai setup [--mode client|server] [--legacy-opencode]
   ivoai doctor [--json] [--inventory]
@@ -55,7 +56,8 @@ Usage:
   ivoai server enrollment create [--ttl 10m] | list | revoke <id>
   ivoai server web-access create [--ttl 10m] [--scopes SCOPE,...] | list | revoke <id>
   ivoai server connector list | add --name NAME --type filesystem|git --path PATH | remove NAME
-  ivoai server context status | memory status | docs status | docs configure --listen IP:PORT | docs serve
+  ivoai server context status | context ingest --connector NAME | context search --query QUERY | context get --id ID
+  ivoai server memory status | docs status | docs configure --listen IP:PORT | docs serve
   ivoai server gateway serve | gateway configure --public-url HTTPS_ORIGIN [--listen HOST:PORT] [--trusted-proxy CIDR] [--tls-cert PATH --tls-key PATH]
   ivoai server backup [--output PATH] | restore --input PATH
   ivoai server remote status | doctor | connector list

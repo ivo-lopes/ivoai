@@ -1,5 +1,5 @@
-// Package admin exposes an explicitly started, local-owner, read-only view of
-// the existing App. It neither schedules work nor grants agent capabilities.
+// Package admin exposes the existing local-owner administrative control plane.
+// It neither schedules agent work nor grants capabilities to executors.
 package admin
 
 import (
@@ -26,9 +26,11 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/app"
 	"github.com/ivo-lopes/ivoai/internal/config"
 	"github.com/ivo-lopes/ivoai/internal/webauth"
+	"github.com/ivo-lopes/ivoai/internal/workingcontext"
 )
 
 const ScopeRead = "admin:read"
+const ScopeManage = "admin:manage"
 const maxResponseBytes = 512 << 10
 
 //go:embed assets/index.html assets/admin.css assets/admin.js
@@ -38,7 +40,12 @@ type Audit struct{ Action, Verdict, Actor string }
 type Options struct {
 	App    *app.App
 	Origin string
-	Audit  func(Audit)
+	// PublicURL is an explicit HTTPS URL, optionally with a path prefix.
+	// The listener remains loopback; only configured proxy peers are accepted.
+	PublicURL      string
+	TrustedProxies []string
+	Dispatch       Dispatch
+	Audit          func(Audit)
 }
 type flow struct {
 	verifier, client string
@@ -49,6 +56,13 @@ type Server struct {
 	auth                                 *webauth.Store
 	oauth                                *webauth.Server
 	origin, instance, cookie, flowCookie string
+	listenerOrigin, basePath             string
+	trustedProxies                       []*net.IPNet
+	dispatch                             Dispatch
+	outputs                              workingcontext.ArtifactStore
+	actionMu                             sync.Mutex
+	confirmations                        map[string]confirmation
+	csrfSecret                           string
 	paths                                config.Paths
 	configRoot, stateRoot                os.FileInfo
 	slots                                chan struct{}
@@ -63,6 +77,28 @@ type Server struct {
 // AccessStore uses the existing OAuth store with a disjoint scope policy. Only
 // its own private directory under the host StateRoot is created, never client
 // configuration, credentials, or permission changes to an existing root.
+// Initialize explicitly creates only missing private host roots. Existing roots
+// must already satisfy ownership/privacy; their permissions are never changed.
+func Initialize(paths config.Paths) error {
+	for _, path := range []string{paths.ConfigDir, paths.StateDir} {
+		if !filepath.IsAbs(path) {
+			return errors.New("admin requires absolute host roots")
+		}
+		info, err := os.Lstat(path)
+		if errors.Is(err, os.ErrNotExist) {
+			if err := os.MkdirAll(path, 0700); err != nil {
+				return errors.New("admin initialization failed")
+			}
+			info, err = os.Lstat(path)
+		}
+		if err != nil || !privateOwner(info) {
+			return errors.New("admin requires private owner roots; existing permissions were preserved")
+		}
+	}
+	_, err := AccessStore(paths)
+	return err
+}
+
 func AccessStore(paths config.Paths) (*webauth.Store, error) {
 	if !filepath.IsAbs(paths.StateDir) || !filepath.IsAbs(paths.ConfigDir) {
 		return nil, errors.New("admin requires absolute host roots")
@@ -89,7 +125,7 @@ func AccessStore(paths config.Paths) (*webauth.Store, error) {
 	if err != nil || !privateOwner(info) {
 		return nil, errors.New("admin state must be a private directory")
 	}
-	return webauth.NewScopedStore(filepath.Join(dir, "oauth.json"), []string{ScopeRead}, []string{ScopeRead})
+	return webauth.NewScopedStore(filepath.Join(dir, "oauth.json"), []string{ScopeRead}, []string{ScopeRead, ScopeManage})
 }
 
 func privateOwner(info os.FileInfo) bool {
@@ -112,6 +148,10 @@ func New(opts Options) (*Server, error) {
 	if err != nil || u.Scheme != "http" || u.User != nil || u.RawQuery != "" || u.Fragment != "" || u.Path != "" || net.ParseIP(u.Hostname()) == nil || !net.ParseIP(u.Hostname()).IsLoopback() || u.Port() == "" || u.Port() == "0" {
 		return nil, errors.New("admin origin must be an explicit HTTP loopback listener")
 	}
+	origin, basePath, proxies, err := proxyOptions(opts)
+	if err != nil {
+		return nil, err
+	}
 	store, err := AccessStore(opts.App.Store.Paths)
 	if err != nil {
 		return nil, err
@@ -126,10 +166,18 @@ func New(opts Options) (*Server, error) {
 		return nil, errors.New("admin roots unavailable")
 	}
 	instance := instanceID(paths)
-	cookieSum := sha256.Sum256([]byte(opts.Origin + instance))
+	cookieSum := sha256.Sum256([]byte(origin + basePath + instance))
 	cookie := "ivoai_admin_" + hex.EncodeToString(cookieSum[:8])
-	s := &Server{app: opts.App, auth: store, origin: opts.Origin, instance: instance, cookie: cookie, flowCookie: cookie + "_flow", paths: paths, configRoot: cfgRoot, stateRoot: stateRoot, slots: make(chan struct{}, 8), audit: opts.Audit, flows: map[string]flow{}}
-	s.oauth = &webauth.Server{Store: store, Issuer: opts.Origin, ResourcePath: "/api/admin/v1/" + instance, CSRFCookieName: cookie + "_oauth_csrf"}
+	s := &Server{app: opts.App, auth: store, origin: origin, listenerOrigin: opts.Origin, basePath: basePath, trustedProxies: proxies, dispatch: opts.Dispatch, confirmations: map[string]confirmation{}, instance: instance, cookie: cookie, flowCookie: cookie + "_flow", paths: paths, configRoot: cfgRoot, stateRoot: stateRoot, slots: make(chan struct{}, 8), audit: opts.Audit, flows: map[string]flow{}}
+	s.outputs, err = s.newOutputStore()
+	if err != nil {
+		return nil, errors.New("admin output store unavailable")
+	}
+	s.csrfSecret, err = randomString()
+	if err != nil {
+		return nil, errors.New("admin entropy unavailable")
+	}
+	s.oauth = &webauth.Server{Store: store, Issuer: origin + basePath, ResourcePath: "/api/admin/v1/" + instance, CSRFCookieName: cookie + "_oauth_csrf"}
 	return s, nil
 }
 
@@ -200,8 +248,12 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /auth/callback", s.callback)
 	mux.HandleFunc("POST /auth/logout", s.logout)
 	mux.HandleFunc("GET /api/admin/v1/meta", func(w http.ResponseWriter, r *http.Request) {
-		response(w, map[string]any{"schema_version": 1, "authentication": "oauth_pkce_cookie", "access": "local_owner_read_only"})
+		response(w, map[string]any{"schema_version": 1, "authentication": "oauth_pkce_cookie", "access": "owner_scoped", "base_path": s.basePath, "public_origin": s.origin})
 	})
+	mux.HandleFunc("GET /api/admin/v1/actions", s.protected("actions", s.actions))
+	mux.HandleFunc("GET /api/admin/v1/csrf", s.protected("csrf", s.csrf))
+	mux.HandleFunc("GET /api/admin/v1/outputs/{id}", s.downloadOutput)
+	mux.HandleFunc("POST /api/admin/v1/actions/{id}", s.action)
 	mux.HandleFunc("GET /api/admin/v1/overview", s.protected("overview", s.overview))
 	mux.HandleFunc("GET /api/admin/v1/sessions", s.protected("sessions", s.sessions))
 	mux.HandleFunc("GET /api/admin/v1/sessions/{id}", s.protected("session", s.session))
@@ -241,14 +293,22 @@ func (s *Server) Handler() http.Handler {
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.Header().Set("Referrer-Policy", "no-referrer")
 		w.Header().Set("X-Frame-Options", "DENY")
+		if strings.HasPrefix(s.origin, "https://") {
+			w.Header().Set("Strict-Transport-Security", "max-age=31536000")
+		}
 		w.Header().Set("Content-Security-Policy", "default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'")
 		// OAuth's form installs its own narrow CSP. Requests must originate at the
 		// listener itself: forwarded headers never confer authority.
-		peer, _, err := net.SplitHostPort(r.RemoteAddr)
-		if err != nil || net.ParseIP(peer) == nil || !net.ParseIP(peer).IsLoopback() || r.Host != strings.TrimPrefix(s.origin, "http://") || r.Header.Get("Origin") != "" && r.Header.Get("Origin") != s.origin || r.Header.Get("Sec-Fetch-Site") == "cross-site" {
+		if !s.allowedBoundary(r) {
 			s.emit("boundary", "deny", "")
 			errorJSON(w, 403, "forbidden")
 			return
+		}
+		if !s.mountPath(w, r) {
+			return
+		}
+		if s.basePath != "" {
+			w = &prefixCookies{ResponseWriter: w, prefix: s.basePath}
 		}
 		if !s.admitRate() {
 			errorJSON(w, 429, "rate_exceeded")
@@ -270,7 +330,7 @@ func (s *Server) Handler() http.Handler {
 			errorJSON(w, 429, "capacity_exceeded")
 			return
 		}
-		ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), requestTimeout(r))
 		defer cancel()
 		r = r.WithContext(ctx)
 		r.Body = http.MaxBytesReader(w, r.Body, 64<<10)
@@ -353,7 +413,7 @@ func (s *Server) start(w http.ResponseWriter, r *http.Request) {
 	}
 	var clientID = s.client
 	if clientID == "" {
-		client, err := s.auth.RegisterClient("IVOAI local admin", []string{s.origin + "/auth/callback"})
+		client, err := s.auth.RegisterClient("IVOAI local admin", []string{s.origin + s.basePath + "/auth/callback"})
 		if err != nil {
 			errorJSON(w, 503, "access_unavailable")
 			return
@@ -371,8 +431,8 @@ func (s *Server) start(w http.ResponseWriter, r *http.Request) {
 	}
 	s.flows[state] = flow{verifier: verifier, client: clientID, expires: now.Add(10 * time.Minute)}
 	s.cookieValue(w, s.flowCookie, state, "/auth/callback", 600)
-	query := url.Values{"client_id": {clientID}, "redirect_uri": {s.origin + "/auth/callback"}, "response_type": {"code"}, "resource": {s.Resource()}, "scope": {ScopeRead}, "code_challenge_method": {"S256"}, "code_challenge": {webauth.PKCEChallenge(verifier)}, "state": {state}}
-	http.Redirect(w, r, s.origin+"/oauth/authorize?"+query.Encode(), http.StatusSeeOther)
+	query := url.Values{"client_id": {clientID}, "redirect_uri": {s.origin + s.basePath + "/auth/callback"}, "response_type": {"code"}, "resource": {s.Resource()}, "scope": {ScopeRead + " " + ScopeManage}, "code_challenge_method": {"S256"}, "code_challenge": {webauth.PKCEChallenge(verifier)}, "state": {state}}
+	http.Redirect(w, r, s.origin+s.basePath+"/oauth/authorize?"+query.Encode(), http.StatusSeeOther)
 }
 func (s *Server) callback(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
@@ -396,7 +456,7 @@ func (s *Server) callback(w http.ResponseWriter, r *http.Request) {
 		errorJSON(w, 503, "instance_unavailable")
 		return
 	}
-	tokens, err := s.auth.ExchangeCode(q.Get("code"), pending.client, s.origin+"/auth/callback", pending.verifier, s.Resource())
+	tokens, err := s.auth.ExchangeCode(q.Get("code"), pending.client, s.origin+s.basePath+"/auth/callback", pending.verifier, s.Resource())
 	if err != nil {
 		errorJSON(w, 403, "invalid_authorization")
 		return
@@ -409,7 +469,7 @@ func (s *Server) callback(w http.ResponseWriter, r *http.Request) {
 	// No refresh token is exposed to the browser or retained by this layer.
 	s.cookieValue(w, s.cookie, tokens.AccessToken, "/", int(tokens.ExpiresIn))
 	s.emit("login", "allow", pending.client)
-	http.Redirect(w, r, "/", http.StatusSeeOther)
+	http.Redirect(w, r, s.basePath+"/", http.StatusSeeOther)
 }
 func (s *Server) logout(w http.ResponseWriter, r *http.Request) {
 	if r.Header.Get("Origin") != s.origin {
@@ -435,10 +495,10 @@ func (s *Server) logout(w http.ResponseWriter, r *http.Request) {
 // explicit startup; there is no background service, public bind, or App launch.
 func (s *Server) ServeListener(ctx context.Context, listener net.Listener) error {
 	host, _, err := net.SplitHostPort(listener.Addr().String())
-	if err != nil || net.ParseIP(host) == nil || !net.ParseIP(host).IsLoopback() || "http://"+listener.Addr().String() != s.origin {
+	if err != nil || net.ParseIP(host) == nil || !net.ParseIP(host).IsLoopback() || "http://"+listener.Addr().String() != s.listenerOrigin {
 		return errors.New("admin listener does not match instance origin")
 	}
-	server := &http.Server{Handler: s.Handler(), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 10 * time.Second, WriteTimeout: 10 * time.Second, IdleTimeout: 30 * time.Second, MaxHeaderBytes: 16 << 10}
+	server := &http.Server{Handler: s.Handler(), ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 10 * time.Second, WriteTimeout: 6 * time.Minute, IdleTimeout: 30 * time.Second, MaxHeaderBytes: 16 << 10}
 	done := make(chan error, 1)
 	go func() { done <- server.Serve(listener) }()
 	select {

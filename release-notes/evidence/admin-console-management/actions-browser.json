@@ -1,0 +1,29 @@
+{
+  "node": "v20.19.2",
+  "playwright": "1.64.0",
+  "axe": "4.13.0",
+  "browsers": [
+    "156.0.8078.79"
+  ],
+  "source_sha256": {
+    "internal/admin/assets/index.html": "f1045fb5193cea684828c0b03a2d29f837c5ae609547aebd3ac2c1bb5b34d0db",
+    "internal/admin/assets/admin.css": "3716c733dffac0cb99593701853ddfee315e65304f3802a8e1f8babae9c99e67",
+    "internal/admin/assets/admin.js": "1b5dba624511f9007999742afff8bac021c1be535e6f8ec57358d0e3532a5623",
+    "scripts/test-admin-console-actions.mjs": "1ecb1b4bbefff2efb0ef0341269b577d8776565013ca0141cf26c037143877fd"
+  },
+  "scope": "hermetic_administrative_action_ui_contract",
+  "actual_oauth_exchange": false,
+  "actual_backend_store": false,
+  "actual_reverse_proxy": false,
+  "native_client_execution": false,
+  "results": [
+    "/: read-only access, text-only result rendering and mutation denial PASS",
+    "/: schema fields, immutable reviewed input, explicit single execution and secret clearing PASS",
+    "/: 375/768/1024/1440 catalog/review WCAG A/AA, overflow and 44px targets PASS",
+    "/: unknown outcome without replay, authority loss clears state, fresh read-only access and prefix-safe logout PASS",
+    "/ivoai/admin: read-only access, text-only result rendering and mutation denial PASS",
+    "/ivoai/admin: schema fields, immutable reviewed input, explicit single execution and secret clearing PASS",
+    "/ivoai/admin: 375/768/1024/1440 catalog/review WCAG A/AA, overflow and 44px targets PASS",
+    "/ivoai/admin: unknown outcome without replay, authority loss clears state, fresh read-only access and prefix-safe logout PASS"
+  ]
+}

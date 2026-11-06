@@ -11,12 +11,15 @@ import { createHash } from 'node:crypto';
 const modules = process.env.IVOAI_ADMIN_UI_NODE_MODULES;
 const rendezvous = process.env.IVOAI_ADMIN_BROWSER_FIXTURE;
 const mode = process.env.IVOAI_ADMIN_BROWSER_PROOF_MODE || 'logout';
-assert.ok(modules && rendezvous && ['logout', 'revoke'].includes(mode), 'Set reviewed modules, temporary fixture rendezvous and logout|revoke mode.');
+assert.ok(modules && rendezvous && ['logout', 'revoke', 'manage'].includes(mode), 'Set reviewed modules, temporary fixture rendezvous and logout|revoke|manage mode.');
 const info = await stat(rendezvous);
 assert.ok(info.isFile() && info.size < 4096 && (info.mode & 0o777) === 0o600, 'Fixture rendezvous must be a private bounded regular file.');
 const fixture = JSON.parse(await readFile(rendezvous, 'utf8'));
 const origin = new URL(fixture.url);
-assert.ok(origin.protocol === 'http:' && origin.hostname === '127.0.0.1' && origin.port && origin.pathname === '/', 'Only disposable loopback fixtures are supported.');
+assert.ok(['http:', 'https:'].includes(origin.protocol) && origin.hostname === '127.0.0.1' && origin.port && /^\/(?:[a-z0-9_-]+\/)*$/.test(origin.pathname) && !origin.search && !origin.hash && !origin.username, 'Only disposable loopback fixtures with a bounded path are supported.');
+assert.equal(origin.protocol === 'https:', fixture.reverse_proxy === true, 'TLS bypass is allowed only for the explicit disposable reverse-proxy fixture.');
+if (mode === 'manage') assert.equal(fixture.write_enabled, true, 'Management proof requires an explicit temporary write grant.');
+const basePath = origin.pathname.replace(/\/$/, '');
 assert.equal(typeof fixture.activation_code, 'string');
 const require = createRequire(join(resolve(modules), '.admin-live-qa.cjs'));
 const { chromium } = require('@playwright/test');
@@ -36,7 +39,7 @@ try {
   for (const directory of Object.values(dirs)) await mkdir(directory, { mode: 0o700 });
   browser = await chromium.launch({ executablePath: process.env.IVOAI_ADMIN_UI_CHROMIUM || '/usr/bin/chromium', headless: true,
     env: { PATH: '/usr/bin:/bin', HOME: dirs.h, XDG_CONFIG_HOME: dirs.c, XDG_CACHE_HOME: dirs.x, XDG_RUNTIME_DIR: dirs.r, TMPDIR: dirs.t, LANG: 'C.UTF-8' } });
-  const context = await browser.newContext({ locale: 'pt-BR', reducedMotion: 'reduce', viewport: { width: 1440, height: 960 } });
+  const context = await browser.newContext({ locale: 'pt-BR', reducedMotion: 'reduce', ignoreHTTPSErrors: fixture.reverse_proxy === true, viewport: { width: 1440, height: 960 } });
   await context.route('**/*', async (route) => {
     if (new URL(route.request().url()).origin === origin.origin) await route.continue();
     else { deniedExternalRequests += 1; await route.abort(); }
@@ -60,7 +63,7 @@ try {
   };
 
   stage = 'unauthorized';
-  await page.goto(origin.origin);
+  await page.goto(origin.href);
   await page.locator('#sign-in').waitFor({ state: 'visible' });
   assert.equal(await page.locator('#workspace').isVisible(), false);
   await axe('access gate');
@@ -83,8 +86,8 @@ try {
   assert.equal(accessCookies.length, 1);
   assert.equal(accessCookies[0].httpOnly, true);
   assert.equal(accessCookies[0].sameSite, 'Strict');
-  // Secure=false is expected only for this explicitly HTTP loopback fixture.
-  assert.equal(accessCookies[0].secure, false);
+  assert.equal(accessCookies[0].secure, origin.protocol === 'https:');
+  assert.equal(accessCookies[0].path, basePath + '/');
   assert.equal(cookies.some((cookie) => cookie.name.endsWith('_flow')), false);
   results.push('Real browser PKCE/state/form/callback exchange passes; access cookie is HttpOnly/Strict, no JS cookies/storage or token URL.');
 
@@ -125,8 +128,40 @@ try {
   await safeBrowserState();
   results.push('Real authenticated sessions/components/connections at 375/768/1024/1440 pass overflow and WCAG A/AA checks.');
 
+  if (mode === 'manage') {
+    stage = 'management';
+    await page.locator('[data-view="administration"]').click();
+    assert.ok(await page.locator('#actions-list article').count() >= 118, 'The real catalog covers the existing menu inventory.');
+    assert.equal(await page.locator('#access-mode').innerText(), 'Acesso de administração');
+    await page.locator('#action-search').fill('config.auto');
+    await page.locator('[data-action-id="config.auto"]').getByRole('button').click();
+    await page.locator('#action-fields select[name="value"]').selectOption('false');
+    await page.locator('#action-submit').click();
+    await page.locator('#action-review').waitFor({ state: 'visible' });
+    assert.equal(await page.locator('#action-execute').isDisabled(), true);
+    await axe('real management review');
+    await page.locator('#action-confirmed').check();
+    await page.locator('#action-execute').click();
+    await page.locator('#action-result').waitFor({ state: 'visible' });
+    assert.equal(await page.locator('#action-result-state').innerText(), 'Alteração concluída');
+    await page.locator('#close-action').click();
+    await page.locator('#action-search').fill('config.show');
+    await page.locator('#actions-list article').getByRole('button').click();
+    await page.locator('#action-submit').click();
+    await page.locator('#action-result').waitFor({ state: 'visible' });
+    stage = 'management-fresh-read';
+    const snapshot = JSON.parse(await page.locator('#action-result-output').innerText());
+    assert.equal(snapshot.AutoEnabled, false, 'Actual isolated App.ConfigSet persists and a fresh MenuSnapshot observes the change.');
+    stage = 'management-result-accessibility';
+    await axe('real management result');
+    stage = 'management-secret-projection';
+    await safeBrowserState();
+    await page.locator('#close-action').click();
+    results.push('Real write grant, explicit preview/confirmation, isolated App.ConfigSet and fresh sanitized configuration read PASS.');
+    if (fixture.reverse_proxy) results.push('Real TLS reverse proxy preserves prefixed assets/API/OAuth redirects and Secure/path-bound cookies.');
+  }
   stage = mode;
-  if (mode === 'logout') await page.locator('#sign-out').click();
+  if (mode === 'logout' || mode === 'manage') await page.locator('#sign-out').click();
   else {
     await writeFile(rendezvous + '.revoke', '', { mode: 0o600, flag: 'wx' });
     await assert.doesNotReject(async () => {
@@ -145,17 +180,22 @@ try {
   assert.equal(deniedExternalRequests, 0);
   const mutations = routes.filter((route) => route.method !== 'GET');
   assert.deepEqual(mutations.map((route) => ({ method: route.method, path: route.path, status: route.status })), [
-    { method: 'POST', path: '/oauth/authorize', status: 303 },
-    ...(mode === 'logout' ? [{ method: 'POST', path: '/auth/logout', status: 200 }] : []),
+    { method: 'POST', path: basePath + '/oauth/authorize', status: 303 },
+    ...(mode === 'manage' ? [
+      { method: 'POST', path: basePath + '/api/admin/v1/actions/config.auto', status: 200 },
+      { method: 'POST', path: basePath + '/api/admin/v1/actions/config.auto', status: 200 },
+      { method: 'POST', path: basePath + '/api/admin/v1/actions/config.show', status: 200 },
+    ] : []),
+    ...(mode === 'logout' || mode === 'manage' ? [{ method: 'POST', path: basePath + '/auth/logout', status: 200 }] : []),
   ]);
-  results.push(mode === 'logout' ? 'Real logout revokes access and clears all administrative DOM snapshots.' : 'External grant revocation is observed on refresh and clears all administrative DOM snapshots.');
+  results.push(mode === 'logout' || mode === 'manage' ? 'Real logout revokes access and clears all administrative DOM snapshots.' : 'External grant revocation is observed on refresh and clears all administrative DOM snapshots.');
   stage = 'provenance';
   const source = {};
-  for (const path of ['internal/admin/assets/index.html', 'internal/admin/assets/admin.css', 'internal/admin/assets/admin.js', 'internal/admin/server.go', 'internal/admin/read.go', 'internal/admin/server_test.go', 'internal/webauth/http.go', 'internal/webauth/store.go']) source[path] = createHash('sha256').update(await readFile(join(root, path))).digest('hex');
+  for (const path of ['internal/admin/assets/index.html', 'internal/admin/assets/admin.css', 'internal/admin/assets/admin.js', 'internal/admin/server.go', 'internal/admin/read.go', 'internal/admin/server_test.go', 'internal/admin/actions.go', 'internal/admin/catalog.go', 'internal/admin/proxy.go', 'internal/admin/live_management_test.go', 'internal/app/app.go', 'scripts/test-admin-console-live.mjs', 'internal/webauth/http.go', 'internal/webauth/store.go']) source[path] = createHash('sha256').update(await readFile(join(root, path))).digest('hex');
   // axe's package exports intentionally hide package.json; inspect its adjacent
   // installed manifest instead of importing an unsupported package subpath.
   const axeManifest = JSON.parse(await readFile(join(dirname(require.resolve('@axe-core/playwright')), '..', 'package.json'), 'utf8'));
-  report = { status: 'PASS', scope: 'real_local_app_oauth_store_with_seeded_session', mode, node: process.version, playwright: require('@playwright/test/package.json').version, axe: axeManifest.version, browser: await browser.version(), actual_provider_execution: false, production_state: false, source_sha256: source, results, routes, denied_external_page_requests: deniedExternalRequests, output };
+  report = { status: 'PASS', scope: 'real_local_app_oauth_store_with_seeded_session', mode, node: process.version, playwright: require('@playwright/test/package.json').version, axe: axeManifest.version, browser: await browser.version(), actual_provider_execution: false, production_state: false, actual_config_mutation: mode === 'manage', actual_reverse_proxy: fixture.reverse_proxy === true, source_sha256: source, results, routes, denied_external_page_requests: deniedExternalRequests, output };
 } catch (failure) {
   // Browser exception text can contain authorize URLs/codes. Retain only stage.
   const code = typeof failure.code === 'string' && /^[A-Z_]{1,64}$/.test(failure.code) ? failure.code : 'CHECK_FAILED';

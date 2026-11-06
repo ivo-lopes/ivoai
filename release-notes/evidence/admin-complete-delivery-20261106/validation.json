@@ -1,0 +1,61 @@
+{
+  "base": "8cd58240946ccef48a397bcb7ee0118617962ab2",
+  "scope": "Administrative UI/backend parity, authorized sanitized output recovery and reverse-proxy publication support; not a conversational client or production deployment.",
+  "checks": {
+    "website_accessibility": {
+      "passed": 152,
+      "skipped": 0,
+      "duration": "5.6m",
+      "log_sha256": "187a26f2b30330ac494aa7d057638e964b3eec73d545f78f9b3ffc1b68af0e7d"
+    },
+    "admin_browser": {
+      "hermetic": 2,
+      "real_app_oauth_store": 4,
+      "skipped": 0,
+      "modes": [
+        "logout",
+        "revoke",
+        "manage",
+        "TLSproxy"
+      ]
+    },
+    "full_admin_race_real_nginx": {
+      "pass": true,
+      "seconds": 36.583
+    },
+    "affected_vet": "PASS",
+    "generated_cli_both_locales": "PASS",
+    "docs_en_pt_build": "PASS"
+  },
+  "source_sha256": {
+    "internal/admin/actions.go": "d2cfa134e0883637f3aebf6710cd615b2a1824289d17dbadca5cd3cfa39ab94b",
+    "internal/admin/actions_test.go": "6a1142c236f515e93f6f3ecba1e02590d5a06e949b4ac713c1018265fac1bab0",
+    "internal/admin/assets/admin.css": "5a77c328919f920c8c251f8d372307c91f1b3682304cd0f02afd687edfad2dcc",
+    "internal/admin/assets/admin.js": "137844c99407d274b458f0902ebfaa752b519ce822794228e7a0fde99140fcba",
+    "internal/admin/assets/index.html": "e7ca2e75cdcfc15244cb309f345e1a42dd57e93fdb0696271a347389372cc8f3",
+    "internal/admin/catalog.go": "d96582bce3660f5b538fa164eb483688a1bba470939fe70b0902bd397b865c5c",
+    "internal/admin/live_management_test.go": "e4a13bdfd47d7d3f36947841896c028d210087da031a6e4ce154bb7735cc83ea",
+    "internal/admin/nginx_integration_test.go": "5f35e4c1b6f7a8a5a83216a71a71b191a38e426b6aa1702af110ebfafbbd609f",
+    "internal/admin/oauth_surface_test.go": "9503ddfd762d4f65c354b85f13223b4c966706994042005305266fd11c31e56a",
+    "internal/admin/operations_integration_test.go": "8132415b04e862b28fc702782564ebc3c10f5b0edf9caaf8bfc738c8e175b7af",
+    "internal/admin/output_artifacts.go": "bf60aa9988c600f386174c34f7c4404ec199f4024c4d4f414c4fe35ec0174b48",
+    "internal/admin/output_artifacts_test.go": "0425d53afbafa49bf44acf1211c844eed425c94bee6ede3b5a60cf900a483d46",
+    "internal/admin/proxy.go": "f6c7444093762b298c675ca329d3aae160de80f67ab532c4173a286a98d72d1c",
+    "internal/admin/proxy_test.go": "4a3d51f34899a3e0676cb5e78a902757fef19eda8b64231b878e9f775b707e70",
+    "internal/admin/read.go": "5301bf1a86d1ae5245a9ede3c590f15c8e6634f5a8c5902bb3c9e562d065592b",
+    "internal/admin/server.go": "5f5b8a44f7fe3e0275d75d53dbb5ef324c70c1adcde5dbab6129eb857599d922",
+    "internal/admin/server_test.go": "f8917002f1837d60027e70f3ad06bbfccddb89c423c1e799eb366d8df2e5cce4"
+  },
+  "unfavorable_observations": [
+    "Initial documentation build failed missing PT admin-console-interface translation.",
+    "Next parity check identified stale translated command blocks and missing official proxy links; fixed the documents, preserving the strict check.",
+    "Earlier output boundary and accessibility failures remain in their source-bound reports; no test/audit threshold was relaxed."
+  ],
+  "limits": [
+    "Catalog/UI coverage does not certify every external provider or OS-privileged operation.",
+    "Native subscription logins remain official-client handoffs. Claude real inference remains explicitly pending by user request.",
+    "Artifacts contain complete sanitized projections only. Overlimit incomplete captures are withheld without replay.",
+    "No public domain, production proxy/service configuration or production data was changed.",
+    "Global economic certification remains INCOMPLETE; connected Mindsite Context sync remains BLOCKED/IVOAI-175."
+  ]
+}

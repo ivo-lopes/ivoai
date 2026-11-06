@@ -1,0 +1,80 @@
+{
+  "schema_version": 1,
+  "scope": "real isolated administrative browser composition",
+  "base_source": "d816a49220d93e3275c512b98244f4c5f535f800",
+  "ui_increment": "9ba897bf7e501b1fe7dbbdc217594e27e71e0150",
+  "backend_increment": "d25b5369",
+  "follow_up": "keyboard-focusable scrollable results and stronger browser regression",
+  "source_sha256": {
+    "internal/admin/assets/index.html": "f1045fb5193cea684828c0b03a2d29f837c5ae609547aebd3ac2c1bb5b34d0db",
+    "internal/admin/assets/admin.css": "3716c733dffac0cb99593701853ddfee315e65304f3802a8e1f8babae9c99e67",
+    "internal/admin/assets/admin.js": "24da9b88ae6dbc47a067d884f6f1fbfaebf07e526cfd18f65461e2aec387305f",
+    "scripts/test-admin-console-actions.mjs": "702000abe85dd74b2b16acfef7be586a6a2061e2a2a1cd8c5a2af864fb4b247a",
+    "scripts/test-admin-console-live.mjs": "503e7fabcc584d641e41b71667f458cfb949af9f0356c7316aab2be114b28243",
+    "scripts/test-admin-console-ci.sh": "11eb186cc216d68eb62fc0e1afa9035e6793895a5e846c394602bb307fcbf605",
+    "scripts/test_admin_console_ci.py": "5d443a2f6834c3fa4d119825d9a4c38659a90cda878ea0e4fdde354d0a0a3b29",
+    "internal/admin/server.go": "394672f60484d5a8ac53cd7de11621d414a208c0fd1d5d4d9fd9523bf7dd309c",
+    "internal/admin/actions.go": "d4e32a262431c858bc6377a3a36815fe0aaee20f39ecc02c323b52b4d381f78e",
+    "internal/admin/catalog.go": "469621c7ea87aecc2b6f65a46d6a068d7384c2211a28b891bcbf5b785f7587a1",
+    "internal/admin/proxy.go": "f6c7444093762b298c675ca329d3aae160de80f67ab532c4173a286a98d72d1c",
+    "internal/admin/server_test.go": "f8917002f1837d60027e70f3ad06bbfccddb89c423c1e799eb366d8df2e5cce4",
+    "internal/admin/live_management_test.go": "e4a13bdfd47d7d3f36947841896c028d210087da031a6e4ce154bb7735cc83ea",
+    "internal/app/app.go": "fc92f6ef3b9d65d5d4d3c9e224eaaedd92672669b6a0ff09780c022282875d8e",
+    "internal/config/config.go": "7c20006a4dd1b28c3029ac7bbfc5f71426a9b38b605f7574591f43c42c964bf4"
+  },
+  "go_version": "go version go1.27.3 linux/amd64",
+  "node_version": "v26.11.1",
+  "reviewed_modules": "same installed Playwright/axe distribution used by the source-bound preliminary actions-browser.json; not credited to root dependency upgrade",
+  "results": [
+    "ADMIN_BROWSER_HERMETIC=PASS",
+    "ADMIN_BROWSER_ACTIONS=PASS",
+    "ADMIN_BROWSER_REAL_LOGOUT=PASS backend_exit=0",
+    "ADMIN_BROWSER_REAL_REVOKE=PASS backend_exit=0",
+    "ADMIN_BROWSER_REAL_MANAGE=PASS backend_exit=0",
+    "ADMIN_BROWSER_REAL_PROXY=PASS backend_exit=0",
+    "ADMIN_BROWSER_CI=PASS hermetic=2 real=4 skipped=0"
+  ],
+  "real_backend_exit_codes": {
+    "logout": 0,
+    "revoke": 0,
+    "manage": 0,
+    "proxy": 0
+  },
+  "skipped_fixtures": 0,
+  "actual_config_mutation": true,
+  "actual_reverse_proxy": true,
+  "proxy_scope": "ephemeral loopback TLS reverse proxy to the real isolated HTTP administrative server with /ivoai/admin prefix",
+  "mutated_setting": "orchestration.auto.enabled: true (isolated config.Default) to false, observed with fresh MenuSnapshot",
+  "provider_inference": false,
+  "production_state": false,
+  "production_reverse_proxy": false,
+  "personal_credentials": false,
+  "whole_administrative_execution_parity": false,
+  "economic_gate": "INCOMPLETE",
+  "historical_failures": [
+    {
+      "epoch": "initial action fixture",
+      "result": "FAIL",
+      "reason": "transport fixture asserted rather than returning409 for a consumed confirmation after browser retransmission",
+      "retained_private_diagnostic": "/var/tmp/ivoai-admin-actions-test.err"
+    },
+    {
+      "epoch": "one-time code close check",
+      "result": "FAIL",
+      "reason": "close event timing; code now cleared synchronously on close/Escape",
+      "retained_private_diagnostic": "/var/tmp/ivoai-admin-actions-test2.err"
+    },
+    {
+      "epoch": "first composed runner",
+      "result": "FAIL",
+      "reason": "management result accessibility after successful config preview/execute/read; no aggregate PASS",
+      "retained_private_diagnostic": "/var/tmp/ivoai-admin-ui-composed-ci.log"
+    },
+    {
+      "epoch": "first diagnostic manage and TLS proxy",
+      "result": "FAIL",
+      "reason": "scrollable result lacked keyboard focus",
+      "retained_private_diagnostic": "/var/tmp/ivoai-admin-ui-live-diagnostics.jsonl"
+    }
+  ]
+}

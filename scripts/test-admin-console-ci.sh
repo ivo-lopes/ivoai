@@ -69,7 +69,14 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 const report = JSON.parse(readFileSync(process.argv[2], 'utf8'));
 const mode = process.argv[3];
-if (mode === 'fixture') {
+if (mode === 'actions') {
+  assert.equal(report.scope, 'hermetic_administrative_action_ui_contract');
+  assert.equal(report.actual_oauth_exchange, false);
+  assert.equal(report.actual_backend_store, false);
+  assert.equal(report.actual_reverse_proxy, false);
+  assert.equal(report.native_client_execution, false);
+  assert.ok(Array.isArray(report.results) && report.results.length >= 8);
+} else if (mode === 'fixture') {
   assert.equal(report.scope, 'hermetic_ui_fixtures_only');
   assert.equal(report.actual_oauth_exchange, false);
   assert.equal(report.actual_backend_store, false);
@@ -77,7 +84,9 @@ if (mode === 'fixture') {
   assert.ok(Array.isArray(report.results) && report.results.length >= 6);
 } else {
   assert.equal(report.status, 'PASS');
-  assert.equal(report.mode, mode);
+  assert.equal(report.mode, mode === 'proxy' ? 'manage' : mode);
+  assert.equal(report.actual_config_mutation, mode === 'manage' || mode === 'proxy');
+  assert.equal(report.actual_reverse_proxy, mode === 'proxy');
   assert.equal(report.scope, 'real_local_app_oauth_store_with_seeded_session');
   assert.equal(report.actual_provider_execution, false);
   assert.equal(report.production_state, false);
@@ -98,13 +107,34 @@ fi
 validate_report "$run_root/hermetic.json" fixture >"$run_root/hermetic-validate.log" 2>&1
 echo 'ADMIN_BROWSER_HERMETIC=PASS'
 
-for proof_mode in logout revoke; do
+stage="hermetic-actions"
+if timeout --kill-after=5s 120s env -i PATH="$PATH" HOME="$run_root/home" TMPDIR="$run_root" LANG=C.UTF-8 \
+  IVOAI_ADMIN_UI_NODE_MODULES="$modules" IVOAI_ADMIN_UI_CHROMIUM="$chromium_binary" \
+  node scripts/test-admin-console-actions.mjs >"$run_root/actions.json" 2>"$run_root/actions.err"; then
+  :
+else
+  exit "$?"
+fi
+validate_report "$run_root/actions.json" actions >"$run_root/actions-validate.log" 2>&1
+echo 'ADMIN_BROWSER_ACTIONS=PASS'
+
+for proof_mode in logout revoke manage proxy; do
+  browser_mode="$proof_mode"
+  fixture_write=0
+  fixture_proxy=0
+  if [[ "$proof_mode" == manage || "$proof_mode" == proxy ]]; then
+    browser_mode=manage
+    fixture_write=1
+  fi
+  if [[ "$proof_mode" == proxy ]]; then
+    fixture_proxy=1
+  fi
   stage="real-$proof_mode-start"
   rendezvous="$run_root/$proof_mode.json"
   # The native Go fixture receives only disposable state. Its own PASS/exit is
   # required separately from browser success; an absent/skipped fixture fails.
   timeout --kill-after=5s 120s env -i PATH="$PATH" HOME="$run_root/home" TMPDIR="$run_root" LANG=C.UTF-8 \
-    IVOAI_ADMIN_BROWSER_FIXTURE="$rendezvous" \
+    IVOAI_ADMIN_BROWSER_FIXTURE="$rendezvous" IVOAI_ADMIN_FIXTURE_WRITE="$fixture_write" IVOAI_ADMIN_FIXTURE_PROXY="$fixture_proxy" \
     "$run_root/admin.test" -test.run '^TestLiveAdminBrowserFixture$' -test.count=1 -test.v -test.timeout=115s \
     >"$run_root/$proof_mode-go.log" 2>&1 &
   fixture_pid=$!
@@ -125,7 +155,7 @@ for proof_mode in logout revoke; do
   stage="real-$proof_mode-browser"
   if timeout --kill-after=5s 90s env -i PATH="$PATH" HOME="$run_root/home" TMPDIR="$run_root" LANG=C.UTF-8 \
     IVOAI_ADMIN_UI_NODE_MODULES="$modules" IVOAI_ADMIN_UI_CHROMIUM="$chromium_binary" \
-    IVOAI_ADMIN_BROWSER_FIXTURE="$rendezvous" IVOAI_ADMIN_BROWSER_PROOF_MODE="$proof_mode" \
+    IVOAI_ADMIN_BROWSER_FIXTURE="$rendezvous" IVOAI_ADMIN_BROWSER_PROOF_MODE="$browser_mode" \
     node scripts/test-admin-console-live.mjs >"$run_root/$proof_mode.json.log" 2>"$run_root/$proof_mode.err"; then
     :
   else
@@ -148,4 +178,4 @@ for proof_mode in logout revoke; do
 done
 
 stage="complete"
-echo 'ADMIN_BROWSER_CI=PASS hermetic=1 real=2 skipped=0'
+echo 'ADMIN_BROWSER_CI=PASS hermetic=2 real=4 skipped=0'
