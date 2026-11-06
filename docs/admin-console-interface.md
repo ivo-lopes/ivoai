@@ -38,6 +38,12 @@ access code appears only in its result, masked until explicitly revealed. Copy
 it deliberately before closing that result; it is removed on close or sign-out
 and never enters the activity list. Clipboard copying occurs only when requested.
 
+When a complete sanitized result exceeds its preview, the console offers an
+authorized download with an expiry. This projection excludes redacted credentials.
+An incomplete capture above the safety limit is withheld entirely and never
+presented as a complete artifact. An already executed operation is not replayed
+to recover unavailable output.
+
 The activity list contains operation names, outcome labels, request identifiers
 and timestamps for this tab. It is cleared on sign-out or loss of authority and
 is not a durable audit log. OAuth tokens remain in HttpOnly cookies; the UI uses

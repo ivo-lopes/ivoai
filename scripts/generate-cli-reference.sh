@@ -2,7 +2,10 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-docs_file="$repo_root/docs/cli-reference.md"
+docs_files=(
+  "$repo_root/docs/cli-reference.md"
+  "$repo_root/website/i18n/pt-BR/docusaurus-plugin-content-docs/current/cli-reference.md"
+)
 mode="${1:-write}"
 
 tmp_dir="$(mktemp -d)"
@@ -11,6 +14,7 @@ binary="$tmp_dir/ivoai"
 
 go build -trimpath -o "$binary" "$repo_root/cmd/ivoai"
 help="$($binary help)"
+for docs_file in "${docs_files[@]}"; do
 generated="$tmp_dir/generated.md"
 
 awk -v help="$help" '
@@ -39,3 +43,4 @@ else
   echo "usage: scripts/generate-cli-reference.sh [--check]" >&2
   exit 2
 fi
+done
