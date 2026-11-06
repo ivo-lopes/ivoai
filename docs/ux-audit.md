@@ -1,5 +1,26 @@
 # Managed terminal UX audit
 
+## Current inventory — 2026-11-06
+
+The dated OpenCode-first records below describe earlier deliveries. Current
+managed execution uses the native clients and the IVOAI Core; those historical
+records do not re-enable the removed OpenCode runtime.
+
+| Capability | Current behavior |
+| --- | --- |
+| `ivoai codex`, `ivoai auto` | Same managed native Codex entrypoint and Core admission, approvals and session lifecycle. |
+| Adaptive Primary | Controlled opt-in for exact reviewed Linux amd64 runtimes; simple turns need no DAG, approved complex work uses the existing scheduler and workers. |
+| Evidence Gateway | Optional scoped exact retrieval and invalidation; authoritative native evidence bypasses lossy proxies while preserving the requested compression setting. |
+| Administrative web console | Same administrative backend, authentication, authorization, audit and explicit confirmations; supports reverse-proxy/TLS publication and adds no chat frontend. |
+| Claude / Antigravity | Official direct client or supported experimental headless contract; headless execution does not claim transparent native TUI control. |
+| Managed OpenCode | Removed: legacy commands return migration errors, retained state is informational and personal files/history remain untouched. |
+
+See [native contracts](orchestrated-frontends.md), [administrative console](admin-console-interface.md)
+and the [canonical CLI reference](cli-reference.md). Provider certification,
+economic results and deployment remain separate evidence categories.
+
+## Previous audit records
+
 Validated for the OpenCode-first AUTO experience on 2026-09-04. The guiding rule is
 one authoritative state model: session, executor, quota and knowledge data originate
 in IVOAI and are rendered by the managed frontend. JSON and non-TTY output never

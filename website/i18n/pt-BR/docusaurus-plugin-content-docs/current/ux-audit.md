@@ -1,5 +1,26 @@
 # Auditoria da UX de terminal gerenciada
 
+## Inventário atual — 2026-11-06
+
+Os registros datados de OpenCode-first abaixo descrevem entregas anteriores. A
+execução gerenciada atual usa os clientes nativos e o IVOAI Core; esses registros
+históricos não reativam o runtime OpenCode removido.
+
+| Capacidade | Comportamento atual |
+| --- | --- |
+| `ivoai codex`, `ivoai auto` | Mesma entrada Codex nativa gerenciada e admissão, aprovações e ciclo de sessão do Core. |
+| Primary adaptativo | Opt-in controlado para runtimes Linux amd64 com identidade exata revisada; turnos simples dispensam DAG e trabalho complexo aprovado usa o scheduler e workers existentes. |
+| Evidence Gateway | Recuperação exata e invalidação opcionais e isoladas; evidências nativas autoritativas têm bypass de proxies com perdas, preservando a configuração de compressão solicitada. |
+| Painel administrativo web | Mesmo backend administrativo, autenticação, autorização, auditoria e confirmações explícitas; suporta proxy reverso/TLS sem adicionar frontend de conversa. |
+| Claude / Antigravity | Cliente oficial direto ou contrato headless experimental suportado; headless não equivale a controle transparente da TUI nativa. |
+| OpenCode gerenciado | Removido: comandos legados retornam erro de migração, estado retido é informativo e arquivos/histórico pessoais permanecem preservados. |
+
+Consulte [contratos nativos](orchestrated-frontends.md), [painel administrativo](admin-console-interface.md)
+e a [referência CLI canônica](cli-reference.md). Certificação de provedores,
+resultados econômicos e implantação continuam sendo evidências distintas.
+
+## Registros de auditoria anteriores
+
 ## Connections multi-server (v0.9.7)
 
 O par legado Connect/Disconnect de default único foi substituído por **IVOAI Servers**.
