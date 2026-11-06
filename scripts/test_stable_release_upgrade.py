@@ -19,6 +19,16 @@ SPEC.loader.exec_module(GATE)
 
 
 class StableReleaseUpgradeControls(unittest.TestCase):
+    def test_offline_phase_is_explicit_and_does_not_change_preparation(self):
+        with tempfile.TemporaryDirectory() as directory, patch.dict(os.environ, {"UV_OFFLINE": "1", "UV_INDEX_URL": "private-marker"}):
+            root = Path(directory)
+            preparation = GATE.environment(root)
+            offline = GATE.environment(root, offline=True)
+            self.assertNotIn("UV_OFFLINE", preparation)
+            self.assertEqual(offline.pop("UV_OFFLINE"), "1")
+            self.assertEqual(preparation, offline)
+            self.assertNotIn("UV_INDEX_URL", offline)
+
     def test_future_release_cannot_reuse_an_unreviewed_baseline_pair(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

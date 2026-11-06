@@ -1,0 +1,40 @@
+{
+  "scope": "real_UV_two_version_Headroom_reapply_without_Core_or_inference",
+  "outcome": "PASS",
+  "phases": [
+    {
+      "phase": "baseline_uv0130",
+      "exit_code": 0,
+      "offline": false,
+      "seconds": 37.477
+    },
+    {
+      "phase": "prime_uv0137",
+      "exit_code": 0,
+      "offline": false,
+      "seconds": 9.931
+    },
+    {
+      "phase": "upgrade_uv0137_offline",
+      "exit_code": 0,
+      "offline": true,
+      "seconds": 0.164
+    },
+    {
+      "phase": "rollback_uv0130_offline",
+      "exit_code": 0,
+      "offline": true,
+      "seconds": 1.396
+    },
+    {
+      "phase": "reapply_uv0137_offline",
+      "exit_code": 0,
+      "offline": true,
+      "seconds": 2.568
+    }
+  ],
+  "provider_inference": false,
+  "personal_config_used": false,
+  "current_phase": "reapply_uv0137_offline",
+  "wall_seconds": 105.601
+}

@@ -161,7 +161,7 @@ def extract_core(archive, destination):
     destination.chmod(0o700)
 
 
-def environment(work):
+def environment(work, *, offline=False):
     values = {"PATH": "/usr/bin:/bin", "HOME": str(work / "home"), "LANG": "C.UTF-8", "TZ": "UTC", "NO_COLOR": "1", "TERM": "dumb"}
     # Official process-local opt-outs, never personal Claude configuration.
     # Setup removes managed MCP entries even with orchestration disabled.
@@ -169,6 +169,8 @@ def environment(work):
     values["DISABLE_AUTOUPDATER"] = "1"
     values["DISABLE_ERROR_REPORTING"] = "1"
     values["DISABLE_TELEMETRY"] = "1"
+    if offline:
+        values["UV_OFFLINE"] = "1"
     for variable, folder in [("XDG_CONFIG_HOME", "config"), ("XDG_DATA_HOME", "data"), ("XDG_STATE_HOME", "state"), ("XDG_CACHE_HOME", "cache"), ("TMPDIR", "tmp"), ("CODEX_HOME", "provider-codex"), ("CLAUDE_CONFIG_DIR", "provider-claude")]:
         values[variable] = str(work / folder)
     for key, value in values.items():
@@ -372,7 +374,9 @@ def inside(work, manifest):
     def checkpoint(phase):
         fixture.phase = phase
         (work / "inside-phase.json").write_text(json.dumps({"phase": phase}))
-    values = environment(work)
+    # Preparation has primed the exact reviewed Python/wheel graph. This phase
+    # deliberately denies external traffic and must not revalidate cached URLs.
+    values = environment(work, offline=True)
     core = work / "install/ivoai"
     archive = Path(manifest["archive"])
     routes = {url: Path(path) for url, path in manifest["routes"].items()}

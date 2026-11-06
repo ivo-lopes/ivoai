@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "outcome": "FAIL",
+  "baseline": "0.16.0",
+  "candidate": "0.17.0",
+  "architecture": "amd64",
+  "test_mode": false,
+  "real_cli_binaries": true,
+  "provider_inference": false,
+  "personal_credentials_inherited": false,
+  "phase": "network_isolated_upgrade",
+  "wall_seconds": 1257.828,
+  "preparation_denials": [],
+  "failure": "COMMAND_EXIT_UNEXPECTED",
+  "inner_result": {
+    "outcome": "FAIL",
+    "failure": "COMMAND_EXIT_UNEXPECTED",
+    "command": {
+      "exit_code": 1,
+      "known_terms": [
+        "candidate setup",
+        "headroom"
+      ]
+    },
+    "scenario": {
+      "phase": "real_cli_update_after_rollback"
+    }
+  }
+}

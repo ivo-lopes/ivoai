@@ -1,0 +1,74 @@
+{
+  "scope": "real_UV_two_version_Headroom_reapply_without_Core_or_inference",
+  "outcome": "EXPERIMENT_COMPLETE_NOT_ALL_CASES_SUCCESSFUL",
+  "phases": [
+    {
+      "phase": "baseline_uv0130",
+      "exit_code": 0,
+      "offline": false,
+      "network_blocked": false,
+      "forced_refresh": false,
+      "seconds": 26.961
+    },
+    {
+      "phase": "prime_uv0137",
+      "exit_code": 0,
+      "offline": false,
+      "network_blocked": false,
+      "forced_refresh": false,
+      "seconds": 12.034
+    },
+    {
+      "phase": "upgrade_uv0137_offline",
+      "exit_code": 0,
+      "offline": true,
+      "network_blocked": false,
+      "forced_refresh": false,
+      "seconds": 0.214
+    },
+    {
+      "phase": "rollback_uv0130_offline",
+      "exit_code": 0,
+      "offline": true,
+      "network_blocked": false,
+      "forced_refresh": false,
+      "seconds": 0.364
+    },
+    {
+      "phase": "reapply_uv0137_offline",
+      "exit_code": 0,
+      "offline": true,
+      "network_blocked": false,
+      "forced_refresh": false,
+      "seconds": 0.465
+    },
+    {
+      "phase": "normal_reapply_blocked_network",
+      "exit_code": 2,
+      "offline": false,
+      "network_blocked": true,
+      "forced_refresh": false,
+      "seconds": 0.032
+    },
+    {
+      "phase": "forced_refresh_blocked_network",
+      "exit_code": 2,
+      "offline": false,
+      "network_blocked": true,
+      "forced_refresh": true,
+      "seconds": 0.016
+    },
+    {
+      "phase": "offline_after_blocked_refresh",
+      "exit_code": 0,
+      "offline": true,
+      "network_blocked": true,
+      "forced_refresh": false,
+      "seconds": 0.314
+    }
+  ],
+  "provider_inference": false,
+  "personal_config_used": false,
+  "current_phase": "offline_after_blocked_refresh",
+  "wall_seconds": 105.274
+}

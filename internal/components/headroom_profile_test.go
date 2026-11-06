@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"io"
 	"os"
 	"path/filepath"
@@ -16,6 +17,136 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/config"
 	"github.com/ivo-lopes/ivoai/internal/platform"
 )
+
+type headroomEnvironmentRunner struct {
+	options platform.RunOptions
+	args    []string
+}
+
+var errHeadroomEnvironmentStop = errors.New("stop before installation")
+
+func (*headroomEnvironmentRunner) LookPath(string) (string, error) { return "", os.ErrNotExist }
+func (r *headroomEnvironmentRunner) Run(_ context.Context, _ string, args []string, options platform.RunOptions) (platform.Result, error) {
+	r.options, r.args = options, append([]string(nil), args...)
+	return platform.Result{}, errHeadroomEnvironmentStop
+}
+
+func TestHeadroomOfflineOptInDoesNotInheritInstallerConfiguration(t *testing.T) {
+	for _, value := range []string{"", "0", "true", "1", "1\n"} {
+		t.Run(value, func(t *testing.T) {
+			t.Setenv("UV_OFFLINE", value)
+			for _, variable := range []string{"UV_INDEX_URL", "UV_EXTRA_INDEX_URL", "UV_CONFIG_FILE", "UV_PYTHON", "PYTHONPATH", "OPENAI_API_KEY", "HTTPS_PROXY"} {
+				t.Setenv(variable, "must-not-reach-installer")
+			}
+			root := t.TempDir()
+			paths := config.Paths{DataDir: filepath.Join(root, "data"), BinDir: filepath.Join(root, "bin")}
+			uv := filepath.Join(paths.DataDir, "components", "uv-"+managedUVVersion, "uv")
+			if err := os.MkdirAll(filepath.Dir(uv), 0o700); err != nil {
+				t.Fatal(err)
+			}
+			if err := os.WriteFile(uv, []byte("fixture"), 0o700); err != nil {
+				t.Fatal(err)
+			}
+			runner := &headroomEnvironmentRunner{}
+			installer := Installer{Runner: runner, Store: config.NewStore(paths), Out: io.Discard}
+			var spec Spec
+			for _, candidate := range DefaultCatalog() {
+				if candidate.Name == "headroom" {
+					spec = candidate
+				}
+			}
+			if _, err := installer.installUVTool(context.Background(), spec); !errors.Is(err, errHeadroomEnvironmentStop) {
+				t.Fatalf("installer failure was not preserved: %v", err)
+			}
+			if !runner.options.CleanEnv {
+				t.Fatal("installer inherited the parent environment")
+			}
+			offline := false
+			for _, field := range runner.options.Env {
+				if field == "UV_OFFLINE=1" {
+					offline = true
+					continue
+				}
+				key, _, _ := strings.Cut(field, "=")
+				switch key {
+				case "HOME", "PATH", "UV_TOOL_DIR", "UV_TOOL_BIN_DIR", "UV_PYTHON_INSTALL_DIR", "UV_PYTHON_PREFERENCE", "UV_NO_PROGRESS":
+				default:
+					t.Fatalf("unexpected inherited setting: %s", key)
+				}
+			}
+			if offline != (value == "1") {
+				t.Fatal("offline mode did not require the literal opt-in")
+			}
+			args := runner.args
+			if len(args) != 11 || args[0] != "tool" || args[1] != "install" || args[2] != "--force" || args[3] != "--python" || args[4] != managedPythonVersion || args[5] != "--constraints" || args[7] != "--no-build" || args[8] != "--exclude-newer" || args[9] != dependencyCutoff {
+				t.Fatalf("reviewed install contract changed: %v", args)
+			}
+			asset := spec.Assets[runtime.GOOS+"/"+runtime.GOARCH]
+			if args[len(args)-1] != spec.Package+" @ "+asset.URL+"#sha256="+asset.SHA256 {
+				t.Fatal("reviewed wheel hash was not preserved")
+			}
+			if _, err := os.Lstat(filepath.Join(paths.BinDir, spec.Executable)); !os.IsNotExist(err) {
+				t.Fatal("failed installation published a launcher")
+			}
+		})
+	}
+}
+
+// This separate negative executes the production installer with the official
+// reviewed UV binary and an empty private cache. Offline is never a bypass.
+func TestLiveHeadroomOfflineCacheMiss(t *testing.T) {
+	archive := os.Getenv("IVOAI_TEST_HEADROOM_UV_ARCHIVE")
+	if archive == "" {
+		t.Skip("requires the reviewed UV archive; no provider inference")
+	}
+	t.Setenv("UV_OFFLINE", "1")
+	body, err := os.ReadFile(archive)
+	if err != nil {
+		t.Fatal(err)
+	}
+	digest := sha256.Sum256(body)
+	if hex.EncodeToString(digest[:]) != managedUVAsset().SHA256 {
+		t.Fatal("UV archive does not match its reviewed pin")
+	}
+	extracted, err := extractSingleExecutable(archive, "uv")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(extracted)
+	body, err = os.ReadFile(extracted)
+	if err != nil {
+		t.Fatal(err)
+	}
+	root := t.TempDir()
+	paths := config.Paths{DataDir: filepath.Join(root, "data"), BinDir: filepath.Join(root, "bin")}
+	uv := filepath.Join(paths.DataDir, "components", "uv-"+managedUVVersion, "uv")
+	if err := os.MkdirAll(filepath.Dir(uv), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(uv, body, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	var spec Spec
+	for _, candidate := range DefaultCatalog() {
+		if candidate.Name == "headroom" {
+			spec = candidate
+		}
+	}
+	var diagnostic bytes.Buffer
+	installer := Installer{Runner: absentRunner{}, Store: config.NewStore(paths), Out: &diagnostic}
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+	if _, err := installer.installUVTool(ctx, spec); err == nil {
+		t.Fatal("empty offline cache was treated as installed")
+	}
+	if !strings.Contains(strings.ToLower(diagnostic.String()), "offline") {
+		t.Fatal("official runtime did not report an offline cache denial")
+	}
+	if _, err := os.Lstat(filepath.Join(paths.BinDir, spec.Executable)); !os.IsNotExist(err) {
+		t.Fatal("cache miss published a launcher")
+	}
+	t.Log("official UV denied an empty offline cache; production installer published no launcher")
+}
 
 func TestHeadroomProfilesPreservePreviousGraph(t *testing.T) {
 	installer := Installer{Store: config.NewStore(config.Paths{DataDir: t.TempDir()})}

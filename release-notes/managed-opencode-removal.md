@@ -33,3 +33,23 @@ assert explicit denial and preserved data. Historical archive/metadata parsing
 contracts remain tested independently; their success is not counted as support
 for executing the retired frontend. Native protocol/TUI/runtime gates replace
 legacy frontend publication jobs, with each gate reported under its actual scope.
+
+Offline reapplication of the optional Headroom profile accepts the explicit
+process-local setting `UV_OFFLINE=1`. Only that literal opt-in crosses the clean
+UV installer environment; index overrides, credentials, Python paths and other
+parent settings remain excluded. The reviewed wheel hash, dependency lock,
+Python version, cutoff, `--force` and `--no-build` are unchanged. Required Python
+and wheel caches must already exist: a missing cache is an installation failure
+and never publishes a launcher. This does not turn bootstrap downloads into an
+offline installer or skip a previously installed compression provider.
+
+The isolated v0.16.0 → candidate v0.17.0 → v0.16.0 → candidate v0.17.0
+qualification initially failed on the last Headroom installation (UV exit 2),
+after the first upgrade and rollback succeeded. That failed receipt is retained.
+A separate real-UV experiment reproduced a network fetch for the cached pinned
+wheel with networking denied; the same command succeeded in explicit offline
+mode. This establishes why the network-isolated qualification must select
+offline mode, without claiming the original unrecorded UV stderr proves the
+same cause. The production installer also passed the real official-UV empty
+offline-cache negative, publishing no launcher. Final integrated upgrade
+qualification remains required before stable publication.

@@ -488,6 +488,12 @@ func (i *Installer) installUVTool(ctx context.Context, spec Spec) (string, error
 		return "", err
 	}
 	uvEnv := []string{"HOME=" + sandboxHome, "PATH=" + filepath.Dir(uv) + ":/usr/local/bin:/usr/bin:/bin", "UV_TOOL_DIR=" + toolDir, "UV_TOOL_BIN_DIR=" + binDir, "UV_PYTHON_INSTALL_DIR=" + filepath.Join(i.Store.Paths.DataDir, "components", "python"), "UV_PYTHON_PREFERENCE=only-managed", "UV_NO_PROGRESS=1"}
+	// Offline reapplication must use the reviewed cached graph rather than
+	// revalidate the wheel over the network. Carry only this explicit opt-in;
+	// never inherit UV indexes, credentials, Python paths or arbitrary settings.
+	if os.Getenv("UV_OFFLINE") == "1" {
+		uvEnv = append(uvEnv, "UV_OFFLINE=1")
+	}
 	_, err = i.Runner.Run(ctx, uv, []string{"tool", "install", "--force", "--python", managedPythonVersion, "--constraints", lockPath, "--no-build", "--exclude-newer", dependencyCutoff, argument}, platform.RunOptions{Env: uvEnv, CleanEnv: true, Stdout: i.Out, Stderr: i.Out, Timeout: 15 * time.Minute})
 	if err != nil {
 		return "", err
