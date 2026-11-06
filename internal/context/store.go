@@ -165,10 +165,25 @@ func (q QdrantStore) endpoint(path string) (string, error) {
 		}
 	}
 	resourcePath, query, _ := strings.Cut(path, "?")
+	parameters, err := url.ParseQuery(base.RawQuery)
+	if err != nil {
+		return "", errors.New("invalid private Qdrant URL query")
+	}
+	operationParameters, err := url.ParseQuery(query)
+	if err != nil {
+		return "", errors.New("invalid Qdrant operation query")
+	}
+	if query != "" {
+		// Preserve proxy routing parameters, but let operation requirements win:
+		// a base wait=false must never turn a synchronous mutation asynchronous.
+		for key, values := range operationParameters {
+			parameters[key] = values
+		}
+		base.RawQuery = parameters.Encode()
+	}
 	escapedPath := strings.TrimRight(base.EscapedPath(), "/") + "/collections/" + collection + resourcePath
 	base.Path = strings.TrimRight(base.Path, "/") + "/collections/" + collection + resourcePath
 	base.RawPath = escapedPath
-	base.RawQuery = query
 	return base.String(), nil
 }
 
