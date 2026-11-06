@@ -70,11 +70,15 @@ func reviewedAntigravity(ctx context.Context) (string, os.FileInfo, error) {
 }
 
 func nativeACPScope(scope, root, binary string, info os.FileInfo) string {
-	return evidence.Digest(adaptiveScopeDigest(scope, root, info), binary, antigravitySHA)
+	return nativeManagedScope(scope, root, binary, antigravitySHA, info)
+}
+
+func nativeManagedScope(scope, root, binary, sha string, info os.FileInfo) string {
+	return evidence.Digest(adaptiveScopeDigest(scope, root, info), binary, sha)
 }
 
 func (g *nativeACPGuard) bound(v session.Session) bool {
-	if !session.PrimaryTurnActive(v) || v.Frontend != "antigravity" || v.WorkingDirectory != g.cwd || v.KnowledgeScopeID != g.scope || !session.ProcessMatches(v.FrontendPID, v.FrontendProcessStart) {
+	if !session.PrimaryTurnActive(v) || v.Frontend != g.receipt.Executor || v.WorkingDirectory != g.cwd || v.KnowledgeScopeID != g.scope || !session.ProcessMatches(v.FrontendPID, v.FrontendProcessStart) {
 		return false
 	}
 	r := *v.PrimaryTurn
@@ -104,7 +108,7 @@ func (g *nativeACPGuard) check(ctx context.Context) (session.Session, error) {
 		return deny()
 	}
 	info, err := os.Stat(root)
-	if err != nil || !os.SameFile(info, g.rootInfo) || nativeACPScope(g.scope, g.cwd, g.binary, info) != g.receipt.ScopeDigest {
+	if err != nil || !os.SameFile(info, g.rootInfo) || nativeManagedScope(g.scope, g.cwd, g.binary, nativeRuntimeDigest(g.receipt.Executor), info) != g.receipt.ScopeDigest {
 		return deny()
 	}
 	info, err = adaptiveFileInfo(g.binary)
@@ -115,10 +119,15 @@ func (g *nativeACPGuard) check(ctx context.Context) (session.Session, error) {
 }
 
 func (a *App) bindNativeACPServer(ctx context.Context, store session.Store, v session.Session) (*nativeACPGuard, error) {
-	if v.PrimaryTurn == nil || v.PrimaryTurn.Executor != "antigravity" || !session.PrimaryTurnActive(v) {
+	if v.PrimaryTurn == nil || (v.PrimaryTurn.Executor != "antigravity" && v.PrimaryTurn.Executor != "claude") || !session.PrimaryTurnActive(v) {
 		return nil, errors.New("ANTIGRAVITY_ADMISSION_DENIED")
 	}
-	binary, binaryInfo, err := reviewedAntigravity(ctx)
+	state, err := a.Store.LoadState()
+	if err != nil {
+		return nil, err
+	}
+	identity, err := reviewedManagedNative(ctx, v.PrimaryTurn.Executor, state)
+	binary, binaryInfo := identity.Binary, identity.Info
 	if err != nil {
 		return nil, err
 	}
@@ -160,9 +169,20 @@ func (g *nativeACPGuard) consume(ctx context.Context) error {
 
 // AntigravityRun enters the existing managed turn bridge and scheduler. It adds
 // no scheduler, prompt-quality classifier, credential store or conversational UI.
-func (a *App) AntigravityRun(ctx context.Context, options NativeRunOptions) (runErr error) {
-	if os.Getenv(antigravityFlag) != "1" {
-		return errors.New("ANTIGRAVITY_EXPERIMENTAL_DISABLED: set IVOAI_EXPERIMENTAL_ANTIGRAVITY=1 for the certified headless path; native TUI interception is not available")
+func (a *App) AntigravityRun(ctx context.Context, options NativeRunOptions) error {
+	return a.runManagedNative(ctx, options, "antigravity")
+}
+func (a *App) ClaudeRun(ctx context.Context, options NativeRunOptions) error {
+	return a.runManagedNative(ctx, options, "claude")
+}
+
+func (a *App) runManagedNative(ctx context.Context, options NativeRunOptions, executor string) (runErr error) {
+	flag := antigravityFlag
+	if executor == "claude" {
+		flag = claudeNativeFlag
+	}
+	if os.Getenv(flag) != "1" {
+		return fmt.Errorf("NATIVE_HEADLESS_EXPERIMENTAL_DISABLED: set %s=1 for managed headless execution; native TUI interception is not available", flag)
 	}
 	if len(options.Followups) > 8 {
 		return errors.New("ANTIGRAVITY_INPUT_LIMIT")
@@ -173,10 +193,7 @@ func (a *App) AntigravityRun(ctx context.Context, options NativeRunOptions) (run
 			return err
 		}
 	}
-	binary, _, err := reviewedAntigravity(ctx)
-	if err != nil {
-		return err
-	}
+	var err error
 	cwd := options.Directory
 	if cwd == "" {
 		cwd, err = os.Getwd()
@@ -192,8 +209,10 @@ func (a *App) AntigravityRun(ctx context.Context, options NativeRunOptions) (run
 	if err != nil {
 		return err
 	}
-	if err = nativeWorkspaceBoundary(cwd); err != nil {
-		return err
+	if executor == "antigravity" {
+		if err = nativeWorkspaceBoundary(cwd); err != nil {
+			return err
+		}
 	}
 	cfg, err := a.Store.Load()
 	if err != nil {
@@ -206,6 +225,11 @@ func (a *App) AntigravityRun(ctx context.Context, options NativeRunOptions) (run
 	if err != nil {
 		return err
 	}
+	identity, err := reviewedManagedNative(ctx, executor, state)
+	if err != nil {
+		return err
+	}
+	binary := identity.Binary
 	scope, err := conversationScopeID(cwd, cfg, nil)
 	if err != nil {
 		return err
@@ -229,8 +253,8 @@ func (a *App) AntigravityRun(ctx context.Context, options NativeRunOptions) (run
 	if limit == 0 {
 		limit = session.MaxNativeWorkers
 	}
-	v := session.Session{SessionID: id, StartedAt: now, UpdatedAt: now, Mode: session.ModeAuto, Auto: true, Coordinator: "native", InitialPlanner: "antigravity", CurrentPrimary: "antigravity", PrimaryExecutor: "antigravity", Frontend: "antigravity", WorkingDirectory: cwd, KnowledgeScopeID: scope, State: session.StateStarting, FrontendState: session.StateRunning, CurrentPhase: "intake", MaxWorkers: limit, Workers: []session.Worker{}}
-	v.SetFrontend("antigravity", frontendID)
+	v := session.Session{SessionID: id, StartedAt: now, UpdatedAt: now, Mode: session.ModeAuto, Auto: true, Coordinator: "native", InitialPlanner: executor, CurrentPrimary: executor, PrimaryExecutor: executor, Frontend: executor, WorkingDirectory: cwd, KnowledgeScopeID: scope, State: session.StateStarting, FrontendState: session.StateRunning, CurrentPhase: "intake", MaxWorkers: limit, Workers: []session.Worker{}}
+	v.SetFrontend(executor, frontendID)
 	v.PrimaryModel = session.ModelInfo{Name: "unknown", Source: session.ModelUnknown}
 	v.ContextStatus, v.MemoryStatus, v.ServerStatus = contextStatus(cfg), memoryStatus(cfg, state), serverStatus(cfg)
 	v.FrontendPID, v.FrontendProcessStart = os.Getpid(), session.ProcessStart(os.Getpid())
@@ -303,7 +327,7 @@ func (a *App) AntigravityRun(ctx context.Context, options NativeRunOptions) (run
 	for _, pair := range []struct{ name, value string }{{"XDG_CONFIG_HOME", filepath.Dir(a.Store.Paths.ConfigDir)}, {"XDG_DATA_HOME", filepath.Dir(a.Store.Paths.DataDir)}, {"XDG_STATE_HOME", filepath.Dir(a.Store.Paths.StateDir)}, {"XDG_CACHE_HOME", filepath.Dir(a.Store.Paths.CacheDir)}} {
 		coreEnvironment = append(coreEnvironment, nativeacp.EnvironmentVariable{Name: pair.name, Value: pair.value})
 	}
-	processEpoch := "antigravity_process_" + id
+	processEpoch := executor + "_process_" + id
 	turnState := &autoTurnState{}
 	base := turnRunnerFunc(func(turnCtx context.Context, request core.ExecutorRequest, emit func(string) error) (core.ExecutorResult, error) {
 		policy := core.ExecutionPolicy{NoReplay: true, NoAutomaticFailover: true}
@@ -319,7 +343,8 @@ func (a *App) AntigravityRun(ctx context.Context, options NativeRunOptions) (run
 		if err != nil {
 			return fail(err)
 		}
-		_, binaryInfo, err := reviewedAntigravity(turnCtx)
+		runtimeIdentity, err := reviewedManagedNative(turnCtx, executor, state)
+		binaryInfo := runtimeIdentity.Info
 		if err != nil {
 			return fail(err)
 		}
@@ -327,7 +352,7 @@ func (a *App) AntigravityRun(ctx context.Context, options NativeRunOptions) (run
 		if err != nil {
 			return fail(err)
 		}
-		receipt := core.PrimaryTurnReceipt{ID: receiptID, TurnID: current.ObservationTurnID, AttemptID: current.ObservationAttemptID, FrontendSessionID: frontendID, Executor: "antigravity", Mode: core.PrimaryReadOnly, ConfigDigest: evidence.Digest(cfg), StateDigest: evidence.Digest(state), ScopeDigest: nativeACPScope(scope, cwd, binary, rootInfo)}
+		receipt := core.PrimaryTurnReceipt{ID: receiptID, TurnID: current.ObservationTurnID, AttemptID: current.ObservationAttemptID, FrontendSessionID: frontendID, Executor: executor, Mode: core.PrimaryReadOnly, ConfigDigest: evidence.Digest(cfg), StateDigest: evidence.Digest(state), ScopeDigest: nativeManagedScope(scope, cwd, binary, identity.SHA256, rootInfo)}
 		if err = receipt.Validate(); err != nil {
 			return fail(err)
 		}
@@ -354,7 +379,7 @@ func (a *App) AntigravityRun(ctx context.Context, options NativeRunOptions) (run
 				return nil
 			})
 		}()
-		k, err := a.prepareAutoPromptKnowledge(turnCtx, cfg, nil, request.Prompt, "antigravity", runtimeDir, cwd, func(event observability.Event) {
+		k, err := a.prepareAutoPromptKnowledge(turnCtx, cfg, nil, request.Prompt, executor, runtimeDir, cwd, func(event observability.Event) {
 			_, _ = store.Update(id, func(v *session.Session) error { return session.AppendObservation(v, event) })
 		})
 		if err != nil {
@@ -434,7 +459,7 @@ func (a *App) AntigravityRun(ctx context.Context, options NativeRunOptions) (run
 		}
 		boundNative := ""
 		if request.ExecutorSessionID != "" {
-			mapping, ok := current.ExecutorSessions["antigravity:"+frontendID]
+			mapping, ok := current.ExecutorSessions[executor+":"+frontendID]
 			if !ok || mapping.AuthReference != processEpoch || mapping.ExecutorSessionID != request.ExecutorSessionID {
 				return fail(errors.New("ANTIGRAVITY_OWNERSHIP_DENIED"))
 			}
@@ -454,9 +479,16 @@ func (a *App) AntigravityRun(ctx context.Context, options NativeRunOptions) (run
 			return nil
 		}
 		request.Model, request.Effort = options.Model, options.Effort
+		if options.Model != "" {
+			request.SelectionMode = "explicit"
+		}
 		projection := "\nHost-projected native MCP servers:"
 		for _, server := range servers {
-			projection += " " + server.Name + " (tool prefix mcp_" + server.Name + "_)"
+			prefix := "mcp_" + server.Name + "_"
+			if executor == "claude" {
+				prefix = "mcp__" + server.Name + "__"
+			}
+			projection += " " + server.Name + " (tool prefix " + prefix + ")"
 		}
 		if !k.config.MCP.Servers["ivoai-memory"].Enabled {
 			projection += "\nMemory is absent in this projection: use memory_status=disabled, memory_lookup_performed=false for bootstrap."
@@ -465,10 +497,14 @@ func (a *App) AntigravityRun(ctx context.Context, options NativeRunOptions) (run
 			projection += "\nContext is absent in this projection: use context_status=disabled, context_lookup_performed=false for bootstrap."
 		}
 		if k.config.MCP.Servers[nativeCodeMCP].Enabled {
-			projection += "\nCode Intelligence code_inspect is available as mcp_ivoai-code_code_inspect. Use it before direct file inspection when it can answer the code question."
+			tool := "mcp_ivoai-code_code_inspect"
+			if executor == "claude" {
+				tool = "mcp__ivoai-code__code_inspect"
+			}
+			projection += "\nCode Intelligence code_inspect is available as " + tool + ". Use it before direct file inspection when it can answer the code question."
 		}
 		request.Prompt = adaptivePrimaryInstructions(cfg.Orchestration.Auto.CheckpointEnabled) + projection + "\n\nUser request (untrusted task data):\n" + request.Prompt
-		runner := nativeacp.New(nativeacp.Options{Enabled: true, SessionID: id, Binary: binary, SHA256: antigravitySHA, Directory: cwd, RuntimeDir: runtimeDir, ProfileDir: filepath.Join(runtimeDir, "native-profile"), Environment: os.Environ(), MCPServers: servers, AllowedTools: []string{"view_file"}, TurnTimeout: 15 * time.Minute, Authorize: check, Validate: check,
+		nativeOptions := nativeacp.Options{Enabled: true, SessionID: id, Binary: binary, SHA256: identity.SHA256, Directory: cwd, RuntimeDir: runtimeDir, ProfileDir: filepath.Join(runtimeDir, "native-profile"), Environment: os.Environ(), MCPServers: servers, AllowedTools: []string{"view_file"}, TurnTimeout: 15 * time.Minute, Authorize: check, Validate: check,
 			Started: func(startCtx context.Context, _ nativeacp.Receipt, pid int) error {
 				if _, err := guard.check(startCtx); err != nil {
 					return err
@@ -548,7 +584,14 @@ func (a *App) AntigravityRun(ctx context.Context, options NativeRunOptions) (run
 				}
 				return false, nil // Builtin shell/write/delegation never bypass Core.
 			},
-		})
+		}
+		var runner core.ExecutorRunner = nativeacp.New(nativeOptions)
+		if executor == "claude" {
+			runner, err = managedClaudeRunner(runtimeIdentity, nativeOptions)
+			if err != nil {
+				return fail(err)
+			}
+		}
 		var answer strings.Builder
 		result, err := runner.Run(turnCtx, request, func(text string) error { answer.WriteString(text); return nil })
 		if err != nil {
@@ -559,8 +602,8 @@ func (a *App) AntigravityRun(ctx context.Context, options NativeRunOptions) (run
 		}
 		return result, emit(answer.String())
 	})
-	bridge, err := opencodebridge.Start(opencodebridge.Options{Frontend: "antigravity", PreferredExecutor: "antigravity", RequirePromptGate: true, Runner: base, Select: func(context.Context, string) (string, error) { return "antigravity", nil }, Status: func() opencodebridge.Status {
-		return opencodebridge.Status{SessionID: id, Frontend: "antigravity", Primary: "antigravity"}
+	bridge, err := opencodebridge.Start(opencodebridge.Options{Frontend: executor, PreferredExecutor: executor, RequirePromptGate: true, Runner: base, Select: func(context.Context, string) (string, error) { return executor, nil }, Status: func() opencodebridge.Status {
+		return opencodebridge.Status{SessionID: id, Frontend: executor, Primary: executor}
 	},
 
 		NativePermissions: func() []opencodebridge.PermissionView {
@@ -606,14 +649,14 @@ func (a *App) AntigravityRun(ctx context.Context, options NativeRunOptions) (run
 			return persistManagedTurnAttempt(ctx, store, id, attempt)
 		},
 		Mapping: func(mapping opencodebridge.Mapping) error {
-			return persistManagedNativeMapping(store, id, frontendID, "antigravity", processEpoch, options, mapping)
+			return persistManagedNativeMapping(store, id, frontendID, executor, processEpoch, options, mapping)
 		},
 	})
 	if err != nil {
 		return err
 	}
 	defer bridge.Close(context.Background())
-	fmt.Fprintln(a.Err, "Antigravity experimental managed headless session:", id)
+	fmt.Fprintln(a.Err, executor+" experimental managed headless session:", id)
 	approvalCtx, stopApprovals := context.WithCancel(ctx)
 	defer stopApprovals()
 	go func() {

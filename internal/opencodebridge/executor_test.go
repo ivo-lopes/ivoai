@@ -203,3 +203,29 @@ printf '%s\n' '{"type":"thread.started","thread_id":"synthetic"}' '{"type":"item
 		t.Fatal("invalid context reached exec")
 	}
 }
+
+func TestCLIRunnerExecutesReviewedDescriptorAfterPathReplacement(t *testing.T) {
+	root := t.TempDir()
+	script := fixtureExecutable(t, root, "reviewed", `#!/bin/sh
+printf '%s\n' '{"type":"system","subtype":"init","session_id":"native_owned"}' '{"type":"stream_event","event":{"type":"content_block_delta","delta":{"type":"text_delta","text":"reviewed descriptor"}}}' '{"type":"result","is_error":false}'
+`)
+	executable, err := os.Open(script)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer executable.Close()
+	hash, err := codexresolver.Fingerprint(script)
+	if err != nil {
+		t.Fatal(err)
+	}
+	replacement := fixtureExecutable(t, root, "replacement", "#!/bin/sh\nexit 99\n")
+	if err = os.Rename(replacement, script); err != nil {
+		t.Fatal(err)
+	}
+	runner := CLIRunner{Claude: ExecutorSpec{Path: script, ExecutableFile: executable, SHA256: hash, Dir: root, Env: []string{"PATH=/usr/bin:/bin"}}}
+	var output strings.Builder
+	result, err := runner.Run(context.Background(), ExecutorRequest{Executor: "claude", Prompt: "fixture"}, func(s string) error { output.WriteString(s); return nil })
+	if err != nil || output.String() != "reviewed descriptor" || result.Trace.ExitCode != 0 {
+		t.Fatalf("replacement executed: result=%#v output=%q err=%v", result, output.String(), err)
+	}
+}

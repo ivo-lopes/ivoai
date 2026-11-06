@@ -20,15 +20,18 @@ func (v *followupPrompts) String() string     { return "" }
 func (v *followupPrompts) Set(s string) error { *v = append(*v, s); return nil }
 
 func runAntigravity(ctx context.Context, a *app.App, args []string) error {
+	return runManagedNative(ctx, a, args, "antigravity")
+}
+func runManagedNative(ctx context.Context, a *app.App, args []string, executor string) error {
 	if len(args) == 0 || args[0] != "run" {
-		return errors.New("usage: ivoai antigravity run --prompt TEXT [--directory PATH] [--model ID] [--effort LEVEL] [--follow-up TEXT]; experimental official ACP, no native TUI interception")
+		return fmt.Errorf("usage: ivoai %s run --prompt TEXT [--directory PATH] [--model ID] [--effort LEVEL] [--follow-up TEXT]; experimental managed headless, no native TUI interception", executor)
 	}
-	fs := flag.NewFlagSet("antigravity run", flag.ContinueOnError)
+	fs := flag.NewFlagSet(executor+" run", flag.ContinueOnError)
 	fs.SetOutput(a.Err)
 	options := app.NativeRunOptions{}
 	fs.StringVar(&options.Prompt, "prompt", "", "natural-language task (required)")
 	fs.StringVar(&options.Directory, "directory", "", "isolated repository/worktree directory")
-	fs.StringVar(&options.Model, "model", "", "exact model ID, validated against the official ACP catalog")
+	fs.StringVar(&options.Model, "model", "", "exact official model ID (Antigravity validates its ACP catalog)")
 	fs.StringVar(&options.Effort, "effort", "", "official model effort suffix")
 	var followups followupPrompts
 	fs.Var(&followups, "follow-up", "related turn in the same managed session (repeatable, maximum 8)")
@@ -36,7 +39,7 @@ func runAntigravity(ctx context.Context, a *app.App, args []string) error {
 		return err
 	}
 	if fs.NArg() != 0 {
-		return errors.New("antigravity run accepts flags only")
+		return fmt.Errorf("%s run accepts flags only", executor)
 	}
 	options.Followups = []string(followups)
 	options.Approve = func(approvalCtx context.Context, p opencodebridge.PermissionView) (bool, error) {
@@ -75,6 +78,9 @@ func runAntigravity(ctx context.Context, a *app.App, args []string) error {
 			answer = append(answer, one[0])
 		}
 		return false, nil
+	}
+	if executor == "claude" {
+		return a.ClaudeRun(ctx, options)
 	}
 	return a.AntigravityRun(ctx, options)
 }

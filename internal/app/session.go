@@ -444,7 +444,7 @@ func (a *App) OrchestratorServe(ctx context.Context, id string) error {
 	if value.PrimaryTurn != nil {
 		identity := value.PrimaryTurn.Identity()
 		server.PrimaryTurnIdentity = &identity
-		if value.PrimaryTurn.Executor == "antigravity" {
+		if value.PrimaryTurn.Executor == "antigravity" || value.PrimaryTurn.Executor == "claude" {
 			bound, err := a.bindNativeACPServer(ctx, store, value)
 			if err != nil {
 				return err

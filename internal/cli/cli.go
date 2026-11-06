@@ -182,6 +182,9 @@ func runCommand(ctx context.Context, a *app.App, args []string) error {
 	case "disconnect":
 		return runDisconnect(ctx, a, args[1:])
 	case "claude":
+		if len(args) > 1 && args[1] == "run" {
+			return runManagedNative(ctx, a, args[1:], "claude")
+		}
 		rest, sources, err := extractKnowledgeSources(args[1:])
 		if err != nil {
 			return err
@@ -852,6 +855,7 @@ Usage:
   ivoai doctor [--json] [--inventory]
   ivoai update [--dry-run] | update --rollback [--force]
   ivoai update --codex [--rollback]
+  ivoai claude run --prompt TEXT [--directory PATH] [--model ID] [--follow-up TEXT]
   ivoai antigravity run --prompt TEXT [--directory PATH] [--model ID] [--follow-up TEXT]
   ivoai connect [list|chatgpt|claude]
   ivoai connect server [--url URL] [--purpose PURPOSE] [--redundancy-group GROUP] [--priority N] [--enrollment-code CODE|--code-stdin]

@@ -1,0 +1,16 @@
+{
+  "epoch": "claude-primary-offline-epoch2",
+  "kind": "official client / synthetic loopback protocol only",
+  "real_inference": false,
+  "sha256": {
+    "internal/app/native_acp.go": "2cd3aaa8d138544820c412eb1ce911797720589c2eb45ef06022ef6f9b529c12",
+    "internal/app/native_claude.go": "cfd67e5b5a9f74eea2a29f4ac401822576104a4fbbfa04dde160917602ccce40",
+    "internal/app/native_claude_runtime.go": "a173f49c4f9a0429610139c69a26ffd39590fd01898f561c8bd797373ab4e0ee",
+    "internal/app/native_claude_test.go": "5f3fff04f6f160b41e25df917b55de8cdd29e1690d47493567678be9538324e4",
+    "internal/app/native_claude_official_test.go": "54a3b0a49f2db7e055675b64c603ffebc2b5bba41d9cef2b344a7dfb6edd8b3c",
+    "internal/opencodebridge/executor.go": "9682a012169070abb4f3197559c0ce0a9df8be4d7ec7eefb3398b7c7ad1b41a1",
+    "internal/opencodebridge/executor_test.go": "ef98c7d0b01f0684420d112230fe7a51c16bbed8650797ac35f99f635b2020cc",
+    "internal/cli/native.go": "2fa4abb38d615605a148473ab65c4a7f6df6443bdf9ba3ad95e71f2c6458ae36",
+    "scripts/test_claude_primary_protocol.py": "164a5c68b157e5b5015e578fa63988bc31f5476e0f88a924fd2a950c6cc1cdcf"
+  }
+}

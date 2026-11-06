@@ -145,3 +145,9 @@ separate installed client remains subject to the applicable
 for that executable are not certified here. Its local digest and official ACP
 contract are recorded separately from publisher/signature attestation. No
 personal configuration or executable was replaced by these tests.
+
+Follow-up 2026-11-06: the optional Claude managed **headless** entrypoint now
+reuses the Core host and official stream protocol. Its three-case official
+client offline proof passed; real Claude inference still remains pending by the
+user's explicit account limitation. See the separate
+[Claude headless delivery and certification boundaries](claude-headless-core-2026-11-06.md).

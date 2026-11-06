@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -28,14 +29,17 @@ type ExecutorSpec struct {
 	Version              string
 	ObserveConfiguration bool
 	SHA256               string
-	Path                 string
-	Args                 []string
-	Env                  []string
-	Dir                  string
-	Disabled             bool
-	Compression          core.CompressionProvider
-	CompressionEnabled   bool
-	RuntimeDir           string
+	// ExecutableFile is a borrowed, already opened reviewed Linux executable.
+	// The runner verifies and executes this same descriptor; the caller owns Close.
+	ExecutableFile     *os.File
+	Path               string
+	Args               []string
+	Env                []string
+	Dir                string
+	Disabled           bool
+	Compression        core.CompressionProvider
+	CompressionEnabled bool
+	RuntimeDir         string
 }
 
 type CLIRunner struct {
@@ -66,7 +70,11 @@ func (r CLIRunner) Run(ctx context.Context, request ExecutorRequest, emit func(s
 		return ExecutorResult{}, failure("executor_unavailable")
 	}
 	if spec.SHA256 != "" {
-		hash, err := codexresolver.Fingerprint(spec.Path)
+		verifiedPath := spec.Path
+		if spec.ExecutableFile != nil {
+			verifiedPath = fmt.Sprintf("/proc/self/fd/%d", spec.ExecutableFile.Fd())
+		}
+		hash, err := codexresolver.Fingerprint(verifiedPath)
 		if err != nil || hash != spec.SHA256 {
 			return ExecutorResult{}, failure("CODEX_SESSION_EXECUTABLE_CHANGED")
 		}
@@ -137,7 +145,16 @@ func (r CLIRunner) Run(ctx context.Context, request ExecutorRequest, emit func(s
 	if lease != nil {
 		defer lease.Close(context.Background())
 	}
+	if spec.ExecutableFile != nil {
+		if compressionUsed {
+			return ExecutorResult{}, failure("executor_descriptor_compression_unsupported")
+		}
+		command = "/proc/self/fd/3"
+	}
 	cmd := exec.Command(command, args...)
+	if spec.ExecutableFile != nil {
+		cmd.ExtraFiles = []*os.File{spec.ExecutableFile}
+	}
 	cmd.Dir = spec.Dir
 	cmd.Env = environment
 	cmd.SysProcAttr = executorProcessAttributes()
