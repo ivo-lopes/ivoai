@@ -124,22 +124,11 @@ func DefaultCatalog() []Spec {
 	return catalog
 }
 
-// ClientSetupCatalog leaves the reviewed legacy catalog available for explicit
-// compatibility setup. Default client setup/update no longer installs, repairs,
-// probes or adopts OpenCode, and does not remove its existing state or files.
-func ClientSetupCatalog(includeLegacyOpenCode bool) []Spec {
-	catalog := DefaultCatalog()
-	if includeLegacyOpenCode {
-		return catalog
-	}
-	result := make([]Spec, 0, len(catalog))
-	for _, spec := range catalog {
-		if spec.Name != "opencode" {
-			result = append(result, spec)
-		}
-	}
-	return result
-}
+// ClientSetupCatalog retains its argument for source compatibility only. No
+// catalog can re-enable removed managed OpenCode installation or repair.
+func ClientSetupCatalog(_ bool) []Spec { return DefaultCatalog() }
+
+var ErrOpenCodeRemoved = errors.New("OPENCODE_MANAGED_DEPRECATED: managed OpenCode installation, repair and execution were removed; use ivoai codex; existing binaries, configuration, credentials and history are preserved")
 
 type Installer struct {
 	Runner  platform.Runner
@@ -150,6 +139,11 @@ type Installer struct {
 }
 
 func (i *Installer) Setup(ctx context.Context) error {
+	for _, spec := range i.Catalog {
+		if spec.Name == "opencode" || spec.Executable == "opencode" {
+			return ErrOpenCodeRemoved
+		}
+	}
 	if i.Runner == nil {
 		i.Runner = platform.ExecRunner{}
 	}
