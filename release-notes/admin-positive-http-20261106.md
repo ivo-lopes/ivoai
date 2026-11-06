@@ -94,3 +94,25 @@ run full setup/runtime reconciliation and remains outside this bounded fixture.
 The remaining systemd, remote-server and privileged service preconditions retain
 their documented limits. IVOAI-189 stays In Progress until its remaining applicable
 operational acceptance evidence is established.
+## Composition with Memory and Context proofs
+
+The later independent Memory and Context increments add four positive HTTP
+actions to the original three described in this report. Their explicit real
+runs are recorded in `admin-memory-status-http-20261106.md` and
+`admin-context-real-http-20261106.md`: Memory normal/race passed; Context passed
+against real TEI/E5/Qdrant without a live race claim. These seven proofs reduce
+the known certification gaps from 21 to 14 after integration; IVOAI-189 remains
+in progress.
+
+The composed ordinary `internal/admin` package passed with the race detector
+(75.326s package time, excluding compilation). Opt-in tests without their real
+inputs may skip in that ordinary run; their separate explicit real receipts,
+not those skips, prove the seven operations. Source hashes and the composed log
+are in `evidence/admin-positive-http-20261106/composed-validation.json`.
+
+Remaining positive HTTP gaps: `remote.connector.list`, `remote.doctor`,
+`remote.status`, `rollback`, `server.start`, `server.stop`, `server.restart`,
+`server.logs`, `server.restore`, `session.scope.adopt`, `session.scope.restore`,
+`update`, `server.upgrade`, and `server.upgrade.rollback`. These require their
+eligible runtime/identity/ownership environments. This follow-up changes no
+production behavior and does not change the published v0.17.0 release.
