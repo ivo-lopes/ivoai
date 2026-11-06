@@ -1,0 +1,65 @@
+ghcr.io/huggingface/text-embeddings-inference@sha256:2538ea1c9640d3763b15af668039d24172d063b42337b0c27796fc2be180c78d: Pulling from huggingface/text-embeddings-inference
+a8ac7f6c67ab: Pulling fs layer
+3ac9b621fd9d: Pulling fs layer
+678512ee5f9e: Pulling fs layer
+30eebeb2ca35: Pulling fs layer
+5d2010583ed6: Pulling fs layer
+d5a3affdea4f: Pulling fs layer
+fa12487017cc: Pulling fs layer
+876dd26d3a65: Pulling fs layer
+670f9775c474: Pulling fs layer
+080e7ef2250a: Pulling fs layer
+4181ddaeccc4: Pulling fs layer
+7a2086d3d728: Pulling fs layer
+fe6872690134: Pulling fs layer
+30eebeb2ca35: Waiting
+5d2010583ed6: Waiting
+fa12487017cc: Waiting
+d5a3affdea4f: Waiting
+876dd26d3a65: Waiting
+7a2086d3d728: Waiting
+080e7ef2250a: Waiting
+fe6872690134: Waiting
+670f9775c474: Waiting
+4181ddaeccc4: Waiting
+678512ee5f9e: Verifying Checksum
+678512ee5f9e: Download complete
+a8ac7f6c67ab: Verifying Checksum
+a8ac7f6c67ab: Download complete
+30eebeb2ca35: Verifying Checksum
+30eebeb2ca35: Download complete
+d5a3affdea4f: Download complete
+a8ac7f6c67ab: Pull complete
+5d2010583ed6: Verifying Checksum
+5d2010583ed6: Download complete
+876dd26d3a65: Verifying Checksum
+876dd26d3a65: Download complete
+fa12487017cc: Verifying Checksum
+fa12487017cc: Download complete
+670f9775c474: Verifying Checksum
+670f9775c474: Download complete
+080e7ef2250a: Verifying Checksum
+080e7ef2250a: Download complete
+7a2086d3d728: Verifying Checksum
+7a2086d3d728: Download complete
+3ac9b621fd9d: Verifying Checksum
+3ac9b621fd9d: Download complete
+fe6872690134: Verifying Checksum
+fe6872690134: Download complete
+4181ddaeccc4: Verifying Checksum
+4181ddaeccc4: Download complete
+3ac9b621fd9d: Pull complete
+678512ee5f9e: Pull complete
+30eebeb2ca35: Pull complete
+5d2010583ed6: Pull complete
+d5a3affdea4f: Pull complete
+fa12487017cc: Pull complete
+876dd26d3a65: Pull complete
+670f9775c474: Pull complete
+080e7ef2250a: Pull complete
+4181ddaeccc4: Pull complete
+7a2086d3d728: Pull complete
+fe6872690134: Pull complete
+Digest: sha256:2538ea1c9640d3763b15af668039d24172d063b42337b0c27796fc2be180c78d
+Status: Downloaded newer image for ghcr.io/huggingface/text-embeddings-inference@sha256:2538ea1c9640d3763b15af668039d24172d063b42337b0c27796fc2be180c78d
+ghcr.io/huggingface/text-embeddings-inference@sha256:2538ea1c9640d3763b15af668039d24172d063b42337b0c27796fc2be180c78d

@@ -1,0 +1,31 @@
+{
+  "source_parent": "6179d217206a8941fe4f01eae3dbe87205e02e85",
+  "fixture_source": "internal/admin/context_real_http_test.go",
+  "fixture_source_sha256": "06a2e4be3a69d9cd5c2a1f42db7544f7e247b4e6711f85ab9e943ed825ce94eb",
+  "compiled_test_sha256": "cfae24034be7b8cacb9a038cfcb2388bd85ff9f2874d69be5937767ee336bbf8",
+  "published_release_binary_executed_by_this_test": false,
+  "production_go_changed": false,
+  "file_sha256": {
+    "baseline-images.json": "64a3f99b0ac6ea62cfd28c0ea00813b15faa26cc819b90bd5d703bc809c6915f",
+    "cleanup.json": "b0991c0d85a01842152a760c33af999ad7a81ab187b05041a5da519fd4a865b3",
+    "daemon-cleanup.json": "2e2fbfcd19a7516d90cbc26232f63d4bae46c1a83561b8bf1ce46407ab934551",
+    "daemon-recovery.json": "6686d84163195103dc7e19d759bd581d498974b2abd215f8e8b3452412d14000",
+    "epoch1-failed-daemon-recovery.json": "f326d4d8280a387445f91d84f8dde006e19d91974b1fa19d9e4da959f0253096",
+    "epoch1-failed-daemon-recovery.log.json": "557728f1fa83189b86c5ebf55c9824ac7317d7255e33a3e58eaa60aa1bbf02ee",
+    "final-source-controls.json": "1f0265b111bd7e2bb30c133956e09c5bfbeb5372ae09ca59ba2c4157dd4932be",
+    "final-vet.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "host-boundary-refusal.log": "c85ae01bbb69578d67d11ca654605c3ba1444d23a29384e242e5a590f9f7b11f",
+    "http-proof.json": "f5443a7e203df45dbbf3d5b40c6e06a9aad35ec99bbba52eac326e13ef596a60",
+    "model-integrity.json": "ccd4841b3754cefdefd489bdd9b5417e9e4713d15c3d6ef264ac251ec77b4390",
+    "ordinary-offline-skip.log": "2d048f8b9c5a03a14647550c5292a447b28a660ad0d8ac5cc54397ca254ede6e",
+    "owned-tei-image-cleanup.log": "3a865d09c61f3300265554e4746f7d191afc9dc8a90640c53f04ba9fb2200a55",
+    "pull_reviewed_tei.py": "75052f0f83c1d2315450c34b3924aa557d342f348b22ba219dc53a2be4a8324e",
+    "real-admin-http-context.log": "2b0ce15bc94ac632ff9aee81bfd9f4aad9ae9f1bf951fa86bc621d590e629688",
+    "retained-harness-failures.json": "b77efeda21ed24e5b91eed1fc303c34cc3ad76d851b2533f8da1478053f60803",
+    "reviewed-tei-pull.json": "c7508fb813843f7c51288dab38eb88a248af6aea019f591d8bf49997d9077698",
+    "reviewed-tei-pull.log": "b0a026040b08111dd0cca3dae1065233dfcafc8b1a2e2f030697b3dbf1b6a0ad",
+    "run_admin_context_private.py": "bfbeafbed2c455485c1e6cae7c8f875ace09015ac265c5b949be3d01299c85b2",
+    "runtime.json": "4ecf8c09a2e75e0efde84bbace7caa7c5fe8ce9c3eec8208bff9540fa7ff3392",
+    "tei-native.log": "2b170838a09b0df84e3263957650fa362b462fec0b4590d45dcf086504876924"
+  }
+}

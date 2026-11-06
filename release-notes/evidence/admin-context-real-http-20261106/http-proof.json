@@ -1,0 +1,27 @@
+{
+  "actions": [
+    "server.context.ingest",
+    "server.context.search",
+    "server.context.document"
+  ],
+  "deterministic_embedder": false,
+  "document_sha256": "ee6a750ee1d37e6f03c2d1461cea9213f12bb89d2d90345646b2010c2e862118",
+  "documents": 1,
+  "embedding_dimensions": 384,
+  "exact_recovery": true,
+  "fake_runner": false,
+  "http_cli_core_dispatches": 5,
+  "ingest_duplicate_request_status": 409,
+  "invalid_csrf_status": 403,
+  "mindsite_context_sync": "NOT_ASSERTED",
+  "operator": "private mapped-root OS identity plus admin OAuth/browser controls",
+  "pass": true,
+  "readonly_repeat_status": 200,
+  "real_qdrant": true,
+  "real_tei_embeddings": true,
+  "receipt_context_sync": "PARTIAL",
+  "seconds": 3.80194716,
+  "semantic_score": 0.88827425,
+  "shared_context_accessed": false,
+  "unauthenticated_status": 401
+}

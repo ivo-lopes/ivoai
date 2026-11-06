@@ -1,0 +1,30 @@
+{
+  "runtime_attempts": 1,
+  "runtime_integration_failures": 0,
+  "harness_failures": [
+    {
+      "stage": "recompile",
+      "exit_code": 1,
+      "cause": "GOTMPDIR did not exist after interruption",
+      "fix": "create task-owned directory before offline compilation",
+      "product_changed": false
+    },
+    {
+      "stage": "private daemon recovery epoch1",
+      "exit_code": 127,
+      "cause": "clean PATH omitted /usr/sbin so rootless launcher could not find sysctl",
+      "fix": "restore standard system paths in private clean environment; failure log retained",
+      "product_changed": false
+    },
+    {
+      "stage": "image inventory assertion",
+      "cause": "default docker image ls excludes the five digest-only retained images",
+      "fix": "inspect known IDs and use image ls -a; all five historical image configuration hashes remain valid",
+      "product_changed": false
+    }
+  ],
+  "review_before_runtime": [
+    "Read actions intentionally do not require a mutable confirmation or NoReplay claim; fixture uses read contract without modifying product",
+    "Register the real servercmd.New dispatcher just as cmd/ivoai/main.go does; no fake success runner"
+  ]
+}
