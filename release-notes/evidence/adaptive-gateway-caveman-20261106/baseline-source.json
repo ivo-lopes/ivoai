@@ -1,0 +1,11 @@
+{
+  "base": "7220a1903",
+  "stage": "before fidelity propagation fix; first report-path validation failed before real admission",
+  "sha256": {
+    "internal/app/auto.go": "06ddd32717851a1e64556ffd4963a438ae350a5adba8ac582134caf68aa901ba",
+    "internal/app/auto_turn.go": "1b8f87cac4288f06682f4df0b5e923885d3022c704b89bc4921a84e23ac27e6e",
+    "internal/opencodebridge/executor.go": "9682a012169070abb4f3197559c0ce0a9df8be4d7ec7eefb3398b7c7ad1b41a1",
+    "internal/app/adaptive_cli_live_test.go": "41ca2ea2f45238e1a781073f5249fb26e52289e800299c3f19771b26a018d455",
+    "internal/app/adaptive_caveman_live_test.go": "0f6b563e09bb86d60ad463f386ef5faa375eff06877c2b84c20a15cc849dffad"
+  }
+}

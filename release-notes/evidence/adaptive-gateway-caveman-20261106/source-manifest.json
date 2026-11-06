@@ -1,0 +1,22 @@
+{
+  "base_commit": "7220a1903",
+  "scope": "final source used for the three-turn official Codex real-default-Caveman proof; source files are uncommitted at compilation and bound by SHA256",
+  "files_sha256": {
+    "internal/app/adaptive_cli_live_test.go": "93301d67788112b018b4020cce3d4c107691e103a9e06b0ace7803412741091c",
+    "internal/app/adaptive_caveman_live_test.go": "b008aab4bb6782e7557b8655cc4de412aedc70f93727b9b2403b91432ce85a1d",
+    "internal/app/adaptive_compression_test.go": "1e6e52849552fdc7047d27655a93cd59551c04ca5645f71cb4215f8951698336",
+    "internal/app/auto.go": "82daa944c08f025cbd9c58d2ae6558b437b7a494c8e4efac6151daab1c786a2a",
+    "internal/app/auto_turn.go": "3ebb6057ed97722ce1741b2bf83cae33519177439c5fe33cde23d1bb525fa665",
+    "internal/app/compression.go": "a75ed08a45f2d165db370bc7e34224fa442a98ab30a1e51b1b599e7ffc5f9a60",
+    "internal/opencodebridge/executor.go": "16d567ad97539fcd7319ab170218acbe155e357c213b4f96cf056d93cba083ed",
+    "internal/opencodebridge/executor_fidelity_test.go": "299a603279360193fa2188ce98698b679c3b10428d558c8d15d04c1a14d8ed76"
+  },
+  "executables_sha256": {
+    "production_core": "ea294228aea8185003fe7ef21756595e5fe34a12ad57550c804fa537922645a0",
+    "official_codex_0.167.0": "cdcb45aaa01d0f14e298985e09465aebccd47f64ecd298aea44814af7b62bbda",
+    "official_code_mode_host": "83f3e174c2da2f1ca8655cce686e302509640d34c0f4407c1155056f64536e0f"
+  },
+  "go_version": "1.27.3",
+  "platform": "linux/amd64",
+  "global_economic_gate": "INCOMPLETE"
+}

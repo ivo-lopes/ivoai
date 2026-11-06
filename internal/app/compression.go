@@ -78,6 +78,21 @@ func compressionObservation(executor string, observation core.SessionObservation
 	return observability.Event{Category: observability.CategoryCompression, Operation: observability.OperationCompressionSelect, State: state, Executor: executor, Provider: provider, RequestedProvider: requested, ProviderSource: policy.ProviderSource, Component: core.ComponentCompression, RoutingReason: reason, FallbackReason: fallbackReason, DurationMilliseconds: observation.CompressionPreflightMilliseconds, CompressionBypassed: policy.Bypassed, AuthoritativeKnowledge: policy.AuthoritativeActive, SelectedSourceCount: policy.SelectedSourceCount}
 }
 
+func managedTurnCompressionObservation(executor string, observation core.SessionObservation, policy sharedKnowledgeCompressionPolicy, fidelity core.CompressionFidelity) observability.Event {
+	event := compressionObservation(executor, observation, policy)
+	if fidelity != core.CompressionExactRequired || observation.CompressionUsed || observation.CompressionProvider != "direct" {
+		return event
+	}
+	event.FidelityClass = string(fidelity)
+	if policy.RequestedProvider == "direct" {
+		return event
+	}
+	event.Provider, event.State, event.RoutingReason = "direct", observability.StateSelected, observability.ReasonExactRequired
+	event.CompressionBypassed, event.AuthoritativeKnowledge = true, true
+	event.CompressionResult, event.FallbackReason = "bypassed", ""
+	return event
+}
+
 func (a *App) componentSpec(name string) (components.Spec, bool) {
 	catalog := components.DefaultCatalog()
 	if a.componentCatalog != nil {

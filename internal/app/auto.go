@@ -1027,6 +1027,7 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 			return persistManagedTurnAttempt(ctx, store, currentID(), attempt)
 		},
 		Mapping: func(mapping opencodebridge.Mapping) error {
+			compression := turnState.compressionSnapshot()
 			_, updateErr := store.Update(currentID(), func(currentSession *session.Session) error {
 				currentSession.SetFrontend(frontendName, mapping.FrontendSessionID)
 				currentSession.ExecutorSessionID = mapping.ExecutorSessionID
@@ -1059,7 +1060,7 @@ func (a *App) OrchestratedWithKnowledge(ctx context.Context, frontendName, plann
 				if mapping.CompressionProvider != "" {
 					currentSession.CompressionProvider = mapping.CompressionProvider
 				}
-				return session.AppendObservation(currentSession, compressionObservation(mapping.Executor, core.SessionObservation{CompressionUsed: mapping.CompressionUsed, CompressionProvider: mapping.CompressionProvider}, compressionPolicy))
+				return session.AppendObservation(currentSession, managedTurnCompressionObservation(mapping.Executor, core.SessionObservation{CompressionUsed: mapping.CompressionUsed, CompressionProvider: mapping.CompressionProvider}, compressionPolicy, compression.forMapping(*currentSession, mapping)))
 			})
 			return updateErr
 		},

@@ -24,49 +24,59 @@ import (
 )
 
 type adaptiveFullCLIReceipt struct {
-	CodeGatewayResolves  int                        `json:"native_code_gateway_resolves,omitempty"`
-	CodeGatewayHits      int                        `json:"native_code_gateway_hits,omitempty"`
-	CodeGatewayMisses    int                        `json:"native_code_gateway_misses,omitempty"`
-	CodeInspections      int                        `json:"native_code_provider_inspections,omitempty"`
-	CodeSourceChanged    bool                       `json:"host_code_change_invalidated_cache,omitempty"`
-	CompletedDAG         bool                       `json:"completed_DAG_before_readonly_and_resume,omitempty"`
-	ArchivedWorkers      int                        `json:"archived_workers,omitempty"`
-	HistoryReadable      bool                       `json:"durable_DAG_history_readable_after_resume,omitempty"`
-	ChangedPaths         []string                   `json:"approved_DAG_changed_paths,omitempty"`
-	BaselineFailed       bool                       `json:"fixed_baseline_tests_failed,omitempty"`
-	FinalTestsPassed     bool                       `json:"fixed_final_tests_passed,omitempty"`
-	LastSessionPhase     string                     `json:"last_session_phase,omitempty"`
-	LastTurnState        string                     `json:"last_turn_state,omitempty"`
-	LastFailureClass     string                     `json:"last_failure_class,omitempty"`
-	LastReceiptMode      string                     `json:"last_receipt_mode,omitempty"`
-	SchemaVersion        int                        `json:"schema_version"`
-	Scope                string                     `json:"scope"`
-	Outcome              string                     `json:"outcome"`
-	Failure              string                     `json:"failure,omitempty"`
-	Phase                string                     `json:"phase"`
-	WallMS               int64                      `json:"wall_ms"`
-	ProductionSHA256     string                     `json:"production_ivoai_sha256,omitempty"`
-	ProductionEntrypoint bool                       `json:"verified_production_go_entrypoint"`
-	PrivateCorePaths     bool                       `json:"private_xdg_core_paths"`
-	AuthLocationsIntact  bool                       `json:"home_and_codex_home_preserved"`
-	GuardedTurns         int                        `json:"subscription_admitted_turns"`
-	ControlEnvironment   string                     `json:"post_guard_control_environment_delta"`
-	ResumedAcrossProcess bool                       `json:"resumed_across_process"`
-	CompletedTurns       int                        `json:"completed_real_turns"`
-	ClosedReceipts       int                        `json:"closed_receipts"`
-	Attempts             int                        `json:"primary_attempts"`
-	Sessions             int                        `json:"core_sessions"`
-	SameFrontend         bool                       `json:"same_frontend"`
-	SameNativeThread     bool                       `json:"same_native_thread"`
-	DAG                  bool                       `json:"dag"`
-	Workers              int                        `json:"workers"`
-	BackendExitZero      bool                       `json:"backend_native_exits_zero"`
-	WrapperExitZero      bool                       `json:"public_wrapper_exit_zero"`
-	SessionCompleted     bool                       `json:"session_finalized_normally"`
-	FilesIntact          bool                       `json:"repository_data_files_intact"`
-	Startup              adaptiveNativeStartup      `json:"startup"`
-	OfficialUsage        []*core.ReportedTokenUsage `json:"official_client_usage,omitempty"`
-	GlobalEconomicGate   string                     `json:"global_economic_gate"`
+	ExactBypassEvents            int                        `json:"exact_bypass_events,omitempty"`
+	CompressionReasonsConsistent bool                       `json:"compression_reasons_consistent,omitempty"`
+	CavemanInstalled             bool                       `json:"reviewed_caveman_pair_really_installed,omitempty"`
+	CavemanWrapReady             bool                       `json:"reviewed_caveman_proxy_ready_before_inference,omitempty"`
+	CavemanVersion               string                     `json:"reviewed_caveman_version,omitempty"`
+	CavemanArchiveSHA256         string                     `json:"reviewed_caveman_archive_sha256,omitempty"`
+	ProductionCavemanMetadata    bool                       `json:"test_and_production_caveman_metadata_match,omitempty"`
+	DefaultCavemanConfig         bool                       `json:"default_caveman_config_preserved,omitempty"`
+	ObservedCompression          []string                   `json:"observed_turn_compression_providers,omitempty"`
+	ObservedCompressionUsed      []bool                     `json:"observed_turn_compression_used,omitempty"`
+	CodeGatewayResolves          int                        `json:"native_code_gateway_resolves,omitempty"`
+	CodeGatewayHits              int                        `json:"native_code_gateway_hits,omitempty"`
+	CodeGatewayMisses            int                        `json:"native_code_gateway_misses,omitempty"`
+	CodeInspections              int                        `json:"native_code_provider_inspections,omitempty"`
+	CodeSourceChanged            bool                       `json:"host_code_change_invalidated_cache,omitempty"`
+	CompletedDAG                 bool                       `json:"completed_DAG_before_readonly_and_resume,omitempty"`
+	ArchivedWorkers              int                        `json:"archived_workers,omitempty"`
+	HistoryReadable              bool                       `json:"durable_DAG_history_readable_after_resume,omitempty"`
+	ChangedPaths                 []string                   `json:"approved_DAG_changed_paths,omitempty"`
+	BaselineFailed               bool                       `json:"fixed_baseline_tests_failed,omitempty"`
+	FinalTestsPassed             bool                       `json:"fixed_final_tests_passed,omitempty"`
+	LastSessionPhase             string                     `json:"last_session_phase,omitempty"`
+	LastTurnState                string                     `json:"last_turn_state,omitempty"`
+	LastFailureClass             string                     `json:"last_failure_class,omitempty"`
+	LastReceiptMode              string                     `json:"last_receipt_mode,omitempty"`
+	SchemaVersion                int                        `json:"schema_version"`
+	Scope                        string                     `json:"scope"`
+	Outcome                      string                     `json:"outcome"`
+	Failure                      string                     `json:"failure,omitempty"`
+	Phase                        string                     `json:"phase"`
+	WallMS                       int64                      `json:"wall_ms"`
+	ProductionSHA256             string                     `json:"production_ivoai_sha256,omitempty"`
+	ProductionEntrypoint         bool                       `json:"verified_production_go_entrypoint"`
+	PrivateCorePaths             bool                       `json:"private_xdg_core_paths"`
+	AuthLocationsIntact          bool                       `json:"home_and_codex_home_preserved"`
+	GuardedTurns                 int                        `json:"subscription_admitted_turns"`
+	ControlEnvironment           string                     `json:"post_guard_control_environment_delta"`
+	ResumedAcrossProcess         bool                       `json:"resumed_across_process"`
+	CompletedTurns               int                        `json:"completed_real_turns"`
+	ClosedReceipts               int                        `json:"closed_receipts"`
+	Attempts                     int                        `json:"primary_attempts"`
+	Sessions                     int                        `json:"core_sessions"`
+	SameFrontend                 bool                       `json:"same_frontend"`
+	SameNativeThread             bool                       `json:"same_native_thread"`
+	DAG                          bool                       `json:"dag"`
+	Workers                      int                        `json:"workers"`
+	BackendExitZero              bool                       `json:"backend_native_exits_zero"`
+	WrapperExitZero              bool                       `json:"public_wrapper_exit_zero"`
+	SessionCompleted             bool                       `json:"session_finalized_normally"`
+	FilesIntact                  bool                       `json:"repository_data_files_intact"`
+	Startup                      adaptiveNativeStartup      `json:"startup"`
+	OfficialUsage                []*core.ReportedTokenUsage `json:"official_client_usage,omitempty"`
+	GlobalEconomicGate           string                     `json:"global_economic_gate"`
 }
 
 // Fixed setup diagnostics never include config contents, paths or credentials.
@@ -162,6 +172,10 @@ func TestLiveAdaptivePrimaryFullCLI(t *testing.T) {
 	fail := func(code string) { t.Helper(); row.Failure = code; t.Fatal(code) }
 	withDAG := os.Getenv("IVOAI_ADAPTIVE_FULL_CLI_DAG_LIVE") == "1"
 	withGateway := os.Getenv("IVOAI_ADAPTIVE_FULL_CLI_GATEWAY_LIVE") == "1"
+	withCaveman := os.Getenv("IVOAI_ADAPTIVE_FULL_CLI_CAVEMAN_LIVE") == "1"
+	if withCaveman && !withGateway {
+		fail("CAVEMAN_DEFAULT_PROOF_REQUIRES_GATEWAY_CASE")
+	}
 	if withGateway && (withDAG || os.Getenv("IVOAI_ADAPTIVE_RESUME_LIVE") == "1") {
 		fail("GATEWAY_REUSE_PROOF_REQUIRES_SAME_PROCESS_READONLY_CASE")
 	}
@@ -224,6 +238,13 @@ func TestLiveAdaptivePrimaryFullCLI(t *testing.T) {
 	cfg.Memory.Enabled = false
 	cfg.Headroom.Enabled = false
 	cfg.Compression.Provider, cfg.Compression.Source = "direct", config.CompressionSourceExplicit
+	if withCaveman {
+		cfg.Compression = config.Default().Compression
+		if cfg.Compression.Provider != "caveman" || cfg.Compression.Source != config.CompressionSourceDefault {
+			fail("CAVEMAN_PROOF_REQUIRES_UNCHANGED_DEFAULT_CONFIG")
+		}
+		row.DefaultCavemanConfig = true
+	}
 	cfg.OpenCode.PermissionMode = "full" // Core still admits the Primary as read-only.
 	cfg.Orchestration.Auto.ProviderPreference = "codex"
 	cfg.Orchestration.Auto.AutomaticFailover = false
@@ -235,6 +256,9 @@ func TestLiveAdaptivePrimaryFullCLI(t *testing.T) {
 	state := config.State{Schema: config.StateSchemaVersion, Components: map[string]config.ComponentState{"codex": f.state.Components["codex"], "codex-code-mode-host": f.state.Components["codex-code-mode-host"]}}
 	if failure := adaptiveFullCLISaveSetup(store, cfg, state); failure != "" {
 		fail(failure)
+	}
+	if withCaveman {
+		adaptiveFullCLIInstallCaveman(t, production, store, &row)
 	}
 	sessions := session.Store{Root: paths.SessionsDir}
 	if values, err := sessions.List(); err != nil || len(values) != 0 {
@@ -419,6 +443,32 @@ func TestLiveAdaptivePrimaryFullCLI(t *testing.T) {
 			fail("PUBLIC_OFFICIAL_ATTEMPT_UNAVAILABLE")
 		}
 		trace := attempt.Trace
+		if withCaveman {
+			row.ObservedCompression = append(row.ObservedCompression, v.CompressionProvider)
+			row.ObservedCompressionUsed = append(row.ObservedCompressionUsed, v.CompressionUsed)
+		}
+		if withCaveman {
+			if v.CompressionProvider != "direct" || v.CompressionUsed {
+				fail("PUBLIC_EXACT_EVIDENCE_WAS_WRAPPED")
+			}
+			exact, contradictory := 0, 0
+			for _, event := range v.Observability {
+				if event.Operation != observability.OperationCompressionSelect || event.TurnID != v.PrimaryTurn.TurnID || event.AttemptID != v.PrimaryTurn.AttemptID {
+					continue
+				}
+				if event.Provider == "direct" && event.RequestedProvider == "caveman" && event.ProviderSource == config.CompressionSourceDefault && event.CompressionBypassed && event.FidelityClass == string(core.CompressionExactRequired) && event.RoutingReason == observability.ReasonExactRequired && event.CompressionResult == "bypassed" {
+					exact++
+				} else {
+					contradictory++
+				}
+			}
+			if exact != 1 || contradictory != 0 {
+				fail("PUBLIC_EXACT_COMPRESSION_REASON_INCONSISTENT")
+			}
+			row.ExactBypassEvents++
+			row.CompressionReasonsConsistent = true
+		}
+
 		row.BackendExitZero = trace.Executor == "codex" && trace.Executable == codex && trace.PID > 0 && trace.ExitCode == 0 && trace.Signal == "" && trace.Completion && trace.FinalResponse && trace.Failure == ""
 		row.Attempts, row.DAG, row.Workers = len(v.TurnAttempts), v.PlanID != "", len(v.Workers)
 		if index == 0 {
@@ -534,6 +584,12 @@ func TestLiveAdaptivePrimaryFullCLI(t *testing.T) {
 		case <-time.After(350 * time.Millisecond):
 		case <-ctx.Done():
 			fail("PUBLIC_CLI_CASE_DEADLINE")
+		}
+	}
+	if withCaveman {
+		savedConfig, err := store.Load()
+		if err != nil || savedConfig.Compression != config.Default().Compression {
+			fail("PUBLIC_DEFAULT_CAVEMAN_CONFIG_CHANGED")
 		}
 	}
 	row.Phase = "public_normal_exit"

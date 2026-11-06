@@ -31,15 +31,16 @@ type ExecutorSpec struct {
 	SHA256               string
 	// ExecutableFile is a borrowed, already opened reviewed Linux executable.
 	// The runner verifies and executes this same descriptor; the caller owns Close.
-	ExecutableFile     *os.File
-	Path               string
-	Args               []string
-	Env                []string
-	Dir                string
-	Disabled           bool
-	Compression        core.CompressionProvider
-	CompressionEnabled bool
-	RuntimeDir         string
+	ExecutableFile      *os.File
+	Path                string
+	Args                []string
+	Env                 []string
+	Dir                 string
+	Disabled            bool
+	Compression         core.CompressionProvider
+	CompressionFidelity core.CompressionFidelity
+	CompressionEnabled  bool
+	RuntimeDir          string
 }
 
 type CLIRunner struct {
@@ -124,14 +125,22 @@ func (r CLIRunner) Run(ctx context.Context, request ExecutorRequest, emit func(s
 	compressionProvider := "direct"
 	compressionUsed := false
 	var lease core.CompressionLease
+	fidelity := spec.CompressionFidelity
+	if fidelity == "" {
+		fidelity = core.CompressionCompressible
+	}
 	if spec.CompressionEnabled && spec.Compression != nil {
 		component := core.ComponentCodex
 		if request.Executor == "claude" {
 			component = core.ComponentClaude
 		}
-		prepared, prepareErr := spec.Compression.Prepare(ctx, core.CompressionRequest{Executor: component, DirectPath: spec.Path, Args: args, Environment: environment, RuntimeDir: spec.RuntimeDir, Fidelity: core.CompressionCompressible})
+		prepared, prepareErr := spec.Compression.Prepare(ctx, core.CompressionRequest{Executor: component, DirectPath: spec.Path, Args: args, Environment: environment, RuntimeDir: spec.RuntimeDir, Fidelity: fidelity})
 		if prepareErr == nil && prepared != nil {
 			decision := prepared.Decision()
+			if decision.Used && fidelity != core.CompressionCompressible {
+				_ = prepared.Close(context.Background())
+				return ExecutorResult{}, failure("compression_fidelity_violation")
+			}
 			if decision.Used {
 				command, args, environment = decision.Command, decision.Args, decision.Environment
 				lease = prepared
