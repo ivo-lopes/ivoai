@@ -1,0 +1,14 @@
+{
+  "pause_trigger_seconds": 869.719,
+  "pause_trigger_free_bytes": 4163932160,
+  "resume_authorization_utc": "2026-11-06T17:53:06.934662+00:00",
+  "resume_confirmed_by_wall_seconds": 1136.752,
+  "maximum_pause_until_resume_observation_seconds": 267.033,
+  "monitor_poll_seconds": 3,
+  "exact_SIGCONT_timestamp_recorded": false,
+  "source_unmodified": true,
+  "candidate_unmodified": true,
+  "fixture_files_deleted_to_reduce_disk_pressure": false,
+  "original_failed_run_preserved": "../headroom-offline-reapply-20261106/initial-core-upgrade-failure.json",
+  "published_release_bundle": false
+}

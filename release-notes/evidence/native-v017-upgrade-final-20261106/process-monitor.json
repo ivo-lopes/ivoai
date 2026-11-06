@@ -1,0 +1,20 @@
+{
+  "source": "7bce1090ea1eb971326f641460fea4fdee8e6b7b",
+  "provider_inference": false,
+  "host_isolated": false,
+  "start_utc": "2026-11-06T17:35:01Z",
+  "outcome": "PROCESS_EXITED",
+  "pauses": [
+    {
+      "at_seconds": 869.719,
+      "free_bytes": 4163932160
+    }
+  ],
+  "pid": 733932,
+  "wall_seconds": 1201.421,
+  "disk_free_bytes": 25214865408,
+  "minimum_disk_free_bytes": 4149977088,
+  "phase": "completed",
+  "exit_code": 0,
+  "end_utc": "2026-11-06T17:55:03Z"
+}

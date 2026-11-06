@@ -1,0 +1,50 @@
+{
+  "source": "7bce1090ea1eb971326f641460fea4fdee8e6b7b",
+  "tree": "ee351d962b3449f6dc89367f043f0635ee919e50",
+  "tracked_files": 5321,
+  "changed_files": [],
+  "candidate_binary_sha256": "a133ef9439e4fbac0dd55ef744824167c6b506cdd0abba3b4f8766311b5a76f4",
+  "candidate_archive_sha256": "b80d694e38ba640bc1ae6ba0f6ed6f717cfad8ae4cf3d78a8d25568c7c0a4073",
+  "source_freeze_sha256": "4dab9dc1d5ff277ad14ef8294b319e56cd212eb8cda52e792fc3a61219d4f468",
+  "source_and_binary_unchanged_after_gate": true,
+  "go_vcs_modified": false,
+  "architecture": "linux/amd64",
+  "build": {
+    "go": "1.27.3",
+    "CGO_ENABLED": "0",
+    "GOOS": "linux",
+    "GOARCH": "amd64",
+    "GOAMD64": "v1",
+    "version": "0.17.0",
+    "trimpath": true
+  },
+  "distribution_metadata": {
+    "graft": {
+      "archive": "ivoai-graft_linux_amd64.tar.gz",
+      "node_sha256": "5848553868b402d3fabb5b09270649977780a390f832155721025a08b5104455",
+      "node_version": "26.13.0",
+      "patch_sha256": "135722b9294001b63545dfe377c8565e25d4b4383ac9ebb5755d951f50a80026",
+      "platform": "linux/amd64",
+      "revision": "47260159e7908545bd7eb4ceee546de8bb91d4d4ecf36a37738c6e16de281bb0",
+      "sha256": "f93950d60d941f80663e6bab5acaa5a17b47909324d8f633b60f3061ad4791b6",
+      "source_sha256": "d39598390324ad0076a88ab593b63ad2ba352370ea07c073e31f11327979f8e1",
+      "upstream_revision": "fe30ead39d5e6f0c921018d364da2bdbc9d4b3ad",
+      "version": "0.21.1-ivoai.2",
+      "url": "https://github.com/ivo-lopes/ivoai/releases/download/v0.17.0/ivoai-graft_linux_amd64.tar.gz"
+    },
+    "caveman": {
+      "archive": "ivoai-caveman_linux_amd64.tar.gz",
+      "patch_sha256": "5f95e80d41d5744f16e09d534b1d56585fe746f9d5aed1e14c2586bbe953810d",
+      "platform": "linux/amd64",
+      "revision": "4aa75389cc44528240cdf4b010cd85b8903fe8fe8d587097a9f09fc48c837c6e",
+      "sha256": "25aa3e352c301fdaf303001487663d71a874e50f9211232a9cdc293b503b3b65",
+      "source_sha256": "29ef4c5bccee70dbc486bae266f966b8bd53132c6e12e27e9b06b36cf35c51f4",
+      "upstream_revision": "b4531dfc05a3ef0ba93b57e8bfa5f48564a4b4d6",
+      "url": "https://github.com/ivo-lopes/ivoai/releases/download/v0.17.0/ivoai-caveman_linux_amd64.tar.gz",
+      "version": "4.0.2-ivoai.1"
+    }
+  },
+  "gate_receipt_sha256": "685b0b9671b14d08b8dd6faff393e0718a4a927954163bbaed6ce396047c4335",
+  "provider_inference": false,
+  "is_published_release_bundle": false
+}
