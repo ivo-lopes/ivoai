@@ -1,9 +1,11 @@
 package codexfrontend
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -21,6 +23,7 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/opencodebridge"
 	"github.com/ivo-lopes/ivoai/internal/routing"
 	"github.com/ivo-lopes/ivoai/internal/session"
+	"golang.org/x/sys/unix"
 )
 
 type writeBuffer struct{ bytes.Buffer }
@@ -32,11 +35,25 @@ func TestNativeCloseStopsBackgroundDirectoryWriters(t *testing.T) {
 		t.Run(map[bool]string{false: "live_writer_control", true: "closed_writer"}[closeBeforeTrigger], func(t *testing.T) {
 			root := t.TempDir()
 			ready, trigger, leaked := filepath.Join(root, "ready"), filepath.Join(root, "trigger"), filepath.Join(root, "leaked")
-			pidFile := filepath.Join(root, "writer-pid")
+			if err := syscall.Mkfifo(ready, 0600); err != nil {
+				t.Fatal(err)
+			}
+			// Keep the read end open before Start. RDWR prevents an early EOF
+			// before the fixture opens its writer, and CLOEXEC prevents either
+			// child from retaining the test's descriptor.
+			fd, err := syscall.Open(ready, syscall.O_RDWR|syscall.O_NONBLOCK|syscall.O_CLOEXEC, 0)
+			if err != nil {
+				t.Fatal(err)
+			}
+			readiness := os.NewFile(uintptr(fd), "native-writer-readiness")
+			defer readiness.Close()
 			binary := filepath.Join(root, "fake-codex")
 			// The writer cannot write the marker until the test releases it. A
 			// slow scheduler can no longer make it write before Close is called.
-			body := "#!/bin/sh\n(touch '" + ready + "'; while [ ! -f '" + trigger + "' ]; do sleep 0.01; done; touch '" + leaked + "') &\nprintf '%s' \"$!\" > '" + pidFile + ".tmp'\nmv '" + pidFile + ".tmp' '" + pidFile + "'\ncat >/dev/null\n"
+			// Both startup signals use shell builtins: one from the writer
+			// itself, one with the parent's exact background PID. FIFO writes
+			// are atomic and their order does not matter.
+			body := "#!/bin/sh\n(printf 'ready\\n' > '" + ready + "'; while [ ! -f '" + trigger + "' ]; do sleep 0.01; done; : > '" + leaked + "') &\nprintf 'pid=%s\\n' \"$!\" > '" + ready + "'\ncat >/dev/null\n"
 			if err := os.WriteFile(binary, []byte(body), 0700); err != nil {
 				t.Fatal(err)
 			}
@@ -51,28 +68,18 @@ func TestNativeCloseStopsBackgroundDirectoryWriters(t *testing.T) {
 				t.Fatal(err)
 			}
 			defer f.Close()
-			for i := 0; i < 100; i++ {
-				_, readyErr := os.Stat(ready)
-				_, pidErr := os.Stat(pidFile)
-				if readyErr == nil && pidErr == nil {
-					break
-				}
-				time.Sleep(5 * time.Millisecond)
-			}
-			if _, err := os.Stat(ready); err != nil {
-				t.Fatal("fixture writer did not become ready")
-			}
-			encodedPID, err := os.ReadFile(pidFile)
-			if err != nil {
-				t.Fatal(err)
-			}
-			pid, err := strconv.Atoi(string(encodedPID))
-			if err != nil || pid <= 0 {
-				t.Fatal("invalid fixture PID")
-			}
+			pid := awaitNativeFixtureWriter(t, f, readiness)
 			identity := session.ProcessStart(pid)
 			if identity == "" {
 				t.Fatal("fixture process identity unavailable")
+			}
+			writerFD, err := unix.PidfdOpen(pid, 0)
+			if err != nil {
+				t.Fatalf("fixture writer pidfd unavailable: %v", err)
+			}
+			if !session.ProcessMatches(pid, identity) {
+				_ = unix.Close(writerFD)
+				t.Fatal("fixture writer changed identity during pidfd acquisition")
 			}
 			writerAlive := func() bool {
 				return nativeFixtureWriterAlive(identity, func() ([]byte, error) {
@@ -80,10 +87,11 @@ func TestNativeCloseStopsBackgroundDirectoryWriters(t *testing.T) {
 				})
 			}
 			t.Cleanup(func() {
+				defer unix.Close(writerFD)
 				f.Close()
-				if session.ProcessMatches(pid, identity) {
-					_ = syscall.Kill(pid, syscall.SIGKILL)
-				}
+				// The acquired descriptor retains this exact process identity;
+				// never signal a raw PID after a separate liveness check.
+				_ = unix.PidfdSendSignal(writerFD, unix.SIGKILL, nil, 0)
 			})
 			args := strings.Join(f.Args(), " ")
 			if strings.Contains(args, "sandbox_mode=") || strings.Contains(args, "approval_policy=") {
@@ -126,6 +134,61 @@ func TestNativeCloseStopsBackgroundDirectoryWriters(t *testing.T) {
 			}
 		})
 	}
+}
+
+func awaitNativeFixtureWriter(t *testing.T, f *Facade, readiness io.Reader) int {
+	t.Helper()
+	type result struct {
+		pid int
+		err error
+	}
+	started := make(chan result, 1)
+	go func() {
+		reader := bufio.NewReader(readiness)
+		ready, pid := false, 0
+		for i := 0; i < 2; i++ {
+			line, err := reader.ReadString('\n')
+			if err != nil {
+				started <- result{err: err}
+				return
+			}
+			switch {
+			case line == "ready\n" && !ready:
+				ready = true
+			case strings.HasPrefix(line, "pid=") && pid == 0:
+				pid, err = strconv.Atoi(strings.TrimSuffix(strings.TrimPrefix(line, "pid="), "\n"))
+				if err != nil || pid <= 0 {
+					started <- result{err: fmt.Errorf("invalid fixture PID")}
+					return
+				}
+			default:
+				started <- result{err: fmt.Errorf("unexpected fixture readiness signal")}
+				return
+			}
+		}
+		if !ready || pid <= 0 {
+			started <- result{err: fmt.Errorf("incomplete fixture readiness")}
+			return
+		}
+		started <- result{pid: pid}
+	}()
+	// Setup includes child scheduling and filesystem I/O under full -race
+	// concurrency. This budget does not change any Close/termination or
+	// post-trigger assertion deadline below.
+	timer := time.NewTimer(10 * time.Second)
+	defer timer.Stop()
+	select {
+	case value := <-started:
+		if value.err != nil {
+			t.Fatalf("fixture writer startup failed: %v", value.err)
+		}
+		return value.pid
+	case <-f.ctx.Done():
+		t.Fatal("fixture App Server exited before writer readiness")
+	case <-timer.C:
+		t.Fatal("fixture writer startup timed out before its causal readiness signals")
+	}
+	return 0
 }
 
 func TestNativeAdmissionFailsClosed(t *testing.T) {
