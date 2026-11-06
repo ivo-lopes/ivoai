@@ -1,0 +1,4 @@
+=== RUN   TestAdministrativePositiveMemoryStatusOfficialServer
+    memory_real_http_test.go:34: real Memory status fixture requires an explicitly isolated network namespace
+--- FAIL: TestAdministrativePositiveMemoryStatusOfficialServer (0.06s)
+FAIL

@@ -1,0 +1,5 @@
+2026-11-06T19:26:48.5718406Z --- FAIL: TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission (0.72s)
+2026-11-06T19:26:48.5724865Z     primary_prefetch_common_admission_process_linux_test.go:197: descendant still executing or identity/state unknown
+2026-11-06T19:26:48.5726590Z FAIL
+2026-11-06T19:26:48.5727235Z FAIL	github.com/ivo-lopes/ivoai/internal/app	165.340s
+2026-11-06T19:26:48.5728125Z ok  	github.com/ivo-lopes/ivoai/internal/benchmarkfixtures	3.151s

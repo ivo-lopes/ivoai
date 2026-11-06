@@ -1,0 +1,4 @@
+=== RUN   TestAdministrativeContextRealHTTP
+    context_real_http_test.go:176: real HTTP→CLI→Core→TEI/Qdrant completed3 actions with5 dispatches; mutation duplicate409, both authorized read repeats200; exactSHAee6a750ee1d37e6f03c2d1461cea9213f12bb89d2d90345646b2010c2e862118
+--- PASS: TestAdministrativeContextRealHTTP (3.80s)
+PASS

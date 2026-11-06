@@ -1,0 +1,8 @@
+=== RUN   TestAdministrativePositiveUpdateDryRunRealCandidate
+    positive_operations_test.go:406: actual operation update.dry-run failed: HTTP200 status=failed error=<nil> output=... Updating ivoai
+        x Updating ivoai failed (0s)
+        ; dispatch=test executable override is not allowed
+--- FAIL: TestAdministrativePositiveUpdateDryRunRealCandidate (0.31s)
+FAIL
+FAIL	github.com/ivo-lopes/ivoai/internal/admin	0.339s
+FAIL

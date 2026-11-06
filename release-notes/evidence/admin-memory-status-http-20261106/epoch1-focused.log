@@ -1,0 +1,4 @@
+=== RUN   TestAdministrativePositiveMemoryStatusOfficialServer
+    memory_real_http_test.go:147: actual administrative Memory status did not report healthy
+--- FAIL: TestAdministrativePositiveMemoryStatusOfficialServer (0.38s)
+FAIL

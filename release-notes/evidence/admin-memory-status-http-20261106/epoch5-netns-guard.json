@@ -1,0 +1,7 @@
+{
+  "outcome": "EXPECTED_REJECTION_PASS",
+  "exit_code": 1,
+  "wall_seconds": 0.07792741000002934,
+  "scope": "same parent network namespace must fail before fixed-port bind/backend execution",
+  "positive_integration": false
+}

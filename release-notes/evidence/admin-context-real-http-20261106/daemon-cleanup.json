@@ -1,0 +1,8 @@
+{
+  "owned_recovery_pid": 10570,
+  "start_ticks": 34459,
+  "stop_signal": "SIGTERM through retained verified pidfd",
+  "original_daemon_was_already_stopped_before_recovery": true,
+  "recovery_daemon_stopped": true,
+  "historical_data_root_preserved": true
+}

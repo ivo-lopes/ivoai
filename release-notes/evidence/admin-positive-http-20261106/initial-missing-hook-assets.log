@@ -1,0 +1,3 @@
+[2m2026-11-06T18:56:55.143649Z[0m [32m INFO[0m [2mai_memory_cli[0m[2m:[0m ai-memory starting [3mversion[0m[2m=[0m"3.4.2" [3mserver_url[0m[2m=[0mhttp://127.0.0.1:1/ [3mdata_dir[0m[2m=[0m/var/tmp/ivoai-admin-positive-evidence-20261106/ivoai-admin-hook-render-diagnostic-m26x1fk_/runtime [3mbind[0m[2m=[0m127.0.0.1:49374
+[ai-memory] capture-policy capability v1 enforced by this selected integration; re-run --apply to refresh existing installs.
+Error: hooks directory /var/tmp/ivoai-admin-positive-evidence-20261106/ivoai-admin-hook-render-diagnostic-m26x1fk_/hooks/codex does not exist

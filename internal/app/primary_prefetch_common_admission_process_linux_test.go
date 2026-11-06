@@ -180,21 +180,30 @@ func TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission(t *testing.T) {
 	}
 	parent, parentStart := readPID("inventory.pid")
 	child, childStart := readPID("child.pid")
+	deadline := time.Now().Add(3 * time.Second)
 	cancel()
+	timer := time.NewTimer(time.Until(deadline))
+	defer timer.Stop()
 	select {
 	case r := <-done:
 		if r.p != nil || r.o.State != "NOT_RUN" || r.o.ModelAttempts != 0 || r.o.InventoryAttempts != 1 || r.o.ProbeAttempts != 1 {
 			t.Fatal("resistant descendant admitted a model")
 		}
-	case <-time.After(3 * time.Second):
+	case <-timer.C:
 		t.Fatal("resistant inventory exceeded existing cleanup bound")
 	}
 	if session.ProcessMatches(parent, parentStart) {
 		t.Fatal("owned inventory leader was not reaped")
 	}
-	raw, e := os.ReadFile("/proc/" + strconv.Itoa(child) + "/stat")
-	if !prefetchFixtureDescendantStopped(raw, e, childStart) {
-		t.Fatal("descendant still executing or identity/state unknown")
+	// Closing/reaping the leader does not observe the descendant's state.
+	// Observe only this identity within the SAME cancellation deadline: a
+	// matching live snapshot may transition after group cleanup, whereas an
+	// unknown identity, malformed stat or I/O error must still fail closed.
+	state, stopped := prefetchFixtureAwaitDescendantStopped(childStart, deadline, func() ([]byte, error) {
+		return os.ReadFile("/proc/" + strconv.Itoa(child) + "/stat")
+	})
+	if !stopped {
+		t.Fatalf("descendant still executing or identity/state unknown within cleanup bound: %s", state)
 	}
 	t.Log("negative admission preserved; descendant_nonexecuting=Z_or_absent; descendant_reap=NOT_OBSERVED")
 }
@@ -203,18 +212,108 @@ func TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission(t *testing.T) {
 // returns ESRCH rather than ENOENT. Only those known-absence errors qualify;
 // permission/I/O failures and malformed or mismatched identities stay unknown.
 func prefetchFixtureDescendantStopped(raw []byte, err error, start string) bool {
+	state, known := prefetchFixtureDescendantState(raw, err, start)
+	return known && (state == "absent" || state == "Z")
+}
+
+func prefetchFixtureDescendantState(raw []byte, err error, start string) (string, bool) {
 	if os.IsNotExist(err) || errors.Is(err, syscall.ESRCH) {
-		return true
+		return "absent", true
 	}
 	if err != nil || len(raw) > 16384 {
-		return false
+		return "unknown", false
 	}
 	i := bytes.LastIndexByte(raw, ')')
 	if i < 0 {
-		return false
+		return "malformed", false
 	}
 	fields := strings.Fields(string(raw[i+1:]))
-	return len(fields) >= 20 && fields[19] == start && fields[0] == "Z"
+	if len(fields) < 20 || fields[19] != start {
+		return "identity_unknown", false
+	}
+	switch fields[0] {
+	case "R", "S", "D", "T", "t", "X", "x", "K", "W", "P", "I", "Z":
+		return fields[0], true
+	default:
+		return "state_unknown", false
+	}
+}
+
+func prefetchFixtureAwaitDescendantStopped(start string, deadline time.Time, observe func() ([]byte, error)) (string, bool) {
+	state := "deadline"
+	for time.Now().Before(deadline) {
+		raw, err := observe()
+		var known bool
+		state, known = prefetchFixtureDescendantState(raw, err, start)
+		if !known {
+			return state, false
+		}
+		if state == "absent" || state == "Z" {
+			return state, time.Now().Before(deadline)
+		}
+		remaining := time.Until(deadline)
+		if remaining <= 0 {
+			break
+		}
+		time.Sleep(min(5*time.Millisecond, remaining))
+	}
+	return state, false
+}
+
+func TestPrimaryPrefetchCommonDescendantObservationUsesSharedDeadline(t *testing.T) {
+	stat := func(state, start string) []byte {
+		fields := []string{state}
+		for range 18 {
+			fields = append(fields, "0")
+		}
+		return []byte("42 (fixture) " + strings.Join(append(fields, start), " "))
+	}
+	observations := 0
+	state, stopped := prefetchFixtureAwaitDescendantStopped("123", time.Now().Add(time.Second), func() ([]byte, error) {
+		observations++
+		if observations < 3 {
+			return stat("R", "123"), nil
+		}
+		return stat("Z", "123"), nil
+	})
+	if !stopped || state != "Z" || observations != 3 {
+		t.Fatal("matching live snapshots did not require an observed nonexecuting transition")
+	}
+	for _, tc := range []struct {
+		name string
+		raw  []byte
+		err  error
+	}{
+		{"permission", nil, syscall.EPERM},
+		{"io", nil, syscall.EIO},
+		{"identity", stat("Z", "999"), nil},
+		{"malformed", []byte("malformed"), nil},
+		{"unknown_state", stat("?", "123"), nil},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			calls := 0
+			_, stopped := prefetchFixtureAwaitDescendantStopped("123", time.Now().Add(time.Second), func() ([]byte, error) {
+				calls++
+				return tc.raw, tc.err
+			})
+			if stopped || calls != 1 {
+				t.Fatal("unknown observation was retried or accepted")
+			}
+		})
+	}
+	_, stopped = prefetchFixtureAwaitDescendantStopped("123", time.Now().Add(15*time.Millisecond), func() ([]byte, error) {
+		return stat("R", "123"), nil
+	})
+	if stopped {
+		t.Fatal("a descendant still executing at the deadline was accepted")
+	}
+	_, stopped = prefetchFixtureAwaitDescendantStopped("123", time.Now().Add(-time.Second), func() ([]byte, error) {
+		t.Fatal("an exhausted cleanup deadline was extended")
+		return stat("Z", "123"), nil
+	})
+	if stopped {
+		t.Fatal("expired cleanup deadline was accepted")
+	}
 }
 
 func TestPrimaryPrefetchCommonDescendantObservationConservative(t *testing.T) {

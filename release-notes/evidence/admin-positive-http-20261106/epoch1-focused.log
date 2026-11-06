@@ -1,0 +1,12 @@
+=== RUN   TestAdministrativePositiveCapabilityRollbackWithPriorRelease
+    positive_operations_test.go:212: real HTTP+CLI+Core rollback restored reviewed prior Ponytail 356918eba965ee1eac64bd3a7f0dd02108350de5 from current 9cc65d03aa2da1db7121b912d03596409ee340b8; no network/provider process; duplicate request=409
+--- PASS: TestAdministrativePositiveCapabilityRollbackWithPriorRelease (0.04s)
+=== RUN   TestAdministrativePositiveRepairHooksOfficialBinary
+    positive_operations_test.go:256: isolated ai-memory hook rendering failed
+--- FAIL: TestAdministrativePositiveRepairHooksOfficialBinary (0.24s)
+=== RUN   TestAdministrativePositiveUpdateDryRunRealCandidate
+    positive_operations_test.go:339: open /var/tmp/ivoai-v017-final-upgrade-candidate-20261106/assets/checksums.txt: no such file or directory
+--- FAIL: TestAdministrativePositiveUpdateDryRunRealCandidate (0.43s)
+FAIL
+FAIL	github.com/ivo-lopes/ivoai/internal/admin	0.739s
+FAIL

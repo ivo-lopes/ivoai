@@ -1,0 +1,19 @@
+{
+  "source_parent": "467f7e696",
+  "outcome": "PASS",
+  "command": "go test -race -p=2 -timeout 3m ./internal/admin",
+  "package_seconds": 75.326,
+  "compile_time_included": false,
+  "ordinary_package_only": true,
+  "opt_in_skips_are_not_real_integration_certification": true,
+  "real_positive_actions_independently_proved": 7,
+  "remaining_positive_http_certification_gaps": 14,
+  "production_changes": false,
+  "source_sha256": {
+    "internal/admin/positive_operations_test.go": "6590bf13c4e724f055f13fc3d4d147c4530398e5caecb8ccf6d795aeaefacd73",
+    "internal/admin/memory_real_http_test.go": "eb08eee8affb022cd147d2afab5a1ec1c2157bfe52b459d1c98bf0e5bc9cbb62",
+    "internal/admin/context_real_http_test.go": "06a2e4be3a69d9cd5c2a1f42db7544f7e247b4e6711f85ab9e943ed825ce94eb",
+    "internal/app/primary_prefetch_common_admission_process_linux_test.go": "9fd280cb80bf5b2282b60dd255e434974c21bf2fff4c1c77b2ac627b83b40e8c"
+  },
+  "log_sha256": "53f183114a233128a90072b09e07c1e2e6ed9676946f809832e98316ee1ef78b"
+}

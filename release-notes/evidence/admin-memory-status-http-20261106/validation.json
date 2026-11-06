@@ -1,0 +1,78 @@
+{
+  "base": "6179d217206a8941fe4f01eae3dbe87205e02e85",
+  "production_release": "v0.17.0 f441b81abbbd9cd24f87651837a98f89a40e06ac remains unchanged",
+  "new_positive_action": "server.memory.status",
+  "outcome": "PASS",
+  "official_memory_version": "3.4.2",
+  "official_memory_sha256": "5a8e2c51cb09dadfc157601772b32c79ee63a6cbf9f05caf59c67da385bae6c1",
+  "normal_run": {
+    "seconds": 2.08,
+    "wall_seconds": 2.10257260100002,
+    "skipped": 0
+  },
+  "race_run": {
+    "seconds": 9.05,
+    "wall_seconds": 10.100577961999988,
+    "skipped": 0
+  },
+  "vet": "PASS",
+  "real_http_statuses": {
+    "healthy_authorized_reads": 2,
+    "missing_cookie": 401,
+    "missing_csrf": 403,
+    "backend_wrong_bearer": 401,
+    "wrong_backend_secret": "HTTP200 status=failed",
+    "stopped_backend": "HTTP200 status=failed"
+  },
+  "dispatch_count": 4,
+  "read_repetition": "permitted; mutation-only confirmation and NoReplay409 are not asserted",
+  "backend_mcp_scope": "Actual authenticated tools/list catalog, not memory_status invocation or inference",
+  "test_mode": "Existing guarded private server-root selector and production installation precondition omission; real HTTP/CLI/servercmd/process/MCP unchanged",
+  "same_namespace_guard": "EXPECTED_REJECTION_PASS before binding port49374 or starting backend",
+  "personal_home_mounted": false,
+  "copied_personal_credentials": false,
+  "provider_inference": false,
+  "docker_or_systemd_mutations": false,
+  "production_code_changed": false,
+  "temporary_private_runtime_and_secrets": "removed after both successful explicit runs; no forced child cleanup required",
+  "resource_observation": {
+    "existing_cache_mib_approx": 540,
+    "final_cache_mib_approx": 759,
+    "own_evidence_and_compiled_binaries_mib_approx": 178,
+    "additional_root_budget_bytes": 536870912,
+    "new_compiles_done_before_shared_cache_returned_to_parent": true
+  },
+  "not_certified": [
+    "Production systemd/install/ownership/resource limits",
+    "Shared Mindsite memory or Context synchronization",
+    "Document retrieval/inference or economic savings",
+    "Other administrative operations; Context3 not counted here"
+  ],
+  "certification_gap_effect": "18→17 only after integration of this proof and PR76; IVOAI-189 remains InProgress",
+  "retained_failures": [
+    {
+      "epoch": "epoch1-focused",
+      "classification": "Fixture missing real server command adapter registration; corrected with production servercmd.New registration, no product changes"
+    },
+    {
+      "epoch": "epoch3-final-race",
+      "classification": "Driver ordered before race linker completed; bwrap refused missing binary before test/backend execution. Final driver checks executable preflight and final race waits for compilation completion."
+    }
+  ],
+  "source_sha256": {
+    "internal/admin/memory_real_http_test.go": "eb08eee8affb022cd147d2afab5a1ec1c2157bfe52b459d1c98bf0e5bc9cbb62"
+  },
+  "evidence_sha256": {
+    "epoch1-focused.log": "d47c7b4b66e56b84d3fc586c64af8d278ed40cacc7aa67a042fa806969a2ba09",
+    "epoch1-focused.json": "cb5eae12b89678f502b6a549f039ea2af8f32f0ed40b959edc804194dfd76a46",
+    "epoch2-real-adapter.log": "e7a135ecd62f223e76545501d419dc1e01b196c81bc0fc4e0cededd1de80229d",
+    "epoch2-real-adapter.json": "50be59934880b8db8cc2f9c8ab244398b684c5caaa358be64b81b3a53f05e30e",
+    "epoch3-final-race.log": "446ca8f72cb581b0cb5bcb472aa45d16d4b0f2e45bbba8bdd52c2f8b89e3950b",
+    "epoch4-final-race.log": "71ab45f94165cd07e36e05b4bdd9fa4635dca1fd612083588a80a5f786086d05",
+    "epoch4-final-race.json": "2955364e787a775a6712d1404e5ee59bd3ae823d5b8a5706def7f79ceb27af93",
+    "epoch5-netns-guard.log": "ff0baa87ae682dc795aae5e6cfb09c75faf65efa39f3d1fb70d5cad202b56e35",
+    "epoch5-netns-guard.json": "7f9d9cb9d45a99f744df6acce1077dc98b2d56153b6f87740aa26a8ae255bb99",
+    "final-vet.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "run-private.py": "25dad65d6fe55309a628d60bb26894a907783fd0857fe8f6a02f5d3af05f06cc"
+  }
+}

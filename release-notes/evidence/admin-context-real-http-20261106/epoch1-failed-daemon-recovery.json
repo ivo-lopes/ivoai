@@ -1,0 +1,25 @@
+{
+  "pid": 10078,
+  "start_ticks": 31476,
+  "command": [
+    "/usr/bin/dockerd-rootless.sh",
+    "--host=unix:///var/tmp/ivoai-consolidation-tools-20261104/docker-private/run/docker.sock",
+    "--data-root=/var/tmp/ivoai-consolidation-tools-20261104/docker-private/data",
+    "--exec-root=/var/tmp/ivoai-consolidation-tools-20261104/docker-private/exec",
+    "--pidfile=/var/tmp/ivoai-consolidation-tools-20261104/docker-private/run/docker.pid",
+    "--storage-driver=vfs",
+    "--iptables=false",
+    "--ip6tables=false",
+    "--bridge=none",
+    "--userland-proxy=false",
+    "--exec-opt=native.cgroupdriver=cgroupfs"
+  ],
+  "socket": "/var/tmp/ivoai-consolidation-tools-20261104/docker-private/run/docker.sock",
+  "previous_pid": 388017,
+  "previous_state_preserved": true,
+  "rootless_slirp_net": true,
+  "data_root": "/var/tmp/ivoai-consolidation-tools-20261104/docker-private/data",
+  "ready": false,
+  "exit": 127,
+  "failure_reason": "clean PATH omitted /usr/sbin; rootless script could not execute sysctl; exit127 before daemon startup"
+}

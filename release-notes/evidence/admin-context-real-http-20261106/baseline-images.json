@@ -1,0 +1,62 @@
+[
+  {
+    "Containers": "0",
+    "CreatedAt": "2026-11-05 12:11:53 -0300 -03",
+    "CreatedSince": "28 hours ago",
+    "Digest": "",
+    "ID": "sha256:fb074894588b42f9f679d6dd38bbad22c88a26f1167ee516ee34d0c820a5c628",
+    "Repository": "akitaonrails/ai-memory",
+    "SharedSize": "N/A",
+    "Size": "142MB",
+    "Tag": "<none>",
+    "UniqueSize": "N/A"
+  },
+  {
+    "Containers": "0",
+    "CreatedAt": "2026-11-03 16:36:23 -0300 -03",
+    "CreatedSince": "3 days ago",
+    "Digest": "",
+    "ID": "sha256:4c600a3b1f6c88971008ebd15ddf2b2a5342a9bdf34bd824c7dd27d5d35ad236",
+    "Repository": "akitaonrails/ai-memory",
+    "SharedSize": "N/A",
+    "Size": "138MB",
+    "Tag": "<none>",
+    "UniqueSize": "N/A"
+  },
+  {
+    "Containers": "0",
+    "CreatedAt": "2026-10-21 16:12:49 -0300 -03",
+    "CreatedSince": "2 weeks ago",
+    "Digest": "",
+    "ID": "sha256:8a80c5500151ab2b08eb5874698b81b6b8addbc53ef4fb0c47f516680cf413d2",
+    "Repository": "qdrant/qdrant",
+    "SharedSize": "N/A",
+    "Size": "193MB",
+    "Tag": "<none>",
+    "UniqueSize": "N/A"
+  },
+  {
+    "Containers": "0",
+    "CreatedAt": "2026-10-10 00:21:43 -0300 -03",
+    "CreatedSince": "3 weeks ago",
+    "Digest": "",
+    "ID": "sha256:95c25886cd3fcf7a1e23302c896b127184feadf8187a652c128a8e0e22b86ec3",
+    "Repository": "akitaonrails/ai-memory",
+    "SharedSize": "N/A",
+    "Size": "127MB",
+    "Tag": "<none>",
+    "UniqueSize": "N/A"
+  },
+  {
+    "Containers": "0",
+    "CreatedAt": "2026-10-05 10:48:58 -0300 -03",
+    "CreatedSince": "4 weeks ago",
+    "Digest": "",
+    "ID": "sha256:e37a07939a01ae09875d5cd58cd05a5e7c393151fce5e0a524c083835570e8e7",
+    "Repository": "qdrant/qdrant",
+    "SharedSize": "N/A",
+    "Size": "200MB",
+    "Tag": "<none>",
+    "UniqueSize": "N/A"
+  }
+]

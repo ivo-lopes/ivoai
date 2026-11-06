@@ -1,0 +1,4 @@
+=== RUN   TestAdministrativePositiveMemoryStatusOfficialServer
+    memory_real_http_test.go:190: real HTTP+CLI+Core server.memory.status: official ai-memory3.4.2 MCP catalog, two healthy reads; missing auth/CSRF refused before dispatch; wrong backend credential/stopped process failed; private config/secret unchanged by reads; no inference/systemd
+--- PASS: TestAdministrativePositiveMemoryStatusOfficialServer (9.05s)
+PASS

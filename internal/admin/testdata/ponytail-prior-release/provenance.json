@@ -1,0 +1,14 @@
+{
+  "ivoai_commit": "f68bc0ad4fba7a84547f861231e8e5c7c0dc38d6",
+  "source_id": "ponytail",
+  "upstream_revision": "356918eba965ee1eac64bd3a7f0dd02108350de5",
+  "catalog_source": "internal/skillcatalog/catalog.json",
+  "sha256": {
+    "internal/skillcatalog/native/ponytail/LICENSE": "fb1bc6909ac3ef82d5c22106e32ef682b0cff66788fa915fb9b53b15c9d2f3ab",
+    "internal/skillcatalog/native/ponytail/skills/ponytail/SKILL.md": "1316a2f3f95741d2300b116fe0c2d81ce4a9568656ed0a62643f54aaf09957f2"
+  },
+  "catalog_original_sha256": "2b342e97a7a1893dc24fa6406b4b9652b1507f78d1a885f4680c919b9c54f031",
+  "fixture_catalog_sha256": "7bbdcbf1eb74b2e0795854dff4aac69b28c28d89e7353de5b952648b988746b7",
+  "license": "MIT",
+  "fixture_derivation": "One unmodified Source selected from the historical IVOAI catalog; all included upstream file bytes are exact Git blobs."
+}

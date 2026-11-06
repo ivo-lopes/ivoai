@@ -1,0 +1,23 @@
+{
+  "compiled_fixture_sha256": "cfae24034be7b8cacb9a038cfcb2388bd85ff9f2874d69be5937767ee336bbf8",
+  "fixture_source_sha256": "06a2e4be3a69d9cd5c2a1f42db7544f7e247b4e6711f85ab9e943ed825ce94eb",
+  "toolchain": "go1.27.3",
+  "CGO_ENABLED": "0",
+  "source_parent": "6179d217206a8941fe4f01eae3dbe87205e02e85",
+  "controls": [
+    {
+      "name": "ordinary-offline-skip",
+      "exit_code": 0,
+      "expected_exit_code": 0,
+      "seconds": 0.009984397999915018
+    },
+    {
+      "name": "host-boundary-refusal",
+      "exit_code": 1,
+      "expected_exit_code": 1,
+      "seconds": 0.009392211999966094
+    }
+  ],
+  "vet": "PASS",
+  "cache_location": "external disposable derivative data; not Docker data-root"
+}
