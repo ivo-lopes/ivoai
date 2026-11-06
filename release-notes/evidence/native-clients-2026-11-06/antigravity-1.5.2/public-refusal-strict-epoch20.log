@@ -1,0 +1,7 @@
+=== RUN   TestAntigravityPublicManagedCLI
+=== RUN   TestAntigravityPublicManagedCLI/read_denial
+    native_acp_cli_live_test.go:160: real official CLI: scenario=read_denial duration=39.608915184s state=completed turns=1 no_dag=true
+--- PASS: TestAntigravityPublicManagedCLI (39.77s)
+    --- PASS: TestAntigravityPublicManagedCLI/read_denial (39.61s)
+PASS
+ok  	github.com/ivo-lopes/ivoai/internal/app	39.776s

@@ -26,8 +26,8 @@ func TestOfficialAntigravityACP(t *testing.T) {
 	if binary == "" {
 		t.Skip("set IVOAI_ANTIGRAVITY_OFFICIAL_BINARY for real authenticated integration")
 	}
-	if os.Getenv("IVOAI_ANTIGRAVITY_OFFICIAL_SHA256") != "b9043860a06a3bfa70b68f06c3d4527abc16207767f14ae9d1e06e3026081862" {
-		t.Fatal("proof requires the reviewed official Antigravity 1.5.0 Linux amd64 digest")
+	if os.Getenv("IVOAI_ANTIGRAVITY_OFFICIAL_SHA256") != "da1751e7658469fa80bf36eda2c60ee61216d8e42b735a184382ba31d1f6b88e" {
+		t.Fatal("proof requires the reviewed official Antigravity 1.5.2 Linux amd64 digest")
 	}
 	root := t.TempDir()
 	if err := os.Chmod(root, 0700); err != nil {
@@ -83,7 +83,7 @@ func TestOfficialAntigravityACP(t *testing.T) {
 			t.Error(err)
 			return
 		}
-		body, err := json.MarshalIndent(map[string]any{"runtime": "Antigravity ACP 1.5.0", "platform": "linux/amd64", "real_inference": true, "credential_copied": false, "paid_api_fallback": false, "tui_parity": false, "cases": records, "pass": !t.Failed()}, "", "  ")
+		body, err := json.MarshalIndent(map[string]any{"runtime": "Antigravity ACP 1.5.2", "platform": "linux/amd64", "real_inference": true, "credential_copied": false, "paid_api_fallback": false, "tui_parity": false, "cases": records, "pass": !t.Failed()}, "", "  ")
 		if err != nil {
 			t.Error(err)
 			return
@@ -184,7 +184,7 @@ for line in sys.stdin:
 	}
 	nativeID := ""
 	permissionNames := []string{}
-	o := Options{Enabled: true, SessionID: "wire-session", Binary: binary, SHA256: "b9043860a06a3bfa70b68f06c3d4527abc16207767f14ae9d1e06e3026081862", Directory: root, RuntimeDir: filepath.Join(root, "runtime"), ProfileDir: filepath.Join(root, "profile"), Environment: os.Environ(), TurnTimeout: 2 * time.Minute, MCPServers: []MCPServer{{Name: "ivoai-orchestrator", Command: python, Args: []string{script}, Env: []EnvironmentVariable{{Name: "PYTHONUNBUFFERED", Value: "1"}}}}}
+	o := Options{Enabled: true, SessionID: "wire-session", Binary: binary, SHA256: "da1751e7658469fa80bf36eda2c60ee61216d8e42b735a184382ba31d1f6b88e", Directory: root, RuntimeDir: filepath.Join(root, "runtime"), ProfileDir: filepath.Join(root, "profile"), Environment: os.Environ(), TurnTimeout: 2 * time.Minute, MCPServers: []MCPServer{{Name: "ivoai-orchestrator", Command: python, Args: []string{script}, Env: []EnvironmentVariable{{Name: "PYTHONUNBUFFERED", Value: "1"}}}}}
 	o.AllowedTools = []string{"view_file"}
 	o.Authorize = func(context.Context, core.ExecutorRequest, Receipt) error { return nil }
 	o.Validate = o.Authorize

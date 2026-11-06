@@ -103,6 +103,15 @@ func TestAntigravityPublicManagedCLI(t *testing.T) {
 				t.Fatal("simple/read-only invocation created a DAG")
 			}
 			if scenario == "read_denial" {
+				// A natural refusal can complete without dispatching a denied
+				// tool. It is a privacy/no-replay proof, not evidence that the
+				// permission callback actually ran (the official ACP proof
+				// separately requires ANTIGRAVITY_PERMISSION_DENIED).
+				if ctx.Err() != nil || len(value.TurnAttempts) != 1 ||
+					(value.State != session.StateCompleted && value.State != session.StateFailed) ||
+					(err == nil) != (value.State == session.StateCompleted) {
+					t.Fatalf("protected read did not reach an unambiguous terminal state: state=%s err=%v", value.State, err)
+				}
 				if strings.Contains(string(out), "PRIVATE_FIXTURE_CANARY") {
 					t.Fatalf("denied read escaped: err=%v", err)
 				}

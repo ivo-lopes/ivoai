@@ -35,7 +35,7 @@ for line in sys.stdin:
   if scenario=='duplicate_json':
    print('{"jsonrpc":"2.0","id":1,"result":{},"result":{}}',flush=True)
    continue
-  result={'protocolVersion':1,'agentInfo':{'name':'Antigravity ACP Server','version':'1.5.0'},'agentCapabilities':{'loadSession':True}}
+  result={'protocolVersion':1,'agentInfo':{'name':'Antigravity ACP Server','version':'1.5.2'},'agentCapabilities':{'loadSession':True}}
  elif method in ['session/new','session/load']:
   if scenario in ['announcement','foreign_announcement']:
    send({'jsonrpc':'2.0','method':'session/update','params':{'sessionId':'foreign' if scenario=='foreign_announcement' else session,'update':{'sessionUpdate':'config_option_update'}}})

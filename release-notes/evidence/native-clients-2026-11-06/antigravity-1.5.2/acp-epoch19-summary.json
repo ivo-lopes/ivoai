@@ -1,0 +1,119 @@
+{
+  "cases": [
+    {
+      "case": "natural_prompt_normal_exit",
+      "pass": true,
+      "trace": {
+        "usage": {
+          "input_tokens": 7056,
+          "output_tokens": 70,
+          "cached_input_tokens": 0,
+          "basis": "official_cli_reported",
+          "source": "antigravity_acp_session_prompt",
+          "scope": "invocation"
+        },
+        "usage_status": "reported",
+        "executor": "antigravity",
+        "resolved_executable": "reviewed-official-agy",
+        "executor_version": "1.5.2",
+        "working_directory": "isolated-fixture",
+        "child_pid": 0,
+        "exit_code": 0,
+        "stdout_events": 8,
+        "last_valid_event": "",
+        "completion_event": true,
+        "final_response_present": true,
+        "partial_output_bytes": 14,
+        "stderr_bytes": 0,
+        "effective_model": "gemini-4-argon-medium"
+      }
+    },
+    {
+      "case": "owned_continuation_normal_exit",
+      "pass": true,
+      "trace": {
+        "usage_status": "not_reported",
+        "executor": "antigravity",
+        "resolved_executable": "reviewed-official-agy",
+        "executor_version": "1.5.2",
+        "working_directory": "isolated-fixture",
+        "child_pid": 0,
+        "exit_code": 0,
+        "stdout_events": 10,
+        "last_valid_event": "",
+        "completion_event": true,
+        "final_response_present": true,
+        "partial_output_bytes": 14,
+        "stderr_bytes": 0,
+        "effective_model": "gemini-4-argon-medium"
+      }
+    },
+    {
+      "case": "scoped_code_recovery",
+      "pass": true,
+      "trace": {
+        "usage_status": "not_reported",
+        "executor": "antigravity",
+        "resolved_executable": "reviewed-official-agy",
+        "executor_version": "1.5.2",
+        "working_directory": "isolated-fixture",
+        "child_pid": 0,
+        "exit_code": 0,
+        "stdout_events": 17,
+        "last_valid_event": "",
+        "completion_event": true,
+        "final_response_present": true,
+        "partial_output_bytes": 8,
+        "stderr_bytes": 0,
+        "effective_model": "gemini-4-argon-medium",
+        "mcp_operations": [
+          {
+            "server": "official_native",
+            "name": "read_file",
+            "status": "allowed"
+          }
+        ]
+      }
+    },
+    {
+      "case": "denied_operation_no_replay",
+      "pass": true,
+      "failure": "ANTIGRAVITY_PERMISSION_DENIED",
+      "trace": {
+        "usage_status": "not_reported",
+        "executor": "antigravity",
+        "resolved_executable": "reviewed-official-agy",
+        "executor_version": "1.5.2",
+        "working_directory": "isolated-fixture",
+        "child_pid": 0,
+        "exit_code": 0,
+        "stdout_events": 20,
+        "last_valid_event": "session/request_permission",
+        "completion_event": false,
+        "final_response_present": false,
+        "partial_output_bytes": 0,
+        "stderr_bytes": 0,
+        "failure_class": "ANTIGRAVITY_PERMISSION_DENIED",
+        "mcp_operations": [
+          {
+            "server": "official_native",
+            "name": "read_file",
+            "status": "allowed"
+          },
+          {
+            "server": "official_native",
+            "name": "edit_file",
+            "status": "denied"
+          }
+        ]
+      }
+    }
+  ],
+  "credential_copied": false,
+  "paid_api_fallback": false,
+  "pass": true,
+  "platform": "linux/amd64",
+  "real_inference": true,
+  "runtime": "Antigravity ACP 1.5.2",
+  "tui_parity": false
+}

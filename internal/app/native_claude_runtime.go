@@ -28,7 +28,7 @@ func nativeRuntimeDigest(executor string) string {
 func reviewedManagedNative(ctx context.Context, executor string, state config.State) (managedNativeRuntime, error) {
 	if executor == "antigravity" {
 		path, info, err := reviewedAntigravity(ctx)
-		return managedNativeRuntime{path, antigravitySHA, "1.5.0", info}, err
+		return managedNativeRuntime{path, antigravitySHA, "1.5.2", info}, err
 	}
 	if executor != "claude" || runtime.GOOS != "linux" || runtime.GOARCH != "amd64" {
 		return managedNativeRuntime{}, errors.New("NATIVE_MANAGED_PLATFORM_UNCERTIFIED")

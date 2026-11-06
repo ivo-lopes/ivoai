@@ -31,7 +31,7 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-const reviewedVersion = "1.5.0"
+const reviewedVersion = "1.5.2"
 
 var identifier = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$`)
 var digest = regexp.MustCompile(`^[a-f0-9]{64}$`)

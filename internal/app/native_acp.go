@@ -25,7 +25,7 @@ import (
 )
 
 const antigravityFlag = "IVOAI_EXPERIMENTAL_ANTIGRAVITY"
-const antigravitySHA = "b9043860a06a3bfa70b68f06c3d4527abc16207767f14ae9d1e06e3026081862"
+const antigravitySHA = "da1751e7658469fa80bf36eda2c60ee61216d8e42b735a184382ba31d1f6b88e"
 
 // NativeRunOptions is an explicit, bounded headless invocation, not a TUI.
 // Followups share one live host lease and authentication process epoch. Cross-
