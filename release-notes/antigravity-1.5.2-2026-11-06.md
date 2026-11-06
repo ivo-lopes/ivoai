@@ -79,3 +79,35 @@ commit/file list. The private original remains recoverable with its owner-bound
 reference. This proves functional compatibility of the worker shell settings;
 it is not an isolated causal AB experiment because Antigravity also changed from
 1.5.0 to1.5.2. No prior failure or historical benchmark was rewritten.
+
+## Composition with reviewed Codex 0.167.0
+
+A separate epoch21 certified Antigravity 1.5.2 with the exact official Codex
+**0.167.0** executable and companion pair. The existing reviewed-digest selector
+and fingerprint checks admitted the new pinned pair; no arbitrary runtime/version
+exception was added. The 0.166.0 and 0.162.1 rollback entries and previous proofs
+remain unchanged.
+
+The same controlled Go task finished with one attempt, two completed tasks and
+one real Codex 0.167.0 worker. Primary review, Core integration and checkpoint
+completed, and the native session/turn exited normally with exit0 and no signal.
+Only `calc.go` and `calc_test.go` changed. The original worker ArtifactStore payload
+passed its owner-bound size/SHA-256 verification and contains an official command
+event for `GOCACHE=/tmp/calc-go-build go test -v ./...`, exit0, with TestAdd,
+TestMultiply, TestDivide and TestDivideByZero passing. Independent host verification
+also exited0. The initial `rg` lookup failed with exit127 and the worker recovered;
+that failure remains in the audit.
+
+The scenario measured **326.614 seconds including external host verification**.
+This single run is functional certification, not an economic comparison with the
+0.166.0 run. The worker selected a static temporary Go cache path rather than the
+private `mktemp` cache observed in epoch18; per-worker private Go-cache isolation
+is therefore **not asserted** by epoch21. No additional mount or grant was added.
+The current adapter does not itself enforce dedicated Go cache directories.
+
+[Source freeze](evidence/native-clients-2026-11-06/antigravity-1.5.2/codex167-epoch21/source-freeze.json)
+and [sanitized execution audit](evidence/native-clients-2026-11-06/antigravity-1.5.2/codex167-epoch21/worker-dag-audit.json)
+retain the exact Core/runtime hashes, worker artifact digest, successful test
+command, failed lookup, terminal state and integrated commit/file list. This adds
+worker167 composition coverage; it does not certify cross-process Antigravity
+resume, post-DAG follow-up, Claude inference or a global economic gate.

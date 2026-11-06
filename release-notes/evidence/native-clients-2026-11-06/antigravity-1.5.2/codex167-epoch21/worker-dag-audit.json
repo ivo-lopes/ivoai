@@ -1,0 +1,86 @@
+{
+  "epoch": "agy152-codex167-epoch21",
+  "outcome": "PASS",
+  "real_inference": true,
+  "primary": "Antigravity1.5.2/Linuxamd64",
+  "worker": "Codex0.167.0/Linuxamd64",
+  "scenario_seconds_including_external_host_verification": 326.614,
+  "native_exit_code": 0,
+  "host_go_test_exit_code": 0,
+  "session_state": "completed",
+  "turn_state": "completed",
+  "attempts": 1,
+  "tasks": [
+    {
+      "id": "impl_calc",
+      "state": "completed",
+      "executor": "codex",
+      "execution_mode": "worker",
+      "duration_ms": 48534,
+      "delegation_reason": "benefit exceeds bounded worker overhead"
+    },
+    {
+      "id": "review_calc",
+      "state": "completed",
+      "executor": "antigravity",
+      "execution_mode": "primary",
+      "duration_ms": null,
+      "delegation_reason": "worker overhead is not lower than expected benefit"
+    }
+  ],
+  "workers": 1,
+  "artifact_sha256": "723431c3dc4232d87d79b84a53262378848f761a6e24c3f73e14b98339c3281d",
+  "artifact_bytes": 9515,
+  "artifact_integrity_verified": true,
+  "official_worker_command_events": [
+    {
+      "command": "/bin/bash -c \"pwd; rg --files -g 'AGENTS.md' -g 'calc.go' -g 'calc_test.go' -g 'go.mod'\"",
+      "status": "failed",
+      "exit_code": 127,
+      "test_add_passed": false,
+      "test_multiply_passed": false,
+      "test_divide_passed": false,
+      "test_divide_by_zero_passed": false,
+      "go_not_found": false,
+      "rg_not_found": true,
+      "output_sha256": "eedc3206471f2c71e515966a49a6e1bcd713ac7d1a234dacc97e2be379d17434"
+    },
+    {
+      "command": "/bin/bash -c 'GOCACHE=/tmp/calc-go-build go test -v ./...'",
+      "status": "completed",
+      "exit_code": 0,
+      "test_add_passed": true,
+      "test_multiply_passed": true,
+      "test_divide_passed": true,
+      "test_divide_by_zero_passed": true,
+      "go_not_found": false,
+      "rg_not_found": false,
+      "output_sha256": "9a1d4ed9c19ed7cd034341e003f980b9102bbdf145f307df6036f5acead26c30"
+    }
+  ],
+  "integrated_head": "fe3f643576775f7bba56c3d940a37c9b4131b714",
+  "fixture_base": "a35ff6570ab3172a471756a6f304107770b6786c",
+  "changed_files": [
+    "calc.go",
+    "calc_test.go"
+  ],
+  "cache_policy_observation": "worker selected static /tmp/calc-go-build; per-worker private Go cache is NOT asserted",
+  "new_mounts_or_grants": false,
+  "credential_copied": false,
+  "paid_api_fallback": false,
+  "economic_evidence": false,
+  "native_attempts": [
+    {
+      "state": "completed",
+      "started_at": "2026-11-06T14:43:25.027939403Z",
+      "ended_at": "2026-11-06T14:48:45.610459781Z",
+      "runtime_version": "1.5.2",
+      "exit_code": 0,
+      "signal": null,
+      "completion_event": true,
+      "final_response_present": true,
+      "usage": null,
+      "usage_status": "not_reported"
+    }
+  ]
+}

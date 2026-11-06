@@ -54,5 +54,22 @@
     "host_go_test_exit_code": 0,
     "worker_rg_lookup_exit_code": 127,
     "artifact_sha256": "1f9b632aa17c99f1777f44e526d59b4c8824c7120e7a90db34a63c3aab4fda5c"
+  },
+  {
+    "epoch": "agy152-codex167-epoch21",
+    "status": "PASS",
+    "primary_runtime": "Antigravity1.5.2",
+    "worker_runtime": "Codex0.167.0",
+    "real_inference": true,
+    "scenario_seconds_including_external_host_verification": 326.614,
+    "native_exit_code": 0,
+    "worker_go_test_exit_code": 0,
+    "host_go_test_exit_code": 0,
+    "workers": 1,
+    "tasks": 2,
+    "attempts": 1,
+    "worker_rg_lookup_exit_code": 127,
+    "worker_cache": "static /tmp/calc-go-build; private per-worker ownership not asserted",
+    "economic_evidence": false
   }
 ]
