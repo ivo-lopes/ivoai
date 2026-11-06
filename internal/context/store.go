@@ -164,7 +164,11 @@ func (q QdrantStore) endpoint(path string) (string, error) {
 			return "", errors.New("invalid Qdrant collection name")
 		}
 	}
-	base.Path = strings.TrimRight(base.Path, "/") + "/collections/" + collection + path
+	resourcePath, query, _ := strings.Cut(path, "?")
+	escapedPath := strings.TrimRight(base.EscapedPath(), "/") + "/collections/" + collection + resourcePath
+	base.Path = strings.TrimRight(base.Path, "/") + "/collections/" + collection + resourcePath
+	base.RawPath = escapedPath
+	base.RawQuery = query
 	return base.String(), nil
 }
 
