@@ -1,0 +1,120 @@
+{
+  "tag": "v0.17.0",
+  "source_commit": "f441b81abbbd9cd24f87651837a98f89a40e06ac",
+  "source_tree": "97684ef5fdb98f9460111b6d490a01faae270110",
+  "tag_worktree_clean": true,
+  "tag_verifier_sha256": "2c58d35bdff6f4a0bd8f5cee0fef215aac96afff05e855847e8af765241ab6b3",
+  "strict_report_sha256": "91770787b375702a2bd0d4256f5beecd0e4d03c3453837a4480c5e1724d26064",
+  "release_api_sha256": "0cab6255967acea9d00075c2cbdbce1d009a67d3f8e83ae8703c9e7a813d20c7",
+  "release_id": 436876360,
+  "published_at": "2026-11-06T19:01:22Z",
+  "latest": true,
+  "cores": {
+    "amd64": {
+      "sha256": "ecb8011b2ac215a7b6ac9166cd4fc032ef3bf0b2ce1a3dbbda756b93b467160c",
+      "go_version": "go1.27.3",
+      "main_module_version": "v0.17.0",
+      "observed_build_settings": {
+        "-buildmode": "exe",
+        "-compiler": "gc",
+        "-trimpath": "true",
+        "CGO_ENABLED": "0",
+        "GOARCH": "amd64",
+        "GOOS": "linux",
+        "GOAMD64": "v1",
+        "vcs": "git",
+        "vcs.revision": "f441b81abbbd9cd24f87651837a98f89a40e06ac",
+        "vcs.time": "2026-11-06T18:31:58Z",
+        "vcs.modified": "false"
+      },
+      "required_build_settings_verified": {
+        "-buildmode": "exe",
+        "-compiler": "gc",
+        "-trimpath": "true",
+        "CGO_ENABLED": "0",
+        "GOOS": "linux",
+        "GOARCH": "amd64",
+        "vcs": "git",
+        "vcs.revision": "f441b81abbbd9cd24f87651837a98f89a40e06ac",
+        "vcs.modified": "false",
+        "GOAMD64": "v1"
+      },
+      "embedded_byte_associations": {
+        "graft": {
+          "url": "https://github.com/ivo-lopes/ivoai/releases/download/v0.17.0/ivoai-graft_linux_amd64.tar.gz",
+          "exact_base64_occurrences": 1
+        },
+        "caveman": {
+          "url": "https://github.com/ivo-lopes/ivoai/releases/download/v0.17.0/ivoai-caveman_linux_amd64.tar.gz",
+          "exact_base64_occurrences": 1
+        }
+      },
+      "component_association": "metadata/bytes only; no runtime pointer-binding, source attestation or reproducibility claim"
+    },
+    "arm64": {
+      "sha256": "be9ab3f74b1e8019d386c63e87862ecf0753b4752a758a79490ecf3c98b8ba74",
+      "go_version": "go1.27.3",
+      "main_module_version": "v0.17.0",
+      "observed_build_settings": {
+        "-buildmode": "exe",
+        "-compiler": "gc",
+        "-trimpath": "true",
+        "CGO_ENABLED": "0",
+        "GOARCH": "arm64",
+        "GOOS": "linux",
+        "GOARM64": "v8.0",
+        "vcs": "git",
+        "vcs.revision": "f441b81abbbd9cd24f87651837a98f89a40e06ac",
+        "vcs.time": "2026-11-06T18:31:58Z",
+        "vcs.modified": "false"
+      },
+      "required_build_settings_verified": {
+        "-buildmode": "exe",
+        "-compiler": "gc",
+        "-trimpath": "true",
+        "CGO_ENABLED": "0",
+        "GOOS": "linux",
+        "GOARCH": "arm64",
+        "vcs": "git",
+        "vcs.revision": "f441b81abbbd9cd24f87651837a98f89a40e06ac",
+        "vcs.modified": "false"
+      },
+      "embedded_byte_associations": {
+        "graft": {
+          "url": "https://github.com/ivo-lopes/ivoai/releases/download/v0.17.0/ivoai-graft_linux_arm64.tar.gz",
+          "exact_base64_occurrences": 1
+        },
+        "caveman": {
+          "url": "https://github.com/ivo-lopes/ivoai/releases/download/v0.17.0/ivoai-caveman_linux_arm64.tar.gz",
+          "exact_base64_occurrences": 1
+        }
+      },
+      "component_association": "metadata/bytes only; no runtime pointer-binding, source attestation or reproducibility claim"
+    }
+  },
+  "copied_original_sha256": {
+    "publication-receipt.json": "89877a7c1b74dd118a6299fc3a1f675e4cb99f681cac67859a9d9a7db6d6bff8",
+    "strict-verification.json": "91770787b375702a2bd0d4256f5beecd0e4d03c3453837a4480c5e1724d26064",
+    "release-api.json": "0cab6255967acea9d00075c2cbdbce1d009a67d3f8e83ae8703c9e7a813d20c7",
+    "latest-release-api.json": "0cab6255967acea9d00075c2cbdbce1d009a67d3f8e83ae8703c9e7a813d20c7",
+    "core-buildinfo.txt": "9fa13ff0aea328f0106858e889700bc1a1b28ad07e41e3580965b6e7f6c2e52a",
+    "strict-verifier.log": "b2472056d3c56ac0775fc02b6ba370e0414c13d67acc32e967eafc573e32dd64",
+    "remote-tag.txt": "9d3b708e042f278b5517e30b008a07ea78f20fb2df34262ab1ce8466fb5cc4ba",
+    "startup-native-version.stdout": "02d38e98e88f4a8dc2ea40dbb769338601066fc94920b52882a14f21ad97f7ee",
+    "startup-native-help.stdout": "af3165d7cb529d63a8213803d3cc241cc9e9690ff8309a982c6cc790c3691d6d",
+    "startup-noavx-version.stdout": "02d38e98e88f4a8dc2ea40dbb769338601066fc94920b52882a14f21ad97f7ee",
+    "startup-noavx-help.stdout": "af3165d7cb529d63a8213803d3cc241cc9e9690ff8309a982c6cc790c3691d6d"
+  },
+  "sanitizations": [
+    {
+      "file": "core-buildinfo.txt",
+      "change": "replace only private executable path in the first line with public artifact label; remaining buildinfo bytes unchanged",
+      "original_sha256": "9fa13ff0aea328f0106858e889700bc1a1b28ad07e41e3580965b6e7f6c2e52a",
+      "public_sha256": "281400da275d91aa1fddda981e64cb3a581580f01665e3bfb459b82f69764835"
+    }
+  ],
+  "provider_inference": false,
+  "personal_credentials_copied": false,
+  "downloaded_code_executed_during_strict_verifier": false,
+  "downloaded_core_executed_only_after_strict_pass": true
+}

@@ -1,0 +1,83 @@
+{
+  "phase": "completed",
+  "outcome": "PASS",
+  "source": "f441b81abbbd9cd24f87651837a98f89a40e06ac",
+  "tag": "v0.17.0",
+  "personal_credentials_copied": false,
+  "provider_inference": false,
+  "start_utc": "2026-11-06T19:06:08Z",
+  "wall_seconds": 31.765,
+  "release_id": 436876360,
+  "release_url": "https://github.com/ivo-lopes/ivoai/releases/tag/v0.17.0",
+  "published_at": "2026-11-06T19:01:22Z",
+  "draft": false,
+  "prerelease": false,
+  "asset_count": 12,
+  "api_json_sha256": "0cab6255967acea9d00075c2cbdbce1d009a67d3f8e83ae8703c9e7a813d20c7",
+  "asset_sha256": {
+    "checksums.txt": "301fe8e545daf66538c9a6c9b37fe06d5ffc664427ca1f7ccda04f4a2b1dd79e",
+    "ivoai-caveman_linux_amd64.metadata.json": "b37bb865c1ca5b794a5b1c903da70ee61a698759af6a354da1ab17d520f10ef6",
+    "ivoai-caveman_linux_amd64.tar.gz": "25aa3e352c301fdaf303001487663d71a874e50f9211232a9cdc293b503b3b65",
+    "ivoai-caveman_linux_arm64.metadata.json": "ae712991fcb6e7d1489ad17835a02de9d771f4548e490cada8ef2e0ccf4b173c",
+    "ivoai-caveman_linux_arm64.tar.gz": "62f1f9bcc784dc0cd5789f1ab27af55c696865131c5f8fd32fbb716065f40f56",
+    "ivoai-graft_linux_amd64.tar.gz": "f93950d60d941f80663e6bab5acaa5a17b47909324d8f633b60f3061ad4791b6",
+    "ivoai-graft_linux_arm64.tar.gz": "4b3c349c9a5190d75a38a6ed82fca3230ae78f912d2bb341b5f1b8429e0d1b2f",
+    "ivoai-memory-context.zip": "6e5bc28cb02d5557dbe16b2e2ffae7fc954c5e783c14a4dcd0fb6c08c364b378",
+    "ivoai_linux_amd64.tar.gz": "df80a6b04b1560ed94a10d9b9e11e3e2286ee7f8eca7d6efb739e5741240adec",
+    "ivoai_linux_arm64.tar.gz": "516e2c78f9a30587b41d586e240419a565a13dbed6810ed3a599d21dd8bc9272",
+    "managed-graft-amd64.json": "8fe94e7a18e0014f6ddfb084aa7ebadcec0e062db044689a0cfa9e5f2d64731b",
+    "managed-graft-arm64.json": "10632f4294b8e813902302622c954a23ccc3d529dbd6caeb2a5421522ecfc0e2"
+  },
+  "api_digests_verified": 12,
+  "api_digests_unavailable": [],
+  "strict_verification_sha256": "91770787b375702a2bd0d4256f5beecd0e4d03c3453837a4480c5e1724d26064",
+  "startup": [
+    {
+      "mode": "native",
+      "argument": "version",
+      "exit_code": 0,
+      "stdout_sha256": "02d38e98e88f4a8dc2ea40dbb769338601066fc94920b52882a14f21ad97f7ee",
+      "stdout_bytes": 7,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "network_namespace_denied": true,
+      "personal_environment_inherited": false
+    },
+    {
+      "mode": "native",
+      "argument": "--help",
+      "exit_code": 0,
+      "stdout_sha256": "af3165d7cb529d63a8213803d3cc241cc9e9690ff8309a982c6cc790c3691d6d",
+      "stdout_bytes": 3998,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "network_namespace_denied": true,
+      "personal_environment_inherited": false
+    },
+    {
+      "mode": "qemu_Nehalem_noAVX_noAVX2",
+      "emulator_sha256": "36d35ffe5363bd49bfa9c2b6a048e9fb2e798fea38285a5a45f52d34f9869089",
+      "argument": "version",
+      "exit_code": 0,
+      "stdout_sha256": "02d38e98e88f4a8dc2ea40dbb769338601066fc94920b52882a14f21ad97f7ee",
+      "stdout_bytes": 7,
+      "network_namespace_denied": true,
+      "personal_environment_inherited": false
+    },
+    {
+      "mode": "qemu_Nehalem_noAVX_noAVX2",
+      "emulator_sha256": "36d35ffe5363bd49bfa9c2b6a048e9fb2e798fea38285a5a45f52d34f9869089",
+      "argument": "--help",
+      "exit_code": 0,
+      "stdout_sha256": "af3165d7cb529d63a8213803d3cc241cc9e9690ff8309a982c6cc790c3691d6d",
+      "stdout_bytes": 3998,
+      "network_namespace_denied": true,
+      "personal_environment_inherited": false
+    }
+  ],
+  "core_amd64_sha256": "ecb8011b2ac215a7b6ac9166cd4fc032ef3bf0b2ce1a3dbbda756b93b467160c",
+  "is_latest": true,
+  "source_tree": "97684ef5fdb98f9460111b6d490a01faae270110",
+  "verifier_sha256": "2c58d35bdff6f4a0bd8f5cee0fef215aac96afff05e855847e8af765241ab6b3",
+  "downloaded_core_executed_after_strict_verification": true,
+  "arm_startup_scope": "native release workflow; not repeated locally",
+  "source_worktree_clean": true
+}
