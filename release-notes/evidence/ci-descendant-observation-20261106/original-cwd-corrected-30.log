@@ -1,0 +1,91 @@
+=== RUN   TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission
+    primary_prefetch_common_admission_process_linux_test.go:199: negative admission preserved; descendant_nonexecuting=Z_or_absent; descendant_reap=NOT_OBSERVED
+--- PASS: TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission (5.18s)
+=== RUN   TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission
+    primary_prefetch_common_admission_process_linux_test.go:199: negative admission preserved; descendant_nonexecuting=Z_or_absent; descendant_reap=NOT_OBSERVED
+--- PASS: TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission (0.61s)
+=== RUN   TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission
+    primary_prefetch_common_admission_process_linux_test.go:199: negative admission preserved; descendant_nonexecuting=Z_or_absent; descendant_reap=NOT_OBSERVED
+--- PASS: TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission (0.63s)
+=== RUN   TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission
+    primary_prefetch_common_admission_process_linux_test.go:199: negative admission preserved; descendant_nonexecuting=Z_or_absent; descendant_reap=NOT_OBSERVED
+--- PASS: TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission (0.61s)
+=== RUN   TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission
+    primary_prefetch_common_admission_process_linux_test.go:199: negative admission preserved; descendant_nonexecuting=Z_or_absent; descendant_reap=NOT_OBSERVED
+--- PASS: TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission (0.61s)
+=== RUN   TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission
+    primary_prefetch_common_admission_process_linux_test.go:199: negative admission preserved; descendant_nonexecuting=Z_or_absent; descendant_reap=NOT_OBSERVED
+--- PASS: TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission (0.63s)
+=== RUN   TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission
+    primary_prefetch_common_admission_process_linux_test.go:199: negative admission preserved; descendant_nonexecuting=Z_or_absent; descendant_reap=NOT_OBSERVED
+--- PASS: TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission (0.63s)
+=== RUN   TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission
+    primary_prefetch_common_admission_process_linux_test.go:199: negative admission preserved; descendant_nonexecuting=Z_or_absent; descendant_reap=NOT_OBSERVED
+--- PASS: TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission (0.63s)
+=== RUN   TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission
+    primary_prefetch_common_admission_process_linux_test.go:199: negative admission preserved; descendant_nonexecuting=Z_or_absent; descendant_reap=NOT_OBSERVED
+--- PASS: TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission (0.63s)
+=== RUN   TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission
+    primary_prefetch_common_admission_process_linux_test.go:199: negative admission preserved; descendant_nonexecuting=Z_or_absent; descendant_reap=NOT_OBSERVED
+--- PASS: TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission (0.61s)
+=== RUN   TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission
+    primary_prefetch_common_admission_process_linux_test.go:199: negative admission preserved; descendant_nonexecuting=Z_or_absent; descendant_reap=NOT_OBSERVED
+--- PASS: TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission (0.64s)
+=== RUN   TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission
+    primary_prefetch_common_admission_process_linux_test.go:199: negative admission preserved; descendant_nonexecuting=Z_or_absent; descendant_reap=NOT_OBSERVED
+--- PASS: TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission (0.65s)
+=== RUN   TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission
+    primary_prefetch_common_admission_process_linux_test.go:199: negative admission preserved; descendant_nonexecuting=Z_or_absent; descendant_reap=NOT_OBSERVED
+--- PASS: TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission (0.61s)
+=== RUN   TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission
+    primary_prefetch_common_admission_process_linux_test.go:199: negative admission preserved; descendant_nonexecuting=Z_or_absent; descendant_reap=NOT_OBSERVED
+--- PASS: TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission (0.61s)
+=== RUN   TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission
+    primary_prefetch_common_admission_process_linux_test.go:199: negative admission preserved; descendant_nonexecuting=Z_or_absent; descendant_reap=NOT_OBSERVED
+--- PASS: TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission (0.60s)
+=== RUN   TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission
+    primary_prefetch_common_admission_process_linux_test.go:199: negative admission preserved; descendant_nonexecuting=Z_or_absent; descendant_reap=NOT_OBSERVED
+--- PASS: TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission (0.61s)
+=== RUN   TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission
+    primary_prefetch_common_admission_process_linux_test.go:199: negative admission preserved; descendant_nonexecuting=Z_or_absent; descendant_reap=NOT_OBSERVED
+--- PASS: TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission (0.61s)
+=== RUN   TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission
+    primary_prefetch_common_admission_process_linux_test.go:199: negative admission preserved; descendant_nonexecuting=Z_or_absent; descendant_reap=NOT_OBSERVED
+--- PASS: TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission (0.61s)
+=== RUN   TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission
+    primary_prefetch_common_admission_process_linux_test.go:199: negative admission preserved; descendant_nonexecuting=Z_or_absent; descendant_reap=NOT_OBSERVED
+--- PASS: TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission (0.63s)
+=== RUN   TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission
+    primary_prefetch_common_admission_process_linux_test.go:199: negative admission preserved; descendant_nonexecuting=Z_or_absent; descendant_reap=NOT_OBSERVED
+--- PASS: TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission (0.63s)
+=== RUN   TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission
+    primary_prefetch_common_admission_process_linux_test.go:199: negative admission preserved; descendant_nonexecuting=Z_or_absent; descendant_reap=NOT_OBSERVED
+--- PASS: TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission (0.63s)
+=== RUN   TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission
+    primary_prefetch_common_admission_process_linux_test.go:199: negative admission preserved; descendant_nonexecuting=Z_or_absent; descendant_reap=NOT_OBSERVED
+--- PASS: TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission (0.61s)
+=== RUN   TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission
+    primary_prefetch_common_admission_process_linux_test.go:199: negative admission preserved; descendant_nonexecuting=Z_or_absent; descendant_reap=NOT_OBSERVED
+--- PASS: TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission (0.62s)
+=== RUN   TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission
+    primary_prefetch_common_admission_process_linux_test.go:199: negative admission preserved; descendant_nonexecuting=Z_or_absent; descendant_reap=NOT_OBSERVED
+--- PASS: TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission (0.63s)
+=== RUN   TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission
+    primary_prefetch_common_admission_process_linux_test.go:199: negative admission preserved; descendant_nonexecuting=Z_or_absent; descendant_reap=NOT_OBSERVED
+--- PASS: TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission (0.64s)
+=== RUN   TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission
+    primary_prefetch_common_admission_process_linux_test.go:199: negative admission preserved; descendant_nonexecuting=Z_or_absent; descendant_reap=NOT_OBSERVED
+--- PASS: TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission (0.64s)
+=== RUN   TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission
+    primary_prefetch_common_admission_process_linux_test.go:199: negative admission preserved; descendant_nonexecuting=Z_or_absent; descendant_reap=NOT_OBSERVED
+--- PASS: TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission (0.65s)
+=== RUN   TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission
+    primary_prefetch_common_admission_process_linux_test.go:199: negative admission preserved; descendant_nonexecuting=Z_or_absent; descendant_reap=NOT_OBSERVED
+--- PASS: TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission (0.72s)
+=== RUN   TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission
+    primary_prefetch_common_admission_process_linux_test.go:199: negative admission preserved; descendant_nonexecuting=Z_or_absent; descendant_reap=NOT_OBSERVED
+--- PASS: TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission (0.70s)
+=== RUN   TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission
+    primary_prefetch_common_admission_process_linux_test.go:199: negative admission preserved; descendant_nonexecuting=Z_or_absent; descendant_reap=NOT_OBSERVED
+--- PASS: TestPrimaryPrefetchCommonResistantDescendantDeniesAdmission (0.69s)
+PASS

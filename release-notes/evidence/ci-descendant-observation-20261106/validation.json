@@ -1,0 +1,46 @@
+{
+  "pr": 76,
+  "original_ci_run": 42277331096,
+  "original_ci_job": 128096940151,
+  "original_ci_result": "15 success, 1 failure, 2 dependent jobs skipped; no merge",
+  "observed_failure": "Single descendant stat snapshot was neither matching Z nor known absence; original diagnostic does not identify state/error. Exact original failure cause is not reproduced.",
+  "production_code_changed": false,
+  "candidate_source_sha256": "9fd280cb80bf5b2282b60dd255e434974c21bf2fff4c1c77b2ac627b83b40e8c",
+  "independent_readonly_review": "No blocker found; shared original 3s bound, admission denied and unknown-state failures preserved.",
+  "cancellation_deadline_seconds": 3,
+  "deadline_start": "before cancel; cleanup and descendant observation share same deadline",
+  "success_states": [
+    "matching Z",
+    "ENOENT",
+    "ESRCH"
+  ],
+  "unknown_observations_retried": false,
+  "additional_signals": false,
+  "descendant_reap": "NOT_OBSERVED; not claimed",
+  "original_local_control": {
+    "outcome": "PASS",
+    "repetitions": 30,
+    "race": false,
+    "source": "existing compiled 7bce test harness; original observation unchanged",
+    "causal_reproduction": false
+  },
+  "candidate_focused_race": {
+    "outcome": "PASS",
+    "repetitions": 20,
+    "top_level_groups_per_repetition": 4,
+    "package_seconds": 20.801,
+    "compile_time_included": false,
+    "skips": 0
+  },
+  "vet": "PASS",
+  "initial_harness_failure": "First compiled-harness launch used repository cwd instead of internal/app; fixture source missing before any controlled process. Retained separately, never counted as controls.",
+  "provider_inference": false,
+  "economic_certification": false,
+  "evidence_sha256": {
+    "ci-failure-excerpt.log": "c4a60347cc47f2add0a58d7784e907df2b495979e46c6047e8e24e10c4ed1ed9",
+    "original-30.log": "9291e80abcc433407d14ed1d9ed027539b94c92e0332389d907cea9e0df792a8",
+    "original-cwd-corrected-30.log": "ab7098ef1e7e21a9909f9c55eab96e9d4508f194c21136f8a255ce0fc4c29343",
+    "candidate-focused-race-20.log": "d0435f8b0c4f610d3e7f2949564f5f57c5d9a471131c517a45ebeb7deb1670fd",
+    "candidate-vet.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}
