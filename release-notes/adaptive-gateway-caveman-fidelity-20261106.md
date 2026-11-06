@@ -72,7 +72,12 @@ three exact runner turns, legacy zero-value fidelity and fail-closed rejection o
 a violating provider. The exact runner test uses the real Caveman provider and
 proves that its integrity hook, process probe and proxy runtime creation are
 never reached; its executor is an offline fixture, separately from the official
-inference results above. Focused `go vet` passed.
+inference results above. Focused `go vet` passed. The complete final-source `go test ./... -count=1`
+suite passed: 61 packages and 4 packages without test files.
+Opt-in live tests skipped by that ordinary suite are not counted as inference;
+the three explicit real sequences above retain their separate receipts.
+[Final validation](evidence/adaptive-gateway-caveman-20261106/final-validation.json)
+records the commands and results.
 
 This is a functional fidelity fix, not an economic benchmark. Reported token
 values retain the official client's `cli_invocation` scope and are not summed
