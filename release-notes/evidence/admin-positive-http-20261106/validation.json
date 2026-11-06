@@ -1,0 +1,74 @@
+{
+  "base": "f441b81abbbd9cd24f87651837a98f89a40e06ac",
+  "scope": "Actual loopback HTTP handlers, OAuth store, CLI and Core services with isolated real files; no provider inference or production services",
+  "covered_previously_unavailable_action_ids": [
+    "capability.rollback",
+    "doctor.repair-hooks",
+    "update.dry-run"
+  ],
+  "remaining_certification_gaps": 18,
+  "positive_cases": 3,
+  "skipped_positive_cases_in_explicit_run": 0,
+  "production_code_changed": false,
+  "test_mode": {
+    "capability.rollback": false,
+    "doctor.repair-hooks": false,
+    "update.dry-run": "Existing guarded executable-path selector and empty private server-root only; real ExecRunner/checksum/metadata/compatibility/snapshot checks unchanged"
+  },
+  "checks": {
+    "focused_positive_and_controls": "PASS2.134s",
+    "final_focused_race": "PASS18.068s",
+    "vet": "PASS",
+    "no_replay_after_success_or_failure": "HTTP409; dispatch count unchanged",
+    "hook_foreign_edit": "refused; bytes preserved",
+    "hook_foreign_registration": "byte-exact preservation",
+    "bad_candidate_checksum": "refused; installed binary/config/state/ownership unchanged"
+  },
+  "real_binaries": {
+    "memory3.4.2": "5a8e2c51cb09dadfc157601772b32c79ee63a6cbf9f05caf59c67da385bae6c1",
+    "memory_archive": "15a4f4a346a27e6fd63a36d1b3de23c5cbe142b80b3bce561e21b1f225a1e645",
+    "original_v0.16.0": "a933d4d313930066409c77682a8cc26b574b5c259174e1cb68fac6b890c9d2ef",
+    "private_v0.17.0_candidate": "a133ef9439e4fbac0dd55ef744824167c6b506cdd0abba3b4f8766311b5a76f4",
+    "private_candidate_archive": "b80d694e38ba640bc1ae6ba0f6ed6f717cfad8ae4cf3d78a8d25568c7c0a4073"
+  },
+  "candidate_source": "7bce1090ea1eb971326f641460fea4fdee8e6b7b; not the final published tag asset claim",
+  "resource_scope": {
+    "go_cache_bytes_at_completion": 543710523,
+    "go_cache_budget_bytes": 3221225472,
+    "root_free_bytes_at_completion": 24838369280,
+    "new_compilation_stop_threshold_bytes": 12884901888,
+    "GOMAXPROCS": 2,
+    "GOMEMLIMIT": "768MiB"
+  },
+  "toolchain": "go version go1.27.3 linux/amd64",
+  "source_sha256": {
+    "internal/admin/positive_operations_test.go": "6590bf13c4e724f055f13fc3d4d147c4530398e5caecb8ccf6d795aeaefacd73",
+    "internal/admin/testdata/ponytail-prior-release/catalog.json": "7bbdcbf1eb74b2e0795854dff4aac69b28c28d89e7353de5b952648b988746b7",
+    "internal/admin/testdata/ponytail-prior-release/files/LICENSE": "fb1bc6909ac3ef82d5c22106e32ef682b0cff66788fa915fb9b53b15c9d2f3ab",
+    "internal/admin/testdata/ponytail-prior-release/files/skills/ponytail/SKILL.md": "1316a2f3f95741d2300b116fe0c2d81ce4a9568656ed0a62643f54aaf09957f2",
+    "internal/admin/testdata/ponytail-prior-release/provenance.json": "9ec96dfee80d7a9764055451902819c3b1d2fd7ae0a97f44d939a7cbc22c2879"
+  },
+  "evidence_sha256": {
+    "epoch1-focused.log": "5e86dc9e34fb95726e0c660234c1df842fc160f2c33eae7832d16f3a380d09fe",
+    "epoch2-focused.log": "d865d866f41d1e52943782a554a773da97415e457d6364265befb64770f4aeba",
+    "epoch3-dry-run-diagnostic.log": "3af7bc688d7f2e18ae73e942790ea787bdb385833c447a9dd07b4f2e0eb42922",
+    "epoch4-focused.log": "bbfeb90b3d05b5e3aa17180dcec7467985dbeee3455135c869643cf8d188402e",
+    "epoch5-controls.log": "a3de2f5879ce06648d11da609d251032d6bc775f229da572d211f44d20c4fdf1",
+    "epoch6-focused-race.log": "b4390da1651f927ac0c6b39aa87a4ae49ca861e862e2e9df8f5305424ae4e7ff",
+    "epoch7-final-race.log": "868595b305410b6e8fedd7f6ffe3283622cb15c9fe3714d8a0bde76112cb6f74",
+    "final-vet.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "initial-missing-hook-assets.log": "1c027cf42aa651e7de13c4f0d464ea9a3467d68d666d85d76f263f5c2449a614"
+  },
+  "retained_failures": [
+    "Initial hook setup lacked official hook assets; real installer rejected it before repair. Fixture now installs exact assets from verified official archive.",
+    "Private candidate bundle had no checksums.txt; isolated release-protocol checksum now derives from the independently pinned actual archive, without claiming publisher attestation.",
+    "Real guarded executable selector refused the first dry-run test. The existing TEST_MODE selector is used explicitly, without changing its guard or mocking execution."
+  ],
+  "not_certified": [
+    "Full Core update/rollback setup reconciliation",
+    "session.scope.adopt/restore without an eligible authenticated conversation record",
+    "systemd/production/privileged server lifecycle",
+    "GitHub availability or final published release-asset identity",
+    "Provider inference; personal auth/configuration; global economic gate"
+  ]
+}

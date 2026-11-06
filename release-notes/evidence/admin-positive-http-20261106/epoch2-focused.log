@@ -1,0 +1,13 @@
+=== RUN   TestAdministrativePositiveCapabilityRollbackWithPriorRelease
+    positive_operations_test.go:214: real HTTP+CLI+Core rollback restored reviewed prior Ponytail 356918eba965ee1eac64bd3a7f0dd02108350de5 from current 9cc65d03aa2da1db7121b912d03596409ee340b8; no network/provider process; duplicate request=409
+--- PASS: TestAdministrativePositiveCapabilityRollbackWithPriorRelease (0.03s)
+=== RUN   TestAdministrativePositiveRepairHooksOfficialBinary
+    positive_operations_test.go:292: real HTTP+CLI+Core repair restored missing receipt-owned hook using official ai-memory3.4.2; wrapper=36ee2fcd4fb57a022bbadbac.sh; no hook execution or personal settings
+--- PASS: TestAdministrativePositiveRepairHooksOfficialBinary (0.98s)
+=== RUN   TestAdministrativePositiveUpdateDryRunRealCandidate
+    positive_operations_test.go:400: actual operation update.dry-run failed: HTTP200 status=failed error=<nil> output=... Updating ivoai
+        x Updating ivoai failed (0s)
+--- FAIL: TestAdministrativePositiveUpdateDryRunRealCandidate (0.26s)
+FAIL
+FAIL	github.com/ivo-lopes/ivoai/internal/admin	1.295s
+FAIL

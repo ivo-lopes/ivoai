@@ -1,0 +1,53 @@
+{
+  "schema": 1,
+  "sources": [
+    {
+      "id": "ponytail",
+      "display_name": "Ponytail",
+      "upstream": {
+        "repository": "https://github.com/DietrichGebert/ponytail",
+        "default_branch": "main",
+        "license": "MIT",
+        "observed_skill_count": 13
+      },
+      "provenance": {
+        "revision": "356918eba965ee1eac64bd3a7f0dd02108350de5",
+        "resolution_source": "github_api",
+        "signature_status": "not_exposed",
+        "attestation_status": "not_exposed",
+        "trust_level": "commit_pinned_local_digest"
+      },
+      "skills": [
+        {
+          "path": "skills/ponytail/SKILL.md",
+          "name": "ponytail",
+          "description": "Prefer the smallest sufficient coding solution and challenge unnecessary scope or dependencies.",
+          "sha256": "1316a2f3f95741d2300b116fe0c2d81ce4a9568656ed0a62643f54aaf09957f2"
+        }
+      ],
+      "classifications": [
+        {
+          "path": "skills/ponytail/SKILL.md",
+          "canonical_id": "ponytail",
+          "domain": "software_engineering",
+          "triggers": [
+            "use the simplest solution",
+            "avoid over engineering"
+          ],
+          "keywords": [
+            "minimal",
+            "yagni"
+          ],
+          "phase": "implementation",
+          "role": "implementation_profile",
+          "role_mode": "exclusive",
+          "risk": "low",
+          "executors": [
+            "claude",
+            "codex"
+          ]
+        }
+      ]
+    }
+  ]
+}
