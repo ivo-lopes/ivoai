@@ -11,13 +11,20 @@ scheduler ou banco de configuração paralelo.
 ```sh
 ivoai admin init
 ivoai admin serve --listen 127.0.0.1:7781
-# Em outro terminal do mesmo usuário e HOME/XDG:
+# In another terminal with the same OS user and HOME/XDG roots:
 ivoai admin access create --ttl 10m
 ```
 
 O acesso padrão é somente leitura. Para autorizar alterações, emita uma ativação
-separada com `ivoai admin access create --ttl 10m --write`. Consulte e revogue com
-`ivoai admin access list` e `ivoai admin access revoke ID`. O código é mostrado uma
+separada:
+
+```sh
+ivoai admin access create --ttl 10m --write
+ivoai admin access list
+ivoai admin access revoke ACCESS_ID
+```
+
+Substitua `ACCESS_ID` pelo identificador da autorização. O código é mostrado uma
 vez e deve ser digitado no formulário OAuth, nunca na URL.
 
 O catálogo cobre os 118 IDs públicos da TUI e acrescenta preview/aplicação de
@@ -80,12 +87,16 @@ configuração de outros sites sem adaptar. Valide com `nginx -t` ou `caddy vali
 antes de recarregar. Os exemplos não comprovam publicação de domínio/certificado
 em produção.
 
+Referências oficiais: [proxy_pass do Nginx](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_pass),
+[reverse_proxy do Caddy](https://caddyserver.com/docs/caddyfile/directives/reverse_proxy)
+e [opções de log do Caddy](https://caddyserver.com/docs/caddyfile/options#log).
+
 ## Administração do Context
 
 ```sh
-sudo ivoai server context ingest --connector documentos-aprovados
-sudo ivoai server context search --query 'frase específica do documento aprovado'
-sudo ivoai server context get --id ID_DO_DOCUMENTO
+sudo ivoai server context ingest --connector approved-documents
+sudo ivoai server context search --query 'distinctive phrase from an approved document'
+sudo ivoai server context get --id DOCUMENT_ID
 ```
 
 Essas ações também usam o catálogo administrativo. A ingestão aproveita o serviço,
@@ -113,7 +124,7 @@ A credencial, cliente/grant OAuth e recurso originais precisam continuar
 autorizados; conhecer a URL não concede acesso. Logout/revogação bloqueiam o
 download. Saída bruta, credenciais e códigos de uso único não são arquivados.
 A captura tem limite de 16 MiB, com quota de 64 MiB por credencial e 256 MiB por
-instância. Captura incompleta ou falha de armazenamento recebe aviso explícito,
+instância. Captura incompleta é inteiramente omitida; falhas de armazenamento recebem aviso explícito,
 sem referência de conteúdo completo. Artefatos expirados ficam inacessíveis e são
 coletados na próxima retenção. Não repita uma alteração para recuperar texto;
 consulte o estado e os registros disponíveis.
