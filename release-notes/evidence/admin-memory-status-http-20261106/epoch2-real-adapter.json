@@ -1,0 +1,12 @@
+{
+  "epoch": "epoch2-real-adapter",
+  "exit_code": 0,
+  "wall_seconds": 2.10257260100002,
+  "official_memory_sha256": "5a8e2c51cb09dadfc157601772b32c79ee63a6cbf9f05caf59c67da385bae6c1",
+  "test_binary_sha256": "9e970208c372bf95a6481b65856773ebc495891239a75b4c1c9ba17237c37eaa",
+  "network": "private bubblewrap namespace, no external route",
+  "personal_home_mounted": false,
+  "private_runtime_cleanup": "TemporaryDirectory",
+  "systemd_or_production": false,
+  "provider_inference": false
+}
