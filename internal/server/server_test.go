@@ -419,3 +419,40 @@ func assertFile(t *testing.T, path, expected string) {
 		t.Fatalf("%s = %q, %v", path, data, err)
 	}
 }
+
+func TestManagedTEILogFilterProtectsSecretForBothArchitectures(t *testing.T) {
+	for _, arch := range []string{"amd64", "arm64"} {
+		t.Run(arch, func(t *testing.T) {
+			layout := DefaultLayout(t.TempDir())
+			if err := (Manager{Layout: layout, Architecture: arch, ContainerUser: "4242:4242"}).Setup(context.Background()); err != nil {
+				t.Fatal(err)
+			}
+			body, err := os.ReadFile(filepath.Join(layout.ConfigDir, "compose.yaml"))
+			if err != nil {
+				t.Fatal(err)
+			}
+			_, embeddings, ok := strings.Cut(string(body), "  embeddings:\n")
+			if !ok {
+				t.Fatal("missing embeddings service")
+			}
+			embeddings, _, ok = strings.Cut(embeddings, "\n  ai-memory:")
+			if !ok {
+				t.Fatal("unbounded embeddings service")
+			}
+			if strings.Count(embeddings, `LOG_LEVEL: "info,text_embeddings_router=warn"`) != 1 || strings.Contains(embeddings, "RUST_LOG:") {
+				t.Fatal("TEI must filter its Args INFO event using the supported LOG_LEVEL target")
+			}
+			for _, retained := range []string{`env_file: [/etc/ivoai/secrets/embeddings.env]`, `Authorization: Bearer '$$API_KEY`, `/health`, `"--revision", "614241f622f53c4eeff9890bdc4f31cfecc418b3"`} {
+				if !strings.Contains(embeddings, retained) {
+					t.Errorf("TEI legitimate contract missing %q", retained)
+				}
+			}
+			if arch == "arm64" {
+				override, err := os.ReadFile(filepath.Join(layout.ConfigDir, "compose.arm64.yaml"))
+				if err != nil || strings.Contains(string(override), "environment:") {
+					t.Fatal("ARM override must inherit shared safe environment", err)
+				}
+			}
+		})
+	}
+}

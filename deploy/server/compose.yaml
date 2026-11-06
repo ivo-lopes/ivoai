@@ -26,6 +26,11 @@ services:
     restart: unless-stopped
     user: "1000:1000"
     env_file: [/etc/ivoai/secrets/embeddings.env]
+    environment:
+      # TEI reads LOG_LEVEL (not RUST_LOG). Its router INFO Args event includes
+      # api_key; suppress that target's INFO while retaining WARN/ERROR and
+      # other targets' INFO. Health, metrics and authentication are unchanged.
+      LOG_LEVEL: "info,text_embeddings_router=warn"
     command: ["--model-id", "intfloat/multilingual-e5-small", "--revision", "614241f622f53c4eeff9890bdc4f31cfecc418b3", "--port", "80"]
     ports:
       - "127.0.0.1:8080:80"
