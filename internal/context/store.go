@@ -224,7 +224,17 @@ func (q QdrantStore) Ensure(ctx context.Context, dimensions int) error {
 		}
 		return nil
 	}
-	err = q.do(ctx, http.MethodPut, "", map[string]any{
+	// Cold collection creation can require durable filesystem initialization.
+	// Give only this one PUT a bounded budget; read/query and point mutation
+	// defaults remain 15s. An explicit client or earlier caller cancellation
+	// stays authoritative, and a failed create is never retried here.
+	createCtx, cancel := context.WithTimeout(ctx, time.Minute)
+	defer cancel()
+	creator := q
+	if creator.Client == nil {
+		creator.Client = &http.Client{Timeout: time.Minute}
+	}
+	err = creator.do(createCtx, http.MethodPut, "", map[string]any{
 		"vectors": map[string]any{"size": dimensions, "distance": "Cosine"},
 	}, nil, http.StatusOK, http.StatusConflict)
 	if err != nil {
