@@ -1,1 +1,1 @@
-headroom-ai[proxy] @ https://github.com/headroomlabs-ai/headroom/releases/download/v0.42.0/headroom_ai-0.42.0-cp310-abi3-manylinux_2_28_aarch64.whl#sha256=82972c52804f7d691dcf73b8f32acbd754b8c2262e56b2365d0741d99e517db8
+headroom-ai[proxy] @ https://github.com/headroomlabs-ai/headroom/releases/download/v0.43.1/headroom_ai-0.43.1-cp310-abi3-manylinux_2_28_aarch64.whl#sha256=12bf1314ff0b3d6f0860b41578422b77949203a93c14bec9f692c7e5b36a862f

@@ -1,6 +1,6 @@
 schema_version: 1
 validated_at: "2026-11-04"
-transitive_dependency_cutoff: "2026-11-04T20:35:00Z"
+transitive_dependency_cutoff: "2026-11-06T14:41:25Z"
 policy:
   allow_latest_tags: false
   update_command: "ivoai update"
@@ -129,10 +129,10 @@ components:
   - name: headroom
     role: [client]
     package: "headroom-ai[proxy]"
-    validated_version: "0.42.0"
-    minimum_version: "0.42.0"
+    validated_version: "0.43.1"
+    minimum_version: "0.43.1"
     license: Apache-2.0
-    source: "https://github.com/headroomlabs-ai/headroom/releases/tag/v0.42.0"
+    source: "https://github.com/headroomlabs-ai/headroom/releases/tag/v0.43.1"
     documentation: "https://headroomlabs-ai.github.io/headroom/cli/"
     architectures: [linux/amd64, linux/arm64]
     install_strategy: isolated_python_tool
@@ -140,13 +140,13 @@ components:
     checksum_strategy: pypi_sha256
     assets:
       linux/amd64:
-        filename: "headroom_ai-0.42.0-cp310-abi3-manylinux_2_28_x86_64.whl"
-        url: "https://github.com/headroomlabs-ai/headroom/releases/download/v0.42.0/headroom_ai-0.42.0-cp310-abi3-manylinux_2_28_x86_64.whl"
-        sha256: "fbb3ceb8f6c3f208edcc3aad43c0e03e0db45636d9d2061525ad0d0a166da146"
+        filename: "headroom_ai-0.43.1-cp310-abi3-manylinux_2_28_x86_64.whl"
+        url: "https://github.com/headroomlabs-ai/headroom/releases/download/v0.43.1/headroom_ai-0.43.1-cp310-abi3-manylinux_2_28_x86_64.whl"
+        sha256: "2e9cd1a9aab42f60b00a9f7c8a85cf82815b51b1989179e5fdd40ddd09915d6e"
       linux/arm64:
-        filename: "headroom_ai-0.42.0-cp310-abi3-manylinux_2_28_aarch64.whl"
-        url: "https://github.com/headroomlabs-ai/headroom/releases/download/v0.42.0/headroom_ai-0.42.0-cp310-abi3-manylinux_2_28_aarch64.whl"
-        sha256: "82972c52804f7d691dcf73b8f32acbd754b8c2262e56b2365d0741d99e517db8"
+        filename: "headroom_ai-0.43.1-cp310-abi3-manylinux_2_28_aarch64.whl"
+        url: "https://github.com/headroomlabs-ai/headroom/releases/download/v0.43.1/headroom_ai-0.43.1-cp310-abi3-manylinux_2_28_aarch64.whl"
+        sha256: "12bf1314ff0b3d6f0860b41578422b77949203a93c14bec9f692c7e5b36a862f"
     notes:
       - "The installed CLI is optional. Managed wrapping remains unavailable_by_policy until configuration isolation and exact recovery are certified; Direct fallback remains mandatory."
       - "Architecture-specific transitive constraints and hashes are embedded; uv installs wheels against exact CPython 3.14.10."
@@ -282,17 +282,17 @@ components:
   - name: ruflo
     role: [client]
     package: ruflo
-    validated_version: "3.71.1"
-    minimum_version: "3.71.1"
+    validated_version: "3.72.2"
+    minimum_version: "3.72.2"
     license: MIT
-    source: "https://www.npmjs.com/package/ruflo/v/3.71.1"
+    source: "https://www.npmjs.com/package/ruflo/v/3.72.2"
     upstream_repository: "https://github.com/ruvnet/ruflo"
     architectures: [linux/amd64, linux/arm64]
     install_strategy: isolated_npm_prefix
     runtime_requirement: "Node.js >=20"
     checksum_strategy: npm_registry_integrity
-    integrity: "sha512-ora1Qud7HM7Lse0w02WFDTnuu81HK3C3AisMbncoVXjmMxXo84ofjjy1fPeWXcoXGpDNdJeokDVe16NbJ58FqA=="
-    package_url: "https://registry.npmjs.org/ruflo/-/ruflo-3.71.1.tgz"
+    integrity: "sha512-DHk7+8a2t5n7B+9PsTKTIGNz0LF8wToGwBOwhSuu0UFL9AabA3a+BHa4eZlY8225dMfZnfHzO+4m6El/R+EkXQ=="
+    package_url: "https://registry.npmjs.org/ruflo/-/ruflo-3.72.2.tgz"
     safe_default_features:
       - coordination
       - hierarchical_swarm_lifecycle

@@ -381,21 +381,21 @@ requested agent
                 direct or failed preflight -> official agent [argv...]
 ```
 
-Headroom 0.42.0 está obsoleto, mas é mantido durante a janela de observação do Caveman.
+Headroom 0.43.1 está obsoleto, mas é mantido durante a janela de observação do Caveman.
 Ele fornece oficialmente `wrap codex` e `wrap claude` e é instalado
 em um ambiente de ferramentas isolado usando uv 0.13.7 e o runtime CPython
 3.14.10 gerenciado exato sob a raiz de dados do ivoai. Uma verificação prévia indisponível, sem integridade ou incompatível
 seleciona o agente direto. Depois que um processo wrapper compatível inicia,
 o ivoai propaga seu status de saída; ele não tenta novamente, de forma silenciosa, uma sessão
 interativa que falhou. O ivoai não reescreve os aliases do usuário nem substitui inicializadores de terceiros.
-Headroom 0.42.0 pode aplicar compressão com perdas a itens
+Headroom 0.43.1 pode aplicar compressão com perdas a itens
 `custom_tool_call_output` do Codex Code Mode sem associá-los de forma confiável ao nome da
 ferramenta MCP de origem. Por isso, IvoAI contorna qualquer provedor de compressão com perdas sempre que
 conhecimento compartilhado autoritativo estiver ativo na sessão. Essa política neutra em relação ao provedor
 preserva resultados exatos de Memory e Context; a telemetria da sessão registra o
 provedor solicitado, o caminho Direct efetivo e o motivo limitado.
 Fontes: [CLI do Headroom](https://headroomlabs-ai.github.io/headroom/cli/),
-[Headroom v0.42.0](https://github.com/headroomlabs-ai/headroom/releases/tag/v0.42.0),
+[Headroom v0.43.1](https://github.com/headroomlabs-ai/headroom/releases/tag/v0.43.1),
 [Issue 940 do Headroom](https://github.com/headroomlabs-ai/headroom/issues/940),
 [uv 0.13.7](https://github.com/astral-sh/uv/releases/tag/0.13.7) e
 [Python 3.14.10](https://www.python.org/downloads/release/python-31410/).
@@ -791,7 +791,7 @@ preenchido, e nenhuma skill externa pode assumir autoridade de orquestrador.
 |---|---:|---|
 | Codex CLI + code-mode host | 0.162.1 | Artefatos oficiais da mesma release; `codex login` suporta assinaturas do ChatGPT, e o host com checksum separado preserva a superfície gerenciada de ferramentas/MCP. |
 | Claude Code | 2.1.296 | Release oficial revisada. Binário externo proprietário sujeito aos termos da Anthropic. |
-| Headroom | 0.42.0 | Release atual do PyPI/GitHub com wheels amd64/arm64; a integração de evolução rápida exige uma sondagem smoke na configuração e fallback direto. |
+| Headroom | 0.43.1 | Release atual do PyPI/GitHub com wheels amd64/arm64; a integração de evolução rápida exige uma sondagem smoke na configuração e fallback direto. |
 | uv / CPython | 0.13.7 / 3.14.10 | Par exato de instalador/runtime privado para Headroom, com restrições incorporadas com hashes específicos por arquitetura. |
 | ai-memory | 2.6.3 | Lançado recentemente na data da validação, com changelog e hashes por arquitetura revisados. O tempo limitado de observação em uso é mitigado pela versão exata fixada, pelo timeout dos hooks e pelo isolamento de falhas. |
 | Ruflo | 3.56.5 | Fixação exata de integridade npm. Inferência direta/roteamento de provedores continua inadequado ao padrão sem PAYG e está desabilitado. Os nomes do pacote/repositório mudaram ao longo do tempo, portanto atualizações exigem revisão de proveniência. |

@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "base": "232ccf0c1e2f7c0f3e84f6350548f1f46dccccf7",
+  "scope": "Headroom and JavaScript optional runtimes; not whole dependency or provider certification",
+  "versions": {
+    "headroom": "0.43.1",
+    "python_latest_compatible": "3.14.10",
+    "python_latest_stable_rejected": "3.15.2",
+    "uv": "0.13.7",
+    "node": "26.13.0",
+    "ruflo": "3.72.2",
+    "pnpm": "12.18.0",
+    "playwright": "1.65.0",
+    "opentelemetry_core": "3.1.0",
+    "glob": "14.0.4",
+    "minimatch": "11.0.5"
+  },
+  "checks": {
+    "real_production_headroom_installer": {
+      "pass": true,
+      "seconds": 30.04,
+      "inference": false
+    },
+    "real_production_ruflo_installer": {
+      "pass": true,
+      "seconds": 36.99,
+      "inference": false
+    },
+    "real_admin_browser": {
+      "hermetic": 2,
+      "real": 4,
+      "skipped": 0,
+      "browser": "Chromium 158 build1254"
+    },
+    "runtime_known_vulnerabilities": 0,
+    "docs_known_vulnerabilities": 0,
+    "go_focused_and_vet": "PASS",
+    "braces_deepmerge_zod": "PASS",
+    "npm_registry_signatures": "VERIFIED_NOT_SOURCE_ATTESTATION"
+  },
+  "limitations": [
+    "Python3.15.2 binary-only resolution fails required PyYAML wheels; no source-build exception or false compatibility claim.",
+    "Headroom managed wrapping remains unavailable_by_policy; Direct fallback is unchanged. Installer tests do not certify compression quality, inference, ARM execution or no-AVX.",
+    "Caveman bin-v4.0.2 is deliberately not adopted here: independent binary govulncheck found Go advisories in x/net0.60.0 and klauspost/compress1.20.1. A separately versioned repair is under investigation.",
+    "A partial edit command initially failed searching for a nonexistent pnpm manifest component; corrected before validation. npm lock refresh emitted local Zod tarball retry warnings; actual production installation later passed.",
+    "Historical benchmark results remain unchanged; no global economic, provider parity or all-dependencies-complete claim.",
+    "Embedded website regeneration and full composition CI remain integration gates."
+  ],
+  "source_sha256": {
+    "internal/components/components.go": "19f0e25bdff6012bf0493d3b8c3e226becf5407b04f2edb8824f0fe3394dde55",
+    "manifest/components.yaml": "51235128cf0d2779dbe910a1ff03ae6ea9263a83a9e13987631c3ab860fb1f76",
+    "internal/components/assets/package.json": "e07c9d6ee94921cb982eadce72133688b92648e9cc524143c69c6c3b98174299",
+    "internal/components/assets/package-lock.json": "6e2e2ffd0dac2c9cd417cd06e4b7e1e944f18a54e5a2d7becc3c9f315598bba8",
+    "internal/components/assets/headroom-amd64.in": "5a84229bd29beaf2958bb335dbb807957c7b91dd235419f065312b638b4ddaf1",
+    "internal/components/assets/headroom-amd64.lock": "1aec425da34c8c91607d41fe6bfeebc12993fc0e1e10e69d9c58958ab9da733c",
+    "internal/components/assets/headroom-arm64.in": "0d41dfd33f786b5109c497b93286607ab391ed1b092eabc676bec69ba79d89d6",
+    "internal/components/assets/headroom-arm64.lock": "30ab33cd623d7d3f17226de31a135a4e7b48931aa9c53f279fb21b34ae73a4c4",
+    "website/package.json": "ee7f43f125e496c604f83d213ca81a6a081dde51b2616a6b8a4881dbcdf74ae2",
+    "website/pnpm-lock.yaml": "bb99f6b9c97cd3fba69194ceb1828e58f9e9b0f8fa384fb7c04341bc7a9f8f35",
+    "website/pnpm-workspace.yaml": "a434e602bd449943f580f82380550cc3638d1ccfc9474e38c5e1c5a4bd250c9e"
+  }
+}

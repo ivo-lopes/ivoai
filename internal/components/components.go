@@ -76,7 +76,7 @@ const (
 	managedUVVersion     = "0.13.7"
 	managedPythonVersion = "3.14.10"
 	managedNodeVersion   = "26.13.0"
-	dependencyCutoff     = "2026-11-04T20:35:00Z"
+	dependencyCutoff     = "2026-11-06T14:41:25Z"
 )
 
 // DefaultCatalog mirrors manifest/components.yaml. Release CI compares the
@@ -95,9 +95,9 @@ func DefaultCatalog() []Spec {
 			"linux/amd64": {URL: "https://github.com/anthropics/claude-code/releases/download/v2.1.318/claude-linux-x64.tar.gz", SHA256: "e6d426ca0c123f61fad58a361da0329f2a93cd206bc87040ed8d9576dd9eb583"},
 			"linux/arm64": {URL: "https://github.com/anthropics/claude-code/releases/download/v2.1.318/claude-linux-arm64.tar.gz", SHA256: "0f4fb66a2af3bf02d114099727e4a7745f117b1e63d2f77c8aff165590197421"},
 		}},
-		{Name: "headroom", Executable: "headroom", Version: "0.42.0", Package: "headroom-ai[proxy]", Strategy: StrategyUVIsolated, Assets: map[string]Asset{
-			"linux/amd64": {URL: "https://github.com/headroomlabs-ai/headroom/releases/download/v0.42.0/headroom_ai-0.42.0-cp310-abi3-manylinux_2_28_x86_64.whl", SHA256: "fbb3ceb8f6c3f208edcc3aad43c0e03e0db45636d9d2061525ad0d0a166da146"},
-			"linux/arm64": {URL: "https://github.com/headroomlabs-ai/headroom/releases/download/v0.42.0/headroom_ai-0.42.0-cp310-abi3-manylinux_2_28_aarch64.whl", SHA256: "82972c52804f7d691dcf73b8f32acbd754b8c2262e56b2365d0741d99e517db8"},
+		{Name: "headroom", Executable: "headroom", Version: "0.43.1", Package: "headroom-ai[proxy]", Strategy: StrategyUVIsolated, Assets: map[string]Asset{
+			"linux/amd64": {URL: "https://github.com/headroomlabs-ai/headroom/releases/download/v0.43.1/headroom_ai-0.43.1-cp310-abi3-manylinux_2_28_x86_64.whl", SHA256: "2e9cd1a9aab42f60b00a9f7c8a85cf82815b51b1989179e5fdd40ddd09915d6e"},
+			"linux/arm64": {URL: "https://github.com/headroomlabs-ai/headroom/releases/download/v0.43.1/headroom_ai-0.43.1-cp310-abi3-manylinux_2_28_aarch64.whl", SHA256: "12bf1314ff0b3d6f0860b41578422b77949203a93c14bec9f692c7e5b36a862f"},
 		}},
 		{Name: "caveman", Executable: "caveman-proxy", Version: "2.1.0", Strategy: StrategySupplyChain,
 			Revision: "e20f07e8152a0c0360f58c09e79d30ac94329991", DefaultBranch: "main", License: "Apache-2.0", PayloadFormat: "raw", PayloadPath: "bin/caveman-proxy", NoVersionProbe: true,
@@ -121,7 +121,7 @@ func DefaultCatalog() []Spec {
 			"linux/amd64": {URL: "https://github.com/akitaonrails/ai-memory/releases/download/v3.4.2/ai-memory-linux-x86_64.tar.gz", SHA256: "15a4f4a346a27e6fd63a36d1b3de23c5cbe142b80b3bce561e21b1f225a1e645"},
 			"linux/arm64": {URL: "https://github.com/akitaonrails/ai-memory/releases/download/v3.4.2/ai-memory-linux-aarch64.tar.gz", SHA256: "164f7c38bb9bafca218dd958c3c60febcd5d2f5200ad138c6f128576cedebfb6"},
 		}},
-		{Name: "ruflo", Executable: "ruflo", Version: "3.71.1", Package: "ruflo", PackageURL: "https://registry.npmjs.org/ruflo/-/ruflo-3.71.1.tgz", Integrity: "sha512-ora1Qud7HM7Lse0w02WFDTnuu81HK3C3AisMbncoVXjmMxXo84ofjjy1fPeWXcoXGpDNdJeokDVe16NbJ58FqA==", Strategy: StrategyNPMIsolated},
+		{Name: "ruflo", Executable: "ruflo", Version: "3.72.2", Package: "ruflo", PackageURL: "https://registry.npmjs.org/ruflo/-/ruflo-3.72.2.tgz", Integrity: "sha512-DHk7+8a2t5n7B+9PsTKTIGNz0LF8wToGwBOwhSuu0UFL9AabA3a+BHa4eZlY8225dMfZnfHzO+4m6El/R+EkXQ==", Strategy: StrategyNPMIsolated},
 	}
 	if managedOpenCodeBuild != "" {
 		for index := range catalog {

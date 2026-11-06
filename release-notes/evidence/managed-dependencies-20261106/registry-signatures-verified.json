@@ -1,0 +1,92 @@
+{
+  "scope": "npm registry signature and published integrity, not source attestation or vulnerability absence",
+  "rows": [
+    {
+      "name": "ruflo",
+      "version": "3.72.2",
+      "integrity": "sha512-DHk7+8a2t5n7B+9PsTKTIGNz0LF8wToGwBOwhSuu0UFL9AabA3a+BHa4eZlY8225dMfZnfHzO+4m6El/R+EkXQ==",
+      "registry_signature_verified": true,
+      "verified_signature_count": 2,
+      "keyids": [
+        "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U",
+        "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+      ]
+    },
+    {
+      "name": "@playwright/test",
+      "version": "1.65.0",
+      "integrity": "sha512-iGURLGuKDLakSEl7Pgfv8h7f+XLT+V861Wfhz0zlEl5nyFuKUopdkFBPKqTllTUp06aOwPuH8iuUEb3yp3MpbQ==",
+      "registry_signature_verified": true,
+      "verified_signature_count": 2,
+      "keyids": [
+        "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U",
+        "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+      ]
+    },
+    {
+      "name": "@opentelemetry/core",
+      "version": "3.1.0",
+      "integrity": "sha512-TS/6jqU5gilzjvjGnsTEKVFF/0MMAtBc2psxaX39IGCBYLat83/iHxYBWn+O6WB+pnyB0SwiH46rvTEp/OeYxA==",
+      "registry_signature_verified": true,
+      "verified_signature_count": 2,
+      "keyids": [
+        "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U",
+        "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+      ]
+    },
+    {
+      "name": "glob",
+      "version": "14.0.4",
+      "integrity": "sha512-mMiwNKoJZ4HAIRVJxotO6LsNRReA30gQwP9E2/p94tfLv+jygCNpKDjhhSL6OLY6LE371EZm5EAf7RpYuUqlsw==",
+      "registry_signature_verified": true,
+      "verified_signature_count": 2,
+      "keyids": [
+        "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U",
+        "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+      ]
+    },
+    {
+      "name": "minimatch",
+      "version": "11.0.5",
+      "integrity": "sha512-snPlVppFcYWfLLFQGhDxUyBcHNtMlWmn3jtj7pEaO+DP8pqL0IvAzXhMYmn1z9ASNtgmwLBdFxSf4tMUB0OTKA==",
+      "registry_signature_verified": true,
+      "verified_signature_count": 2,
+      "keyids": [
+        "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U",
+        "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+      ]
+    },
+    {
+      "name": "pnpm",
+      "version": "12.18.0",
+      "integrity": "sha512-nXiC1dyCFH7PxOBiqjSDTgrQKWcQoYN6ERWuASEn02txCeMhrBWYod0KZVl2gbHpmRfhLtDXSerpEYeUM2O+sw==",
+      "registry_signature_verified": true,
+      "verified_signature_count": 1,
+      "keyids": [
+        "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+      ]
+    },
+    {
+      "name": "playwright",
+      "version": "1.65.0",
+      "integrity": "sha512-F3AMWcR44qMBt4kq+6Kb6mX7bjGXshktKFOPULd7reED6ZJWevjbNRqysP7q+AATE9kdPEZBibex1BYsvpVoeA==",
+      "registry_signature_verified": true,
+      "verified_signature_count": 2,
+      "keyids": [
+        "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U",
+        "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+      ]
+    },
+    {
+      "name": "playwright-core",
+      "version": "1.65.0",
+      "integrity": "sha512-vNSKgH6YqtN7cdT/L334zo0a+YwkrpicyrHJlWWPIm/Q+Nn2SWInil01oT0mbu96U4GgoRtCYQD9CzJQgju+lA==",
+      "registry_signature_verified": true,
+      "verified_signature_count": 2,
+      "keyids": [
+        "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U",
+        "SHA256:DhQ8wR5APBvFHLF/+Tc+AYvPOdTpcIDqOhxsBHRwC7U"
+      ]
+    }
+  ]
+}
