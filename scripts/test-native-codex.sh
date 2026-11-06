@@ -27,7 +27,7 @@ PY_PIN
 done
 startup=(python3 "$repo_root/scripts/verify-native-codex-pair.py" --arch "$arch" --directory "$test_root")
 if [[ "$arch" == amd64 ]]; then
-  startup+=(--emulator "$(command -v qemu-x86_64)" --cpu Nehalem,-avx,-avx2)
+  startup+=(--emulator "$(command -v qemu-x86_64)" --cpu "Nehalem,-avx,-avx2")
 fi
 "${startup[@]}" --output "$test_root/pair-startup.json"
 IVOAI_LIVE_CODEX_PATH="$test_root/codex" IVOAI_LIVE_CODEX_TUI=1 \

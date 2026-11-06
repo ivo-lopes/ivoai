@@ -12,9 +12,9 @@ test_root="$(mktemp -d "${TMPDIR:-/var/tmp}/ivoai-caveman-qualification.XXXXXXXX
 stage=archive_verification
 finish() {
   status=$?
-  python3 - "$receipt" "$stage" "$status" "$archive" <<'PY_RECEIPT'
+  python3 - "$receipt" "$stage" "$status" "$archive" "$test_root" <<'PY_RECEIPT'
 import hashlib,json,os,sys
-path,stage,status,archive=sys.argv[1:]
+path,stage,status,archive,private=sys.argv[1:]
 h=hashlib.sha256()
 fd=os.open(archive,os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK)
 with os.fdopen(fd,'rb') as source:
@@ -23,6 +23,16 @@ with os.fdopen(fd,'rb') as source:
  for block in iter(lambda:source.read(1<<20),b''): h.update(block)
 row={'scope':'reviewed_local_caveman_rebuild_not_upstream_signature','outcome':'PASS' if status=='0' else 'FAIL',
      'last_stage':stage,'provider_inference':False,'archive_sha256':h.hexdigest()}
+diagnostic=os.path.join(private,'installer.jsonl')
+if status!='0' and os.path.isfile(diagnostic):
+ outpath=path+'.installer-private.jsonl'
+ source=os.open(diagnostic,os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK)
+ with os.fdopen(source,'rb') as stream:
+  first=stream.read(32768);stream.seek(max(32768,os.fstat(stream.fileno()).st_size-32768))
+  raw=first+b'\n[bounded diagnostic tail]\n'+stream.read(32768)
+ outfd=os.open(outpath,os.O_CREAT|os.O_EXCL|os.O_WRONLY|os.O_NOFOLLOW,0o600)
+ with os.fdopen(outfd,'wb') as out:out.write(raw)
+ row['bounded_private_installer_diagnostic_retained']=True
 fd=os.open(path,os.O_CREAT|os.O_EXCL|os.O_WRONLY|os.O_NOFOLLOW,0o600)
 with os.fdopen(fd,'w') as out: json.dump(row,out,indent=2);out.write('\n')
 PY_RECEIPT
@@ -69,7 +79,7 @@ for binary in caveman-proxy caveman-mcp; do
 done
 stage=baseline_cpu_startup
 case "$(uname -m)" in
-  x86_64) emulator=("$(command -v qemu-x86_64)" -cpu Nehalem,-avx,-avx2) ;;
+  x86_64) emulator=("$(command -v qemu-x86_64)" -cpu "Nehalem,-avx,-avx2") ;;
   aarch64) emulator=() ;;
   *) echo 'Native Linux amd64/arm64 required' >&2; exit 1 ;;
 esac
