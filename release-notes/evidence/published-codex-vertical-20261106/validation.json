@@ -1,0 +1,23 @@
+{
+  "source": "f441b81abbbd9cd24f87651837a98f89a40e06ac",
+  "harness_source": "7bce1090ea1eb971326f641460fea4fdee8e6b7b",
+  "scope": "Downloaded final public v0.17.0 Core, official Codex0.167 native TUI, three-turn DAG/read-only/cross-process-resume integration",
+  "outcome": "PASS",
+  "attempts": 1,
+  "wall_ms": 107889,
+  "artifact_bytes": 3939,
+  "files": {
+    "post-run-checks-epoch1.json": "c723179b0763bf715ae668c620d1ac3add2b5849f6520f6802b7234b5ca6a75e",
+    "published-dag-resume-epoch1.json": "ec4a4bc8631a8ce2fb113b04bed304e4bab4afe5b79626ca086f798323502dda",
+    "published-dag-resume-epoch1.log": "3f3a65ea260b5207126286bbeb671c31165c0a438def91fc751f16bbc5052479",
+    "source-and-launch-epoch1.json": "ac9de28f7f56776df11377204c64158a97c6f04d8041b9d19b0ed844f8285c4d"
+  },
+  "limits": [
+    "Not global economic certification or comparative performance evidence.",
+    "Official usage values retain client_reported cli_invocation scope; do not sum as session costs.",
+    "Linuxamd64 exact reviewed client pair only; no ARM/client parity certification.",
+    "DAG fixture uses explicit immediate authorization only for the disposable worktree; interactive approval UI is not certified by this run.",
+    "Auth-files flag describes the agent: the official client uses existing authentication in place.",
+    "Final dag=false/workers=0 describes later read-only state; initial DAG is proved by completed_DAG and archived_workers=1."
+  ]
+}

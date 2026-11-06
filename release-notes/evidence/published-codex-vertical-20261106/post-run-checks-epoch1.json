@@ -1,0 +1,14 @@
+{
+  "checked_utc": "2026-11-06T19:27:29.648184+00:00",
+  "matching_executable_processes_after_test": {
+    "published_core": 0,
+    "reviewed_codex": 0,
+    "harness": 0
+  },
+  "root_free_bytes_after": 22259445760,
+  "personal_auth_scope": "Agent did not inspect or copy personal auth files; the official CLI uses existing authentication in place. HOME/CODEX_HOME are preserved by the harness.",
+  "provider_usage_scope": "client_reported cli_invocation receipts, not summed as session cost or savings",
+  "harness_source_scope": "Compiled test executable from7bce1090; all tracked Go sources and go.mod/go.sum match publishedf441b81; production executable itself is the downloaded finalf441 release binary.",
+  "oracle_scope": "Existing harness executes real Go tests in a disposable private cache; product executable is not rebuilt.",
+  "artifact_directory_bytes": 3065
+}

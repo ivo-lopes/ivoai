@@ -1,0 +1,27 @@
+{
+  "started_utc": "2026-11-06T19:24:10.150997+00:00",
+  "source": "f441b81abbbd9cd24f87651837a98f89a40e06ac",
+  "harness_source": "7bce1090ea1eb971326f641460fea4fdee8e6b7b",
+  "go_source_and_modules_identical": true,
+  "executables": {
+    "production": {
+      "path": "/var/tmp/ivoai-v0170-postpublication-20261106/ivoai",
+      "sha256": "ecb8011b2ac215a7b6ac9166cd4fc032ef3bf0b2ce1a3dbbda756b93b467160c"
+    },
+    "harness": {
+      "path": "/var/tmp/ivoai-consolidation-final-20261106/app-source7bce.test",
+      "sha256": "06cd2785a824390d0014a120533e2a067d609cae418bf58441c5ed9a309bfd49"
+    },
+    "codex": {
+      "path": "/var/tmp/ivoai-codex167-reviewed/amd64/codex",
+      "sha256": "cdcb45aaa01d0f14e298985e09465aebccd47f64ecd298aea44814af7b62bbda"
+    }
+  },
+  "home_and_codex_home_preserved": true,
+  "auth_files_read_or_copied": false,
+  "production_rebuilt": false,
+  "attempt": 1,
+  "automatic_retries": false,
+  "automatic_model_fallback": false,
+  "root_free_bytes_before": 24691679232
+}
