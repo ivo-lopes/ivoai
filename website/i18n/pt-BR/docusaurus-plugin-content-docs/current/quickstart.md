@@ -11,12 +11,12 @@ segundo plano. Exemplo: `sudo apt-get install curl ca-certificates libatomic1`.
 curl -fsSL https://raw.githubusercontent.com/ivo-lopes/ivoai/main/install.sh | sh
 ivoai setup
 ivoai doctor
-ivoai auto
+ivoai codex
 ```
 
 A autenticação dos executores oficiais permanece dentro de cada executor. O IVOAI
-não solicita nem copia credenciais de assinatura. O AUTO abre o frontend OpenCode
-gerenciado pelo IVOAI e usa como executores esses clientes oficiais já autenticados.
+não solicita nem copia credenciais de assinatura. O caminho gerenciado abre o Codex nativo; `ivoai auto` é seu alias no mesmo Core.
+O Primary adaptativo é opt-in e OFF por padrão, preservando permissões e aprovações.
 
 ## Adicionar servidores privados
 

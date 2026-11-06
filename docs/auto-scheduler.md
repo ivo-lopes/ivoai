@@ -1,10 +1,9 @@
 # Automatic scheduler and model routing
 
-`ivoai opencode` uses an in-process policy engine and the session-local
-`ivoai-orchestrator` MCP. The pinned OpenCode TUI is the frontend; IVOAI remains the
-conversation owner and integration authority. Official clients execute bounded
-tasks; approved writers use isolated worktrees, never concurrent writes to the
-primary checkout. Native AUTO does not depend on Ruflo lifecycle.
+`ivoai codex` and `ivoai auto` use the existing in-process policy engine and
+session-local `ivoai-orchestrator` MCP. Core remains the conversation owner and
+integration authority. Approved writers use isolated worktrees, not concurrent
+writes to the primary checkout. Managed OpenCode is removed.
 
 ## First substantive turn
 
@@ -20,7 +19,8 @@ Prompt readiness -> purpose-auto -> selected Memory/Context -> bounded brief
 Prompt acceptance criteria are optional. Intake checks non-empty bounded UTF-8
 text and rejects unsafe control characters; it does not approve a plan or grant
 tools. Task acceptance, plan approval and DAG completion remain required in the
-current scheduler. A separate primary-only path without a DAG remains pending.
+existing scheduler. The reviewed Primary-only read path is available behind
+`IVOAI_EXPERIMENTAL_ADAPTIVE_PRIMARY`, OFF by default; it grants no writes.
 Selected, relevant Memory and Context attempts occur once. `orchestration_bootstrap` stores a
 maximum-64-KiB, secret-free brief in the private session runtime directory. Session
 JSON retains only its timestamp, source statuses, reference count, and SHA-256 hash.
@@ -148,7 +148,7 @@ Headroom use, and escalation count. JSON contains only this metadata. Token and
 Headroom-saving metrics remain unavailable unless an official structured source
 provides them; ivoai does not estimate them.
 
-Headroom 0.40.0 is bypassed whenever authoritative shared-knowledge material is in
+Managed Headroom wrapping is unavailable by policy when authoritative material is in
 the primary or worker path because its tool-result protection is not proven safe for
 those exact responses. Direct agent modes, Web MCP, ai-memory, and Context remain
 independent of the automatic scheduler.

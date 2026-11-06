@@ -5,7 +5,38 @@ v0.5.0 and records the current incremental status separately below. Exact pins
 live in `manifest/components.yaml`; delivered behavior and migration limits belong
 to versioned implementation and validation evidence.
 
-## Current release: v0.15.0 — published and verified
+## Current native backend
+
+The current Core controls native Codex sessions and optional managed headless
+Claude/Antigravity hosts through the existing admission, ownership and scheduler
+contracts. `ivoai auto` aliases managed Codex. Managed OpenCode installation,
+repair, probing and execution are removed; old entrypoints explain migration and
+preserve user binaries, credentials, configuration, profiles and history.
+
+```text
+Native clients -> Core admission and session ownership
+               -> Primary / existing plan and scheduler
+               -> scoped evidence and tool providers
+               -> WorkingContext / ArtifactStore
+               -> validation -> native client output
+```
+
+Adaptive Primary and native read-only CodeIntel Gateway reuse remain explicit
+feature flags, OFF by default. A reviewed adaptive read-only turn can finish
+without a DAG; complex work uses the same existing orchestration protocol and
+workers. The Gateway preserves exact typed evidence with owner/source checks;
+this is not universal Memory/Context/tool mediation or proven global economy.
+Claude/Antigravity headless support does not mean transparent TUI control. Runtime
+and platform certification are limited to the committed real evidence.
+
+The administrative console consumes that same backend, with scoped authorization,
+auditing and reverse-proxy protection; it is not another conversational frontend.
+Versioned release notes establish which increments belong to each published
+artifact. The original v0.16.0 assets remain immutable. Subsequent historical
+sections below describe their named sources, not the current command catalog.
+See [executors](executors.md) and [administration](admin-console.md).
+
+## Historical published release: v0.15.0 — published and verified
 
 **Published and independently verified.** [v0.15.0](https://github.com/ivo-lopes/ivoai/releases/tag/v0.15.0)
 was published on 2026-10-29 at 04:51:24 UTC from immutable source `8f688e26`.
@@ -52,6 +83,9 @@ PR56/63/64, authenticated metadata qualification and the separate Direct-only
 factory proposal are outside the v0.15.0 tag. Post-tag main builds have their own
 source qualifications. See [releases](releases.md) for exact release boundaries;
 the v0.14.0 description below remains historical.
+
+
+> The remaining historical architecture sections retain their named implementation boundaries; references to the retired OpenCode executor or older pins do not restore it in the current runtime.
 
 ## Historical release: v0.14.0
 

@@ -5,7 +5,39 @@ na v0.5.0, e registra separadamente o estado incremental atual abaixo. As versõ
 exatas estão em `manifest/components.yaml`; comportamento entregue e limites da
 migração pertencem às evidências versionadas de implementação e validação.
 
-## Release atual: v0.15.0 — publicada e verificada
+## Backend nativo atual
+
+O Core controla sessões Codex nativas e hosts headless opcionais Claude/Antigravity
+pelos contratos existentes de admissão, ownership e scheduler. `ivoai auto` é um
+alias do Codex gerenciado. Instalação, reparo, sondagem e execução gerenciada
+OpenCode foram removidos; os comandos antigos explicam a migração e preservam
+binários, credenciais, configurações, perfis e histórico do usuário.
+
+```text
+Native clients -> Core admission and session ownership
+               -> Primary / existing plan and scheduler
+               -> scoped evidence and tool providers
+               -> WorkingContext / ArtifactStore
+               -> validation -> native client output
+```
+
+Primary adaptativo e reutilização CodeIntel somente leitura no Gateway continuam
+atrás de flags explícitas, OFF por padrão. Um turno adaptativo somente leitura
+revisado pode terminar sem DAG; trabalhos complexos usam o protocolo de
+orquestração e workers existentes. O Gateway preserva evidência tipada exata com
+verificações de proprietário/fonte; isso não comprova mediação universal de
+Memory/Context/tools nem economia global. Headless Claude/Antigravity não implica
+controle transparente da TUI. Certificação de runtime/plataforma limita-se às
+provas reais registradas.
+
+O painel administrativo usa o mesmo backend, com autorização, auditoria e proteção
+para proxy reverso; não é outro chat. Notas versionadas identificam os incrementos
+que pertencem a cada artefato publicado. Os assets originais da v0.16.0 permanecem
+imutáveis. As seções históricas seguintes descrevem os fontes nomeados, não o
+catálogo atual de comandos. Veja [executores](executors.md) e
+[administração](admin-console.md).
+
+## Release histórica publicada: v0.15.0 — publicada e verificada
 
 **Publicada e verificada independentemente.** A [v0.15.0](https://github.com/ivo-lopes/ivoai/releases/tag/v0.15.0)
 foi publicada em 29/10/2026 às 04:51:24 UTC, do fonte imutável `8f688e26`.
@@ -53,6 +85,9 @@ Core existentes. PR55 é preflight offline; PR54/56 ficam excluídos. Consulte
 de metadados autenticados e a evolução separada da factory Direct-only estão fora
 da tag v0.15.0. Builds do main posterior à tag têm qualificação própria por fonte.
 A descrição da v0.14.0 abaixo continua histórica.
+
+
+> As demais seções históricas preservam os limites de suas implementações nomeadas; referências ao executor OpenCode removido ou a pins antigos não o restauram no runtime atual.
 
 ## Release histórica: v0.14.0
 

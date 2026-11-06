@@ -6,6 +6,18 @@ Data da auditoria: 2026-10-27. Baseline de código: `v0.12.1` publicada, commit
 Este documento distingue esse baseline do destino aprovado para a migração.
 Ele não certifica implementações adicionadas posteriormente em uma branch de desenvolvimento.
 
+## Estado atual do código
+
+A auditoria histórica abaixo continua vinculada à v0.12.1 e aos incrementos
+nomeados. O código nativo atual inclui intake permissivo, Primary adaptativo
+opt-in e continuidade com owner, reutilização isolada de código no Gateway,
+adaptadores headless e administração/proxy reverso. Instalação, reparo, sondagem,
+execução e novos assets OpenCode foram removidos; dados pessoais e assets
+publicados permanecem intactos. Flags experimentais continuam OFF por padrão,
+inferência/paridade TUI Claude não estão comprovadas e o gate econômico continua
+INCOMPLETE. Notas versionadas e provas executáveis definem a certificação real;
+as tabelas antigas da auditoria não são o catálogo atual de runtime.
+
 ## Incremento implementado após o baseline auditado
 
 O incremento da v0.13.0 inclui o Evidence Gateway experimental e limitado de código,

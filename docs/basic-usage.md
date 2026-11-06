@@ -3,18 +3,20 @@
 ```bash
 ivoai codex
 ivoai claude
-ivoai opencode
+ivoai auto
 ivoai status
 ivoai doctor
 ```
 
-`ivoai codex` starts the native Codex TUI with IVOAI-controlled admission. `ivoai opencode`
-starts managed OpenCode. Both use the same prompt gate, native DAG, plan approval,
-worker scheduler and capability policies. Codex is the preferred primary in the
-Codex frontend, not necessarily every worker's executor.
+`ivoai codex` starts the official native Codex TUI with IVOAI Core admission.
+`ivoai auto` is a compatibility alias for the same path. Natural prompts do not
+require formal acceptance headings. Adaptive Primary execution without a DAG is
+an experimental opt-in, OFF by default; the existing planning/scheduler path and
+all authorization checks remain available.
 
-Use `ivoai codex --direct` or `ivoai opencode --direct` for the official standalone
-clients without orchestration. `ivoai claude` is unchanged. `ivoai auto` remains a
-deprecated alias for `ivoai opencode`, with a warning on stderr only.
+`ivoai codex --direct` and `ivoai claude` use the official direct clients.
+Managed headless clients have separate explicit feature flags and do not imply
+native TUI interception. `ivoai opencode`, including `--direct`, now returns a
+migration error and preserves all existing user data.
 
 See [Orchestrated frontends](orchestrated-frontends.md) for prompts and decisions.

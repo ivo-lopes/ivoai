@@ -10,7 +10,7 @@ primary para uma sessão já ativa.
 ivoai session list --json
 ivoai session show --json <id>
 ivoai session resume <id>
-ivoai session resume <id> --frontend opencode
+ivoai session resume <id> --frontend codex
 ivoai session resume <id> --knowledge-source voicecorp
 ivoai session recover <id>
 ivoai session recover <id> --knowledge-source voicecorp
@@ -118,7 +118,7 @@ Sources históricas não recebem novas consultas ou grants automaticamente.
 ## Resume, recovery e handoff
 
 - **Resume:** reabre a conversa nativa e aguarda novo input; não repete o último
-  turno. Codex e Claude diretos usam argumentos oficiais de resume. OpenCode
+  turno. Codex e Claude diretos usam argumentos oficiais de resume. O histórico legado OpenCode é somente leitura;
   gerenciado conecta à sessão nativa. Novos prompts orquestrados passam pelo gate.
 - **Troca de frontend:** muda a apresentação, não o provider nem a identidade
   lógica. Os mappings de ambos os frontends são preservados. Pode ser necessária
@@ -166,7 +166,7 @@ e verificada antes de ser retomado por uma versão que aplica o novo limite.
 
 ## Limites e diagnóstico
 
-A descoberta direta Codex/OpenCode é limitada e só registra uma nova sessão nativa
+A descoberta direta Codex é limitada e só registra uma nova sessão nativa
 quando inequívoca. Se várias conversas foram criadas simultaneamente ou nenhum ID
 foi observado, o mapping fica indisponível; não se escolhe a mais recente por palpite.
 Claude live depende da autenticação oficial existente, sem remover seu suporte.
@@ -182,5 +182,5 @@ IVOAI e reinicie o frontend gerenciado; não desabilite `/resume` nem use direct
 correção. Se a sessão já estiver ativa, feche ou pare seu frontend antes de retomar.
 Não apague arquivos de lock ou de sessão.
 
-Esta release não implementa OpenCode Full Console, OpenViking ou a próxima geração
+OpenCode gerenciado foi removido. Esta entrega não certifica OpenViking nem a próxima geração
 de orquestração paralela.

@@ -1,6 +1,6 @@
 # Session control and orchestration
 
-IVOAI exposes one native orchestration core through Codex and OpenCode frontends.
+IVOAI exposes one native orchestration Core through supported native clients.
 See [Orchestrated frontends](orchestrated-frontends.md). The official clients remain
 available in explicit direct mode; no new provider credential is introduced.
 
@@ -15,8 +15,8 @@ ivoai claude
 
 They transfer the current directory, stdin, stdout, stderr, foreground terminal
 process group and signals to the selected official client. The runtime snapshots and
-restores terminal modes on return. Ruflo is not initialized. Headroom is used only after
-its compatibility probe succeeds, with the existing safe direct-start fallback.
+restores terminal modes on return. Ruflo is not initialized. Unsafe managed Headroom wrapping is refused by policy;
+Direct fallback is chosen before that wrapper starts.
 
 For the same runtime with lifecycle observability, start a direct session:
 
@@ -39,7 +39,7 @@ ivoai session start --executor codex --mode orchestrated
 ivoai session start --executor claude --mode orchestrated
 ```
 
-Codex and OpenCode orchestrated sessions use native prompt admission, plan approval,
+Codex orchestrated sessions use native prompt admission, plan approval,
 automatic DAG dispatch and the same economic router. The historical Claude explicit
 orchestrated mode below is unchanged; `ivoai claude` itself remains direct.
 
@@ -81,60 +81,23 @@ provider, runtime-verified model, effort, and whether delegation is economical.
 ## Automatic mode
 
 ```sh
-ivoai opencode
-ivoai opencode --planner codex
-ivoai opencode --planner claude
+ivoai codex
+ivoai auto
+ivoai claude
 ```
 
-Automatic mode uses the pinned OpenCode TUI as its interactive frontend while IVOAI
-remains the planner, logical session owner, authoritative writer and result
-consolidator. IVOAI invokes the chosen official Codex or Claude Code CLI behind a
-private loopback bridge, using each client's existing subscription login without
-copying credentials into OpenCode. Native AUTO verifies eligible clients without
-requiring Ruflo. It can propose an alternate when the current
-provider has a confirmed hard limit, refreshes quota before and after worker work,
-and monitors the active primary. A hard mid-session limit stops only the matching
-process group, preserves the worktree, and starts the alternate with a bounded
-checkpoint plus Git status/diff-stat summary after routing approval. At most two consecutive automatic
-failovers are accepted; a successful checkpoint resets that counter.
+Managed Codex and its auto alias use the same Core admission, existing scheduler,
+plan approval and validation. OpenCode execution/setup are removed. Claude above
+opens its official direct TUI; experimental managed headless hosts have separate
+OFF-by-default flags and do not control that TUI transparently.
 
-The OpenCode frontend stays attached across bounded executor failover. Codex receives
-session instructions through an official process-scoped config
-override. Claude receives them through `--append-system-prompt-file` and a private
-session-only `--settings` file that captures structured statusline telemetry. No
-permanent third-party configuration is overwritten. Details are in
+Natural prompts need no formal acceptance headings. Adaptive Primary execution
+without a DAG is an explicit experimental option, OFF by default. It preserves
+read-only authority and escalates complex work through the same planning protocol.
+Every new turn is admitted independently; source selection, quotas, scopes and
+native approvals remain enforced. No uncertain operation is replayed after a
+refusal or cancellation. Detailed contracts are in
 [auto-orchestration.md](auto-orchestration.md).
-
-AUTO accepts bounded non-empty UTF-8 text, including informal requests and
-questions, without requiring acceptance criteria in the prompt. Readiness grants
-no tool or plan authority; empty/malformed input is rejected before execution.
-The separate primary-only path without a DAG remains pending. Purpose-auto selects
-relevant institutional sources before bounded knowledge lookups. IVOAI validates
-the DAG and waits for plan approval by default. It calculates
-weighted capability tiers, keeps uneconomic read-only work in the primary, and
-launches dependency-ready workers within host and user limits. Each worker receives
-a local SharedContextBrief and deny-by-default MCP capabilities. Approved writers
-use isolated worktrees; IVOAI checks integration before primary synthesis. Full task text and result bodies never
-enter session JSON; only bounded WorkingContext ResultRefs do. Details of scoring and routing are in
-[auto-scheduler.md](auto-scheduler.md).
-
-Those session instructions enforce the same research priority used by direct mode:
-`ivoai-memory` first, `ivoai-context` second, and web/external sources only after both
-internal stages have been attempted. Worker adapters receive the policy through the
-official process-scoped Codex and Claude instruction flags as well.
-
-Delegation tasks and result bodies never enter Ruflo or the session JSON. Ruflo receives
-only opaque session/worker IDs through provider-free task lifecycle commands. The
-worker adapter uses `codex exec --json --output-last-message` or
-`claude --print --output-format json`, selected from trusted component paths. Worker
-provider-key environment variables are removed; subscription authentication stays
-inside each official client. Research instructions neither add provider credentials
-nor route inference through Ruflo.
-
-Worker output is untrusted. IvoAI persists its exact bytes first in the private
-transient ArtifactStore, then projects a bounded provider-neutral WorkerResult. A
-StateDelta is only a proposed observation; it cannot grant capability, change policy,
-disable a sandbox, or apply worktree mutations. See [WorkingContext](working-context.md).
 
 ## Roles of the components
 
