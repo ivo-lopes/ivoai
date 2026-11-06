@@ -1,0 +1,37 @@
+{
+  "qemu_package_sha256": "ca6ede739327a20ae5a3498230c8a3a9a072c586e131bc6bcc1201eb1725e336",
+  "qemu_executable_sha256": "36d35ffe5363bd49bfa9c2b6a048e9fb2e798fea38285a5a45f52d34f9869089",
+  "cpuid_helper_source_sha256": "becd8e8a6212f244dbd128c13cc5c0bf46088492af093b699b65fb99db754f32",
+  "cpuid_helper_executable_sha256": "321103dcc503d5c7d853bc5bd253c5fb998b6c595da14acdf9c049842a2b615f",
+  "qemu_package_matches_reused_apt_provenance": true,
+  "installed_on_host": false,
+  "isolation": {
+    "bubblewrap_unshare_all": true,
+    "private_home": "/tmp/home",
+    "environment_cleared": true,
+    "host_authentication_mounted": false,
+    "external_network": false
+  },
+  "commands": [
+    [
+      "qemu-x86_64",
+      "-cpu",
+      "Nehalem,-avx,-avx2",
+      "cpuid"
+    ],
+    [
+      "qemu-x86_64",
+      "-cpu",
+      "Nehalem,-avx,-avx2",
+      "claude",
+      "--version"
+    ],
+    [
+      "qemu-x86_64",
+      "-cpu",
+      "Nehalem,-avx,-avx2",
+      "claude",
+      "--help"
+    ]
+  ]
+}

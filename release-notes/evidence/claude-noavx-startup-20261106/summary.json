@@ -1,0 +1,40 @@
+{
+  "official_runtime": "Claude Code2.1.318/Linuxamd64",
+  "execution": "QEMU10.0.13 user-mode; not native hardware",
+  "cpu": "Nehalem,-avx,-avx2",
+  "cpuid_observed": {
+    "avx": 0,
+    "avx2": 0
+  },
+  "binary_sha256": "708c77b204db30086ff6f1ed34577bda03e1be74ced80557cbf7b54249ebf0bd",
+  "qemu_sha256": "36d35ffe5363bd49bfa9c2b6a048e9fb2e798fea38285a5a45f52d34f9869089",
+  "real_inference": false,
+  "external_network": false,
+  "personal_home_mounted": false,
+  "authentication_used": false,
+  "cases": [
+    {
+      "flag": "--version",
+      "exit_code": 0,
+      "signal": null,
+      "seconds": 1.145,
+      "stdout_bytes": 22,
+      "stderr_bytes": 0,
+      "stdout_sha256": "9d30587ab1d5620e3b0a96177dc1d5a79c78ccc2518e714823babbd7636efb3e",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "pass": true
+    },
+    {
+      "flag": "--help",
+      "exit_code": 0,
+      "signal": null,
+      "seconds": 3.361,
+      "stdout_bytes": 22344,
+      "stderr_bytes": 0,
+      "stdout_sha256": "5ca3a9dac2026e56c221fdd34380c7d7d45ebbb51c1d01b7c17c75cb076a0be8",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "pass": true
+    }
+  ],
+  "pass": true
+}
