@@ -1,0 +1,4 @@
+=== RUN   TestLiveAdaptivePrimaryFullCLI
+    adaptive_cli_live_test.go:284: NOT_RUN: existing official admission refused
+--- SKIP: TestLiveAdaptivePrimaryFullCLI (13.99s)
+PASS

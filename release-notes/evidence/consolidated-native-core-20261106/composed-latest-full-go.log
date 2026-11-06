@@ -1,0 +1,74 @@
+?   	github.com/ivo-lopes/ivoai/cmd/ivoai	[no test files]
+?   	github.com/ivo-lopes/ivoai/cmd/ivoai-output-view-sandbox	[no test files]
+ok  	github.com/ivo-lopes/ivoai/internal/admin	2.573s
+ok  	github.com/ivo-lopes/ivoai/internal/agents	0.358s
+# github.com/ivo-lopes/ivoai/internal/app
+# [github.com/ivo-lopes/ivoai/internal/app]
+vet: internal/app/adaptive_cli_live_test.go:27:1: expected '}', found '<<' (and 8 more errors)
+FAIL	github.com/ivo-lopes/ivoai/internal/app [build failed]
+ok  	github.com/ivo-lopes/ivoai/internal/benchmarkfixtures	0.511s
+ok  	github.com/ivo-lopes/ivoai/internal/caveman	0.711s
+ok  	github.com/ivo-lopes/ivoai/internal/cavemaneval	21.871s
+ok  	github.com/ivo-lopes/ivoai/internal/cli	5.909s
+ok  	github.com/ivo-lopes/ivoai/internal/codebase	0.015s
+ok  	github.com/ivo-lopes/ivoai/internal/codeintel	17.134s
+ok  	github.com/ivo-lopes/ivoai/internal/codesandbox	0.007s
+# github.com/ivo-lopes/ivoai/internal/components [github.com/ivo-lopes/ivoai/internal/components.test]
+internal/components/components.go:77:1: syntax error: unexpected <<, expected name
+internal/components/components.go:114:1: syntax error: unexpected <<, expected expression
+internal/components/components.go:116:1: syntax error: unexpected ==, expected expression
+internal/components/components.go:117: syntax error: unexpected comma after top level declaration
+ok  	github.com/ivo-lopes/ivoai/internal/codexfrontend	11.067s
+ok  	github.com/ivo-lopes/ivoai/internal/codexresolver	0.011s
+FAIL	github.com/ivo-lopes/ivoai/internal/components [build failed]
+ok  	github.com/ivo-lopes/ivoai/internal/componentupdate	0.029s
+ok  	github.com/ivo-lopes/ivoai/internal/compression	0.003s
+ok  	github.com/ivo-lopes/ivoai/internal/config	0.029s
+ok  	github.com/ivo-lopes/ivoai/internal/connections	0.067s
+ok  	github.com/ivo-lopes/ivoai/internal/context	0.026s
+ok  	github.com/ivo-lopes/ivoai/internal/core	0.003s
+ok  	github.com/ivo-lopes/ivoai/internal/docsserver	0.008s
+ok  	github.com/ivo-lopes/ivoai/internal/doctor	0.021s
+ok  	github.com/ivo-lopes/ivoai/internal/enrollment	0.016s
+ok  	github.com/ivo-lopes/ivoai/internal/evidence	5.403s
+ok  	github.com/ivo-lopes/ivoai/internal/externalmcp	0.046s
+ok  	github.com/ivo-lopes/ivoai/internal/gateway	0.019s
+ok  	github.com/ivo-lopes/ivoai/internal/headroom	0.002s
+ok  	github.com/ivo-lopes/ivoai/internal/knowledgepolicy	0.002s
+ok  	github.com/ivo-lopes/ivoai/internal/knowledgerouter	0.270s
+ok  	github.com/ivo-lopes/ivoai/internal/memory	0.035s
+ok  	github.com/ivo-lopes/ivoai/internal/migration	0.011s
+ok  	github.com/ivo-lopes/ivoai/internal/nativeacp	0.432s
+ok  	github.com/ivo-lopes/ivoai/internal/nativecodex	0.781s
+ok  	github.com/ivo-lopes/ivoai/internal/observability	0.003s
+ok  	github.com/ivo-lopes/ivoai/internal/opencodebridge	4.858s
+ok  	github.com/ivo-lopes/ivoai/internal/orchestration	0.430s
+ok  	github.com/ivo-lopes/ivoai/internal/orchestrator	21.127s
+ok  	github.com/ivo-lopes/ivoai/internal/ownedprocess	0.003s
+ok  	github.com/ivo-lopes/ivoai/internal/platform	0.016s
+ok  	github.com/ivo-lopes/ivoai/internal/policy	0.002s
+ok  	github.com/ivo-lopes/ivoai/internal/project	0.008s
+ok  	github.com/ivo-lopes/ivoai/internal/promptgate	0.006s
+ok  	github.com/ivo-lopes/ivoai/internal/quota	0.021s
+ok  	github.com/ivo-lopes/ivoai/internal/routing	0.007s
+ok  	github.com/ivo-lopes/ivoai/internal/rtkview	0.003s
+ok  	github.com/ivo-lopes/ivoai/internal/secrets	0.004s
+ok  	github.com/ivo-lopes/ivoai/internal/server	0.048s
+ok  	github.com/ivo-lopes/ivoai/internal/servercmd	0.375s
+ok  	github.com/ivo-lopes/ivoai/internal/serverpool	0.004s
+ok  	github.com/ivo-lopes/ivoai/internal/session	1.470s
+ok  	github.com/ivo-lopes/ivoai/internal/skillcatalog	1.705s
+ok  	github.com/ivo-lopes/ivoai/internal/skillgate	0.186s
+ok  	github.com/ivo-lopes/ivoai/internal/skills	0.142s
+ok  	github.com/ivo-lopes/ivoai/internal/skillupdate	0.031s
+ok  	github.com/ivo-lopes/ivoai/internal/supplychain	0.037s
+ok  	github.com/ivo-lopes/ivoai/internal/terminalui	0.007s
+ok  	github.com/ivo-lopes/ivoai/internal/toolrouting	0.002s
+ok  	github.com/ivo-lopes/ivoai/internal/update	0.015s
+ok  	github.com/ivo-lopes/ivoai/internal/webauth	0.035s
+ok  	github.com/ivo-lopes/ivoai/internal/webmcp	0.022s
+ok  	github.com/ivo-lopes/ivoai/internal/workers	0.100s
+ok  	github.com/ivo-lopes/ivoai/internal/workingcontext	4.409s
+?   	github.com/ivo-lopes/ivoai/scripts/stable-release-upgrade-fixtures	[no test files]
+?   	github.com/ivo-lopes/ivoai/scripts/upgrade-matrix-v050	[no test files]
+FAIL

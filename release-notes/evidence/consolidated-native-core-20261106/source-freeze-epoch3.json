@@ -1,0 +1,9 @@
+{
+  "source_head": "fb3b5a1be208c618394f9b0b358e4857497f8763",
+  "source_tree": "007496e97bc667fa6d59cb6fd31a9f650ffe3516",
+  "working_tree": "",
+  "binaries": {
+    "ivoai-production-epoch3": "c6f5bd07449355a2ffc5dd2f8c573ea5b39514580f8b3fbbfae85f84c4741a6b",
+    "app-epoch3.test": "682a9a01a4a2dfb62fdd8972eaeb546d861b679db12f5ce98bd7ccce34a6241c"
+  }
+}

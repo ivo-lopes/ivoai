@@ -1,0 +1,41 @@
+✓ Lockfile passes supply-chain policies (verified 56m ago)
+Lockfile is up to date, resolution step is skipped
+Packages are hard linked from the content-addressable store to the virtual store.
+  Content-addressable store is at: /home/ivo/.local/share/pnpm/store/v11
+  Virtual store is at:             node_modules/.pnpm
+Packages: +1298
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Progress: resolved 1298, reused 1298, downloaded 0, added 1298, done
+
+dependencies:
++ @docusaurus/core 3.10.2
++ @docusaurus/preset-classic 3.10.2
++ @docusaurus/theme-mermaid 3.10.2
++ @easyops-cn/docusaurus-search-local 0.55.3
++ @fontsource/bpmf-huninn 5.3.1
++ @mdx-js/react 3.1.1
++ @mermaid-js/layout-elk 1.0.2
++ clsx 2.1.1
++ prism-react-renderer 2.4.1
++ react 19.3.1
++ react-dom 19.3.1
+
+devDependencies:
++ @axe-core/playwright 4.14.0
++ @docusaurus/module-type-aliases 3.10.2
++ @docusaurus/tsconfig 3.10.2
++ @playwright/test 1.65.0
++ typescript 7.0.2
+
+Done in 1.4s using pnpm v12.18.0
+$ node scripts/check-i18n.mjs
+file:///var/tmp/ivoai-delivery-20261104/website/scripts/check-i18n.mjs:33
+      throw new Error(`pt-BR ${label} link destinations drifted from the source document: ${file}`);
+            ^
+
+Error: pt-BR current link destinations drifted from the source document: client.md
+    at validatePair (file:///var/tmp/ivoai-delivery-20261104/website/scripts/check-i18n.mjs:33:13)
+    at async file:///var/tmp/ivoai-delivery-20261104/website/scripts/check-i18n.mjs:39:22
+
+Node.js v26.13.0
+[ELIFECYCLE] Command failed with exit code 1.
