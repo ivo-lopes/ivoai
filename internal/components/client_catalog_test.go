@@ -76,8 +76,8 @@ func TestClientSetupCatalogSkipsLegacyAndPreservesRetainedFilesAndOwnership(t *t
 			for _, spec := range ClientSetupCatalog(true) {
 				legacyFound = legacyFound || spec.Name == "opencode"
 			}
-			if !legacyFound {
-				t.Fatal("explicit compatibility catalog removed")
+			if legacyFound {
+				t.Fatal("removed compatibility flag reintroduced OpenCode")
 			}
 		})
 	}

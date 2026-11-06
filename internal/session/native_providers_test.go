@@ -34,8 +34,8 @@ func TestNativeProviderMigrationGatePreservesCheckpointAndMetadata(t *testing.T)
 			t.Fatal("retained legacy executor admitted", kind)
 		}
 		v.Frontend = "opencode"
-		if err := store.CheckNativeProviders(v); err != nil {
-			t.Fatal("explicit legacy path rejected", err)
+		if err := store.CheckNativeProviders(v); !errors.Is(err, ErrOpenCodeMigrationRequired) {
+			t.Fatal("removed legacy frontend admitted", err)
 		}
 	}
 	plan := routing.Plan{ID: "plan_fixture", Strategy: "efficient", CreatedAt: time.Now(), Tasks: []routing.Task{{TaskInput: routing.TaskInput{ID: "t1", Role: "research", Task: "Inspect the fixture", Acceptance: []string{"report the finding"}}, Profile: routing.ExecutionProfile{Provider: "opencode", Tier: routing.TierLight}, Tier: routing.TierLight, State: "planned", ExecutionMode: "worker"}}}

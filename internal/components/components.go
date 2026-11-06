@@ -100,29 +100,11 @@ func DefaultCatalog() []Spec {
 			"linux/amd64": {URL: "https://github.com/headroomlabs-ai/headroom/releases/download/v0.43.1/headroom_ai-0.43.1-cp310-abi3-manylinux_2_28_x86_64.whl", SHA256: "2e9cd1a9aab42f60b00a9f7c8a85cf82815b51b1989179e5fdd40ddd09915d6e"},
 			"linux/arm64": {URL: "https://github.com/headroomlabs-ai/headroom/releases/download/v0.43.1/headroom_ai-0.43.1-cp310-abi3-manylinux_2_28_aarch64.whl", SHA256: "12bf1314ff0b3d6f0860b41578422b77949203a93c14bec9f692c7e5b36a862f"},
 		}},
-		{Name: "opencode", Executable: "opencode", Version: "1.19.0", Strategy: StrategySupplyChain,
-			Revision: "733b2c627e5aec39cb33cc22373bdce33053ef2c", DefaultBranch: "dev", License: "MIT", PayloadFormat: "tar_gzip", PayloadPath: "opencode",
-			SignatureStatus: "not_exposed", AttestationStatus: "not_exposed", TrustLevel: "upstream_checksum", Assets: map[string]Asset{
-				"linux/amd64": {URL: "https://github.com/anomalyco/opencode/releases/download/v1.19.0/opencode-linux-x64.tar.gz", SHA256: "7bb9e61ad6feacf2e89c10a6a2c1840e3de4220bb50ba1fc7110f31806076aec"},
-				"linux/arm64": {URL: "https://github.com/anomalyco/opencode/releases/download/v1.19.0/opencode-linux-arm64.tar.gz", SHA256: "e9841d43d3e1a8f36ed2691592d3b8b4fb097e606c8b559a277a1b845840e26b"},
-			}},
 		{Name: "ai-memory", Executable: "ai-memory", Version: "3.4.2", Strategy: StrategyBinary, Assets: map[string]Asset{
 			"linux/amd64": {URL: "https://github.com/akitaonrails/ai-memory/releases/download/v3.4.2/ai-memory-linux-x86_64.tar.gz", SHA256: "15a4f4a346a27e6fd63a36d1b3de23c5cbe142b80b3bce561e21b1f225a1e645"},
 			"linux/arm64": {URL: "https://github.com/akitaonrails/ai-memory/releases/download/v3.4.2/ai-memory-linux-aarch64.tar.gz", SHA256: "164f7c38bb9bafca218dd958c3c60febcd5d2f5200ad138c6f128576cedebfb6"},
 		}},
 		{Name: "ruflo", Executable: "ruflo", Version: "3.72.2", Package: "ruflo", PackageURL: "https://registry.npmjs.org/ruflo/-/ruflo-3.72.2.tgz", Integrity: "sha512-DHk7+8a2t5n7B+9PsTKTIGNz0LF8wToGwBOwhSuu0UFL9AabA3a+BHa4eZlY8225dMfZnfHzO+4m6El/R+EkXQ==", Strategy: StrategyNPMIsolated},
-	}
-	if managedOpenCodeBuild != "" {
-		for index := range catalog {
-			if catalog[index].Name != "opencode" {
-				continue
-			}
-			projected, err := managedOpenCodeSpec(catalog[index], managedOpenCodeBuild, runtime.GOOS+"/"+runtime.GOARCH)
-			if err != nil {
-				panic("invalid release-managed OpenCode build metadata")
-			}
-			catalog[index] = projected
-		}
 	}
 	if ManagedCavemanAvailable() {
 		specs, err := managedCavemanSpecs(managedCavemanBuild, runtime.GOOS+"/"+runtime.GOARCH)

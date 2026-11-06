@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ivo-lopes/ivoai/internal/opencodebridge"
+	"github.com/ivo-lopes/ivoai/internal/codexfrontend"
 	"github.com/ivo-lopes/ivoai/internal/quota"
 )
 
@@ -43,12 +43,12 @@ func TestOpenCodePermissionModePersistsAndRejectsInvalid(t *testing.T) {
 	if !bytes.Equal(before, after) {
 		t.Fatal("invalid mode changed persisted config")
 	}
-	if !strings.Contains(out.String(), "next managed OpenCode session") {
+	if !strings.Contains(out.String(), "next managed native turn") {
 		t.Fatal("missing restart notice")
 	}
 }
 
-func TestAutoPassesPersistedPermissionModeToManagedBackend(t *testing.T) {
+func TestAutoPermissionSettingsNeverRestoreRemovedFrontend(t *testing.T) {
 	for _, mode := range []string{"interactive", "full"} {
 		t.Run(mode, func(t *testing.T) {
 			a := autoTestApp(t, t.TempDir(), "#!/bin/sh\n", "#!/bin/sh\n")
@@ -61,11 +61,12 @@ func TestAutoPassesPersistedPermissionModeToManagedBackend(t *testing.T) {
 					return quota.ProviderQuota{Provider: quota.ProviderClaude}, nil
 				}),
 			}}
-			previous := a.StartOpenCodeManaged
+			previous := a.StartCodexNative
 			called := false
-			a.StartOpenCodeManaged = func(ctx context.Context, options opencodebridge.ManagedOptions) (managedOpenCodeFrontend, error) {
+			a.StartCodexNative = func(ctx context.Context, options codexfrontend.Options) (nativeCodexFrontend, error) {
 				called = true
-				if options.PermissionMode != mode {
+				stored, _ := a.Store.Load()
+				if stored.OpenCode.ResolvedPermissionMode() != mode {
 					t.Fatal("permission mode lost at AUTO boundary")
 				}
 				return previous(ctx, options)

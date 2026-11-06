@@ -32,6 +32,9 @@ func (a *App) SessionStart(ctx context.Context, executor string, mode session.Mo
 }
 
 func (a *App) SessionStartWithKnowledge(ctx context.Context, executor string, mode session.Mode, args, selectors []string) error {
+	if executor == "opencode" {
+		return session.ErrOpenCodeManagedDeprecated
+	}
 	if executor != "codex" && executor != "claude" && executor != "opencode" {
 		return errors.New("session executor must be codex, claude, or opencode")
 	}

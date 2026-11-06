@@ -87,7 +87,7 @@ The healthy disconnected state is:
 ivoai          ready
 Codex          installed / not connected
 Claude Code    installed / not connected
-OpenCode       ready / managed frontend
+OpenCode       removed / retained metadata only
 Headroom       ready
 Compression    default caveman / effective caveman
 Caveman        installed / managed
@@ -100,13 +100,12 @@ Overall: READY — external connections pending
 
 ## Agent launch
 
-`ivoai codex` opens the IVOAI-controlled orchestrated terminal; `--direct` preserves
-the official TUI. `ivoai claude` is unchanged. `ivoai opencode` opens a pinned
-OpenCode TUI attached to the same IVOAI
-control plane. IVOAI routes turns to the official Codex or Claude Code CLI and reuses
-the login already owned by that client without reading or copying it. A private
-managed OpenCode overlay disables project configuration, sharing and auto-update;
-the user's global OpenCode configuration and provider store remain untouched.
+`ivoai codex` opens the IVOAI-controlled official Codex terminal; `--direct`
+preserves its direct TUI path. `ivoai auto` aliases managed Codex. `ivoai claude`
+launches the official Claude client, while the experimental `claude run` and
+`antigravity run` commands use the same Core through their headless protocols.
+Managed OpenCode execution and explicit legacy setup have been removed. Existing
+OpenCode user data and previous profiles remain untouched for explicit rollback.
 
 Codex and Claude sessions can select an enrolled knowledge purpose without changing
 global agent configuration:
@@ -114,7 +113,7 @@ global agent configuration:
 ```sh
 ivoai codex --knowledge-source mindsite
 ivoai claude --knowledge-source voicecorp
-ivoai opencode --knowledge-source mindsite
+ivoai auto --knowledge-source mindsite
 ```
 
 With no `--knowledge-source`, every enabled connected source participates in bounded
@@ -218,11 +217,11 @@ isolated per session. Session metadata stores selected aliases, never credential
 
 ## Automatic conversation mode
 
-`ivoai opencode` opens the managed OpenCode frontend and shows bounded IVOAI-owned
-executor, quota and knowledge state. The configured planner preference selects the
-initial official executor; `--planner codex` and `--planner claude` override it for
-the session. Codex/Claude never take over the screen. OpenCode supplies the UI while
+`ivoai codex` and its `ivoai auto` alias open the official native Codex frontend.
 IVOAI retains session ownership, provider selection and single-writer authority.
+Simple admitted requests can use the adaptive Primary without a DAG; complex work
+uses the same plan validation and scheduler. `--planner opencode` is refused;
+legacy history is never silently converted into new native execution.
 
 Automatic mode starts the same provider-free Ruflo control plane used by explicit
 orchestrated sessions, injects the session-local orchestration MCP, and adds

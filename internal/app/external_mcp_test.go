@@ -57,11 +57,11 @@ func TestExternalMCPProjectionKeepsPATOnlyInIVOAI(t *testing.T) {
 			if executor == "opencode" {
 				state := config.State{Components: map[string]config.ComponentState{"opencode": {Installed: true, Managed: true, Version: "1.18.25", Path: appExecutable(t, t.TempDir(), "opencode", "#!/bin/sh\nexit 0\n")}}}
 				native := a.nativeOpenCode(knowledge.config, state, t.TempDir(), runtime, knowledge.environment, false)
-				if native == nil || native.Options.NativeMCP["plane"] == nil || native.Options.NativePermissions["plane_*"] != "allow" {
-					t.Fatal("native managed projection absent")
+				if native != nil {
+					t.Fatal("removed native projection reactivated")
 				}
 				worker := a.nativeOpenCode(knowledge.config, state, t.TempDir(), runtime, knowledge.environment, true)
-				if worker == nil || worker.Options.NativeMCP["plane"] != nil || strings.Contains(strings.Join(worker.Options.Environment, "\n"), externalMCPTokenEnvironment) {
+				if worker != nil {
 					t.Fatal("advisory worker inherited arbitrary external MCP")
 				}
 			}

@@ -3,15 +3,18 @@ package cli
 import (
 	"bytes"
 	"context"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/ivo-lopes/ivoai/internal/app"
+	"github.com/ivo-lopes/ivoai/internal/config"
+	"github.com/ivo-lopes/ivoai/internal/session"
 )
 
-func TestClientSetupRequiresLegacyOpenCodeOptInAndPreservesItAfterward(t *testing.T) {
+func TestClientSetupRejectsRemovedFlagAndPreservesRetainedOpenCode(t *testing.T) {
 	root := t.TempDir()
 	t.Setenv("HOME", root)
 	t.Setenv("IVOAI_TEST_MODE", "1")
@@ -33,20 +36,26 @@ func TestClientSetupRequiresLegacyOpenCodeOptInAndPreservesItAfterward(t *testin
 	if _, ok := state.Components["opencode"]; ok {
 		t.Fatal("default CLI setup installed legacy component")
 	}
-	if err := Run(context.Background(), a, []string{"setup", "--mode", "client", "--legacy-opencode"}); err != nil {
+	// Seed retained metadata/files from a previous installation. The new Core
+	// must neither execute nor repair nor remove any of them.
+	legacyPath := filepath.Join(root, "retained-opencode")
+	if err := os.WriteFile(legacyPath, []byte("retained binary"), 0700); err != nil {
 		t.Fatal(err)
 	}
-	state, err = a.Store.LoadState()
-	if err != nil {
+	legacy := config.ComponentState{Installed: true, Managed: true, Version: "retained", Path: legacyPath}
+	state.Components["opencode"] = legacy
+	if err := a.Store.SaveState(state); err != nil {
 		t.Fatal(err)
 	}
-	legacy := state.Components["opencode"]
-	if !legacy.Installed || !strings.Contains(output.String(), "deprecated") {
-		t.Fatal("explicit compatibility setup unavailable or silent")
-	}
-	before, err := os.ReadFile(legacy.Path)
-	if err != nil {
-		t.Fatal(err)
+	before, _ := os.ReadFile(a.Store.Paths.State)
+	for _, mode := range []string{"client", "server"} {
+		if err := Run(context.Background(), a, []string{"setup", "--mode", mode, "--legacy-opencode"}); !errors.Is(err, session.ErrOpenCodeManagedDeprecated) {
+			t.Fatal("removed setup flag admitted", err)
+		}
+		after, _ := os.ReadFile(a.Store.Paths.State)
+		if !bytes.Equal(before, after) {
+			t.Fatal("removed flag changed state")
+		}
 	}
 	if err := Run(context.Background(), a, []string{"setup", "--mode", "client"}); err != nil {
 		t.Fatal(err)
@@ -56,10 +65,7 @@ func TestClientSetupRequiresLegacyOpenCodeOptInAndPreservesItAfterward(t *testin
 		t.Fatal("default setup changed retained component", err)
 	}
 	after, err := os.ReadFile(legacy.Path)
-	if err != nil || !bytes.Equal(before, after) {
+	if err != nil || string(after) != "retained binary" {
 		t.Fatal("default setup modified retained binary")
-	}
-	if err := Run(context.Background(), a, []string{"setup", "--mode", "server", "--legacy-opencode"}); err == nil || !strings.Contains(err.Error(), "client setup") {
-		t.Fatal("legacy flag reached server setup", err)
 	}
 }

@@ -70,11 +70,11 @@ func menu(ctx context.Context, a *app.App) error {
 		}
 		badges := snapshotBadges(snapshot)
 		actions := []menuAction{
-			{id: "auto", label: "Launch Orchestration", description: "Codex or OpenCode frontend; one IVOAI control plane. Explicit direct sessions are also available", disabled: disabledUnless(snapshot.AutoEnabled, "automatic orchestration disabled"), run: session.launch},
+			{id: "auto", label: "Launch Orchestration", description: "Native Codex frontend; one IVOAI control plane. Explicit direct sessions are also available", disabled: disabledUnless(snapshot.AutoEnabled, "automatic orchestration disabled"), run: session.launch},
 			{id: "dashboard", label: "Dashboard", description: "Status, diagnostics, and version information", run: session.dashboard},
 			{id: "maintenance", label: "Setup & Maintenance", description: "Install, repair, update, rollback, or uninstall", run: session.maintenance},
 			{id: "connections", label: "Connections", description: "ChatGPT, Claude Code, ivoai server, and external MCPs", run: session.connections},
-			{id: "agents", label: "Agents", description: "Launch Codex, Claude Code, or OpenCode through the ivoai runtime", run: session.agents},
+			{id: "agents", label: "Agents", description: "Launch official native Codex or Claude Code through the IVOAI runtime", run: session.agents},
 			{id: "sessions", label: "Session Control", description: "Inspect, resume, recover or hand off native conversations; start and stop sessions", run: session.sessions},
 			{id: "memory", label: "Memory", description: "Inspect or reconfigure persistent operational memory", run: session.memory},
 			{id: "project", label: "Project", description: "Host identity and optional project override", run: session.project},
@@ -143,17 +143,17 @@ func (s *menuSession) agents() (bool, error) {
 	return s.loop("Agents", []menuAction{
 		{id: "launch.codex", label: "Codex Orchestrated", description: "Native Codex TUI, IVOAI admission, scoped Codex/Claude workers", run: func() (bool, error) { return true, s.app.OrchestratedWithKnowledge(s.ctx, "codex", "", nil, nil) }},
 		{id: "launch.claude", label: "Launch Claude Code", description: "Official Claude interface with IVOAI knowledge and safe compression", run: func() (bool, error) { return true, s.app.Launch(s.ctx, "claude", nil) }},
-		{id: "launch.opencode", label: "Launch IVOAI OpenCode frontend", description: "Managed OpenCode interface with IVOAI-routed Codex and Claude executors", run: func() (bool, error) { return true, s.app.Auto(s.ctx, "", nil) }},
+		{id: "launch.opencode", label: "OpenCode removed — use Codex", description: "Existing OpenCode data is preserved for rollback", disabled: "managed OpenCode execution removed; use ivoai codex"},
 	})
 }
 
 func (s *menuSession) launch() (bool, error) {
-	return s.loop("Launch — auto is a deprecated alias for opencode", []menuAction{
-		{id: "launch.codex", label: "Codex Orchestrated", description: "Native Codex TUI; prompt gate, native plan approval and automatic workers", run: func() (bool, error) { return true, s.app.OrchestratedWithKnowledge(s.ctx, "codex", "", nil, nil) }},
-		{id: "launch.opencode", label: "OpenCode Orchestrated", description: "Managed OpenCode frontend, same IVOAI policies and worker scheduler", run: func() (bool, error) { return true, s.app.Auto(s.ctx, "", nil) }},
+	return s.loop("Launch — auto is a compatibility alias for codex", []menuAction{
+		{id: "launch.codex", label: "Codex Orchestrated", description: "Native Codex TUI; natural intake, native plan approval and adaptive workers", run: func() (bool, error) { return true, s.app.OrchestratedWithKnowledge(s.ctx, "codex", "", nil, nil) }},
+		{id: "launch.opencode", label: "OpenCode removed — use Codex", description: "Existing OpenCode data is preserved for rollback", disabled: "managed OpenCode execution removed; use ivoai codex"},
 		{id: "session.direct.codex", label: "Codex Direct", description: "Official Codex TUI; no prompt gate or automatic DAG", run: func() (bool, error) { return true, s.app.SessionStart(s.ctx, "codex", "direct", nil) }},
 		{id: "session.direct.claude", label: "Claude Direct", description: "Optional official Claude client", run: func() (bool, error) { return true, s.app.SessionStart(s.ctx, "claude", "direct", nil) }},
-		{id: "session.direct.opencode", label: "OpenCode Direct", description: "Standalone official OpenCode; no orchestration", run: func() (bool, error) { return true, s.app.SessionStart(s.ctx, "opencode", "direct", nil) }},
+		{id: "session.direct.opencode", label: "OpenCode removed — use Codex", description: "Existing OpenCode data is preserved for rollback", disabled: "managed OpenCode execution removed; use ivoai codex"},
 	})
 }
 
@@ -161,10 +161,10 @@ func (s *menuSession) sessions() (bool, error) {
 	snapshot, _ := s.app.MenuSnapshot()
 	return s.loop("Session Control", []menuAction{
 		{id: "session.continuity", label: "Conversations — Inspect / Resume", description: "Choose an IVOAI session; preserve native conversation and execution mode", run: s.conversations},
-		{id: "auto", label: "IVOAI Automatic Session", description: "OpenCode frontend with prompt gate, approved native DAG and scoped workers", disabled: disabledUnless(snapshot.AutoEnabled, "automatic orchestration disabled"), run: func() (bool, error) { return true, s.app.Auto(s.ctx, "", nil) }},
+		{id: "auto", label: "IVOAI Automatic Session", description: "Native Codex frontend with natural intake, adaptive DAG and scoped workers", disabled: disabledUnless(snapshot.AutoEnabled, "automatic orchestration disabled"), run: func() (bool, error) { return true, s.app.Auto(s.ctx, "", nil) }},
 		{id: "session.direct.codex", label: "Direct Session — Codex", description: "Official Codex runtime with session observability; Ruflo is not started", run: func() (bool, error) { return true, s.app.SessionStart(s.ctx, "codex", "direct", nil) }},
 		{id: "session.direct.claude", label: "Direct Session — Claude Code", description: "Official Claude Code runtime with session observability; Ruflo is not started", run: func() (bool, error) { return true, s.app.SessionStart(s.ctx, "claude", "direct", nil) }},
-		{id: "session.direct.opencode", label: "Standalone Session — OpenCode", description: "Unmodified upstream OpenCode provider path; IVOAI AUTO bridge is not used", run: func() (bool, error) { return true, s.app.SessionStart(s.ctx, "opencode", "direct", nil) }},
+		{id: "session.direct.opencode", label: "OpenCode removed — use Codex", description: "Existing OpenCode data is preserved for rollback", disabled: "managed OpenCode execution removed; use ivoai codex"},
 		{id: "session.orchestrated.codex", label: "Orchestrated Session — Codex", description: "Native IVOAI prompt gate, DAG and scoped workers", run: func() (bool, error) { return true, s.app.SessionStart(s.ctx, "codex", "orchestrated", nil) }},
 		{id: "session.orchestrated.claude", label: "Orchestrated Session — Claude Code", description: "Safe Ruflo swarm with official Claude Code primary and bounded workers", run: func() (bool, error) { return true, s.app.SessionStart(s.ctx, "claude", "orchestrated", nil) }},
 		{id: "session.list", label: "List Sessions", description: "Show non-sensitive lifecycle metadata", run: s.simple(func() error { return runSession(s.ctx, s.app, []string{"list"}) })},

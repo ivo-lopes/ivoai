@@ -3,10 +3,7 @@ package app
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
-	"io"
-	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -14,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/ivo-lopes/ivoai/internal/codexfrontend"
 	"github.com/ivo-lopes/ivoai/internal/config"
 	"github.com/ivo-lopes/ivoai/internal/opencodebridge"
 	"github.com/ivo-lopes/ivoai/internal/quota"
@@ -85,6 +83,15 @@ func (f fakeManagedOpenCode) BackendURL() string          { return "http://127.0
 func (f fakeManagedOpenCode) BackendLoopback() bool       { return true }
 func (f fakeManagedOpenCode) Close(context.Context) error { return nil }
 
+type fixtureAutoNativeFrontend struct{ environment []string }
+
+func (fixtureAutoNativeFrontend) Args() []string { return []string{"--fixture-native-ui"} }
+func (f fixtureAutoNativeFrontend) Environment() []string {
+	return append([]string(nil), f.environment...)
+}
+func (fixtureAutoNativeFrontend) TurnError() error { return nil }
+func (fixtureAutoNativeFrontend) Close()           {}
+
 type probeFunc func(context.Context) (quota.ProviderQuota, error)
 
 func (f probeFunc) Probe(ctx context.Context) (quota.ProviderQuota, error) { return f(ctx) }
@@ -136,6 +143,9 @@ case "$*" in
   "task create"*) echo 'task-auto-123' ;;
 esac
 `)
+	codexBody = strings.Replace(codexBody, "#!/bin/sh\n", `#!/bin/sh
+if [ "$1" = '--fixture-native-ui' ]; then exit 0; fi
+`, 1)
 	codexBody += "\nprintf '%s\\n' '{\"type\":\"thread.started\",\"thread_id\":\"thread_fixture\"}'\nprintf '%s\\n' '{\"type\":\"item.completed\",\"item\":{\"type\":\"agent_message\",\"text\":\"fixture complete\"}}'\n"
 	claudeBody += "\nprintf '%s\\n' '{\"type\":\"system\",\"session_id\":\"claude_fixture\"}'\nprintf '%s\\n' '{\"type\":\"stream_event\",\"event\":{\"type\":\"content_block_delta\",\"delta\":{\"type\":\"text_delta\",\"text\":\"fixture complete\"}}}'\n"
 	codexBody += "\nprintf '%s\\n' '{\"type\":\"turn.completed\"}'\n"
@@ -161,7 +171,7 @@ esac
 	if err := a.Store.SaveState(state); err != nil {
 		t.Fatal(err)
 	}
-	a.StartOpenCodeManaged = func(ctx context.Context, options opencodebridge.ManagedOptions) (managedOpenCodeFrontend, error) {
+	a.StartCodexNative = func(ctx context.Context, options codexfrontend.Options) (nativeCodexFrontend, error) {
 		// Simulate the operator explicitly approving routing proposals in this
 		// transport fixture. Rejection/no-approval are covered independently.
 		decisionCtx, stopDecisions := context.WithCancel(ctx)
@@ -186,32 +196,17 @@ esac
 				}
 			}
 		}()
-		payload, err := json.Marshal(map[string]any{
-			"model": "auto", "stream": false,
-			// AUTO now requires a real intake contract even in transport fixtures.
-			"messages": []map[string]string{{"role": "user", "content": "Read the fixture and report its status. Acceptance: return only fixture complete; do not modify any files."}},
-		})
+		const thread = "12345678-1234-4234-9234-123456789abc"
+		if options.ThreadSelected != nil {
+			if err := options.ThreadSelected(thread); err != nil {
+				return nil, err
+			}
+		}
+		_, err := options.Bridge.SubmitTurn(ctx, thread, "msg_fixture", "Read the fixture and report its status. Acceptance: return only fixture complete; do not modify any files.", "auto", "")
 		if err != nil {
 			return nil, err
 		}
-		request, err := http.NewRequestWithContext(ctx, http.MethodPost, options.Bridge.URL()+"/v1/chat/completions", bytes.NewReader(payload))
-		if err != nil {
-			return nil, err
-		}
-		request.Header.Set("Authorization", "Bearer "+options.Bridge.Token())
-		request.Header.Set("Content-Type", "application/json")
-		request.Header.Set("X-IVOAI-OpenCode-Session", "oc_fixture")
-		request.Header.Set("X-IVOAI-OpenCode-Message", "msg_fixture")
-		response, err := http.DefaultClient.Do(request)
-		if err != nil {
-			return nil, err
-		}
-		_, _ = io.Copy(io.Discard, response.Body)
-		_ = response.Body.Close()
-		if response.StatusCode != http.StatusOK {
-			return nil, errors.New("fixture OpenCode bridge request failed")
-		}
-		return fakeManagedOpenCode{environment: options.Environment}, nil
+		return fixtureAutoNativeFrontend{environment: options.Environment}, nil
 	}
 	catalog := opencodebridge.CatalogFromRegistry(routing.Registry{Providers: map[string]routing.ProviderCapability{
 		"codex":  {Authenticated: true, Models: []routing.ModelCapability{{Name: "fixture-codex", Source: routing.SourceRuntimeVerified, CapabilityTier: routing.TierStrong}}},
@@ -313,7 +308,7 @@ func TestResumableOpenCodeSessionRejectsFailedAndBlockedSessions(t *testing.T) {
 	}
 }
 
-func TestAutoStartsClaudeWhenCodexRuntimeIsUnavailable(t *testing.T) {
+func TestAutoRefusesExecutorFallbackWhenNativeFrontendRuntimeIsUnavailable(t *testing.T) {
 	root := t.TempDir()
 	claudeMarker := filepath.Join(root, "claude-launched")
 	a := autoTestApp(t, root, "#!/bin/sh\nexit 99\n", "#!/bin/sh\n: > '"+claudeMarker+"'\n")
@@ -329,11 +324,15 @@ func TestAutoStartsClaudeWhenCodexRuntimeIsUnavailable(t *testing.T) {
 		quota.ProviderCodex:  probeFunc(func(context.Context) (quota.ProviderQuota, error) { return exhausted(quota.ProviderCodex), nil }),
 		quota.ProviderClaude: probeFunc(func(context.Context) (quota.ProviderQuota, error) { return available(quota.ProviderClaude), nil }),
 	}}
-	if err := a.Auto(context.Background(), "", nil); err != nil {
-		t.Fatal(err)
+	if err := a.Auto(context.Background(), "", nil); err == nil {
+		t.Fatal("missing native frontend accepted")
 	}
-	if _, err := os.Stat(claudeMarker); err != nil {
-		t.Fatalf("eligible Claude executor was not launched: %v", err)
+	if _, err := os.Stat(claudeMarker); !errors.Is(err, os.ErrNotExist) {
+		t.Fatal("executor launched without native frontend", err)
+	}
+	values, _ := a.SessionList()
+	if len(values) != 0 {
+		t.Fatal("missing frontend created a session")
 	}
 }
 
@@ -453,10 +452,10 @@ exit 2
 		t.Fatal(err)
 	}
 	a.QuotaManager = &quota.Manager{Store: quota.Store{Root: a.Store.Paths.QuotaDir}, Probes: map[quota.Provider]quota.Probe{
-		quota.ProviderCodex:  probeFunc(func(context.Context) (quota.ProviderQuota, error) { return available(quota.ProviderCodex), nil }),
+		quota.ProviderCodex:  probeFunc(func(context.Context) (quota.ProviderQuota, error) { return exhausted(quota.ProviderCodex), nil }),
 		quota.ProviderClaude: probeFunc(func(context.Context) (quota.ProviderQuota, error) { return available(quota.ProviderClaude), nil }),
 	}}
-	if err := a.Auto(context.Background(), "claude", nil); err != nil {
+	if err := a.Auto(context.Background(), "", nil); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := os.Stat(agentMarker); err != nil {

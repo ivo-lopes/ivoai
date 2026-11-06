@@ -195,35 +195,6 @@ components:
     notes:
       - "Same reviewed archive and identity as the proxy. Pure-Go MCP matches upstream build policy."
       - "Internal bounded ephemeral stdio caveman_compress only; never registered as a primary tool or durable memory."
-  - name: opencode
-    role: [client]
-    validated_version: "1.19.0"
-    minimum_version: "1.19.0"
-    revision: "733b2c627e5aec39cb33cc22373bdce33053ef2c"
-    default_branch: dev
-    license: MIT
-    source: "https://github.com/anomalyco/opencode/releases/tag/v1.19.0"
-    documentation: "https://opencode.ai/docs/"
-    architectures: [linux/amd64, linux/arm64]
-    install_strategy: managed_supply_chain_release_archive
-    checksum_strategy: github_release_asset_digest_sha256
-    assets:
-      linux/amd64:
-        url: "https://github.com/anomalyco/opencode/releases/download/v1.19.0/opencode-linux-x64.tar.gz"
-        sha256: "7bb9e61ad6feacf2e89c10a6a2c1840e3de4220bb50ba1fc7110f31806076aec"
-      linux/arm64:
-        url: "https://github.com/anomalyco/opencode/releases/download/v1.19.0/opencode-linux-arm64.tar.gz"
-        sha256: "e9841d43d3e1a8f36ed2691592d3b8b4fb097e606c8b559a277a1b845840e26b"
-    auth:
-      default: "opencode auth login"
-      subscription_or_provider_owned: true
-      payg_key_required_by_ivoai: false
-    notes:
-      - "Source pin below is upstream; official IVOAI releases override it with reviewed private 1.19.0-ivoai.3 archive metadata."
-      - "Managed launch requires 1.19.0-ivoai.3 local-plugin/no-runtime-npm policy; .2/upstream/unknown builds require an explicit update before launch."
-      - "Authentication remains entirely owned by OpenCode; IVOAI never reads or persists its auth store."
-      - "Direct primary sessions are supported; AUTO/worker use is deferred to IVOAI-22."
-
   - name: ai-memory
     role: [client, server]
     validated_version: "3.4.2"

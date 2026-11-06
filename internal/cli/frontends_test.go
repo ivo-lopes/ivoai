@@ -3,11 +3,13 @@ package cli
 import (
 	"bytes"
 	"context"
+	"errors"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/ivo-lopes/ivoai/internal/app"
+	"github.com/ivo-lopes/ivoai/internal/session"
 )
 
 func TestOrchestratedEntrypointsAndDeprecatedAlias(t *testing.T) {
@@ -28,7 +30,7 @@ func TestOrchestratedEntrypointsAndDeprecatedAlias(t *testing.T) {
 	if err := a.Store.Save(cfg); err != nil {
 		t.Fatal(err)
 	}
-	for _, command := range []string{"codex", "opencode", "auto"} {
+	for _, command := range []string{"codex", "auto"} {
 		out.Reset()
 		diagnostic.Reset()
 		err := runCommand(context.Background(), a, []string{command})
@@ -38,11 +40,11 @@ func TestOrchestratedEntrypointsAndDeprecatedAlias(t *testing.T) {
 		if out.Len() != 0 {
 			t.Fatal("alias or mode polluted stdout")
 		}
-		if (strings.Count(diagnostic.String(), "deprecated") == 1) != (command == "auto" || command == "opencode") {
+		if (strings.Count(diagnostic.String(), "compatibility alias") == 1) != (command == "auto") {
 			t.Fatalf("incorrect deprecation: %s", command)
 		}
 	}
-	for _, command := range []string{"codex", "opencode"} {
+	for _, command := range []string{"codex"} {
 		for _, planner := range []string{"codex", "claude"} {
 			err := runCommand(context.Background(), a, []string{command, "--planner", planner})
 			if err == nil || err.Error() != "automatic orchestration is disabled" {
@@ -52,6 +54,15 @@ func TestOrchestratedEntrypointsAndDeprecatedAlias(t *testing.T) {
 		err := runCommand(context.Background(), a, []string{command, "--direct", "--", "--version"})
 		if err != nil && strings.Contains(err.Error(), "orchestration is disabled") {
 			t.Fatal("direct entered orchestration")
+		}
+	}
+}
+
+func TestRemovedOpenCodeEntrypointsReturnMigrationBeforeStoreAccess(t *testing.T) {
+	for _, arguments := range [][]string{{"opencode"}, {"opencode", "--direct"}, {"opencode", "--planner", "codex"}, {"setup", "--legacy-opencode"}, {"setup", "--mode", "server", "--legacy-opencode"}} {
+		a := &app.App{Out: &bytes.Buffer{}, Err: &bytes.Buffer{}}
+		if err := runCommand(context.Background(), a, arguments); !errors.Is(err, session.ErrOpenCodeManagedDeprecated) {
+			t.Fatal("removed entrypoint reached dependencies", arguments, err)
 		}
 	}
 }
@@ -69,7 +80,7 @@ func TestLaunchMenuExposesOrchestratedAndDirectModes(t *testing.T) {
 	if err := menu(context.Background(), a); err != nil {
 		t.Fatal(err)
 	}
-	for _, label := range []string{"Codex Orchestrated", "OpenCode Orchestrated", "Codex Direct", "Claude Direct", "OpenCode Direct", "deprecated alias"} {
+	for _, label := range []string{"Codex Orchestrated", "OpenCode removed", "Codex Direct", "Claude Direct", "compatibility alias for codex"} {
 		if !strings.Contains(output.String(), label) {
 			t.Fatalf("missing mode %s", label)
 		}

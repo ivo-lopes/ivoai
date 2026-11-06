@@ -2,9 +2,10 @@ package app
 
 import (
 	"context"
+	"errors"
 	"os"
 	"path/filepath"
-	"strings"
+	"reflect"
 	"testing"
 	"time"
 
@@ -74,17 +75,18 @@ func TestConversationFrontendSwitchReusesVerifiedProviderThread(t *testing.T) {
 	if err != nil || afterTurn.KnowledgeScopeID != scope {
 		t.Fatal("prompt-local routing replaced authoritative conversation scope", err)
 	}
-	if err := a.SessionResumeFrontend(context.Background(), id, "opencode"); err != nil {
-		t.Fatal(err)
+	beforeMigration, _ := store.Get(id)
+	if err := a.SessionResumeFrontend(context.Background(), id, "opencode"); !errors.Is(err, session.ErrOpenCodeManagedDeprecated) {
+		t.Fatal("removed frontend reopened", err)
 	}
 	got, err := store.Get(id)
-	if err != nil || got.Frontend != "opencode" || got.FrontendSessions["codex"] != "thread_presentation" || got.ExecutorSessionID != "thread_fixture" {
-		t.Fatal("frontend switch changed provider identity", err)
+	if err != nil || !reflect.DeepEqual(got, beforeMigration) {
+		t.Fatal("removed frontend switch changed provider identity", err)
 	}
-	args, _ := os.ReadFile(marker)
-	if !strings.Contains(string(args), "resume\n") || !strings.Contains(string(args), "thread_fixture\n") {
-		t.Fatal("new frontend did not use native provider resume")
+	if _, err := os.Stat(marker); !errors.Is(err, os.ErrNotExist) {
+		t.Fatal("removed switch executed provider", err)
 	}
+
 	values, _ := store.List()
 	if len(values) != 1 {
 		t.Fatal("frontend switch duplicated IVOAI session")

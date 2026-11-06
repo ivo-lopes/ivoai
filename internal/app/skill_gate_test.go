@@ -20,7 +20,7 @@ import (
 )
 
 func TestManagedDirectLaunchesApplySkillGateToAllDirectExecutors(t *testing.T) {
-	for _, executor := range []string{"codex", "claude", "opencode"} {
+	for _, executor := range []string{"codex", "claude"} {
 		t.Run(executor, func(t *testing.T) {
 			root := t.TempDir()
 			arguments := filepath.Join(root, executor+"-args")

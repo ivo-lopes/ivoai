@@ -52,7 +52,7 @@ func TestDirectSessionUsesExistingRuntimeWithoutRuflo(t *testing.T) {
 	}
 }
 
-func TestOpenCodeDirectSessionUsesSkillGateAndOrchestrationUsesControlledFrontend(t *testing.T) {
+func TestRemovedOpenCodeSessionPreservesBinaryStateAndDoesNotExecute(t *testing.T) {
 	root := t.TempDir()
 	marker := filepath.Join(root, "opencode-instructions")
 	opencode := appExecutable(t, root, "opencode", "#!/bin/sh\npath=$(printf '%s' \"$OPENCODE_CONFIG_CONTENT\" | sed 's/.*\\[\"\\([^\"]*\\)\"\\].*/\\1/')\ncp \"$path\" '"+marker+"'\n")
@@ -67,19 +67,22 @@ func TestOpenCodeDirectSessionUsesSkillGateAndOrchestrationUsesControlledFronten
 	if err := os.Chdir(root); err != nil {
 		t.Fatal(err)
 	}
-	if err := a.SessionStart(context.Background(), "opencode", session.ModeDirect, []string{"--model", "provider/model"}); err != nil {
-		t.Fatal(err)
+	before, _ := os.ReadFile(a.Store.Paths.State)
+	for _, mode := range []session.Mode{session.ModeDirect, session.ModeOrchestrated} {
+		if err := a.SessionStart(context.Background(), "opencode", mode, []string{"--model", "provider/model"}); !errors.Is(err, session.ErrOpenCodeManagedDeprecated) {
+			t.Fatal("removed session admitted", err)
+		}
 	}
-	body, err := os.ReadFile(marker)
-	if err != nil || !strings.Contains(string(body), "memory_read_page") {
-		t.Fatalf("instructions=%q err=%v", body, err)
+	if _, err := os.Stat(marker); !errors.Is(err, os.ErrNotExist) {
+		t.Fatal("removed runtime executed", err)
+	}
+	after, _ := os.ReadFile(a.Store.Paths.State)
+	if !bytes.Equal(before, after) {
+		t.Fatal("rejected session changed state")
 	}
 	values, err := a.SessionList()
-	if err != nil || len(values) != 1 || values[0].PrimaryExecutor != "opencode" || values[0].HeadroomRequested || values[0].RufloEnabled || values[0].PrimaryModel.Name != "provider/model" {
-		t.Fatalf("sessions=%+v err=%v", values, err)
-	}
-	if err := a.SessionStart(context.Background(), "opencode", session.ModeOrchestrated, nil); err == nil || !strings.Contains(err.Error(), "direct fallback refused") {
-		t.Fatalf("orchestrated OpenCode error=%v", err)
+	if err != nil || len(values) != 0 {
+		t.Fatal("removed entrypoint created sessions", err)
 	}
 }
 

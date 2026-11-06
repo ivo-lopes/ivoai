@@ -190,9 +190,12 @@ func (a *App) Setup(ctx context.Context) error {
 	return a.SetupWithLegacyOpenCode(ctx, false)
 }
 
-// SetupWithLegacyOpenCode is an explicit compatibility choice, never inferred
-// from the existence of a user's binary, configuration or historical session.
+// SetupWithLegacyOpenCode retains a removed flag as an explicit migration error.
+// Refusal precedes filesystem/configuration changes.
 func (a *App) SetupWithLegacyOpenCode(ctx context.Context, includeLegacy bool) error {
+	if includeLegacy {
+		return session.ErrOpenCodeManagedDeprecated
+	}
 	if err := a.Store.Ensure(); err != nil {
 		return err
 	}
@@ -330,8 +333,8 @@ func (a *App) Status(ctx context.Context) error {
 		{"Codex", componentStatus(state.Components["codex"], cfg.Connections.ChatGPT.Status)},
 		{"Codex tools", codexToolHostStatus(state)},
 		{"Claude Code", componentStatus(state.Components["claude-code"], cfg.Connections.Claude.Status)},
-		{"OpenCode", optionalManagedStatus(state.Components["opencode"], "ready / managed frontend")},
-		{"Permissions", statusValue{cfg.OpenCode.ResolvedPermissionMode() + " / managed OpenCode", terminalui.StatusNeutral}},
+		{"OpenCode", statusValue{"removed / retained metadata only", terminalui.StatusNeutral}},
+		{"Permissions", statusValue{cfg.OpenCode.ResolvedPermissionMode() + " / Core tool approvals", terminalui.StatusNeutral}},
 		{"Headroom", headroomStatus(state.Components["headroom"], cfg.Headroom.Enabled)},
 		{"Compression", compressionStatus},
 		{"Context", contextHealthStatus(cfg, serverHealth)},
@@ -917,6 +920,9 @@ func (a *App) Launch(ctx context.Context, target string, args []string) error {
 }
 
 func (a *App) LaunchWithKnowledge(ctx context.Context, target string, args, selectors []string) error {
+	if target == "opencode" {
+		return session.ErrOpenCodeManagedDeprecated
+	}
 	cfg, err := a.Store.Load()
 	if err != nil {
 		return err
@@ -1160,7 +1166,7 @@ func (a *App) ConfigSet(key, value string) error {
 		if err := a.Store.Save(c); err != nil {
 			return err
 		}
-		fmt.Fprintln(a.Out, "OpenCode permission mode changed; effective on next managed OpenCode session.")
+		fmt.Fprintln(a.Out, "Core tool approval mode changed (legacy config key retained); effective on the next managed native turn.")
 		return nil
 	case "compression.provider":
 		c.Compression.Provider = strings.ToLower(strings.TrimSpace(value))

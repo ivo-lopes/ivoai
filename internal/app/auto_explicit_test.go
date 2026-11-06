@@ -21,7 +21,11 @@ func TestAutoExplicitSubscriptionExecutorUnavailableFailsClosed(t *testing.T) {
 					return available(provider), nil
 				})
 			}
-			if err := a.Auto(context.Background(), requested, nil); err == nil || !strings.Contains(err.Error(), "explicit executor unavailable") {
+			want := "explicit executor unavailable"
+			if requested == "claude" {
+				want = "CLAUDE_NATIVE_MANAGED_FRONTEND_UNAVAILABLE"
+			}
+			if err := a.Auto(context.Background(), requested, nil); err == nil || !strings.Contains(err.Error(), want) {
 				t.Fatalf("explicit provider substituted: %v", err)
 			}
 			values, _ := a.SessionList()

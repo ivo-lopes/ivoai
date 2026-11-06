@@ -213,8 +213,9 @@ func (d Doctor) Run(ctx context.Context) Report {
 	r.Codex = d.agent(ctx, "codex", []string{"login", "status"}, state.Components["codex"])
 	r.CodexCodeModeHost = componentFromState(state.Components["codex-code-mode-host"])
 	r.Claude = d.agent(ctx, "claude", []string{"auth", "status"}, state.Components["claude-code"])
-	r.OpenCode = d.managedComponent("opencode", state.Components["opencode"])
-	d.probeManagedVersion(ctx, &r.OpenCode)
+	// Historical metadata only: never stat/probe/execute a retained OpenCode binary.
+	legacy := state.Components["opencode"]
+	r.OpenCode = ManagedComponent{Component: Component{Installed: legacy.Installed, Managed: legacy.Managed, Path: legacy.Path, Version: legacy.Version}}
 	r.Headroom = (headroom.Manager{Runner: d.Runner, Binary: state.Components["headroom"].Path}).Inspect(ctx, cfg.Headroom.Enabled)
 	if fixture := state.Components["headroom"]; !r.Headroom.Installed && strings.HasSuffix(fixture.Version, "-fixture") {
 		r.Headroom.Installed, r.Headroom.Healthy, r.Headroom.CodexCompatible, r.Headroom.ClaudeCompatible, r.Headroom.Version, r.Headroom.InteractiveLaunch = true, true, true, true, fixture.Version, "fixture"
@@ -537,10 +538,17 @@ func componentMatrix(cfg config.Config, state config.State, report Report) core.
 			Compatibility: compatibility(auth.Installed, "official client is not available"),
 		}
 	}
+	legacyOpenCode := executor(core.ComponentOpenCode, Auth{Version: report.OpenCode.Version}, state.Components["opencode"], false)
+	legacyOpenCode.Active = false
+	legacyOpenCode.Implementation = "retained-legacy-metadata"
+	legacyOpenCode.Installed = report.OpenCode.Installed
+	legacyOpenCode.Provenance.Source = "retained_state_without_probe"
+	legacyOpenCode.Capabilities[core.CapabilitySessionStart] = core.SupportUnsupported
+	legacyOpenCode.Compatibility = core.Compatibility{State: core.CompatibilityIncompatible, Reason: "managed OpenCode execution removed; use ivoai codex; user data preserved"}
 	values := []core.ComponentStatus{
 		executor(core.ComponentCodex, report.Codex, state.Components["codex"], report.Orchestration.CodexWorker),
 		executor(core.ComponentClaude, report.Claude, state.Components["claude-code"], report.Orchestration.ClaudeWorker),
-		executor(core.ComponentOpenCode, Auth{Installed: report.OpenCode.Installed && report.OpenCode.Healthy, Version: report.OpenCode.Version}, state.Components["opencode"], false),
+		legacyOpenCode,
 	}
 	memory := state.Components["ai-memory"]
 	memoryAvailable := report.Memory.Installed && (!cfg.Memory.Enabled || report.Memory.Hooks)
