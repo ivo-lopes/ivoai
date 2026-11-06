@@ -297,7 +297,36 @@ func (m Manager) rollbackDependencies(ctx context.Context, path string) error {
 			return errors.New("invalid operational asset in upgrade receipt")
 		}
 	}
-	if err := Restore(m.Layout, receipt.Backup); err != nil {
+	// A public Restore overlays its destination. A dependency rollback must
+	// instead replace Memory exactly: forward-only schema files and SQLite
+	// sidecars cannot be allowed to survive from the current runtime.
+	memoryStage, err := os.MkdirTemp(filepath.Dir(m.Layout.MemoryDir), ".memory-rollback-")
+	if err != nil {
+		return err
+	}
+	defer os.RemoveAll(memoryStage)
+	restored := DefaultLayout(memoryStage)
+	if err := Restore(restored, receipt.Backup); err != nil {
+		return fmt.Errorf("prepare exact memory rollback: %w", err)
+	}
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	info, err := os.Lstat(m.Layout.MemoryDir)
+	if err != nil || !info.IsDir() || info.Mode()&os.ModeSymlink != 0 {
+		return errors.New("current memory rollback root must be a real directory")
+	}
+	// Retain the public Restore semantics for the other authoritative roots.
+	// Only the already validated private restore tree is copied here.
+	for _, roots := range []struct{ source, destination string }{
+		{restored.ConfigDir, m.Layout.ConfigDir}, {restored.ContextDir, m.Layout.ContextDir},
+		{restored.CorpusDir, m.Layout.CorpusDir},
+	} {
+		if err := applyRestoredTree(roots.source, roots.destination, m.Layout); err != nil {
+			return err
+		}
+	}
+	if err := replaceRollbackMemory(m.Layout.MemoryDir, restored.MemoryDir); err != nil {
 		return err
 	}
 	quarantine, err := os.MkdirTemp(m.Layout.BackupDir, "post-upgrade-index-")
@@ -329,6 +358,27 @@ func (m Manager) rollbackDependencies(ctx context.Context, path string) error {
 		}
 	}
 	return m.Controller.DaemonReload(ctx)
+}
+
+// replaceRollbackMemory keeps the entire forward runtime tree in a private
+// sibling quarantine, on the same filesystem as the active tree. Never delete
+// forward data or copy it over the restored tree, even when activation fails.
+func replaceRollbackMemory(active, prepared string) error {
+	quarantine, err := os.MkdirTemp(filepath.Dir(active), "post-upgrade-memory-")
+	if err != nil {
+		return err
+	}
+	preserved := filepath.Join(quarantine, "memory")
+	if err := os.Rename(active, preserved); err != nil {
+		_ = os.Remove(quarantine) // still empty; never remove quarantined data
+		return fmt.Errorf("memory rollback could not preserve current memory; services must remain stopped: %w", err)
+	}
+	if err := os.Rename(prepared, active); err != nil {
+		// Reestablish the original name if activation failed. If that too fails,
+		// retain the quarantine and report both errors; services stay stopped.
+		return errors.Join(fmt.Errorf("memory rollback activation failed; current memory preserved at %s: %w", preserved, err), os.Rename(preserved, active))
+	}
+	return nil
 }
 
 func writeDependencyReceipt(path string, value DependencyUpgradeReceipt) error {

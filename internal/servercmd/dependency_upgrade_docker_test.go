@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -13,6 +14,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 	"strconv"
 	"strings"
 	"testing"
@@ -213,7 +215,45 @@ func TestRealPrivateDockerDependencyUpgradeAndCoordinatedRollback(t *testing.T) 
 	}
 	observations["candidate_after_exact_reads"] = controller.resourceObservation(ctx)
 	if err := server.WithDependencyMutationLock(ctx, layout, func(locked context.Context) error {
-		return r.withQuiescedServices(locked, manager, func() error { return manager.RollbackDependencies(locked, receipt) }, false)
+		return r.withQuiescedServices(locked, manager, func() error {
+			// Create sidecars only after the real forward runtime has stopped.
+			// They must never be replayed against the restored old database.
+			expected := server.DefaultLayout(t.TempDir())
+			if err := server.Restore(expected, archive); err != nil {
+				return err
+			}
+			projection := privateMemoryProjection(t, expected.MemoryDir)
+			extras := map[string]string{"rollback-only.db-wal": "forward-only-wal", "rollback-only.db-shm": "forward-only-shm", "v3extras/rollback-only": "forward-only-extra"}
+			for name, body := range extras {
+				path := filepath.Join(layout.MemoryDir, name)
+				if _, err := os.Lstat(path); !errors.Is(err, os.ErrNotExist) {
+					return errors.New("post-upgrade fixture already existed")
+				}
+				if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
+					return err
+				}
+				if err := os.WriteFile(path, []byte(body), 0600); err != nil {
+					return err
+				}
+			}
+			if err := manager.RollbackDependencies(locked, receipt); err != nil {
+				return err
+			}
+			if !reflect.DeepEqual(projection, privateMemoryProjection(t, layout.MemoryDir)) {
+				return errors.New("active Memory differs from the exact backup tree before old runtime restart")
+			}
+			quarantines, err := filepath.Glob(filepath.Join(filepath.Dir(layout.MemoryDir), "post-upgrade-memory-*", "memory"))
+			if err != nil || len(quarantines) != 1 {
+				return errors.New("forward Memory quarantine missing")
+			}
+			for name, body := range extras {
+				got, err := os.ReadFile(filepath.Join(quarantines[0], name))
+				if err != nil || string(got) != body {
+					return errors.New("forward-only Memory artifact not preserved in quarantine")
+				}
+			}
+			return nil
+		}, false)
 	}); err != nil {
 		t.Fatal("actual coordinated rollback failed", err)
 	}
@@ -223,7 +263,7 @@ func TestRealPrivateDockerDependencyUpgradeAndCoordinatedRollback(t *testing.T) 
 		}
 	}
 	observations["rollback_after_exact_reads"] = controller.resourceObservation(ctx)
-	report := map[string]any{"pass": true, "actual_official_images": true, "ai_memory_versions": []string{"2.6.3", "3.4.2", "2.6.3"}, "qdrant_versions": []string{"1.19.2", "1.20.0", "1.19.2"}, "core_backup_restore": true, "original_index_preserved": true, "stage_validator_actual_startup": true, "authenticated_read_and_401": true, "exact_memory_fixture_read": true, "exact_vector_point_read": true, "service_uid": 1000, "service_gid": 1000, "private_docker_info": strings.TrimSpace(string(info)), "systemd_certified": false, "production_accessed": false, "cgroup_limits_applied": false, "resource_observations": observations, "resource_observation_scope": "guest procfs for the unique runtime process: observed RSS KiB and process CPU ticks after readiness/read; not peak, normalized comparison or session cost"}
+	report := map[string]any{"pass": true, "actual_official_images": true, "ai_memory_versions": []string{"2.6.3", "3.4.2", "2.6.3"}, "qdrant_versions": []string{"1.19.2", "1.20.0", "1.19.2"}, "core_backup_restore": true, "original_index_preserved": true, "exact_backup_memory_tree_before_restart": true, "forward_only_wal_shm_extras_quarantined": true, "probe_scope": "known authenticated read/status/query/catalog and vector contracts only; not a universal tool inventory or full provider parity", "stage_validator_actual_startup": true, "authenticated_read_and_401": true, "exact_memory_fixture_read": true, "exact_vector_point_read": true, "service_uid": 1000, "service_gid": 1000, "private_docker_info": strings.TrimSpace(string(info)), "systemd_certified": false, "production_accessed": false, "cgroup_limits_applied": false, "resource_observations": observations, "resource_observation_scope": "guest procfs for the unique runtime process: observed RSS KiB and process CPU ticks after readiness/read; not peak, normalized comparison or session cost"}
 	if path := os.Getenv("IVOAI_TEST_UPGRADE_REPORT"); path != "" {
 		body, _ := json.MarshalIndent(report, "", "  ")
 		if err := os.WriteFile(path, append(body, '\n'), 0600); err != nil {
@@ -231,6 +271,48 @@ func TestRealPrivateDockerDependencyUpgradeAndCoordinatedRollback(t *testing.T) 
 		}
 	}
 	t.Log("actual official image upgrade+Core backup/stage+data/index/pin rollback PASS; mapped service UID/GID1000; systemd/production not certified;", strings.TrimSpace(string(info)))
+}
+
+// privateMemoryProjection compares exact restored names and file bytes before
+// restarting the old runtime, which may legitimately create fresh SQLite WALs.
+func privateMemoryProjection(t *testing.T, root string) map[string]string {
+	t.Helper()
+	projection := map[string]string{}
+	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		rel, err := filepath.Rel(root, path)
+		if err != nil {
+			return err
+		}
+		if info.IsDir() {
+			projection[rel] = "directory"
+			return nil
+		}
+		if !info.Mode().IsRegular() {
+			return errors.New("unsupported memory projection entry")
+		}
+		file, err := os.Open(path)
+		if err != nil {
+			return err
+		}
+		h := sha256.New()
+		_, copyErr := io.Copy(h, file)
+		closeErr := file.Close()
+		if copyErr != nil {
+			return copyErr
+		}
+		if closeErr != nil {
+			return closeErr
+		}
+		projection[rel] = hex.EncodeToString(h.Sum(nil))
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return projection
 }
 
 func TestPrivateUpgradeHTTPFixtureHelper(t *testing.T) {

@@ -85,8 +85,30 @@ func TestDependencyUpgradeValidatesCopyAndRollbackRestoresDataIndexAndPins(t *te
 	if err := os.WriteFile(filepath.Join(m.Layout.QdrantDir, "index"), []byte("activated-forward-index"), 0600); err != nil {
 		t.Fatal(err)
 	}
+	postUpgrade := map[string]string{"memory.db-wal": "forward-wal", "memory.db-shm": "forward-shm", "v3extras/new-file": "forward-extra"}
+	for name, body := range postUpgrade {
+		path := filepath.Join(m.Layout.MemoryDir, name)
+		if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, []byte(body), 0600); err != nil {
+			t.Fatal(err)
+		}
+	}
 	if err := m.RollbackDependencies(context.Background(), receipt); err != nil {
 		t.Fatal(err)
+	}
+	entries, err := os.ReadDir(m.Layout.MemoryDir)
+	if err != nil || len(entries) != 1 || entries[0].Name() != "memory.db" {
+		t.Fatal("active Memory is not the exact backup tree", entries, err)
+	}
+	quarantines, _ := filepath.Glob(filepath.Join(filepath.Dir(m.Layout.MemoryDir), "post-upgrade-memory-*", "memory"))
+	if len(quarantines) != 1 {
+		t.Fatal("forward Memory tree was not quarantined", quarantines)
+	}
+	assertFile(t, filepath.Join(quarantines[0], "memory.db"), "activated-forward-schema")
+	for name, body := range postUpgrade {
+		assertFile(t, filepath.Join(quarantines[0], name), body)
 	}
 	assertFile(t, filepath.Join(m.Layout.MemoryDir, "memory.db"), "original-schema-two")
 	assertFile(t, filepath.Join(m.Layout.QdrantDir, "index"), "original-index")
@@ -190,5 +212,59 @@ func TestDependencyLockContextCannotOutliveItsKernelLease(t *testing.T) {
 		return nil
 	}); err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestRollbackMemoryActivationFailurePreservesOriginalTree(t *testing.T) {
+	parent := t.TempDir()
+	active := filepath.Join(parent, "memory")
+	if err := os.Mkdir(active, 0700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(active, "forward.db-wal"), []byte("preserve me"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := replaceRollbackMemory(active, filepath.Join(parent, "missing-prepared")); err == nil {
+		t.Fatal("missing prepared tree accepted")
+	}
+	assertFile(t, filepath.Join(active, "forward.db-wal"), "preserve me")
+}
+
+func TestDependencyRollbackMalformedBackupLeavesActiveTreesUntouched(t *testing.T) {
+	m, _, _ := stoppedUpgradeFixture(t)
+	archive := filepath.Join(m.Layout.BackupDir, "before.tar.gz")
+	receiptPath, err := m.UpgradeDependencies(context.Background(), archive, func(context.Context, Layout) error { return nil })
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, err := os.ReadFile(receiptPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var receipt DependencyUpgradeReceipt
+	if err := json.Unmarshal(body, &receipt); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(archive, []byte("invalid archive with matching receipt hash"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	receipt.BackupSHA256, err = hashUpgradeFile(archive)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := writeDependencyReceipt(receiptPath, receipt); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(m.Layout.MemoryDir, "memory.db"), []byte("forward-current"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	if err := m.RollbackDependencies(context.Background(), receiptPath); err == nil {
+		t.Fatal("invalid backup admitted")
+	}
+	assertFile(t, filepath.Join(m.Layout.MemoryDir, "memory.db"), "forward-current")
+	assertFile(t, filepath.Join(m.Layout.QdrantDir, "index"), "original-index")
+	quarantines, err := filepath.Glob(filepath.Join(filepath.Dir(m.Layout.MemoryDir), "post-upgrade-memory-*"))
+	if err != nil || len(quarantines) != 0 {
+		t.Fatal("invalid archive changed active tree", quarantines, err)
 	}
 }
