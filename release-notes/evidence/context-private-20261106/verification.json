@@ -1,0 +1,26 @@
+{
+  "context_focused_mutation_tests": {
+    "status": "PASS",
+    "seconds": 0.005
+  },
+  "context_full_race": {
+    "command": "GOMAXPROCS=2 go test -race ./internal/context -count=1",
+    "status": "PASS",
+    "seconds": 17.119
+  },
+  "context_vet": {
+    "command": "GOMAXPROCS=2 go vet ./internal/context",
+    "status": "PASS"
+  },
+  "official_real_embedding_readiness": {
+    "status": "PASS",
+    "seconds": 0.6
+  },
+  "actual_cli_http_fixture": {
+    "status": "PASS",
+    "seconds": 0.39856674
+  },
+  "shared_mindsite_context_sync": "NOT_ASSERTED",
+  "global_economic_gate": "NOT_EVALUATED",
+  "parent_integration_release_ci": "PENDING"
+}

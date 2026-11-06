@@ -1,0 +1,28 @@
+{
+  "source_base": "fb56be506399fb5f9bb610220694978ef871f3a7",
+  "product_commits": [
+    "9d643eb74",
+    "1e95aa6c5"
+  ],
+  "artifacts": {
+    "context_private_docker_test.go": {
+      "sha256": "c088a7a05c5df9a3dc36e673ca16e40f1f79543ff0d80bbad78c2878250f1576",
+      "bytes": 15794
+    },
+    "context-real.test": {
+      "sha256": "c96f6bc3cc3087c91b18d2ba2fec6c88a07be8b5ab50c7834b1cb436fb209a8b",
+      "bytes": 65865935
+    },
+    "ivoai-context-real": {
+      "sha256": "b5c4d7ff8fbc57c7044f67392535446751e5a050e2aa963ae987d4049e46d341",
+      "bytes": 76817794
+    },
+    "run_stack_private.py": {
+      "sha256": "203296eaed2a14a923758766fe6d62e403cea10870aaabda9f028fe3ba68e6e1",
+      "bytes": 8411
+    }
+  },
+  "private_evidence_root": "/var/tmp/ivoai-context-private-ingest-evidence-20261106",
+  "provider": "official TEI1.9.4 CPU Candle/E5 pinned safetensors and real Qdrant1.20",
+  "shared_mindsite_context_sync": "NOT_ASSERTED"
+}

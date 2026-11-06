@@ -1,0 +1,26 @@
+{
+  "owned_pair_removed": [
+    "ivoai-context-c6f6bff10befdf430c5df66c-tei",
+    "ivoai-context-c6f6bff10befdf430c5df66c-qdrant"
+  ],
+  "original_daemon_stopped": false,
+  "global_prune": false,
+  "tei_image_id": "sha256:8ce0330d3eae11511627a5b3eeef7001f76970ad3633d771147b57915c021dd7",
+  "other_containers_using_tei": [],
+  "private_tei_image_removed": true,
+  "retained_image_refs": [],
+  "root_available_bytes": 15051927552,
+  "retained_digest_only_images_from_all_listing": [
+    "sha256:fb074894588b42f9f679d6dd38bbad22c88a26f1167ee516ee34d0c820a5c628 akitaonrails/ai-memory <none>",
+    "sha256:4c600a3b1f6c88971008ebd15ddf2b2a5342a9bdf34bd824c7dd27d5d35ad236 akitaonrails/ai-memory <none>",
+    "sha256:8a80c5500151ab2b08eb5874698b81b6b8addbc53ef4fb0c47f516680cf413d2 qdrant/qdrant <none>",
+    "sha256:95c25886cd3fcf7a1e23302c896b127184feadf8187a652c128a8e0e22b86ec3 akitaonrails/ai-memory <none>",
+    "sha256:e37a07939a01ae09875d5cd58cd05a5e7c393151fce5e0a524c083835570e8e7 qdrant/qdrant <none>"
+  ],
+  "default_image_list_note": "Default listing hides digest-only images; --all confirms five historical images remain.",
+  "private_backend_secret_files_removed": [
+    "qdrant.env",
+    "embeddings.env",
+    "memory.env"
+  ]
+}

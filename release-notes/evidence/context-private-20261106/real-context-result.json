@@ -1,0 +1,48 @@
+{
+  "exit_code": 0,
+  "preserved_prior_epoch": "stack-af068964",
+  "operator_explicit_retry": true,
+  "automatic_replay": false,
+  "context_proof": {
+    "cgroup_limits_applied": false,
+    "cpu_features_observed": [
+      "avx",
+      "avx2",
+      "sse4_2"
+    ],
+    "deterministic_embedder": false,
+    "document_sha256": "00aae2fa6b69bb95c324dbd14f3ef23962f0a81d145c09ac410e4c502f77a30b",
+    "documents": 1,
+    "exact_cli_recovery": true,
+    "gateway_auth": "existing enrollment bearer/context:read",
+    "gateway_revoked_status": 401,
+    "gateway_unauthenticated_status": 401,
+    "gateway_wrong_scope_status": 403,
+    "mcp_mutation_denied": true,
+    "mindsite_context_sync": "NOT_ASSERTED",
+    "operator_authority": "existing mapped-root OS identity",
+    "pass": true,
+    "production_or_shared_context_accessed": false,
+    "real_qdrant": true,
+    "real_tei_embeddings": true,
+    "receipt_context_sync": "PARTIAL",
+    "seconds": 0.39856674,
+    "semantic_search_verified": true,
+    "semantic_top_score": 0.893796,
+    "source_path_filter_and_collection_isolation": true
+  },
+  "nonroot_ingest_exit": 1,
+  "nonroot_ingest_denied_without_mutation": true,
+  "tei_raw_log": {
+    "bytes": 1755,
+    "sha256": "63ae9193bfa7d52ae63576076e1e52b3972b2012950e8ea8190c8f03f95edade",
+    "secret_present": false
+  },
+  "qdrant_cold_collection_create_after_explicit_reset": true,
+  "pass": true,
+  "prior_nonroot_probe": {
+    "exit_code": 126,
+    "reason": "isolated binaries directory0700 prevented exec; not product authorization proof",
+    "preserved_result": "retry-queryfix-epoch1/result.json"
+  }
+}
