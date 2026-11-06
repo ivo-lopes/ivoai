@@ -22,6 +22,7 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/core"
 	"github.com/ivo-lopes/ivoai/internal/headroom"
 	"github.com/ivo-lopes/ivoai/internal/knowledgepolicy"
+	"github.com/ivo-lopes/ivoai/internal/ownedprocess"
 	"github.com/ivo-lopes/ivoai/internal/platform"
 	"github.com/ivo-lopes/ivoai/internal/quota"
 	"github.com/ivo-lopes/ivoai/internal/session"
@@ -526,14 +527,20 @@ func (a Adapter) binary(executor string) (string, error) {
 }
 
 type limitedBuffer struct {
-	bytes.Buffer
+	buffer   bytes.Buffer
 	overflow bool
 	limit    int
 }
 
 func (b *limitedBuffer) Write(value []byte) (int, error) {
 	original := len(value)
-	remaining := resultBudget(b.limit) - b.Len()
+	// Raw capture has its own reviewed ceiling. The small model-summary tier
+	// budget must not silently replace the original evidence allowance.
+	limit := b.limit
+	if limit <= 0 || limit > MaxRawResultBytes {
+		limit = MaxRawResultBytes
+	}
+	remaining := limit - b.buffer.Len()
 	if remaining <= 0 {
 		b.overflow = true
 		return original, nil
@@ -542,9 +549,11 @@ func (b *limitedBuffer) Write(value []byte) (int, error) {
 		value = value[:remaining]
 		b.overflow = true
 	}
-	_, _ = b.Buffer.Write(value)
+	_, _ = b.buffer.Write(value)
 	return original, nil
 }
+
+func (b *limitedBuffer) String() string { return b.buffer.String() }
 
 func run(ctx context.Context, command string, args []string, request Request, direct string, headroomUsed bool, observe func(Observation), environment []string) (Result, error) {
 	cmd := exec.CommandContext(ctx, command, args...)
@@ -559,20 +568,26 @@ func run(ctx context.Context, command string, args []string, request Request, di
 	if err := cmd.Start(); err != nil {
 		return Result{}, fmt.Errorf("start worker: %w", err)
 	}
+	group, err := ownedprocess.New(cmd)
+	if err != nil {
+		_ = cmd.Process.Kill()
+		_ = cmd.Wait()
+		return Result{}, errors.New("worker process ownership unavailable")
+	}
 	if observe != nil {
 		observe(Observation{PID: cmd.Process.Pid, ProcessStart: session.ProcessStart(cmd.Process.Pid), HeadroomUsed: headroomUsed})
 	}
 	done := make(chan error, 1)
-	go func() { done <- cmd.Wait() }()
-	var err error
+	go func() { done <- group.Wait() }()
+	err = nil
 	select {
 	case err = <-done:
 	case <-ctx.Done():
-		_ = syscall.Kill(-cmd.Process.Pid, syscall.SIGTERM)
+		_ = group.Signal(syscall.SIGTERM)
 		select {
 		case err = <-done:
 		case <-time.After(2 * time.Second):
-			_ = syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
+			_ = group.Signal(syscall.SIGKILL)
 			err = <-done
 		}
 		if err == nil {
@@ -585,6 +600,7 @@ func run(ctx context.Context, command string, args []string, request Request, di
 		return result, errors.New("worker output exceeded the 15 MiB raw evidence limit")
 	}
 	if len(result.Stdout)+len(result.Stderr) > MaxRawResultBytes {
+		result.Truncated = true
 		return result, errors.New("worker output exceeded the 15 MiB aggregate raw evidence limit")
 	}
 	if err == nil {

@@ -1,0 +1,13 @@
+--- FAIL: TestWorkerCaptureBoundsWriterFastPaths (0.00s)
+    --- FAIL: TestWorkerCaptureBoundsWriterFastPaths/copy (0.00s)
+        capture_boundary_test.go:31: standard writer path bypassed worker evidence limit
+    --- FAIL: TestWorkerCaptureBoundsWriterFastPaths/write (0.00s)
+        capture_boundary_test.go:31: standard writer path bypassed worker evidence limit
+    --- FAIL: TestWorkerCaptureBoundsWriterFastPaths/string (0.00s)
+        capture_boundary_test.go:31: standard writer path bypassed worker evidence limit
+--- FAIL: TestWorkerProcessCaptureMarksAndBoundsOverflow (0.03s)
+    capture_boundary_test.go:44: actual child pipe escaped capture bounds or lost overflow metadata
+FAIL
+FAIL	github.com/ivo-lopes/ivoai/internal/workers	0.094s
+ok  	github.com/ivo-lopes/ivoai/internal/ownedprocess	1.013s
+FAIL
