@@ -1,0 +1,4 @@
+=== RUN   TestLiveAdaptivePrimaryFullCLI
+    adaptive_cli_live_test.go:289: NOT_RUN: observed official model unavailable
+--- SKIP: TestLiveAdaptivePrimaryFullCLI (32.69s)
+PASS
