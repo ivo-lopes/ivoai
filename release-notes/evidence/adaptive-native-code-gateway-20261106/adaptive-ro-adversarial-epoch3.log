@@ -1,0 +1,63 @@
+=== RUN   TestAdaptiveCodeGatewayExactReuseAndRecovery
+    adaptive_code_gateway_test.go:94: managed code runtime unavailable
+--- FAIL: TestAdaptiveCodeGatewayExactReuseAndRecovery (0.01s)
+=== RUN   TestAdaptiveCodeGatewaySourceChangesInvalidateAndRevokeRecovery
+    adaptive_code_gateway_test.go:138: managed code runtime unavailable
+--- FAIL: TestAdaptiveCodeGatewaySourceChangesInvalidateAndRevokeRecovery (0.01s)
+=== RUN   TestAdaptiveCodeGatewayOwnerScopesAndAuthorityDenyBeforeProvider
+=== RUN   TestAdaptiveCodeGatewayOwnerScopesAndAuthorityDenyBeforeProvider/scope
+    adaptive_code_gateway_test.go:164: managed code runtime unavailable
+=== RUN   TestAdaptiveCodeGatewayOwnerScopesAndAuthorityDenyBeforeProvider/worktree
+    adaptive_code_gateway_test.go:164: managed code runtime unavailable
+=== RUN   TestAdaptiveCodeGatewayOwnerScopesAndAuthorityDenyBeforeProvider/permissions
+    adaptive_code_gateway_test.go:164: managed code runtime unavailable
+=== RUN   TestAdaptiveCodeGatewayOwnerScopesAndAuthorityDenyBeforeProvider/provider_denied
+    adaptive_code_gateway_test.go:164: managed code runtime unavailable
+=== RUN   TestAdaptiveCodeGatewayOwnerScopesAndAuthorityDenyBeforeProvider/receipt
+    adaptive_code_gateway_test.go:164: managed code runtime unavailable
+=== RUN   TestAdaptiveCodeGatewayOwnerScopesAndAuthorityDenyBeforeProvider/config
+    adaptive_code_gateway_test.go:164: managed code runtime unavailable
+=== RUN   TestAdaptiveCodeGatewayOwnerScopesAndAuthorityDenyBeforeProvider/runtime
+    adaptive_code_gateway_test.go:164: managed code runtime unavailable
+--- FAIL: TestAdaptiveCodeGatewayOwnerScopesAndAuthorityDenyBeforeProvider (0.05s)
+    --- FAIL: TestAdaptiveCodeGatewayOwnerScopesAndAuthorityDenyBeforeProvider/scope (0.01s)
+    --- FAIL: TestAdaptiveCodeGatewayOwnerScopesAndAuthorityDenyBeforeProvider/worktree (0.01s)
+    --- FAIL: TestAdaptiveCodeGatewayOwnerScopesAndAuthorityDenyBeforeProvider/permissions (0.01s)
+    --- FAIL: TestAdaptiveCodeGatewayOwnerScopesAndAuthorityDenyBeforeProvider/provider_denied (0.01s)
+    --- FAIL: TestAdaptiveCodeGatewayOwnerScopesAndAuthorityDenyBeforeProvider/receipt (0.01s)
+    --- FAIL: TestAdaptiveCodeGatewayOwnerScopesAndAuthorityDenyBeforeProvider/config (0.01s)
+    --- FAIL: TestAdaptiveCodeGatewayOwnerScopesAndAuthorityDenyBeforeProvider/runtime (0.01s)
+=== RUN   TestAdaptiveCodeGatewayNeverCachesIndexOrDiagnosticActions
+=== RUN   TestAdaptiveCodeGatewayNeverCachesIndexOrDiagnosticActions/build
+    adaptive_code_gateway_test.go:201: managed code runtime unavailable
+=== RUN   TestAdaptiveCodeGatewayNeverCachesIndexOrDiagnosticActions/viz
+    adaptive_code_gateway_test.go:201: managed code runtime unavailable
+=== RUN   TestAdaptiveCodeGatewayNeverCachesIndexOrDiagnosticActions/check
+    adaptive_code_gateway_test.go:201: managed code runtime unavailable
+--- FAIL: TestAdaptiveCodeGatewayNeverCachesIndexOrDiagnosticActions (0.02s)
+    --- FAIL: TestAdaptiveCodeGatewayNeverCachesIndexOrDiagnosticActions/build (0.01s)
+    --- FAIL: TestAdaptiveCodeGatewayNeverCachesIndexOrDiagnosticActions/viz (0.01s)
+    --- FAIL: TestAdaptiveCodeGatewayNeverCachesIndexOrDiagnosticActions/check (0.01s)
+=== RUN   TestAdaptiveCodeGatewayChangedAuthorityOrSensitiveTextWithholds
+=== RUN   TestAdaptiveCodeGatewayChangedAuthorityOrSensitiveTextWithholds/revoke
+    adaptive_code_gateway_test.go:224: managed code runtime unavailable
+=== RUN   TestAdaptiveCodeGatewayChangedAuthorityOrSensitiveTextWithholds/source_change
+    adaptive_code_gateway_test.go:224: managed code runtime unavailable
+=== RUN   TestAdaptiveCodeGatewayChangedAuthorityOrSensitiveTextWithholds/secret_json
+    adaptive_code_gateway_test.go:224: managed code runtime unavailable
+=== RUN   TestAdaptiveCodeGatewayChangedAuthorityOrSensitiveTextWithholds/private_key
+    adaptive_code_gateway_test.go:224: managed code runtime unavailable
+=== RUN   TestAdaptiveCodeGatewayChangedAuthorityOrSensitiveTextWithholds/upstream_error
+    adaptive_code_gateway_test.go:224: managed code runtime unavailable
+--- FAIL: TestAdaptiveCodeGatewayChangedAuthorityOrSensitiveTextWithholds (0.03s)
+    --- FAIL: TestAdaptiveCodeGatewayChangedAuthorityOrSensitiveTextWithholds/revoke (0.01s)
+    --- FAIL: TestAdaptiveCodeGatewayChangedAuthorityOrSensitiveTextWithholds/source_change (0.01s)
+    --- FAIL: TestAdaptiveCodeGatewayChangedAuthorityOrSensitiveTextWithholds/secret_json (0.01s)
+    --- FAIL: TestAdaptiveCodeGatewayChangedAuthorityOrSensitiveTextWithholds/private_key (0.01s)
+    --- FAIL: TestAdaptiveCodeGatewayChangedAuthorityOrSensitiveTextWithholds/upstream_error (0.01s)
+=== RUN   TestAdaptiveCodeGatewayConcurrentQueriesDeduplicate
+    adaptive_code_gateway_test.go:255: managed code runtime unavailable
+--- FAIL: TestAdaptiveCodeGatewayConcurrentQueriesDeduplicate (0.01s)
+FAIL
+FAIL	github.com/ivo-lopes/ivoai/internal/app	0.131s
+FAIL

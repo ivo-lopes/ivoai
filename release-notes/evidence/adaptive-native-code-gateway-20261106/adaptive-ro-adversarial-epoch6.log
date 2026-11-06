@@ -1,0 +1,44 @@
+=== RUN   TestAdaptiveCodeGatewayExactReuseAndRecovery
+--- PASS: TestAdaptiveCodeGatewayExactReuseAndRecovery (0.05s)
+=== RUN   TestAdaptiveCodeGatewaySourceChangesInvalidateAndRevokeRecovery
+--- PASS: TestAdaptiveCodeGatewaySourceChangesInvalidateAndRevokeRecovery (0.04s)
+=== RUN   TestAdaptiveCodeGatewayOwnerScopesAndAuthorityDenyBeforeProvider
+=== RUN   TestAdaptiveCodeGatewayOwnerScopesAndAuthorityDenyBeforeProvider/scope
+=== RUN   TestAdaptiveCodeGatewayOwnerScopesAndAuthorityDenyBeforeProvider/worktree
+=== RUN   TestAdaptiveCodeGatewayOwnerScopesAndAuthorityDenyBeforeProvider/permissions
+=== RUN   TestAdaptiveCodeGatewayOwnerScopesAndAuthorityDenyBeforeProvider/provider_denied
+=== RUN   TestAdaptiveCodeGatewayOwnerScopesAndAuthorityDenyBeforeProvider/receipt
+=== RUN   TestAdaptiveCodeGatewayOwnerScopesAndAuthorityDenyBeforeProvider/config
+=== RUN   TestAdaptiveCodeGatewayOwnerScopesAndAuthorityDenyBeforeProvider/runtime
+--- PASS: TestAdaptiveCodeGatewayOwnerScopesAndAuthorityDenyBeforeProvider (0.05s)
+    --- PASS: TestAdaptiveCodeGatewayOwnerScopesAndAuthorityDenyBeforeProvider/scope (0.01s)
+    --- PASS: TestAdaptiveCodeGatewayOwnerScopesAndAuthorityDenyBeforeProvider/worktree (0.01s)
+    --- PASS: TestAdaptiveCodeGatewayOwnerScopesAndAuthorityDenyBeforeProvider/permissions (0.01s)
+    --- PASS: TestAdaptiveCodeGatewayOwnerScopesAndAuthorityDenyBeforeProvider/provider_denied (0.01s)
+    --- PASS: TestAdaptiveCodeGatewayOwnerScopesAndAuthorityDenyBeforeProvider/receipt (0.01s)
+    --- PASS: TestAdaptiveCodeGatewayOwnerScopesAndAuthorityDenyBeforeProvider/config (0.01s)
+    --- PASS: TestAdaptiveCodeGatewayOwnerScopesAndAuthorityDenyBeforeProvider/runtime (0.01s)
+=== RUN   TestAdaptiveCodeGatewayNeverCachesIndexOrDiagnosticActions
+=== RUN   TestAdaptiveCodeGatewayNeverCachesIndexOrDiagnosticActions/build
+=== RUN   TestAdaptiveCodeGatewayNeverCachesIndexOrDiagnosticActions/viz
+=== RUN   TestAdaptiveCodeGatewayNeverCachesIndexOrDiagnosticActions/check
+--- PASS: TestAdaptiveCodeGatewayNeverCachesIndexOrDiagnosticActions (0.02s)
+    --- PASS: TestAdaptiveCodeGatewayNeverCachesIndexOrDiagnosticActions/build (0.01s)
+    --- PASS: TestAdaptiveCodeGatewayNeverCachesIndexOrDiagnosticActions/viz (0.01s)
+    --- PASS: TestAdaptiveCodeGatewayNeverCachesIndexOrDiagnosticActions/check (0.01s)
+=== RUN   TestAdaptiveCodeGatewayChangedAuthorityOrSensitiveTextWithholds
+=== RUN   TestAdaptiveCodeGatewayChangedAuthorityOrSensitiveTextWithholds/revoke
+=== RUN   TestAdaptiveCodeGatewayChangedAuthorityOrSensitiveTextWithholds/source_change
+=== RUN   TestAdaptiveCodeGatewayChangedAuthorityOrSensitiveTextWithholds/secret_json
+=== RUN   TestAdaptiveCodeGatewayChangedAuthorityOrSensitiveTextWithholds/private_key
+=== RUN   TestAdaptiveCodeGatewayChangedAuthorityOrSensitiveTextWithholds/upstream_error
+--- PASS: TestAdaptiveCodeGatewayChangedAuthorityOrSensitiveTextWithholds (0.05s)
+    --- PASS: TestAdaptiveCodeGatewayChangedAuthorityOrSensitiveTextWithholds/revoke (0.01s)
+    --- PASS: TestAdaptiveCodeGatewayChangedAuthorityOrSensitiveTextWithholds/source_change (0.01s)
+    --- PASS: TestAdaptiveCodeGatewayChangedAuthorityOrSensitiveTextWithholds/secret_json (0.01s)
+    --- PASS: TestAdaptiveCodeGatewayChangedAuthorityOrSensitiveTextWithholds/private_key (0.01s)
+    --- PASS: TestAdaptiveCodeGatewayChangedAuthorityOrSensitiveTextWithholds/upstream_error (0.01s)
+=== RUN   TestAdaptiveCodeGatewayConcurrentQueriesDeduplicate
+--- PASS: TestAdaptiveCodeGatewayConcurrentQueriesDeduplicate (0.03s)
+PASS
+ok  	github.com/ivo-lopes/ivoai/internal/app	0.257s
