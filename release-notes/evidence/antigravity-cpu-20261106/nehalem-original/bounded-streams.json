@@ -1,0 +1,44 @@
+{
+  "cpuid": {
+    "stdout": {
+      "bytes": 19,
+      "sha256": "85a6949309735bd583fdd7fa317f3e8a10a02fac22df4d8c2c7c43686c31647a",
+      "base64": "eyJhdngiOjAsImF2eDIiOjB9Cg==",
+      "text": "{\"avx\":0,\"avx2\":0}\n"
+    },
+    "stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "base64": "",
+      "text": ""
+    }
+  },
+  "version": {
+    "stdout": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "base64": "",
+      "text": ""
+    },
+    "stderr": {
+      "bytes": 202,
+      "sha256": "ea562f650da91b9bfd5244368e370cd13eae3f9dd5bfb054bb91e365b86dc688",
+      "base64": "RkFUQUwgRVJST1I6IFRoaXMgYmluYXJ5IHdhcyBjb21waWxlZCB3aXRoIHBjbG11bCBlbmFibGVkLCBidXQgdGhpcyBmZWF0dXJlIGlzIG5vdCBhdmFpbGFibGUgb24gdGhpcyBwcm9jZXNzb3IgKGdvL3NpZ2lsbC1mYWlsLWZhc3QpLgoAcWVtdTogdW5jYXVnaHQgdGFyZ2V0IHNpZ25hbCA0IChJbGxlZ2FsIGluc3RydWN0aW9uKSAtIGNvcmUgZHVtcGVkCg==",
+      "text": "FATAL ERROR: This binary was compiled with pclmul enabled, but this feature is not available on this processor (go/sigill-fail-fast).\n\u0000qemu: uncaught target signal 4 (Illegal instruction) - core dumped\n"
+    }
+  },
+  "help": {
+    "stdout": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "base64": "",
+      "text": ""
+    },
+    "stderr": {
+      "bytes": 202,
+      "sha256": "ea562f650da91b9bfd5244368e370cd13eae3f9dd5bfb054bb91e365b86dc688",
+      "base64": "RkFUQUwgRVJST1I6IFRoaXMgYmluYXJ5IHdhcyBjb21waWxlZCB3aXRoIHBjbG11bCBlbmFibGVkLCBidXQgdGhpcyBmZWF0dXJlIGlzIG5vdCBhdmFpbGFibGUgb24gdGhpcyBwcm9jZXNzb3IgKGdvL3NpZ2lsbC1mYWlsLWZhc3QpLgoAcWVtdTogdW5jYXVnaHQgdGFyZ2V0IHNpZ25hbCA0IChJbGxlZ2FsIGluc3RydWN0aW9uKSAtIGNvcmUgZHVtcGVkCg==",
+      "text": "FATAL ERROR: This binary was compiled with pclmul enabled, but this feature is not available on this processor (go/sigill-fail-fast).\n\u0000qemu: uncaught target signal 4 (Illegal instruction) - core dumped\n"
+    }
+  }
+}

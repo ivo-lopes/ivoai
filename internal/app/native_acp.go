@@ -22,6 +22,7 @@ import (
 	"github.com/ivo-lopes/ivoai/internal/orchestration"
 	"github.com/ivo-lopes/ivoai/internal/promptgate"
 	"github.com/ivo-lopes/ivoai/internal/session"
+	"golang.org/x/sys/cpu"
 )
 
 const antigravityFlag = "IVOAI_EXPERIMENTAL_ANTIGRAVITY"
@@ -48,6 +49,9 @@ type nativeACPGuard struct {
 func reviewedAntigravity(ctx context.Context) (string, os.FileInfo, error) {
 	if runtime.GOOS != "linux" || runtime.GOARCH != "amd64" {
 		return "", nil, errors.New("ANTIGRAVITY_PLATFORM_UNCERTIFIED")
+	}
+	if err := antigravityCPUAdmission(cpu.X86.HasPCLMULQDQ); err != nil {
+		return "", nil, err
 	}
 	path, err := exec.LookPath("agy")
 	if err != nil {

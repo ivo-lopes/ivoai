@@ -1,0 +1,6 @@
+{"case": "cpuid", "arguments": [], "cpu": "Haswell,+pclmul,-avx,-avx2", "exit_code": 1, "elapsed_seconds": 0.012, "failure": null, "timeout_seconds": 60, "stream_limit_bytes": 65536, "stdout_bytes": 0, "stderr_bytes": 53, "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", "stderr_sha256": "aad2bb4de2f84ff987a65c3f99175a736a57cf2de2b4ff8fb87f30c2870de642", "personal_credentials_available": false, "network_namespace": "unshared", "private_home_initially_empty": true, "cpuid": null, "pass": false}
+Traceback (most recent call last):
+  File "/var/tmp/ivoai-antigravity-startup-evidence-20261106/haswell-noavx-pclmul/run_startup.py", line 59, in <module>
+    assert len(results)==3 and all(row['pass']for row in results),'Startup certification failed; retained results are not successes'
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: Startup certification failed; retained results are not successes
