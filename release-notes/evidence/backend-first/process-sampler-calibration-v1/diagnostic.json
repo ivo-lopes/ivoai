@@ -1,0 +1,341 @@
+{
+  "schema": 1,
+  "condition": "offline-process-sampler-calibration-v1",
+  "basis": "signed ONminusOFF within each frozen pair, never mechanical subtraction from an LLM benchmark; no exclusions or performance gate",
+  "pairs": [
+    {
+      "case": "wait",
+      "repetition": 0,
+      "order": "AB",
+      "both_correct": true,
+      "wall_on_minus_off_ms": -10.99354999999997,
+      "active_wall_on_minus_off_ms": -0.28033700000003137,
+      "workload_cpu_on_minus_off_ms": -11.358999999999998,
+      "controller_cpu_on_minus_off_ms": 0.8459289999999999,
+      "sampler_tick_cpu_ms": 1.278,
+      "sampler_tick_wall_ms": 1.284
+    },
+    {
+      "case": "wait",
+      "repetition": 1,
+      "order": "BA",
+      "both_correct": true,
+      "wall_on_minus_off_ms": 14.898414000000002,
+      "active_wall_on_minus_off_ms": 0.6129829999999856,
+      "workload_cpu_on_minus_off_ms": 13.613999999999999,
+      "controller_cpu_on_minus_off_ms": 0.9810819999999998,
+      "sampler_tick_cpu_ms": 1.072,
+      "sampler_tick_wall_ms": 1.09
+    },
+    {
+      "case": "wait",
+      "repetition": 2,
+      "order": "AB",
+      "both_correct": true,
+      "wall_on_minus_off_ms": 12.442102000000034,
+      "active_wall_on_minus_off_ms": 0.7817299999999818,
+      "workload_cpu_on_minus_off_ms": 11.163999999999998,
+      "controller_cpu_on_minus_off_ms": 1.5019529999999999,
+      "sampler_tick_cpu_ms": 1.238,
+      "sampler_tick_wall_ms": 1.239
+    },
+    {
+      "case": "wait",
+      "repetition": 3,
+      "order": "BA",
+      "both_correct": true,
+      "wall_on_minus_off_ms": -7.643327999999997,
+      "active_wall_on_minus_off_ms": 2.6067279999999755,
+      "workload_cpu_on_minus_off_ms": -10.777999999999997,
+      "controller_cpu_on_minus_off_ms": 3.1979629999999997,
+      "sampler_tick_cpu_ms": 1.495,
+      "sampler_tick_wall_ms": 1.497
+    },
+    {
+      "case": "cpu",
+      "repetition": 0,
+      "order": "AB",
+      "both_correct": true,
+      "wall_on_minus_off_ms": 21.461146000000014,
+      "active_wall_on_minus_off_ms": 10.613185000000016,
+      "workload_cpu_on_minus_off_ms": 27.358000000000004,
+      "controller_cpu_on_minus_off_ms": 1.1161530000000002,
+      "sampler_tick_cpu_ms": 0.829,
+      "sampler_tick_wall_ms": 0.829
+    },
+    {
+      "case": "cpu",
+      "repetition": 1,
+      "order": "BA",
+      "both_correct": true,
+      "wall_on_minus_off_ms": 5.306077000000016,
+      "active_wall_on_minus_off_ms": -0.40612600000000043,
+      "workload_cpu_on_minus_off_ms": 8.194999999999995,
+      "controller_cpu_on_minus_off_ms": -0.025402000000000147,
+      "sampler_tick_cpu_ms": 0.525,
+      "sampler_tick_wall_ms": 0.526
+    },
+    {
+      "case": "cpu",
+      "repetition": 2,
+      "order": "AB",
+      "both_correct": true,
+      "wall_on_minus_off_ms": -10.790638999999999,
+      "active_wall_on_minus_off_ms": 0.5707140000000095,
+      "workload_cpu_on_minus_off_ms": -9.475999999999964,
+      "controller_cpu_on_minus_off_ms": 0.8893010000000001,
+      "sampler_tick_cpu_ms": 0.82,
+      "sampler_tick_wall_ms": 0.824
+    },
+    {
+      "case": "cpu",
+      "repetition": 3,
+      "order": "BA",
+      "both_correct": true,
+      "wall_on_minus_off_ms": -8.717086000000023,
+      "active_wall_on_minus_off_ms": -0.14000799999999458,
+      "workload_cpu_on_minus_off_ms": -7.760999999999996,
+      "controller_cpu_on_minus_off_ms": 0.639929,
+      "sampler_tick_cpu_ms": 0.919,
+      "sampler_tick_wall_ms": 0.922
+    },
+    {
+      "case": "touched_memory_children",
+      "repetition": 0,
+      "order": "AB",
+      "both_correct": true,
+      "wall_on_minus_off_ms": 7.753439000000014,
+      "active_wall_on_minus_off_ms": -8.374828999999977,
+      "workload_cpu_on_minus_off_ms": 1.2129999999999939,
+      "controller_cpu_on_minus_off_ms": 2.029942,
+      "sampler_tick_cpu_ms": 2.479,
+      "sampler_tick_wall_ms": 2.48
+    },
+    {
+      "case": "touched_memory_children",
+      "repetition": 1,
+      "order": "BA",
+      "both_correct": true,
+      "wall_on_minus_off_ms": -2.9709249999999656,
+      "active_wall_on_minus_off_ms": 3.5416179999999713,
+      "workload_cpu_on_minus_off_ms": -5.315000000000005,
+      "controller_cpu_on_minus_off_ms": 4.2067440000000005,
+      "sampler_tick_cpu_ms": 3.349,
+      "sampler_tick_wall_ms": 3.35
+    },
+    {
+      "case": "touched_memory_children",
+      "repetition": 2,
+      "order": "AB",
+      "both_correct": true,
+      "wall_on_minus_off_ms": 1.3739930000000413,
+      "active_wall_on_minus_off_ms": -17.645160000000033,
+      "workload_cpu_on_minus_off_ms": 7.654999999999994,
+      "controller_cpu_on_minus_off_ms": 3.7078209999999996,
+      "sampler_tick_cpu_ms": 3.154,
+      "sampler_tick_wall_ms": 3.19
+    },
+    {
+      "case": "touched_memory_children",
+      "repetition": 3,
+      "order": "BA",
+      "both_correct": true,
+      "wall_on_minus_off_ms": 10.501604999999984,
+      "active_wall_on_minus_off_ms": 1.1776160000000004,
+      "workload_cpu_on_minus_off_ms": 4.309999999999995,
+      "controller_cpu_on_minus_off_ms": 2.2128509999999997,
+      "sampler_tick_cpu_ms": 3.008,
+      "sampler_tick_wall_ms": 3.039
+    },
+    {
+      "case": "churn",
+      "repetition": 0,
+      "order": "AB",
+      "both_correct": true,
+      "wall_on_minus_off_ms": -38.48154099999999,
+      "active_wall_on_minus_off_ms": -35.618885999999975,
+      "workload_cpu_on_minus_off_ms": -39.24700000000013,
+      "controller_cpu_on_minus_off_ms": 5.133824000000001,
+      "sampler_tick_cpu_ms": 5.477,
+      "sampler_tick_wall_ms": 5.519
+    },
+    {
+      "case": "churn",
+      "repetition": 1,
+      "order": "BA",
+      "both_correct": true,
+      "wall_on_minus_off_ms": 17.83953699999995,
+      "active_wall_on_minus_off_ms": 4.753532999999948,
+      "workload_cpu_on_minus_off_ms": 13.258999999999986,
+      "controller_cpu_on_minus_off_ms": 5.052605000000001,
+      "sampler_tick_cpu_ms": 5.922,
+      "sampler_tick_wall_ms": 6.004
+    },
+    {
+      "case": "churn",
+      "repetition": 2,
+      "order": "AB",
+      "both_correct": true,
+      "wall_on_minus_off_ms": 28.92739700000004,
+      "active_wall_on_minus_off_ms": 23.900477000000024,
+      "workload_cpu_on_minus_off_ms": 24.391999999999967,
+      "controller_cpu_on_minus_off_ms": 4.235441,
+      "sampler_tick_cpu_ms": 4.986,
+      "sampler_tick_wall_ms": 5.021
+    },
+    {
+      "case": "churn",
+      "repetition": 3,
+      "order": "BA",
+      "both_correct": true,
+      "wall_on_minus_off_ms": -39.47384299999999,
+      "active_wall_on_minus_off_ms": -35.47225000000003,
+      "workload_cpu_on_minus_off_ms": -30.335000000000065,
+      "controller_cpu_on_minus_off_ms": 5.375713000000001,
+      "sampler_tick_cpu_ms": 5.009,
+      "sampler_tick_wall_ms": 5.054
+    }
+  ],
+  "cases": [
+    {
+      "case": "wait",
+      "pairs": 4,
+      "all_rows_preserved": 8,
+      "paired_wall_delta_median_ms": 2.3993870000000186,
+      "paired_wall_delta_range_ms": [
+        -10.99354999999997,
+        14.898414000000002
+      ],
+      "paired_workload_cpu_delta_median_ms": 0.1930000000000005,
+      "paired_controller_cpu_delta_median_ms": 1.2415174999999998,
+      "sampler_tick_cpu_median_ms": 1.258,
+      "sampler_tick_wall_median_ms": 1.2615,
+      "sample_count_range": [
+        3,
+        3
+      ],
+      "known_total_processes": 1,
+      "observed_identity_range": [
+        1,
+        1
+      ],
+      "not_observed_identity_range": [
+        0,
+        0
+      ],
+      "sampled_rss_sum_range_bytes": [
+        20602880,
+        20840448
+      ]
+    },
+    {
+      "case": "cpu",
+      "pairs": 4,
+      "all_rows_preserved": 8,
+      "paired_wall_delta_median_ms": -1.7055045000000035,
+      "paired_wall_delta_range_ms": [
+        -10.790638999999999,
+        21.461146000000014
+      ],
+      "paired_workload_cpu_delta_median_ms": 0.21699999999999964,
+      "paired_controller_cpu_delta_median_ms": 0.764615,
+      "sampler_tick_cpu_median_ms": 0.8245,
+      "sampler_tick_wall_median_ms": 0.8265,
+      "sample_count_range": [
+        2,
+        2
+      ],
+      "known_total_processes": 1,
+      "observed_identity_range": [
+        1,
+        1
+      ],
+      "not_observed_identity_range": [
+        0,
+        0
+      ],
+      "sampled_rss_sum_range_bytes": [
+        20602880,
+        20877312
+      ]
+    },
+    {
+      "case": "touched_memory_children",
+      "pairs": 4,
+      "all_rows_preserved": 8,
+      "paired_wall_delta_median_ms": 4.563716000000028,
+      "paired_wall_delta_range_ms": [
+        -2.9709249999999656,
+        10.501604999999984
+      ],
+      "paired_workload_cpu_delta_median_ms": 2.7614999999999945,
+      "paired_controller_cpu_delta_median_ms": 2.960336,
+      "sampler_tick_cpu_median_ms": 3.081,
+      "sampler_tick_wall_median_ms": 3.1145,
+      "sample_count_range": [
+        3,
+        3
+      ],
+      "known_total_processes": 3,
+      "observed_identity_range": [
+        3,
+        3
+      ],
+      "not_observed_identity_range": [
+        0,
+        0
+      ],
+      "sampled_rss_sum_range_bytes": [
+        70967296,
+        71180288
+      ]
+    },
+    {
+      "case": "churn",
+      "pairs": 4,
+      "all_rows_preserved": 8,
+      "paired_wall_delta_median_ms": -10.321002000000021,
+      "paired_wall_delta_range_ms": [
+        -39.47384299999999,
+        28.92739700000004
+      ],
+      "paired_workload_cpu_delta_median_ms": -8.53800000000004,
+      "paired_controller_cpu_delta_median_ms": 5.0932145,
+      "sampler_tick_cpu_median_ms": 5.243,
+      "sampler_tick_wall_median_ms": 5.2865,
+      "sample_count_range": [
+        8,
+        8
+      ],
+      "known_total_processes": 13,
+      "observed_identity_range": [
+        8,
+        9
+      ],
+      "not_observed_identity_range": [
+        4,
+        5
+      ],
+      "sampled_rss_sum_range_bytes": [
+        41857024,
+        42004480
+      ]
+    }
+  ],
+  "observation_loss_flags": {
+    "read_failures": 0,
+    "partial_samples": 0,
+    "cap_rows": 0
+  },
+  "host_load_before": "UNKNOWN; shared host, no reserved CPUs; no scheduling control",
+  "measurement_bases": {
+    "external_wall": "Popen launch through controller parse/cleanup completion, not exact kernel exit timestamp",
+    "active_wall": "parent release of READY barrier through same parse/cleanup; initial sampler tick/buffered startup excluded",
+    "wait4_cpu": "owned coordinator plus its waited descendants, includes interpreter startup; no wholehost accounting",
+    "controller_cpu": "time.process_time span of entire attempt, includes launch/protocol/polling and ticks; not just sampler",
+    "sampler_cpu_and_wall": "existing ProcessSampler tick scope only, included in controller CPU; do not sum as separate independent costs",
+    "rss": "kernel approximate sampled sum including shared pages, not unique physical usage or an exact lifetime maximum",
+    "missing_known": "known fixture startedprocesscount minus observed identities, independent of read/cap flags"
+  },
+  "rss_max_observed_sum_bytes": 71180288
+}

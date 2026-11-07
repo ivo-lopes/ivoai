@@ -1,0 +1,11 @@
+test_actual_fixture_failure_is_retained_not_quality_pass (test_benchmark_sampler_calibration.CalibrationTests.test_actual_fixture_failure_is_retained_not_quality_pass) ... ok
+test_deadline_and_os_error_diagnostics_do_not_invent_errno (test_benchmark_sampler_calibration.CalibrationTests.test_deadline_and_os_error_diagnostics_do_not_invent_errno) ... ok
+test_fixed_balanced_plan_and_independent_cpu_oracle (test_benchmark_sampler_calibration.CalibrationTests.test_fixed_balanced_plan_and_independent_cpu_oracle) ... ok
+test_private_bounded_no_overwrite_and_child_environment (test_benchmark_sampler_calibration.CalibrationTests.test_private_bounded_no_overwrite_and_child_environment) ... ok
+test_real_memory_and_churn_have_known_counts_and_partial_observation (test_benchmark_sampler_calibration.CalibrationTests.test_real_memory_and_churn_have_known_counts_and_partial_observation) ... skipped 'NOT_RUN: explicit offline subprocess fixtures'
+test_typed_pipe_failures_preserve_phase_exit_and_private_payload (test_benchmark_sampler_calibration.CalibrationTests.test_typed_pipe_failures_preserve_phase_exit_and_private_payload) ... ok
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.140s
+
+OK (skipped=1)

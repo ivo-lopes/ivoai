@@ -1,0 +1,40 @@
+{
+  "schema": 1,
+  "epoch": "sampler-diagnostic-projection-after-independent-failure-v1",
+  "base_commit": "8f513876dacc0c7b101bcfda7eb3f74486036d6c",
+  "sources_sha256": {
+    "benchmark_sampler_calibration.py": "bb08f9e2a02689a0ae42df14358d4f87b7db735b54303d06db836dc7ed82aef5",
+    "benchmark_process_sampler.py": "5ebaaa4c8b18e4a24b85bd35b9c57fc992b972cbb529530e86e266ca15a5a3cd",
+    "benchmark-economic-runtime.py": "f3d88a3bfb4117606648a2d58ec2b4bc62a549bc41660c75c9c0192807a94e60",
+    "benchmark_catalog.py": "c2d61962691373cc120f9fda9735f13ce7b1c9122f314ca31cfe5b1fa7091622",
+    "test_benchmark_sampler_calibration.py": "9172ad025e0dd48b5a3fe8fbea981187b08c364be27d3bfb009a0721d6418804"
+  },
+  "python_binary_sha256": "889c603f0d17cb54060951bcf4c4f9b8c9ebd9e52b392c70209bbb9755d797d9",
+  "unchanged_workload_functions": [
+    "plan",
+    "expected",
+    "worker",
+    "read_message",
+    "private_env",
+    "waiter",
+    "write_new"
+  ],
+  "limits_oracles_sampler_waiter_unchanged": true,
+  "attempt_seconds": 3.0,
+  "failure_phase_values": [
+    "launch",
+    "ready",
+    "sample",
+    "release",
+    "wait4",
+    "done",
+    "oracle",
+    null
+  ],
+  "notes": [
+    "phase is where failure surfaces, not a root cause",
+    "nonzero wait4 exit retains wait4 phase; original checks unchanged",
+    "no new32rowcohort; tests only; independent rootfailure remainsINCONCLUSIVE",
+    "old32rows/freeze/results and rootFAIL/followupPASS preserved without rescore"
+  ]
+}

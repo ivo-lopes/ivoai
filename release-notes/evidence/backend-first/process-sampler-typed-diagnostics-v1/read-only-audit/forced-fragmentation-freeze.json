@@ -1,0 +1,6 @@
+{
+  "control": "forced_between_reads_fragmentation",
+  "source_sha256": "bb08f9e2a02689a0ae42df14358d4f87b7db735b54303d06db836dc7ed82aef5",
+  "probe_sha256": "5af5da8a92f0b01f1715098b97c07bb062b2c09674c2b598672de71ca4f987b9",
+  "note": "supplements initial two-write control by forcing the reader to consume prefix before suffix is sent; no calibration attempt"
+}

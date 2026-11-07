@@ -1,0 +1,9 @@
+{"Time":"2026-10-28T21:24:01.93965412Z","Action":"start","Package":"github.com/ivo-lopes/ivoai/internal/workingcontext"}
+{"Time":"2026-10-28T21:24:01.943956759Z","Action":"run","Package":"github.com/ivo-lopes/ivoai/internal/workingcontext","Test":"TestLiveProtectedArtifactsDoNotPoisonLegacyCoreRollback"}
+{"Time":"2026-10-28T21:24:01.944062407Z","Action":"output","Package":"github.com/ivo-lopes/ivoai/internal/workingcontext","Test":"TestLiveProtectedArtifactsDoNotPoisonLegacyCoreRollback","Output":"=== RUN   TestLiveProtectedArtifactsDoNotPoisonLegacyCoreRollback\n","OutputType":"frame"}
+{"Time":"2026-10-28T21:24:01.989843214Z","Action":"output","Package":"github.com/ivo-lopes/ivoai/internal/workingcontext","Test":"TestLiveProtectedArtifactsDoNotPoisonLegacyCoreRollback","Output":"    protected_rollback_live_test.go:60: LEGACY_CORE_ROLLBACK=PASS old_full_and_range_denied legacy_put_read_gc_worked protected_bytes_preserved; old_inventory_excludes_protected_disk\n"}
+{"Time":"2026-10-28T21:24:01.991558464Z","Action":"output","Package":"github.com/ivo-lopes/ivoai/internal/workingcontext","Test":"TestLiveProtectedArtifactsDoNotPoisonLegacyCoreRollback","Output":"--- PASS: TestLiveProtectedArtifactsDoNotPoisonLegacyCoreRollback (0.05s)\n","OutputType":"frame"}
+{"Time":"2026-10-28T21:24:01.992460673Z","Action":"pass","Package":"github.com/ivo-lopes/ivoai/internal/workingcontext","Test":"TestLiveProtectedArtifactsDoNotPoisonLegacyCoreRollback","Elapsed":0.05}
+{"Time":"2026-10-28T21:24:01.992495912Z","Action":"output","Package":"github.com/ivo-lopes/ivoai/internal/workingcontext","Output":"PASS\n","OutputType":"frame"}
+{"Time":"2026-10-28T21:24:01.992548072Z","Action":"output","Package":"github.com/ivo-lopes/ivoai/internal/workingcontext","Output":"ok  \tgithub.com/ivo-lopes/ivoai/internal/workingcontext\t0.053s\n"}
+{"Time":"2026-10-28T21:24:01.992558661Z","Action":"pass","Package":"github.com/ivo-lopes/ivoai/internal/workingcontext","Elapsed":0.053}

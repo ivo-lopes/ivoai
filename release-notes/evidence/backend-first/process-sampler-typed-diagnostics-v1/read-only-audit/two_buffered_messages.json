@@ -1,0 +1,9 @@
+{
+  "control": "two_buffered_messages",
+  "result": "PASS_EXPECTED_BEHAVIOR",
+  "detail": {
+    "messages": 2,
+    "outcome": "exact JSON accepted"
+  },
+  "elapsed_ms": 0.12736799908452667
+}

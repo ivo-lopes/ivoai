@@ -1,0 +1,74 @@
+{
+  "diagnostic_only": true,
+  "row": {
+    "case": "churn",
+    "repetition": 0,
+    "arm": "ON",
+    "order": "AB",
+    "ordinal": 25,
+    "status": "PASS",
+    "correct": true,
+    "error": null,
+    "fixture_known": {
+      "started_children": 12,
+      "completed_children": 12,
+      "child_failures": 0,
+      "checksum": 0,
+      "touched_pages": 0,
+      "known_total_processes": 13,
+      "known_simultaneous_processes": 2,
+      "ready_children": 1
+    },
+    "actual_fixture": {
+      "started_children": 12,
+      "completed_children": 12,
+      "child_failures": 0,
+      "checksum": 0,
+      "touched_pages": 0,
+      "reported_coordinator_cpu_ms": 10.095255,
+      "reported_waited_children_cpu_ms": 576.364
+    },
+    "process_observation": {
+      "schema_version": 1,
+      "source": "linux_procfs_bounded_task_children_stat",
+      "status": "partial",
+      "coverage": "sampled_root_and_descendants_not_complete_or_atomic",
+      "read_loss_or_cap_detected": false,
+      "sample_count": 8,
+      "partial_samples": 0,
+      "read_failures": 0,
+      "limit_reached": false,
+      "interval_ms": 100,
+      "window_budget_ms": 25,
+      "observed_span_ms": 709.518,
+      "max_window_ms": 0.825,
+      "observer_wall_ms": 3.743,
+      "observer_cpu_ms": 3.686,
+      "sampled_process_count_peak": 2,
+      "sampled_rss_sum_peak_bytes": 41852928,
+      "observed_identity_count": 9,
+      "rss_semantics": "kernel_approximate_sampled_rss_sum_includes_shared_pages_not_unique_physical_memory",
+      "actual_process_total": null,
+      "exact_peak_rss": null
+    },
+    "barrier_observed_processes": 2,
+    "known_identities_not_observed": 4,
+    "exit_code": 0,
+    "workload_wait4_user_ms": 513.2769999999999,
+    "workload_wait4_system_ms": 119.769,
+    "external_process_elapsed_ms": 802.269262,
+    "external_active_elapsed_ms": 720.256146,
+    "barrier_hold_ms": 0.403976,
+    "controller_cpu_ms": 7.225035
+  },
+  "read_stages": [
+    {
+      "read_kind": "ready",
+      "elapsed_ms": 81.208
+    },
+    {
+      "read_kind": "done",
+      "elapsed_ms": 0.528
+    }
+  ]
+}

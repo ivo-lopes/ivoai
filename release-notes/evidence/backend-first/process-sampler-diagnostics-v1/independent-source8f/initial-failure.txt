@@ -1,0 +1,1 @@
+2026-10-28 19:30 UTC; immutable8f513876; explicitfixture unittest4tests4.830s FAILED at row.correct; fixture_or_protocol_failed. Original tool transcript retained. No stage/case captured by original test.

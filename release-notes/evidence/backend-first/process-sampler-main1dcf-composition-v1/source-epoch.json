@@ -1,0 +1,53 @@
+{
+  "schema": 1,
+  "epoch": "pr54-main1dcf-source-composition-v1",
+  "parents": {
+    "typed_diagnostics": "057c808c4e53b1c829cb5748a823de1c19d8a991",
+    "main": "1dcf90400f67eb960a2446ccf3c987ecf977a9d8"
+  },
+  "merged_source_index_tree": "2eb52406f2ac9372e83dd5c6b7d651ed544a43c8",
+  "merge_conflicts": 0,
+  "manual_implementation_or_condition_changes": 0,
+  "reviewed_scripts_unchanged": {
+    "scripts/benchmark_sampler_calibration.py": "11a4f2089b5086a1ddb8f5de5246650d49afb64878e5125a109e78954581a65b",
+    "scripts/test_benchmark_sampler_calibration.py": "23c78e36d04e417119258271b42293d5e68f883265888b86fc4f8552cba4f121",
+    "scripts/benchmark_process_sampler.py": "5ebaaa4c8b18e4a24b85bd35b9c57fc992b972cbb529530e86e266ca15a5a3cd",
+    "scripts/benchmark-economic-runtime.py": "f3d88a3bfb4117606648a2d58ec2b4bc62a549bc41660c75c9c0192807a94e60"
+  },
+  "sampler_driver_vs_d7": "byte-identical",
+  "all_Go_source_inputs_identical_main": 563,
+  "source_inventory_entries": 569,
+  "source_inventory_sha256": "f9a861b1d099cdf0f33d250f6a17487d6ab18c980dce2fbb9fc51c3fc9785060",
+  "docs_site_markers_identical_main": {
+    "website/static/build-input.sha256": "ba870252bd6ff935775d087a3666e3104683281bfc5cc00799f2d91952ebbae4",
+    "internal/docsserver/site/build-input.sha256": "ba870252bd6ff935775d087a3666e3104683281bfc5cc00799f2d91952ebbae4"
+  },
+  "docs_website_site_entire_tree_equal_main": true,
+  "Node_build": "NOT_RUN; no differences from reviewed main trees",
+  "prior_evidence": {
+    "files": 368,
+    "all_bytes_unchanged": true,
+    "includes_original343_plus_typed_epoch": true
+  },
+  "incoming_main_evidence": {
+    "files": 497,
+    "all_bytes_unchanged": true
+  },
+  "rollback": {
+    "pinned_source": "3be82befea6ed3875373afcb1bfaa450710310ac",
+    "source_manifest_sha256": "28eeb86068f75de7d60ca7a0702723c63519dc844a8b593bab8441f986050389",
+    "probe_source_sha256": "37c26f467d5472bad3650e0e6ee2460c7929cd78332174d87958ca86243ef860",
+    "binary_sha256": "fc913780355621826b49aa03455cdf0b743294acfccaf6dbfc10db755bee27e2",
+    "current_jsonl_sha256": "9a5ce40e8e2b6af967f1777df860380c76128b2c5d201b826a6a9f6f0a1ef772",
+    "named_tests": 1,
+    "skips": 0,
+    "result": "PASS; oldfull/range rejectprotected, oldput/read/GC work and protectedbytespreserved; no protecteddiskinventoryclaim"
+  },
+  "calibration_fixture_optin": false,
+  "new_calibration_cohort": false,
+  "provider_turns": 0,
+  "original_failure": "INCONCLUSIVE/DRAFT remains; composition and greenCI do not resolve it",
+  "source_note": "incoming catalog/concurrency/doc/publication/G1 changes inherited unchanged; no new calibration condition selected",
+  "release014": "unchanged; no release actions",
+  "context_sync": "BLOCKED IVOAI-175"
+}

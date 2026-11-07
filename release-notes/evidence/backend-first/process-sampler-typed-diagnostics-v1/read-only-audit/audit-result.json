@@ -1,0 +1,45 @@
+{
+  "schema": 1,
+  "audited_head": "d7bd3a04f0bd8c1192ee7abc1d56fc972ac0e3c3",
+  "verdict": "INCONCLUSIVE original independent failure; no demonstrable race/protocol defect identified in audited paths",
+  "shared_source_modified": false,
+  "calibration_workloads_rerun": 0,
+  "provider_turns": 0,
+  "new_calibration_cohorts": 0,
+  "evidence_integrity": "four private independent files byte-identical to retained public copies",
+  "what_original_failure_proves": "row.correctFalse before subsequent coverage/RSS assertions; caught launch/protocol/observer/exit/oracle path, not a coverage assertion",
+  "ordinary_sampler_read_loss_or_caps": "handled as partial observation; do not alone change row.correct; elapsed sampler work can still consume overall deadline",
+  "unknown_originals": [
+    "case",
+    "failure_phase",
+    "exit/signal",
+    "per-attempt elapsed",
+    "read timeout versus EOF/JSON/oracle error",
+    "stderr",
+    "interpreter identity",
+    "resource/cgroup/load conditions"
+  ],
+  "audit_findings": [
+    "workload/oracle/read-message/wait4 source functions unchanged since8f by AST/bytes",
+    "READY barrier precedes all releases; parent and child counts are checked; all worker handles are cleaned in finally",
+    "owned coordinator is reaped by commonwait4 once; no Popen poll/wait before that path",
+    "global3s spans startup/readiness/barrier/sample/work and root exit; it is not merely the250ms sleep",
+    "helper controls covered complete/fragmented/two buffered messages, bounded EOF/oversize/deadline and wait4 already-exited/timeout paths",
+    "supplemental barrier forces parser prefix consumption before suffix write; initial two-write control alone did not force scheduling",
+    "current Python3.13.5 binary matches the original32cohort freeze; this does not establish original rootfailure interpreter identity"
+  ],
+  "controls": {
+    "initial_matrix": 8,
+    "supplemental_forced_fragmentation": 1,
+    "all_expected_behaviors": true,
+    "scope": "small pipe/reaping helper controls, no real calibration cases and no claim rootfailure reproduced"
+  },
+  "recommendation": "retainDRAFT/inconclusive; no justified workload/deadline/oracle fix. If future natural failure occurs, capture one bounded row with stage+exit and failure-kind errno/EOF/timeout classification rather than rerun-until-green; do not infer cause from successful repeats.",
+  "source_checks": "freeze and post-control source SHA match; repo clean",
+  "limits": [
+    "not an exhaustive scheduler/resource/fault stress proof",
+    "no historical missing stderr/exit/state can be reconstructed",
+    "no timeout attribution from aggregate4.830s alone",
+    "no changes to deadlines/oracles/ProcessSampler or current datasets"
+  ]
+}

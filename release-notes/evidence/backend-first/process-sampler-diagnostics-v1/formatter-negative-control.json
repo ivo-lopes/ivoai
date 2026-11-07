@@ -1,0 +1,16 @@
+{
+  "kind": "injected formatting control; not an observed workload failure or rootcause",
+  "expected_failures": 2,
+  "actual_failures": 2,
+  "no_workload_launched": true,
+  "failures": [
+    {
+      "subtest": "test_real_memory_and_churn_have_known_counts_and_partial_observation (test_benchmark_sampler_calibration.CalibrationTests.test_real_memory_and_churn_have_known_counts_and_partial_observation) (case='touched_memory_children')",
+      "traceback": "Traceback (most recent call last):\n  File \"/media/ivo/ARQUIVOS/home/ivo/Downloads/PROJETOS/MINDSITE/ivoai-sampler-calibration/scripts/test_benchmark_sampler_calibration.py\", line 66, in test_real_memory_and_churn_have_known_counts_and_partial_observation\n    self.assertTrue(row['correct'], message)\n    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: False is not true : {\"actual_fixture\": null, \"arm\": \"ON\", \"case\": \"touched_memory_children\", \"correct\": false, \"error\": \"fixture_or_protocol_failed\", \"failure_phase\": \"ready\", \"order\": \"AB\", \"ordinal\": 17, \"repetition\": 0, \"status\": \"FAILED\"}\n"
+    },
+    {
+      "subtest": "test_real_memory_and_churn_have_known_counts_and_partial_observation (test_benchmark_sampler_calibration.CalibrationTests.test_real_memory_and_churn_have_known_counts_and_partial_observation) (case='churn')",
+      "traceback": "Traceback (most recent call last):\n  File \"/media/ivo/ARQUIVOS/home/ivo/Downloads/PROJETOS/MINDSITE/ivoai-sampler-calibration/scripts/test_benchmark_sampler_calibration.py\", line 66, in test_real_memory_and_churn_have_known_counts_and_partial_observation\n    self.assertTrue(row['correct'], message)\n    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^\nAssertionError: False is not true : {\"actual_fixture\": null, \"arm\": \"ON\", \"case\": \"churn\", \"correct\": false, \"error\": \"fixture_or_protocol_failed\", \"failure_phase\": \"ready\", \"order\": \"AB\", \"ordinal\": 25, \"repetition\": 0, \"status\": \"FAILED\"}\n"
+    }
+  ]
+}

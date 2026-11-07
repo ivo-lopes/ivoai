@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "condition": "offline-process-sampler-calibration-v1",
+  "planned_rows": 32,
+  "actual_rows": 32,
+  "correct_rows": 32,
+  "status": "PASS_OFFLINE_FIXTURES",
+  "observation_rows_available": 16,
+  "source_freeze_verified_after": true,
+  "elapsed_seconds": 14.564814331999514,
+  "model_calls": 0,
+  "economy": "NOT_EVALUATED",
+  "actual_native_workers": null,
+  "limits": "single shared host; sample coverage always partial/non-atomic; no LLM benefit or subtractable correction factor"
+}

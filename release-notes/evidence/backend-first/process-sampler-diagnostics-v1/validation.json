@@ -1,0 +1,44 @@
+{
+  "schema": 1,
+  "epoch": "sampler-diagnostic-projection-after-independent-failure-v1",
+  "base_commit": "8f513876dacc0c7b101bcfda7eb3f74486036d6c",
+  "readiness": "DRAFT; independent failure causeINCONCLUSIVE, not fixed by successful repeats",
+  "original32cohort": "all original40evidence files including manifest remainbyte-identical; no rescore or newABBAcohort",
+  "independent_source8f": {
+    "failure": "four-test explicit fixture run exited1 in4.830s; real-memory/churn method failed, case/phaseUNKNOWN",
+    "failure_log_provenance": "root reconstructed from retained original tool transcript; named original method, no invented case/stage; not claimed rawstderr",
+    "followups": "two same-source diagnostic casesPASS, memory421.328ms/churn802.269ms; not substituted for originalFAIL",
+    "inputs_preserved_byte_identical": true,
+    "interpreter_identity_at_original_failure": "UNKNOWN not retroactively inferred"
+  },
+  "new_projection": {
+    "failure_phases": [
+      "launch",
+      "ready",
+      "sample",
+      "release",
+      "wait4",
+      "done",
+      "oracle"
+    ],
+    "successful_or_notrun_phase": null,
+    "semantics": "where failure surfaced; nonzero wait4 outcome keeps wait4 phase; not a rootcause inference",
+    "messages": "bounded full allowlisted row with case subtest; no argv/env/paths/PIDs or exceptiontext"
+  },
+  "unchanged": "limits3s/110s,4pairs, workloads, oracles, ProcessSampler, commonwait4; AST/bytes checked",
+  "source_freeze_before_tests_and_verified_after": true,
+  "tests": {
+    "calibration_diagnostics": "4PASS1.372s explicit realfixtures",
+    "original_ProcessSampler": "3PASS1.079s",
+    "formatter_negative_control": "two expected injected failed subtests verified case+fullrow payload; no workload launched",
+    "launch_error_privacy": "injected PRIVATE_SECRET excluded; phaseLaunch retained"
+  },
+  "limits": [
+    "Newsource diagnostic testsPASS does not establish originalfailurefixed",
+    "No new overheadcomparison, defaultchange, versionbump, nativeclient/provider/network/credentials or economicclaim",
+    "OriginalRSS and processcoverage remain approximate/partial; no mechanicalsubtraction",
+    "PR46/PR51 separate; no originalorrootfailuredata modified",
+    "CONTEXT_SYNC BLOCKED IVOAI-175"
+  ],
+  "original_evidence_files_preserved": 40
+}

@@ -1,0 +1,8 @@
+{
+  "result": "PASS_EXPECTED_BEHAVIOR",
+  "prefix_consumed_before_suffix": true,
+  "bytes": 17,
+  "elapsed_ms": 0.7135060004657134,
+  "workloads_rerun": 0,
+  "provider_turns": 0
+}

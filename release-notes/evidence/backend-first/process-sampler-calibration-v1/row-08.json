@@ -1,0 +1,39 @@
+{
+  "case": "cpu",
+  "repetition": 0,
+  "arm": "OFF",
+  "order": "AB",
+  "ordinal": 8,
+  "status": "PASS",
+  "correct": true,
+  "error": null,
+  "fixture_known": {
+    "started_children": 0,
+    "completed_children": 0,
+    "child_failures": 0,
+    "checksum": 49862,
+    "touched_pages": 0,
+    "known_total_processes": 1,
+    "known_simultaneous_processes": 1,
+    "ready_children": 0
+  },
+  "actual_fixture": {
+    "started_children": 0,
+    "completed_children": 0,
+    "child_failures": 0,
+    "checksum": 49862,
+    "touched_pages": 0,
+    "reported_coordinator_cpu_ms": 161.971515,
+    "reported_waited_children_cpu_ms": 0.0
+  },
+  "process_observation": null,
+  "barrier_observed_processes": null,
+  "known_identities_not_observed": null,
+  "exit_code": 0,
+  "workload_wait4_user_ms": 202.047,
+  "workload_wait4_system_ms": 7.958,
+  "external_process_elapsed_ms": 222.586414,
+  "external_active_elapsed_ms": 182.794807,
+  "barrier_hold_ms": 0.00093,
+  "controller_cpu_ms": 2.27445
+}
